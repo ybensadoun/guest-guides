@@ -9,6 +9,7 @@ const LINK_RX = [
   { site: 'vrbo', rx: /^https?:\/\/(www\.)?vrbo\.com\/(\d+|[\w-]+\/\d+)/i }
 ];
 const AMEN = ['Pool','Garden','BBQ','Air conditioning','Heating or fireplace','Washing machine','Dishwasher','Coffee machine','Smart TV','Cot or high chair','Pets allowed','Free parking','EV charger','Hot tub','Bikes','Workspace','Sea view','Lift'];
+const ROOMS = ['Outside','Living room','Kitchen','Bedroom','Bathroom','Pool','Garden','Terrace','Office','Laundry','View','Other'];
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json' } });
 
 function htmlToText(html){
@@ -25,9 +26,16 @@ async function readPage(url){
     if (!r.ok) return null;
     const html = await r.text();
     const coords = html.match(/"lat(?:itude)?"\s*:\s*(-?\d+\.\d+)\s*,\s*"(?:lng|longitude)"\s*:\s*(-?\d+\.\d+)/);
-    const photos = [...new Set((html.match(/https:\/\/a0\.muscache\.com\/im\/pictures\/[^"'\s?]+\.(?:jpe?g|webp)/gi) || []))].slice(0, 12);
+    // Airbnb lists every photo with its caption: ..."accessibilityLabel":"Salón","baseUrl":"https://a0.muscache.com/im/pictures/....jpg"
+    const seen = new Map();
+    for (const m of html.matchAll(/"accessibilityLabel":"([^"]{0,140})","baseUrl":"(https:\/\/a0\.muscache\.com\/im\/pictures\/[^"?]+\.(?:jpe?g|webp))/gi)) { if (!seen.has(m[2])) seen.set(m[2], m[1]); }
+    for (const u of (html.match(/https:\/\/a0\.muscache\.com\/im\/pictures\/[^"'\s?\\]+\.(?:jpe?g|webp)/gi) || [])) if (!seen.has(u) && !/\/(user|profile|Hosting|airbnb-platform)/i.test(u)) seen.set(u, '');
+    const pics = [...seen.entries()].slice(0, 16).map(([url, caption]) => ({ url, caption }));
+    const photos = pics.map(x => x.url);
+    // "4 habitaciones · 7 camas · 2 baños": the counts Claude needs for the rooms
+    const counts = [...new Set((html.match(/\b\d{1,2}\s(?:bedrooms?|beds?|baths?|bathrooms?|habitaci[oó]n(?:es)?|camas?|ba[ñn]os?|chambres?|lits?|salles? de bains?)\b/gi) || []))].slice(0, 12).join(' · ');
     const text = htmlToText(html);
-    const out = { title: meta(html, 'og:title'), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, text: text.slice(0, 40000),
+    const out = { title: meta(html, 'og:title'), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, text: text.slice(0, 40000),
       lat: coords ? +coords[1] : null, lng: coords ? +coords[2] : null };
     // A blocked or empty page has almost no text and no title.
     if (!out.title && out.text.length < 1500) return null;
@@ -46,6 +54,9 @@ function prompt(src, town){
 Town given by the host: ${town || 'not given'}
 Page title: ${src.title || ''}
 Page description: ${src.description || ''}
+Room and bed counts found on the page: ${src.counts || 'none'}
+Photos, numbered from 0, with the caption the host gave each one:
+${(src.pics || []).map((x, i) => `${i}: ${x.caption || '(no caption)'}`).join('\n') || 'none'}
 Listing text:
 """
 ${(src.text || '').slice(0, 30000)}
@@ -54,6 +65,8 @@ ${(src.text || '').slice(0, 30000)}
 Return this JSON (null when unknown):
 {
  "placeName": string, "propertyType": one of ["House","Villa","Apartment","Cottage","Farmhouse","Room","Other"],
+ "bedrooms": number, "bathrooms": number, "beds": number (only what the page says, else null),
+ "photoRooms": array with one entry per numbered photo, in order: the room it shows, chosen from ${JSON.stringify(ROOMS)}, judged from its caption ("Fachada", "Jardín" = Outside or Garden, "Salón", "Comedor" = Living room, "Habitación" = Bedroom). null when the caption does not tell,
  "town": string, "region": string ("Region, Country"), "sleeps": number,
  "checkIn": "HH:MM", "checkOut": "HH:MM",
  "amenities": array chosen only from ${JSON.stringify(AMEN)},
@@ -104,12 +117,12 @@ export default async (req) => {
       ? 'Your link is right, but the listing site did not let us read it. Copy the text of your listing page and paste it below: everything from the title down to the house rules.'
       : 'Paste the text of your listing: everything from the title down to the house rules.' });
   }
-  if (!src) src = { title: '', description: '', text, photos: [], lat: null, lng: null };
+  if (!src) src = { title: '', description: '', text, photos: [], pics: [], counts: '', lat: null, lng: null };
   else if (text) src.text = text + '\n\n' + src.text;
   src.url = url;
   try {
     const draft = await askClaude(src, town);
-    return json({ ok: true, source: src.title ? 'page' : 'text', site, draft, photos: src.photos || [], cover: src.image || (src.photos || [])[0] || null, lat: src.lat, lng: src.lng });
+    return json({ ok: true, source: src.title ? 'page' : 'text', site, draft, photos: src.photos || [], photoRooms: (draft && draft.photoRooms) || [], photoCaps: (src.pics || []).map(x => x.caption), cover: src.image || (src.photos || [])[0] || null, lat: src.lat, lng: src.lng });
   } catch (e) {
     return json({ ok: false, need: 'retry', message: e.message === 'no_key' ? 'The writing assistant is not set up yet. You can still fill in the steps by hand.' : 'Writing your first version took too long. Press the button again.' }, 200);
   }

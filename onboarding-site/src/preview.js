@@ -230,7 +230,7 @@ function openFeedback(){
     ${mode === 'screen' ? `<p class="hint">About “${esc(screenName)}”: what is missing, wrong or how should it look?</p><textarea id="fbt" placeholder="I would expect…"></textarea>`
       : `<div class="stars">${[1,2,3,4,5].map(n => `<button type="button" data-star="${n}" aria-pressed="${n === rating}">${n}</button>`).join('')}</div>
       <textarea id="fbr" placeholder="What feels right"></textarea><textarea id="fbw" placeholder="What is wrong or missing"></textarea><textarea id="fbu" placeholder="How would you like it to look or work instead?"></textarea>`}
-    <div class="row"><span class="hint">Goes straight to the Porta team.</span><button type="button" class="pv-btn" data-send style="background:#151515;color:#fff">Send</button></div></div>`; };
+    <div class="row"><span class="hint">Goes straight to the Guest Guide Maker team.</span><button type="button" class="pv-btn" data-send style="background:#151515;color:#fff">Send</button></div></div>`; };
   draw(); document.body.appendChild(o);
   o.addEventListener('click', async e => {
     if (e.target === o || e.target.closest('[data-x]')) { o.remove(); return; }

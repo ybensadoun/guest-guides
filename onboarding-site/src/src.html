@@ -1,4 +1,4 @@
-<title>Porta Host Onboarding</title>
+<title>Guest Guide Maker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
@@ -137,6 +137,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 .thumb{position:relative;border-radius:var(--r-s);overflow:hidden;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column}
 .thumb img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
 .thumb .doc{aspect-ratio:4/3;display:grid;place-items:center;font-weight:700;color:var(--muted);font-size:13px;padding:8px;text-align:center;word-break:break-word}
+.thumb .fl{position:absolute;left:6px;top:6px;background:rgba(21,21,21,.72);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px}
 .thumb select{border-radius:0;border:0;border-top:1px solid var(--line);padding:6px 8px;font-size:13px;background:var(--surface)}
 .thumb .x{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:16px;line-height:1}
 .thumb.pending{opacity:.6}
@@ -213,7 +214,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="#home" aria-label="Porta, all steps"><span class="door" aria-hidden="true"></span><b>Porta</b></a>
+    <a class="brand" href="#home" aria-label="Guest Guide Maker, all steps"><span class="door" aria-hidden="true"></span><b>Guest Guide Maker</b></a>
     <span class="save" id="saveState"><span class="sdot"></span><span>Connecting…</span></span>
     <span id="ownerSlot"></span>
   </header>
@@ -288,7 +289,7 @@ const secOn = id => { const m = A.modules || {}; const s = SECTIONS.find(x => x.
 const MODULES = [
   {id:'listing',group:'basics',title:'Your listing',sub:'Link, name, town',icon:'link',tc:'var(--pine)',sh:'var(--sun)',shape:'circle',
    lead:'Paste your listing link and description: we fill in what we can. Nothing is copied from Airbnb by us, only what you paste.',
-   need:['placeName','town'],fields:['listingUrl','listingText','autofill','placeName','propertyType','town','region','sleeps','hostName','privacyNote']},
+   need:['placeName','town'],fields:['listingUrl','listingText','autofill','placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','hostName','privacyNote']},
   {id:'guide',group:'basics',title:'Name and languages',sub:'What guests see',icon:'tag',tc:'var(--sun)',ti:'#1b1407',sh:'var(--tomato)',shape:'half',
    lead:'Most hosts use the house name. It becomes the title of the guide and the app name on guests’ phones.',
    need:['languages'],fields:['guideName','tagline','languages','guests','up:logo']},
@@ -299,7 +300,7 @@ const MODULES = [
    lead:'Each section you keep adds its own short set of questions to this page. Ticked ones fit your answers so far.',
    need:[],fields:['sectionPicker','moduleIdeas']},
   {id:'photos',group:'house',title:'Photos by room',sub:'Up to 16',icon:'cam',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'quarter',
-   lead:'Tag each photo with its room: it lands in the right part of the house guide.',need:['upload:photo'],fields:['up:photo']},
+   lead:'Tag each photo with its room: it lands in the right part of the house guide. Photos from your listing are already here: check the room on each one, remove any you do not want and add your own.',need:['upload:photo'],fields:['up:photo']},
   {id:'howto',group:'house',title:'How things work',sub:'Boiler, pool, TV…',icon:'tool',tc:'var(--clay)',ti:'#fff',sh:'var(--ink)',shape:'bar',sec:'houseguide',
    lead:'One line per thing guests get stuck on. We put each line in the right room.',need:['howTos'],fields:['amenities','howTos','up:manual']},
   {id:'stay',group:'house',title:'Check-in and rules',sub:'Times, rules, leaving',icon:'key',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
@@ -330,6 +331,9 @@ const Q = {
   town:{label:'Town or village',ph:'Where the place is'},
   region:{label:'Region and country',ph:'Region, country',opt:true},
   sleeps:{t:'number',label:'Sleeps',ph:'6',opt:true},
+  bedrooms:{t:'number',label:'Bedrooms',ph:'3',opt:true},
+  bathrooms:{t:'number',label:'Bathrooms',ph:'2',opt:true},
+  beds:{t:'number',label:'Beds',ph:'5',opt:true},
   hostName:{label:'Your first name',ph:'As guests know you',opt:true},
   guideName:{label:'Guide name',opt:true,hintFn:()=>v('placeName')?`Leave empty to use “${v('placeName')}”.`:''},
   tagline:{label:'Welcome line',opt:true,ph:'Make yourself at home'},
@@ -493,6 +497,7 @@ function drop(kind){
       ${db && uid ? `<label class="btn small"><input class="sr" type="file" data-file="${kind}" accept="${accept}"${o.max > 1 ? ' multiple' : ''}>${mine.length ? 'Add more' : 'Choose files'}</label>` : '<p class="err">Open in Claude to upload</p>'}</div>
     ${mine.length || pend.length ? `<div class="thumbs">${mine.map(u => `<div class="thumb">${/^image\//.test(u.type) || u.dataUrl ? `<img src="${esc(srcOf(u))}" alt="${esc(u.name)}" loading="lazy">` : `<div class="doc">${esc(u.name)}</div>`}
       ${o.rooms ? `<select data-room="${u.id}" aria-label="Room for ${esc(u.name)}"><option value="">Room…</option>${ROOMS.map(r => `<option${u.room===r?' selected':''}>${r}</option>`).join('')}</select>` : ''}
+      ${u.remote ? '<span class="fl">From your listing</span>' : ''}
       <button class="x" type="button" data-del="${u.id}" aria-label="Remove ${esc(u.name)}">×</button></div>`).join('')}
       ${pend.map(p => `<div class="thumb pending">${p.preview ? `<img src="${p.preview}" alt="">` : `<div class="doc">${esc(p.name)}</div>`}</div>`).join('')}</div>` : ''}
   </div></div>`;

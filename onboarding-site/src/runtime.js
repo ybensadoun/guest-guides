@@ -277,13 +277,13 @@ async function send(b){
   try {
     log('send'); const d = device(), j = journey();
     const clean = { ...A }; delete clean._notes; delete clean._log;
-    const total = uploads.length + 1; let n = 0;
+    const total = uploads.filter(x => !x.remote).length + 1; let n = 0;
     const tick = () => { n++; if (st) st.textContent = `Sending ${n} of ${total}…`; };
     tick();
-    await nf('onboarding', { sid, email: v('email'), place: v('placeName'), town: v('town'), slug: v('slug'), progress: progressText(), photos: String(uploads.length),
+    await nf('onboarding', { sid, email: v('email'), place: v('placeName'), town: v('town'), slug: v('slug'), progress: progressText(), photos: String(uploads.length), listing_photos: JSON.stringify(uploads.filter(u => u.remote).map(u => ({ url: u.src, room: u.room || '', caption: u.name }))),
       device: deviceLine(d), device_type: d.type, device_json: JSON.stringify(d), active_minutes: String(j.activeMinutes), journey: JSON.stringify(j), events: JSON.stringify(A._log || []),
       sent_before: A._sentAt || '', answers: JSON.stringify(clean) });
-    for (const u of uploads) { tick(); await nf('file', { sid, kind: u.kind, room: u.room || '', name: u.name }, u); }
+    for (const u of uploads.filter(x => !x.remote)) { tick(); await nf('file', { sid, kind: u.kind, room: u.room || '', name: u.name }, u); }
     A._sentAt = new Date().toISOString(); flush();
     toast('Sent! Opening your preview…'); setTimeout(() => { location.href = '/' + (v('slug') || 'preview'); }, 900);
   } catch (err) { b.disabled = false; if (st) st.textContent = 'Something did not go through. Check your connection and press Send again.'; }
@@ -298,7 +298,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { cle
   try { const saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved) { A = saved.A || {}; sid = saved.sid; } } catch (e) {}
   if (!sid) sid = newId();
   { const d = device(); A._sessions = [...(A._sessions || []), { t: Date.now(), d: deviceLine(d) }].slice(-50); log('session', null, { d: deviceLine(d) }); flush(); }
-  try { uploads = (await idb.all() || []).map(u => ({ ...u, url: URL.createObjectURL(u.blob) })).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')); } catch (e) { uploads = []; }
+  try { uploads = (await idb.all() || []).map(u => ({ ...u, url: u.blob ? URL.createObjectURL(u.blob) : u.url })).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')); } catch (e) { uploads = []; }
   setSave('ok', A._seen ? 'Saved on this device' : 'Answers save on this device');
   render();
 })();

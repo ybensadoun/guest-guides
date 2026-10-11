@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Porta · Build your guest guide</title>
+<title>Guest Guide Maker · Build your guest guide</title>
 <meta name="description" content="Tell us about your place and we build a guest guide for your guests' phones.">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -149,6 +149,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 .thumb{position:relative;border-radius:var(--r-s);overflow:hidden;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column}
 .thumb img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
 .thumb .doc{aspect-ratio:4/3;display:grid;place-items:center;font-weight:700;color:var(--muted);font-size:13px;padding:8px;text-align:center;word-break:break-word}
+.thumb .fl{position:absolute;left:6px;top:6px;background:rgba(21,21,21,.72);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px}
 .thumb select{border-radius:0;border:0;border-top:1px solid var(--line);padding:6px 8px;font-size:13px;background:var(--surface)}
 .thumb .x{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:16px;line-height:1}
 .thumb.pending{opacity:.6}
@@ -420,7 +421,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="#home" aria-label="Porta, all steps"><span class="door" aria-hidden="true"></span><b>Porta</b></a>
+    <a class="brand" href="#home" aria-label="Guest Guide Maker, all steps"><span class="door" aria-hidden="true"></span><b>Guest Guide Maker</b></a>
     <span class="save" id="saveState"><span class="sdot"></span><span>Connecting…</span></span>
   </header>
   <main id="main" class="wrap" style="gap:18px"><div class="loading">Loading your onboarding…</div></main>
@@ -494,7 +495,7 @@ const secOn = id => { const m = A.modules || {}; const s = SECTIONS.find(x => x.
 const MODULES = [
   {id:'listing',group:'basics',title:'Your listing',sub:'Link, name, town',icon:'link',tc:'var(--pine)',sh:'var(--sun)',shape:'circle',
    lead:'Your listing is where everything starts. With the link (or its text) and the town, we write the rest.',
-   need:['source','town'],fields:['listingUrl','listingText','fillBtn','placeName','propertyType','town','region','sleeps','hostName','privacyNote']},
+   need:['source','town'],fields:['listingUrl','listingText','fillBtn','placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','hostName','privacyNote']},
   {id:'guide',group:'basics',title:'Name, address, languages',sub:'What guests see',icon:'tag',tc:'var(--sun)',ti:'#1b1407',sh:'var(--tomato)',shape:'half',
    lead:'Most hosts use the house name. It becomes the title of the guide and the app name on guests’ phones.',
    need:[],fields:['guideName','slug','tagline','languages','guests','up:logo']},
@@ -505,7 +506,7 @@ const MODULES = [
    lead:'Each section you keep adds its own short set of questions to this page. Ticked ones fit your answers so far.',
    need:[],fields:['sectionPicker','moduleIdeas']},
   {id:'photos',group:'house',title:'Photos by room',sub:'Up to 16',icon:'cam',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'quarter',
-   lead:'Tag each photo with its room: it lands in the right part of the house guide.',need:[],fields:['up:photo']},
+   lead:'Tag each photo with its room: it lands in the right part of the house guide. Photos from your listing are already here: check the room on each one, remove any you do not want and add your own.',need:[],fields:['up:photo']},
   {id:'howto',group:'house',title:'How things work',sub:'Boiler, pool, TV…',icon:'tool',tc:'var(--clay)',ti:'#fff',sh:'var(--ink)',shape:'bar',sec:'houseguide',
    lead:'One line per thing guests get stuck on. We put each line in the right room.',need:[],fields:['amenities','howTos','up:manual']},
   {id:'stay',group:'house',title:'Check-in and rules',sub:'Times, rules, leaving',icon:'key',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
@@ -538,6 +539,9 @@ const Q = {
   town:{label:'Town or village',ph:'Where the place is'},
   region:{label:'Region and country',ph:'Region, country',opt:true},
   sleeps:{t:'number',label:'Sleeps',ph:'6',opt:true},
+  bedrooms:{t:'number',label:'Bedrooms',ph:'3',opt:true},
+  bathrooms:{t:'number',label:'Bathrooms',ph:'2',opt:true},
+  beds:{t:'number',label:'Beds',ph:'5',opt:true},
   hostName:{label:'Your first name',ph:'As guests know you',opt:true},
   guideName:{label:'Guide name',opt:true,hintFn:()=>v('placeName')?`Leave empty to use “${v('placeName')}”.`:''},
   tagline:{label:'Welcome line',opt:true,ph:'Make yourself at home'},
@@ -643,6 +647,7 @@ function drop(kind){
       ${true ? `<label class="btn small"><input class="sr" type="file" data-file="${kind}" accept="${accept}"${o.max > 1 ? ' multiple' : ''}>${mine.length ? 'Add more' : 'Choose files'}</label>` : '<p class="err">Open in Claude to upload</p>'}</div>
     ${mine.length || pend.length ? `<div class="thumbs">${mine.map(u => `<div class="thumb">${/^image\//.test(u.type) || u.dataUrl ? `<img src="${esc(srcOf(u))}" alt="${esc(u.name)}" loading="lazy">` : `<div class="doc">${esc(u.name)}</div>`}
       ${o.rooms ? `<select data-room="${u.id}" aria-label="Room for ${esc(u.name)}"><option value="">Room…</option>${ROOMS.map(r => `<option${u.room===r?' selected':''}>${r}</option>`).join('')}</select>` : ''}
+      ${u.remote ? '<span class="fl">From your listing</span>' : ''}
       <button class="x" type="button" data-del="${u.id}" aria-label="Remove ${esc(u.name)}">×</button></div>`).join('')}
       ${pend.map(p => `<div class="thumb pending">${p.preview ? `<img src="${p.preview}" alt="">` : `<div class="doc">${esc(p.name)}</div>`}</div>`).join('')}</div>` : ''}
   </div></div>`;
@@ -779,6 +784,9 @@ function parseListing(text){
   const where = t.match(/(?:^|\n)\s*(entire [^\n]*?|private room [^\n]*?|[^\n]*?(?:villa|home|house|cottage|apartment|rental unit|loft|condo|cabin|bungalow|alojamiento entero|casa|apartamento|logement entier|maison))\s+(?:in|en|[àa])\s+([^,\n]+)(?:,\s*([^\n]+))?/i);
   if (where) { out.town = where[2].trim(); if (where[3]) out.region = where[3].trim(); const ty = TYPE_RX.find(([rx]) => rx.test(where[1])); if (ty) out.propertyType = ty[1]; }
   const g = t.match(/(\d{1,2})\s+(?:guests|hu[ée]spedes|viajeros|voyageurs)/i); if (g) out.sleeps = g[1];
+  const nn = (rx) => { const m = t.match(rx); return m ? m[1] : null; };
+  const br = nn(/(\d{1,2})\s+(?:bedrooms?|habitaci[oó]n(?:es)?|dormitorios?|chambres?)/i), ba = nn(/(\d{1,2}(?:[.,]5)?)\s+(?:baths?|bathrooms?|ba[ñn]os?|salles? de bains?)/i), bd = nn(/(\d{1,2})\s+(?:beds?|camas?|lits?)\b/i);
+  if (br) out.bedrooms = br; if (ba) out.bathrooms = ba.replace(',', '.'); if (bd) out.beds = bd;
   const ci = t.match(/check-?\s?in[^\n\d]{0,25}(\d{1,2})(?:[:.h](\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?/i) || t.match(/llegada[^\n\d]{0,25}(\d{1,2})(?:[:.](\d{2}))?/i) || t.match(/arriv[ée]e[^\n\d]{0,25}(\d{1,2})(?:[:h](\d{2}))?/i);
   if (ci) out.checkIn = hhmm(ci[1], ci[2], ci[3]);
   const co = t.match(/check-?\s?out[^\n\d]{0,25}(\d{1,2})(?:[:.h](\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?/i) || t.match(/salida[^\n\d]{0,25}(\d{1,2})(?:[:.](\d{2}))?/i) || t.match(/d[ée]part[^\n\d]{0,25}(\d{1,2})(?:[:h](\d{2}))?/i);
@@ -789,7 +797,7 @@ function parseListing(text){
   out._wifi = /wi-?fi/i.test(t);
   return out;
 }
-const FIELD_MODULE = { placeName: 'listing', town: 'listing', region: 'listing', propertyType: 'listing', sleeps: 'listing', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', amenities: 'howto' };
+const FIELD_MODULE = { placeName: 'listing', town: 'listing', region: 'listing', propertyType: 'listing', sleeps: 'listing', bedrooms: 'listing', bathrooms: 'listing', beds: 'listing', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', amenities: 'howto' };
 function applyListing(){
   const r = parseListing(v('listingText')), got = [];
   for (const [k, mod] of Object.entries(FIELD_MODULE)) {
@@ -1038,7 +1046,7 @@ function openFeedback(){
     ${mode === 'screen' ? `<p class="hint">About “${esc(screenName)}”: what is missing, wrong or how should it look?</p><textarea id="fbt" placeholder="I would expect…"></textarea>`
       : `<div class="stars">${[1,2,3,4,5].map(n => `<button type="button" data-star="${n}" aria-pressed="${n === rating}">${n}</button>`).join('')}</div>
       <textarea id="fbr" placeholder="What feels right"></textarea><textarea id="fbw" placeholder="What is wrong or missing"></textarea><textarea id="fbu" placeholder="How would you like it to look or work instead?"></textarea>`}
-    <div class="row"><span class="hint">Goes straight to the Porta team.</span><button type="button" class="pv-btn" data-send style="background:#151515;color:#fff">Send</button></div></div>`; };
+    <div class="row"><span class="hint">Goes straight to the Guest Guide Maker team.</span><button type="button" class="pv-btn" data-send style="background:#151515;color:#fff">Send</button></div></div>`; };
   draw(); document.body.appendChild(o);
   o.addEventListener('click', async e => {
     if (e.target === o || e.target.closest('[data-x]')) { o.remove(); return; }
@@ -1079,7 +1087,7 @@ const linkProblem = u => { u = (u || '').trim(); if (!u) return ''; if (!/^https
 const hasSource = () => !!A._draftAt || (!!v('listingUrl') && !linkProblem(v('listingUrl'))) || v('listingText').length > 200;
 const START = { busy: false, need: '', msg: '', step: 0 };
 const STEPS_MSG = ['Opening your listing…', 'Reading the house, the rules and what it offers…', 'Writing your house guide…', 'Choosing sections for your guests…', 'Almost there…'];
-const DRAFT_MAP = { placeName: 'listing', propertyType: 'listing', town: 'listing', region: 'listing', sleeps: 'listing',
+const DRAFT_MAP = { placeName: 'listing', propertyType: 'listing', town: 'listing', region: 'listing', sleeps: 'listing', bedrooms: 'listing', bathrooms: 'listing', beds: 'listing',
   guideName: 'guide', tagline: 'guide', welcome: 'guide', guests: 'guide', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
   amenities: 'howto', howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
 
@@ -1088,7 +1096,7 @@ function startHTML(){
   return `<section class="start">
     <div class="st-art" aria-hidden="true"><span class="st-door"><i></i></span><span class="st-moon"></span></div>
     <div class="st-tx">
-      <small>Porta · guest guides</small>
+      <small>Guest Guide Maker</small>
       <h1>Your guest guide, written for you.</h1>
       <p>Paste your listing link. In about a minute we write a first version of your whole guide: the house, the rules, the area. You then only check it and make it yours.</p>
     </div>
@@ -1126,7 +1134,7 @@ function applyDraft(d){
   const D = d.draft || {}, pre = { ...(A._pre || {}) };
   for (const [k, mod] of Object.entries(DRAFT_MAP)) {
     let val = D[k]; if (val == null || val === '' || (Array.isArray(val) && !val.length)) continue;
-    if (k === 'sleeps') val = String(val);
+    if (k === 'sleeps' || k === 'bedrooms' || k === 'bathrooms' || k === 'beds') val = String(val);
     if (k === 'amenities') val = val.filter(x => AMEN.includes(x));
     const empty = Array.isArray(A[k]) ? !A[k].length : !String(A[k] ?? '').trim();
     if (!empty) continue;
@@ -1143,7 +1151,19 @@ function applyDraft(d){
   if (Array.isArray(D.toConfirm)) A.toConfirm = D.toConfirm.slice(0, 6);
   if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
   if (d.cover) A.coverUrl = d.cover;
-  if (Array.isArray(d.photos)) A.listingPhotos = d.photos;
+  if (Array.isArray(d.photos)) {
+    A.listingPhotos = d.photos;
+    // The listing's own photos become the first photos of the house guide, each with the room we could tell from its caption.
+    const have = uploads.filter(u => u.kind === 'photo');
+    if (!have.some(u => u.remote)) {
+      const room = r => ROOMS.includes(r) ? r : '';
+      d.photos.slice(0, Math.max(0, 16 - have.length)).forEach((src, i) => {
+        const cap = (d.photoCaps || [])[i] || '';
+        const rec = { id: newId(), kind: 'photo', remote: true, src, name: cap || 'Listing photo ' + (i + 1), room: room((d.photoRooms || [])[i]), url: src + '?im_w=720', createdAt: new Date(Date.now() + i).toISOString() };
+        uploads.push(rec); saveUpload(rec);
+      });
+    }
+  }
   if (!A._slugTouched && (v('guideName') || v('placeName'))) A.slug = cleanSlug(v('guideName') || v('placeName'));
   A._draftAt = new Date().toISOString(); A._draftSource = d.source;
 }
@@ -1523,13 +1543,13 @@ async function send(b){
   try {
     log('send'); const d = device(), j = journey();
     const clean = { ...A }; delete clean._notes; delete clean._log;
-    const total = uploads.length + 1; let n = 0;
+    const total = uploads.filter(x => !x.remote).length + 1; let n = 0;
     const tick = () => { n++; if (st) st.textContent = `Sending ${n} of ${total}…`; };
     tick();
-    await nf('onboarding', { sid, email: v('email'), place: v('placeName'), town: v('town'), slug: v('slug'), progress: progressText(), photos: String(uploads.length),
+    await nf('onboarding', { sid, email: v('email'), place: v('placeName'), town: v('town'), slug: v('slug'), progress: progressText(), photos: String(uploads.length), listing_photos: JSON.stringify(uploads.filter(u => u.remote).map(u => ({ url: u.src, room: u.room || '', caption: u.name }))),
       device: deviceLine(d), device_type: d.type, device_json: JSON.stringify(d), active_minutes: String(j.activeMinutes), journey: JSON.stringify(j), events: JSON.stringify(A._log || []),
       sent_before: A._sentAt || '', answers: JSON.stringify(clean) });
-    for (const u of uploads) { tick(); await nf('file', { sid, kind: u.kind, room: u.room || '', name: u.name }, u); }
+    for (const u of uploads.filter(x => !x.remote)) { tick(); await nf('file', { sid, kind: u.kind, room: u.room || '', name: u.name }, u); }
     A._sentAt = new Date().toISOString(); flush();
     toast('Sent! Opening your preview…'); setTimeout(() => { location.href = '/' + (v('slug') || 'preview'); }, 900);
   } catch (err) { b.disabled = false; if (st) st.textContent = 'Something did not go through. Check your connection and press Send again.'; }
@@ -1544,7 +1564,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { cle
   try { const saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved) { A = saved.A || {}; sid = saved.sid; } } catch (e) {}
   if (!sid) sid = newId();
   { const d = device(); A._sessions = [...(A._sessions || []), { t: Date.now(), d: deviceLine(d) }].slice(-50); log('session', null, { d: deviceLine(d) }); flush(); }
-  try { uploads = (await idb.all() || []).map(u => ({ ...u, url: URL.createObjectURL(u.blob) })).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')); } catch (e) { uploads = []; }
+  try { uploads = (await idb.all() || []).map(u => ({ ...u, url: u.blob ? URL.createObjectURL(u.blob) : u.url })).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')); } catch (e) { uploads = []; }
   setSave('ok', A._seen ? 'Saved on this device' : 'Answers save on this device');
   render();
 })();
@@ -1555,7 +1575,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { cle
 <form name="onboarding" data-netlify="true" netlify-honeypot="bot" hidden>
   <input name="sid"><input name="email"><input name="place"><input name="town"><input name="slug"><input name="progress"><input name="photos">
   <input name="device"><input name="device_type"><textarea name="device_json"></textarea><input name="active_minutes"><textarea name="journey"></textarea><textarea name="events"></textarea>
-  <input name="sent_before"><textarea name="answers"></textarea><input name="bot">
+  <input name="sent_before"><input name="listing_photos"><textarea name="answers"></textarea><input name="bot">
 </form>
 <form name="file" data-netlify="true" netlify-honeypot="bot" enctype="multipart/form-data" hidden>
   <input name="sid"><input name="kind"><input name="room"><input name="name"><input type="file" name="file"><input name="bot">

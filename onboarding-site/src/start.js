@@ -8,7 +8,7 @@ const linkProblem = u => { u = (u || '').trim(); if (!u) return ''; if (!/^https
 const hasSource = () => !!A._draftAt || (!!v('listingUrl') && !linkProblem(v('listingUrl'))) || v('listingText').length > 200;
 const START = { busy: false, need: '', msg: '', step: 0 };
 const STEPS_MSG = ['Opening your listing…', 'Reading the house, the rules and what it offers…', 'Writing your house guide…', 'Choosing sections for your guests…', 'Almost there…'];
-const DRAFT_MAP = { placeName: 'listing', propertyType: 'listing', town: 'listing', region: 'listing', sleeps: 'listing',
+const DRAFT_MAP = { placeName: 'listing', propertyType: 'listing', town: 'listing', region: 'listing', sleeps: 'listing', bedrooms: 'listing', bathrooms: 'listing', beds: 'listing',
   guideName: 'guide', tagline: 'guide', welcome: 'guide', guests: 'guide', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
   amenities: 'howto', howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
 
@@ -17,7 +17,7 @@ function startHTML(){
   return `<section class="start">
     <div class="st-art" aria-hidden="true"><span class="st-door"><i></i></span><span class="st-moon"></span></div>
     <div class="st-tx">
-      <small>Porta · guest guides</small>
+      <small>Guest Guide Maker</small>
       <h1>Your guest guide, written for you.</h1>
       <p>Paste your listing link. In about a minute we write a first version of your whole guide: the house, the rules, the area. You then only check it and make it yours.</p>
     </div>
@@ -55,7 +55,7 @@ function applyDraft(d){
   const D = d.draft || {}, pre = { ...(A._pre || {}) };
   for (const [k, mod] of Object.entries(DRAFT_MAP)) {
     let val = D[k]; if (val == null || val === '' || (Array.isArray(val) && !val.length)) continue;
-    if (k === 'sleeps') val = String(val);
+    if (k === 'sleeps' || k === 'bedrooms' || k === 'bathrooms' || k === 'beds') val = String(val);
     if (k === 'amenities') val = val.filter(x => AMEN.includes(x));
     const empty = Array.isArray(A[k]) ? !A[k].length : !String(A[k] ?? '').trim();
     if (!empty) continue;
@@ -72,7 +72,19 @@ function applyDraft(d){
   if (Array.isArray(D.toConfirm)) A.toConfirm = D.toConfirm.slice(0, 6);
   if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
   if (d.cover) A.coverUrl = d.cover;
-  if (Array.isArray(d.photos)) A.listingPhotos = d.photos;
+  if (Array.isArray(d.photos)) {
+    A.listingPhotos = d.photos;
+    // The listing's own photos become the first photos of the house guide, each with the room we could tell from its caption.
+    const have = uploads.filter(u => u.kind === 'photo');
+    if (!have.some(u => u.remote)) {
+      const room = r => ROOMS.includes(r) ? r : '';
+      d.photos.slice(0, Math.max(0, 16 - have.length)).forEach((src, i) => {
+        const cap = (d.photoCaps || [])[i] || '';
+        const rec = { id: newId(), kind: 'photo', remote: true, src, name: cap || 'Listing photo ' + (i + 1), room: room((d.photoRooms || [])[i]), url: src + '?im_w=720', createdAt: new Date(Date.now() + i).toISOString() };
+        uploads.push(rec); saveUpload(rec);
+      });
+    }
+  }
   if (!A._slugTouched && (v('guideName') || v('placeName'))) A.slug = cleanSlug(v('guideName') || v('placeName'));
   A._draftAt = new Date().toISOString(); A._draftSource = d.source;
 }

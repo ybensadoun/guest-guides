@@ -224,6 +224,29 @@ for i, u in enumerate(by_kind.get('photo', [])):
     save_jpg(im, SITE / 'public' / f)
     room_photos[key].append(f)
 
+# Photos taken from the host's listing arrive as links (the listing_photos form field), with the room the host confirmed.
+def _listing_photos():
+    raw = host.get('listing_photos') or A.get('listing_photos') or []
+    if isinstance(raw, str):
+        try: raw = json.loads(raw or '[]')
+        except Exception: raw = []
+    if not raw and (S / 'listing_photos.json').exists():
+        try: raw = json.loads((S / 'listing_photos.json').read_text())
+        except Exception: raw = []
+    return [x for x in raw if isinstance(x, dict) and str(x.get('url', '')).startswith('https://a0.muscache.com/')]
+import urllib.request
+for x in _listing_photos():
+    try:
+        req = urllib.request.Request(x['url'] + '?im_w=1600', headers={'User-Agent': 'Mozilla/5.0'})
+        im = Image.open(io.BytesIO(urllib.request.urlopen(req, timeout=20).read()))
+    except Exception as e:
+        print('listing photo not downloaded:', x['url'], e); continue
+    key = ROOM_KEY.get(x.get('room', ''), 'other')
+    n = len(room_photos.setdefault(key, [])) + 1
+    f = f'guide/{key}-{n}.jpg'
+    save_jpg(im, SITE / 'public' / f)
+    room_photos[key].append(f)
+
 def square(im, size):
     im = ImageOps.exif_transpose(im).convert('RGBA')
     return ImageOps.fit(im, (size, size), Image.LANCZOS)

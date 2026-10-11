@@ -22,6 +22,9 @@ function parseListing(text){
   const where = t.match(/(?:^|\n)\s*(entire [^\n]*?|private room [^\n]*?|[^\n]*?(?:villa|home|house|cottage|apartment|rental unit|loft|condo|cabin|bungalow|alojamiento entero|casa|apartamento|logement entier|maison))\s+(?:in|en|[àa])\s+([^,\n]+)(?:,\s*([^\n]+))?/i);
   if (where) { out.town = where[2].trim(); if (where[3]) out.region = where[3].trim(); const ty = TYPE_RX.find(([rx]) => rx.test(where[1])); if (ty) out.propertyType = ty[1]; }
   const g = t.match(/(\d{1,2})\s+(?:guests|hu[ée]spedes|viajeros|voyageurs)/i); if (g) out.sleeps = g[1];
+  const nn = (rx) => { const m = t.match(rx); return m ? m[1] : null; };
+  const br = nn(/(\d{1,2})\s+(?:bedrooms?|habitaci[oó]n(?:es)?|dormitorios?|chambres?)/i), ba = nn(/(\d{1,2}(?:[.,]5)?)\s+(?:baths?|bathrooms?|ba[ñn]os?|salles? de bains?)/i), bd = nn(/(\d{1,2})\s+(?:beds?|camas?|lits?)\b/i);
+  if (br) out.bedrooms = br; if (ba) out.bathrooms = ba.replace(',', '.'); if (bd) out.beds = bd;
   const ci = t.match(/check-?\s?in[^\n\d]{0,25}(\d{1,2})(?:[:.h](\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?/i) || t.match(/llegada[^\n\d]{0,25}(\d{1,2})(?:[:.](\d{2}))?/i) || t.match(/arriv[ée]e[^\n\d]{0,25}(\d{1,2})(?:[:h](\d{2}))?/i);
   if (ci) out.checkIn = hhmm(ci[1], ci[2], ci[3]);
   const co = t.match(/check-?\s?out[^\n\d]{0,25}(\d{1,2})(?:[:.h](\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?/i) || t.match(/salida[^\n\d]{0,25}(\d{1,2})(?:[:.](\d{2}))?/i) || t.match(/d[ée]part[^\n\d]{0,25}(\d{1,2})(?:[:h](\d{2}))?/i);
@@ -32,7 +35,7 @@ function parseListing(text){
   out._wifi = /wi-?fi/i.test(t);
   return out;
 }
-const FIELD_MODULE = { placeName: 'listing', town: 'listing', region: 'listing', propertyType: 'listing', sleeps: 'listing', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', amenities: 'howto' };
+const FIELD_MODULE = { placeName: 'listing', town: 'listing', region: 'listing', propertyType: 'listing', sleeps: 'listing', bedrooms: 'listing', bathrooms: 'listing', beds: 'listing', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', amenities: 'howto' };
 function applyListing(){
   const r = parseListing(v('listingText')), got = [];
   for (const [k, mod] of Object.entries(FIELD_MODULE)) {
