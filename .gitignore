@@ -20,3 +20,4 @@ sites/torre-de-campos/
 .trash-preview/
 onboarding-site/src/index.html
 onboarding-site/src/ob-test.html
+.regen-torre.sh
