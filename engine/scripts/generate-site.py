@@ -235,12 +235,17 @@ def _listing_photos():
         except Exception: raw = []
     return [x for x in raw if isinstance(x, dict) and str(x.get('url', '')).startswith('https://a0.muscache.com/')]
 import urllib.request
-for x in _listing_photos():
+for idx, x in enumerate(_listing_photos()):
+    # A copy saved next to the submission (listing_photos/00.img, in the same order) wins over the download.
+    local = next(iter((S / 'listing_photos').glob(f'{idx:02d}.*')), None) if (S / 'listing_photos').exists() else None
     try:
-        req = urllib.request.Request(x['url'] + '?im_w=1600', headers={'User-Agent': 'Mozilla/5.0'})
-        im = Image.open(io.BytesIO(urllib.request.urlopen(req, timeout=20).read()))
+        if local: im = Image.open(local)
+        else:
+            req = urllib.request.Request(x['url'] + '?im_w=1200', headers={'User-Agent': 'Mozilla/5.0'})
+            im = Image.open(io.BytesIO(urllib.request.urlopen(req, timeout=20).read()))
     except Exception as e:
         print('listing photo not downloaded:', x['url'], e); continue
+    if not cover and str(A.get('coverUrl', '')).split('?')[0] == x['url']: save_jpg(im, SITE / 'public/house.jpg', 1800)   # the listing's own cover photo
     key = ROOM_KEY.get(x.get('room', ''), 'other')
     n = len(room_photos.setdefault(key, [])) + 1
     f = f'guide/{key}-{n}.jpg'

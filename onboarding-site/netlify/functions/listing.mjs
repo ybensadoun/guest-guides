@@ -64,7 +64,7 @@ async function readPage(url){
     const facts = [overview.length && 'Overview: ' + overview.join(' · '), rules.length && 'House rules section: ' + rules.join(' | '), amenities.length && 'Amenities listed: ' + amenities.join(', '),
       sleeping.length && 'Sleeping arrangements: ' + sleeping.join(' | '), tour.length && 'Photo tour rooms: ' + tour.map(x => x.name + ' (' + x.imgs.length + ' photos)').join(', '), rt && 'Rating: ' + rt[1] + ' from ' + rt[2] + ' reviews'].filter(Boolean).join('\n');
     const text = (facts ? 'FACTS READ FROM THE PAGE DATA:\n' + facts + '\n\n' : '') + htmlToText(html);
-    const out = { overview, rules, amenities, sleeping: sleepLines, tourRooms: tour.length, rating: rt ? { avg: +rt[1], count: +rt[2] } : null, title: meta(html, 'og:title'), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, facts, text: text.slice(0, 40000),
+    const out = { overview, rules, amenities, sleeping: sleepLines, tourRooms: tour.length, rating: rt ? { avg: +rt[1], count: +rt[2] } : null, title: meta(html, 'og:title'), pageTitle: ((html.match(/<title[^>]*>([^<]+)<\/title>/i) || [])[1] || '').replace(/&amp;/g, '&').trim(), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, facts, text: text.slice(0, 40000),
       lat: coords ? +coords[1] : null, lng: coords ? +coords[2] : null };
     // A blocked or empty page has almost no text and no title.
     if (!out.title && out.text.length < 1500) return null;
@@ -95,7 +95,10 @@ function fallbackDraft(src){
   const num = rx => { const x = ov.find(t => rx.test(t)); const m = x && x.match(/(\d+(?:[.,]5)?)/); return m ? +m[1].replace(',', '.') : null; };
   d.sleeps = num(/viajero|guest|hu[eé]sped|voyageur|gast/i); d.bedrooms = num(/dormitor|bedroom|habitaci|chambre|slaapkamer/i);
   d.beds = num(/\bcamas?\b|\bbeds?\b|\blits?\b/i); d.bathrooms = num(/ba[ñn]o|bath|salle de bain/i);
-  if (src.title) d.placeName = src.title.split(/\s[-|–]\s/)[0].trim();
+  // The listing's own name is in the page <title> ("Name - Houses for Rent in Town - Airbnb"). The og:title is a generic line ("Home in Town · ★5.0 · 4 bedrooms").
+  const nm = (src.pageTitle || '').split(/\s[-|–]\s/)[0].trim();
+  if (nm && !/^(airbnb|home in |room in |entire )/i.test(nm)) d.placeName = nm;
+  else if (src.title) d.placeName = src.title.split(/\s[·|]\s|\s[-–]\s/)[0].trim();
   const rules = src.rules || [], tm = rx => { const l = rules.find(x => rx.test(x) && /\d{1,2}[:.h]\d{2}/.test(x)); const m = l && l.match(/(\d{1,2})[:.h](\d{2})\s*(am|pm|a\.m\.|p\.m\.)?/i); if (!m) return null; let h = +m[1]; if (/p/i.test(m[3] || '') && h < 12) h += 12; if (/a/i.test(m[3] || '') && h === 12) h = 0; return String(h).padStart(2, '0') + ':' + m[2]; };
   d.checkIn = tm(/llegada|check-?in|arriv|arrivée|ankunft|inchecken/i); d.checkOut = tm(/salida|check-?out|d[ée]part|abreise|uitchecken/i);
   const keep = rules.filter(x => x.length > 12 && !/^(llegada y salida|durante tu estancia|otras normas|checking in and out|during your stay|additional rules|arriving and leaving|house rules|normas de la casa|check-in|checkout)$/i.test(x) && !/\d{1,2}[:.h]\d{2}/.test(x));
