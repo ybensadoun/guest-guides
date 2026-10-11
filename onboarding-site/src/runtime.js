@@ -11,7 +11,7 @@ function statusOf(m){
   const miss = missingOf(m).length, seen = (A._seen || []).includes(m.id), done = !!(A._done || {})[m.id];
   if (done && !miss) return { k:'done', label:'Done', miss };
   if (preKeys(m).length) return { k:'pre', label: miss ? `Review · ${miss} to do` : 'Review', miss };
-  if (seen || done) return { k:'chk', label: miss ? `${miss} to do` : 'Checked', miss };
+  if (seen || done) return { k:'chk', label: miss ? `${miss} to do` : 'Not done', miss };
   return { k:'new', label:'Start', miss };
 }
 // Only the listing and the town are needed to send. Everything else is a first version to review, or optional.

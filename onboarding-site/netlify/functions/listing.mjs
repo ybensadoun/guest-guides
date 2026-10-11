@@ -34,8 +34,18 @@ async function readPage(url){
     const photos = pics.map(x => x.url);
     // "4 habitaciones · 7 camas · 2 baños": the counts Claude needs for the rooms
     const counts = [...new Set((html.match(/\b\d{1,2}\s(?:bedrooms?|beds?|baths?|bathrooms?|habitaci[oó]n(?:es)?|camas?|ba[ñn]os?|chambres?|lits?|salles? de bains?)\b/gi) || []))].slice(0, 12).join(' · ');
-    const text = htmlToText(html);
-    const out = { title: meta(html, 'og:title'), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, text: text.slice(0, 40000),
+    const cl = x => x.replace(/\\u0026/g, '&').replace(/\\"/g, '"').replace(/\\u2019/g, '’').replace(/\\n/g, ' ').trim();
+    const iv = (k, n) => { const i = html.indexOf(k); return i < 0 ? '' : html.slice(i, i + n); };
+    const strs = (blk) => [...new Set([...blk.matchAll(/"(?:title|subtitle|text|html)":"([^"]{2,220})"/g)].map(m => cl(m[1])))];
+    const overview = (iv('"overview":{"__typename":"StaysPdpOverview"', 700).match(/"items":\[([^\]]*)\]/) || [, ''])[1].replace(/"/g, '').split(',').map(x => x.trim()).filter(Boolean);
+    const rules = strs(iv('"rules":{"__typename":"StaysPdpRuleDetails"', 6000).split('"__typename":"StaysPdpSection"')[0]).filter(x => !/^Normas de la casa$|trátala como/i.test(x));
+    const amenities = [...new Set([...html.matchAll(/"__typename":"AmenityItem","available":true,"title":"([^"]+)"/g)].map(m => cl(m[1])))];
+    const sleepBlk = iv('"sleepingArrangements":[', 3000); const sleeping = sleepBlk ? strs(sleepBlk).slice(0, 24) : [];
+    const rt = html.match(/"ratingAverage":([\d.]+),"ratingCount":"?(\d+)/);
+    const facts = [overview.length && 'Overview: ' + overview.join(' · '), rules.length && 'House rules section: ' + rules.join(' | '), amenities.length && 'Amenities listed: ' + amenities.join(', '),
+      sleeping.length && 'Sleeping arrangements: ' + sleeping.join(' | '), rt && 'Rating: ' + rt[1] + ' from ' + rt[2] + ' reviews'].filter(Boolean).join('\n');
+    const text = (facts ? 'FACTS READ FROM THE PAGE DATA:\n' + facts + '\n\n' : '') + htmlToText(html);
+    const out = { title: meta(html, 'og:title'), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, facts, text: text.slice(0, 40000),
       lat: coords ? +coords[1] : null, lng: coords ? +coords[2] : null };
     // A blocked or empty page has almost no text and no title.
     if (!out.title && out.text.length < 1500) return null;
@@ -63,7 +73,7 @@ const SYSTEM = `You turn a holiday-rental listing into the first version of a gu
 Write in the language of the listing. Be accurate: only state what the listing says or what is obviously true for this kind of place.
 When something is likely but not stated, phrase it as something for the host to confirm, ending with " (please confirm)".
 Never include a street address, door code or key-box code. Keep the host's tone if the listing has one.
-Take everything you can from the listing first, in its own wording (house rules, check-in and out, how things work, arrival). Only when the listing is silent on a point, propose a short sensible version for this kind of place and mark it as a suggestion. The host will edit every line.
+Copy what the listing says, in its own wording: house rules, check-in and out, rooms, beds, amenities, rating. Do NOT guess or invent. When the listing is silent on a point, return null for it. The only things you write yourself are the tagline and the welcome text, from facts in the listing. The host will edit every line.
 Return ONLY a JSON object, no prose.`;
 function prompt(src, town){
   return `Listing link: ${src.url || 'none'}
@@ -88,17 +98,19 @@ Return this JSON (null when unknown):
  "amenities": array chosen only from ${JSON.stringify(AMEN)},
  "guideName": string (usually the place name), "tagline": string (one warm welcome line, max 70 characters),
  "welcome": string (2 or 3 sentences welcoming guests, in the host's voice),
- "houseRules": string (one rule per line),
- "checkoutTasks": string (one task per line, typical for this place; mark guesses with (please confirm)),
- "howTos": string (one line per thing guests get stuck on, "Thing: how it works". Only things this listing has. Mark guesses with (please confirm)),
- "arrival": string (how to arrive and park, only from the listing; null if not said),
+ "houseRules": string (one rule per line, copied from the house rules section: pets, smoking, parties, quiet hours, max guests, other rules. Not the check-in and check-out times),
+ "sleeping": string (one line per bedroom or sleeping space with its beds, exactly as the page says, for example "Bedroom 1: 2 single beds"; null when the page gives no arrangement),
+ "rating": number (the overall rating shown, null if none), "reviewCount": number,
+ "checkoutTasks": string (one task per line, ONLY if the listing states check-out instructions; otherwise null),
+ "howTos": string (one line per instruction the listing itself gives about how something works, "Thing: how it works"; otherwise null. Never invent instructions),
+ "arrival": string (how to arrive and park, only if the listing says so; null if not said),
  "rubbish": null,
  "interests": array chosen from ["Beaches","Wine and food","Hiking and nature","Culture and history","Local markets","Nightlife","Festivals","Sports","Shopping","Wellness"] that fit the area,
  "guests": array chosen from ["Families with kids","Couples","Groups of friends","Remote workers","Older guests","Guests with pets","Wedding or event guests"],
  "navStyle": one of ["Big tiles, like an app","A simple list","Photo-led, like a magazine"] that fits the listing's style,
  "feelWords": array of up to 3 from ["Cosy","Elegant","Playful","Modern","Rustic","Calm","Local and authentic","Luxurious","Family friendly","Colourful"],
  "sections": object with true/false for ["wifi","rubbish","markets","eat","todo","events"],
- "basis": object saying, for each of "houseRules","checkoutTasks","howTos","arrival","checkIn","checkOut","welcome": "listing" when the listing itself says it, "suggested" when you wrote it because the listing is silent,
+ "basis": object saying, for each of "houseRules","sleeping","arrival","checkIn","checkOut","welcome","tagline": "listing" when the listing itself says it, "suggested" when you wrote it (only welcome and tagline),
  "toConfirm": array of short questions the host should answer that the listing does not cover (max 6)
 }`;
 }
@@ -126,7 +138,14 @@ export default async (req) => {
   if (url) {
     site = (LINK_RX.find(x => x.rx.test(url)) || {}).site;
     if (!site && !text) return json({ ok: false, need: 'link', message: 'That does not look like a listing page. Open your listing on Airbnb (or Booking, Vrbo) and copy the address from the browser: it looks like airbnb.com/rooms/12345678.' });
-    if (site) src = (await readPage(url)) || (await readViaReader(url));
+    if (site) {
+      src = await readPage(url);
+      if (!src || src.text.length < 6000) {
+        const alt = await readViaReader(url);
+        if (alt && !src) src = alt;
+        else if (alt && src) { src.text = (src.facts ? src.text.split('\n\n')[0] + '\n\n' : '') + alt.text; src.counts = src.counts || alt.counts; if (!src.pics.length) { src.pics = alt.pics; src.photos = alt.photos; src.image = src.image || alt.image; } }
+      }
+    }
   }
   if (!src && text.length < 200) {
     return json({ ok: false, need: 'text', site, message: url && site

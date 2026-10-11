@@ -306,6 +306,7 @@ items = {k: [] for k in ROOM}
 for ln in lines('howTos'):
     k = next((r for r, rx in KW.items() if re.search(rx, ln, re.I)), 'other')
     items[k].append(ln)
+items['bedrooms'] = lines('sleeping') + items['bedrooms']   # sleeping arrangements as the listing states them
 blocks = []
 for k, (icon, tone, title) in ROOM.items():
     if not items[k] and not room_photos.get(k): continue
@@ -324,6 +325,23 @@ co = [f"Check-out by {house['checkout']}."] + lines('checkoutTasks')
 if A.get('checkIn'): co.insert(0, f"Check-in from {A['checkIn'][:5]}.")
 blocks.append({'id': 'checkout', 'icon': 'key', 'tone': 'ink', 'title': L('Check-in and check-out'), 'items': [L(x) for x in co]})
 (SITE / 'content/message.json').write_text(json.dumps({'_doc': 'House guide by room, from the host’s onboarding answers.', 'blocks': blocks}, ensure_ascii=False, indent=1))
+
+# Ratings and reviews (optional section the host asked for). The data contract for the guide: content/reviews.json.
+# The engine shows it once the "reviews" section exists in the guide; until then the file is simply ignored.
+if M.get('reviews') and (A.get('ratingAvg') or A.get('reviewQuotes')):
+    quotes = []
+    for ln in lines('reviewQuotes'):
+        who = ''
+        m = re.match(r'^(.*?)\s+[-\u2013\u2014]\s+([^-\u2013\u2014]{1,40})$', ln)
+        if m: ln, who = m.group(1), m.group(2)
+        quotes.append({'text': ln.strip(' "\u201c\u201d'), 'author': who.strip()})
+    def _num(x):
+        try: return float(str(x).replace(',', '.'))
+        except Exception: return None
+    (SITE / 'content/reviews.json').write_text(json.dumps({
+        '_doc': 'Shown only with host consent. rating/count come from the listing, quotes were picked by the host.',
+        'rating': _num(A.get('ratingAvg')), 'count': int(_num(A.get('ratingCount')) or 0) or None,
+        'source': 'Airbnb' if 'airbnb' in (A.get('listingUrl') or '').lower() else '', 'url': A.get('listingUrl') or '', 'quotes': quotes[:3]}, ensure_ascii=False, indent=1))
 
 def info(fid, title_key_text, paras, icon='car', tone='blue'):
     (SITE / f'content/{fid}.json').write_text(json.dumps({'blocks': [

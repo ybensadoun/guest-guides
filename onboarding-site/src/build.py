@@ -128,7 +128,7 @@ seg1=rep(seg1,".loading{padding:40px;text-align:center;color:var(--muted)}",""".
 views=rep(views,"  if (k === 'privacyNote')","  if (k === 'fillBtn') return `<div class=\"full\" style=\"display:flex;gap:12px;align-items:center;flex-wrap:wrap\"><button class=\"btn sun\" type=\"button\" id=\"fillListing\">Fill in from my listing</button><span class=\"hint\">Fills the steps it can and marks them “Review”. Nothing you typed is replaced.</span></div>`;\n  if (k === 'privacyNote')")
 views=rep(views,"  const head = `${esc(q.label)} ${badge(k)}`;","  const head = `${esc(q.label)} ${badge(k)}${A._pre && A._pre[k] && filled(k) ? (A._basis && A._basis[k] === 'suggested' ? ' <span class=\"frm sug\">Suggested by Claude: please check</span>' : ' <span class=\"frm\">From your listing</span>') : ''}`;")
 views=rep(views,"<i class=\"${s.k === 'done' ? 'd' : s.k === 'chk' ? 'c' : ''}\"></i>","<i class=\"${s.k === 'done' ? 'd' : s.k === 'chk' ? 'c' : s.k === 'pre' ? 'p' : ''}\"></i>")
-views=rep(views,"<span><i class=\"c\"></i>${chk} checked</span>","${st.some(s => s.k === 'pre') ? `<span><i class=\"p\"></i>${st.filter(s => s.k === 'pre').length} to review</span>` : ''}<span><i class=\"c\"></i>${chk} checked</span>")
+views=rep(views,"<span><i class=\"c\"></i>${chk} checked</span>","${st.some(s => s.k === 'pre') ? `<span><i class=\"p\"></i>${st.filter(s => s.k === 'pre').length} to review</span>` : ''}<span><i class=\"c\"></i>${chk} opened, not done</span>")
 views=rep(views,"${mods.length - done - chk} not started","${mods.length - done - chk - st.filter(s => s.k === 'pre').length} not started")
 # ---- v2: link-first, everything optional except the listing and the town ----
 import re as _re
@@ -165,6 +165,20 @@ _i=seg1.index("  {id:'sections',"); _j=seg1.index("  {id:'photos',")
 _blk=seg1[_i:_j]; seg1=seg1[:_i]+seg1[_j:]
 _blk=_blk.replace("lead:'Each section you keep adds its own short set of questions to this page. Ticked ones fit your answers so far.'","lead:'Choose what goes into your guide. Each section you keep adds its questions to the steps that follow, and each one you remove takes them away. Ticked ones already fit your listing.'")
 _k=seg1.index("  {id:'guide',"); seg1=seg1[:_k]+_blk+seg1[_k:]
+
+# ---- v4: sleeping arrangements, optional ratings and reviews ----
+seg1=rep(seg1,"  source:{label:'Your listing link or text'},","""  source:{label:'Your listing link or text'},
+  sleeping:{t:'area',rows:4,label:'Sleeping arrangements',opt:true,full:true,ph:'Bedroom 1: double bed\\nBedroom 2: two single beds\\nLiving room: sofa bed',hint:'One line per bedroom, as your listing says. Guests see it in the Bedrooms part of the house guide.'},
+  ratingAvg:{t:'number',label:'Your rating',ph:'4.9',opt:true,hint:'Out of 5, as shown on your listing.'},
+  ratingCount:{t:'number',label:'Number of reviews',ph:'89',opt:true},
+  reviewQuotes:{t:'area',rows:5,label:'Reviews you would like to show',opt:true,full:true,ph:'Lovely house, we did not want to leave. - Marie\\nPerfect for a family weekend. - Jordi',hint:'Up to three short reviews, one per line, with the first name after a dash. Only add reviews you are happy to share.'},
+  reviewsNote:{label:'Ratings and reviews'},""")
+seg1=rep(seg1,"'beds','hostName','privacyNote']}","'beds','sleeping','hostName','privacyNote']}")
+seg1=rep(seg1,"  {id:'map',name:'Map'","  {id:'reviews',name:'Ratings and reviews',d:'Your rating and a few guest reviews, if you want them shown.',built:true,on:()=>false},\n  {id:'map',name:'Map'")
+seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'reviews',group:'area',title:'Ratings and reviews',sub:'Optional',icon:'heart',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'half',sec:'reviews',
+   lead:'Show your rating and a few reviews at the end of the guide. We read the rating from your listing. Reviews are yours to choose.',need:[],fields:['ratingAvg','ratingCount','reviewQuotes','reviewsNote']},
+  {id:'taste',group:'area'""")
+views=rep(views,"  if (k === 'privacyNote')","  if (k === 'reviewsNote') return `<div class=\"note full\"><div>We show your rating and the reviews you pick, with a link to your listing for the rest. Reviews belong to your guests: only add ones you are comfortable showing.</div></div>`;\n  if (k === 'privacyNote')")
 forms=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'forms.html')).read()
 html=seg1+'\n'+views+'\n'+runtime+'\n})();\n</script>\n'+forms+'</body>\n</html>\n'
 open(__import__('os').path.join(__import__('os').path.dirname(__file__),'index.html'),'w').write(html)

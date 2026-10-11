@@ -8,7 +8,7 @@ const linkProblem = u => { u = (u || '').trim(); if (!u) return ''; if (!/^https
 const hasSource = () => !!A._draftAt || (!!v('listingUrl') && !linkProblem(v('listingUrl'))) || v('listingText').length > 200;
 const START = { busy: false, need: '', msg: '', step: 0 };
 const STEPS_MSG = ['Opening your listing…', 'Reading the house, the rules and what it offers…', 'Writing your house guide…', 'Choosing sections for your guests…', 'Almost there…'];
-const DRAFT_MAP = { placeName: 'listing', propertyType: 'listing', town: 'listing', region: 'listing', sleeps: 'listing', bedrooms: 'listing', bathrooms: 'listing', beds: 'listing',
+const DRAFT_MAP = { placeName: 'listing', propertyType: 'listing', town: 'listing', region: 'listing', sleeps: 'listing', sleeping: 'listing', bedrooms: 'listing', bathrooms: 'listing', beds: 'listing',
   guideName: 'guide', tagline: 'guide', welcome: 'guide', guests: 'guide', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
   amenities: 'howto', howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
 
@@ -69,6 +69,7 @@ function applyDraft(d){
     for (const [k, id] of Object.entries(map)) if (typeof D.sections[k] === 'boolean' && !(A.modules && id in A.modules)) cur[id] = D.sections[k];
     A.modules = { ...cur, ...(A.modules || {}) };
   }
+  if (D.rating && !A.ratingAvg) { A.ratingAvg = String(D.rating); A._pre = { ...(A._pre || {}), ratingAvg: 'reviews' }; if (D.reviewCount) A.ratingCount = String(D.reviewCount); }
   if (Array.isArray(D.toConfirm)) A.toConfirm = D.toConfirm.slice(0, 6);
   if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
   if (d.cover) A.coverUrl = d.cover;
