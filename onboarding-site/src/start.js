@@ -317,3 +317,6 @@ async function resetAll(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Version __BUILD__'; document.body.appendChild(d);
 })();
+
+/* ---------- The "Places nearby" step needs a Google key on our side. If it is not connected, the step is hidden instead of showing a dead page. ---------- */
+fetch('/api/places?probe=1').then(r => r.json()).then(d => { if (!d.ok) { window.__placesOff = true; if (location.hash === '#nearby') location.hash = '#home'; render(); } }).catch(() => {});

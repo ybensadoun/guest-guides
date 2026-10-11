@@ -14,7 +14,8 @@ async function g(path, body, mask, key){
 const hav = (a, b, c, d) => { const R = 6371, t = Math.PI / 180, x = (c - a) * t, y = (d - b) * t; const h = Math.sin(x / 2) ** 2 + Math.cos(a * t) * Math.cos(c * t) * Math.sin(y / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
 export default async (req) => {
   const key = process.env.GOOGLE_MAPS_API_KEY;
-  if (!key) return json({ ok: false, message: 'Places are not set up yet.' });
+  if (!key) return new Response(JSON.stringify({ ok: false, message: 'Places are not set up yet.' }), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+  if (new URL(req.url).searchParams.get('probe')) return new Response(JSON.stringify({ ok: true, enabled: true }), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
   const u = new URL(req.url), cat = CATS[u.searchParams.get('cat')] ? u.searchParams.get('cat') : 'eat';
   let lat = parseFloat(u.searchParams.get('lat')), lng = parseFloat(u.searchParams.get('lng'));
   const town = (u.searchParams.get('town') || '').slice(0, 120), lang = (u.searchParams.get('lang') || 'en').slice(0, 5);

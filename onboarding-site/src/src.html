@@ -400,7 +400,7 @@ let db = null, assets = null, sample = null, user = null, uid = null, isOwner = 
 let A = {}, doc = {}, uploads = [], feedback = [], hostsAll = [];
 const pending = new Map();
 const v = k => A[k] ?? '';
-const visible = () => MODULES.filter(m => !m.sec || secOn(m.sec));
+const visible = () => MODULES.filter(m => (!m.sec || secOn(m.sec)) && !(m.id === 'nearby' && window.__placesOff));
 const filled = k => { if (k.startsWith('upload:')) return uploads.some(u => u.kind === k.slice(7)); const x = A[k]; return Array.isArray(x) ? x.length > 0 : !!String(x ?? '').trim(); };
 const missingOf = m => m.need.filter(k => !filled(k));
 const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k] || {}).label;

@@ -3,7 +3,7 @@ let A = {}, uploads = [], sid = '';
 const pending = new Map();
 const KEY = 'porta-onboarding-v1';
 const v = k => A[k] ?? '';
-const visible = () => MODULES.filter(m => !m.sec || secOn(m.sec));
+const visible = () => MODULES.filter(m => (!m.sec || secOn(m.sec)) && !(m.id === 'nearby' && window.__placesOff));
 const filled = k => { if (k === 'source') return hasSource(); if (k === 'slug') return !slugProblem(v('slug')); if (k.startsWith('upload:')) return uploads.some(u => u.kind === k.slice(7)); const x = A[k]; return Array.isArray(x) ? x.length > 0 : !!String(x ?? '').trim(); };
 const missingOf = m => m.need.filter(k => !filled(k));
 const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k] || {}).label;
