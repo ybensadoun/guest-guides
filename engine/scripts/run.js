@@ -19,11 +19,18 @@ const run = (args, SITE) => {
 };
 const vite = (sub, SITE) => run(['npx', 'vite', ...(sub ? [sub] : []), '--config', resolve(ENGINE, 'vite.config.js')], SITE);
 // On a build server, private values come from environment variables (they are never in git).
-const writePrivate = SITE => {
+// WIFI_JSON is short: {"password":"...","networks":[{"ssid":"...","label":{"en":"..."}}]}; the QR codes are made here.
+const writePrivate = async SITE => {
   if (!process.env.WIFI_JSON) return;
+  const w = JSON.parse(process.env.WIFI_JSON);
+  const { default: QR } = await import('qrcode');
+  const esc = v => String(v).replace(/([\\;,:"])/g, '\\$1');
+  for (const n of w.networks || []) {
+    if (!n.qr) n.qr = await QR.toString(`WIFI:T:WPA;S:${esc(n.ssid)};P:${esc(w.password)};;`, { type: 'svg', margin: 2, errorCorrectionLevel: 'M' });
+  }
   const dir = resolve(ROOT, 'sites', SITE, 'private');
   mkdirSync(dir, { recursive: true });
-  writeFileSync(resolve(dir, 'wifi.json'), JSON.stringify(JSON.parse(process.env.WIFI_JSON), null, 2));
+  writeFileSync(resolve(dir, 'wifi.json'), JSON.stringify(w, null, 2));
 };
 const check = SITE => run(['node', resolve(ENGINE, 'scripts/check-content.js'), SITE], SITE);
 
@@ -35,7 +42,7 @@ const pick = () => {
 };
 
 if (cmd === 'build') {
-  for (const s of arg ? [pick()] : sites) { console.log(`\n=== ${s} ===`); writePrivate(s); check(s); vite('build', s); }
+  for (const s of arg ? [pick()] : sites) { console.log(`\n=== ${s} ===`); await writePrivate(s); check(s); vite('build', s); }
 } else if (cmd === 'check') {
   for (const s of arg ? [pick()] : sites) check(s);
 } else if (cmd === 'dev') vite('', pick());
