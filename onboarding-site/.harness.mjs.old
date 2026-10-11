@@ -1,0 +1,14 @@
+const html = `<html><head><meta property="og:title" content="Ca La Kimberly Pool House - Houses for Rent in Can Gordei, Catalunya, Spain - Airbnb"></head><body><script>{"sleepingArrangements":{"__typename":"MediaTour","stops":[{"__typename":"MediaTourStop","id":"1-space-1","name":"Bedroom 1","items":[{"__typename":"ImageMediaTourItem","image":{"__typename":"ImageEntity","uri":"https://a0.muscache.com/im/pictures/hosting/H/original/a.jpeg"}}],"description":{"__typename":"MediaTourStopDescription","descriptions":[{"__typename":"LocalizedText","text":"1 king bed"}]}}]},"overview":{"__typename":"StaysPdpOverview","title":"x","items":["8 guests","4 bedrooms","5 beds","2 bathrooms"]},"rules":{"__typename":"StaysPdpRuleDetails","title":"House rules","groupItems":[{"title":"Checking in and out"},{"title":"Check-in after 4:00 PM"},{"title":"Checkout before 11:00 AM"},{"title":"No parties or events"}]},"mediaTour":{"__typename":"MediaTour","stops":[{"__typename":"MediaTourStop","id":"1-space-2","name":"Living room","items":[{"image":{"uri":"https://a0.muscache.com/im/pictures/hosting/H/original/b.jpeg"}}],"description":{"descriptions":[{"__typename":"LocalizedText","text":"Sofa bed"}]}},{"__typename":"MediaTourStop","id":"1-space-3","name":"Pool","items":[{"image":{"uri":"https://a0.muscache.com/im/pictures/hosting/H/original/c.jpeg"}}],"description":{"descriptions":[{"__typename":"LocalizedText","text":"Pool"}]}}]},"ratingAverage":4.9,"ratingCount":"120"}</script></body></html>`;
+const mode = process.argv[2] || 'fail';
+globalThis.fetch = async (u) => {
+  u = String(u);
+  if (u.includes('airbnb')) return new Response(html, { status: 200 });
+  if (u.includes('jina')) return new Response('no', { status: 403 });
+  if (u.includes('anthropic')) return new Response(JSON.stringify({ error: { type: 'invalid_request_error', message: 'credit balance too low' } }), { status: 400 });
+  return new Response('', { status: 404 });
+};
+process.env.ANTHROPIC_API_KEY = 'x';
+const m = await import('/sessions/rcw-014jowdgf3ngpbffcjzlz5iz/mnt/Ca La Kimberly/Guest Guides/onboarding-site/netlify/functions/listing.mjs');
+const res = await m.default(new Request('https://x/api/listing', { method: 'POST', body: JSON.stringify({ url: 'https://www.airbnb.com/rooms/1022457118238842125' }) }));
+const d = await res.json();
+console.log(JSON.stringify({ ok: d.ok, report: d.report, draft: d.draft, photos: d.photos, photoRooms: d.photoRooms }, null, 1));

@@ -35,7 +35,7 @@ function parseListing(text){
   out._wifi = /wi-?fi/i.test(t);
   return out;
 }
-const FIELD_MODULE = { placeName: 'listing', town: 'listing', region: 'listing', propertyType: 'listing', sleeps: 'listing', bedrooms: 'listing', bathrooms: 'listing', beds: 'listing', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', amenities: 'howto' };
+const FIELD_MODULE = { placeName: 'place', town: 'place', region: 'place', propertyType: 'place', sleeps: 'place', bedrooms: 'place', bathrooms: 'place', beds: 'place', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', amenities: 'howto' };
 function applyListing(){
   const r = parseListing(v('listingText')), got = [];
   for (const [k, mod] of Object.entries(FIELD_MODULE)) {

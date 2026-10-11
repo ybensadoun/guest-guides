@@ -8,7 +8,7 @@ const linkProblem = u => { u = (u || '').trim(); if (!u) return ''; if (!/^https
 const hasSource = () => !!A._draftAt || (!!v('listingUrl') && !linkProblem(v('listingUrl'))) || v('listingText').length > 200;
 const START = { busy: false, need: '', msg: '', step: 0 };
 const STEPS_MSG = ['Opening your listing…', 'Reading the house, the rules and what it offers…', 'Writing your house guide…', 'Choosing sections for your guests…', 'Almost there…'];
-const DRAFT_MAP = { placeName: 'listing', propertyType: 'listing', town: 'listing', region: 'listing', sleeps: 'listing', sleeping: 'listing', bedrooms: 'listing', bathrooms: 'listing', beds: 'listing',
+const DRAFT_MAP = { placeName: 'place', propertyType: 'place', town: 'place', region: 'place', sleeps: 'place', sleeping: 'place', bedrooms: 'place', bathrooms: 'place', beds: 'place',
   guideName: 'guide', tagline: 'guide', welcome: 'guide', guests: 'guide', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
   amenities: 'howto', howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
 
@@ -46,7 +46,8 @@ async function createDraft(fromStep){
     const r = await fetch('/api/listing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url, text, town }) });
     const d = await r.json();
     if (!d.ok) { START.need = d.need || 'text'; START.msg = d.message; log('draft_fail', d.need || 'error'); return; }
-    applyDraft(d); log('draft_ok', d.source); classifyPhotos(); START.need = ''; START.msg = '';
+    applyDraft(d); log('draft_ok', d.source); classifyPhotos();
+    A._done = { ...(A._done || {}), listing: true }; START.need = ''; START.msg = '';
     location.hash = fromStep ? '#place' : '#home'; toast('Your first version is ready');
   } catch (e) { START.need = 'retry'; START.msg = 'We could not reach the assistant. Check your connection and press the button again.'; }
   finally { clearInterval(tick); START.busy = false; queueSave(); render(); }
@@ -181,9 +182,10 @@ function loadListingHTML(){
 }
 function reportHTML(){
   const R = A._report || {}, f = R.found || {}, n = uploads.filter(u => u.remote).length;
+  const warn = R.assistant === 'failed' ? `<p style="margin:8px 0;padding:8px 10px;border-radius:8px;background:#fdecd8;color:#7a3e10"><b>The writing assistant did not answer</b>, so we only filled in what your listing states exactly (no welcome text, no suggestions). You can press “Load it again”.<br><small style="opacity:.8">Technical detail: ${esc(R.code || 'unknown')}</small></p>` : '';
   const VIA = { page: 'We read your listing page.', reader: 'We read your listing page through a page reader, so some details may be missing.', 'page + reader': 'We read your listing page.', text: 'We used the text you pasted: photos cannot come from pasted text.' };
   const row = (ok, yes, no) => `<li style="margin:3px 0"><b style="color:${ok ? '#1f7a4a' : '#a14b1f'}">${ok ? '✓' : '✕'}</b> ${esc(ok ? yes : no)}</li>`;
-  return `<div class="note" style="margin-top:12px;display:block"><div><b>Loaded.</b> ${esc(VIA[R.via] || '')} Here is what we found and what we did not:
+  return `<div class="note" style="margin-top:12px;display:block"><div><b>Loaded.</b> ${esc(VIA[R.via] || '')} ${warn}Here is what we found and what we did not:
     <ul style="list-style:none;padding:0;margin:8px 0 0">
       ${row(n > 0, `${n} photos${R.roomsFromPage ? ', already sorted by room as on your listing' : ''}`, 'Photos: none came through. Add yours in “Photos by room”.')}
       ${row(!!f.counts, 'Bedrooms, bathrooms and beds', 'Bedrooms, bathrooms and beds: not found. Fill them in “About the place”.')}

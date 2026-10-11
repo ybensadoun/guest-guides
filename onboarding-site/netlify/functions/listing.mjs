@@ -64,7 +64,7 @@ async function readPage(url){
     const facts = [overview.length && 'Overview: ' + overview.join(' · '), rules.length && 'House rules section: ' + rules.join(' | '), amenities.length && 'Amenities listed: ' + amenities.join(', '),
       sleeping.length && 'Sleeping arrangements: ' + sleeping.join(' | '), tour.length && 'Photo tour rooms: ' + tour.map(x => x.name + ' (' + x.imgs.length + ' photos)').join(', '), rt && 'Rating: ' + rt[1] + ' from ' + rt[2] + ' reviews'].filter(Boolean).join('\n');
     const text = (facts ? 'FACTS READ FROM THE PAGE DATA:\n' + facts + '\n\n' : '') + htmlToText(html);
-    const out = { sleeping: sleepLines, tourRooms: tour.length, rating: rt ? { avg: +rt[1], count: +rt[2] } : null, title: meta(html, 'og:title'), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, facts, text: text.slice(0, 40000),
+    const out = { overview, rules, amenities, sleeping: sleepLines, tourRooms: tour.length, rating: rt ? { avg: +rt[1], count: +rt[2] } : null, title: meta(html, 'og:title'), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, facts, text: text.slice(0, 40000),
       lat: coords ? +coords[1] : null, lng: coords ? +coords[2] : null };
     // A blocked or empty page has almost no text and no title.
     if (!out.title && out.text.length < 1500) return null;
@@ -87,6 +87,22 @@ async function readViaReader(url){
     if (!title && text.length < 1500) return null;
     return { via: 'reader', sleeping: [], tourRooms: 0, rating: null, title, description: '', image: pics[0] ? pics[0].url : '', photos: pics.slice(0, 16).map(x => x.url), pics: pics.slice(0, 16), counts, text: text.slice(0, 40000), lat: null, lng: null };
   } catch (e) { return null; }
+}
+
+// If the writing assistant fails, what the page states exactly is still filled in, so the host never gets nothing.
+function fallbackDraft(src){
+  const d = {}; const ov = src.overview || [];
+  const num = rx => { const x = ov.find(t => rx.test(t)); const m = x && x.match(/(\d+(?:[.,]5)?)/); return m ? +m[1].replace(',', '.') : null; };
+  d.sleeps = num(/viajero|guest|hu[eé]sped|voyageur|gast/i); d.bedrooms = num(/dormitor|bedroom|habitaci|chambre|slaapkamer/i);
+  d.beds = num(/\bcamas?\b|\bbeds?\b|\blits?\b/i); d.bathrooms = num(/ba[ñn]o|bath|salle de bain/i);
+  if (src.title) d.placeName = src.title.split(/\s[-|–]\s/)[0].trim();
+  const rules = src.rules || [], tm = rx => { const l = rules.find(x => rx.test(x) && /\d{1,2}[:.h]\d{2}/.test(x)); const m = l && l.match(/(\d{1,2})[:.h](\d{2})\s*(am|pm|a\.m\.|p\.m\.)?/i); if (!m) return null; let h = +m[1]; if (/p/i.test(m[3] || '') && h < 12) h += 12; if (/a/i.test(m[3] || '') && h === 12) h = 0; return String(h).padStart(2, '0') + ':' + m[2]; };
+  d.checkIn = tm(/llegada|check-?in|arriv|arrivée|ankunft|inchecken/i); d.checkOut = tm(/salida|check-?out|d[ée]part|abreise|uitchecken/i);
+  const keep = rules.filter(x => x.length > 12 && !/^(llegada y salida|durante tu estancia|otras normas|checking in and out|during your stay|additional rules|arriving and leaving|house rules|normas de la casa|check-in|checkout)$/i.test(x) && !/\d{1,2}[:.h]\d{2}/.test(x));
+  if (keep.length) d.houseRules = keep.join('\n');
+  if (src.sleeping && src.sleeping.length) d.sleeping = src.sleeping.join('\n');
+  if (src.rating) { d.rating = src.rating.avg; d.reviewCount = src.rating.count; }
+  return d;
 }
 
 const SYSTEM = `You turn a holiday-rental listing into the first version of a guest guide, for the host to review.
@@ -143,7 +159,7 @@ async function askClaude(src, town){
     body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001', max_tokens: 3000, system: SYSTEM,
       messages: [{ role: 'user', content: prompt(src, town) }] })
   });
-  if (!r.ok) throw new Error('claude_' + r.status);
+  if (!r.ok) { let body = ''; try { body = (await r.text()).slice(0, 160); } catch (e) {} throw new Error('claude_' + r.status + ' ' + body); }
   const d = await r.json();
   const t = (d.content || []).map(c => c.text || '').join('');
   const j = t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1);
@@ -175,18 +191,20 @@ export default async (req) => {
   if (!src) src = { via: 'text', sleeping: [], tourRooms: 0, rating: null, title: '', description: '', text, photos: [], pics: [], counts: '', lat: null, lng: null };
   else if (text) src.text = text + '\n\n' + src.text;
   src.url = url;
-  try {
-    const draft = await askClaude(src, town);
+  {
+    let draft, assistant = 'ok', code = '';
+    try { draft = await askClaude(src, town); } catch (e) { assistant = 'failed'; code = String((e && e.message) || e).slice(0, 220); draft = fallbackDraft(src); console.error('askClaude failed:', code); }
+    if (assistant === 'failed' && !(src.pics || []).length && !(src.overview || []).length && !draft.houseRules) {
+      return json({ ok: false, need: 'retry', code, message: code.startsWith('no_key') ? 'The writing assistant is not set up yet. You can still fill in the steps by hand.' : 'The writing assistant did not answer, so we could not read your listing this time. Press the button again, or fill in the steps by hand.' });
+    }
     // What the page states exactly is copied as is, not left to the model.
     if (src.sleeping && src.sleeping.length) draft.sleeping = src.sleeping.join('\n');
     if (src.rating) { draft.rating = src.rating.avg; draft.reviewCount = src.rating.count; }
     const photoRooms = (src.pics || []).map((x, i) => x.room || (draft.photoRooms || [])[i] || null);
     const has = k => draft[k] != null && String(draft[k]).trim() !== '' && !(Array.isArray(draft[k]) && !draft[k].length);
-    const report = { via: src.via, photos: (src.photos || []).length, roomsFromPage: !!src.tourRooms,
+    const report = { assistant, code, via: src.via, photos: (src.photos || []).length, roomsFromPage: !!src.tourRooms,
       found: { counts: has('bedrooms') || has('bathrooms') || has('beds'), rules: has('houseRules'), times: has('checkIn') && has('checkOut'), amenities: has('amenities'), sleeping: has('sleeping'), rating: has('rating') } };
     return json({ ok: true, report, source: src.title ? 'page' : 'text', site, draft, photos: src.photos || [], photoRooms, photoCaps: (src.pics || []).map(x => x.caption), cover: src.image || (src.photos || [])[0] || null, lat: src.lat, lng: src.lng });
-  } catch (e) {
-    return json({ ok: false, need: 'retry', message: e.message === 'no_key' ? 'The writing assistant is not set up yet. You can still fill in the steps by hand.' : 'Writing your first version took too long. Press the button again.' }, 200);
   }
 };
 export const config = { path: '/api/listing' };
