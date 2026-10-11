@@ -1,0 +1,1051 @@
+{
+  "_doc": "The house page (#s/house): photos (public/guide), facts and description adapted from the Airbnb listing. Always link back to Airbnb.",
+  "url": "https://www.airbnb.com/rooms/1022457118238842125",
+  "photosUrl": "https://www.airbnb.com/rooms/1022457118238842125/photos",
+  "rating": {
+    "stars": 4.91,
+    "count": 43
+  },
+  "photos": [
+    "house.jpg",
+    "guide/pool-1.jpg",
+    "guide/porch-3.jpg",
+    "guide/living-1.jpg",
+    "guide/kitchen-2.jpg",
+    "guide/dining-2.jpg",
+    "guide/bed1-1.jpg",
+    "guide/bed2-1.jpg",
+    "guide/bed3-2.jpg",
+    "guide/bed4-1.jpg",
+    "guide/bath1-2.jpg",
+    "guide/patio-1.jpg",
+    "guide/patio-5.jpg",
+    "guide/garden-3.jpg",
+    "guide/pool-7.jpg",
+    "guide/balcony-1.jpg"
+  ],
+  "summary": {
+    "en": "Entire home · 8 guests · 4 bedrooms · 6 beds · 2 bathrooms",
+    "es": "Casa entera · 8 huéspedes · 4 habitaciones · 6 camas · 2 baños",
+    "fr": "Maison entière · 8 voyageurs · 4 chambres · 6 lits · 2 salles de bain",
+    "ca": "Casa sencera · 8 hostes · 4 habitacions · 6 llits · 2 banys",
+    "de": "Ganzes Haus · 8 Gäste · 4 Schlafzimmer · 6 Betten · 2 Bäder",
+    "nl": "Hele woning · 8 gasten · 4 slaapkamers · 6 bedden · 2 badkamers"
+  },
+  "highlights": [
+    {
+      "icon": "pool",
+      "t": {
+        "en": "Pool 3.5 × 7 m",
+        "es": "Piscina de 3,5 × 7 m",
+        "fr": "Piscine 3,5 × 7 m",
+        "ca": "Piscina de 3,5 × 7 m",
+        "de": "Pool 3,5 × 7 m",
+        "nl": "Zwembad 3,5 × 7 m"
+      },
+      "s": {
+        "en": "Up to 1.7 m deep, not heated: about 26 to 28 °C in July and August",
+        "es": "Hasta 1,7 m, sin climatizar: unos 26 a 28 °C en julio y agosto",
+        "fr": "Jusqu'à 1,7 m, non chauffée : environ 26 à 28 °C en juillet et août",
+        "ca": "Fins a 1,7 m, no climatitzada: uns 26 a 28 °C al juliol i l'agost",
+        "de": "Bis 1,7 m tief, unbeheizt: etwa 26 bis 28 °C im Juli und August",
+        "nl": "Tot 1,7 m diep, onverwarmd: zo'n 26 tot 28 °C in juli en augustus"
+      }
+    },
+    {
+      "icon": "flame",
+      "t": {
+        "en": "Shaded barbecue patio",
+        "es": "Patio con barbacoa a la sombra",
+        "fr": "Patio ombragé avec barbecue",
+        "ca": "Pati amb barbacoa a l'ombra",
+        "de": "Schattiger Grillplatz",
+        "nl": "Schaduwrijk barbecueterras"
+      },
+      "s": {
+        "en": "Outdoor kitchen and a table for 8",
+        "es": "Cocina exterior y mesa para 8",
+        "fr": "Cuisine d'été et table pour 8",
+        "ca": "Cuina exterior i taula per a 8",
+        "de": "Außenküche und Tisch für 8",
+        "nl": "Buitenkeuken en tafel voor 8"
+      }
+    },
+    {
+      "icon": "view",
+      "t": {
+        "en": "Mountain views",
+        "es": "Vistas a la montaña",
+        "fr": "Vue sur la montagne",
+        "ca": "Vistes a la muntanya",
+        "de": "Bergblick",
+        "nl": "Uitzicht op de bergen"
+      },
+      "s": {
+        "en": "Quiet residential area",
+        "es": "Zona residencial tranquila",
+        "fr": "Quartier résidentiel calme",
+        "ca": "Zona residencial tranquil·la",
+        "de": "Ruhiges Wohngebiet",
+        "nl": "Rustige woonwijk"
+      }
+    },
+    {
+      "icon": "desk",
+      "t": {
+        "en": "Attic office",
+        "es": "Despacho en la buhardilla",
+        "fr": "Bureau sous les combles",
+        "ca": "Despatx a les golfes",
+        "de": "Büro im Dachgeschoss",
+        "nl": "Kantoor op zolder"
+      },
+      "s": {
+        "en": "A quiet desk for remote work",
+        "es": "Un escritorio tranquilo para teletrabajar",
+        "fr": "Un bureau au calme pour télétravailler",
+        "ca": "Un escriptori tranquil per teletreballar",
+        "de": "Ein ruhiger Schreibtisch fürs Homeoffice",
+        "nl": "Een rustig bureau om op afstand te werken"
+      }
+    }
+  ],
+  "description": {
+    "en": "A bright, sunny house to relax with family and friends: lounge by the pool, cook on the barbecue, or head out to the beaches and the countryside nearby.\n\nThe main rooms are on the ground floor, one step up from the driveway: an open-plan living and dining room, a compact, well-equipped kitchen, three bedrooms and a bathroom with shower. Upstairs, the attic office has a sofa bed. Downstairs at the back are the second bathroom, the laundry, a shaded barbecue patio for long lunches, and the pool with plenty of space in the sun. Park inside the gate or on the quiet street.\n\nAir conditioning in every room, ceiling fans in the bedrooms and the living room, and central heating for cooler months. Smart TVs in the living room, the main bedroom and the attic office.",
+    "es": "Una casa luminosa y soleada para relajarse en familia o con amigos: tumbarse junto a la piscina, cocinar en la barbacoa o salir a descubrir las playas y el campo de la zona.\n\nLas estancias principales están en la planta baja, a un escalón de la entrada: salón comedor abierto, cocina compacta y bien equipada, tres habitaciones y un baño con ducha. Arriba, el despacho de la buhardilla tiene sofá cama. Abajo, en la parte de atrás, están el segundo baño, la lavandería, un patio con barbacoa a la sombra para comidas largas y la piscina, con mucho espacio al sol. Se puede aparcar dentro de la verja o en la calle, que es tranquila.\n\nAire acondicionado en cada habitación, ventiladores de techo en los dormitorios y el salón, y calefacción central para los meses frescos. Smart TV en el salón, el dormitorio principal y el despacho del ático.",
+    "fr": "Une maison lumineuse et ensoleillée pour se détendre en famille ou entre amis : lézarder au bord de la piscine, cuisiner au barbecue ou partir découvrir les plages et la campagne alentour.\n\nLes pièces principales sont au rez-de-chaussée, à une marche de l'allée : séjour et salle à manger ouverts, cuisine compacte et bien équipée, trois chambres et une salle de bain avec douche. À l'étage, le bureau sous les combles a un canapé-lit. En bas, à l'arrière : la seconde salle de bain, la buanderie, un patio ombragé avec barbecue pour les longs déjeuners, et la piscine, avec beaucoup d'espace au soleil. On se gare derrière le portail ou dans la rue, très calme.\n\nClimatisation dans chaque pièce, ventilateurs de plafond dans les chambres et au salon, et chauffage central pour les mois plus frais. Smart TV au salon, dans la chambre principale et dans le bureau sous les toits.",
+    "ca": "Una casa lluminosa i assolellada per relaxar-se en família o amb amics: estirar-se vora la piscina, cuinar a la barbacoa o sortir a descobrir les platges i el camp de la zona.\n\nLes estances principals són a la planta baixa, a un graó de l'entrada: menjador i sala oberts, cuina compacta i ben equipada, tres habitacions i un bany amb dutxa. A dalt, el despatx de les golfes té sofà llit. A baix, a la part del darrere, hi ha el segon bany, la bugaderia, un pati amb barbacoa a l'ombra per a dinars llargs i la piscina, amb molt d'espai al sol. Es pot aparcar dins de la tanca o al carrer, que és tranquil.\n\nAire condicionat a cada habitació, ventiladors de sostre als dormitoris i al menjador, i calefacció central per als mesos frescos. Smart TV al menjador, al dormitori principal i al despatx de les golfes.",
+    "de": "Ein helles, sonniges Haus zum Entspannen mit Familie und Freunden: am Pool liegen, grillen oder die Strände und das Hinterland in der Nähe entdecken.\n\nDie Haupträume liegen im Erdgeschoss, eine Stufe über der Einfahrt: offener Wohn- und Essbereich, kompakte, gut ausgestattete Küche, drei Schlafzimmer und ein Bad mit Dusche. Oben im Dachgeschoss ein Büro mit Schlafsofa. Unten hinter dem Haus: das zweite Bad, die Waschküche, ein schattiger Grillplatz für lange Mittagessen und der Pool mit viel Platz in der Sonne. Parken hinter dem Tor oder in der ruhigen Straße.\n\nKlimaanlage in jedem Zimmer, Deckenventilatoren in den Schlafzimmern und im Wohnzimmer und Zentralheizung für die kühleren Monate. Smart-TVs im Wohnzimmer, im Hauptschlafzimmer und im Dachbüro.",
+    "nl": "Een licht, zonnig huis om te ontspannen met familie en vrienden: luieren bij het zwembad, koken op de barbecue of de stranden en het platteland in de buurt ontdekken.\n\nDe hoofdruimtes liggen op de begane grond, één trede boven de oprit: een open woon- en eetkamer, een compacte, goed uitgeruste keuken, drie slaapkamers en een badkamer met douche. Boven is het zolderkantoor met slaapbank. Beneden aan de achterkant: de tweede badkamer, de wasruimte, een schaduwrijk barbecueterras voor lange lunches en het zwembad, met veel plek in de zon. Parkeren kan achter het hek of in de rustige straat.\n\nAirco in elke kamer, plafondventilatoren in de slaapkamers en de woonkamer, en centrale verwarming voor de koelere maanden. Smart-tv's in de woonkamer, de grote slaapkamer en het zolderkantoor."
+  },
+  "beds": [
+    {
+      "en": "Bedroom 1: king-size bed",
+      "es": "Habitación 1: cama king",
+      "fr": "Chambre 1 : lit king size",
+      "ca": "Habitació 1: llit king",
+      "de": "Schlafzimmer 1: Kingsize-Bett",
+      "nl": "Slaapkamer 1: kingsize bed"
+    },
+    {
+      "en": "Bedroom 2: double bed",
+      "es": "Habitación 2: cama de matrimonio",
+      "fr": "Chambre 2 : lit double",
+      "ca": "Habitació 2: llit de matrimoni",
+      "de": "Schlafzimmer 2: Doppelbett",
+      "nl": "Slaapkamer 2: tweepersoonsbed"
+    },
+    {
+      "en": "Bedroom 3: two single beds (one pull-out)",
+      "es": "Habitación 3: dos camas individuales (una nido)",
+      "fr": "Chambre 3 : deux lits simples (un gigogne)",
+      "ca": "Habitació 3: dos llits individuals (un niu)",
+      "de": "Schlafzimmer 3: zwei Einzelbetten (eines ausziehbar)",
+      "nl": "Slaapkamer 3: twee eenpersoonsbedden (één uitschuifbaar)"
+    },
+    {
+      "en": "Attic office: sofa bed",
+      "es": "Despacho del ático: sofá cama",
+      "fr": "Bureau sous les toits : canapé-lit",
+      "ca": "Despatx de les golfes: sofà llit",
+      "de": "Dachbüro: Schlafsofa",
+      "nl": "Zolderkantoor: slaapbank"
+    },
+    {
+      "en": "Living room: sofa bed",
+      "es": "Salón: sofá cama",
+      "fr": "Salon : canapé-lit",
+      "ca": "Menjador: sofà llit",
+      "de": "Wohnzimmer: Schlafsofa",
+      "nl": "Woonkamer: slaapbank"
+    }
+  ],
+  "amenities": [
+    {
+      "t": {
+        "en": "Scenic views",
+        "es": "Vistas",
+        "fr": "Vues",
+        "ca": "Vistes",
+        "de": "Aussicht",
+        "nl": "Uitzicht"
+      },
+      "items": [
+        {
+          "en": "Pool view",
+          "es": "Vista a la piscina",
+          "fr": "Vue sur la piscine",
+          "ca": "Vista a la piscina",
+          "de": "Poolblick",
+          "nl": "Uitzicht op het zwembad"
+        },
+        {
+          "en": "Mountain view",
+          "es": "Vista a la montaña",
+          "fr": "Vue sur la montagne",
+          "ca": "Vista a la muntanya",
+          "de": "Bergblick",
+          "nl": "Uitzicht op de bergen"
+        }
+      ]
+    },
+    {
+      "t": {
+        "en": "Bathroom",
+        "es": "Baño",
+        "fr": "Salle de bain",
+        "ca": "Bany",
+        "de": "Bad",
+        "nl": "Badkamer"
+      },
+      "items": [
+        {
+          "en": "Hair dryer",
+          "es": "Secador de pelo",
+          "fr": "Sèche-cheveux",
+          "ca": "Assecador de cabells",
+          "de": "Haartrockner",
+          "nl": "Föhn"
+        },
+        {
+          "en": "Shampoo",
+          "es": "Champú",
+          "fr": "Shampooing",
+          "ca": "Xampú",
+          "de": "Shampoo",
+          "nl": "Shampoo"
+        },
+        {
+          "en": "Shower gel and body soap",
+          "es": "Gel de ducha y jabón",
+          "fr": "Gel douche et savon",
+          "ca": "Gel de dutxa i sabó",
+          "de": "Duschgel und Seife",
+          "nl": "Douchegel en zeep"
+        },
+        {
+          "en": "Cleaning products",
+          "es": "Productos de limpieza",
+          "fr": "Produits ménagers",
+          "ca": "Productes de neteja",
+          "de": "Reinigungsmittel",
+          "nl": "Schoonmaakmiddelen"
+        },
+        {
+          "en": "Hot water",
+          "es": "Agua caliente",
+          "fr": "Eau chaude",
+          "ca": "Aigua calenta",
+          "de": "Warmwasser",
+          "nl": "Warm water"
+        },
+        {
+          "en": "Outdoor shower",
+          "es": "Ducha exterior",
+          "fr": "Douche extérieure",
+          "ca": "Dutxa exterior",
+          "de": "Außendusche",
+          "nl": "Buitendouche"
+        }
+      ]
+    },
+    {
+      "t": {
+        "en": "Bedroom and laundry",
+        "es": "Dormitorio y lavandería",
+        "fr": "Chambre et linge",
+        "ca": "Dormitori i bugaderia",
+        "de": "Schlafzimmer und Wäsche",
+        "nl": "Slaapkamer en was"
+      },
+      "items": [
+        {
+          "en": "Washing machine",
+          "es": "Lavadora",
+          "fr": "Lave-linge",
+          "ca": "Rentadora",
+          "de": "Waschmaschine",
+          "nl": "Wasmachine"
+        },
+        {
+          "en": "Tumble dryer",
+          "es": "Secadora",
+          "fr": "Sèche-linge",
+          "ca": "Assecadora",
+          "de": "Wäschetrockner",
+          "nl": "Droger"
+        },
+        {
+          "en": "Drying rack",
+          "es": "Tendedero",
+          "fr": "Étendoir",
+          "ca": "Estenedor",
+          "de": "Wäscheständer",
+          "nl": "Droogrek"
+        },
+        {
+          "en": "Iron",
+          "es": "Plancha",
+          "fr": "Fer à repasser",
+          "ca": "Planxa",
+          "de": "Bügeleisen",
+          "nl": "Strijkijzer"
+        },
+        {
+          "en": "Cotton bed linen",
+          "es": "Ropa de cama de algodón",
+          "fr": "Linge de lit en coton",
+          "ca": "Roba de llit de cotó",
+          "de": "Bettwäsche aus Baumwolle",
+          "nl": "Katoenen beddengoed"
+        },
+        {
+          "en": "Extra pillows and blankets",
+          "es": "Almohadas y mantas extra",
+          "fr": "Oreillers et couvertures en plus",
+          "ca": "Coixins i mantes extra",
+          "de": "Extra Kissen und Decken",
+          "nl": "Extra kussens en dekens"
+        },
+        {
+          "en": "Room-darkening shades",
+          "es": "Persianas opacas",
+          "fr": "Volets occultants",
+          "ca": "Persianes opaques",
+          "de": "Verdunkelung",
+          "nl": "Verduisterende rolluiken"
+        },
+        {
+          "en": "Mosquito nets",
+          "es": "Mosquiteras",
+          "fr": "Moustiquaires",
+          "ca": "Mosquiteres",
+          "de": "Moskitonetze",
+          "nl": "Horren"
+        },
+        {
+          "en": "Hangers",
+          "es": "Perchas",
+          "fr": "Cintres",
+          "ca": "Penjadors",
+          "de": "Kleiderbügel",
+          "nl": "Kleerhangers"
+        },
+        {
+          "en": "Closet, wardrobe and dresser",
+          "es": "Armario, ropero y cómoda",
+          "fr": "Placard, armoire et commode",
+          "ca": "Armari, rober i calaixera",
+          "de": "Einbauschrank, Kleiderschrank und Kommode",
+          "nl": "Kast, kledingkast en ladekast"
+        },
+        {
+          "en": "Safe",
+          "es": "Caja fuerte",
+          "fr": "Coffre-fort",
+          "ca": "Caixa forta",
+          "de": "Safe",
+          "nl": "Kluis"
+        }
+      ]
+    },
+    {
+      "t": {
+        "en": "Entertainment",
+        "es": "Entretenimiento",
+        "fr": "Divertissement",
+        "ca": "Entreteniment",
+        "de": "Unterhaltung",
+        "nl": "Entertainment"
+      },
+      "items": [
+        {
+          "en": "Smart TVs in the living room, main bedroom and attic office",
+          "es": "Smart TV en el salón, el dormitorio principal y el despacho del ático",
+          "fr": "Smart TV au salon, dans la chambre principale et le bureau sous les toits",
+          "ca": "Smart TV al menjador, el dormitori principal i el despatx de les golfes",
+          "de": "Smart-TVs im Wohnzimmer, im Hauptschlafzimmer und im Dachbüro",
+          "nl": "Smart-tv's in de woonkamer, de grote slaapkamer en het zolderkantoor"
+        },
+        {
+          "en": "50-inch HD TV",
+          "es": "Televisor HD de 50 pulgadas",
+          "fr": "Télévision HD 50 pouces",
+          "ca": "Televisor HD de 50 polzades",
+          "de": "50-Zoll-HD-Fernseher",
+          "nl": "50-inch hd-tv"
+        },
+        {
+          "en": "Sound system",
+          "es": "Equipo de sonido",
+          "fr": "Système audio",
+          "ca": "Equip de so",
+          "de": "Soundsystem",
+          "nl": "Geluidssysteem"
+        },
+        {
+          "en": "Books and reading material",
+          "es": "Libros y lectura",
+          "fr": "Livres et lectures",
+          "ca": "Llibres i lectura",
+          "de": "Bücher und Lesestoff",
+          "nl": "Boeken en leesmateriaal"
+        }
+      ]
+    },
+    {
+      "t": {
+        "en": "Family",
+        "es": "Familia",
+        "fr": "Famille",
+        "ca": "Família",
+        "de": "Familie",
+        "nl": "Gezin"
+      },
+      "items": [
+        {
+          "en": "Travel cot",
+          "es": "Cuna de viaje",
+          "fr": "Lit parapluie",
+          "ca": "Bressol de viatge",
+          "de": "Reisebett",
+          "nl": "Campingbedje"
+        },
+        {
+          "en": "High chair",
+          "es": "Trona",
+          "fr": "Chaise haute",
+          "ca": "Cadira alta",
+          "de": "Hochstuhl",
+          "nl": "Kinderstoel"
+        },
+        {
+          "en": "Board games",
+          "es": "Juegos de mesa",
+          "fr": "Jeux de société",
+          "ca": "Jocs de taula",
+          "de": "Brettspiele",
+          "nl": "Bordspellen"
+        }
+      ]
+    },
+    {
+      "t": {
+        "en": "Heating and cooling",
+        "es": "Calefacción y aire",
+        "fr": "Chauffage et climatisation",
+        "ca": "Calefacció i aire",
+        "de": "Heizung und Kühlung",
+        "nl": "Verwarming en koeling"
+      },
+      "items": [
+        {
+          "en": "Air conditioning in every room (split units)",
+          "es": "Aire acondicionado en cada habitación (split)",
+          "fr": "Climatisation dans chaque pièce (split)",
+          "ca": "Aire condicionat a cada habitació (split)",
+          "de": "Klimaanlage in jedem Zimmer (Split)",
+          "nl": "Airco in elke kamer (split-units)"
+        },
+        {
+          "en": "Ceiling fans in the bedrooms and living room",
+          "es": "Ventiladores de techo en los dormitorios y el salón",
+          "fr": "Ventilateurs de plafond dans les chambres et au salon",
+          "ca": "Ventiladors de sostre als dormitoris i al menjador",
+          "de": "Deckenventilatoren in den Schlafzimmern und im Wohnzimmer",
+          "nl": "Plafondventilatoren in de slaapkamers en woonkamer"
+        },
+        {
+          "en": "Portable fans",
+          "es": "Ventiladores portátiles",
+          "fr": "Ventilateurs portables",
+          "ca": "Ventiladors portàtils",
+          "de": "Standventilatoren",
+          "nl": "Losse ventilatoren"
+        },
+        {
+          "en": "Central heating",
+          "es": "Calefacción central",
+          "fr": "Chauffage central",
+          "ca": "Calefacció central",
+          "de": "Zentralheizung",
+          "nl": "Centrale verwarming"
+        }
+      ]
+    },
+    {
+      "t": {
+        "en": "Home safety",
+        "es": "Seguridad",
+        "fr": "Sécurité",
+        "ca": "Seguretat",
+        "de": "Sicherheit",
+        "nl": "Veiligheid"
+      },
+      "items": [
+        {
+          "en": "Smoke alarm",
+          "es": "Detector de humo",
+          "fr": "Détecteur de fumée",
+          "ca": "Detector de fum",
+          "de": "Rauchmelder",
+          "nl": "Rookmelder"
+        },
+        {
+          "en": "Carbon monoxide alarm",
+          "es": "Detector de monóxido de carbono",
+          "fr": "Détecteur de monoxyde de carbone",
+          "ca": "Detector de monòxid de carboni",
+          "de": "Kohlenmonoxidmelder",
+          "nl": "Koolmonoxidemelder"
+        },
+        {
+          "en": "First aid kit",
+          "es": "Botiquín",
+          "fr": "Trousse de premiers secours",
+          "ca": "Farmaciola",
+          "de": "Erste-Hilfe-Set",
+          "nl": "EHBO-doos"
+        }
+      ]
+    },
+    {
+      "t": {
+        "en": "Internet and office",
+        "es": "Internet y oficina",
+        "fr": "Internet et bureau",
+        "ca": "Internet i oficina",
+        "de": "Internet und Büro",
+        "nl": "Internet en kantoor"
+      },
+      "items": [
+        {
+          "en": "Wifi",
+          "es": "Wifi",
+          "fr": "Wifi",
+          "ca": "Wifi",
+          "de": "WLAN",
+          "nl": "Wifi"
+        },
+        {
+          "en": "Dedicated workspace in the attic office",
+          "es": "Espacio de trabajo en el despacho del ático",
+          "fr": "Espace de travail dans le bureau sous les toits",
+          "ca": "Espai de treball al despatx de les golfes",
+          "de": "Arbeitsplatz im Dachbüro",
+          "nl": "Werkplek in het zolderkantoor"
+        }
+      ]
+    },
+    {
+      "t": {
+        "en": "Kitchen and dining",
+        "es": "Cocina y comedor",
+        "fr": "Cuisine et repas",
+        "ca": "Cuina i menjador",
+        "de": "Küche und Essen",
+        "nl": "Keuken en eten"
+      },
+      "items": [
+        {
+          "en": "Fully equipped kitchen",
+          "es": "Cocina equipada",
+          "fr": "Cuisine équipée",
+          "ca": "Cuina equipada",
+          "de": "Voll ausgestattete Küche",
+          "nl": "Volledig uitgeruste keuken"
+        },
+        {
+          "en": "Fridge and freezer",
+          "es": "Nevera y congelador",
+          "fr": "Réfrigérateur et congélateur",
+          "ca": "Nevera i congelador",
+          "de": "Kühlschrank und Gefrierfach",
+          "nl": "Koelkast en vriezer"
+        },
+        {
+          "en": "Dishwasher",
+          "es": "Lavavajillas",
+          "fr": "Lave-vaisselle",
+          "ca": "Rentaplats",
+          "de": "Geschirrspüler",
+          "nl": "Vaatwasser"
+        },
+        {
+          "en": "Electric hob and oven",
+          "es": "Placa eléctrica y horno",
+          "fr": "Plaques électriques et four",
+          "ca": "Placa elèctrica i forn",
+          "de": "Elektroherd und Backofen",
+          "nl": "Elektrische kookplaat en oven"
+        },
+        {
+          "en": "Microwave",
+          "es": "Microondas",
+          "fr": "Micro-ondes",
+          "ca": "Microones",
+          "de": "Mikrowelle",
+          "nl": "Magnetron"
+        },
+        {
+          "en": "Kettle",
+          "es": "Hervidor de agua",
+          "fr": "Bouilloire",
+          "ca": "Bullidor d'aigua",
+          "de": "Wasserkocher",
+          "nl": "Waterkoker"
+        },
+        {
+          "en": "Drip coffee maker and coffee",
+          "es": "Cafetera de goteo y café",
+          "fr": "Cafetière filtre et café",
+          "ca": "Cafetera de degoteig i cafè",
+          "de": "Filterkaffeemaschine und Kaffee",
+          "nl": "Filterkoffiezetapparaat en koffie"
+        },
+        {
+          "en": "Toaster",
+          "es": "Tostadora",
+          "fr": "Grille-pain",
+          "ca": "Torradora",
+          "de": "Toaster",
+          "nl": "Broodrooster"
+        },
+        {
+          "en": "Blender",
+          "es": "Batidora",
+          "fr": "Mixeur",
+          "ca": "Batedora",
+          "de": "Mixer",
+          "nl": "Blender"
+        },
+        {
+          "en": "Pots and pans, oil, salt and pepper",
+          "es": "Ollas y sartenes, aceite, sal y pimienta",
+          "fr": "Casseroles et poêles, huile, sel et poivre",
+          "ca": "Olles i paelles, oli, sal i pebre",
+          "de": "Töpfe und Pfannen, Öl, Salz und Pfeffer",
+          "nl": "Pannen, olie, peper en zout"
+        },
+        {
+          "en": "Plates, bowls, cups and cutlery",
+          "es": "Platos, cuencos, tazas y cubiertos",
+          "fr": "Assiettes, bols, tasses et couverts",
+          "ca": "Plats, bols, tasses i coberts",
+          "de": "Teller, Schüsseln, Tassen und Besteck",
+          "nl": "Borden, kommen, kopjes en bestek"
+        },
+        {
+          "en": "Wine glasses",
+          "es": "Copas de vino",
+          "fr": "Verres à vin",
+          "ca": "Copes de vi",
+          "de": "Weingläser",
+          "nl": "Wijnglazen"
+        },
+        {
+          "en": "Baking tray",
+          "es": "Bandeja de horno",
+          "fr": "Plaque de cuisson",
+          "ca": "Safata de forn",
+          "de": "Backblech",
+          "nl": "Bakplaat"
+        },
+        {
+          "en": "Dining table",
+          "es": "Mesa de comedor",
+          "fr": "Table à manger",
+          "ca": "Taula de menjador",
+          "de": "Esstisch",
+          "nl": "Eettafel"
+        }
+      ]
+    },
+    {
+      "t": {
+        "en": "Outdoor",
+        "es": "Exterior",
+        "fr": "Extérieur",
+        "ca": "Exterior",
+        "de": "Draußen",
+        "nl": "Buiten"
+      },
+      "items": [
+        {
+          "en": "Private pool (not heated), open all year",
+          "es": "Piscina privada (sin climatizar), abierta todo el año",
+          "fr": "Piscine privée (non chauffée), ouverte toute l'année",
+          "ca": "Piscina privada (no climatitzada), oberta tot l'any",
+          "de": "Privater Pool (unbeheizt), ganzjährig geöffnet",
+          "nl": "Privézwembad (onverwarmd), het hele jaar open"
+        },
+        {
+          "en": "Fully fenced private garden",
+          "es": "Jardín privado vallado",
+          "fr": "Jardin privé entièrement clos",
+          "ca": "Jardí privat tancat",
+          "de": "Komplett eingezäunter privater Garten",
+          "nl": "Volledig omheinde privétuin"
+        },
+        {
+          "en": "Patio",
+          "es": "Patio",
+          "fr": "Patio",
+          "ca": "Pati",
+          "de": "Terrasse",
+          "nl": "Terras"
+        },
+        {
+          "en": "Outdoor dining area",
+          "es": "Comedor exterior",
+          "fr": "Coin repas extérieur",
+          "ca": "Menjador exterior",
+          "de": "Essbereich im Freien",
+          "nl": "Buiten eten"
+        },
+        {
+          "en": "Outdoor kitchen with sink",
+          "es": "Cocina exterior con fregadero",
+          "fr": "Cuisine extérieure avec évier",
+          "ca": "Cuina exterior amb aigüera",
+          "de": "Außenküche mit Spüle",
+          "nl": "Buitenkeuken met gootsteen"
+        },
+        {
+          "en": "Charcoal and wood barbecue, with utensils",
+          "es": "Barbacoa de carbón y leña, con utensilios",
+          "fr": "Barbecue au charbon et au bois, avec ustensiles",
+          "ca": "Barbacoa de carbó i llenya, amb estris",
+          "de": "Holzkohle- und Holzgrill mit Zubehör",
+          "nl": "Houtskool- en houtbarbecue met gerei"
+        },
+        {
+          "en": "Sun loungers",
+          "es": "Tumbonas",
+          "fr": "Transats",
+          "ca": "Gandules",
+          "de": "Sonnenliegen",
+          "nl": "Ligbedden"
+        },
+        {
+          "en": "Hammock",
+          "es": "Hamaca",
+          "fr": "Hamac",
+          "ca": "Hamaca",
+          "de": "Hängematte",
+          "nl": "Hangmat"
+        },
+        {
+          "en": "Outdoor furniture",
+          "es": "Muebles de exterior",
+          "fr": "Mobilier d'extérieur",
+          "ca": "Mobles d'exterior",
+          "de": "Gartenmöbel",
+          "nl": "Tuinmeubels"
+        }
+      ]
+    },
+    {
+      "t": {
+        "en": "Parking and services",
+        "es": "Parking y servicios",
+        "fr": "Parking et services",
+        "ca": "Aparcament i serveis",
+        "de": "Parken und Service",
+        "nl": "Parkeren en service"
+      },
+      "items": [
+        {
+          "en": "Free parking inside the gate",
+          "es": "Parking gratuito dentro de la parcela",
+          "fr": "Parking gratuit dans la propriété",
+          "ca": "Aparcament gratuït dins la parcel·la",
+          "de": "Kostenloses Parken auf dem Grundstück",
+          "nl": "Gratis parkeren op het terrein"
+        },
+        {
+          "en": "Free street parking",
+          "es": "Aparcamiento gratuito en la calle",
+          "fr": "Stationnement gratuit dans la rue",
+          "ca": "Aparcament gratuït al carrer",
+          "de": "Kostenloses Parken an der Straße",
+          "nl": "Gratis parkeren op straat"
+        },
+        {
+          "en": "Self check-in with smart lock",
+          "es": "Entrada autónoma con cerradura inteligente",
+          "fr": "Arrivée autonome avec serrure connectée",
+          "ca": "Entrada autònoma amb pany intel·ligent",
+          "de": "Self-Check-in mit Smart Lock",
+          "nl": "Zelf inchecken met slim slot"
+        },
+        {
+          "en": "Luggage drop-off allowed",
+          "es": "Se puede dejar el equipaje",
+          "fr": "Dépôt de bagages possible",
+          "ca": "Es pot deixar l'equipatge",
+          "de": "Gepäckaufbewahrung möglich",
+          "nl": "Bagage achterlaten mogelijk"
+        },
+        {
+          "en": "Long stays allowed (28 nights or more)",
+          "es": "Estancias largas (28 noches o más)",
+          "fr": "Longs séjours possibles (28 nuits ou plus)",
+          "ca": "Estades llargues (28 nits o més)",
+          "de": "Langzeitaufenthalte möglich (ab 28 Nächten)",
+          "nl": "Lang verblijf mogelijk (28 nachten of meer)"
+        },
+        {
+          "en": "Cleaning available during your stay",
+          "es": "Limpieza disponible durante la estancia",
+          "fr": "Ménage possible pendant le séjour",
+          "ca": "Neteja disponible durant l'estada",
+          "de": "Reinigung während des Aufenthalts möglich",
+          "nl": "Schoonmaak mogelijk tijdens het verblijf"
+        },
+        {
+          "en": "Pets allowed",
+          "es": "Se admiten mascotas",
+          "fr": "Animaux acceptés",
+          "ca": "S'admeten mascotes",
+          "de": "Haustiere erlaubt",
+          "nl": "Huisdieren toegestaan"
+        },
+        {
+          "en": "Laundromat nearby",
+          "es": "Lavandería cerca",
+          "fr": "Laverie à proximité",
+          "ca": "Bugaderia a prop",
+          "de": "Waschsalon in der Nähe",
+          "nl": "Wasserette in de buurt"
+        }
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "room": {
+        "en": "Living room",
+        "es": "Salón",
+        "fr": "Salon",
+        "ca": "Sala d'estar",
+        "de": "Wohnzimmer",
+        "nl": "Woonkamer"
+      },
+      "photos": [
+        "guide/living-1.jpg",
+        "guide/living-2.jpg",
+        "guide/living-3.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Kitchen",
+        "es": "Cocina",
+        "fr": "Cuisine",
+        "ca": "Cuina",
+        "de": "Küche",
+        "nl": "Keuken"
+      },
+      "photos": [
+        "guide/kitchen-1.jpg",
+        "guide/kitchen-2.jpg",
+        "guide/kitchen-3.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Dining area",
+        "es": "Comedor",
+        "fr": "Coin repas",
+        "ca": "Menjador",
+        "de": "Essbereich",
+        "nl": "Eethoek"
+      },
+      "photos": [
+        "guide/dining-1.jpg",
+        "guide/dining-2.jpg",
+        "guide/dining-3.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Bedroom 1",
+        "es": "Habitación 1",
+        "fr": "Chambre 1",
+        "ca": "Habitació 1",
+        "de": "Schlafzimmer 1",
+        "nl": "Slaapkamer 1"
+      },
+      "photos": [
+        "guide/bed1-1.jpg",
+        "guide/bed1-2.jpg",
+        "guide/bed1-3.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Bedroom 2",
+        "es": "Habitación 2",
+        "fr": "Chambre 2",
+        "ca": "Habitació 2",
+        "de": "Schlafzimmer 2",
+        "nl": "Slaapkamer 2"
+      },
+      "photos": [
+        "guide/bed2-1.jpg",
+        "guide/bed2-2.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Bedroom 3",
+        "es": "Habitación 3",
+        "fr": "Chambre 3",
+        "ca": "Habitació 3",
+        "de": "Schlafzimmer 3",
+        "nl": "Slaapkamer 3"
+      },
+      "photos": [
+        "guide/bed3-1.jpg",
+        "guide/bed3-2.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Attic office",
+        "es": "Despacho del ático",
+        "fr": "Bureau sous les toits",
+        "ca": "Despatx de les golfes",
+        "de": "Dachbüro",
+        "nl": "Zolderkantoor"
+      },
+      "photos": [
+        "guide/bed4-1.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Bathroom 1",
+        "es": "Baño 1",
+        "fr": "Salle de bain 1",
+        "ca": "Bany 1",
+        "de": "Bad 1",
+        "nl": "Badkamer 1"
+      },
+      "photos": [
+        "guide/bath1-1.jpg",
+        "guide/bath1-2.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Bathroom 2",
+        "es": "Baño 2",
+        "fr": "Salle de bain 2",
+        "ca": "Bany 2",
+        "de": "Bad 2",
+        "nl": "Badkamer 2"
+      },
+      "photos": [
+        "guide/bath2-1.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Barbecue patio",
+        "es": "Patio con barbacoa",
+        "fr": "Patio barbecue",
+        "ca": "Pati amb barbacoa",
+        "de": "Grillterrasse",
+        "nl": "Barbecueterras"
+      },
+      "photos": [
+        "guide/patio-1.jpg",
+        "guide/patio-2.jpg",
+        "guide/patio-3.jpg",
+        "guide/patio-4.jpg",
+        "guide/patio-5.jpg",
+        "guide/patio-6.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Porch",
+        "es": "Porche",
+        "fr": "Porche",
+        "ca": "Porxo",
+        "de": "Veranda",
+        "nl": "Veranda"
+      },
+      "photos": [
+        "guide/porch-1.jpg",
+        "guide/porch-2.jpg",
+        "guide/porch-3.jpg",
+        "guide/porch-4.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Garden",
+        "es": "Jardín",
+        "fr": "Jardin",
+        "ca": "Jardí",
+        "de": "Garten",
+        "nl": "Tuin"
+      },
+      "photos": [
+        "guide/garden-1.jpg",
+        "guide/garden-2.jpg",
+        "guide/garden-3.jpg",
+        "guide/garden-4.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Pool",
+        "es": "Piscina",
+        "fr": "Piscine",
+        "ca": "Piscina",
+        "de": "Pool",
+        "nl": "Zwembad"
+      },
+      "photos": [
+        "guide/pool-1.jpg",
+        "guide/pool-2.jpg",
+        "guide/pool-3.jpg",
+        "guide/pool-4.jpg",
+        "guide/pool-5.jpg",
+        "guide/pool-6.jpg",
+        "guide/pool-7.jpg",
+        "guide/pool-8.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Laundry",
+        "es": "Lavadero",
+        "fr": "Buanderie",
+        "ca": "Safareig",
+        "de": "Waschraum",
+        "nl": "Wasruimte"
+      },
+      "photos": [
+        "guide/laundry-1.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "View from the balcony",
+        "es": "Vista desde el balcón",
+        "fr": "Vue du balcon",
+        "ca": "Vista des del balcó",
+        "de": "Blick vom Balkon",
+        "nl": "Uitzicht vanaf het balkon"
+      },
+      "photos": [
+        "guide/balcony-1.jpg"
+      ]
+    }
+  ]
+}

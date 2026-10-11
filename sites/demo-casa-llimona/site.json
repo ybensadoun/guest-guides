@@ -1,0 +1,32 @@
+{
+  "_doc": "Dummy second site: proves a new guide is only data. Different name, languages, look and modules; same engine.",
+  "slug": "demo-casa-llimona",
+  "name": "Casa Llimona",
+  "description": "Casa Llimona (demo), guest guide: house guide, markets, places to eat and map.",
+  "logo": "logo-head.png",
+  "shareImage": "house.jpg",
+  "languages": ["en", "es"],
+  "storageKey": "demo-llimona",
+  "area": { "radiusKm": 30 },
+  "modules": {
+    "house": false,
+    "garbage": false,
+    "message": true,
+    "emergency": true,
+    "markets": true,
+    "restaurants": true,
+    "todo": false,
+    "events": false,
+    "quick": false,
+    "map": true
+  },
+  "theme": {
+    "preset": "bauhaus",
+    "fonts": ["outfit/400.css", "outfit/500.css", "outfit/600.css", "outfit/700.css"],
+    "paper": "#F6F3EA",
+    "manifestBackground": "#F6F3EA",
+    "manifestTheme": "#0F6E6A",
+    "darkMode": false
+  },
+  "previewImages": ["logo-head.png", "favicon.png", "house.jpg"]
+}

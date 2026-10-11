@@ -1,0 +1,957 @@
+{
+  "_doc": "Spots appear in this section's list and on the map. Item shape: id, name{6}, type{6} (category line), town, place (address), lat, lng, km_from_house (by road), description{6}, tags[], flags[], phone, url, schedule (same format as markets) and/or hours{6} (note shown under the hours). Tags and flags need t_<tag> / f_<flag> keys in src/i18n. price: typical spend per person in euros, 'min-max' rounded to multiples of 5 (from TheFork, Guía Repsol, Gastroranking or menu prices); shown as '€min-max per person'. Leave out when unknown. setMenus: [{kind: menuDia|tasting, price}] shown as tags with their exact price. topPick: true = the hosts' absolute favourites, shown with a yellow 'Unmissable' tag.",
+  "items": [
+    {
+      "id": "locanda",
+      "name": {
+        "en": "La Locanda dei Sapori",
+        "es": "La Locanda dei Sapori",
+        "fr": "La Locanda dei Sapori",
+        "ca": "La Locanda dei Sapori",
+        "de": "La Locanda dei Sapori",
+        "nl": "La Locanda dei Sapori"
+      },
+      "type": {
+        "en": "Italian trattoria & pizzeria, El Vendrell",
+        "es": "Trattoria y pizzería italiana, El Vendrell",
+        "fr": "Trattoria et pizzeria italienne, El Vendrell",
+        "ca": "Trattoria i pizzeria italiana, El Vendrell",
+        "de": "Italienische Trattoria & Pizzeria, El Vendrell",
+        "nl": "Italiaanse trattoria & pizzeria, El Vendrell"
+      },
+      "town": "El Vendrell",
+      "place": "Carrer de Mar, 10-12",
+      "lat": 41.21965,
+      "lng": 1.53459,
+      "km_from_house": 10,
+      "description": {
+        "en": "Our favourite Italian: a trattoria and pizzeria in the centre of El Vendrell. You can also order to take away and eat at the house. It fills up quickly, so book for dinner.",
+        "es": "Nuestro italiano favorito: una trattoria y pizzería en el centro de El Vendrell. También puedes pedir para llevar y comer en casa. Se llena rápido, así que reserva para cenar.",
+        "fr": "Notre italien préféré : une trattoria et pizzeria dans le centre d'El Vendrell. Vous pouvez aussi commander à emporter et manger à la maison. C'est vite complet, réservez pour le dîner.",
+        "ca": "El nostre italià preferit: una trattoria i pizzeria al centre del Vendrell. També pots demanar per emportar i menjar a casa. S'omple ràpid, així que reserva per sopar.",
+        "de": "Unser Lieblingsitaliener: eine Trattoria und Pizzeria im Zentrum von El Vendrell. Du kannst auch zum Mitnehmen bestellen und im Haus essen. Schnell voll, also fürs Abendessen reservieren.",
+        "nl": "Onze favoriete Italiaan: een trattoria en pizzeria in het centrum van El Vendrell. Je kunt ook afhalen en thuis eten. Het zit snel vol, dus reserveer voor het diner."
+      },
+      "tags": [
+        "veggie"
+      ],
+      "flags": [
+        "book"
+      ],
+      "phone": "977 66 16 25",
+      "schedule": [
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "13:00",
+          "close": "16:00"
+        },
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "20:00",
+          "close": "23:30"
+        }
+      ],
+      "rating": {
+        "stars": 4.7,
+        "count": 1277
+      },
+      "gmaps": "https://www.google.com/maps/place/La+Locanda+dei+Sapori/data=!4m2!3m1!1s0x12a38b237f1c227f:0x5588072edcbdf82",
+      "url": "https://www.facebook.com/LaLocandaElVendrell",
+      "icon": "pizza",
+      "price": "20-25",
+      "priceNote": {
+        "en": "A pizza each, a shared starter and a bottle of house wine for two comes to about €20-25 per person. Pizzas around €10-13, pasta a little more.",
+        "es": "Una pizza cada uno, un entrante para compartir y una botella de vino de la casa para dos sale por unos 20-25 € por persona. Pizzas a unos 10-13 €, la pasta algo más.",
+        "fr": "Une pizza chacun, une entrée à partager et une bouteille de vin maison pour deux : environ 20-25 € par personne. Pizzas autour de 10-13 €, les pâtes un peu plus.",
+        "ca": "Una pizza cadascú, un entrant per compartir i una ampolla de vi de la casa per a dos surt per uns 20-25 € per persona. Pizzes a uns 10-13 €, la pasta una mica més.",
+        "de": "Eine Pizza pro Person, eine geteilte Vorspeise und eine Flasche Hauswein für zwei: etwa 20-25 € pro Person. Pizzen um 10-13 €, Pasta etwas mehr.",
+        "nl": "Een pizza per persoon, een gedeeld voorgerecht en een fles huiswijn voor twee: ongeveer € 20-25 p.p. Pizza's rond € 10-13, pasta iets meer."
+      },
+      "topPick": true
+    },
+    {
+      "id": "obrador",
+      "name": {
+        "en": "L'Obrador d'Oriol Rossell",
+        "es": "L'Obrador d'Oriol Rossell",
+        "fr": "L'Obrador d'Oriol Rossell",
+        "ca": "L'Obrador d'Oriol Rossell",
+        "de": "L'Obrador d'Oriol Rossell",
+        "nl": "L'Obrador d'Oriol Rossell"
+      },
+      "type": {
+        "en": "Bakery & café, El Vendrell",
+        "es": "Panadería y cafetería, El Vendrell",
+        "fr": "Boulangerie et café, El Vendrell",
+        "ca": "Forn i cafeteria, El Vendrell",
+        "de": "Bäckerei & Café, El Vendrell",
+        "nl": "Bakkerij & café, El Vendrell"
+      },
+      "town": "El Vendrell",
+      "place": "Carrer del Nord, 3",
+      "lat": 41.22119,
+      "lng": 1.53606,
+      "km_from_house": 10,
+      "description": {
+        "en": "A bakery and café in the old town of El Vendrell where everything is made with great taste. Excellent bread and great cocas that change with the season. The croissants and the palmeras are amazing: pure butter. At lunchtime, lobster rolls, roast beef sandwiches and more. They also make cakes for a celebration. Small terrace.",
+        "es": "Panadería y cafetería en el casco antiguo de El Vendrell donde todo se hace con muy buen gusto. Pan excelente y cocas buenísimas que cambian con la temporada. Los cruasanes y las palmeras son increíbles: pura mantequilla. A mediodía, lobster rolls, bocadillos de rosbif y más. También hacen pasteles para una celebración. Pequeña terraza.",
+        "fr": "Boulangerie et café dans la vieille ville d'El Vendrell, où tout est fait avec beaucoup de goût. Un pain excellent et de très bonnes cocas qui changent selon la saison. Les croissants et les palmiers sont incroyables : pur beurre. Le midi, lobster rolls, sandwichs au rosbif et plus encore. Ils font aussi des gâteaux pour une fête. Petite terrasse.",
+        "ca": "Forn i cafeteria al nucli antic del Vendrell on tot es fa amb molt bon gust. Pa excel·lent i coques boníssimes que canvien amb la temporada. Els croissants i les palmeres són increïbles: pura mantega. Al migdia, lobster rolls, entrepans de rosbif i més. També fan pastissos per a una celebració. Petita terrassa.",
+        "de": "Bäckerei und Café in der Altstadt von El Vendrell, wo alles mit viel Geschmack gemacht wird. Ausgezeichnetes Brot und tolle Cocas, die mit der Saison wechseln. Die Croissants und die Palmiers sind unglaublich: reine Butter. Mittags Lobster Rolls, Roastbeef-Sandwiches und mehr. Auch Torten für eine Feier. Kleine Terrasse.",
+        "nl": "Bakkerij en café in de oude stad van El Vendrell, waar alles met veel smaak wordt gemaakt. Uitstekend brood en heerlijke cocas die met het seizoen wisselen. De croissants en de palmiers zijn geweldig: pure boter. Voor de lunch lobster rolls, rosbiefbroodjes en meer. Ze maken ook taarten voor een feest. Klein terras."
+      },
+      "tags": [
+        "dogs",
+        "veggie"
+      ],
+      "flags": [],
+      "phone": "977 66 48 04",
+      "url": "https://www.l-obrador.com/",
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "08:30",
+          "close": "13:30"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "17:00",
+          "close": "20:00"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "08:30",
+          "close": "14:00"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "17:30",
+          "close": "20:30"
+        }
+      ],
+      "rating": {
+        "stars": 4.5,
+        "count": 425
+      },
+      "gmaps": "https://www.google.com/maps/place/L%27Obrador+d%27Oriol+Rossell/data=!4m2!3m1!1s0x12a38b2344d76479:0xdbdf4466666d5ad2",
+      "icon": "croissant",
+      "price": "5-15",
+      "priceNote": {
+        "en": "Coffee and a croissant or palmera: about €5. A lobster roll or roast beef sandwich with a drink at lunch: about €12-15. Cakes are priced to order.",
+        "es": "Café y cruasán o palmera: unos 5 €. Un lobster roll o bocadillo de rosbif con bebida al mediodía: unos 12-15 €. Los pasteles, por encargo.",
+        "fr": "Café et croissant ou palmier : environ 5 €. Un lobster roll ou sandwich au rosbif avec une boisson le midi : environ 12-15 €. Gâteaux sur commande.",
+        "ca": "Cafè i croissant o palmera: uns 5 €. Un lobster roll o entrepà de rosbif amb beguda al migdia: uns 12-15 €. Els pastissos, per encàrrec.",
+        "de": "Kaffee und Croissant oder Palmier: etwa 5 €. Mittags ein Lobster Roll oder Roastbeef-Sandwich mit Getränk: etwa 12-15 €. Torten auf Bestellung.",
+        "nl": "Koffie met een croissant of palmier: ongeveer € 5. Een lobster roll of rosbiefbroodje met drankje als lunch: ongeveer € 12-15. Taarten op bestelling."
+      },
+      "topPick": true
+    },
+    {
+      "id": "casinet",
+      "name": {
+        "en": "Casinet",
+        "es": "Casinet",
+        "fr": "Casinet",
+        "ca": "Casinet",
+        "de": "Casinet",
+        "nl": "Casinet"
+      },
+      "type": {
+        "en": "Rice & seafood on the beach, Sant Salvador",
+        "es": "Arroces y marisco frente al mar, Sant Salvador",
+        "fr": "Riz et fruits de mer face à la mer, Sant Salvador",
+        "ca": "Arrossos i marisc davant del mar, Sant Salvador",
+        "de": "Reis & Meeresfrüchte am Strand, Sant Salvador",
+        "nl": "Rijst & zeevruchten aan zee, Sant Salvador"
+      },
+      "town": "Sant Salvador",
+      "place": "Passeig Marítim Joan Reventós, 11",
+      "lat": 41.1839041,
+      "lng": 1.5460985,
+      "km_from_house": 15,
+      "description": {
+        "en": "Our favourite arroz, right on the seafront in Sant Salvador. Three rooms to choose from when you book: the main room where the cooking happens, the terrace on the beach, or the quieter dining room. Dogs are welcome, but mention it when you book. Always book ahead.",
+        "es": "Nuestro arroz favorito, en primera línea de mar en Sant Salvador. Tres salas para elegir al reservar: la principal, donde se cocina a la vista, la terraza sobre la playa o el comedor, más tranquilo. Se admiten perros, pero avísalo al reservar. Reserva siempre con antelación.",
+        "fr": "Notre riz préféré, en bord de mer à Sant Salvador. Trois salles au choix à la réservation : la salle principale où l'on cuisine, la terrasse sur la plage ou la salle à manger, plus calme. Chiens acceptés, mais prévenez en réservant. Réservez toujours à l'avance.",
+        "ca": "El nostre arròs preferit, a primera línia de mar a Sant Salvador. Tres sales per triar quan reserves: la principal, on es cuina, la terrassa sobre la platja o el menjador, més tranquil. S'admeten gossos, però avisa-ho en reservar. Reserva sempre amb antelació.",
+        "de": "Unser Lieblingsreis, direkt an der Strandpromenade von Sant Salvador. Drei Räume zur Wahl bei der Reservierung: der Hauptraum, in dem gekocht wird, die Terrasse am Strand oder der ruhigere Speisesaal. Hunde willkommen, aber bei der Reservierung angeben. Immer vorher reservieren.",
+        "nl": "Onze favoriete rijst, aan de boulevard van Sant Salvador. Drie ruimtes om uit te kiezen bij het reserveren: de hoofdzaal waar gekookt wordt, het terras op het strand of de rustigere eetzaal. Honden welkom, maar meld het bij het reserveren. Reserveer altijd vooraf."
+      },
+      "tags": [
+        "dogs"
+      ],
+      "flags": [
+        "book"
+      ],
+      "phone": "977 68 00 47",
+      "url": "https://www.casinet.net/",
+      "hours": {
+        "en": "Lunch only. In summer it may also open for dinner: call to check and to book.",
+        "es": "Solo mediodía. En verano puede abrir también para cenar: llama para confirmar y reservar.",
+        "fr": "Uniquement le midi. En été, il peut aussi ouvrir le soir : appelez pour vérifier et réserver.",
+        "ca": "Només migdia. A l'estiu pot obrir també per sopar: truca per confirmar i reservar.",
+        "de": "Nur mittags. Im Sommer eventuell auch abends: anrufen, prüfen und reservieren.",
+        "nl": "Alleen lunch. In de zomer soms ook diner: bel om te checken en te reserveren."
+      },
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "13:00",
+          "close": "16:00"
+        }
+      ],
+      "rating": {
+        "stars": 4.8,
+        "count": 20650
+      },
+      "gmaps": "https://www.google.com/maps/place/Casinet/data=!4m2!3m1!1s0x12a38c9bea80d6b3:0x177d14ea1d7111f9",
+      "icon": "paella",
+      "price": "30-45",
+      "priceNote": {
+        "en": "Weekday set lunch (starter, rice and dessert) about €26. À la carte with a rice, starters and wine: about €35-45. Kids menu about €12.",
+        "es": "Menú del día entre semana (entrante, arroz y postre) unos 26 €. A la carta con arroz, entrantes y vino: unos 35-45 €. Menú infantil unos 12 €.",
+        "fr": "Menu du jour en semaine (entrée, riz et dessert) environ 26 €. À la carte avec un riz, des entrées et du vin : environ 35-45 €. Menu enfant environ 12 €.",
+        "ca": "Menú del dia entre setmana (entrant, arròs i postres) uns 26 €. A la carta amb arròs, entrants i vi: uns 35-45 €. Menú infantil uns 12 €.",
+        "de": "Mittagsmenü unter der Woche (Vorspeise, Reis, Dessert) etwa 26 €. À la carte mit Reis, Vorspeisen und Wein: etwa 35-45 €. Kindermenü etwa 12 €.",
+        "nl": "Doordeweeks dagmenu (voorgerecht, rijst en dessert) ongeveer € 26. À la carte met rijst, voorgerechten en wijn: ongeveer € 35-45. Kindermenu ongeveer € 12."
+      },
+      "setMenus": [
+        {
+          "kind": "menuDia",
+          "price": "26"
+        },
+        {
+          "kind": "kids",
+          "price": "12"
+        }
+      ],
+      "topPick": true
+    },
+    {
+      "id": "ulldellebre",
+      "name": {
+        "en": "Ull de Llebre",
+        "es": "Ull de Llebre",
+        "fr": "Ull de Llebre",
+        "ca": "Ull de Llebre",
+        "de": "Ull de Llebre",
+        "nl": "Ull de Llebre"
+      },
+      "type": {
+        "en": "Seasonal cuisine, La Bisbal del Penedès",
+        "es": "Cocina de temporada, La Bisbal del Penedès",
+        "fr": "Cuisine de saison, La Bisbal del Penedès",
+        "ca": "Cuina de temporada, La Bisbal del Penedès",
+        "de": "Saisonale Küche, La Bisbal del Penedès",
+        "nl": "Seizoenskeuken, La Bisbal del Penedès"
+      },
+      "town": "La Bisbal del Penedès",
+      "place": "Carrer Santa Cristina, 15",
+      "lat": 41.28067,
+      "lng": 1.4852593,
+      "km_from_house": 3,
+      "description": {
+        "en": "In the village, a few minutes by car. Seasonal cooking with a tasting menu at weekends and a home-style set lunch on Thursday and Friday. Small and popular, so book ahead.",
+        "es": "En el pueblo, a pocos minutos en coche. Cocina de temporada con menú degustación el fin de semana y menú del día casero jueves y viernes. Pequeño y muy solicitado, reserva con antelación.",
+        "fr": "Au village, à quelques minutes en voiture. Cuisine de saison avec menu dégustation le week-end et menu du jour maison le jeudi et le vendredi. Petit et très demandé, réservez à l'avance.",
+        "ca": "Al poble, a pocs minuts amb cotxe. Cuina de temporada amb menú degustació el cap de setmana i menú diari casolà dijous i divendres. Petit i molt demanat, reserva amb antelació.",
+        "de": "Im Dorf, wenige Autominuten entfernt. Saisonale Küche mit Degustationsmenü am Wochenende und hausgemachtem Mittagsmenü am Donnerstag und Freitag. Klein und beliebt, also vorher reservieren.",
+        "nl": "In het dorp, een paar minuten met de auto. Seizoenskeuken met proefmenu in het weekend en een huisgemaakt lunchmenu op donderdag en vrijdag. Klein en populair, dus reserveer vooraf."
+      },
+      "tags": [
+        "veggie"
+      ],
+      "flags": [
+        "book"
+      ],
+      "phone": "977 68 88 88",
+      "url": "https://restaurantulldellebre.com/",
+      "rating": {
+        "stars": 4.5,
+        "count": 1238
+      },
+      "schedule": [
+        {
+          "days": [
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "13:00",
+          "close": "16:00"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "21:00",
+          "close": "22:30"
+        },
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "09:00",
+          "close": "11:00"
+        }
+      ],
+      "gmaps": "https://www.google.com/maps/place/Ull+de+Llebre/data=!4m2!3m1!1s0x12a40a862fb699c9:0x70c43759d025f86e",
+      "icon": "pot",
+      "price": "15-40",
+      "priceNote": {
+        "en": "Weekday menú del día about €16.50-18 with wine and water. Weekend menu about €29. A seafood tasting menu of about €38 is expected, ask when you book.",
+        "es": "Menú del día entre semana unos 16,50-18 € con vino y agua. Menú de fin de semana unos 29 €. Se espera un menú degustación marinero de unos 38 €, pregunta al reservar.",
+        "fr": "Menu du jour en semaine environ 16,50-18 € avec vin et eau. Menu du week-end environ 29 €. Un menu dégustation de la mer d'environ 38 € est attendu, demandez en réservant.",
+        "ca": "Menú del dia entre setmana uns 16,50-18 € amb vi i aigua. Menú de cap de setmana uns 29 €. S'espera un menú degustació mariner d'uns 38 €, pregunteu-ho en reservar.",
+        "de": "Mittagsmenü unter der Woche etwa 16,50-18 € mit Wein und Wasser. Wochenendmenü etwa 29 €. Ein Meeresfrüchte-Probiermenü für etwa 38 € wird erwartet, beim Reservieren nachfragen.",
+        "nl": "Doordeweeks dagmenu ongeveer € 16,50-18 met wijn en water. Weekendmenu ongeveer € 29. Een zeevruchten-proeverijmenu van ongeveer € 38 wordt verwacht, vraag ernaar bij het reserveren."
+      },
+      "setMenus": [
+        {
+          "kind": "menuDia",
+          "price": "16.50-18"
+        },
+        {
+          "kind": "weekend",
+          "price": "29"
+        }
+      ]
+    },
+    {
+      "id": "esencia",
+      "name": {
+        "en": "Esencia",
+        "es": "Esencia",
+        "fr": "Esencia",
+        "ca": "Esencia",
+        "de": "Esencia",
+        "nl": "Esencia"
+      },
+      "type": {
+        "en": "Refined creative cuisine, El Vendrell",
+        "es": "Cocina creativa refinada, El Vendrell",
+        "fr": "Cuisine créative raffinée, El Vendrell",
+        "ca": "Cuina creativa refinada, El Vendrell",
+        "de": "Feine kreative Küche, El Vendrell",
+        "nl": "Verfijnde creatieve keuken, El Vendrell"
+      },
+      "town": "El Vendrell",
+      "place": "Carrer de Montserrat, 15",
+      "lat": 41.2220751,
+      "lng": 1.5354627,
+      "km_from_house": 10,
+      "description": {
+        "en": "The refined address in El Vendrell: a small, elegant dining room in the centre with creative, beautifully plated dishes. The place for a special dinner, so book ahead.",
+        "es": "La dirección más refinada de El Vendrell: un comedor pequeño y elegante en el centro, con platos creativos y muy cuidados. El sitio para una cena especial, mejor reservar.",
+        "fr": "L'adresse raffinée d'El Vendrell : une petite salle élégante en centre-ville et des plats créatifs, joliment dressés. L'endroit pour un dîner spécial, réservez.",
+        "ca": "L'adreça més refinada del Vendrell: un menjador petit i elegant al centre, amb plats creatius i molt ben presentats. El lloc per a un sopar especial, millor reservar.",
+        "de": "Die feine Adresse in El Vendrell: ein kleiner, eleganter Speiseraum im Zentrum mit kreativen, schön angerichteten Gerichten. Der Ort für ein besonderes Abendessen, besser reservieren.",
+        "nl": "Het verfijnde adres van El Vendrell: een kleine, elegante eetzaal in het centrum met creatieve, mooi opgemaakte gerechten. Dé plek voor een bijzonder diner, reserveer vooraf."
+      },
+      "tags": [],
+      "flags": [],
+      "phone": "877 64 03 49",
+      "rating": {
+        "stars": 4.9,
+        "count": 494
+      },
+      "schedule": [
+        {
+          "days": [
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "13:00",
+          "close": "16:00"
+        },
+        {
+          "days": [
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "20:00",
+          "close": "23:00"
+        }
+      ],
+      "gmaps": "https://www.google.com/maps/place/Esencia/data=!4m2!3m1!1s0x12a3f5588dc7a129:0xdbe0c178ca5437dc",
+      "icon": "cloche",
+      "price": "35-55",
+      "priceNote": {
+        "en": "A refined meal with a glass or two of wine: about €35-55 per person. Ask about the weekday lunch menu, often the best value.",
+        "es": "Una comida cuidada con una o dos copas de vino: unos 35-55 € por persona. Preguntad por el menú de mediodía entre semana, suele ser la mejor opción.",
+        "fr": "Un repas raffiné avec un ou deux verres de vin : environ 35-55 € par personne. Demandez le menu du midi en semaine, souvent le meilleur rapport qualité-prix.",
+        "ca": "Un àpat acurat amb una o dues copes de vi: uns 35-55 € per persona. Pregunteu pel menú de migdia entre setmana, sol ser la millor opció.",
+        "de": "Ein feines Essen mit ein, zwei Gläsern Wein: etwa 35-55 € pro Person. Fragt nach dem Mittagsmenü unter der Woche, meist das beste Angebot.",
+        "nl": "Een verfijnde maaltijd met een of twee glazen wijn: ongeveer € 35-55 p.p. Vraag naar het lunchmenu doordeweeks, vaak de beste prijs."
+      }
+    },
+    {
+      "id": "ancora",
+      "name": {
+        "en": "L'Àncora del Serrallo",
+        "es": "L'Àncora del Serrallo",
+        "fr": "L'Àncora del Serrallo",
+        "ca": "L'Àncora del Serrallo",
+        "de": "L'Àncora del Serrallo",
+        "nl": "L'Àncora del Serrallo"
+      },
+      "type": {
+        "en": "Seafood restaurant, Tarragona",
+        "es": "Restaurante de pescado y marisco, Tarragona",
+        "fr": "Restaurant de poissons et fruits de mer, Tarragone",
+        "ca": "Restaurant de peix i marisc, Tarragona",
+        "de": "Fisch- & Meeresfrüchte-Restaurant, Tarragona",
+        "nl": "Vis- en zeevruchtenrestaurant, Tarragona"
+      },
+      "town": "Tarragona",
+      "place": "Carrer de Trafalgar, 21",
+      "lat": 41.109788,
+      "lng": 1.24147,
+      "km_from_house": 45,
+      "description": {
+        "en": "Family-run for over 50 years in El Serrallo, Tarragona's fishermen's quarter by the port. Fresh local fish and seafood, rice dishes and a long list of tapas. Easy to combine with a day in Tarragona.",
+        "es": "Negocio familiar desde hace más de 50 años en El Serrallo, el barrio de pescadores de Tarragona junto al puerto. Pescado y marisco fresco de la zona, arroces y muchas tapas. Ideal para combinar con un día en Tarragona.",
+        "fr": "Affaire familiale depuis plus de 50 ans à El Serrallo, le quartier des pêcheurs de Tarragone, au bord du port. Poissons et fruits de mer frais de la région, riz et une longue liste de tapas. Idéal avec une journée à Tarragone.",
+        "ca": "Negoci familiar des de fa més de 50 anys al Serrallo, el barri de pescadors de Tarragona, al costat del port. Peix i marisc fresc de la zona, arrossos i moltes tapes. Ideal per combinar amb un dia a Tarragona.",
+        "de": "Seit über 50 Jahren in Familienhand, in El Serrallo, dem Fischerviertel von Tarragona am Hafen. Frischer Fisch und Meeresfrüchte aus der Gegend, Reisgerichte und viele Tapas. Gut mit einem Tag in Tarragona zu verbinden.",
+        "nl": "Al meer dan 50 jaar een familiebedrijf in El Serrallo, de visserswijk van Tarragona bij de haven. Verse lokale vis en zeevruchten, rijstgerechten en veel tapas. Makkelijk te combineren met een dag in Tarragona."
+      },
+      "tags": [
+        "dogs"
+      ],
+      "flags": [],
+      "phone": "617 49 46 54",
+      "url": "https://ancoradelserrallo.es/",
+      "rating": {
+        "stars": 4.2,
+        "count": 9255
+      },
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "13:00",
+          "close": "00:00"
+        }
+      ],
+      "gmaps": "https://www.google.com/maps/place/L%27%C3%80ncora+del+Serrallo/data=!4m2!3m1!1s0x12a3e2d272462ee5:0xa5346325642161ff",
+      "icon": "fish",
+      "price": "30-40",
+      "priceNote": {
+        "en": "Starters to share, a fish or seafood main and a bottle of wine for two: about €30-40 per person. Whole fish is priced by weight (around €40 a kilo).",
+        "es": "Entrantes para compartir, un pescado o marisco y una botella de vino para dos: unos 30-40 € por persona. El pescado entero va al peso (unos 40 € el kilo).",
+        "fr": "Entrées à partager, un poisson ou des fruits de mer et une bouteille de vin pour deux : environ 30-40 € par personne. Le poisson entier est au poids (environ 40 € le kilo).",
+        "ca": "Entrants per compartir, un peix o marisc i una ampolla de vi per a dos: uns 30-40 € per persona. El peix sencer va a pes (uns 40 € el quilo).",
+        "de": "Vorspeisen zum Teilen, Fisch oder Meeresfrüchte und eine Flasche Wein für zwei: etwa 30-40 € pro Person. Ganzer Fisch nach Gewicht (etwa 40 € pro Kilo).",
+        "nl": "Gedeelde voorgerechten, vis of zeevruchten en een fles wijn voor twee: ongeveer € 30-40 p.p. Hele vis gaat per gewicht (ongeveer € 40 per kilo)."
+      }
+    },
+    {
+      "id": "pernil",
+      "name": {
+        "en": "La Fàbrica del Pernil",
+        "es": "La Fàbrica del Pernil",
+        "fr": "La Fàbrica del Pernil",
+        "ca": "La Fàbrica del Pernil",
+        "de": "La Fàbrica del Pernil",
+        "nl": "La Fàbrica del Pernil"
+      },
+      "type": {
+        "en": "Ham bar & grill, El Vendrell",
+        "es": "Bar de jamón y brasa, El Vendrell",
+        "fr": "Bar à jambon et grill, El Vendrell",
+        "ca": "Bar de pernil i brasa, El Vendrell",
+        "de": "Schinkenbar & Grill, El Vendrell",
+        "nl": "Hambar & grill, El Vendrell"
+      },
+      "town": "El Vendrell",
+      "place": "La Rambla, 14",
+      "lat": 41.2205096,
+      "lng": 1.5366949,
+      "km_from_house": 10,
+      "description": {
+        "en": "On La Rambla in El Vendrell. Ibérico ham, cured meats, montaditos, huevos rotos and torradas (toasted country bread with toppings), from breakfast to dinner.",
+        "es": "En La Rambla de El Vendrell. Jamón ibérico, embutidos, montaditos, huevos rotos y torradas, del desayuno a la cena.",
+        "fr": "Sur La Rambla d'El Vendrell. Jambon ibérique, charcuterie, montaditos, huevos rotos et torradas (pain de campagne grillé garni), du petit-déjeuner au dîner.",
+        "ca": "A la Rambla del Vendrell. Pernil ibèric, embotits, montaditos, ous estrellats i torrades, de l'esmorzar al sopar.",
+        "de": "An der Rambla von El Vendrell. Ibérico-Schinken, Wurstwaren, Montaditos, Huevos Rotos und Torradas (geröstetes Landbrot mit Belag), vom Frühstück bis zum Abendessen.",
+        "nl": "Aan La Rambla in El Vendrell. Ibérico-ham, vleeswaren, montaditos, huevos rotos en torradas (geroosterd boerenbrood met beleg), van ontbijt tot diner."
+      },
+      "tags": [],
+      "flags": [],
+      "phone": "669 20 52 93",
+      "url": "https://fabricadelpernil.com/",
+      "rating": {
+        "stars": 4.2,
+        "count": 527
+      },
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu"
+          ],
+          "open": "08:00",
+          "close": "16:00"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu"
+          ],
+          "open": "18:30",
+          "close": "23:00"
+        },
+        {
+          "days": [
+            "fri",
+            "sat"
+          ],
+          "open": "08:00",
+          "close": "23:00"
+        }
+      ],
+      "gmaps": "https://www.google.com/maps/place/La+F%C3%A0brica+del+Pernil/data=!4m2!3m1!1s0x12a38b40c30bdda7:0xf29396492ed5c471",
+      "icon": "ham",
+      "price": "20-30",
+      "priceNote": {
+        "en": "A board of ibérico ham, a few montaditos or huevos rotos and a glass of wine or a beer: about €20-30 per person.",
+        "es": "Una tabla de ibérico, unos montaditos o huevos rotos y una copa de vino o una cerveza: unos 20-30 € por persona.",
+        "fr": "Une planche de jambon ibérique, quelques montaditos ou huevos rotos et un verre de vin ou une bière : environ 20-30 € par personne.",
+        "ca": "Una taula d'ibèric, uns quants montaditos o ous estrellats i una copa de vi o una cervesa: uns 20-30 € per persona.",
+        "de": "Ein Brett Ibérico-Schinken, ein paar Montaditos oder Huevos rotos und ein Glas Wein oder ein Bier: etwa 20-30 € pro Person.",
+        "nl": "Een plank ibérico-ham, een paar montaditos of huevos rotos en een glas wijn of een biertje: ongeveer € 20-30 p.p."
+      }
+    },
+    {
+      "id": "marga",
+      "name": {
+        "en": "La Cuina de la Marga",
+        "es": "La Cuina de la Marga",
+        "fr": "La Cuina de la Marga",
+        "ca": "La Cuina de la Marga",
+        "de": "La Cuina de la Marga",
+        "nl": "La Cuina de la Marga"
+      },
+      "type": {
+        "en": "Rice dishes on the seafront, Sant Salvador",
+        "es": "Arroces frente al mar, Sant Salvador",
+        "fr": "Riz face à la mer, Sant Salvador",
+        "ca": "Arrossos davant del mar, Sant Salvador",
+        "de": "Reisgerichte am Meer, Sant Salvador",
+        "nl": "Rijstgerechten aan zee, Sant Salvador"
+      },
+      "town": "Sant Salvador",
+      "place": "Passeig Marítim Joan Reventós, 50",
+      "lat": 41.1828906,
+      "lng": 1.5380457,
+      "km_from_house": 15,
+      "description": {
+        "en": "On the Sant Salvador promenade, known for its rice dishes: black rice with squid, artichoke and baby squid, or arròs del senyoret with everything already peeled. Open on Mondays too.",
+        "es": "En el paseo de Sant Salvador, conocido por sus arroces: arroz negro con chipirones, de alcachofas y calamarcitos, o arroz del senyoret con todo pelado. También abre los lunes.",
+        "fr": "Sur la promenade de Sant Salvador, réputé pour ses riz : riz noir aux petits calamars, riz aux artichauts et calamars, ou arròs del senyoret tout décortiqué. Ouvert aussi le lundi.",
+        "ca": "Al passeig de Sant Salvador, conegut pels arrossos: arròs negre de xipirons, de carxofes i calamarsets, o arròs del senyoret amb tot pelat. També obre els dilluns.",
+        "de": "An der Promenade von Sant Salvador, bekannt für Reisgerichte: schwarzer Reis mit Tintenfisch, Reis mit Artischocken und kleinen Kalmaren oder Arròs del senyoret, alles schon geschält. Auch montags geöffnet.",
+        "nl": "Aan de boulevard van Sant Salvador, bekend om de rijstgerechten: zwarte rijst met inktvisjes, rijst met artisjok en pijlinktvis, of arròs del senyoret met alles al gepeld. Ook op maandag open."
+      },
+      "tags": [],
+      "flags": [],
+      "phone": "640 69 29 09",
+      "url": "https://www.lacuinadelamarga.com/",
+      "rating": {
+        "stars": 4.5,
+        "count": 4017
+      },
+      "gmaps": "https://www.google.com/maps/place/La+Cuina+de+la+Marga/data=!4m2!3m1!1s0x12a38ca11df2c82f:0xc3d484415286ded8",
+      "hours": {
+        "en": "Closed on Tuesdays. Kitchen 13:00-16:00. Google also shows some Friday and Saturday evenings: check before going.",
+        "es": "Cerrado los martes. Cocina 13:00-16:00. Google también indica algunas noches de viernes y sábado: confírmalo antes de ir.",
+        "fr": "Fermé le mardi. Cuisine 13h00-16h00. Google indique aussi certains vendredis et samedis soir : vérifiez avant d'y aller.",
+        "ca": "Tancat els dimarts. Cuina 13:00-16:00. Google també indica alguns vespres de divendres i dissabte: comprova-ho abans d'anar-hi.",
+        "de": "Dienstags geschlossen. Küche 13:00-16:00. Google zeigt auch einige Freitag- und Samstagabende: vorher prüfen.",
+        "nl": "Dinsdag gesloten. Keuken 13:00-16:00. Google toont ook sommige vrijdag- en zaterdagavonden: check dat vooraf."
+      },
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "10:30",
+          "close": "18:00"
+        }
+      ],
+      "icon": "paella",
+      "price": "35-50",
+      "priceNote": {
+        "en": "Rice dishes are about €21-26 per person, starters about €16 to share. With wine: about €35-50 per person.",
+        "es": "Los arroces cuestan unos 21-26 € por persona y los entrantes unos 16 € para compartir. Con vino: unos 35-50 € por persona.",
+        "fr": "Les riz coûtent environ 21-26 € par personne, les entrées environ 16 € à partager. Avec du vin : environ 35-50 € par personne.",
+        "ca": "Els arrossos costen uns 21-26 € per persona i els entrants uns 16 € per compartir. Amb vi: uns 35-50 € per persona.",
+        "de": "Reisgerichte etwa 21-26 € pro Person, Vorspeisen etwa 16 € zum Teilen. Mit Wein: etwa 35-50 € pro Person.",
+        "nl": "Rijstgerechten ongeveer € 21-26 p.p., voorgerechten ongeveer € 16 om te delen. Met wijn: ongeveer € 35-50 p.p."
+      }
+    },
+    {
+      "id": "rest101",
+      "name": {
+        "en": "101 Restaurante",
+        "es": "101 Restaurante",
+        "fr": "101 Restaurante",
+        "ca": "101 Restaurante",
+        "de": "101 Restaurante",
+        "nl": "101 Restaurante"
+      },
+      "type": {
+        "en": "Roadside restaurant, Bellvei",
+        "es": "Restaurante de carretera, Bellvei",
+        "fr": "Restaurant routier, Bellvei",
+        "ca": "Restaurant de carretera, Bellvei",
+        "de": "Restaurant an der Landstraße, Bellvei",
+        "nl": "Wegrestaurant, Bellvei"
+      },
+      "town": "Bellvei",
+      "place": "N-340, km 1196,5",
+      "lat": 41.2464818,
+      "lng": 1.5851735,
+      "km_from_house": 13,
+      "description": {
+        "en": "A truckers' favourite on the N-340: the kitchen never closes, from early morning to midnight, and the food is always good, so you can turn up at any time. At lunch the menú del día (set lunch) is outstanding, with grilled meat and home cooking at a great price.",
+        "es": "El favorito de los camioneros en la N-340: la cocina no cierra nunca, desde primera hora hasta medianoche, y siempre se come bien, así que puedes ir a cualquier hora. A mediodía, el menú del día es buenísimo, con carne a la brasa y cocina casera a muy buen precio.",
+        "fr": "Le préféré des routiers sur la N-340 : la cuisine ne ferme jamais, du petit matin à minuit, et c'est toujours bon, vous pouvez donc y aller à toute heure. Le midi, le menu du jour est excellent, avec viandes grillées et cuisine maison à très bon prix.",
+        "ca": "El preferit dels camioners a la N-340: la cuina no tanca mai, des de primera hora fins a mitjanit, i sempre s'hi menja bé, així que hi pots anar a qualsevol hora. Al migdia, el menú del dia és boníssim, amb carn a la brasa i cuina casolana a molt bon preu.",
+        "de": "Der Liebling der Fernfahrer an der N-340: Die Küche schließt nie, vom frühen Morgen bis Mitternacht, und das Essen ist immer gut, du kannst also jederzeit vorbeikommen. Mittags ist das Menü des Tages (menú del día) hervorragend, mit Grillfleisch und Hausmannskost zu einem tollen Preis.",
+        "nl": "De favoriet van truckers aan de N-340: de keuken sluit nooit, van vroeg in de ochtend tot middernacht, en het eten is altijd goed, dus je kunt er op elk moment terecht. 's Middags is het dagmenu (menú del día) geweldig, met vlees van de grill en huisgemaakte gerechten voor een mooie prijs."
+      },
+      "tags": [],
+      "flags": [],
+      "phone": "977 16 87 42",
+      "url": "https://grup101.com/",
+      "rating": {
+        "stars": 4.3,
+        "count": 12
+      },
+      "gmaps": "https://www.google.com/maps/place/101+Restaurante/data=!4m2!3m1!1s0x12a38b7a23b9b6c1:0xb7defca9509a1b03",
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "07:00",
+          "close": "00:00"
+        }
+      ],
+      "hours": {
+        "en": "Kitchen open non-stop, 7:00 to midnight, Monday to Saturday. The menú del día is served at lunchtime.",
+        "es": "Cocina abierta sin interrupción, de 7:00 a medianoche, de lunes a sábado. El menú del día se sirve a mediodía.",
+        "fr": "Cuisine ouverte en continu, de 7h00 à minuit, du lundi au samedi. Le menu du jour est servi le midi.",
+        "ca": "Cuina oberta sense interrupció, de 7:00 a mitjanit, de dilluns a dissabte. El menú del dia se serveix al migdia.",
+        "de": "Küche durchgehend geöffnet, 7:00 bis Mitternacht, Montag bis Samstag. Das Mittagsmenü gibt es mittags.",
+        "nl": "Keuken doorlopend open, 7:00 tot middernacht, maandag tot en met zaterdag. Het dagmenu wordt 's middags geserveerd."
+      },
+      "icon": "truck",
+      "price": "10-20",
+      "priceNote": {
+        "en": "Menú del día with a drink: around €12-15. A big sandwich next door from about €6. Mixed grill for two about €33.",
+        "es": "Menú del día con bebida: unos 12-15 €. Un bocadillo grande al lado desde unos 6 €. Parrillada para dos unos 33 €.",
+        "fr": "Menu du jour avec boisson : environ 12-15 €. Un gros sandwich à côté dès 6 € environ. Grillade mixte pour deux environ 33 €.",
+        "ca": "Menú del dia amb beguda: uns 12-15 €. Un entrepà gran al costat des d'uns 6 €. Graellada per a dos uns 33 €.",
+        "de": "Mittagsmenü mit Getränk: etwa 12-15 €. Nebenan ein großes Bocadillo ab etwa 6 €. Grillplatte für zwei etwa 33 €.",
+        "nl": "Dagmenu met drankje: ongeveer € 12-15. Ernaast een groot broodje vanaf ongeveer € 6. Gemengde grill voor twee ongeveer € 33."
+      },
+      "setMenus": [
+        {
+          "kind": "menuDia",
+          "price": "12-15"
+        }
+      ]
+    },
+    {
+      "id": "llepol",
+      "name": {
+        "en": "Llépol",
+        "es": "Llépol",
+        "fr": "Llépol",
+        "ca": "Llépol",
+        "de": "Llépol",
+        "nl": "Llépol"
+      },
+      "type": {
+        "en": "Seasonal Catalan cuisine, Vila-rodona",
+        "es": "Cocina catalana de temporada, Vila-rodona",
+        "fr": "Cuisine catalane de saison, Vila-rodona",
+        "ca": "Cuina catalana de temporada, Vila-rodona",
+        "de": "Saisonale katalanische Küche, Vila-rodona",
+        "nl": "Seizoensgebonden Catalaanse keuken, Vila-rodona"
+      },
+      "town": "Vila-rodona",
+      "place": "Carrer del Gaià, 3",
+      "lat": 41.3093081,
+      "lng": 1.3570828,
+      "km_from_house": 16,
+      "description": {
+        "en": "A small gastronomic restaurant in the village of Vila-rodona that cooks \"the landscape, the seasons and memory\": two set menus that change with the season, with local produce. A lovely lunch on a weekend, so book ahead.",
+        "es": "Un pequeño restaurante gastronómico en el pueblo de Vila-rodona que cocina \"el paisaje, las estaciones y la memoria\": dos menús que cambian con la temporada, con producto local. Una comida estupenda de fin de semana, mejor reservar.",
+        "fr": "Un petit restaurant gastronomique dans le village de Vila-rodona qui cuisine « le paysage, les saisons et la mémoire » : deux menus qui changent avec les saisons, avec des produits locaux. Un très bon déjeuner de week-end, réservez.",
+        "ca": "Un petit restaurant gastronòmic al poble de Vila-rodona que cuina \"el paisatge, les estacions i la memòria\": dos menús que canvien amb la temporada, amb producte local. Un dinar fantàstic de cap de setmana, millor reservar.",
+        "de": "Ein kleines Gourmetrestaurant im Dorf Vila-rodona, das \"die Landschaft, die Jahreszeiten und die Erinnerung\" kocht: zwei Menüs, die mit der Saison wechseln, mit regionalen Produkten. Ein schönes Wochenend-Mittagessen, besser reservieren.",
+        "nl": "Een klein gastronomisch restaurant in het dorp Vila-rodona dat \"het landschap, de seizoenen en het geheugen\" kookt: twee menu's die met het seizoen veranderen, met lokale producten. Een heerlijke weekendlunch, reserveer vooraf."
+      },
+      "tags": [
+        "dogs"
+      ],
+      "flags": [
+        "book"
+      ],
+      "phone": "609 78 99 20",
+      "url": "https://llepol.com/",
+      "rating": {
+        "stars": 4.7,
+        "count": 296
+      },
+      "gmaps": "https://www.google.com/maps/place/Ll%C3%A9pol/data=!4m2!3m1!1s0x12a407d2127922a1:0x203e9f43212b8552",
+      "hours": {
+        "en": "Open Friday to Sunday only.",
+        "es": "Abierto solo de viernes a domingo.",
+        "fr": "Ouvert uniquement du vendredi au dimanche.",
+        "ca": "Obert només de divendres a diumenge.",
+        "de": "Nur Freitag bis Sonntag geöffnet.",
+        "nl": "Alleen open van vrijdag tot zondag."
+      },
+      "schedule": [
+        {
+          "days": [
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "13:00",
+          "close": "16:00"
+        },
+        {
+          "days": [
+            "fri",
+            "sat"
+          ],
+          "open": "21:00",
+          "close": "23:00"
+        }
+      ],
+      "icon": "leaf",
+      "price": "30-55",
+      "priceNote": {
+        "en": "Two menus: La Drecera about €34 (4 dishes and dessert) and El Camí Ral about €44 (6 dishes and dessert). Add wine pairing or a bottle.",
+        "es": "Dos menús: La Drecera unos 34 € (4 platos y postre) y El Camí Ral unos 44 € (6 platos y postre). Más el maridaje o una botella.",
+        "fr": "Deux menus : La Drecera environ 34 € (4 plats et dessert) et El Camí Ral environ 44 € (6 plats et dessert). Plus l'accord mets-vins ou une bouteille.",
+        "ca": "Dos menús: La Drecera uns 34 € (4 plats i postres) i El Camí Ral uns 44 € (6 plats i postres). Més el maridatge o una ampolla.",
+        "de": "Zwei Menüs: La Drecera etwa 34 € (4 Gänge und Dessert) und El Camí Ral etwa 44 € (6 Gänge und Dessert). Dazu Weinbegleitung oder eine Flasche.",
+        "nl": "Twee menu's: La Drecera ongeveer € 34 (4 gerechten en dessert) en El Camí Ral ongeveer € 44 (6 gerechten en dessert). Plus wijnarrangement of een fles."
+      },
+      "setMenus": [
+        {
+          "kind": "tasting",
+          "price": "34"
+        },
+        {
+          "kind": "tasting",
+          "price": "44"
+        }
+      ]
+    },
+    {
+      "id": "quijote",
+      "name": {
+        "en": "Quijote Beach",
+        "es": "Quijote Beach",
+        "fr": "Quijote Beach",
+        "ca": "Quijote Beach",
+        "de": "Quijote Beach",
+        "nl": "Quijote Beach"
+      },
+      "type": {
+        "en": "Beach bar, Creixell",
+        "es": "Chiringuito, Creixell",
+        "fr": "Paillote, Creixell",
+        "ca": "Xiringuito, Creixell",
+        "de": "Strandbar, Creixell",
+        "nl": "Strandbar, Creixell"
+      },
+      "town": "Creixell",
+      "place": "Avinguda de la Platja, 1",
+      "lat": 41.159437,
+      "lng": 1.449938,
+      "km_from_house": 16,
+      "description": {
+        "en": "Feet in the sand on Creixell beach, with a family atmosphere. Paella, tapas and fish. Book if you want paella.",
+        "es": "Con los pies en la arena en la playa de Creixell, ambiente familiar. Paella, tapas y pescado. Reserva si quieres paella.",
+        "fr": "Les pieds dans le sable sur la plage de Creixell, ambiance familiale. Paella, tapas et poisson. Réservez si vous voulez une paella.",
+        "ca": "Amb els peus a la sorra a la platja de Creixell, ambient familiar. Paella, tapes i peix. Reserva si vols paella.",
+        "de": "Füße im Sand am Strand von Creixell, familiäre Stimmung. Paella, Tapas und Fisch. Für Paella besser reservieren.",
+        "nl": "Met je voeten in het zand op het strand van Creixell, gezellig voor gezinnen. Paella, tapas en vis. Reserveer als je paella wilt."
+      },
+      "hours": {
+        "en": "Beach season only. Opening hours are not published: check Google Maps or call before going.",
+        "es": "Solo en temporada de playa. No publican horario: mira Google Maps o llama antes de ir.",
+        "fr": "Seulement en saison. Les horaires ne sont pas publiés : vérifiez sur Google Maps ou appelez avant d'y aller.",
+        "ca": "Només en temporada de platja. No publiquen horari: mira Google Maps o truca abans d'anar-hi.",
+        "de": "Nur in der Strandsaison. Öffnungszeiten sind nicht veröffentlicht: vorher auf Google Maps schauen oder anrufen.",
+        "nl": "Alleen in het strandseizoen. Openingstijden worden niet gepubliceerd: kijk op Google Maps of bel voor je gaat."
+      },
+      "tags": [],
+      "flags": [],
+      "phone": "675 18 14 21",
+      "icon": "beachbar",
+      "rating": {
+        "stars": 4.2,
+        "count": 526
+      },
+      "gmaps": "https://www.google.com/maps/place/Quijote+Beach/data=!4m2!3m1!1s0x12a3f39f4be6ca0b:0x669f4d66326cc1ef",
+      "price": "20-30",
+      "priceNote": {
+        "en": "Paella or fish with a drink: about €20-30 per person. An estimate, prices are not published.",
+        "es": "Paella o pescado con bebida: unos 20-30 € por persona. Es una estimación, no publican precios.",
+        "fr": "Paella ou poisson avec une boisson : environ 20-30 € par personne. Estimation, les prix ne sont pas publiés.",
+        "ca": "Paella o peix amb beguda: uns 20-30 € per persona. És una estimació, no publiquen preus.",
+        "de": "Paella oder Fisch mit Getränk: etwa 20-30 € pro Person. Eine Schätzung, Preise sind nicht veröffentlicht.",
+        "nl": "Paella of vis met een drankje: ongeveer € 20-30 per persoon. Een schatting, prijzen worden niet gepubliceerd."
+      }
+    },
+    {
+      "id": "brisa",
+      "name": {
+        "en": "La Brisa Beach Club",
+        "es": "La Brisa Beach Club",
+        "fr": "La Brisa Beach Club",
+        "ca": "La Brisa Beach Club",
+        "de": "La Brisa Beach Club",
+        "nl": "La Brisa Beach Club"
+      },
+      "type": {
+        "en": "Beach bar, Coma-ruga",
+        "es": "Chiringuito, Coma-ruga",
+        "fr": "Paillote, Coma-ruga",
+        "ca": "Xiringuito, Coma-ruga",
+        "de": "Strandbar, Coma-ruga",
+        "nl": "Strandbar, Coma-ruga"
+      },
+      "town": "Coma-ruga",
+      "place": "Passeig Marítim",
+      "lat": 41.180062,
+      "lng": 1.521563,
+      "km_from_house": 14,
+      "description": {
+        "en": "Tables on the sand, pizzas, wings and cold drinks, with a playground and toys for the kids. Dogs welcome. A nice spot for the end of a beach day.",
+        "es": "Mesas en la arena, pizzas, alitas y bebidas frías, con parque infantil y juguetes para los niños. Se admiten perros. Ideal para terminar un día de playa.",
+        "fr": "Tables sur le sable, pizzas, ailes de poulet et boissons fraîches, avec aire de jeux et jouets pour les enfants. Chiens acceptés. Parfait pour finir une journée de plage.",
+        "ca": "Taules a la sorra, pizzes, aletes i begudes fresques, amb parc infantil i joguines per als nens. S'admeten gossos. Ideal per acabar un dia de platja.",
+        "de": "Tische im Sand, Pizza, Chicken Wings und kalte Getränke, mit Spielplatz und Spielzeug für die Kinder. Hunde willkommen. Schön zum Ausklang eines Strandtags.",
+        "nl": "Tafels in het zand, pizza's, kippenvleugels en koude drankjes, met een speeltuin en speelgoed voor de kinderen. Honden welkom. Fijn om een stranddag af te sluiten."
+      },
+      "hours": {
+        "en": "Beach bars in El Vendrell may open from Easter to the end of October. Out of summer, check Google Maps before going.",
+        "es": "Los chiringuitos de El Vendrell pueden abrir de Semana Santa a finales de octubre. Fuera del verano, mira Google Maps antes de ir.",
+        "fr": "Les paillotes d'El Vendrell peuvent ouvrir de Pâques à fin octobre. Hors été, vérifiez sur Google Maps avant d'y aller.",
+        "ca": "Els xiringuitos del Vendrell poden obrir de Setmana Santa a finals d'octubre. Fora de l'estiu, mira Google Maps abans d'anar-hi.",
+        "de": "Strandbars in El Vendrell dürfen von Ostern bis Ende Oktober öffnen. Außerhalb des Sommers vorher auf Google Maps schauen.",
+        "nl": "Strandbars in El Vendrell mogen van Pasen tot eind oktober open. Buiten de zomer eerst even op Google Maps kijken."
+      },
+      "tags": [
+        "dogs"
+      ],
+      "flags": [],
+      "icon": "beachbar",
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "11:00",
+          "close": "01:00",
+          "from": "04-01",
+          "to": "10-31"
+        }
+      ],
+      "rating": {
+        "stars": 3.8,
+        "count": 86
+      },
+      "gmaps": "https://www.google.com/maps/place/La+Brisa+Beach+Club/data=!4m2!3m1!1s0x12a38dbfd9df20b5:0x290afc9eaae10c6c",
+      "price": "15-25",
+      "priceNote": {
+        "en": "Pizza or wings with a drink: about €15-25 per person. An estimate, prices are not published.",
+        "es": "Pizza o alitas con bebida: unos 15-25 € por persona. Es una estimación, no publican precios.",
+        "fr": "Pizza ou ailes de poulet avec une boisson : environ 15-25 € par personne. Estimation, les prix ne sont pas publiés.",
+        "ca": "Pizza o aletes amb beguda: uns 15-25 € per persona. És una estimació, no publiquen preus.",
+        "de": "Pizza oder Chicken Wings mit Getränk: etwa 15-25 € pro Person. Eine Schätzung, Preise sind nicht veröffentlicht.",
+        "nl": "Pizza of kippenvleugels met een drankje: ongeveer € 15-25 per persoon. Een schatting, prijzen worden niet gepubliceerd."
+      }
+    }
+  ]
+}

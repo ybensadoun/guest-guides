@@ -1,0 +1,9 @@
+/* Casa Llimona (demo): Mediterranean palette and a rounder font, same engine and layout. */
+:root{
+  --paper:#F6F3EA;--ink:#1C2B2A;--muted:#45524F;--faint:#66706C;--line:#D9D4C4;
+  --red:#C2462B;--blue:#0F6E6A;--yellow:#F2C84B;--orange:#E07B39;--green:#3F7D3A;
+  --accent:var(--blue);--accent-soft:#D5E8E6;
+  --display:"Outfit",system-ui,sans-serif;
+  --font:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:26px;--r-s:14px;
+}

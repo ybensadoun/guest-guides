@@ -1,0 +1,35 @@
+{
+  "name": "guest-guides",
+  "version": "1.0.0",
+  "description": "Guest guides: one engine, many sites. Ca La Kimberly is site #1.",
+  "scripts": {
+    "dev": "node engine/scripts/run.js dev",
+    "build": "node engine/scripts/run.js build",
+    "check": "node engine/scripts/run.js check",
+    "preview": "node engine/scripts/run.js preview",
+    "preview-file": "node engine/scripts/run.js preview-file",
+    "sites": "node engine/scripts/run.js sites"
+  },
+  "devDependencies": {
+    "vite": "^8.3.2",
+    "vite-plugin-pwa": "^1.3.0",
+    "vite-plugin-singlefile": "^2.3.3"
+  },
+  "dependencies": {
+    "@fontsource/bricolage-grotesque": "^5.3.0",
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/dm-sans": "^5.3.0",
+    "@fontsource/dm-serif-display": "^5.3.0",
+    "@fontsource/fraunces": "^5.3.0",
+    "@fontsource/geist": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jost": "^5.3.0",
+    "@fontsource/nunito": "^5.3.0",
+    "@fontsource/outfit": "^5.3.0",
+    "@fontsource/space-grotesk": "^5.3.0",
+    "maplibre-gl": "^6.11.2"
+  },
+  "private": true,
+  "type": "module"
+}

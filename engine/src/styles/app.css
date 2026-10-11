@@ -1,0 +1,864 @@
+/* Ca La Kimberly · "Bauhaus summer" look
+   Principles: big type for 30+ guests reading in the sun, flat primary colours (no pastels),
+   one geometric shape per tile instead of decoration everywhere, icons only where they help.
+   Every text/background pair below was checked for WCAG AA (4.5:1). Red text is only used large. */
+
+:root{
+  color-scheme:light;box-sizing:border-box;
+  /* Palette: Bauhaus primaries + black, plus orange and green so tiles never repeat */
+  --paper:#F3EEE3;--white:#FFFFFF;--ink:#121212;--muted:#4A4A4A;--faint:#6E6A63;--line:#DED6C6;
+  --red:#D52B1E;--blue:#1D4FA0;--yellow:#F5C400;--orange:#EC6A1C;--green:#0E7C46;
+  /* Old names still used by the code and the map */
+  --k-blue:var(--blue);--k-red:var(--red);--k-yellow:var(--yellow);--k-black:var(--ink);--k-orange:var(--orange);--k-green:var(--green);--k-sky:var(--blue);--k-pink:var(--orange);--k-purple:var(--blue);--k-amber:var(--yellow);
+  --bg:var(--paper);--surface:var(--white);
+  --accent:var(--red);--accent-soft:#F3D9D6;--on-accent:#fff;
+  --brand:var(--ink);--brand-soft:var(--paper);--on-brand:#fff;
+  --ok:var(--green);--ok-s:var(--green);
+  --sea:#D7E0EA;--me:#1A73E8;
+  /* Market types */
+  --c-covered:var(--blue);--c-street:var(--red);--c-flea:var(--orange);--c-antiques:var(--ink);--c-events:var(--green);
+  --c-covered-s:var(--paper);--c-street-s:var(--paper);--c-flea-s:var(--paper);--c-antiques-s:var(--paper);--c-events-s:var(--paper);
+  /* Other map layers */
+  --c-restaurants:var(--orange);--c-todo:var(--green);--c-places:var(--green);--c-deixalleria:#5B6B2E;
+  /* Bins: the real colours of the bins, kept recognisable */
+  --w-organic:#7A4A1E;--w-packaging:#F5C400;--w-paper:#1D4FA0;--w-rest:#6B6B6B;--w-sanitary:#D52B1E;--w-glass:#0E7C46;--w-kitchen:#6B6B6B;--c-glass:#0E7C46;
+  --r:20px;--r-s:12px;
+  --display:"Jost",system-ui,sans-serif;--font:"Jost",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.45;padding-bottom:calc(92px + env(safe-area-inset-bottom,0px));-webkit-font-smoothing:antialiased}
+button{font-family:inherit;font-size:inherit}
+a{color:inherit}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;display:flex;flex-direction:column;gap:18px}
+.wrap .wrap{padding-inline:0}
+[hidden]{display:none!important}
+
+/* ---------- Top bar: neutral, one line ---------- */
+.hero{background:var(--white);border-bottom:2px solid var(--ink);padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;margin-bottom:18px;position:sticky;top:0;z-index:30}
+.hero-in{max-width:720px;margin:0 auto}
+.hero .top{display:flex;align-items:center;gap:12px}
+.hero .shape,.welcome,.hero-art{display:none}
+.mark{width:42px;height:42px;border-radius:10px;overflow:hidden;flex:none}
+.mark img{width:100%;height:100%;display:block}
+.brand{display:flex;flex-direction:column;min-width:0}
+.hero h1{font-family:var(--display);font-weight:700;font-size:21px;line-height:1.1;margin:0;letter-spacing:-.01em}
+.hero .sub{font-size:14px;color:var(--muted);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.langsel{margin-left:auto;position:relative;display:inline-flex;align-items:center;gap:5px;flex:none;border:2px solid var(--ink);border-radius:999px;padding:6px 28px 6px 10px;font-size:15px;font-weight:600}
+.langsel svg{width:17px;height:17px}
+.langsel::after{content:"";position:absolute;right:11px;top:50%;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.langsel select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px;border:0;margin:0}
+.langsel:focus-within{outline:3px solid var(--blue);outline-offset:2px}
+.langsel option{color:#121212}
+.themebtn{display:none}
+
+/* ---------- Bottom bar ---------- */
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(4,1fr);background:var(--white);border-top:2px solid var(--ink);padding:6px 4px calc(8px + env(safe-area-inset-bottom,0px))}
+.bnav a{display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;color:var(--muted);font-size:13px;font-weight:500;-webkit-tap-highlight-color:transparent}
+.bnav .bi{display:grid;place-items:center;width:44px;height:36px;border-radius:999px}
+.bnav .ci{width:25px;height:25px;stroke-width:2.2}
+.bnav a[aria-current="page"]{color:var(--ink);font-weight:700}
+.bnav a[aria-current="page"] .bi{background:var(--yellow)}
+@media (min-width:760px){.bnav{left:50%;right:auto;transform:translateX(-50%);width:560px;bottom:14px;border:2px solid var(--ink);border-radius:22px;padding-bottom:8px}}
+
+/* ---------- Type ---------- */
+h2.title{font-family:var(--display);font-weight:700;font-size:36px;line-height:1.05;letter-spacing:-.015em;margin:0}
+.lead{color:var(--muted);margin:6px 0 0;font-size:17px;max-width:60ch}
+.section-h,.sh{font-family:var(--display);font-weight:700;font-size:25px;line-height:1.15;letter-spacing:-.01em;margin:0}
+.sh{margin-top:6px}
+.sh-dot{display:none}
+.sub2{font-size:15px;color:var(--muted)}
+.note{font-size:17px;line-height:1.5}
+.foot{font-size:15px;color:var(--muted);margin:0}
+.empty{color:var(--muted);padding:6px 0;font-size:17px}
+
+/* ---------- Home tiles ---------- */
+.ggrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gt{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;gap:2px;min-height:150px;padding:16px;border-radius:var(--r);background:var(--tc);color:var(--ti);text-decoration:none;-webkit-tap-highlight-color:transparent}
+a.gt:active{transform:scale(.98)}
+.gt .ib{display:block;width:34px;height:34px;margin-bottom:auto}
+.gt .ib .ci{width:34px;height:34px;stroke-width:2.2}
+.gt-tx{display:flex;flex-direction:column;gap:2px;margin-top:14px;position:relative;z-index:1}
+.gt-t{font-family:var(--display);font-weight:700;font-size:23px;line-height:1.08;letter-spacing:-.01em}
+.gt-m{font-size:16px;font-weight:600;line-height:1.25}
+.gt .go{position:absolute;right:14px;bottom:14px;width:36px;height:36px;border-radius:50%;background:var(--ti);color:var(--tc);display:grid;place-items:center;z-index:1}
+.gt .go svg{width:20px;height:20px}
+.soon-tag{position:absolute;top:14px;right:14px;z-index:1;font-size:14px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--ink);color:#fff}
+.gt.soon .gt-tx{padding-right:0}
+.gt::before,.gt::after{content:"";position:absolute;z-index:-1;pointer-events:none}
+.gt.wide{grid-column:1/-1;min-height:0}
+
+/* One flat Bauhaus shape per tile, in a contrasting palette colour */
+.gt[data-k="garbage"]::before{width:150px;height:150px;border-radius:50%;background:var(--yellow);right:-46px;bottom:-70px}
+.gt[data-k="message"]::before{width:60px;height:30px;background:var(--ink);border-radius:60px 60px 0 0;right:22px;bottom:auto;top:64px;transform:rotate(180deg);transform-origin:center}
+
+.gt[data-k="emergency"]::before{width:0;height:0;border-left:44px solid transparent;border-right:44px solid transparent;border-bottom:70px solid var(--ink);right:-18px;bottom:-10px}
+.gt[data-k="markets"]::before{width:190px;height:190px;border-radius:50%;background:var(--red);right:-80px;top:-60px}
+.gt[data-k="markets"]::after{width:46px;height:46px;background:var(--yellow);right:26px;top:150px;transform:rotate(12deg)}
+.gt[data-k="restaurants"]::before{width:110px;height:110px;border-radius:50%;background:var(--yellow);right:-34px;top:-40px}
+.gt[data-k="todo"]::before{width:0;height:0;border-left:60px solid transparent;border-right:60px solid transparent;border-bottom:100px solid var(--yellow);right:-22px;top:-20px;transform:rotate(180deg)}
+.gt[data-k="map"]{border:2px solid var(--ink)}
+.gt[data-k="map"]::before{width:120px;height:120px;border-radius:50%;background:var(--blue);right:-30px;top:-46px}
+.gt[data-k="map"]::after{width:70px;height:12px;background:var(--red);right:84px;bottom:14px}
+
+/* Garbage tile: tonight's bins are the message */
+.gt[data-k="garbage"]{min-height:0}
+.gt[data-k="garbage"] .ib{display:none}
+.gt[data-k="garbage"] .gt-tx{margin-top:0}
+.gt-bins{display:flex;gap:10px;align-items:flex-end;margin-top:12px;align-self:flex-start;background:var(--white);border-radius:14px;padding:10px 14px 8px;position:relative;z-index:1}
+.gt-bins .gbin{width:30px;height:38px}
+
+/* Around the house: Markets tall, the two others stacked next to it */
+.ggrid.mosaic > .gt:first-child{grid-row:span 2}
+.ggrid.mosaic > .gt:first-child .gt-t{font-size:30px}
+.ggrid.mosaic > .gt:first-child .ib,.ggrid.mosaic > .gt:first-child .ib .ci{width:42px;height:42px}
+.gt[data-k="map"]{flex-direction:row;align-items:center;gap:14px;min-height:0;padding:18px}
+.gt[data-k="map"] .ib{margin:0}
+.gt[data-k="map"] .gt-tx{margin:0}
+
+/* ---------- Home: market widgets ---------- */
+.hero-today{background:var(--white);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden}
+.hero-today .hd{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hero-today .hd b{font-family:var(--display);font-weight:700;font-size:25px;line-height:1.1}
+.todaycard .band{background:var(--ink);color:#fff;padding:18px 18px 16px;position:relative;overflow:hidden}
+.todaycard .band::after{content:"";position:absolute;width:90px;height:90px;border-radius:50%;background:var(--red);right:-24px;bottom:-46px}
+.todaycard .hd-sub{margin:2px 0 0;font-size:16px;color:#E8E2D6;position:relative;z-index:1}
+.see{font-size:16px;font-weight:600;text-decoration:none;white-space:nowrap}
+.todaycard .see{background:var(--yellow);color:var(--ink);padding:6px 14px;border-radius:999px;position:relative;z-index:1}
+.mini{display:flex;flex-direction:column;padding:4px 18px 8px}
+.mini > a{all:unset;cursor:pointer;display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-top:1.5px solid var(--line)}
+.mini > a:first-child{border-top:0}
+.mini > a:focus-visible{outline:3px solid var(--blue)}
+.mini .nm{font-size:18px;font-weight:600;line-height:1.25}
+.mini .nm small{display:block;font-size:15px;font-weight:400;color:var(--muted);margin-top:2px}
+.todaycard .empty{padding:16px 18px;font-size:18px;font-weight:500}
+.nextcard summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px;background:var(--white)}
+.nextcard summary::-webkit-details-marker{display:none}
+.nextcard summary b{font-family:var(--display);font-weight:700;font-size:23px;line-height:1.1;display:flex;flex-direction:column}
+.nextcard summary b small{font-family:var(--display);font-size:16px;font-weight:500;color:var(--muted)}
+.nextcard{border:2px solid var(--ink)}
+.nextcard .sum-r{display:inline-flex;align-items:center;gap:10px;font-size:16px;font-weight:600;white-space:nowrap}
+.nextcard .count{background:var(--ink);color:#fff;border-radius:999px;padding:3px 11px}
+.nextcard[open] summary{border-bottom:1.5px solid var(--line)}
+.nextcard .see{margin:2px 18px 16px;align-self:flex-start;color:var(--blue);text-decoration:underline;text-underline-offset:3px}
+.chev{width:10px;height:10px;border-right:2.5px solid currentColor;border-bottom:2.5px solid currentColor;transform:rotate(45deg) translateY(-3px);transition:transform .15s;flex:none}
+.nextcard[open] .chev,.mrow[open] .chev{transform:rotate(-135deg) translateY(-1px)}
+
+/* Category badge (market type): square, flat colour, white pictogram */
+.dot{width:40px;height:40px;border-radius:10px;background:var(--cc);color:#fff;display:grid;place-items:center;flex:none}
+.dot .ci{width:22px;height:22px;stroke-width:2.2}
+
+/* Status pills: solid, readable in sunlight */
+.st,.status{font-size:15px;font-weight:600;padding:4px 11px;border-radius:999px;white-space:nowrap;line-height:1.2}
+.st.open,.status.open{background:var(--green);color:#fff}
+.st.later,.status.later{background:var(--blue);color:#fff}
+.st.done,.status.done{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1.5px var(--line)}
+.st.plain{padding:0;background:none;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- Controls ---------- */
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pills{display:inline-flex;border:2px solid var(--ink);border-radius:999px;padding:3px;gap:2px;background:var(--white)}
+.pills button{border:0;background:transparent;color:var(--ink);font-size:16px;font-weight:600;padding:7px 16px;border-radius:999px;cursor:pointer}
+.pills button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.btn{display:inline-flex;align-items:center;gap:8px;font-size:16px;font-weight:600;padding:9px 16px;border-radius:999px;border:2px solid var(--ink);background:var(--white);color:var(--ink);cursor:pointer;text-decoration:none;line-height:1.1}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn svg{width:18px;height:18px}
+.btn.filt[aria-expanded="true"]{background:var(--ink);color:#fff}
+.nbadge{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:11px;background:var(--red);color:#fff;font-size:13px;padding:0 6px}
+.mk-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.filters{display:flex;flex-direction:column;gap:12px;background:var(--white);border-radius:var(--r);padding:16px}
+.chip{border:2px solid var(--ink);background:var(--white);color:var(--ink);border-radius:999px;padding:7px 14px 7px 10px;font-size:16px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.chip .ci{width:20px;height:20px;color:var(--cc);flex:none}
+.chip[aria-pressed="true"]{background:var(--ink);color:#fff}
+.chip[aria-pressed="true"] .ci{color:#fff}
+.chip[aria-pressed="false"]{border-color:var(--line);color:var(--muted)}
+.chip.plain{padding-left:14px}
+.sortnote{font-size:15px;color:var(--muted)}
+
+/* Day strip */
+.daybar{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}
+.daybar::-webkit-scrollbar{display:none}
+.dchip{flex:none;text-align:left;border:2px solid var(--line);background:var(--white);color:var(--ink);border-radius:14px;padding:8px 14px;cursor:pointer;display:flex;flex-direction:column;font-size:17px;font-weight:600;min-width:74px;line-height:1.2}
+.dchip small{font-size:14px;color:var(--muted);font-weight:500}
+.dchip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.dchip[aria-pressed="true"] small{color:#E8E2D6}
+
+/* ---------- Markets list (collapsible rows) ---------- */
+.mlist{display:flex;flex-direction:column;background:var(--white);border-radius:var(--r);overflow:hidden}
+.mrow{border-top:1.5px solid var(--line)}
+.mrow:first-child{border-top:0}
+.mrow summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:40px 1fr auto;column-gap:12px;row-gap:0;align-items:center;padding:14px 16px;-webkit-tap-highlight-color:transparent}
+.mrow summary::-webkit-details-marker{display:none}
+.mrow .dot{grid-row:1/span 2;align-self:center}
+.mrow .nm{font-size:18px;font-weight:600;line-height:1.25;min-width:0}
+.mrow .nm small{display:block;font-size:15px;font-weight:400;color:var(--muted);margin-top:2px}
+.nm .nw{white-space:nowrap}
+.warn{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--yellow);color:var(--ink);font-style:normal;font-size:13px;font-weight:700;margin-left:6px;vertical-align:2px}
+.mrow .rt{display:flex;align-items:center;gap:10px}
+.mrow[open] summary{background:var(--paper)}
+.tstrip{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tstrip i{font-style:normal;font-size:14px;font-weight:500;line-height:1;color:var(--ink);background:var(--paper);padding:6px 9px;border-radius:8px;white-space:nowrap}
+.mrow[open] .tstrip i{background:var(--white)}
+.mbody{padding:4px 16px 18px 68px;display:flex;flex-direction:column;gap:10px;background:var(--paper)}
+.mbody .where{font-size:16px;color:var(--muted)}
+.when{font-size:17px;display:flex;flex-direction:column;gap:2px}
+.when .t{font-variant-numeric:tabular-nums;font-weight:600}
+.when .next{color:var(--blue);font-weight:600}
+.size{font-size:15px;font-weight:600;padding:3px 10px;border-radius:999px;border:1.5px solid var(--ink)}
+.flag{font-size:15px;font-weight:600;color:#8A4B00;display:flex;gap:8px;align-items:baseline}
+.flag::before{content:"!";display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--yellow);color:var(--ink);font-size:13px;font-weight:700;flex:none}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.emptybox{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:20px;background:var(--white);border-radius:var(--r);border:2px solid var(--ink)}
+.emptybox b{font-size:19px;font-weight:600}
+
+/* ---------- Cards (map sheet, garbage, sections) ---------- */
+.list{display:grid;grid-template-columns:1fr;gap:12px}
+.card{background:var(--white);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;border-top:6px solid var(--cc)}
+.card .hd{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.card h3{margin:0;font-family:var(--display);font-size:21px;font-weight:700;line-height:1.2}
+.card .where{font-size:16px;color:var(--muted)}
+.card .reg{font-size:15px;color:var(--faint)}
+.type{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:600}
+.type .ci{width:18px;height:18px;color:var(--cc)}
+.kms{flex:none;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.km{text-align:right;line-height:1.1}
+.km b{display:block;font-family:var(--display);font-size:26px;font-weight:700;white-space:nowrap}
+.km b small{font-size:15px;font-weight:500;color:var(--muted)}
+.km span{display:block;font-size:13px;color:var(--muted);white-space:nowrap}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:14px;background:var(--paper);border-radius:8px;padding:5px 9px}
+
+/* ---------- Garbage page ---------- */
+.gbin{flex:none;width:26px;height:33px;background:var(--wc);-webkit-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2030%22%3E%3Crect%20x%3D%229%22%20y%3D%221.2%22%20width%3D%226%22%20height%3D%221.8%22%20rx%3D%22.6%22/%3E%3Crect%20x%3D%221.5%22%20y%3D%223.8%22%20width%3D%2221%22%20height%3D%223.6%22%20rx%3D%221%22/%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M3.3%208.9h17.4l-1.7%2019.6a1.6%201.6%200%200%201-1.6%201.4H6.6a1.6%201.6%200%200%201-1.6-1.4zM8.2%2012v13h1.7V12zm6%200v13h1.7V12z%22/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2030%22%3E%3Crect%20x%3D%229%22%20y%3D%221.2%22%20width%3D%226%22%20height%3D%221.8%22%20rx%3D%22.6%22/%3E%3Crect%20x%3D%221.5%22%20y%3D%223.8%22%20width%3D%2221%22%20height%3D%223.6%22%20rx%3D%221%22/%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M3.3%208.9h17.4l-1.7%2019.6a1.6%201.6%200%200%201-1.6%201.4H6.6a1.6%201.6%200%200%201-1.6-1.4zM8.2%2012v13h1.7V12zm6%200v13h1.7V12z%22/%3E%3C/svg%3E") center/contain no-repeat}
+.gbin.sm{width:14px;height:18px}
+.ghero{background:var(--blue);color:#fff;border-radius:var(--r);padding:20px 18px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;isolation:isolate}
+.ghero::before{content:"";position:absolute;z-index:-1;width:150px;height:150px;border-radius:50%;background:var(--yellow);right:-50px;top:-60px}
+.ghero-hd{display:flex;flex-direction:column;gap:2px}
+.ghero-hd b{font-family:var(--display);font-weight:700;font-size:30px;line-height:1.05}
+.ghero .sub2{color:#DCE5F3;font-size:16px}
+.gput{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.gput li{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:var(--white);color:var(--ink)}
+.gput li .gbin{width:30px;height:38px}
+.gput li b{display:block;font-family:var(--display);font-size:20px;font-weight:700;line-height:1.15}
+.gput li small{display:block;font-size:15px;color:var(--muted)}
+.gnote{margin:0;font-size:16px;color:#fff}
+.gsec{display:flex;flex-direction:column;gap:12px}
+.gsteps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:12px}
+.gsteps li{counter-increment:s;display:grid;grid-template-columns:36px 1fr;gap:12px;font-size:17px;line-height:1.45}
+.gsteps li::before{content:counter(s);width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700;font-size:17px}
+.gred{margin:0;display:flex;align-items:center;gap:10px;font-size:16px;color:var(--ink);font-weight:500}
+.gweek{background:var(--white);border-radius:var(--r);overflow:hidden}
+.grow{display:grid;grid-template-columns:minmax(120px,40%) 1fr;gap:12px;align-items:center;padding:12px 16px;border-top:1.5px solid var(--line)}
+.grow:first-child{border-top:0}
+.grow.next{background:var(--yellow)}
+.gwhen b{display:block;font-size:17px;font-weight:600}
+.gwhen small{display:block;font-size:14px;color:var(--muted)}
+.grow.next .gwhen small{color:var(--ink)}
+.gtag{display:inline-block;margin-top:4px;font-size:13px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--ink);color:#fff}
+.gpills{display:flex;flex-wrap:wrap;gap:6px}
+.gpill{display:inline-flex;align-items:center;gap:7px;font-size:15px;font-weight:600;padding:4px 10px 4px 8px;border-radius:999px;background:var(--white);border:1.5px solid var(--ink)}
+.gdot{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
+
+/* ---------- Map page (chrome lives in map.css) ---------- */
+.sheet{background:var(--white);border-radius:var(--r);padding:16px}
+.sheet h3{font-family:var(--display);font-size:22px}
+.mapbox{border-radius:var(--r)}
+
+/* Tiles stay in 2 columns at every width so each row is filled edge to edge. */
+
+/* Map page: the map is the content. Filters on one scrolling line, no instructions paragraph. */
+#mapview .lead{display:none}
+#mapChips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding:2px 16px}
+#mapChips::-webkit-scrollbar{display:none}
+#mapChips .chip{flex:none;font-size:15px;padding:6px 12px 6px 9px}
+#mapview .mapbox{height:calc(100vh - 290px);min-height:380px}
+
+/* Garbage week: day on the left, bins on the right */
+.grow{grid-template-columns:1fr auto}
+.gpills{flex-direction:column;align-items:flex-end}
+.grow .sub2{font-size:15px}
+
+/* Home headline: today's date, poster style (from the "Kimberly poster" proposal) */
+.p-date{display:grid;grid-template-columns:auto 1fr;align-items:end;gap:14px;padding:2px 2px 0;position:relative;isolation:isolate;overflow:visible}
+.p-day{font-family:var(--display);font-weight:800;font-size:108px;line-height:.78;letter-spacing:-.05em;color:var(--red)}
+.p-dm{display:flex;flex-direction:column;padding-bottom:3px;text-transform:uppercase;line-height:1}
+.p-dm b{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:.01em}
+.p-dm span{font-family:var(--display);font-weight:500;font-size:20px;letter-spacing:.18em;margin-top:6px}
+.p-sun{position:absolute;z-index:-1;width:84px;height:84px;border-radius:50%;background:var(--yellow);right:-34px;top:-34px}
+.p-date + .sh{margin-top:10px}
+.todaycard .band{padding-bottom:18px}
+
+/* Markets today: date under the title, like the Tomorrow card */
+.todaycard .hd b{display:flex;flex-direction:column}
+.todaycard .hd b small{font-family:var(--display);font-size:16px;font-weight:500;color:#E8E2D6;margin-top:2px}
+
+/* =====================================================================
+   Design review fixes: one frame colour, three radii, one rule per control.
+   Paper = the frame (top bar, page, tab bar). White = content cards only.
+   Radii: 20px containers, 12px small blocks, pill for buttons and statuses.
+   ===================================================================== */
+:root{--r-m:12px}
+.hero,.bnav{background:var(--paper)}
+.langsel{background:var(--white)}
+
+/* Radii */
+.dot,.dchip,.gput li,.gt-bins,.mark,.filters .chip{border-radius:var(--r-m)}
+.tag,.tstrip i{border-radius:8px}
+.dchip{border-radius:var(--r-m)}
+
+/* Cards: no coloured top edge (it curved into a crescent); the icon leads the title */
+.card{border-top:0}
+.card .hd{display:flex;align-items:flex-start;gap:12px}
+.card .hd .hdt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.card .hd .hdt .sub2{order:-1}
+.card .hd .dot{margin-top:1px}
+.card .hd .gbin{width:30px;height:38px;margin-top:2px}
+.list .card .hd .hdt{flex-direction:column}
+.gsec .card .hd .hdt{flex-direction:column-reverse}
+.gsec .card .hd .hdt .sub2{order:0}
+
+/* Statuses: one shape, filled. Finished = quiet fill, no border */
+.st.done,.status.done{background:var(--paper);box-shadow:none;color:var(--muted)}
+.when .next{color:var(--ink);font-weight:700}
+
+/* Home widgets: same card treatment, same "See all" button */
+.nextcard{border:0}
+.nextcard .see{background:var(--yellow);color:var(--ink);text-decoration:none;padding:6px 14px;border-radius:999px}
+
+/* "Coming soon" page */
+.soonbox{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;min-height:260px;padding:22px;border-radius:var(--r);background:var(--tc);color:var(--ti)}
+.soonbox .ib .ci{width:48px;height:48px;stroke-width:2.2}
+.soonbox b{font-family:var(--display);font-size:30px;font-weight:700;line-height:1.05}
+.soonbox::before{content:"";position:absolute;z-index:-1;width:220px;height:220px;border-radius:50%;background:var(--ink);right:-70px;top:-80px}
+.soonbox[data-k="message"]::before,.soonbox[data-k="todo"]::before,.soonbox[data-k="restaurants"]::before{background:var(--yellow)}
+.soonbox[data-k="message"]::before{background:var(--ink)}
+
+/* Map: same language as the rest (ink outlines, Jost, 12px radius) */
+#mapview .mapbox{border-block:2px solid var(--ink);border-inline:0;border-radius:0;background:#D7E0EA}
+.maplibregl-ctrl-group{border:2px solid var(--ink)!important;border-radius:var(--r-m)!important;box-shadow:none!important;overflow:hidden}
+.maplibregl-ctrl-group button+button{border-top:2px solid var(--ink)!important}
+.map-msg p,.locmsg{font-size:15px;color:var(--ink);background:var(--white);border:2px solid var(--ink);border-radius:var(--r-m);box-shadow:none}
+.mapbox .btn.float{box-shadow:none}
+.mk-label{font-family:var(--display);font-size:13px;font-weight:600;border-radius:6px;box-shadow:none;border:1.5px solid var(--ink);background:var(--white);padding:3px 7px}
+.mk-label.sm{font-size:12px;font-weight:500}
+.gp b{font-family:var(--display);font-size:14px}
+.house{border-radius:10px}
+.sheet{border:0}
+.sheet h3{font-family:var(--display);font-size:22px;font-weight:700}
+.sheet .card{box-shadow:none;border:0;padding:0}
+/* Map stylesheet loads after this one: win with the view id */
+#mapview .map-msg p{font-size:15px;color:var(--ink);background:var(--white);border:2px solid var(--ink);border-radius:var(--r-m);box-shadow:none}
+#mapview .maplibregl-ctrl-group button+button{border-top:2px solid var(--ink)!important}
+#mapview .sheet{border:0;border-radius:var(--r)}
+/* Garbage cards: title first, then the days */
+.gsec .card .hd .hdt{flex-direction:column!important}
+.gsec .card .hd .hdt .sub2{order:1}
+
+/* Home quick calls: tap to dial. White with an ink outline = an action, not a section */
+.qcalls{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px}
+.qcall{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px;border-radius:16px;background:#fff;border:2px solid #121212;color:#121212;text-decoration:none;-webkit-tap-highlight-color:transparent;min-width:0}
+.qcall:active{transform:scale(.97)}
+.qcall .qi{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;margin-bottom:8px;color:#fff;background:#D52B1E}
+.qcall[data-q="taxi"] .qi{background:#F5C400;color:#121212}
+.qcall[data-q="shop"] .qi{background:#0E7C46}
+.qcall .qi .ci{width:24px;height:24px}
+.qcall b{font-family:var(--display);font-weight:700;font-size:17px;line-height:1.1}
+.qcall small{font-size:14px;color:#4A4A4A;line-height:1.2}
+
+/* Emergency contacts page: grouped rows, the number is the button */
+.cgroup{display:flex;flex-direction:column;gap:10px}
+.clist{display:flex;flex-direction:column;background:#fff;border-radius:20px;overflow:hidden}
+.crow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:1.5px solid #DED6C6}
+.crow:first-child{border-top:0}
+.ctx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ctx b{font-size:18px;font-weight:600;line-height:1.2}
+.ctx span{font-size:15px;color:#4A4A4A;line-height:1.35}
+.cmap{display:inline-flex;align-items:center;gap:5px;font-size:15px;font-weight:600;color:#1D4FA0;text-decoration:none;margin-top:2px}
+.cmap svg{width:16px;height:16px}
+.ccall{flex:none;display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:999px;background:#0E7C46;color:#fff;font-weight:700;font-size:16px;text-decoration:none;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ccall svg{width:18px;height:18px}
+.cgroup[data-g="urgent"] .ccall{background:#D52B1E;font-size:20px;padding:10px 18px}
+.cgroup[data-g="urgent"] .crow:first-child .ccall{font-size:24px}
+.crow{flex-wrap:wrap;row-gap:10px}
+.ctx{flex:1 1 190px}
+
+/* Garbage tile: "Tonight" and the bins are one white card; each bin carries its name */
+.gt-tonight{position:relative;z-index:1;align-self:stretch;margin-top:12px;margin-right:52px;background:#fff;color:#121212;border-radius:12px;padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px}
+.gt-tl{font-family:var(--display);font-weight:700;font-size:17px;line-height:1}
+.gt-tonight .gt-bins{all:unset;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:flex-start}
+.gtb{display:flex;align-items:center;gap:8px}
+.gtb .gbin{width:24px;height:30px;flex:none}
+.gtn{font-size:16px;font-weight:600;line-height:1.15}
+.gt[data-k="garbage"] .gt-tx{margin-top:0}
+.gt-m:empty{display:none}
+.gt.wide.has-bins{gap:0}
+
+/* Emergency contacts: hours like the markets, links on one line */
+.chours{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:6px}
+.chours .when{font-size:16px}
+.chours .when span{color:#121212}
+.chours .st{font-size:14px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.chours .st.open{background:#0E7C46;color:#fff}
+.chours .st.later{background:#1D4FA0;color:#fff}
+.chours .st.done{background:#F3EEE3;color:#4A4A4A}
+.clinks{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:4px}
+.ctx > span:not(.clinks){color:#4A4A4A}
+.crow .ccall{align-self:flex-start;margin-top:2px}
+.crow{flex-direction:column;align-items:stretch}
+.crow .ccall{align-self:flex-start}
+.cgroup[data-g="urgent"] .crow:first-child .ccall,.cgroup[data-g="urgent"] .ccall{font-size:20px}
+.crow .ctx{flex:0 0 auto}
+
+/* Quick calls: the bar & shop next door is the wide one on top, pizza and taxi side by side */
+.qcalls{grid-template-columns:1fr 1fr}
+.qcall.wide{grid-column:1/-1;flex-direction:row;align-items:center;gap:14px}
+.qcall.wide .qi{margin-bottom:0;flex:none;width:48px;height:48px}
+.qcall.wide .qi .ci{width:28px;height:28px}
+.qcall.wide b{font-size:19px}
+.qt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.dl{display:block}
+.dk{white-space:nowrap}
+.dk{display:block}
+
+/* Place page (#p/<id>): map, buttons, description, hours */
+.pl-head{display:flex;gap:14px;align-items:center}
+.pl-head .qi{flex:none;display:grid;place-items:center;width:56px;height:56px;border-radius:14px;color:#fff;background:#D52B1E}
+.place[data-q="taxi"] .pl-head .qi{background:#F5C400;color:#121212}
+.place[data-q="shop"] .pl-head .qi{background:#0E7C46}
+.pl-head .qi .ci{width:30px;height:30px}
+.pl-head .lead{margin-top:4px}
+.pl-map{position:relative;display:block;height:200px;border-radius:20px;overflow:hidden;border:2px solid #121212;background:#D7E0EA;text-decoration:none}
+.pl-map #plmap{position:absolute;inset:0}
+.pl-map-cta{position:absolute;left:10px;bottom:10px;display:inline-flex;align-items:center;gap:6px;background:#fff;color:#121212;border:2px solid #121212;border-radius:999px;padding:5px 12px;font-weight:600;font-size:15px}
+.pl-map-cta svg{width:16px;height:16px}
+.pl-actions{display:flex;flex-wrap:wrap;gap:10px}
+.pl-actions .ccall{font-size:18px;padding:11px 18px}
+.pl-what{margin:0;font-size:17px;line-height:1.5}
+.pl-sec{display:flex;flex-direction:column;gap:10px}
+.pl-hours{display:flex;flex-direction:column;align-items:flex-start;gap:8px;background:#fff;border-radius:20px;padding:16px}
+.pl-hours p{margin:0;font-size:16px;line-height:1.45;color:#4A4A4A}
+.pl-hours .st{font-size:14px;font-weight:600;padding:3px 10px;border-radius:999px}
+.pl-hours .st.open{background:#0E7C46;color:#fff}
+.pl-hours .st.later{background:#1D4FA0;color:#fff}
+.pl-hours .st.done{background:#F3EEE3;color:#4A4A4A}
+.pl-alt{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:14px 16px;text-decoration:none;color:#121212}
+.pl-alt b{font-size:17px}
+.pl-alt span{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#0E7C46;white-space:nowrap}
+.pl-alt svg{width:18px;height:18px}
+.pl-map-cta{left:auto;right:10px;bottom:auto;top:10px}
+.qcall small{white-space:pre-line}
+
+.card .hnote{margin:0;font-size:15px;line-height:1.35;color:#4A4A4A}
+.secmap{height:220px}
+.secmap #secmap{position:absolute;inset:0}
+.mbody .hnote{margin:0;font-size:15px;line-height:1.35;color:#4A4A4A}
+/* Item colours (What to do) */
+:root{--tone-blue:var(--blue);--tone-blue-s:#DCE5F3;--tone-red:var(--red);--tone-red-s:#F8DEDB;--tone-orange:var(--orange);--tone-orange-s:#FBE3D3;--tone-purple:#121212;--tone-purple-s:#E6E2DA;--tone-green:var(--green);--tone-green-s:#D7EBDF;--tone-pink:var(--green);--tone-pink-s:#D7EBDF}
+/* Small live tiles: the round arrow sits top right (where "Soon" sits), clear of the title */
+.gt[data-k="emergency"] .go,.gt[data-k="restaurants"] .go,.gt[data-k="todo"] .go,.gt[data-k="message"] .go{top:14px;bottom:auto}
+/* Quick filters (What to do) */
+.gchips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}
+.gchips::-webkit-scrollbar{display:none}
+.gchip{--cc:var(--ink);flex:none;display:inline-flex;align-items:center;gap:8px;border:2px solid var(--ink);background:var(--white);color:var(--ink);border-radius:999px;padding:8px 15px;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.gchip .n{font-size:14px;font-weight:600;opacity:.7}
+.gchip[aria-pressed="true"]{background:var(--cc);border-color:var(--cc);color:#fff}
+.gchip[aria-pressed="true"] .n{opacity:.85}
+/* Taxi & train page */
+.pl-sub{margin:-6px 0 0;color:var(--muted);font-size:16px}
+.trains{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.train{background:var(--white);border:2px solid var(--ink);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.tr-hd{display:flex;gap:12px;align-items:center}
+.tr-hd b{display:block;font-family:var(--display);font-size:20px;line-height:1.1}
+.tr-n{flex:none;width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:700;font-size:18px}
+.tr-l{font-size:15px;color:var(--muted);font-weight:600}
+.tr-tag{margin:0;font-weight:700;font-size:16px;color:var(--blue)}
+.tr-what{margin:0;font-size:17px;line-height:1.45}
+#trmap{position:absolute;inset:0}
+:root{--tone-taxi:#F5C400}
+.transport .mrow[style*="tone-taxi"] .dot{color:#121212}
+.lbadges{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0 3px}
+.lbadge{font-style:normal;display:inline-block;padding:2px 7px;border-radius:6px;background:var(--lc);color:#fff;font-weight:700;font-size:14px;line-height:1.3}
+.lbadge.ink{color:#121212}
+.dests{border-collapse:collapse;width:100%;font-size:16px}
+.dests th{text-align:left;font-weight:600;padding:5px 8px 5px 0}
+.dests td{padding:5px 8px 5px 0;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.dests td:last-child{font-weight:400;color:var(--muted);white-space:normal}
+.dests tr+tr{border-top:1.5px solid var(--line)}
+:root{--tone-wine:#8E1B4A;--tone-wine-s:#F3DDE6}
+.dk.rating{color:#7A5200}
+/* Slim header that hides on scroll down; no bottom bar (Home is the menu) */
+body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+.bnav{display:none!important}
+.hero{padding-top:calc(env(safe-area-inset-top,0px) + 8px);padding-bottom:8px;margin-bottom:16px;transition:transform .25s ease}
+.hero.hide{transform:translateY(-110%)}
+.hero .sub{display:none}
+.hero .mark img{width:38px;height:38px}
+.hero h1{font-size:20px}
+.hero .back{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--white);border:2px solid var(--ink);color:var(--ink)}
+.hero .back svg{width:20px;height:20px}
+.hero .back[hidden]{display:none}
+#mapview .mapbox{height:calc(100vh - 200px)}
+/* Quick filters and sort switch fill the width, wrapping onto centred rows instead of scrolling off screen */
+.gchips{flex-wrap:wrap;overflow:visible;margin:0;padding:0;justify-content:flex-start}
+.gchip{flex:none}
+.pills{display:flex;width:100%}
+.pills button{flex:1 1 0;text-align:center}
+/* Header, 2026: no bar at rest. Floating round buttons; a frosted bar with the page title fades in on scroll. */
+.hero{background:transparent;border-bottom:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;margin-bottom:0;transition:background-color .2s,box-shadow .2s}
+.hero.hide{transform:none}
+.hero.scrolled{background:rgba(243,238,227,.82);-webkit-backdrop-filter:saturate(1.5) blur(18px);backdrop-filter:saturate(1.5) blur(18px);box-shadow:0 1px 0 rgba(18,18,18,.08)}
+.hero .top{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:10px}
+.hero .mark{display:none}
+.hero .brand{min-width:0;text-align:center}
+.hero h1{font-size:17px;font-weight:700;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero.scrolled h1{opacity:1;transform:none}
+.hero .back,.hero .back[hidden]{display:grid;width:44px;height:44px;border:0;background:var(--white);box-shadow:0 1px 3px rgba(18,18,18,.14),0 0 0 1px rgba(18,18,18,.06)}
+.hero .back[hidden]{visibility:hidden}
+.langsel{border:0;background:var(--white);box-shadow:0 1px 3px rgba(18,18,18,.14),0 0 0 1px rgba(18,18,18,.06);padding:11px 28px 11px 12px;margin-left:0}
+.brandline{display:flex;align-items:center;gap:14px;margin:-50px 0 4px;padding-right:120px;min-height:58px}
+.brandline img{width:58px;height:58px;border-radius:15px;flex:none}
+.brandline .title{font-size:30px;line-height:1.02}
+.brandline span{display:block;color:var(--muted);font-size:16px;margin-top:2px}
+.hero .back{grid-column:1;grid-row:1}
+.hero .brand{grid-column:2;grid-row:1}
+.hero .langsel{grid-column:3;grid-row:1;justify-self:end}
+.is-home .hero .back{display:none}
+.brandline{padding-right:96px}
+.brandline .title{font-size:26px;white-space:nowrap}
+.guide .mbody .note{margin:0 0 10px}
+.glist{margin:0;padding-left:20px;display:grid;gap:7px;font-size:15px;line-height:1.4}
+.glist li::marker{color:var(--cc)}
+.guide .mrow .dot svg{width:22px;height:22px}
+.guide .mrow[data-tone=yellow] .dot{color:var(--ink)}
+.guide .mbody .note{font-size:15px;line-height:1.45}
+.events .evm{font-size:15px;font-weight:700;margin:0;padding:14px 16px 6px;color:var(--muted);background:var(--white)}
+.events .evm:first-child{padding-top:12px}
+.events .mrow .dot svg{width:22px;height:22px}
+.gt[data-k="events"]::before{width:120px;height:60px;border-radius:120px 120px 0 0;background:var(--red);right:-20px;bottom:-4px}
+.gt[data-k="events"]{flex-direction:row;align-items:center;gap:14px;min-height:0;padding:18px 64px 18px 18px}
+.gt[data-k="events"] .ib{margin:0}
+.gt[data-k="events"] .gt-tx{margin:0}
+.gt[data-k="events"]::before{width:96px;height:48px;border-radius:96px 96px 0 0;background:var(--red);right:-6px;bottom:-2px;top:auto}
+/* Live status as plain coloured text (like Google Maps), not pills: green open, red closed + next opening. */
+.st,.status,.chours .st,.pl-hours .st{display:inline-flex;flex-direction:column;align-items:flex-end;text-align:right;background:none!important;box-shadow:none!important;padding:0!important;border-radius:0;font-size:15px;font-weight:600;line-height:1.25;white-space:nowrap}
+.st.open,.status.open,.chours .st.open,.pl-hours .st.open{color:var(--green)!important}
+.st.later,.status.later,.chours .st.later,.pl-hours .st.later{color:var(--blue)!important}
+.st.closed,.status.closed,.chours .st.closed,.pl-hours .st.closed{color:var(--red)!important}
+.st small{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+.st.plain{color:var(--muted)}
+.chours .st,.pl-hours .st,.status{align-items:flex-start;text-align:left}
+/* Header v3: no logo or site name. Round language button with just the code; greeting on Home. */
+.langsel{width:44px;height:44px;padding:0!important;justify-content:center;border-radius:50%}
+.langsel svg,.langsel::after{display:none}
+#langCode{font-size:14px;font-weight:700;letter-spacing:.03em}
+.greet{margin:-54px 0 2px;padding-right:56px}
+.gdate{height:44px;display:flex;align-items:center;margin:0;font-size:15px;font-weight:600;color:var(--muted)}
+.gh{font-family:var(--display);font-size:36px;font-weight:700;line-height:1.05;letter-spacing:-.01em;margin:6px 0 0}
+/* Garbage tile: no white box. Moon + "Tonight", then each bin as a soft chip on the blue. */
+.gt-tonight{background:none!important;color:#fff!important;padding:0!important;margin:10px 56px 0 0!important;gap:10px!important}
+.gt-tl{display:inline-flex;align-items:center;gap:7px;font-size:14px!important;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.92}
+.gt-tl svg{width:16px;height:16px;color:var(--yellow)}
+.gt-tonight .gt-bins{gap:8px!important}
+.gtb{background:rgba(255,255,255,.16);border-radius:999px;padding:5px 14px 5px 5px;gap:9px!important}
+.gbc{width:34px;height:34px;border-radius:50%;background:#fff;display:grid;place-items:center;flex:none}
+.gbc .gbin{width:18px!important;height:23px!important}
+.gtn{color:#fff;font-size:16px!important}
+/* What's on: today's markets, then upcoming events, in one card. */
+.whatson{background:var(--white);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden}
+.wo-h{display:flex;justify-content:space-between;align-items:baseline;padding:16px 18px 2px}
+.wo-h b{font-family:var(--display);font-size:20px;font-weight:700}
+.wo-h a{color:var(--blue);font-weight:600;font-size:15px;text-decoration:none}
+.wo-ev{border-top:1.5px solid var(--line);margin-top:6px;padding-top:16px}
+.whatson .empty{padding:10px 18px;font-size:16px;color:var(--muted)}
+.wo-next{display:flex;justify-content:space-between;margin:0 18px 6px;padding:12px 0 6px;border-top:1.5px solid var(--line);color:var(--ink);text-decoration:none;font-size:16px}
+.wo-next b{font-weight:600;color:var(--blue)}
+.dbadge{width:40px;height:44px;border-radius:10px;background:var(--ink);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.dbadge b{font-size:18px;font-weight:700}
+.dbadge small{font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-top:2px;opacity:.85}
+.wo-day{display:flex;align-items:baseline;gap:8px;padding:16px 18px 2px;border-top:1.5px solid var(--line)}
+.wo-day:first-child{border-top:0}
+.wo-day b{font-family:var(--display);font-size:20px;font-weight:700}
+.wo-day span{color:var(--muted);font-size:15px}
+.wo-more{color:var(--blue)!important;font-weight:600;font-size:15px;display:block!important;padding:10px 0!important}
+.wo-links{display:flex;gap:18px;padding:14px 18px 16px;border-top:1.5px solid var(--line)}
+.wo-links a{color:var(--blue);font-weight:600;font-size:15px;text-decoration:none}
+.go-r{transform:rotate(-45deg)!important}
+/* Header v4: no bar at all. The top row (language, back) scrolls away with the page;
+   on inner pages only the round back button stays, floating top-left. */
+.hero,.hero.scrolled{position:relative!important;background:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border:0!important}
+.hero h1,.hero .brand{visibility:hidden}
+body:not(.is-home) .hero .back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:max(16px,calc(50% - 344px));z-index:40}
+.dbadge.dbm{background:var(--c-antiques)}
+/* Header v5: on Home nothing but the language button, sitting on the first heading's row. */
+.is-home .hero{position:absolute!important;top:0;left:0;right:0;margin:0;pointer-events:none}
+.is-home .hero .langsel{pointer-events:auto}
+.is-home #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) + 10px)}
+.is-home #view > .wrap > .sh:first-child{margin-top:0;min-height:44px;display:flex;align-items:center;padding-right:56px}
+/* Expandable rows (events) inside the Home "What's on" card. */
+.mini > .mrow{border-top:1.5px solid var(--line);background:none;border-radius:0}
+.mini > .mrow:first-child{border-top:0}
+.mini > .mrow > summary{padding:12px 0}
+.mini > .mrow .mbody{padding:0 0 14px 52px}
+.dot.dbadge-wrap{background:none!important;width:auto;height:auto}
+.mini > .mrow[open]{background:none}
+.mini > .mrow[open],.mini > .mrow[open] > summary{background:none!important}
+.mini > .mrow .mbody{background:none}
+/* Next 2 days: a day's markets open in place. */
+.mini.nested{padding:0}
+.mini.nested > a{padding:10px 0}
+.mini.nested .nm{font-size:16px}
+.mini.nested .dot{width:34px;height:34px}
+.mini > .mrow:has(.nested) .mbody{padding-left:0}
+/* Home top (standard guest-guide pattern): the house photo edge to edge, the name as a small
+   Bauhaus label on it, then three key facts. The language button floats on the photo. */
+.is-home #view > .wrap{padding-top:0}
+.sthero{margin:0 -16px;display:flex;flex-direction:column}
+.sthero-ph{position:relative;height:clamp(200px,30vh,260px);background:var(--blue);overflow:hidden}
+.sthero-ph img{width:100%;height:100%;object-fit:cover;object-position:50% 58%;display:block}
+.sthero-n{position:absolute;left:16px;bottom:0;background:var(--red);color:#fff;font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.09em;text-transform:uppercase;padding:9px 14px 8px;border-radius:10px 10px 0 0}
+.keyfacts{display:grid;grid-template-columns:repeat(2,1fr);background:var(--white);border-bottom:1.5px solid var(--line)}
+.keyfacts a{display:flex;flex-direction:column;gap:2px;padding:12px 16px;color:var(--ink);text-decoration:none;border-left:1.5px solid var(--line)}
+.keyfacts a:first-child{border-left:0}
+.keyfacts small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.keyfacts b{font-size:15px;font-weight:600;line-height:1.2}
+.is-home .hero .langsel{margin-top:2px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.is-home #view > .wrap > .sh:first-child{padding-right:0}
+@media (min-width:752px){.sthero{margin:0}.sthero-ph{border-radius:var(--r) var(--r) 0 0;margin-top:12px}.keyfacts{border-radius:0 0 var(--r) var(--r)}}
+/* Language button always visible, top right, on every page. */
+.langsel{position:fixed!important;top:calc(env(safe-area-inset-top,0px) + 10px);right:max(16px,calc(50% - 344px));z-index:41;margin:0!important;box-shadow:0 2px 8px rgba(18,18,18,.22)!important}
+/* House guide: listing photos inside each row, and a link to all photos on Airbnb. */
+.gphotos{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin:2px 0;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.gphotos img{flex:none;width:150px;height:112px;object-fit:cover;border-radius:12px;scroll-snap-align:start;background:var(--line)}
+.allphotos{display:grid;grid-template-columns:72px 1fr auto;gap:14px;align-items:center;background:var(--white);border-radius:var(--r);padding:10px 16px 10px 10px;color:var(--ink);text-decoration:none}
+.allphotos img{width:72px;height:56px;object-fit:cover;border-radius:12px}
+.allphotos b{display:block;font-size:17px}
+.allphotos small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+/* Home photo label: white, joined to the strip below (no red, not a warning). */
+.sthero-n{background:var(--white)!important;color:var(--ink)!important}
+.sthero-ph{display:block;color:inherit}
+.sthero-see{position:absolute;right:14px;bottom:12px;display:inline-flex;align-items:center;gap:6px;background:rgba(18,18,18,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:14px;font-weight:600;padding:7px 12px;border-radius:999px}
+.sthero-see svg{width:16px;height:16px}
+/* The house page */
+.hgal{position:relative;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.hgal::-webkit-scrollbar{display:none}
+.hgal a{flex:none;width:100%;scroll-snap-align:start}
+.hgal img{width:100%;height:clamp(220px,34vh,340px);object-fit:cover;display:block}
+.hcount{position:sticky;right:12px;margin-left:-74px;align-self:flex-end;margin-bottom:12px;flex:none;width:62px;text-align:center;background:rgba(18,18,18,.6);color:#fff;font-size:13px;font-weight:600;padding:4px 0;border-radius:999px}
+.hsum{margin:0;display:flex;flex-direction:column;gap:4px}
+.hsum b{font-size:17px}
+.hsum span{color:var(--muted);font-size:15px}
+.hhl{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hhl > div{background:var(--white);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.hhl .dot{width:38px;height:38px;margin-bottom:4px}
+.hhl b{font-size:16px;line-height:1.2}
+.hhl small{color:var(--muted);font-size:14px;line-height:1.3}
+.hsec{background:var(--white);border-radius:var(--r);padding:16px 18px}
+.hsec p{margin:10px 0 0;font-size:16px;line-height:1.5}
+.hsec .glist{margin-top:10px}
+@media (min-width:752px){.hgal{margin:0;border-radius:var(--r)}}
+.qst{display:block;font-size:13px;font-weight:700;margin-top:3px}
+.qst.open{color:var(--green)}.qst.later{color:var(--blue)}.qst.closed{color:var(--red)}
+.hbook{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1.5px solid var(--ink);border-radius:14px;color:inherit;text-decoration:none}
+.hbook span{font-size:14px;color:var(--muted);line-height:1.35}
+.hbook b{flex:none;background:var(--brand);color:var(--on-brand);font-size:14px;padding:9px 14px;border-radius:999px}
+.amen ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:0}
+.amen li{font-size:15px;line-height:1.35;padding:9px 0 9px 26px;border-bottom:1px solid var(--line);position:relative}
+.amen li::before{content:"";position:absolute;left:3px;top:13px;width:11px;height:6px;border-left:2.5px solid var(--blue);border-bottom:2.5px solid var(--blue);transform:rotate(-45deg)}
+.amen .amkey li:last-child{border-bottom:0}
+.amall summary{list-style:none;cursor:pointer;margin-top:12px;display:block;text-align:center;font-weight:700;font-size:15px;padding:11px 14px;border:1.5px solid var(--ink);border-radius:12px}
+.amall summary::-webkit-details-marker{display:none}
+.amall[open] summary{margin-bottom:6px}
+.amall h4{margin:18px 0 0;font-size:16px}
+.amall ul li:last-child{border-bottom:0}
+.sthero-ph{height:clamp(230px,36vh,310px)}
+.sthero-ph img{object-position:50% 60%}
+
+.hgal button{flex:none;width:100%;scroll-snap-align:start;padding:0;border:0;background:none;cursor:zoom-in}
+.zg button{flex:none;padding:0;border:0;background:none;scroll-snap-align:start;cursor:zoom-in}
+.gphotos img{width:auto;min-width:84px;max-width:200px}
+.tour h4{margin:16px 0 8px;font-size:16px}
+.tour .gphotos{margin:0 -18px;padding:0 18px 2px;scroll-padding:0 18px}
+.lbox{position:fixed;inset:0;z-index:1000;background:rgba(10,10,10,.94);display:flex;align-items:center}
+.lb-track{display:flex;width:100%;height:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.lb-track::-webkit-scrollbar{display:none}
+.lb-cell{flex:none;width:100%;height:100%;display:flex;align-items:center;justify-content:center;scroll-snap-align:start}
+.lb-cell img{max-width:100%;max-height:100%;object-fit:contain}
+.lb-x{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:28px;line-height:1;cursor:pointer}
+.lb-n{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);color:#fff;font-size:14px;font-weight:600;background:rgba(255,255,255,.14);padding:5px 12px;border-radius:999px}
+
+.keyfacts .kf-wifi{display:flex;flex-direction:column;gap:2px;padding:12px 16px;color:var(--ink);background:none;border:0;text-align:left;font:inherit;cursor:pointer}
+.keyfacts .kf-wifi b{color:var(--blue)}
+.wsheet{position:fixed;inset:0;z-index:1000;background:rgba(10,10,10,.55);display:flex;align-items:flex-end;justify-content:center}
+.ws-card{position:relative;width:100%;max-width:520px;max-height:92vh;overflow:auto;background:var(--white);color:var(--ink);border-radius:20px 20px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.ws-card h3{margin:0;font-size:24px}
+.ws-x{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:50%;border:0;background:var(--paper);color:var(--ink);font-size:26px;line-height:1;cursor:pointer}
+.ws-f{display:flex;flex-direction:column;gap:2px;background:var(--paper);border-radius:12px;padding:10px 14px}
+.ws-f small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ws-f b{font-size:17px;overflow-wrap:anywhere;user-select:all;-webkit-user-select:all}
+.ws-copy{justify-content:center}
+.ws-how{margin:0;font-size:15px;line-height:1.4;color:var(--muted)}
+.ws-qr{display:flex;align-items:center;gap:14px;border-top:1.5px solid var(--line);padding-top:14px}
+.ws-qr svg{flex:none;width:112px;height:112px;background:#fff}
+.ws-qr p{margin:0;font-size:14px;line-height:1.4;color:var(--muted)}
+.mbody .note{overflow-wrap:anywhere}
+
+.ws-f .ws-l{font-size:13px;color:var(--muted);margin:0 0 6px}
+.ws-f .ws-l:last-child{margin-bottom:0}
+.ws-qrs{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1.5px solid var(--line);padding-top:14px}
+.ws-qrs figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px}
+.ws-qrs svg{width:100%;max-width:150px;height:auto;background:#fff}
+.ws-qrs figcaption{font-size:13px;font-weight:600;text-align:center}
+.qst small{font-size:inherit;font-weight:500;color:var(--muted)}
+
+/* Home header v6: shorter photo, and a slim fixed bar once it has scrolled away. */
+.sthero-ph{height:clamp(170px,24vh,210px)}
+.sthero-ph img{object-position:50% 74%}
+.hbar{position:fixed;top:0;left:0;right:0;z-index:29;display:none;align-items:center;gap:10px;height:calc(env(safe-area-inset-top,0px) + 60px);padding:env(safe-area-inset-top,0px) 72px 0 max(16px,calc(50% - 344px));background:var(--white);border-bottom:1.5px solid var(--line)}
+.hbar.on{display:flex}
+.hbar img{width:38px;height:38px;border-radius:10px;object-fit:cover;object-position:50% 74%}
+.hbar span{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.09em;text-transform:uppercase}
+.hbar img{object-position:center}
+.sthero-n{display:inline-flex;align-items:center;gap:9px;padding-left:8px!important}
+.sthero-n img{width:28px;height:28px;border-radius:7px;display:block}
+
+/* Home header v7: the house as a card in the same language as the rest of Home
+   (white card, 2px ink outline, rounded corners, round arrow button), not an edge-to-edge banner. */
+.sthero{margin:0!important}
+.hcard{background:var(--white);border:2px solid var(--ink);border-radius:var(--r);overflow:hidden}
+.hc-ph{display:block;height:clamp(150px,21vh,190px);background:var(--blue)}
+.hc-ph img{width:100%;height:100%;object-fit:cover;object-position:50% 74%;display:block}
+.hc-id{display:flex;align-items:center;gap:12px;padding:12px 14px;color:var(--ink);text-decoration:none;border-bottom:1.5px solid var(--line)}
+.hc-id > img{width:44px;height:44px;border-radius:12px;flex:none}
+.hc-nm{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+.hc-nm b{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.06em;text-transform:uppercase;line-height:1.1}
+.hc-nm small{font-size:14px;color:var(--muted)}
+.hc-id .go{flex:none;width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--yellow);display:grid;place-items:center}
+.hc-id .go svg{width:20px;height:20px}
+.hcard .keyfacts{border-bottom:0;background:none}
+.is-home #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (min-width:752px){.hc-ph{border-radius:0;margin:0}}
+
+.hc-ph{height:clamp(140px,19vh,170px)}
+.hc-nm .hc-w{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em;text-transform:none}
+.hc-nm b{font-size:21px}
+
+/* Map filters v2: one segmented control, everything visible, no sideways scroll. */
+.mapseg{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.mapseg .seg{display:grid;grid-template-columns:repeat(4,1fr);background:var(--white);border:2px solid var(--ink);border-radius:999px;padding:3px;gap:2px}
+.mapseg .seg button{border:0;background:none;font:inherit;font-weight:700;font-size:15px;padding:10px 4px;border-radius:999px;color:var(--ink);cursor:pointer;white-space:nowrap}
+.mapseg .seg button[aria-checked="true"]{background:var(--ink);color:var(--white)}
+.mapseg .chip{align-self:flex-start}
+
+#mapview #mapChips.mapseg{overflow:visible;margin:calc(env(safe-area-inset-top,0px) + 22px) 0 0;padding:0;flex-wrap:nowrap}
+#mapview .mapbox{height:calc(100vh - 170px);min-height:360px}
+#mapview .foot[hidden]{display:none}
+#mapview h2.title{display:none}
+
+/* Slim Home bar: follows the scroll (fade + slide), no on/off jump. */
+.hbar{display:flex!important;--k:0;opacity:var(--k);transform:translateY(calc((var(--k) - 1) * 100%));pointer-events:none;box-shadow:0 1px 0 rgba(18,18,18,calc(var(--k) * .08));will-change:transform,opacity}
+.hbar.on{pointer-events:auto}
+.hbar img{transform:scale(calc(.7 + var(--k) * .3))}
+.hbar{opacity:1}
+.hbar > *{opacity:var(--k)}
+
+#mapview .maplist-h{margin:18px 0 10px}
+
+/* Map page v3: a framed map that does not fill the screen, so the page can always be scrolled past it. */
+#mapview .mapbox{height:min(52vh,440px);min-height:300px;border:2px solid var(--ink)!important;border-radius:var(--r)!important;overflow:hidden}
+#mapview .mapbox{margin-inline:0!important;width:auto}
+
+/* House pin: small, no name label (the area is approximate on purpose). */
+.mk .house{width:26px;height:26px;border-radius:8px}
+.mk .house svg{width:15px;height:15px}
+.mk .house::after{display:none}
+/* Inner pages: the title starts below the floating back and language buttons, never under them. */
+body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) + 64px)!important}
+
+/* Map selection: same rows as everywhere else, no separate card layout. */
+#mapview .sheet{background:none;border:0;padding:0;box-shadow:none}
+#mapview .sheet .hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:18px 0 10px}
+#mapview .sheet .hd h3{margin:0;font-size:26px}
+#mapview .sheet .hd .x{font-weight:600}
+/* Map controls stay under the floating back / language buttons when the page scrolls. */
+#mapview .mapbox{isolation:isolate;z-index:0;position:relative}
+
+#mapview .maplist{background:var(--white);border-radius:var(--r);overflow:hidden}
+#mapview .maplist .mbody a[href^="#map/"]{display:none}
+#mapview .maplist .mbody .actions{flex-direction:row;flex-wrap:wrap}
+#mapview .maplist .mrow[open] .mbody{padding-left:18px;padding-right:18px}
+/* Lists: each opened listing reads as one block, clearly separated from the next.
+   The open row keeps a white header, its details sit in a framed panel, and a thick divider follows. */
+.mlist > .mrow[open] > summary{background:var(--white)}
+.mlist > .mrow[open] .tstrip i{background:var(--paper)}
+.mlist > .mrow[open] > .mbody{margin:0 12px 14px;border-radius:14px;padding-top:14px}
+.mlist > .mrow[open] + .mrow{border-top:6px solid var(--paper)!important}
+.mlist > .mrow + .mrow[open]{border-top:6px solid var(--paper)!important}
+#mapview .maplist .mrow[open] > .mbody{padding-left:14px;padding-right:14px}
+.mlist > .mrow[open] > .mbody{padding-left:16px;padding-right:16px}
+
+#mapview .maplist-hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+#mapview .maplist-hd .x{font-weight:600;color:var(--ink)}
+#mapview .maplist .mrow.sel > summary{box-shadow:inset 4px 0 0 var(--cc)}
+.mapseg .seg{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}
+.mapseg .seg button{font-size:14px;padding:10px 2px}
+#mapview .maplist-empty{margin:4px 0 0;font-size:16px;color:var(--muted)}
+.dk.price{color:var(--ink);font-weight:600}
+.tstrip i.setm{background:var(--ink)!important;color:var(--white);font-weight:600}
+.ochips{margin-top:-4px}
+.ochips{flex-wrap:nowrap!important;gap:6px}.ochips .gchip{white-space:nowrap;padding-inline:12px}
+.tstrip i.top{background:var(--yellow)!important;color:var(--ink);font-weight:700;letter-spacing:.01em}
+.tstrip i.note{background:none!important;border:1.5px solid var(--ink);color:var(--ink);font-weight:600}
+
+/* Next 2 days: the day is a blue date badge; its markets hang below on a red rail so they read as its contents. */
+.dbadge.dday{background:var(--blue);flex:none}
+.dbadge.dday small{margin:0 0 3px}
+.dayrow > summary .nm{font-size:19px}
+.mini > .mrow.dayrow:has(.nested) .mbody{padding:0 0 12px 19px}
+.dayrow .mini.nested{border-left:3px solid var(--c-street);padding-left:14px}
+.dayrow .mini.nested > a{padding:8px 0;border-top:0}
+.dayrow .mini.nested .nm{font-size:15px}
+.dayrow .mini.nested .dot{width:28px;height:28px}
+.dayrow .mini.nested .dot svg{width:16px;height:16px}
+.dayrow .mini.nested > a{grid-template-columns:28px 1fr auto;gap:10px}
+
+/* What's on: Today and Next 2 days fold; a short hint says why (all finished / n open now). */
+.wo-sec{border-top:1.5px solid var(--line)}
+.wo-sec:first-child{border-top:0}
+.wo-sec > summary.wo-day{list-style:none;cursor:pointer;border-top:0;flex-wrap:wrap;padding-bottom:14px;position:relative;padding-right:48px}
+.wo-sec > summary.wo-day::-webkit-details-marker{display:none}
+.wo-sec[open] > summary.wo-day{padding-bottom:2px}
+.wo-sec > summary em{flex-basis:100%;font-style:normal;font-size:14px;font-weight:600;color:var(--muted)}
+.wo-sec > summary em:empty{display:none}
+.wo-sec > summary .chev{position:absolute;right:18px;top:22px}
+.wo-sec[open] > summary em{display:none}
+.wo-sec[open] > summary .chev{transform:rotate(-135deg) translateY(-1px)}
+.mini .nm small.dist{margin-top:0;font-size:14px}
+.pl-dist{margin:4px 0 0;color:var(--muted);font-size:15px}
+.pl-dist span{display:block}
+.pl-dist:empty{display:none}
+
+/* Map: "Map centred on Can Gordei" picker (your location, a town in the guide, or any place). */
+.mapat{background:var(--white);border:2px solid var(--ink);border-radius:18px;overflow:hidden}
+.mapat-btn{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:12px;padding:10px 18px 10px 14px;cursor:pointer}
+.mapat-btn > svg{width:22px;height:22px;flex:none;color:var(--red)}
+.mapat-l{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.mapat-l small{font-size:13px;color:var(--muted);font-weight:600}
+.mapat-l b{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mapat-btn[aria-expanded="true"] .chev{transform:rotate(-135deg) translateY(-1px)}
+.mapat-panel{border-top:1.5px solid var(--line);padding:10px 12px 8px}
+.mapat-panel input{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:11px 14px;border:2px solid var(--ink);border-radius:12px;background:var(--bg);color:var(--ink)}
+.mapat-res{display:flex;flex-direction:column;max-height:300px;overflow-y:auto;margin-top:4px}
+.mapat-res button{all:unset;cursor:pointer;padding:10px 4px;border-bottom:1.5px solid var(--line);display:flex;flex-direction:column}
+.mapat-res button:last-child{border-bottom:0}
+.mapat-res b{font-size:16px;font-weight:600}
+.mapat-res small{font-size:13px;color:var(--muted)}
+.mapat-none{color:var(--muted);font-size:15px;padding:10px 4px;margin:0}
+.at-mk{width:22px;height:22px;border-radius:50%;border:4px solid var(--blue);background:rgba(255,255,255,.85);box-shadow:0 0 0 2px #fff}
+
+/* Status labels wrap (max ~8 em wide) so names keep their room; times stay on one line. */
+.st:not(.plain){white-space:normal!important;max-width:8.2em}
+.st .nw{white-space:nowrap}
+/* Half-width Home tiles: long words hyphenate instead of running off the tile. */
+.gt:not(.wide) .gt-t{hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word}

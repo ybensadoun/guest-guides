@@ -1,0 +1,76 @@
+/* Preset "editorial": photo-led, reads like a magazine. Serif display, hairlines instead of boxes,
+   Home sections as a contents list instead of colour tiles. Structure only; colours come from tokens
+   (defaults below, overridden by the site's theme.css). */
+:root{
+  --paper:#FAF8F4;--white:#FFFFFF;--ink:#1D1C1A;--muted:#5E5A54;--faint:#86817A;--line:#E3DED5;
+  --accent:#8C3B2E;--blue:#2F4B5C;--red:#8C3B2E;--yellow:#C9A24A;--orange:#B4683A;--green:#4D6B4A;
+  --display:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --font:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:4px;--r-s:4px;--r-m:4px;
+}
+body{background:var(--paper);letter-spacing:.005em}
+h2.title{font-weight:400;font-size:46px;letter-spacing:-.01em;line-height:1}
+.sh,.section-h{font-family:var(--font);font-weight:600;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--ink);padding-top:10px;margin-top:18px}
+.lead{font-size:18px;line-height:1.55}
+
+/* Home: the cover photo full width, the name set large in serif over it */
+.hcard{border:0;border-radius:0;background:none;position:relative;margin:0 -16px}
+.hc-ph{height:clamp(300px,52vh,460px)!important}
+.hc-ph img{object-position:50% 55%!important;filter:saturate(.92)}
+.hc-id{position:absolute;left:0;right:0;top:clamp(300px,52vh,460px);transform:translateY(-100%);background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;border:0;padding:60px 20px 18px;align-items:flex-end}
+.hc-id > img{display:none}
+.hc-nm b{font-family:var(--display);font-weight:400;font-size:44px!important;letter-spacing:0!important;text-transform:none!important;line-height:.95}
+.hc-nm small,.hc-nm .hc-w{color:rgba(255,255,255,.85)!important;font-size:13px!important;letter-spacing:.14em!important;text-transform:uppercase!important;font-weight:600!important}
+.hc-id .go{background:#fff;color:var(--ink)}
+.keyfacts{background:none!important;border-top:1px solid var(--ink);border-bottom:1px solid var(--line)!important;margin:0 16px}
+.keyfacts a,.keyfacts .kf-wifi{padding:14px 0!important;border-left:0!important}
+.keyfacts a + a,.keyfacts .kf-wifi + a{padding-left:16px!important;border-left:1px solid var(--line)!important}
+.keyfacts b{font-family:var(--display);font-size:24px!important;font-weight:400!important;color:var(--ink)!important}
+@media (min-width:752px){.hcard{margin:0}.keyfacts{margin:0}}
+
+/* Sections: a numbered contents list, no colour blocks, no shapes */
+.ggrid,.ggrid.mosaic{grid-template-columns:1fr;gap:0;counter-reset:sec}
+.gt{background:none!important;color:var(--ink)!important;border-radius:0;min-height:0!important;padding:16px 52px 16px 0!important;border-bottom:1px solid var(--line);flex-direction:row!important;align-items:center;gap:14px!important;counter-increment:sec;grid-row:auto!important;border:0;border-bottom:1px solid var(--line)!important}
+.gt::before,.gt::after{display:none!important}
+.gt .ib{display:none!important}
+.gt-tx{margin:0!important;flex:1}
+.gt-tx::before{content:counter(sec,decimal-leading-zero);font-family:var(--font);font-size:12px;font-weight:600;letter-spacing:.14em;color:var(--faint);margin-bottom:2px}
+.gt-t,.ggrid.mosaic > .gt:first-child .gt-t{font-family:var(--display);font-weight:400;font-size:30px!important;line-height:1.05}
+.gt-m{font-size:14px;font-weight:500;color:var(--muted)}
+.gt .go{background:none!important;color:var(--ink)!important;top:50%!important;bottom:auto!important;right:0!important;transform:translateY(-50%);width:28px;height:28px}
+.soon-tag{background:none;color:var(--faint);border:1px solid var(--line);top:50%;transform:translateY(-50%);right:0}
+.gt-tonight{margin:8px 0 0!important;color:var(--ink)!important}
+.gtb{background:none!important;border:1px solid var(--line);padding:3px 12px 3px 3px!important}
+.gtn{color:var(--ink)!important}
+.gbc{background:var(--paper)!important}
+.gt-tl svg{color:var(--accent)!important}
+.gt[data-k="map"]{border:0}
+
+/* Lists and cards: hairlines on paper */
+.whatson,.mlist,.clist,.hsec,.allphotos,.pl-hours,.pl-alt,#mapview .maplist,.filters{background:none!important;border-radius:0!important;border-top:1px solid var(--ink)}
+.mrow,.crow,.wo-sec,.wo-day,.wo-links{border-color:var(--line)!important}
+.mrow[open] summary,.mlist > .mrow[open] > summary{background:none!important}
+.mbody,.mlist > .mrow[open] > .mbody{background:var(--white)!important;border-radius:0!important}
+.mini{padding-inline:0}
+.wo-day b,.wo-sec > summary.wo-day b{font-family:var(--display);font-weight:400;font-size:26px}
+.dot{border-radius:50%;background:none!important;color:var(--cc);box-shadow:inset 0 0 0 1px var(--line)}
+.dbadge{border-radius:0;background:none!important;color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.dbadge b{font-family:var(--display);font-weight:400;font-size:22px}
+.wo-links a,.wo-more,.cmap,.mapat-btn > svg{color:var(--accent)!important}
+
+/* Controls: quiet outlines */
+.btn,.chip,.gchip,.pills,.mapseg .seg,.mapat,.hbook,.amall summary{border-width:1px!important;border-radius:2px!important}
+.btn.primary,.gchip[aria-pressed="true"],.chip[aria-pressed="true"],.pills button[aria-pressed="true"],.mapseg .seg button[aria-checked="true"]{background:var(--ink)!important;border-color:var(--ink)!important;color:var(--paper)!important}
+.pills button,.mapseg .seg button{border-radius:2px!important}
+.qcall{background:none;border:0;border-top:1px solid var(--ink);border-radius:0;padding:12px 0;color:var(--ink)}
+.qcall .qi{background:none!important;color:var(--accent)!important;width:auto;height:auto;margin-bottom:4px}
+.qcall b{font-family:var(--display);font-weight:400;font-size:22px}
+.qcall small{color:var(--muted)}
+.ccall{background:var(--ink)!important;border-radius:2px}
+.cgroup[data-g="urgent"] .ccall{background:var(--accent)!important}
+.langsel,.hero .back{border-radius:50%!important}
+.pl-map,#mapview .mapbox{border-width:1px!important;border-radius:0!important}
+.hbar{background:var(--paper)}
+.hbar span{font-family:var(--display);font-weight:400;letter-spacing:0;text-transform:none;font-size:20px}
+.glist li::marker{color:var(--accent)}
+.gphotos img{border-radius:0}

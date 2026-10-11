@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Can Gordei · Guest guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme:light;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#F6F6F3;--surface:#FFFFFF;--ink:#141517;--muted:#6B6E73;--faint:#9A9CA0;--line:#E7E7E2;
+  --accent:#D4472B;--accent-soft:#FBE8E2;--on-accent:#FFFFFF;
+  --c-covered:#2563A8;--c-covered-s:#E7F0FA;
+  --c-street:#C2410C;--c-street-s:#FDEBDF;
+  --c-flea:#A86A12;--c-flea-s:#FBF1DF;
+  --c-antiques:#6D48C2;--c-antiques-s:#EFEAFB;
+  --c-events:#0E7470;--c-events-s:#DEF2F0;
+  --ok:#2E7D4F;--ok-s:#E4F3EA;
+  --sea:#DCE9F2;--land:#F1F0EA;--coast:#B9CCDA;
+  --r:12px;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111214;--surface:#1A1B1E;--ink:#EDEDEA;--muted:#A0A3A8;--faint:#6E7176;--line:#2A2C30;
+    --accent:#F0795D;--accent-soft:#3A2019;--on-accent:#111214;
+    --c-covered:#7FB1EA;--c-covered-s:#17263A;
+    --c-street:#F59E6B;--c-street-s:#3A2213;
+    --c-flea:#E7B25E;--c-flea-s:#33270F;
+    --c-antiques:#B79CF5;--c-antiques-s:#291F42;
+    --c-events:#62CFC7;--c-events-s:#10302E;
+    --ok:#79CF9C;--ok-s:#15301F;
+    --sea:#14212C;--land:#1C1D20;--coast:#2C4254;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111214;--surface:#1A1B1E;--ink:#EDEDEA;--muted:#A0A3A8;--faint:#6E7176;--line:#2A2C30;
+  --accent:#F0795D;--accent-soft:#3A2019;--on-accent:#111214;
+  --c-covered:#7FB1EA;--c-covered-s:#17263A;
+  --c-street:#F59E6B;--c-street-s:#3A2213;
+  --c-flea:#E7B25E;--c-flea-s:#33270F;
+  --c-antiques:#B79CF5;--c-antiques-s:#291F42;
+  --c-events:#62CFC7;--c-events-s:#10302E;
+  --ok:#79CF9C;--ok-s:#15301F;
+  --sea:#14212C;--land:#1C1D20;--coast:#2C4254;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5;padding-inline:16px;padding-block:24px 72px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+button{font-family:inherit}
+a{color:inherit}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+header.top{display:flex;align-items:center;gap:14px}
+.mark{width:44px;height:44px;border-radius:11px;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-family:"Instrument Serif",Georgia,serif;font-size:21px;line-height:1;flex:none;position:relative}
+.mark::after{content:"";position:absolute;right:-3px;top:-3px;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--bg)}
+.brand{display:flex;flex-direction:column;gap:2px}
+h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:clamp(28px,4.4vw,38px);line-height:1.05;margin:0}
+.sub{color:var(--muted);margin:0;font-size:13px}
+
+.tabs{display:flex;gap:4px;align-items:center;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:20;padding-block:10px;margin-inline:-16px;padding-inline:16px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs > button{flex:none;font-size:14px;font-weight:500;border:0;background:transparent;color:var(--muted);padding:7px 14px;border-radius:999px;cursor:pointer}
+.tabs > button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.seg{margin-left:auto;display:inline-flex;gap:2px;flex:none}
+.seg button{font-size:12px;font-weight:600;letter-spacing:.04em;border:0;background:transparent;color:var(--faint);padding:6px 8px;border-radius:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{color:var(--accent);background:var(--accent-soft)}
+
+h2.title{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:34px;line-height:1.1;margin:0}
+.lead{color:var(--muted);margin:4px 0 0;max-width:62ch}
+.section-h{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:26px;margin:0}
+
+/* Home */
+.hero-today{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.hero-today .hd{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.hero-today .hd b{font-weight:600}
+.mini{display:flex;flex-direction:column}
+.mini button{all:unset;cursor:pointer;display:grid;grid-template-columns:10px 1fr auto;gap:12px;align-items:center;padding:9px 4px;border-top:1px solid var(--line)}
+.mini button:first-child{border-top:0}
+.mini button:focus-visible{outline:2px solid var(--accent)}
+.mini .dot{width:10px;height:10px;border-radius:50%}
+.mini .nm{font-weight:500}
+.mini .nm small{display:block;color:var(--muted);font-weight:400;font-size:13px}
+.mini .st{font-size:12px;font-weight:600;white-space:nowrap}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.group{display:flex;flex-direction:column;gap:8px}
+.group h3{margin:0;font-size:13px;font-weight:600;color:var(--muted)}
+.tiles{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.tile{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border-top:1px solid var(--line);cursor:pointer;font-weight:500}
+.tile:first-child{border-top:0}
+.tile:hover{background:var(--bg)}
+.tile:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tile[aria-disabled="true"]{cursor:default;color:var(--faint);font-weight:400}
+.tile[aria-disabled="true"]:hover{background:transparent}
+.tile .meta{font-size:12px;font-weight:500;color:var(--faint)}
+.tile .go{font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+
+/* Controls */
+.controls{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pills{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.pills button{border:0;background:transparent;color:var(--muted);font-size:14px;font-weight:500;padding:6px 14px;border-radius:999px;cursor:pointer}
+.pills button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 12px 5px 9px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.chip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.chip[aria-pressed="false"]{color:var(--faint)}
+.chip[aria-pressed="false"] i{opacity:.35}
+.chip.plain{padding-left:12px}
+.chip.plain[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.sortnote{font-size:13px;color:var(--muted)}
+
+.daybar{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.daybar::-webkit-scrollbar{display:none}
+.dchip{flex:none;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);padding:7px 14px;cursor:pointer;display:flex;flex-direction:column;gap:0;font-size:14px;font-weight:500;min-width:64px}
+.dchip small{font-size:12px;color:var(--faint);font-weight:500}
+.dchip[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.dchip.today small{color:var(--accent)}
+
+/* Cards */
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px 12px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cc)}
+.card .hd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.card h3{margin:0;font-size:16px;font-weight:600;line-height:1.3}
+.card .where{font-size:13px;color:var(--muted)}
+.km{flex:none;text-align:right;font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);line-height:1.3}
+.km b{display:block;font-size:20px;color:var(--ink);font-weight:600}
+.type{align-self:flex-start;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--cs);color:var(--cc)}
+.when{font-size:14px;display:flex;flex-direction:column;gap:1px}
+.when .t{font-variant-numeric:tabular-nums;color:var(--muted)}
+.size{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.card .reg{font-size:12px;color:var(--faint)}
+.status{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;align-self:flex-start}
+.status.open{background:var(--ok-s);color:var(--ok)}
+.status.later{background:var(--c-covered-s);color:var(--c-covered)}
+.status.done{background:var(--line);color:var(--muted)}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+.note{font-size:14px;color:var(--ink);line-height:1.45}
+.flag{font-size:12px;color:var(--c-street);font-weight:500}
+.actions{display:flex;gap:8px;margin-top:2px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn svg{width:14px;height:14px}
+.empty{color:var(--muted);padding:12px 0}
+.foot{font-size:13px;color:var(--muted);margin:0}
+
+/* Map */
+.mapbox{position:relative;background:var(--sea);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;height:min(68vh,620px);touch-action:none;user-select:none;-webkit-user-select:none}
+#msvg{width:100%;height:100%;display:block;cursor:grab}
+#msvg.drag{cursor:grabbing}
+.mapctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
+.mapctl button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:18px;font-weight:500;cursor:pointer;display:grid;place-items:center}
+.mapctl button svg{width:18px;height:18px}
+.locbtn{position:absolute;left:10px;top:10px;display:flex;gap:6px;align-items:center}
+.locmsg{position:absolute;left:10px;right:58px;bottom:10px;font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;color:var(--muted)}
+.locmsg[hidden]{display:none}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.sheet .hd{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.sheet h3{margin:0;font-size:17px;font-weight:600}
+.x{border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;padding:4px 6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:560px){
+  h2.title{font-size:30px}
+  .list{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="mark">CG</div>
+    <div class="brand">
+      <h1>Can Gordei</h1>
+      <p class="sub" id="brandSub"></p>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-v="home"></button>
+    <button role="tab" data-v="markets"></button>
+    <button role="tab" data-v="map"></button>
+    <div class="seg" id="langs" role="group" aria-label="Language">
+      <button data-l="en">EN</button><button data-l="es">ES</button><button data-l="fr">FR</button><button data-l="ca">CA</button>
+    </div>
+  </nav>
+
+  <main id="view"></main>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- i18n ---------- */
+const I = {
+en:{brandSub:"Guest guide · La Bisbal del Penedès",home:"Home",markets:"Markets",map:"Map",
+ todayHead:"Markets today",seeAll:"See all",openToday:"{n} today",noneTodayShort:"No street markets today. Covered markets are open Monday to Saturday.",
+ gHouse:"The house",houseRules:"House rules",garbage:"Garbage and recycling",emergency:"Emergency contacts",
+ gArea:"The area",restaurants:"Restaurants",places:"Places to visit",kids:"Activities for kids",adults:"Activities for adults",
+ gMap:"Map",mapTile:"Map of all spots",soon:"Coming soon",
+ mkLead:"Weekly street markets, covered food halls, flea and antiques fairs. Distances are by road from the house.",
+ vToday:"Today",vWeek:"By day",vAll:"All",fromHouse:"From the house",fromMe:"From me",
+ today:"Today",tomorrow:"Tomorrow",openNow:"Open now",later:"Later today",done:"Finished",
+ noneDay:"No street markets this day. The covered markets in El Vendrell and Tarragona are open Monday to Saturday.",
+ noneMatch:"Nothing matches these filters.",
+ morning:"Morning",nth:"{nth} {day} of the month",nth1:"1st",nth2:"2nd",nth3:"3rd",nextDate:"Next: {date}",
+ kmYou:"~{n} km from you",kmHouse:"km",directions:"Directions",onMap:"On map",
+ locate:"My location",locating:"Finding you…",locErr:"Location unavailable. Open this guide in your phone browser and allow location.",
+ outside:"You are outside this map. Distances still work.",mapNote:"Simplified map. Tap a pin for details, then open Google Maps for directions.",
+ houseName:"Can Gordei",openTodayOnly:"Open today",close:"Close",
+ foot:"Markets skip public holidays and village markets can change. We recommend checking online on the day before you go.",
+ occasional:"Occasional",
+ cat_covered:"Covered market",cat_street:"Street market",cat_flea:"Flea market",cat_antiques:"Antiques and crafts",cat_events:"Swap and fairs",
+ t_fruitveg:"Fruit and veg",t_meat:"Meat",t_fish:"Fish",t_cheese:"Cheese",t_deli:"Deli",t_clothes:"Clothes",t_shoes:"Shoes",t_home:"Home goods",t_plants:"Plants",t_toys:"Toys",t_secondhand:"Second-hand",t_antiques:"Antiques",t_crafts:"Crafts",t_books:"Old books",t_tapas:"Tapas bars",t_small:"Small",t_big:"Big",t_food:"Food",
+ f_check:"Check before going",f_tiny:"Very small, 2 or 3 stalls",f_older:"Based on older information",f_holidays:"Not held on public holidays",f_closest:"Closest to the house",f_octmay:"October to May only",stalls:"~{n} stalls"},
+es:{brandSub:"Guía para huéspedes · La Bisbal del Penedès",home:"Inicio",markets:"Mercados",map:"Mapa",
+ todayHead:"Mercados de hoy",seeAll:"Ver todos",openToday:"{n} hoy",noneTodayShort:"Hoy no hay mercadillos. Los mercados municipales abren de lunes a sábado.",
+ gHouse:"La casa",houseRules:"Normas de la casa",garbage:"Basura y reciclaje",emergency:"Contactos de emergencia",
+ gArea:"La zona",restaurants:"Restaurantes",places:"Lugares para visitar",kids:"Actividades para niños",adults:"Actividades para adultos",
+ gMap:"Mapa",mapTile:"Mapa de todos los sitios",soon:"Próximamente",
+ mkLead:"Mercadillos semanales, mercados municipales, rastros y ferias de antigüedades. Distancias por carretera desde la casa.",
+ vToday:"Hoy",vWeek:"Por día",vAll:"Todos",fromHouse:"Desde la casa",fromMe:"Desde mí",
+ today:"Hoy",tomorrow:"Mañana",openNow:"Abierto ahora",later:"Más tarde",done:"Terminado",
+ noneDay:"Este día no hay mercadillos. Los mercados municipales de El Vendrell y Tarragona abren de lunes a sábado.",
+ noneMatch:"Nada coincide con estos filtros.",
+ morning:"Mañana",nth:"{nth} {day} del mes",nth1:"1.er",nth2:"2.º",nth3:"3.er",nextDate:"Próximo: {date}",
+ kmYou:"~{n} km de ti",kmHouse:"km",directions:"Cómo llegar",onMap:"En el mapa",
+ locate:"Mi ubicación",locating:"Buscando…",locErr:"Ubicación no disponible. Abre esta guía en el navegador del móvil y permite la ubicación.",
+ outside:"Estás fuera de este mapa. Las distancias siguen funcionando.",mapNote:"Mapa simplificado. Toca un punto para ver detalles y abre Google Maps para llegar.",
+ houseName:"Can Gordei",openTodayOnly:"Abierto hoy",close:"Cerrar",
+ foot:"Los mercados no se celebran en festivos y los de los pueblos pueden cambiar. Recomendamos comprobarlo en internet el mismo día antes de ir.",
+ occasional:"Ocasional",
+ cat_covered:"Mercado municipal",cat_street:"Mercadillo",cat_flea:"Rastro",cat_antiques:"Antigüedades y artesanía",cat_events:"Intercambio y ferias",
+ t_fruitveg:"Fruta y verdura",t_meat:"Carne",t_fish:"Pescado",t_cheese:"Queso",t_deli:"Charcutería",t_clothes:"Ropa",t_shoes:"Zapatos",t_home:"Hogar",t_plants:"Plantas",t_toys:"Juguetes",t_secondhand:"Segunda mano",t_antiques:"Antigüedades",t_crafts:"Artesanía",t_books:"Libros antiguos",t_tapas:"Bares de tapas",t_small:"Pequeño",t_big:"Grande",t_food:"Comida",
+ f_check:"Comprobar antes de ir",f_tiny:"Muy pequeño, 2 o 3 puestos",f_older:"Información algo antigua",f_holidays:"No se celebra en festivos",f_closest:"El más cercano a la casa",f_octmay:"Solo de octubre a mayo",stalls:"~{n} puestos"},
+fr:{brandSub:"Guide des hôtes · La Bisbal del Penedès",home:"Accueil",markets:"Marchés",map:"Carte",
+ todayHead:"Marchés du jour",seeAll:"Tout voir",openToday:"{n} aujourd'hui",noneTodayShort:"Pas de marché en plein air aujourd'hui. Les marchés couverts ouvrent du lundi au samedi.",
+ gHouse:"La maison",houseRules:"Règles de la maison",garbage:"Poubelles et tri",emergency:"Contacts d'urgence",
+ gArea:"Les environs",restaurants:"Restaurants",places:"Lieux à visiter",kids:"Activités pour enfants",adults:"Activités pour adultes",
+ gMap:"Carte",mapTile:"Carte de tous les lieux",soon:"Bientôt",
+ mkLead:"Marchés hebdomadaires, halles couvertes, puces et brocantes. Distances par la route depuis la maison.",
+ vToday:"Aujourd'hui",vWeek:"Par jour",vAll:"Tous",fromHouse:"Depuis la maison",fromMe:"Depuis moi",
+ today:"Aujourd'hui",tomorrow:"Demain",openNow:"Ouvert",later:"Plus tard",done:"Terminé",
+ noneDay:"Pas de marché en plein air ce jour-là. Les marchés couverts d'El Vendrell et de Tarragone ouvrent du lundi au samedi.",
+ noneMatch:"Aucun résultat avec ces filtres.",
+ morning:"Matin",nth:"{nth} {day} du mois",nth1:"1er",nth2:"2e",nth3:"3e",nextDate:"Prochain : {date}",
+ kmYou:"~{n} km de vous",kmHouse:"km",directions:"Itinéraire",onMap:"Sur la carte",
+ locate:"Ma position",locating:"Localisation…",locErr:"Position indisponible. Ouvrez ce guide dans le navigateur de votre téléphone et autorisez la localisation.",
+ outside:"Vous êtes hors de cette carte. Les distances restent calculées.",mapNote:"Carte simplifiée. Touchez un point puis ouvrez Google Maps pour l'itinéraire.",
+ houseName:"Can Gordei",openTodayOnly:"Ouvert aujourd'hui",close:"Fermer",
+ foot:"Pas de marché les jours fériés, et ceux des villages peuvent changer. Nous vous conseillons de vérifier en ligne le jour même avant d'y aller.",
+ occasional:"Occasionnel",
+ cat_covered:"Marché couvert",cat_street:"Marché en plein air",cat_flea:"Puces",cat_antiques:"Antiquités et artisanat",cat_events:"Troc et foires",
+ t_fruitveg:"Fruits et légumes",t_meat:"Viande",t_fish:"Poisson",t_cheese:"Fromage",t_deli:"Charcuterie",t_clothes:"Vêtements",t_shoes:"Chaussures",t_home:"Maison",t_plants:"Plantes",t_toys:"Jouets",t_secondhand:"Seconde main",t_antiques:"Antiquités",t_crafts:"Artisanat",t_books:"Livres anciens",t_tapas:"Bars à tapas",t_small:"Petit",t_big:"Grand",t_food:"Alimentation",
+ f_check:"À vérifier avant d'y aller",f_tiny:"Tout petit, 2 ou 3 étals",f_older:"Informations un peu anciennes",f_holidays:"Pas les jours fériés",f_closest:"Le plus proche de la maison",f_octmay:"D'octobre à mai uniquement",stalls:"~{n} étals"},
+ca:{brandSub:"Guia per als hostes · La Bisbal del Penedès",home:"Inici",markets:"Mercats",map:"Mapa",
+ todayHead:"Mercats d'avui",seeAll:"Veure'ls tots",openToday:"{n} avui",noneTodayShort:"Avui no hi ha mercats ambulants. Els mercats municipals obren de dilluns a dissabte.",
+ gHouse:"La casa",houseRules:"Normes de la casa",garbage:"Escombraries i reciclatge",emergency:"Contactes d'emergència",
+ gArea:"La zona",restaurants:"Restaurants",places:"Llocs per visitar",kids:"Activitats per a infants",adults:"Activitats per a adults",
+ gMap:"Mapa",mapTile:"Mapa de tots els llocs",soon:"Aviat",
+ mkLead:"Mercats setmanals, mercats municipals, encants i fires d'antiguitats. Distàncies per carretera des de la casa.",
+ vToday:"Avui",vWeek:"Per dia",vAll:"Tots",fromHouse:"Des de la casa",fromMe:"Des de mi",
+ today:"Avui",tomorrow:"Demà",openNow:"Obert ara",later:"Més tard",done:"Acabat",
+ noneDay:"Aquest dia no hi ha mercats ambulants. Els mercats municipals del Vendrell i Tarragona obren de dilluns a dissabte.",
+ noneMatch:"Res no coincideix amb aquests filtres.",
+ morning:"Matí",nth:"{nth} {day} del mes",nth1:"1r",nth2:"2n",nth3:"3r",nextDate:"Proper: {date}",
+ kmYou:"~{n} km de tu",kmHouse:"km",directions:"Com arribar-hi",onMap:"Al mapa",
+ locate:"La meva ubicació",locating:"Buscant…",locErr:"Ubicació no disponible. Obre aquesta guia al navegador del mòbil i permet la ubicació.",
+ outside:"Ets fora d'aquest mapa. Les distàncies continuen funcionant.",mapNote:"Mapa simplificat. Toca un punt per veure'n els detalls i obre Google Maps per arribar-hi.",
+ houseName:"Can Gordei",openTodayOnly:"Obert avui",close:"Tancar",
+ foot:"Els mercats no es fan els festius i els dels pobles poden canviar. Us recomanem comprovar-ho a internet el mateix dia abans d'anar-hi.",
+ occasional:"Ocasional",
+ cat_covered:"Mercat municipal",cat_street:"Mercat setmanal",cat_flea:"Encants",cat_antiques:"Antiguitats i artesania",cat_events:"Intercanvi i fires",
+ t_fruitveg:"Fruita i verdura",t_meat:"Carn",t_fish:"Peix",t_cheese:"Formatge",t_deli:"Xarcuteria",t_clothes:"Roba",t_shoes:"Sabates",t_home:"Llar",t_plants:"Plantes",t_toys:"Joguines",t_secondhand:"Segona mà",t_antiques:"Antiguitats",t_crafts:"Artesania",t_books:"Llibres vells",t_tapas:"Bars de tapes",t_small:"Petit",t_big:"Gran",t_food:"Alimentació",
+ f_check:"Comprova-ho abans d'anar-hi",f_tiny:"Molt petit, 2 o 3 parades",f_older:"Informació una mica antiga",f_holidays:"No es fa els festius",f_closest:"El més proper a la casa",f_octmay:"Només d'octubre a maig",stalls:"~{n} parades"}
+};
+const LANGS=["en","es","fr","ca"];
+let lang=(()=>{try{const s=localStorage.getItem("cg-lang");if(LANGS.includes(s))return s}catch(e){}const n=(navigator.language||"en").slice(0,2);return LANGS.includes(n)?n:"en"})();
+const t=(k,v)=>{let s=(I[lang]&&I[lang][k])||I.en[k]||k;if(v)for(const x in v)s=s.replace("{"+x+"}",v[x]);return s};
+const tx=o=>o?(o[lang]||o.en):"";
+
+/* ---------- data ---------- */
+const HOUSE={lat:41.2643,lng:1.4748};
+const CATS=["covered","street","flea","antiques","events"];
+// d: 0=Sun..6=Sat. nth: week of month. m: morning approx.
+const S=(d,o,c,x)=>Object.assign({d,o,c},x||{});
+const D=(en,es,fr,ca)=>({en,es,fr,ca});
+const M=[
+ // ---------- Baix Penedès ----------
+ {id:"bisbal",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"La Bisbal del Penedès",km:3,lat:41.2812,lng:1.4873,n:10,s:[S([3],"08:30","13:30")],tags:["fruitveg","food"],flags:["closest"],
+  note:D("A handful of stalls in the village centre: fruit, veg and a few basics. Handy for a quick top-up, not a day out.","Unos pocos puestos en el centro del pueblo: fruta, verdura y algo de básicos. Práctico para comprar cuatro cosas, no para pasar la mañana.","Quelques étals au centre du village : fruits, légumes et produits de base. Pratique pour un petit réassort, pas pour une sortie.","Unes quantes parades al centre del poble: fruita, verdura i quatre bàsics. Pràctic per a una compra ràpida, no per passar-hi el matí.")},
+ {id:"papiola-sun",cat:"street",reg:"Baix Penedès",name:"Mercat de La Papiola",town:"Albinyana",place:"La Papiola, next to the C-51",km:6,lat:41.2480,lng:1.5160,n:70,s:[S([0],"09:00","14:00")],tags:["fruitveg","cheese","deli","clothes","plants","home"],
+  note:D("Open-air Sunday market with about 70 stalls: fruit and veg, cheese and charcuterie, olives and nuts, clothes, plants and household goods.","Mercadillo dominical al aire libre con unos 70 puestos: fruta y verdura, quesos y embutidos, aceitunas y frutos secos, ropa, plantas y menaje.","Marché du dimanche en plein air, environ 70 étals : fruits et légumes, fromages et charcuterie, olives et fruits secs, vêtements, plantes et articles ménagers.","Mercat de diumenge a l'aire lliure amb unes 70 parades: fruita i verdura, formatges i embotits, olives i fruits secs, roba, plantes i parament de la llar.")},
+ {id:"papiola-sat",cat:"flea",reg:"Baix Penedès",name:"Mercat de segona mà La Papiola",town:"Albinyana",place:"La Papiola, next to the C-51",km:6,lat:41.2448,lng:1.5198,n:70,s:[S([6],"09:00","14:00")],tags:["secondhand","home","toys"],
+  note:D("Second-hand market on the same site as the Sunday market, about 70 stalls of used furniture, tools, bric-a-brac and clothes. Good for a browse.","Mercadillo de segunda mano en el mismo recinto que el del domingo, unos 70 puestos de muebles usados, herramientas, cachivaches y ropa. Ideal para curiosear.","Marché d'occasion sur le même site que celui du dimanche, environ 70 étals de meubles, outils, bric-à-brac et vêtements. Parfait pour chiner.","Mercat de segona mà al mateix recinte que el de diumenge, unes 70 parades de mobles usats, eines, objectes i roba. Ideal per remenar.")},
+ {id:"bonastre",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"Bonastre",km:8,lat:41.2200,lng:1.4390,n:15,s:[S([2],"09:00","13:00")],tags:["fruitveg"],
+  note:D("Small village market, mainly fruit and veg.","Mercadillo pequeño de pueblo, sobre todo fruta y verdura.","Petit marché de village, surtout des fruits et légumes.","Mercat petit de poble, sobretot fruita i verdura.")},
+ {id:"llorenc",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"Llorenç del Penedès",place:"C/ Mestre González",km:9,lat:41.2826,lng:1.5528,n:20,s:[S([1],"08:00","14:00")],tags:["fruitveg","clothes"],
+  note:D("About 20 stalls of fruit, veg and clothes. The only Monday market nearby.","Unos 20 puestos de fruta, verdura y ropa. El único mercadillo de los lunes en la zona.","Une vingtaine d'étals de fruits, légumes et vêtements. Le seul marché du lundi aux alentours.","Unes 20 parades de fruita, verdura i roba. L'únic mercat de dilluns a la zona.")},
+ {id:"santaoliva",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"Santa Oliva",place:"Pol. Ind. Molí d'en Serra",km:9,lat:41.2367,lng:1.5444,s:[S([6],"08:00","13:30",{m:1})],tags:["food","clothes"],
+  note:D("Saturday market on the Molí d'en Serra industrial estate with food, clothes and accessories. Easy parking.","Mercadillo de los sábados en el polígono Molí d'en Serra, con alimentación, ropa y complementos. Fácil para aparcar.","Marché du samedi dans la zone d'activité Molí d'en Serra : alimentation, vêtements et accessoires. Stationnement facile.","Mercat de dissabte al polígon Molí d'en Serra, amb alimentació, roba i complements. Fàcil d'aparcar.")},
+ {id:"vendrell-mm",cat:"covered",reg:"Baix Penedès",name:"Mercat Municipal del Vendrell",town:"El Vendrell",place:"Plaça del Mercat",km:10,lat:41.2193,lng:1.5352,n:33,s:[S([1,2,3,4,5,6],"08:00","14:00"),S([2,5,6],"17:30","20:30")],tags:["fruitveg","meat","fish"],
+  note:D("Fresh food hall in an 1887 building, about 33 stalls of meat, fish, fruit and veg. The best place nearby for quality fresh produce any weekday.","Mercado de producto fresco en un edificio de 1887, unos 33 puestos de carne, pescado, fruta y verdura. El mejor sitio cercano para producto fresco de calidad entre semana.","Halle de produits frais dans un bâtiment de 1887, environ 33 étals de viande, poisson, fruits et légumes. La meilleure adresse proche pour des produits frais en semaine.","Mercat de producte fresc en un edifici del 1887, unes 33 parades de carn, peix, fruita i verdura. El millor lloc proper per a producte fresc de qualitat entre setmana.")},
+ {id:"vendrell-w",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"El Vendrell",place:"La Rambla, Pl. Nova, Pl. Francesc Macià",km:10,lat:41.2178,lng:1.5338,n:95,s:[S([5],"09:00","14:00")],tags:["fruitveg","fish","clothes","toys","home"],
+  note:D("One of the bigger markets nearby, about 95 stalls. Fresh food (fruit, veg, salted fish, olives, sweets) on Pl. Francesc Macià; clothes, toys and household along the Rambla.","Uno de los mercadillos grandes de la zona, unos 95 puestos. Comida (fruta, verdura, salazones, aceitunas, dulces) en la Pl. Francesc Macià; ropa, juguetes y hogar por la Rambla.","L'un des plus grands marchés du coin, environ 95 étals. Alimentation (fruits, légumes, salaisons, olives, douceurs) place Francesc Macià ; vêtements, jouets et maison sur la Rambla.","Un dels mercats grans de la zona, unes 95 parades. Alimentació (fruita, verdura, salaons, olives, dolços) a la Pl. Francesc Macià; roba, joguines i llar a la Rambla.")},
+ {id:"vendrell-a",cat:"antiques",reg:"Baix Penedès",name:"Mercat d'antiquaris i brocanters",town:"El Vendrell",place:"La Rambla",km:10,lat:41.2176,lng:1.5345,s:[S([6],"09:00","15:00",{nth:2})],tags:["antiques"],
+  note:D("Antique dealers and brocante along the Rambla: old furniture, tools, ceramics and collectables. Only genuine antique and second-hand goods are allowed.","Anticuarios y brocantes por la Rambla: muebles antiguos, herramientas, cerámica y objetos de colección. Solo se admiten antigüedades y artículos de brocante.","Antiquaires et brocanteurs sur la Rambla : meubles anciens, outils, céramiques et objets de collection. Uniquement de l'ancien et de la brocante.","Antiquaris i brocanters a la Rambla: mobles antics, eines, ceràmica i objectes de col·lecció. Només s'hi admeten antiguitats i brocanteria.")},
+ {id:"vendrell-art",cat:"antiques",reg:"Baix Penedès",name:"Racó de l'Art",town:"El Vendrell",place:"C/ dels Cafès",km:10,lat:41.2183,lng:1.5330,s:[S([6],"09:00","14:00",{nth:2,m:1})],tags:["crafts"],
+  note:D("Handmade crafts on the same morning as the antiques market: soaps, painted clothes, ceramics, glass, jewellery and puppets.","Artesanía hecha a mano la misma mañana que el mercado de antigüedades: jabones, ropa pintada, cerámica, vidrio, bisutería y títeres.","Artisanat le même matin que le marché d'antiquités : savons, vêtements peints, céramique, verre, bijoux et marionnettes.","Artesania feta a mà el mateix matí que el mercat d'antiguitats: sabons, roba pintada, ceràmica, vidre, bijuteria i titelles.")},
+ {id:"banyeres",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"Banyeres del Penedès",km:11,lat:41.2800,lng:1.5810,n:15,s:[S([3],"08:30","13:30")],tags:["fruitveg"],
+  note:D("Small village market, fewer than 20 stalls, mostly fruit and veg.","Mercadillo pequeño, menos de 20 puestos, sobre todo fruta y verdura.","Petit marché de village, moins de 20 étals, surtout fruits et légumes.","Mercat petit, menys de 20 parades, sobretot fruita i verdura.")},
+ {id:"bellvei",cat:"flea",reg:"Baix Penedès",name:"Mercat de segona mà Ca Susi",town:"Bellvei",place:"Carretera de Calafell",km:12,lat:41.2360,lng:1.5780,s:[S([0],"09:00","14:00")],tags:["secondhand"],flags:["check"],
+  note:D("Sunday second-hand market on the Calafell road: used goods and bric-a-brac. Pairs well with La Papiola on a Sunday morning.","Rastro dominical en la carretera de Calafell: artículos usados y cachivaches. Se combina bien con La Papiola un domingo por la mañana.","Brocante du dimanche sur la route de Calafell : objets d'occasion et bric-à-brac. À combiner avec La Papiola le dimanche matin.","Encants de diumenge a la carretera de Calafell: objectes usats i andròmines. Es combina bé amb La Papiola un diumenge al matí.")},
+ {id:"santjaume",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"Sant Jaume dels Domenys",place:"Pl. de Sant Jaume",km:12,lat:41.3020,lng:1.5600,n:3,s:[S([4],"08:00","13:30",{m:1})],tags:["fruitveg","cheese","deli"],flags:["older"],
+  note:D("Just two or three stalls by the church: fruit and veg, homemade cheese and charcuterie. Eco cleaning products every other week.","Solo dos o tres puestos junto a la iglesia: fruta y verdura, queso y embutido caseros. Productos de limpieza ecológicos cada dos semanas.","Seulement deux ou trois étals près de l'église : fruits et légumes, fromage et charcuterie maison. Produits d'entretien écologiques une semaine sur deux.","Només dues o tres parades al costat de l'església: fruita i verdura, formatge i embotit casolans. Productes de neteja ecològics cada dues setmanes.")},
+ {id:"comaruga",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"Coma-ruga",place:"Av. Parlament de Catalunya",km:13,lat:41.1830,lng:1.5200,n:80,s:[S([6],"09:00","14:00")],tags:["fruitveg","cheese","deli","clothes","shoes","home"],
+  note:D("About 80 stalls between the train station and the beach: fruit and veg, cheese, charcuterie, pickles and nuts, clothes, shoes, bags and household goods. Easy to combine with a beach morning.","Unos 80 puestos entre la estación y la playa: fruta y verdura, quesos, embutidos, encurtidos y frutos secos, ropa, calzado, bolsos y menaje. Fácil de combinar con una mañana de playa.","Environ 80 étals entre la gare et la plage : fruits et légumes, fromages, charcuterie, olives et fruits secs, vêtements, chaussures, sacs et articles ménagers. Facile à combiner avec la plage.","Unes 80 parades entre l'estació i la platja: fruita i verdura, formatges, embotits, encurtits i fruits secs, roba, calçat, bosses i parament. Fàcil de combinar amb un matí de platja.")},
+ {id:"arboc",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"L'Arboç",place:"Carrer Major",km:14,lat:41.2660,lng:1.6030,n:40,s:[S([2],"08:00","14:00")],tags:["fruitveg","food","clothes"],
+  note:D("Around 40 stalls along Carrer Major, a proper village market with food and clothes.","Unos 40 puestos por el Carrer Major, un mercadillo de pueblo de los de toda la vida, con comida y ropa.","Une quarantaine d'étals dans la Carrer Major, un vrai marché de village avec alimentation et vêtements.","Unes 40 parades al Carrer Major, un mercat de poble de tota la vida, amb alimentació i roba.")},
+ {id:"calafell-mm",cat:"covered",reg:"Baix Penedès",name:"Mercat de Calafell",town:"Calafell Platja",place:"Ctra. Sanatori",km:15,lat:41.1905,lng:1.5690,s:[S([1,2,3,4,5,6],"09:00","14:00",{m:1})],tags:["meat","fish","deli","tapas"],flags:["check"],
+  note:D("Covered market by the beach with butchers, fishmongers and deli counters, plus wine and tapas bars that stay open later than the food stalls.","Mercado cubierto cerca de la playa con carnicerías, pescaderías y charcuterías, además de bares de vino y tapas que cierran más tarde que los puestos.","Marché couvert près de la plage : bouchers, poissonniers, charcutiers, et bars à vin et tapas ouverts plus tard que les étals.","Mercat cobert a prop de la platja amb carnisseries, peixateries i xarcuteries, i bars de vins i tapes que tanquen més tard que les parades.")},
+ {id:"calafell-w",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"Calafell",place:"Passeig de la Unió",km:15,lat:41.1925,lng:1.5735,n:70,s:[S([2],"08:00","14:00")],tags:["fruitveg","clothes","shoes","home"],
+  note:D("About 70 stalls. An everyday local market rather than a tourist one, with good prices on fruit, veg, olives, linen, clothes and shoes.","Unos 70 puestos. Un mercadillo de vecinos más que turístico, con buenos precios en fruta, verdura, aceitunas, ropa de casa, ropa y calzado.","Environ 70 étals. Un marché de quartier plus que touristique, avec de bons prix : fruits, légumes, olives, linge, vêtements et chaussures.","Unes 70 parades. Un mercat de veïns més que turístic, amb bons preus en fruita, verdura, olives, roba de casa, roba i calçat.")},
+ {id:"segur",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"Segur de Calafell",place:"Passeig Marítim",km:17,lat:41.1890,lng:1.6020,s:[S([5],"08:00","14:00")],tags:["clothes","fruitveg"],
+  note:D("Large market along the seafront promenade, mostly clothes and accessories. The fruit and veg stalls are inside Port Segur.","Mercadillo grande en el paseo marítimo, sobre todo ropa y complementos. Los puestos de fruta y verdura están dentro del Port de Segur.","Grand marché sur le front de mer, surtout vêtements et accessoires. Les étals de fruits et légumes sont dans le port de Segur.","Mercat gran al passeig marítim, sobretot roba i complements. Les parades de fruita i verdura són dins del Port de Segur.")},
+ {id:"cunit",cat:"street",reg:"Baix Penedès",name:"Mercat setmanal",town:"Cunit",place:"C/ Joaquim Mir",km:20,lat:41.1980,lng:1.6330,n:85,s:[S([4],"08:00","14:00")],tags:["fruitveg","food"],
+  note:D("About 85 stalls, strong on fresh food: fruit, veg and local products, plus everyday goods.","Unos 85 puestos, fuerte en producto fresco: fruta, verdura y productos locales, además de artículos del día a día.","Environ 85 étals, surtout des produits frais : fruits, légumes et produits locaux, plus des articles du quotidien.","Unes 85 parades, fort en producte fresc: fruita, verdura i productes locals, a més d'articles del dia a dia.")},
+ // ---------- Tarragonès ----------
+ {id:"roda",cat:"street",reg:"Tarragonès",name:"Mercat setmanal",town:"Roda de Berà",place:"Car park, c/ Sant Salvador",km:14,lat:41.1870,lng:1.4590,n:60,s:[S([4],"08:00","14:00")],tags:["fruitveg","clothes","food"],
+  note:D("About 60 stalls: regional produce and eggs, clothes and bags, plus a churros stand and roast chicken to take away.","Unos 60 puestos: producto de la zona y huevos, ropa y bolsos, además de churrería y pollos a l'ast para llevar.","Environ 60 étals : produits régionaux et œufs, vêtements et sacs, plus un stand de churros et des poulets rôtis à emporter.","Unes 60 parades: producte de la zona i ous, roba i bosses, a més de xurreria i pollastres a l'ast per emportar.")},
+ {id:"pobla",cat:"street",reg:"Tarragonès",name:"Mercat setmanal",town:"La Pobla de Montornès",km:14,lat:41.1840,lng:1.4160,n:20,s:[S([6],"08:00","13:30",{m:1})],tags:["fruitveg","food"],
+  note:D("Small Saturday market with around 20 stalls.","Mercadillo pequeño de los sábados, unos 20 puestos.","Petit marché du samedi, une vingtaine d'étals.","Mercat petit de dissabte, unes 20 parades.")},
+ {id:"creixell",cat:"street",reg:"Tarragonès",name:"Mercat setmanal",town:"Creixell",place:"Rambla de les Moreres",km:16,lat:41.1688,lng:1.4403,n:150,s:[S([0],"09:00","14:00")],tags:["fruitveg","deli","clothes","shoes","home","plants","crafts"],
+  note:D("Big Sunday market with about 150 stalls: fruit and veg, nuts, spices, charcuterie, churros, clothes, shoes, bags, homeware, hardware, plants and crafts.","Gran mercadillo dominical con unos 150 puestos: fruta y verdura, frutos secos, especias, embutidos, churros, ropa, calzado, bolsos, menaje, ferretería, plantas y artesanía.","Grand marché du dimanche, environ 150 étals : fruits et légumes, fruits secs, épices, charcuterie, churros, vêtements, chaussures, sacs, maison, quincaillerie, plantes et artisanat.","Gran mercat de diumenge amb unes 150 parades: fruita i verdura, fruits secs, espècies, embotits, xurros, roba, calçat, bosses, parament, ferreteria, plantes i artesania.")},
+ {id:"torredembarra",cat:"street",reg:"Tarragonès",name:"Mercat setmanal",town:"Torredembarra",place:"C/ Mañé i Flaquer",km:20,lat:41.1460,lng:1.3990,n:100,s:[S([2],"08:00","14:00")],tags:["fruitveg","deli","clothes"],
+  note:D("Around 100 stalls: fruit, charcuterie, teas and spices, clothes and accessories.","Unos 100 puestos: fruta, embutidos, tés y especias, ropa y complementos.","Une centaine d'étals : fruits, charcuterie, thés et épices, vêtements et accessoires.","Unes 100 parades: fruita, embotits, tes i espècies, roba i complements.")},
+ {id:"constanti",cat:"street",reg:"Tarragonès",name:"Mercat setmanal",town:"Constantí",km:32,lat:41.1540,lng:1.2150,n:30,s:[S([4],"09:00","14:00")],tags:["food"],
+  note:D("About 30 stalls, mainly food.","Unos 30 puestos, sobre todo alimentación.","Une trentaine d'étals, surtout de l'alimentation.","Unes 30 parades, sobretot alimentació.")},
+ {id:"tgn-central",cat:"covered",reg:"Tarragonès",name:"Mercat Central de Tarragona",town:"Tarragona",place:"Plaça Corsini",km:35,lat:41.1172,lng:1.2531,s:[S([1,2,3,4,5,6],"08:30","21:00")],tags:["meat","fish","cheese","deli","tapas"],
+  note:D("Big modernist food hall: meat, fish, cheese, bakeries, eat-in counters and a supermarket downstairs. Worth combining with a visit to the old town.","Gran mercado modernista: carne, pescado, quesos, panaderías, barras para comer y supermercado abajo. Vale la pena combinarlo con la parte antigua.","Grande halle moderniste : viande, poisson, fromages, boulangeries, comptoirs où manger et supermarché au sous-sol. À combiner avec la vieille ville.","Gran mercat modernista: carn, peix, formatges, fleques, barres per menjar i supermercat a baix. Val la pena combinar-ho amb la part alta.")},
+ {id:"tgn-corsini",cat:"street",reg:"Tarragonès",name:"Mercadet de Corsini",town:"Tarragona",place:"Around the Mercat Central",km:35,lat:41.1168,lng:1.2540,n:70,s:[S([2,4],"08:00","14:00")],tags:["clothes","home"],flags:["holidays"],
+  note:D("Around 70 stalls next to the Mercat Central, mostly clothes, accessories and textiles.","Unos 70 puestos junto al Mercat Central, sobre todo ropa, complementos y textil.","Environ 70 étals à côté du Mercat Central, surtout vêtements, accessoires et textile.","Unes 70 parades al costat del Mercat Central, sobretot roba, complements i tèxtil.")},
+ {id:"tgn-quadrat",cat:"antiques",reg:"Tarragonès",name:"Mercadet de Sant Quadrat",town:"Tarragona",place:"Rambla Nova",km:35,lat:41.1160,lng:1.2510,n:20,s:[S([5],"08:00","15:00")],tags:["antiques"],
+  note:D("About 20 antiques and collectables stalls on the Rambla Nova every Friday.","Unos 20 puestos de antigüedades y coleccionismo en la Rambla Nova cada viernes.","Une vingtaine d'étals d'antiquités et de collection sur la Rambla Nova chaque vendredi.","Unes 20 parades d'antiguitats i col·leccionisme a la Rambla Nova cada divendres.")},
+ {id:"tgn-seu",cat:"antiques",reg:"Tarragonès",name:"Mercadet de la Catedral",town:"Tarragona",place:"Pla de la Seu",km:35,lat:41.1189,lng:1.2577,n:35,s:[S([0],"08:00","14:00")],tags:["antiques"],
+  note:D("Antiques and collectables at the foot of the cathedral steps, roughly 25 to 50 stalls. A lovely setting for a Sunday stroll.","Antigüedades y coleccionismo al pie de la escalinata de la catedral, entre 25 y 50 puestos. Un sitio precioso para pasear un domingo.","Antiquités et objets de collection au pied des marches de la cathédrale, entre 25 et 50 étals. Un cadre superbe pour une balade du dimanche.","Antiguitats i col·leccionisme al peu de l'escalinata de la catedral, entre 25 i 50 parades. Un lloc preciós per passejar un diumenge.")},
+ {id:"bonavista",cat:"street",reg:"Tarragonès",name:"Mercadillo de Bonavista",town:"Tarragona",place:"Bonavista",km:40,lat:41.1370,lng:1.2000,n:400,s:[S([0],"08:00","14:00")],tags:["clothes","shoes","food","home","secondhand"],
+  note:D("The biggest market in the province, around 400 stalls. A sprawling bargain market: clothes, shoes, food, household and odds and ends. Go early.","El mercadillo más grande de la provincia, unos 400 puestos. Un mercadillo enorme de gangas: ropa, calzado, comida, hogar y de todo un poco. Mejor ir temprano.","Le plus grand marché de la province, environ 400 étals. Un immense marché aux bonnes affaires : vêtements, chaussures, alimentation, maison et un peu de tout. Allez-y tôt.","El mercat més gran de la província, unes 400 parades. Un mercat enorme de gangues: roba, calçat, menjar, llar i de tot una mica. Millor anar-hi d'hora.")},
+ // ---------- Alt Camp ----------
+ {id:"vilarodona",cat:"street",reg:"Alt Camp",name:"Mercat setmanal",town:"Vila-rodona",km:16,lat:41.3110,lng:1.3610,s:[S([2],"08:00","14:00")],tags:["fruitveg","plants","clothes","shoes","home"],flags:["holidays"],
+  note:D("Village market with a bit of everything: fruit and veg, seedlings, salted fish, clothes, home linen, shoes, flowers and traditional clay cookware.","Mercadillo de pueblo con de todo un poco: fruta y verdura, planteles, salazones, ropa, ropa de casa, calzado, flores y cazuelas de barro.","Marché de village avec un peu de tout : fruits et légumes, plants, salaisons, vêtements, linge, chaussures, fleurs et poterie de cuisson en terre.","Mercat de poble amb de tot una mica: fruita i verdura, planter, salaons, roba, roba de casa, calçat, flors i cassoles de fang.")},
+ {id:"valls",cat:"street",reg:"Alt Camp",name:"Mercat setmanal",town:"Valls",place:"El Pati, Pl. dels Quarters, Pl. del Blat",km:25,lat:41.2860,lng:1.2500,n:100,s:[S([3,6],"08:30","13:30")],tags:["fruitveg","clothes"],
+  note:D("Main market of the Alt Camp with about 100 stalls across the old squares. Saturday is the full market with fresh produce; Wednesday is mostly clothes.","El mercado principal del Alt Camp, unos 100 puestos por las plazas del centro. El sábado es el completo con producto fresco; el miércoles es sobre todo ropa.","Le grand marché de l'Alt Camp, environ 100 étals dans les places du centre. Le samedi c'est le marché complet avec produits frais ; le mercredi surtout des vêtements.","El mercat principal de l'Alt Camp, unes 100 parades per les places del centre. El dissabte és el complet amb producte fresc; el dimecres és sobretot roba.")},
+ {id:"valls-b",cat:"antiques",reg:"Alt Camp",name:"Mercat d'antiguitats i col·leccionisme",town:"Valls",place:"El Pati",km:25,lat:41.2870,lng:1.2520,s:[S([6],"09:00","14:00",{nth:1})],tags:["antiques"],flags:["check"],
+  note:D("Antiques, brocante and collectors' stalls at El Pati, on the same morning as the Saturday market.","Antigüedades, brocante y coleccionismo en El Pati, la misma mañana que el mercado del sábado.","Antiquités, brocante et collectionneurs à El Pati, le même matin que le marché du samedi.","Antiguitats, brocanteria i col·leccionisme a El Pati, el mateix matí que el mercat de dissabte.")},
+ {id:"alcover",cat:"street",reg:"Alt Camp",name:"Mercat setmanal",town:"Alcover",place:"Pl. President Lluís Companys",km:35,lat:41.2630,lng:1.1700,n:25,s:[S([2],"09:00","14:00")],tags:["fruitveg","clothes"],flags:["holidays"],
+  note:D("Around 25 stalls in the main square, food and clothes. The market dates back to the Middle Ages.","Unos 25 puestos en la plaza mayor, comida y ropa. Un mercado con origen medieval.","Environ 25 étals sur la place principale, alimentation et vêtements. Un marché d'origine médiévale.","Unes 25 parades a la plaça, alimentació i roba. Un mercat d'origen medieval.")},
+ // ---------- Alt Penedès ----------
+ {id:"monjos",cat:"street",reg:"Alt Penedès",name:"Mercat setmanal",town:"Santa Margarida i els Monjos",place:"Av. de Cal Salines",km:22,lat:41.3180,lng:1.6640,n:200,s:[S([0],"08:00","14:00")],tags:["fruitveg","food","clothes","shoes","home","crafts","plants"],
+  note:D("One of the biggest Sunday markets around, about 200 stalls: fruit and veg, food, clothes, shoes, bags, jewellery, homeware, crafts, flowers and plants.","Uno de los mercadillos dominicales más grandes de la zona, unos 200 puestos: fruta y verdura, alimentación, ropa, calzado, bolsos, bisutería, hogar, artesanía, flores y plantas.","L'un des plus grands marchés du dimanche du secteur, environ 200 étals : fruits et légumes, alimentation, vêtements, chaussures, sacs, bijoux, maison, artisanat, fleurs et plantes.","Un dels mercats de diumenge més grans de la zona, unes 200 parades: fruita i verdura, alimentació, roba, calçat, bosses, bijuteria, llar, artesania, flors i plantes.")},
+ {id:"monjos-art",cat:"antiques",reg:"Alt Penedès",name:"Mercat d'artesania i brocanters",town:"Santa Margarida i els Monjos",km:22,lat:41.3195,lng:1.6610,n:20,s:[S([0],"09:00","14:00",{nth:1,m:1})],tags:["crafts","antiques","books"],
+  note:D("About 20 stalls of crafts, local food, collectors and old books, alongside the big Sunday market.","Unos 20 puestos de artesanía, alimentación artesana, coleccionismo y libros viejos, junto al gran mercadillo del domingo.","Une vingtaine d'étals d'artisanat, produits locaux, collection et vieux livres, à côté du grand marché du dimanche.","Unes 20 parades d'artesania, alimentació artesana, col·leccionisme i llibres vells, al costat del gran mercat de diumenge.")},
+ {id:"vilafranca-sat",cat:"street",reg:"Alt Penedès",name:"Mercat dels dissabtes",town:"Vilafranca del Penedès",place:"Old town squares and Rambla",km:27,lat:41.3465,lng:1.6990,n:210,s:[S([6],"08:00","14:00")],tags:["fruitveg","plants","food","clothes","home"],
+  note:D("The big one: an almost thousand-year-old market with about 210 stalls across the old town squares and some 20,000 visitors a week. Known for local produce, seedlings and even live poultry. Food from 8:00, other stalls from 9:00. Go early to park.","El gran mercado: casi mil años de historia, unos 210 puestos por las plazas del casco antiguo y unos 20.000 visitantes a la semana. Famoso por el producto de la tierra, los planteles e incluso aves vivas. Comida desde las 8:00, el resto desde las 9:00. Id temprano para aparcar.","Le grand marché : presque mille ans d'histoire, environ 210 étals dans les places de la vieille ville et quelque 20 000 visiteurs par semaine. Réputé pour les produits du terroir, les plants et même la volaille vivante. Alimentation dès 8 h, le reste dès 9 h. Venez tôt pour vous garer.","El gran mercat: gairebé mil anys d'història, unes 210 parades per les places del centre i uns 20.000 visitants a la setmana. Famós pel producte de la terra, el planter i fins i tot l'aviram viu. Alimentació des de les 8:00, la resta des de les 9:00. Aneu-hi d'hora per aparcar.")},
+ {id:"vilafranca-veg",cat:"street",reg:"Alt Penedès",name:"Mercat diari de la verdura",town:"Vilafranca del Penedès",place:"Plaça de Sant Joan",km:27,lat:41.3462,lng:1.6980,s:[S([1,2,3,4,5,6],"08:00","13:30",{m:1})],tags:["fruitveg"],
+  note:D("Small fruit and veg market under the arcades of Plaça de Sant Joan, every working morning of the year.","Pequeño mercado de fruta y verdura bajo los porches de la plaça de Sant Joan, todas las mañanas laborables del año.","Petit marché de fruits et légumes sous les arcades de la plaça de Sant Joan, tous les matins ouvrables de l'année.","Petit mercat de fruita i verdura sota els porxos de la plaça de Sant Joan, cada matí feiner de l'any.")},
+ {id:"vilafranca-tue",cat:"street",reg:"Alt Penedès",name:"Mercat del dimarts",town:"Vilafranca del Penedès",place:"L'Espirall, by La Pelegrina",km:27,lat:41.3420,lng:1.7060,n:60,s:[S([2],"09:00","13:30")],tags:["clothes","home"],
+  note:D("Neighbourhood market with about 60 stalls, mainly clothes and textiles.","Mercadillo de barrio con unos 60 puestos, sobre todo ropa y textil.","Marché de quartier d'environ 60 étals, surtout vêtements et textile.","Mercat de barri amb unes 60 parades, sobretot roba i tèxtil.")},
+ {id:"vilafranca-art",cat:"antiques",reg:"Alt Penedès",name:"Mercat d'artesania, brocanters i pintors",town:"Vilafranca del Penedès",place:"Rambla de Sant Francesc",km:27,lat:41.3470,lng:1.6975,n:50,s:[S([0],"10:00","14:00",{nth:2})],tags:["crafts","antiques"],flags:["octmay"],
+  note:D("Crafts, antiques and painters with 50+ stalls on the Rambla de Sant Francesc.","Artesanía, antigüedades y pintores con más de 50 puestos en la Rambla de Sant Francesc.","Artisanat, antiquités et peintres, plus de 50 étals sur la Rambla de Sant Francesc.","Artesania, antiguitats i pintors amb més de 50 parades a la Rambla de Sant Francesc.")},
+ {id:"vilafranca-mm",cat:"covered",reg:"Alt Penedès",name:"Mercat Municipal de Sant Salvador",town:"Vilafranca del Penedès",place:"Sant Julià district",km:27,lat:41.3445,lng:1.6930,s:[S([1,2,3,4,5,6],"08:00","13:30",{m:1})],tags:["fruitveg","meat","fish"],flags:["check"],
+  note:D("Covered neighbourhood food market, fully renovated: fresh produce from local stallholders.","Mercado municipal cubierto de barrio, totalmente reformado: producto fresco de paradistas locales.","Marché couvert de quartier entièrement rénové : produits frais de commerçants locaux.","Mercat municipal cobert de barri, totalment reformat: producte fresc de paradistes locals.")},
+ {id:"santsadurni",cat:"street",reg:"Alt Penedès",name:"Mercat setmanal",town:"Sant Sadurní d'Anoia",place:"Around Plaça de l'Ajuntament",km:40,lat:41.4260,lng:1.7850,s:[S([4,6],"08:00","13:00")],tags:["fruitveg","deli","plants","clothes","home"],
+  note:D("The cava capital's market: fruit and veg, olives, salted fish, roast chicken, nuts, charcuterie, flowers, clothes and homeware. Pair it with a cava cellar visit.","El mercado de la capital del cava: fruta y verdura, aceitunas, salazones, pollos asados, frutos secos, embutidos, flores, ropa y hogar. Combínalo con una visita a una bodega de cava.","Le marché de la capitale du cava : fruits et légumes, olives, salaisons, poulets rôtis, fruits secs, charcuterie, fleurs, vêtements et maison. À combiner avec une cave à cava.","El mercat de la capital del cava: fruita i verdura, olives, salaons, pollastres a l'ast, fruits secs, embotits, flors, roba i llar. Combina-ho amb una visita a un celler de cava.")},
+ {id:"santquinti",cat:"street",reg:"Alt Penedès",name:"Mercat setmanal",town:"Sant Quintí de Mediona",place:"C/ de Pi i Margall",km:38,lat:41.4590,lng:1.6650,n:10,s:[S([6],"08:00","14:00")],tags:["fruitveg","clothes"],
+  note:D("Small market of about 10 stalls: fruit, veg and clothes.","Mercadillo pequeño de unos 10 puestos: fruta, verdura y ropa.","Petit marché d'une dizaine d'étals : fruits, légumes et vêtements.","Mercat petit d'unes 10 parades: fruita, verdura i roba.")},
+ // ---------- Occasional ----------
+ {id:"vendrell-teresa",cat:"events",reg:"Baix Penedès",name:"Fira de Santa Teresa",town:"El Vendrell",km:10,lat:41.2200,lng:1.5360,s:[],tags:["food","crafts"],flags:["check"],
+  when:D("Town festival fair around 15 October","Feria de la fiesta mayor, alrededor del 15 de octubre","Foire de la fête patronale, autour du 15 octobre","Fira de la festa major, al voltant del 15 d'octubre"),
+  note:D("El Vendrell's main festival, with fair stalls in town. Dates are set each year.","La fiesta mayor de El Vendrell, con puestos de feria por el pueblo. Las fechas cambian cada año.","La fête patronale d'El Vendrell, avec des stands de foire en ville. Dates fixées chaque année.","La festa major del Vendrell, amb parades de fira pel poble. Les dates canvien cada any.")},
+ {id:"comaruga-night",cat:"events",reg:"Baix Penedès",name:"Mercat del passeig marítim",town:"Coma-ruga",place:"Passeig Marítim",km:13,lat:41.1795,lng:1.5230,s:[],tags:["crafts","clothes"],
+  when:D("Summer evenings, 18:00 to 24:00","Noches de verano, de 18:00 a 24:00","Soirs d'été, de 18 h à minuit","Vespres d'estiu, de 18:00 a 24:00"),
+  note:D("Seafront evening market during the summer season.","Mercadillo nocturno en el paseo marítimo durante la temporada de verano.","Marché du soir sur le front de mer pendant la saison d'été.","Mercat de vespre al passeig marítim durant la temporada d'estiu.")},
+ {id:"cunit-summer",cat:"events",reg:"Baix Penedès",name:"Fira d'artesania d'estiu",town:"Cunit",km:20,lat:41.1960,lng:1.6360,s:[],tags:["crafts"],
+  when:D("Weekends in July and August, 18:00 to 24:00","Fines de semana de julio y agosto, de 18:00 a 24:00","Week-ends de juillet et août, de 18 h à minuit","Caps de setmana de juliol i agost, de 18:00 a 24:00"),
+  note:D("Summer crafts fair on weekend evenings.","Feria de artesanía de verano las noches de fin de semana.","Foire artisanale d'été les soirs de week-end.","Fira d'artesania d'estiu els vespres de cap de setmana.")},
+ {id:"calafell-medieval",cat:"events",reg:"Baix Penedès",name:"Mercat Medieval",town:"Calafell",place:"Around the castle",km:15,lat:41.2000,lng:1.5680,n:50,s:[],tags:["crafts","food"],
+  when:D("Last weekend of August, 11:00 to 24:00","Último fin de semana de agosto, de 11:00 a 24:00","Dernier week-end d'août, de 11 h à minuit","Últim cap de setmana d'agost, de 11:00 a 24:00"),
+  note:D("About 50 craft stalls, shows and a historic atmosphere by the castle. Great for families.","Unos 50 puestos de artesanía, espectáculos y ambiente histórico junto al castillo. Ideal en familia.","Une cinquantaine d'étals d'artisanat, spectacles et ambiance historique près du château. Idéal en famille.","Unes 50 parades d'artesania, espectacles i ambient històric al costat del castell. Ideal en família.")},
+ {id:"segur-swap",cat:"events",reg:"Baix Penedès",name:"Mercat d'intercanvi i segona mà",town:"Segur de Calafell",place:"Passeig Marítim",km:17,lat:41.1880,lng:1.6080,n:200,s:[],tags:["secondhand","books","toys","plants"],
+  when:D("A few Sundays a year, usually spring, 8:00 to 15:00","Algunos domingos al año, sobre todo en primavera, de 8:00 a 15:00","Quelques dimanches par an, surtout au printemps, de 8 h à 15 h","Alguns diumenges l'any, sobretot a la primavera, de 8:00 a 15:00"),
+  note:D("About 200 private sellers swap or sell their things: books, furniture, records, tools, clothes, kids' gear and plants. No food, no traders.","Unos 200 particulares intercambian o venden sus cosas: libros, muebles, discos, herramientas, ropa, cosas de niños y plantas. Sin comida ni comerciantes.","Environ 200 particuliers échangent ou vendent : livres, meubles, disques, outils, vêtements, affaires d'enfants et plantes. Ni alimentation ni professionnels.","Uns 200 particulars intercanvien o venen les seves coses: llibres, mobles, discos, eines, roba, coses d'infants i plantes. Sense menjar ni comerciants.")},
+ {id:"arboc-llucia",cat:"events",reg:"Baix Penedès",name:"Fira de Santa Llúcia",town:"L'Arboç",km:14,lat:41.2665,lng:1.6040,n:100,s:[],tags:["crafts","food"],
+  when:D("Santa Llúcia weekend, mid December","Fin de semana de Santa Llúcia, a mediados de diciembre","Week-end de la Santa Llúcia, mi-décembre","Cap de setmana de Santa Llúcia, a mitjans de desembre"),
+  note:D("Christmas fair with about 100 stalls: decorations, crafts and gifts.","Feria navideña con unos 100 puestos: adornos, artesanía y regalos.","Marché de Noël d'environ 100 étals : décorations, artisanat et cadeaux.","Fira de Nadal amb unes 100 parades: guarniments, artesania i regals.")},
+ {id:"torre-swap",cat:"events",reg:"Tarragonès",name:"Mercat d'intercanvi",town:"Torredembarra",km:20,lat:41.1450,lng:1.4030,s:[],tags:["secondhand"],
+  when:D("Twice a year, June and late November, Saturday 10:00 to 14:00","Dos veces al año, junio y finales de noviembre, sábado de 10:00 a 14:00","Deux fois par an, juin et fin novembre, samedi de 10 h à 14 h","Dues vegades l'any, juny i finals de novembre, dissabte de 10:00 a 14:00"),
+  note:D("Eco swap and second-hand market with repair and reuse stalls.","Mercado ecológico de intercambio y segunda mano, con puestos de reparación y reutilización.","Marché écologique de troc et d'occasion, avec stands de réparation et de réemploi.","Mercat ecològic d'intercanvi i segona mà, amb parades de reparació i reutilització.")},
+ {id:"tgn-medieval",cat:"events",reg:"Tarragonès",name:"Mercat Medieval",town:"Tarragona",place:"Pla de la Seu",km:35,lat:41.1195,lng:1.2585,s:[],tags:["crafts","food"],flags:["check"],
+  when:D("October, around the Pilar long weekend, 10:00 to 22:00","Octubre, alrededor del puente del Pilar, de 10:00 a 22:00","Octobre, autour du pont du Pilar, de 10 h à 22 h","Octubre, al voltant del pont del Pilar, de 10:00 a 22:00"),
+  note:D("The cathedral square fills with craft beer, jewellery, sweets, charcuterie, cheese and wooden toys, plus parades and kids' activities.","La plaza de la catedral se llena de cerveza artesana, bisutería, dulces, embutidos, quesos y juguetes de madera, con pasacalles y actividades infantiles.","La place de la cathédrale se remplit de bière artisanale, bijoux, douceurs, charcuterie, fromages et jouets en bois, avec défilés et animations pour enfants.","La plaça de la catedral s'omple de cervesa artesana, bijuteria, dolços, embotits, formatges i joguines de fusta, amb cercaviles i activitats infantils.")},
+ {id:"valls-fair",cat:"events",reg:"Alt Camp",name:"Fira de Santa Úrsula",town:"Valls",km:25,lat:41.2850,lng:1.2480,s:[],tags:["food","crafts"],flags:["check"],
+  when:D("Mid October, all day","Mediados de octubre, todo el día","Mi-octobre, toute la journée","Mitjans d'octubre, tot el dia"),
+  note:D("Valls' traditional autumn fair during its town festival.","La feria tradicional de otoño de Valls, durante su fiesta mayor.","La foire d'automne traditionnelle de Valls, pendant sa fête patronale.","La fira tradicional de tardor de Valls, durant la festa major.")},
+ {id:"sarroca-medieval",cat:"events",reg:"Alt Penedès",name:"Fira Sarroca Medieval",town:"Sant Martí Sarroca",place:"Around the castle",km:25,lat:41.3850,lng:1.6110,s:[],tags:["crafts","food"],flags:["check"],
+  when:D("October, around the Pilar long weekend, 11:00 to 22:00","Octubre, alrededor del puente del Pilar, de 11:00 a 22:00","Octobre, autour du pont du Pilar, de 11 h à 22 h","Octubre, al voltant del pont del Pilar, d'11:00 a 22:00"),
+  note:D("Medieval fair around the castle: craft stalls, food and wine, street shows, castle tours and a kids' area.","Feria medieval junto al castillo: artesanía, gastronomía y vino, espectáculos, visitas al castillo y zona infantil.","Foire médiévale autour du château : artisanat, gastronomie et vin, spectacles, visites du château et espace enfants.","Fira medieval al voltant del castell: artesania, gastronomia i vi, espectacles, visites al castell i zona infantil.")}
+];
+
+/* ---------- state ---------- */
+const st={view:"home",mk:"today",day:new Date().getDay(),cats:new Set(CATS),sort:"house",me:null,locState:"",mapCats:new Set(CATS),mapToday:false,sel:null,vb:null};
+try{const h=location.hash.slice(1);if(["home","markets","map"].includes(h))st.view=h}catch(e){}
+
+/* ---------- helpers ---------- */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const loc=()=>({en:"en-GB",es:"es-ES",fr:"fr-FR",ca:"ca-ES"})[lang];
+const dayName=(d,w)=>{const base=new Date(2026,0,4+d);return new Intl.DateTimeFormat(loc(),{weekday:w||"long"}).format(base)};
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const min=h=>{const [a,b]=h.split(":").map(Number);return a*60+b};
+const fmtT=h=>h.replace(/^0/,"");
+const weekOfMonth=dt=>Math.ceil(dt.getDate()/7);
+function runsOn(m,dt){return m.s.filter(x=>x.d.includes(dt.getDay())&&(!x.nth||weekOfMonth(dt)===x.nth))}
+function nextDate(m,x){const d=new Date();d.setHours(0,0,0,0);for(let i=0;i<70;i++){if(x.d.includes(d.getDay())&&(!x.nth||weekOfMonth(d)===x.nth))return new Date(d);d.setDate(d.getDate()+1)}return null}
+function status(m,dt){const now=dt||new Date();const sl=runsOn(m,now);if(!sl.length)return null;const n=now.getHours()*60+now.getMinutes();
+  if(sl.some(x=>n>=min(x.o)&&n<min(x.c)))return"open";if(sl.some(x=>n<min(x.o)))return"later";return"done"}
+function hav(a,b,c,d){const R=6371,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r;const h=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+const kmMe=m=>st.me?Math.max(1,Math.round(hav(st.me.lat,st.me.lng,m.lat,m.lng)*1.3)):null;
+const gq=m=>encodeURIComponent(m.q||[m.name,m.place,m.town].filter(Boolean).join(", "));
+const gDir=m=>"https://www.google.com/maps/dir/?api=1&destination="+(m.q?gq(m):m.lat+","+m.lng);
+const gSearch=m=>"https://www.google.com/maps/search/?api=1&query="+gq(m);
+function hoursText(m){
+  if(!m.s.length)return tx(m.when);
+  // group slots by identical times/nth
+  return m.s.map(x=>{
+    let days;
+    if(x.nth){days=t("nth",{nth:t("nth"+x.nth),day:dayName(x.d[0])})}
+    else{const ord=[1,2,3,4,5,6,0];const ds=ord.filter(d=>x.d.includes(d));
+      const run=ds.length>=3&&ds.every((d,i)=>i===0||ord.indexOf(d)===ord.indexOf(ds[i-1])+1);
+      days=run?cap(dayName(ds[0],"short"))+"–"+dayName(ds[ds.length-1],"short"):ds.map(d=>cap(dayName(d,"short"))).join(", ")}
+    const time=x.m?t("morning"):fmtT(x.o)+"–"+fmtT(x.c);
+    return {days:cap(days),time}
+  });
+}
+function sorted(list){return list.slice().sort((a,b)=>st.sort==="me"&&st.me?kmMe(a)-kmMe(b):a.km-b.km||a.town.localeCompare(b.town))}
+const ICON={
+ dir:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg>',
+ pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+ me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
+ home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>'
+};
+
+/* ---------- card ---------- */
+function card(m,opts){
+  opts=opts||{};
+  const ht=hoursText(m);
+  const when=typeof ht==="string"?`<div class="when"><span>${esc(t("occasional"))}</span><span class="t">${esc(ht)}</span></div>`
+    :`<div class="when">${ht.map(h=>`<span>${esc(h.days)} <span class="t">${esc(h.time)}</span></span>`).join("")}${m.s.filter(x=>x.nth).map(x=>{const d=nextDate(m,x);return d?`<span class="t">${esc(t("nextDate",{date:new Intl.DateTimeFormat(loc(),{weekday:"short",day:"numeric",month:"short"}).format(d)}))}</span>`:""}).join("")}</div>`;
+  let stt="";
+  if(opts.date){const s=status(m,opts.date);if(opts.live&&s)stt=`<span class="status ${s==="open"?"open":s==="later"?"later":"done"}">${esc(t(s==="open"?"openNow":s==="later"?"later":"done"))}</span>`}
+  const me=kmMe(m);
+  return `<article class="card" style="--cc:var(--c-${m.cat});--cs:var(--c-${m.cat}-s)">
+   <div class="hd"><div><h3>${esc(m.town)}</h3><div class="where">${esc(m.name)}${m.place?", "+esc(m.place):""}</div><div class="reg">${esc(m.reg)}</div></div>
+   <div class="km"><b>${m.km}</b>${esc(t("kmHouse"))}</div></div>
+   <div class="row"><span class="type">${esc(t("cat_"+m.cat))}</span>${m.n?`<span class="size">${esc(t("stalls",{n:m.n}))}</span>`:""}${stt}</div>
+   ${when}
+   ${m.tags&&m.tags.length?`<div class="tags">${m.tags.map(g=>`<span class="tag">${esc(t("t_"+g))}</span>`).join("")}</div>`:""}
+   ${m.note?`<div class="note">${esc(tx(m.note))}</div>`:""}
+   ${(m.flags||[]).map(f=>`<div class="flag">${esc(t("f_"+f))}</div>`).join("")}
+   ${me!=null?`<div class="where">${esc(t("kmYou",{n:me}))}</div>`:""}
+   <div class="actions">
+     <a class="btn primary" href="${gDir(m)}" target="_blank" rel="noopener">${ICON.dir}${esc(t("directions"))}</a>
+     ${opts.noMap?`<a class="btn" href="${gSearch(m)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>`:`<button class="btn" data-onmap="${m.id}">${ICON.pin}${esc(t("onMap"))}</button>`}
+   </div></article>`;
+}
+
+/* ---------- views ---------- */
+const V=document.getElementById("view");
+function render(){
+  document.documentElement.lang=lang;
+  document.getElementById("brandSub").textContent=t("brandSub");
+  document.querySelectorAll("#tabs > button").forEach(b=>{b.textContent=t(b.dataset.v);b.setAttribute("aria-selected",b.dataset.v===st.view)});
+  document.querySelectorAll("#langs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===lang));
+  if(st.view==="home")renderHome();else if(st.view==="markets")renderMarkets();else renderMap();
+}
+
+function renderHome(){
+  const now=new Date();
+  const todays=sorted(M.filter(m=>m.cat!=="covered"&&runsOn(m,now).length));
+  const rows=todays.slice(0,5).map(m=>{const s=status(m,now);return `<button data-goto="${m.id}"><span class="dot" style="background:var(--c-${m.cat})"></span>
+     <span class="nm">${esc(m.town)}<small>${esc(t("cat_"+m.cat))} · ${m.km} km</small></span>
+     <span class="st" style="color:${s==="open"?"var(--ok)":s==="later"?"var(--c-covered)":"var(--faint)"}">${esc(t(s==="open"?"openNow":s==="later"?"later":"done"))}</span></button>`}).join("");
+  const soon=k=>`<div class="tile" aria-disabled="true">${esc(t(k))}<span class="meta">${esc(t("soon"))}</span></div>`;
+  V.innerHTML=`<div class="wrap" style="gap:18px">
+   <section class="hero-today">
+     <div class="hd"><b>${esc(t("todayHead"))} · ${esc(cap(new Intl.DateTimeFormat(loc(),{weekday:"long",day:"numeric",month:"long"}).format(now)))}</b>
+     <button class="btn" data-nav="markets" data-today>${esc(t("seeAll"))}</button></div>
+     ${rows?`<div class="mini">${rows}</div>`:`<div class="empty">${esc(t("noneTodayShort"))}</div>`}
+   </section>
+   <div class="groups">
+     <div class="group"><h3>${esc(t("gHouse"))}</h3><div class="tiles">${soon("houseRules")}${soon("garbage")}${soon("emergency")}</div></div>
+     <div class="group"><h3>${esc(t("gArea"))}</h3><div class="tiles">
+       <button class="tile" data-nav="markets" data-today>${esc(t("markets"))}<span class="go">${esc(t("openToday",{n:todays.length}))}</span></button>
+       ${soon("restaurants")}${soon("places")}${soon("kids")}${soon("adults")}</div></div>
+     <div class="group"><h3>${esc(t("gMap"))}</h3><div class="tiles"><button class="tile" data-nav="map">${esc(t("mapTile"))}<span class="go">${M.length}</span></button></div></div>
+   </div></div>`;
+}
+
+function filters(){
+  return `<div class="row">${CATS.map(c=>`<button class="chip" data-cat="${c}" aria-pressed="${st.cats.has(c)}"><i style="background:var(--c-${c})"></i>${esc(t("cat_"+c))}</button>`).join("")}</div>`;
+}
+function sortRow(){
+  return `<div class="row"><div class="pills" role="group">
+    <button data-sort="house" aria-pressed="${st.sort==="house"}">${esc(t("fromHouse"))}</button>
+    <button data-sort="me" aria-pressed="${st.sort==="me"}">${esc(t("fromMe"))}</button></div>
+    ${st.locState?`<span class="sortnote">${esc(st.locState)}</span>`:""}</div>`;
+}
+function renderMarkets(){
+  const now=new Date();
+  let body="";
+  const vis=m=>st.cats.has(m.cat);
+  if(st.mk==="today"){
+    const tm=new Date(now);tm.setDate(tm.getDate()+1);
+    const block=(dt,live,label)=>{const l=sorted(M.filter(m=>vis(m)&&runsOn(m,dt).length));
+      return `<h3 class="section-h">${esc(label)}</h3>${l.length?`<div class="list">${l.map(m=>card(m,{date:dt,live})).join("")}</div>`:`<div class="empty">${esc(t("noneMatch"))}</div>`}`};
+    body=block(now,true,t("today")+" · "+cap(dayName(now.getDay())))+block(tm,false,t("tomorrow")+" · "+cap(dayName(tm.getDay())));
+  }else if(st.mk==="week"){
+    const ord=[1,2,3,4,5,6,0];const td=now.getDay();
+    const bar=`<div class="daybar">${ord.map(d=>`<button class="dchip ${d===td?"today":""}" data-day="${d}" aria-pressed="${st.day===d}">${esc(cap(dayName(d,"short")))}<small>${d===td?esc(t("today")):M.filter(m=>m.cat!=="covered"&&m.s.some(x=>x.d.includes(d))).length}</small></button>`).join("")}</div>`;
+    const l=sorted(M.filter(m=>vis(m)&&m.s.some(x=>x.d.includes(st.day))));
+    const street=l.filter(m=>m.cat!=="covered");
+    body=bar+(l.length?`<div class="list">${l.map(m=>card(m,{date:st.day===td?now:null,live:st.day===td})).join("")}</div>`:`<div class="empty">${esc(t("noneDay"))}</div>`);
+  }else{
+    const l=sorted(M.filter(vis));
+    body=l.length?`<div class="list">${l.map(m=>card(m)).join("")}</div>`:`<div class="empty">${esc(t("noneMatch"))}</div>`;
+  }
+  V.innerHTML=`<div class="wrap" style="gap:16px">
+    <div><h2 class="title">${esc(t("markets"))}</h2><p class="lead">${esc(t("mkLead"))}</p></div>
+    <div class="controls">
+      <div class="row"><div class="pills" role="group">
+        <button data-mk="today" aria-pressed="${st.mk==="today"}">${esc(t("vToday"))}</button>
+        <button data-mk="week" aria-pressed="${st.mk==="week"}">${esc(t("vWeek"))}</button>
+        <button data-mk="all" aria-pressed="${st.mk==="all"}">${esc(t("vAll"))}</button></div></div>
+      ${filters()}${sortRow()}
+    </div>
+    ${body}
+    <p class="foot">${esc(t("foot"))}</p></div>`;
+}
+
+/* ---------- map ---------- */
+const B={latMax:41.49,latMin:41.06,lngMin:1.13,lngMax:1.84};const COS=Math.cos(41.2*Math.PI/180);
+const K=1000/((B.lngMax-B.lngMin)*COS);const MW=1000,MH=Math.round((B.latMax-B.latMin)*K);
+const P=(lat,lng)=>[(lng-B.lngMin)*COS*K,(B.latMax-lat)*K];
+const COAST=[[41.33,2.15],[41.27,1.98],[41.25,1.90],[41.236,1.82],[41.222,1.765],[41.212,1.73],[41.205,1.68],[41.196,1.636],[41.189,1.605],[41.186,1.570],[41.181,1.540],[41.177,1.515],[41.172,1.490],[41.168,1.460],[41.160,1.437],[41.146,1.405],[41.137,1.380],[41.128,1.350],[41.122,1.320],[41.115,1.290],[41.112,1.265],[41.105,1.245],[41.095,1.225],[41.085,1.190],[41.070,1.150],[41.060,1.110],[41.040,1.050],[40.990,0.950],[40.900,0.850]];
+function landPath(){const pts=COAST.map(c=>P(c[0],c[1]));return "M"+pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" L")+` L-3000,${COAST[COAST.length-1]?P(COAST[COAST.length-1][0],COAST[COAST.length-1][1])[1]:0} L-3000,-3000 L${MW+3000},-3000 L${MW+3000},${P(COAST[0][0],COAST[0][1])[1]} Z`}
+function groupsForMap(){
+  const now=new Date();
+  const l=M.filter(m=>st.mapCats.has(m.cat)&&(!st.mapToday||runsOn(m,now).length));
+  const g={};l.forEach(m=>{(g[m.town]=g[m.town]||[]).push(m)});
+  return Object.keys(g).map(k=>{const a=g[k];const lat=a.reduce((s,m)=>s+m.lat,0)/a.length,lng=a.reduce((s,m)=>s+m.lng,0)/a.length;return{town:k,items:a,lat,lng}});
+}
+function mapSVG(){
+  const vb=st.vb||(st.vb={x:0,y:0,w:MW,h:MH});const placed=[];
+  const box=document.querySelector(".mapbox");const pxw=box&&box.clientWidth||1000,pxh=box&&box.clientHeight||600;const s=Math.max(vb.w/pxw,vb.h/pxh);
+  const gs=groupsForMap();
+  const h=P(HOUSE.lat,HOUSE.lng);
+  const hp=P(HOUSE.lat,HOUSE.lng);placed.push([hp[0]-50*s,hp[1]-14*s,hp[0]+50*s,hp[1]+32*s]);
+  gs.forEach(g=>{const p=P(g.lat,g.lng);const r=(g.items.length>1?13:10)*s;placed.push([p[0]-r,p[1]-r,p[0]+r,p[1]+r])});
+  const showLab={};const hit=bx=>placed.some(q=>bx[0]<q[2]&&bx[2]>q[0]&&bx[1]<q[3]&&bx[3]>q[1]);
+  gs.slice().sort((a,b)=>(st.sel===b.town)-(st.sel===a.town)||b.items.length-a.items.length).forEach(g=>{const p=P(g.lat,g.lng);const r=(g.items.length>1?11:8)*s;const w=g.town.length*6.6*s,h=14*s,gap=4*s;
+    const c=[["m",p[0],p[1]-r-gap-h/2],["m",p[0],p[1]+r+gap+h/2],["s",p[0]+r+gap,p[1]],["e",p[0]-r-gap,p[1]]];
+    for(const [an,x,y] of c){const x0=an==="m"?x-w/2:an==="s"?x:x-w;const bx=[x0,y-h/2,x0+w,y+h/2];if(!hit(bx)){placed.push(bx);showLab[g.town]={an,x,y:y+4*s};break}}});
+  let pins=gs.map(g=>{const p=P(g.lat,g.lng);const cats=[...new Set(g.items.map(m=>m.cat))];const col=cats.length===1?`var(--c-${cats[0]})`:"var(--ink)";
+    const r=(g.items.length>1?11:8)*s;const on=st.sel===g.town;
+    return `<g class="pin" data-town="${esc(g.town)}" tabindex="0" role="button" aria-label="${esc(g.town)}" style="cursor:pointer">
+      <circle cx="${p[0]}" cy="${p[1]}" r="${r+(on?4*s:2*s)}" fill="var(--surface)"/>
+      <circle cx="${p[0]}" cy="${p[1]}" r="${r}" fill="${col}"/>
+      ${g.items.length>1?`<text x="${p[0]}" y="${p[1]+4*s}" text-anchor="middle" font-size="${11*s}" font-weight="600" fill="var(--bg)">${g.items.length}</text>`:""}
+      ${showLab[g.town]?`<text x="${showLab[g.town].x}" y="${showLab[g.town].y}" text-anchor="${({m:"middle",s:"start",e:"end"})[showLab[g.town].an]}" font-size="${12*s}" font-weight="500" fill="var(--ink)" stroke="var(--land)" stroke-width="${3*s}" paint-order="stroke">${esc(g.town)}</text>`:""}</g>`}).join("");
+  const house=`<g><rect x="${h[0]-11*s}" y="${h[1]-11*s}" width="${22*s}" height="${22*s}" rx="${6*s}" fill="var(--accent)" stroke="var(--surface)" stroke-width="${2.5*s}"/>
+    <path d="M${h[0]-6*s},${h[1]+1*s} L${h[0]},${h[1]-5*s} L${h[0]+6*s},${h[1]+1*s} M${h[0]-4*s},${h[1]} V${h[1]+5*s} H${h[0]+4*s} V${h[1]}" stroke="var(--on-accent)" stroke-width="${1.8*s}" fill="none" stroke-linejoin="round"/>
+    <text x="${h[0]}" y="${h[1]+26*s}" text-anchor="middle" font-size="${13*s}" font-weight="600" fill="var(--accent)" stroke="var(--land)" stroke-width="${3*s}" paint-order="stroke">${esc(t("houseName"))}</text></g>`;
+  let me="";
+  if(st.me){const m=P(st.me.lat,st.me.lng);me=`<circle cx="${m[0]}" cy="${m[1]}" r="${16*s}" fill="#2F7DF6" opacity=".18"/><circle cx="${m[0]}" cy="${m[1]}" r="${7*s}" fill="#2F7DF6" stroke="#fff" stroke-width="${2.5*s}"/>`}
+  const seaLabel=P(41.10,1.52);
+  return `<svg viewBox="${vb.x} ${vb.y} ${vb.w} ${vb.h}" preserveAspectRatio="xMidYMid meet" id="msvg">
+    <rect x="-400" y="-400" width="${MW+800}" height="${MH+800}" fill="var(--sea)"/>
+    <path d="${landPath()}" fill="var(--land)" stroke="var(--coast)" stroke-width="${2*s}"/>
+    <text x="${seaLabel[0]}" y="${seaLabel[1]}" text-anchor="middle" font-family="Instrument Serif, Georgia, serif" font-style="italic" font-size="${22*s}" fill="var(--coast)">Mediterrània</text>
+    ${pins}${house}${me}</svg>`;
+}
+function renderMap(){
+  const now=new Date();
+  V.innerHTML=`<div class="wrap" style="gap:14px">
+    <div><h2 class="title">${esc(t("map"))}</h2><p class="lead">${esc(t("mapNote"))}</p></div>
+    <div class="controls">
+      <div class="row">${CATS.map(c=>`<button class="chip" data-mcat="${c}" aria-pressed="${st.mapCats.has(c)}"><i style="background:var(--c-${c})"></i>${esc(t("cat_"+c))}</button>`).join("")}
+      <button class="chip plain" data-mtoday aria-pressed="${st.mapToday}">${esc(t("openTodayOnly"))}</button></div>
+    </div>
+    <div class="mapbox" id="mapbox"><div id="svgwrap" style="height:100%"></div>
+      <div class="locbtn"><button class="btn" data-locate>${ICON.me}${esc(t("locate"))}</button></div>
+      <div class="mapctl"><button data-zoom="in" aria-label="Zoom in">+</button><button data-zoom="out" aria-label="Zoom out">−</button><button data-zoom="home" aria-label="${esc(t("houseName"))}">${ICON.home}</button></div>
+      <div class="locmsg" id="locmsg" ${st.locState?"":"hidden"}>${esc(st.locState)}</div>
+    </div>
+    <div id="sheet"></div></div>`;
+  if(!st.vb||st.vbAR!==boxAR()){if(!st.vb)fitDefault();else{const c=[st.vb.x+st.vb.w/2,st.vb.y+st.vb.h/2];st.vb.h=st.vb.w*boxAR();st.vb.y=c[1]-st.vb.h/2}st.vbAR=boxAR()}
+  drawMap();renderSheet();
+}
+function drawMap(){const w=document.getElementById("svgwrap");if(w)w.innerHTML=mapSVG()}
+function renderSheet(){
+  const el=document.getElementById("sheet");if(!el)return;
+  if(!st.sel){el.innerHTML="";return}
+  const g=groupsForMap().find(x=>x.town===st.sel);if(!g){el.innerHTML="";return}
+  el.innerHTML=`<div class="sheet"><div class="hd"><h3>${esc(g.town)}</h3><button class="x" data-closesheet>${esc(t("close"))}</button></div>
+   <div class="list">${sorted(g.items).map(m=>card(m,{date:new Date(),live:true,noMap:true})).join("")}</div></div>`;
+}
+function zoom(f,cx,cy){const v=st.vb;const nw=Math.min(MW*1.2,Math.max(90,v.w*f));const k=nw/v.w;
+  cx=cx==null?v.x+v.w/2:cx;cy=cy==null?v.y+v.h/2:cy;
+  st.vb={x:cx-(cx-v.x)*k,y:cy-(cy-v.y)*k,w:nw,h:v.h*k};drawMap()}
+function boxAR(){const b=document.getElementById("mapbox");return b&&b.clientWidth?b.clientHeight/b.clientWidth:MH/MW}
+function focusOn(lat,lng,w){const p=P(lat,lng);let ww=w||260;let hh=ww*boxAR();st.vb={x:p[0]-ww/2,y:p[1]-hh/2,w:ww,h:hh};}
+function fitDefault(){const ar=boxAR();const pts=M.map(m=>P(m.lat,m.lng)).concat([P(HOUSE.lat,HOUSE.lng)]);
+  let x0=Math.min(...pts.map(p=>p[0])),x1=Math.max(...pts.map(p=>p[0])),y0=Math.min(...pts.map(p=>p[1])),y1=Math.max(...pts.map(p=>p[1]));
+  const px=(x1-x0)*.08+20,py=(y1-y0)*.12+30;x0-=px;x1+=px;y0-=py;y1+=py;let w=x1-x0,h=y1-y0;
+  if(h/w<ar){h=w*ar}else{w=h/ar}const cx=(x0+x1)/2,cy=(y0+y1)/2;st.vb={x:cx-w/2,y:cy-h/2,w,h}}
+
+/* ---------- geolocation ---------- */
+function locate(then){
+  if(!navigator.geolocation){st.locState=t("locErr");render();return}
+  st.locState=t("locating");render();
+  navigator.geolocation.getCurrentPosition(p=>{
+    st.me={lat:p.coords.latitude,lng:p.coords.longitude};
+    const inside=st.me.lat<B.latMax&&st.me.lat>B.latMin&&st.me.lng>B.lngMin&&st.me.lng<B.lngMax;
+    st.locState=inside?"":t("outside");
+    if(then)then(inside);render();
+  },()=>{st.locState=t("locErr");if(st.sort==="me")st.sort="house";render()},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
+}
+
+/* ---------- events ---------- */
+function go(v){st.view=v;try{history.replaceState(null,"","#"+v)}catch(e){}render();window.scrollTo(0,0)}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button,[data-town]");if(!b)return;
+  if(b.dataset.v){go(b.dataset.v)}
+  else if(b.dataset.l){lang=b.dataset.l;try{localStorage.setItem("cg-lang",lang)}catch(x){}render()}
+  else if(b.dataset.nav){if(b.hasAttribute("data-today")){st.mk="today";st.cats=new Set(CATS.filter(c=>c!=="covered"))}go(b.dataset.nav)}
+  else if(b.dataset.goto){const m=M.find(x=>x.id===b.dataset.goto);st.sel=m.town;focusOn(m.lat,m.lng,320);go("map")}
+  else if(b.dataset.mk){st.mk=b.dataset.mk;render()}
+  else if(b.dataset.day){st.day=+b.dataset.day;render()}
+  else if(b.dataset.cat){const c=b.dataset.cat;if(st.cats.size===CATS.length){st.cats=new Set([c])}else if(st.cats.has(c)){st.cats.delete(c);if(!st.cats.size)st.cats=new Set(CATS)}else st.cats.add(c);render()}
+  else if(b.dataset.sort){if(b.dataset.sort==="me"){st.sort="me";if(!st.me)locate();else render()}else{st.sort="house";render()}}
+  else if(b.dataset.onmap){const m=M.find(x=>x.id===b.dataset.onmap);st.sel=m.town;st.mapCats=new Set(CATS);st.mapToday=false;focusOn(m.lat,m.lng,320);go("map")}
+  else if(b.dataset.mcat){const c=b.dataset.mcat;if(st.mapCats.size===CATS.length){st.mapCats=new Set([c])}else if(st.mapCats.has(c)){st.mapCats.delete(c);if(!st.mapCats.size)st.mapCats=new Set(CATS)}else st.mapCats.add(c);st.sel=null;renderMap()}
+  else if(b.hasAttribute("data-mtoday")){st.mapToday=!st.mapToday;st.sel=null;renderMap()}
+  else if(b.dataset.zoom){const z=b.dataset.zoom;if(z==="in")zoom(.7);else if(z==="out")zoom(1/.7);else{fitDefault();drawMap()}}
+  else if(b.hasAttribute("data-locate")){locate(inside=>{if(inside)focusOn(st.me.lat,st.me.lng,360)})}
+  else if(b.hasAttribute("data-closesheet")){st.sel=null;drawMap();renderSheet()}
+  else if(b.dataset.town&&!dragMoved){st.sel=b.dataset.town;drawMap();renderSheet();const sh=document.getElementById("sheet");if(sh&&sh.scrollIntoView)sh.scrollIntoView({behavior:"smooth",block:"nearest"})}
+});
+document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.dataset&&e.target.dataset.town){e.preventDefault();e.target.dispatchEvent(new MouseEvent("click",{bubbles:true}))}});
+
+// pan + pinch + wheel
+let ptrs=new Map(),dragMoved=false,startVB=null,startPts=null;
+function toUser(svg,cx,cy){const r=svg.getBoundingClientRect();const v=st.vb;
+  const sc=Math.max(v.w/r.width,v.h/r.height);const ox=(r.width*sc-v.w)/2,oy=(r.height*sc-v.h)/2;
+  return [v.x-ox+(cx-r.left)*sc,v.y-oy+(cy-r.top)*sc,sc]}
+document.addEventListener("pointerdown",e=>{const svg=e.target.closest&&e.target.closest("#msvg");if(!svg)return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});dragMoved=false;startVB=Object.assign({},st.vb);startPts=new Map(ptrs);svg.classList.add("drag")});
+document.addEventListener("pointermove",e=>{if(!ptrs.has(e.pointerId))return;const svg=document.getElementById("msvg");if(!svg)return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const r=svg.getBoundingClientRect();const sc=Math.max(startVB.w/r.width,startVB.h/r.height);
+  if(ptrs.size===1){const s0=startPts.get(e.pointerId);if(!s0)return;const dx=e.clientX-s0.x,dy=e.clientY-s0.y;
+    if(Math.abs(dx)+Math.abs(dy)>4)dragMoved=true;
+    st.vb={x:startVB.x-dx*sc,y:startVB.y-dy*sc,w:startVB.w,h:startVB.h};svg.setAttribute("viewBox",`${st.vb.x} ${st.vb.y} ${st.vb.w} ${st.vb.h}`)}
+  else if(ptrs.size===2){dragMoved=true;const a=[...ptrs.values()],b0=[...startPts.values()];if(b0.length<2)return;
+    const d1=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),d0=Math.hypot(b0[0].x-b0[1].x,b0[0].y-b0[1].y);if(!d0)return;
+    const k=Math.min(MW*1.2/startVB.w,Math.max(90/startVB.w,d0/d1));
+    const mx=(b0[0].x+b0[1].x)/2,my=(b0[0].y+b0[1].y)/2;const ux=startVB.x+(mx-r.left)*sc,uy=startVB.y+(my-r.top)*sc;
+    st.vb={x:ux-(ux-startVB.x)*k,y:uy-(uy-startVB.y)*k,w:startVB.w*k,h:startVB.h*k};svg.setAttribute("viewBox",`${st.vb.x} ${st.vb.y} ${st.vb.w} ${st.vb.h}`)}
+});
+function endPtr(e){if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);if(!ptrs.size){const svg=document.getElementById("msvg");if(svg)svg.classList.remove("drag");if(dragMoved)drawMap()}else{startVB=Object.assign({},st.vb);startPts=new Map(ptrs)}}
+document.addEventListener("pointerup",endPtr);document.addEventListener("pointercancel",endPtr);
+document.addEventListener("wheel",e=>{const svg=e.target.closest&&e.target.closest("#msvg");if(!svg)return;e.preventDefault();const [ux,uy]=toUser(svg,e.clientX,e.clientY);zoom(e.deltaY>0?1.15:1/1.15,ux,uy)},{passive:false});
+window.addEventListener("resize",()=>{if(st.view==="map")drawMap()});
+
+render();
+setInterval(()=>{if(st.view!=="map")render()},60000);
+})();
+</script>
+</body>
+</html>

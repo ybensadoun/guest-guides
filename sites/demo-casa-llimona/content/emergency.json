@@ -1,0 +1,329 @@
+{
+  "_doc": "Emergency contacts page (kind: contacts). groups[] in display order, most urgent first; group title from i18n key c_<id>. Item: id, name{6}, what{6} (what it is and when to use it), phone (optional, as dialled), address (optional, opens Google Maps), schedule (same shape as markets: days/open/close) or always:true (24 h), web (official page, optional), map (direct Google Maps link, optional, else built from address), link {url, label: i18n key} (optional), verify (true = from a directory, check it). Sources in docs/RESEARCH-NOTES.md. Never add the hosts' own numbers. Pizza, taxi and the shop next door are in content/quick.json.",
+  "groups": [
+    {
+      "id": "urgent",
+      "items": [
+        {
+          "id": "112",
+          "phone": "112",
+          "always": true,
+          "name": {
+            "en": "Emergencies",
+            "es": "Emergencias",
+            "fr": "Urgences",
+            "ca": "Emergències",
+            "de": "Notruf",
+            "nl": "Noodnummer"
+          },
+          "what": {
+            "en": "Ambulance, police or fire, for anything serious or dangerous. Free from any phone. They speak English, French and German.",
+            "es": "Ambulancia, policía o bomberos, para cualquier cosa grave o peligrosa. Gratis desde cualquier teléfono. Hablan inglés, francés y alemán.",
+            "fr": "Ambulance, police ou pompiers, pour tout ce qui est grave ou dangereux. Gratuit depuis n'importe quel téléphone. On y parle anglais, français et allemand.",
+            "ca": "Ambulància, policia o bombers, per a qualsevol cosa greu o perillosa. Gratuït des de qualsevol telèfon. Parlen anglès, francès i alemany.",
+            "de": "Rettungsdienst, Polizei oder Feuerwehr bei allem, was ernst oder gefährlich ist. Kostenlos von jedem Telefon. Auch auf Englisch, Französisch und Deutsch.",
+            "nl": "Ambulance, politie of brandweer, voor alles wat ernstig of gevaarlijk is. Gratis vanaf elke telefoon. Ze spreken Engels, Frans en Duits."
+          }
+        },
+        {
+          "id": "061",
+          "phone": "061",
+          "always": true,
+          "name": {
+            "en": "Health advice line (061)",
+            "es": "Consejo sanitario (061)",
+            "fr": "Conseil médical (061)",
+            "ca": "061 CatSalut Respon",
+            "de": "Medizinische Beratung (061)",
+            "nl": "Medisch advies (061)"
+          },
+          "what": {
+            "en": "Feeling unwell but not sure it is an emergency? A nurse or doctor tells you what to do and where to go.",
+            "es": "¿Te encuentras mal pero no sabes si es urgente? Una enfermera o un médico te dice qué hacer y adónde ir.",
+            "fr": "Vous ne vous sentez pas bien sans savoir si c'est urgent ? Une infirmière ou un médecin vous dit quoi faire et où aller.",
+            "ca": "Et trobes malament però no saps si és urgent? Una infermera o un metge et diu què fer i on anar.",
+            "de": "Unwohl, aber unsicher, ob es ein Notfall ist? Eine Pflegekraft oder ein Arzt sagt, was zu tun ist und wohin.",
+            "nl": "Voel je je niet goed maar weet je niet of het dringend is? Een verpleegkundige of arts zegt wat je moet doen en waarheen."
+          },
+          "web": "https://catsalut.gencat.cat/ca/serveis-sanitaris/urgencies-mediques/"
+        },
+        {
+          "id": "hospital",
+          "phone": "977 25 79 14",
+          "always": true,
+          "address": "Hospital del Vendrell, Carretera de Barcelona, El Vendrell",
+          "name": {
+            "en": "Hospital del Vendrell, A&E",
+            "es": "Hospital del Vendrell, urgencias",
+            "fr": "Hôpital du Vendrell, urgences",
+            "ca": "Hospital del Vendrell, urgències",
+            "de": "Krankenhaus El Vendrell, Notaufnahme",
+            "nl": "Ziekenhuis El Vendrell, spoedeisende hulp"
+          },
+          "what": {
+            "en": "Nearest hospital emergency department, about 15 minutes by car. Go straight there for injuries, high fever or pain that cannot wait.",
+            "es": "Urgencias del hospital más cercano, a unos 15 minutos en coche. Ve directamente por heridas, fiebre alta o dolor que no puede esperar.",
+            "fr": "Urgences de l'hôpital le plus proche, à environ 15 minutes en voiture. Allez-y directement pour une blessure, une forte fièvre ou une douleur qui ne peut pas attendre.",
+            "ca": "Urgències de l'hospital més proper, a uns 15 minuts en cotxe. Vés-hi directament per ferides, febre alta o dolor que no pot esperar.",
+            "de": "Notaufnahme des nächsten Krankenhauses, etwa 15 Minuten mit dem Auto. Direkt hinfahren bei Verletzungen, hohem Fieber oder Schmerzen, die nicht warten können.",
+            "nl": "Spoedeisende hulp van het dichtstbijzijnde ziekenhuis, ongeveer 15 minuten met de auto. Ga er direct heen bij verwondingen, hoge koorts of pijn die niet kan wachten."
+          },
+          "web": "https://www.xarxatecla.cat/es/hospital-del-vendrell"
+        },
+        {
+          "id": "vet",
+          "phone": "608 835 327",
+          "always": true,
+          "verify": true,
+          "address": "Vidavet, Carrer de Mallorca 47, Calafell",
+          "name": {
+            "en": "Emergency vet",
+            "es": "Veterinario de urgencias",
+            "fr": "Vétérinaire d'urgence",
+            "ca": "Veterinari d'urgències",
+            "de": "Tierarzt-Notdienst",
+            "nl": "Spoeddierenarts"
+          },
+          "what": {
+            "en": "Vidavet clinic in Calafell, about 15 minutes away. Answers emergencies day and night.",
+            "es": "Clínica Vidavet en Calafell, a unos 15 minutos. Atiende urgencias de día y de noche.",
+            "fr": "Clinique Vidavet à Calafell, à environ 15 minutes. Urgences jour et nuit.",
+            "ca": "Clínica Vidavet a Calafell, a uns 15 minuts. Atén urgències de dia i de nit.",
+            "de": "Tierklinik Vidavet in Calafell, etwa 15 Minuten entfernt. Notfälle Tag und Nacht.",
+            "nl": "Dierenkliniek Vidavet in Calafell, ongeveer 15 minuten rijden. Spoed dag en nacht."
+          },
+          "web": "https://www.vidavet.es/"
+        },
+        {
+          "id": "toxic",
+          "phone": "91 562 04 20",
+          "always": true,
+          "name": {
+            "en": "Poison information",
+            "es": "Información toxicológica",
+            "fr": "Centre antipoison",
+            "ca": "Informació toxicològica",
+            "de": "Giftnotruf",
+            "nl": "Vergiftigingen"
+          },
+          "what": {
+            "en": "A child or a pet swallowed something: medicines, cleaning products, plants, mushrooms. Tells you what to do.",
+            "es": "Un niño o una mascota se ha tragado algo: medicamentos, productos de limpieza, plantas, setas. Te dicen qué hacer.",
+            "fr": "Un enfant ou un animal a avalé quelque chose : médicaments, produits ménagers, plantes, champignons. On vous dit quoi faire.",
+            "ca": "Un infant o una mascota s'ha empassat alguna cosa: medicaments, productes de neteja, plantes, bolets. Et diuen què fer.",
+            "de": "Ein Kind oder Tier hat etwas verschluckt: Medikamente, Putzmittel, Pflanzen, Pilze. Sie sagen, was zu tun ist.",
+            "nl": "Een kind of huisdier heeft iets ingeslikt: medicijnen, schoonmaakmiddelen, planten, paddenstoelen. Ze zeggen wat je moet doen."
+          },
+          "web": "https://www.mjusticia.gob.es/es/institucional/organismos/instituto-nacional/servicios/servicio-informacion/servicio-informacion1"
+        }
+      ]
+    },
+    {
+      "id": "health",
+      "items": [
+        {
+          "id": "pharmacy",
+          "phone": "977 68 85 50",
+          "address": "Farmàcia Dalmau, Carrer de la Llibertat 11, La Bisbal del Penedès",
+          "schedule": [
+            {
+              "days": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat"
+              ],
+              "open": "09:30",
+              "close": "13:30"
+            },
+            {
+              "days": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri"
+              ],
+              "open": "17:00",
+              "close": "20:00"
+            }
+          ],
+          "link": {
+            "url": "https://www.coft.cat/font/gcomarques.php?CODICOMARCA=3",
+            "label": "dutyPharmacies"
+          },
+          "name": {
+            "en": "Pharmacy in the village",
+            "es": "Farmacia del pueblo",
+            "fr": "Pharmacie du village",
+            "ca": "Farmàcia del poble",
+            "de": "Apotheke im Dorf",
+            "nl": "Apotheek in het dorp"
+          },
+          "what": {
+            "en": "Medicines, plasters, sun cream and advice from the pharmacist, who can help with small problems without a doctor. When it is closed, another pharmacy nearby is on duty (de guàrdia).",
+            "es": "Medicamentos, tiritas, crema solar y consejo del farmacéutico, que ayuda con problemas pequeños sin pasar por el médico. Cuando está cerrada, otra farmacia cercana está de guardia.",
+            "fr": "Médicaments, pansements, crème solaire et conseils du pharmacien, qui aide pour les petits soucis sans passer par le médecin. Quand elle est fermée, une autre pharmacie proche est de garde.",
+            "ca": "Medicaments, tiretes, crema solar i consell del farmacèutic, que ajuda amb problemes petits sense passar pel metge. Quan és tancada, una altra farmàcia propera és de guàrdia.",
+            "de": "Medikamente, Pflaster, Sonnencreme und Rat vom Apotheker, der bei kleinen Problemen ohne Arzt hilft. Wenn sie geschlossen ist, hat eine andere Apotheke in der Nähe Notdienst (de guàrdia).",
+            "nl": "Medicijnen, pleisters, zonnebrand en advies van de apotheker, die bij kleine klachten helpt zonder arts. Als ze dicht is, heeft een andere apotheek in de buurt dienst (de guàrdia)."
+          }
+        },
+        {
+          "id": "consultori",
+          "phone": "977 68 87 24",
+          "address": "Consultori local, Carrer de Girona 3, La Bisbal del Penedès",
+          "schedule": [
+            {
+              "days": [
+                "mon",
+                "wed"
+              ],
+              "open": "08:00",
+              "close": "20:00"
+            },
+            {
+              "days": [
+                "tue",
+                "thu",
+                "fri"
+              ],
+              "open": "08:00",
+              "close": "14:00"
+            }
+          ],
+          "name": {
+            "en": "Village health centre",
+            "es": "Centro de salud del pueblo",
+            "fr": "Centre de santé du village",
+            "ca": "Consultori del poble",
+            "de": "Gesundheitszentrum im Dorf",
+            "nl": "Gezondheidscentrum in het dorp"
+          },
+          "what": {
+            "en": "Public GP surgery for problems that are not emergencies: a fever, an ear infection, a prescription. Call first to get an appointment. Bring your European health card or travel insurance.",
+            "es": "Médico de cabecera público para lo que no es urgente: fiebre, otitis, una receta. Llama antes para pedir cita. Lleva tu tarjeta sanitaria europea o tu seguro de viaje.",
+            "fr": "Médecin généraliste public pour ce qui n'est pas urgent : fièvre, otite, une ordonnance. Appelez avant pour un rendez-vous. Apportez votre carte européenne d'assurance maladie ou votre assurance voyage.",
+            "ca": "Metge de capçalera públic per al que no és urgent: febre, otitis, una recepta. Truca abans per demanar hora. Porta la targeta sanitària europea o l'assegurança de viatge.",
+            "de": "Öffentliche Hausarztpraxis für alles, was kein Notfall ist: Fieber, Ohrenentzündung, ein Rezept. Vorher anrufen für einen Termin. Europäische Krankenversicherungskarte oder Reiseversicherung mitbringen.",
+            "nl": "Openbare huisarts voor wat geen spoed is: koorts, oorontsteking, een recept. Bel eerst voor een afspraak. Neem je Europese zorgpas of reisverzekering mee."
+          },
+          "web": "https://www.xarxatecla.cat/consultori-la-bisbal-del-penedes"
+        }
+      ]
+    },
+    {
+      "id": "police",
+      "items": [
+        {
+          "id": "mossos",
+          "address": "Comissaria Mossos d'Esquadra, Carrer de Cèsar Martinell i Brunet 20, El Vendrell",
+          "link": {
+            "url": "https://mossos.gencat.cat/ca/temes/denuncies/",
+            "label": "reportOnline"
+          },
+          "name": {
+            "en": "Theft or lost papers",
+            "es": "Robo o documentos perdidos",
+            "fr": "Vol ou papiers perdus",
+            "ca": "Robatori o documents perduts",
+            "de": "Diebstahl oder verlorene Papiere",
+            "nl": "Diefstal of verloren papieren"
+          },
+          "what": {
+            "en": "Report it to the Catalan police (Mossos d'Esquadra) at the El Vendrell station, or online. You need the report for insurance and to replace documents. If you are in danger, call 112.",
+            "es": "Denúncialo a la policía catalana (Mossos d'Esquadra) en la comisaría de El Vendrell, o en línea. Necesitas la denuncia para el seguro y para rehacer documentos. Si estás en peligro, llama al 112.",
+            "fr": "Déclarez-le à la police catalane (Mossos d'Esquadra) au commissariat d'El Vendrell, ou en ligne. La déclaration est nécessaire pour l'assurance et pour refaire vos papiers. En cas de danger, appelez le 112.",
+            "ca": "Denuncia-ho a la policia catalana (Mossos d'Esquadra) a la comissaria del Vendrell, o en línia. Necessites la denúncia per a l'assegurança i per refer documents. Si estàs en perill, truca al 112.",
+            "de": "Bei der katalanischen Polizei (Mossos d'Esquadra) in El Vendrell oder online anzeigen. Die Anzeige braucht man für die Versicherung und neue Papiere. Bei Gefahr 112 anrufen.",
+            "nl": "Doe aangifte bij de Catalaanse politie (Mossos d'Esquadra) in El Vendrell, of online. Je hebt de aangifte nodig voor de verzekering en nieuwe papieren. Ben je in gevaar, bel 112."
+          },
+          "web": "https://mossos.gencat.cat/en/serveis_i_tramits/localitzacio_de_comissaries/index.html"
+        },
+        {
+          "id": "car",
+          "name": {
+            "en": "Car breakdown or accident",
+            "es": "Avería o accidente de coche",
+            "fr": "Panne ou accident de voiture",
+            "ca": "Avaria o accident de cotxe",
+            "de": "Autopanne oder Unfall",
+            "nl": "Autopech of ongeluk"
+          },
+          "what": {
+            "en": "Call the assistance number on your rental contract or insurance card. On a main road, put on the reflective vest, stand behind the barrier and call 112 if anyone is hurt or in danger.",
+            "es": "Llama al número de asistencia de tu contrato de alquiler o de tu seguro. En carretera, ponte el chaleco reflectante, quédate tras el guardarraíl y llama al 112 si hay heridos o peligro.",
+            "fr": "Appelez le numéro d'assistance de votre contrat de location ou de votre assurance. Sur la route, mettez le gilet réfléchissant, restez derrière la glissière et appelez le 112 en cas de blessés ou de danger.",
+            "ca": "Truca al número d'assistència del contracte de lloguer o de l'assegurança. A la carretera, posa't l'armilla reflectant, queda't darrere la tanca i truca al 112 si hi ha ferits o perill.",
+            "de": "Die Pannenhilfe-Nummer vom Mietvertrag oder der Versicherung anrufen. Auf der Straße Warnweste anziehen, hinter die Leitplanke gehen und bei Verletzten oder Gefahr 112 anrufen.",
+            "nl": "Bel het pechhulpnummer op je huurcontract of verzekeringspas. Op de weg: hesje aan, achter de vangrail gaan staan en 112 bellen bij gewonden of gevaar."
+          }
+        }
+      ]
+    },
+    {
+      "id": "town",
+      "items": [
+        {
+          "id": "power",
+          "phone": "900 878 212",
+          "always": true,
+          "web": "https://www.edistribucion.com/es/averias.html",
+          "name": {
+            "en": "Power cut in the street",
+            "es": "Corte de luz en la calle",
+            "fr": "Coupure de courant dans la rue",
+            "ca": "Tall de llum al carrer",
+            "de": "Stromausfall in der Straße",
+            "nl": "Stroomstoring in de straat"
+          },
+          "what": {
+            "en": "If the neighbours are dark too, it is a network fault: report it to e-distribución, the company that runs the power lines here, whoever supplies the house. Free, 24 h.",
+            "es": "Si los vecinos también están sin luz, es una avería de la red: avisa a e-distribución, la empresa que gestiona las líneas aquí, sea cual sea la comercializadora. Gratis, 24 h.",
+            "fr": "Si les voisins sont aussi dans le noir, c'est une panne du réseau : prévenez e-distribución, qui gère les lignes ici, quel que soit le fournisseur. Gratuit, 24 h.",
+            "ca": "Si els veïns també són sense llum, és una avaria de la xarxa: avisa e-distribución, l'empresa que gestiona les línies aquí, sigui quina sigui la comercialitzadora. Gratuït, 24 h.",
+            "de": "Wenn auch die Nachbarn keinen Strom haben, ist es eine Netzstörung: bei e-distribución melden, dem Netzbetreiber hier, egal wer das Haus beliefert. Kostenlos, rund um die Uhr.",
+            "nl": "Als de buren ook zonder stroom zitten, is het een netstoring: meld het bij e-distribución, het netbedrijf hier, wie de leverancier ook is. Gratis, 24 uur."
+          }
+        },
+        {
+          "id": "ajuntament",
+          "phone": "977 68 84 38",
+          "address": "Ajuntament, Carrer Major 21, La Bisbal del Penedès",
+          "name": {
+            "en": "Town hall",
+            "es": "Ayuntamiento",
+            "fr": "Mairie",
+            "ca": "Ajuntament",
+            "de": "Rathaus",
+            "nl": "Gemeentehuis"
+          },
+          "what": {
+            "en": "Lost property and local questions (roads, events). In winter also open on Monday afternoon, 16:00-19:00.",
+            "es": "Objetos perdidos y dudas locales (calles, fiestas). En invierno también abre el lunes por la tarde, 16:00-19:00.",
+            "fr": "Objets trouvés et questions locales (routes, fêtes). En hiver, ouvert aussi le lundi après-midi, 16h-19h.",
+            "ca": "Objectes perduts i dubtes locals (carrers, festes). A l'hivern també obre dilluns a la tarda, 16:00-19:00.",
+            "de": "Fundsachen und Fragen zum Ort (Straßen, Feste). Im Winter auch montags 16-19 Uhr geöffnet.",
+            "nl": "Gevonden voorwerpen en lokale vragen (wegen, feesten). In de winter ook maandagmiddag open, 16:00-19:00."
+          },
+          "web": "https://bisbalpenedes.com/web/horaris-datencio-a-la-ciutadania/",
+          "schedule": [
+            {
+              "days": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri"
+              ],
+              "open": "09:00",
+              "close": "14:00"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

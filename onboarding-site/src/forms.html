@@ -1,0 +1,16 @@
+<!-- Netlify Forms: declared here so Netlify detects them at deploy. The page sends them with fetch. -->
+<form name="onboarding" data-netlify="true" netlify-honeypot="bot" hidden>
+  <input name="sid"><input name="email"><input name="place"><input name="town"><input name="slug"><input name="progress"><input name="photos">
+  <input name="device"><input name="device_type"><textarea name="device_json"></textarea><input name="active_minutes"><textarea name="journey"></textarea><textarea name="events"></textarea>
+  <input name="sent_before"><textarea name="answers"></textarea><input name="bot">
+</form>
+<form name="file" data-netlify="true" netlify-honeypot="bot" enctype="multipart/form-data" hidden>
+  <input name="sid"><input name="kind"><input name="room"><input name="name"><input type="file" name="file"><input name="bot">
+</form>
+<form name="note" data-netlify="true" netlify-honeypot="bot" hidden>
+  <input name="sid"><input name="module"><textarea name="note"></textarea><input name="place"><input name="town"><input name="email"><input name="progress"><input name="device"><textarea name="device_json"></textarea><input name="bot">
+</form>
+<form name="feedback" data-netlify="true" netlify-honeypot="bot" enctype="multipart/form-data" hidden>
+  <input name="sid"><input name="guide"><input name="round"><input name="email"><input name="rating"><textarea name="right"></textarea><textarea name="wrong"></textarea><textarea name="ux"></textarea>
+  <input name="areas"><input name="next"><input name="kind"><input name="screen"><input name="preset"><input name="device"><textarea name="device_json"></textarea><input type="file" name="file"><input name="bot">
+</form>

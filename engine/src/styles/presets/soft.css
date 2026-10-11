@@ -1,0 +1,44 @@
+/* Preset "soft": rounded, gentle and airy. Pastel tiles built from the palette (mixed with white),
+   ink text everywhere, blurred blobs instead of hard shapes, soft shadows instead of outlines. */
+:root{
+  --paper:#F6F2EF;--white:#FFFFFF;--ink:#2B2A33;--muted:#62606C;--faint:#8C8A95;--line:#E8E2DE;
+  --red:#E07A6F;--blue:#6F9CD8;--yellow:#F2C36B;--orange:#EE9B6A;--green:#79B791;
+  --display:"Outfit",system-ui,sans-serif;--font:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:28px;--r-s:18px;--r-m:16px;--shadow:0 6px 24px rgba(43,42,51,.08),0 1px 3px rgba(43,42,51,.06);
+}
+body{background:var(--paper)}
+h2.title{font-weight:600;letter-spacing:-.02em}
+.sh{font-weight:600;font-size:22px}
+
+.hcard{border:0;box-shadow:var(--shadow);border-radius:var(--r)}
+.hc-ph{height:clamp(180px,26vh,230px)!important}
+.hc-nm b{letter-spacing:0!important;text-transform:none!important;font-weight:600;font-size:24px!important}
+.hc-id .go{background:var(--yellow);color:var(--ink)}
+.hc-id > img{border-radius:50%}
+
+/* Tiles: pastel, ink text, one soft blob each */
+.gt{background:color-mix(in srgb,var(--tc) 26%,var(--white))!important;color:var(--ink)!important;box-shadow:var(--shadow);border:0!important}
+.gt::before{filter:blur(22px);opacity:.55;border:0!important;width:140px!important;height:140px!important;border-radius:50%!important;background:var(--tc)!important;transform:none!important}
+.gt::after{display:none!important}
+.gt .go{background:var(--white)!important;color:var(--ink)!important;box-shadow:0 2px 8px rgba(43,42,51,.12)}
+.gt-t{font-weight:600}
+.soon-tag{background:var(--white);color:var(--ink)}
+.gt-tonight,.gtn{color:var(--ink)!important}
+.gtb{background:rgba(255,255,255,.7)!important}
+.gt-tl svg{color:var(--orange)!important}
+.gt[data-k="map"]{background:var(--white)!important}
+
+.whatson,.mlist,.clist,.hsec,.allphotos,.pl-hours,.pl-alt,#mapview .maplist,.filters,.sheet{box-shadow:var(--shadow);border:0!important}
+.mbody,.mrow[open] summary{background:color-mix(in srgb,var(--paper) 60%,var(--white))!important}
+.mlist > .mrow[open] + .mrow,.mlist > .mrow + .mrow[open]{border-top-color:var(--paper)!important}
+.dot{border-radius:50%;background:color-mix(in srgb,var(--cc) 22%,var(--white))!important;color:var(--ink)}
+.dbadge{border-radius:14px;background:color-mix(in srgb,var(--blue) 25%,var(--white))!important;color:var(--ink)}
+
+.btn,.chip,.gchip,.pills,.mapseg .seg,.mapat,.hbook,.amall summary{border:0!important;box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn.primary,.gchip[aria-pressed="true"],.chip[aria-pressed="true"],.pills button[aria-pressed="true"],.mapseg .seg button[aria-checked="true"]{background:var(--ink)!important;color:var(--white)!important}
+.qcall{border:0;box-shadow:var(--shadow);border-radius:var(--r-s);color:var(--ink)}
+.qcall .qi{border-radius:50%;background:color-mix(in srgb,var(--red) 25%,var(--white))!important;color:var(--ink)!important}
+.ccall{border-radius:999px}
+.pl-map,#mapview .mapbox{border:0!important;box-shadow:var(--shadow);border-radius:var(--r)!important}
+.hero .back,.langsel{box-shadow:var(--shadow)!important}
+.gphotos img{border-radius:16px}

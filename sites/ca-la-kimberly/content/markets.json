@@ -1,0 +1,2275 @@
+{
+  "_doc": "Source of truth for markets. See docs/RESEARCH-NOTES.md before changing data. name{} is the title shown on cards; town is the secondary line; group (optional) overrides town for map grouping. Names follow one pattern: place + type (EN \"El Vendrell covered market\", ES/FR/CA \"Mercat Municipal del Vendrell\"), with a local name in brackets when useful.",
+  "categories": [
+    "covered",
+    "street",
+    "flea",
+    "antiques",
+    "events"
+  ],
+  "markets": [
+    {
+      "id": "bisbal",
+      "category": "street",
+      "name": {
+        "en": "La Bisbal Wednesday market",
+        "es": "Mercadillo de los miércoles de La Bisbal",
+        "fr": "Marché du mercredi de La Bisbal",
+        "ca": "Mercat dels dimecres de la Bisbal",
+        "de": "Mittwochsmarkt La Bisbal",
+        "nl": "Woensdagmarkt La Bisbal"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "La Bisbal del Penedès",
+      "km_from_house": 3,
+      "lat": 41.2812,
+      "lng": 1.4873,
+      "stalls_approx": 10,
+      "schedule": [
+        {
+          "days": [
+            "wed"
+          ],
+          "open": "08:30",
+          "close": "13:30"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "food"
+      ],
+      "flags": [
+        "closest"
+      ],
+      "description": {
+        "en": "A handful of stalls in the village centre: fruit, veg and a few basics. Handy for a quick top-up, not a day out.",
+        "es": "Unos pocos puestos en el centro del pueblo: fruta, verdura y algo de básicos. Práctico para comprar cuatro cosas, no para pasar la mañana.",
+        "fr": "Quelques étals au centre du village : fruits, légumes et produits de base. Pratique pour un petit réassort, pas pour une sortie.",
+        "ca": "Unes quantes parades al centre del poble: fruita, verdura i quatre bàsics. Pràctic per a una compra ràpida, no per passar-hi el matí.",
+        "de": "Eine Handvoll Stände im Dorfzentrum: Obst, Gemüse und ein paar Grundnahrungsmittel. Praktisch für einen schnellen Einkauf, kein Tagesausflug.",
+        "nl": "Een handvol kraampjes in het dorpscentrum: groente, fruit en wat basisproducten. Handig voor een snelle boodschap, geen dagje uit."
+      }
+    },
+    {
+      "id": "papiola-sun",
+      "category": "street",
+      "name": {
+        "en": "La Papiola Sunday market",
+        "es": "Mercadillo de los domingos de La Papiola",
+        "fr": "Marché du dimanche de La Papiola",
+        "ca": "Mercat dels diumenges de la Papiola",
+        "de": "Sonntagsmarkt La Papiola",
+        "nl": "Zondagmarkt La Papiola"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat de La Papiola",
+      "town": "Albinyana",
+      "place": "La Papiola, next to the C-51",
+      "km_from_house": 6,
+      "lat": 41.248,
+      "lng": 1.516,
+      "stalls_approx": 70,
+      "schedule": [
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "09:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "cheese",
+        "deli",
+        "clothes",
+        "plants",
+        "home"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Open-air Sunday market with about 70 stalls: fruit and veg, cheese and charcuterie, olives and nuts, clothes, plants and household goods.",
+        "es": "Mercadillo dominical al aire libre con unos 70 puestos: fruta y verdura, quesos y embutidos, aceitunas y frutos secos, ropa, plantas y menaje.",
+        "fr": "Marché du dimanche en plein air, environ 70 étals : fruits et légumes, fromages et charcuterie, olives et fruits secs, vêtements, plantes et articles ménagers.",
+        "ca": "Mercat de diumenge a l'aire lliure amb unes 70 parades: fruita i verdura, formatges i embotits, olives i fruits secs, roba, plantes i parament de la llar.",
+        "de": "Sonntagsmarkt unter freiem Himmel mit etwa 70 Ständen: Obst und Gemüse, Käse und Wurst, Oliven und Nüsse, Kleidung, Pflanzen und Haushaltswaren.",
+        "nl": "Zondagsmarkt in de openlucht met zo'n 70 kramen: groente en fruit, kaas en vleeswaren, olijven en noten, kleding, planten en huishoudspullen."
+      }
+    },
+    {
+      "id": "papiola-sat",
+      "category": "flea",
+      "name": {
+        "en": "La Papiola second-hand market",
+        "es": "Mercadillo de segunda mano de La Papiola",
+        "fr": "Marché d'occasion de La Papiola",
+        "ca": "Mercat de segona mà de la Papiola",
+        "de": "Second-Hand-Markt La Papiola",
+        "nl": "Tweedehandsmarkt La Papiola"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat de segona mà La Papiola",
+      "town": "Albinyana",
+      "place": "La Papiola, next to the C-51",
+      "km_from_house": 6,
+      "lat": 41.2448,
+      "lng": 1.5198,
+      "stalls_approx": 70,
+      "schedule": [
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "09:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "secondhand",
+        "home",
+        "toys"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Second-hand market on the same site as the Sunday market, about 70 stalls of used furniture, tools, bric-a-brac and clothes. Good for a browse.",
+        "es": "Mercadillo de segunda mano en el mismo recinto que el del domingo, unos 70 puestos de muebles usados, herramientas, cachivaches y ropa. Ideal para curiosear.",
+        "fr": "Marché d'occasion sur le même site que celui du dimanche, environ 70 étals de meubles, outils, bric-à-brac et vêtements. Parfait pour chiner.",
+        "ca": "Mercat de segona mà al mateix recinte que el de diumenge, unes 70 parades de mobles usats, eines, objectes i roba. Ideal per remenar.",
+        "de": "Second-Hand-Markt auf demselben Gelände wie der Sonntagsmarkt, etwa 70 Stände mit gebrauchten Möbeln, Werkzeug, Trödel und Kleidung. Schön zum Stöbern.",
+        "nl": "Tweedehandsmarkt op hetzelfde terrein als de zondagsmarkt, zo'n 70 kramen met gebruikte meubels, gereedschap, snuisterijen en kleding. Leuk om te snuffelen."
+      }
+    },
+    {
+      "id": "bonastre",
+      "category": "street",
+      "name": {
+        "en": "Bonastre Tuesday market",
+        "es": "Mercadillo de los martes de Bonastre",
+        "fr": "Marché du mardi de Bonastre",
+        "ca": "Mercat dels dimarts de Bonastre",
+        "de": "Dienstagsmarkt Bonastre",
+        "nl": "Dinsdagmarkt Bonastre"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Bonastre",
+      "km_from_house": 8,
+      "lat": 41.22,
+      "lng": 1.439,
+      "stalls_approx": 15,
+      "schedule": [
+        {
+          "days": [
+            "tue"
+          ],
+          "open": "09:00",
+          "close": "13:00"
+        }
+      ],
+      "tags": [
+        "fruitveg"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Small village market, mainly fruit and veg.",
+        "es": "Mercadillo pequeño de pueblo, sobre todo fruta y verdura.",
+        "fr": "Petit marché de village, surtout des fruits et légumes.",
+        "ca": "Mercat petit de poble, sobretot fruita i verdura.",
+        "de": "Kleiner Dorfmarkt, vor allem Obst und Gemüse.",
+        "nl": "Kleine dorpsmarkt, vooral groente en fruit."
+      }
+    },
+    {
+      "id": "llorenc",
+      "category": "street",
+      "name": {
+        "en": "Llorenç Monday market",
+        "es": "Mercadillo de los lunes de Llorenç",
+        "fr": "Marché du lundi de Llorenç",
+        "ca": "Mercat dels dilluns de Llorenç",
+        "de": "Montagsmarkt Llorenç",
+        "nl": "Maandagmarkt Llorenç"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Llorenç del Penedès",
+      "place": "C/ Mestre González",
+      "km_from_house": 9,
+      "lat": 41.2826,
+      "lng": 1.5528,
+      "stalls_approx": 20,
+      "schedule": [
+        {
+          "days": [
+            "mon"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "clothes"
+      ],
+      "flags": [],
+      "description": {
+        "en": "About 20 stalls of fruit, veg and clothes. The only Monday market nearby.",
+        "es": "Unos 20 puestos de fruta, verdura y ropa. El único mercadillo de los lunes en la zona.",
+        "fr": "Une vingtaine d'étals de fruits, légumes et vêtements. Le seul marché du lundi aux alentours.",
+        "ca": "Unes 20 parades de fruita, verdura i roba. L'únic mercat de dilluns a la zona.",
+        "de": "Etwa 20 Stände mit Obst, Gemüse und Kleidung. Der einzige Montagsmarkt in der Nähe.",
+        "nl": "Zo'n 20 kramen met groente, fruit en kleding. De enige maandagmarkt in de buurt."
+      }
+    },
+    {
+      "id": "santaoliva",
+      "category": "street",
+      "name": {
+        "en": "Santa Oliva Saturday market",
+        "es": "Mercadillo de los sábados de Santa Oliva",
+        "fr": "Marché du samedi de Santa Oliva",
+        "ca": "Mercat dels dissabtes de Santa Oliva",
+        "de": "Samstagsmarkt Santa Oliva",
+        "nl": "Zaterdagmarkt Santa Oliva"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Santa Oliva",
+      "place": "Pol. Ind. Molí d'en Serra",
+      "km_from_house": 9,
+      "lat": 41.2367,
+      "lng": 1.5444,
+      "schedule": [
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "09:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "food",
+        "clothes"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Saturday market on the Molí d'en Serra industrial estate with food, clothes and accessories. Easy parking.",
+        "es": "Mercadillo de los sábados en el polígono Molí d'en Serra, con alimentación, ropa y complementos. Fácil para aparcar.",
+        "fr": "Marché du samedi dans la zone d'activité Molí d'en Serra : alimentation, vêtements et accessoires. Stationnement facile.",
+        "ca": "Mercat de dissabte al polígon Molí d'en Serra, amb alimentació, roba i complements. Fàcil d'aparcar.",
+        "de": "Samstagsmarkt im Gewerbegebiet Molí d'en Serra mit Lebensmitteln, Kleidung und Accessoires. Parken ist einfach.",
+        "nl": "Zaterdagmarkt op het bedrijventerrein Molí d'en Serra met eten, kleding en accessoires. Makkelijk parkeren."
+      }
+    },
+    {
+      "id": "vendrell-mm",
+      "category": "covered",
+      "name": {
+        "en": "El Vendrell covered market",
+        "es": "Mercado Municipal de El Vendrell",
+        "fr": "Halles d'El Vendrell",
+        "ca": "Mercat Municipal del Vendrell",
+        "de": "Markthalle El Vendrell",
+        "nl": "Overdekte markt El Vendrell"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat Municipal del Vendrell",
+      "town": "El Vendrell",
+      "place": "Plaça del Mercat",
+      "km_from_house": 10,
+      "lat": 41.2193,
+      "lng": 1.5352,
+      "stalls_approx": 33,
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        },
+        {
+          "days": [
+            "tue",
+            "fri",
+            "sat"
+          ],
+          "open": "17:30",
+          "close": "20:30"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "meat",
+        "fish"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Fresh food hall in an 1887 building, about 33 stalls of meat, fish, fruit and veg. The best place nearby for quality fresh produce any weekday.",
+        "es": "Mercado de producto fresco en un edificio de 1887, unos 33 puestos de carne, pescado, fruta y verdura. El mejor sitio cercano para producto fresco de calidad entre semana.",
+        "fr": "Halle de produits frais dans un bâtiment de 1887, environ 33 étals de viande, poisson, fruits et légumes. La meilleure adresse proche pour des produits frais en semaine.",
+        "ca": "Mercat de producte fresc en un edifici del 1887, unes 33 parades de carn, peix, fruita i verdura. El millor lloc proper per a producte fresc de qualitat entre setmana.",
+        "de": "Frischmarkthalle in einem Gebäude von 1887, etwa 33 Stände mit Fleisch, Fisch, Obst und Gemüse. Die beste Adresse in der Nähe für gute frische Produkte an jedem Werktag.",
+        "nl": "Versmarkthal in een gebouw uit 1887, zo'n 33 kramen met vlees, vis, groente en fruit. De beste plek in de buurt voor goede verse producten op elke werkdag."
+      }
+    },
+    {
+      "id": "vendrell-w",
+      "category": "street",
+      "name": {
+        "en": "El Vendrell Friday market",
+        "es": "Mercadillo de los viernes de El Vendrell",
+        "fr": "Marché du vendredi d'El Vendrell",
+        "ca": "Mercat dels divendres del Vendrell",
+        "de": "Freitagsmarkt El Vendrell",
+        "nl": "Vrijdagmarkt El Vendrell"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "El Vendrell",
+      "place": "La Rambla, Pl. Nova, Pl. Francesc Macià",
+      "km_from_house": 10,
+      "lat": 41.2178,
+      "lng": 1.5338,
+      "stalls_approx": 95,
+      "schedule": [
+        {
+          "days": [
+            "fri"
+          ],
+          "open": "09:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "fish",
+        "clothes",
+        "toys",
+        "home"
+      ],
+      "flags": [],
+      "description": {
+        "en": "One of the bigger markets nearby, about 95 stalls. Fresh food (fruit, veg, salted fish, olives, sweets) on Pl. Francesc Macià; clothes, toys and household along the Rambla.",
+        "es": "Uno de los mercadillos grandes de la zona, unos 95 puestos. Comida (fruta, verdura, salazones, aceitunas, dulces) en la Pl. Francesc Macià; ropa, juguetes y hogar por la Rambla.",
+        "fr": "L'un des plus grands marchés du coin, environ 95 étals. Alimentation (fruits, légumes, salaisons, olives, douceurs) place Francesc Macià ; vêtements, jouets et maison sur la Rambla.",
+        "ca": "Un dels mercats grans de la zona, unes 95 parades. Alimentació (fruita, verdura, salaons, olives, dolços) a la Pl. Francesc Macià; roba, joguines i llar a la Rambla.",
+        "de": "Einer der größeren Märkte in der Nähe, etwa 95 Stände. Lebensmittel (Obst, Gemüse, Salzfisch, Oliven, Süßes) an der Pl. Francesc Macià, Kleidung, Spielzeug und Haushalt entlang der Rambla.",
+        "nl": "Een van de grotere markten in de buurt, zo'n 95 kramen. Eten (groente, fruit, gezouten vis, olijven, snoep) op de Pl. Francesc Macià, kleding, speelgoed en huishouden langs de Rambla."
+      }
+    },
+    {
+      "id": "vendrell-a",
+      "category": "antiques",
+      "name": {
+        "en": "El Vendrell antiques and bric-a-brac market",
+        "es": "Mercado de antigüedades y brocante de El Vendrell",
+        "fr": "Marché des antiquaires et brocanteurs d'El Vendrell",
+        "ca": "Mercat d'antiquaris i brocanters del Vendrell",
+        "de": "Antiquitäten- und Trödelmarkt El Vendrell",
+        "nl": "Antiek- en brocantemarkt El Vendrell"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat d'antiquaris i brocanters",
+      "town": "El Vendrell",
+      "place": "La Rambla",
+      "km_from_house": 10,
+      "lat": 41.2176,
+      "lng": 1.5345,
+      "schedule": [
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "09:00",
+          "close": "15:00",
+          "week_of_month": 2
+        }
+      ],
+      "tags": [
+        "antiques"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Antique dealers and brocante along the Rambla: old furniture, tools, ceramics and collectables. Only genuine antique and second-hand goods are allowed.",
+        "es": "Anticuarios y brocantes por la Rambla: muebles antiguos, herramientas, cerámica y objetos de colección. Solo se admiten antigüedades y artículos de brocante.",
+        "fr": "Antiquaires et brocanteurs sur la Rambla : meubles anciens, outils, céramiques et objets de collection. Uniquement de l'ancien et de la brocante.",
+        "ca": "Antiquaris i brocanters a la Rambla: mobles antics, eines, ceràmica i objectes de col·lecció. Només s'hi admeten antiguitats i brocanteria.",
+        "de": "Antiquitätenhändler und Trödel entlang der Rambla: alte Möbel, Werkzeug, Keramik und Sammlerstücke. Nur echte Antiquitäten und Gebrauchtwaren sind erlaubt.",
+        "nl": "Antiekhandelaars en brocante langs de Rambla: oude meubels, gereedschap, keramiek en verzamelobjecten. Alleen echt antiek en tweedehands is toegestaan."
+      }
+    },
+    {
+      "id": "vendrell-art",
+      "category": "antiques",
+      "name": {
+        "en": "El Vendrell crafts market (Racó de l'Art)",
+        "es": "Mercado de artesanía de El Vendrell (Racó de l'Art)",
+        "fr": "Marché artisanal d'El Vendrell (Racó de l'Art)",
+        "ca": "Mercat d'artesania del Vendrell (Racó de l'Art)",
+        "de": "Kunsthandwerksmarkt El Vendrell (Racó de l'Art)",
+        "nl": "Ambachtsmarkt El Vendrell (Racó de l'Art)"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Racó de l'Art",
+      "town": "El Vendrell",
+      "place": "C/ dels Cafès",
+      "km_from_house": 10,
+      "lat": 41.2183,
+      "lng": 1.533,
+      "schedule": [
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "10:00",
+          "close": "21:00",
+          "week_of_month": 2
+        }
+      ],
+      "tags": [
+        "crafts"
+      ],
+      "flags": [
+        "check"
+      ],
+      "description": {
+        "en": "Handmade crafts on the same morning as the antiques market: soaps, painted clothes, ceramics, glass, jewellery and puppets.",
+        "es": "Artesanía hecha a mano la misma mañana que el mercado de antigüedades: jabones, ropa pintada, cerámica, vidrio, bisutería y títeres.",
+        "fr": "Artisanat le même matin que le marché d'antiquités : savons, vêtements peints, céramique, verre, bijoux et marionnettes.",
+        "ca": "Artesania feta a mà el mateix matí que el mercat d'antiguitats: sabons, roba pintada, ceràmica, vidre, bijuteria i titelles.",
+        "de": "Handgemachtes Kunsthandwerk am selben Tag wie der Antiquitätenmarkt: Seifen, bemalte Kleidung, Keramik, Glas, Schmuck und Puppen.",
+        "nl": "Handgemaakt ambacht op dezelfde dag als de antiekmarkt: zeep, beschilderde kleding, keramiek, glas, sieraden en poppen."
+      }
+    },
+    {
+      "id": "banyeres",
+      "category": "street",
+      "name": {
+        "en": "Banyeres Wednesday market",
+        "es": "Mercadillo de los miércoles de Banyeres",
+        "fr": "Marché du mercredi de Banyeres",
+        "ca": "Mercat dels dimecres de Banyeres",
+        "de": "Mittwochsmarkt Banyeres",
+        "nl": "Woensdagmarkt Banyeres"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Banyeres del Penedès",
+      "km_from_house": 11,
+      "lat": 41.28,
+      "lng": 1.581,
+      "stalls_approx": 15,
+      "schedule": [
+        {
+          "days": [
+            "wed"
+          ],
+          "open": "08:30",
+          "close": "13:30"
+        }
+      ],
+      "tags": [
+        "fruitveg"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Small village market, fewer than 20 stalls, mostly fruit and veg.",
+        "es": "Mercadillo pequeño, menos de 20 puestos, sobre todo fruta y verdura.",
+        "fr": "Petit marché de village, moins de 20 étals, surtout fruits et légumes.",
+        "ca": "Mercat petit, menys de 20 parades, sobretot fruita i verdura.",
+        "de": "Kleiner Dorfmarkt mit weniger als 20 Ständen, vor allem Obst und Gemüse.",
+        "nl": "Kleine dorpsmarkt met minder dan 20 kramen, vooral groente en fruit."
+      }
+    },
+    {
+      "id": "bellvei",
+      "category": "flea",
+      "name": {
+        "en": "Bellvei second-hand market (Ca Susi)",
+        "es": "Mercadillo de segunda mano de Bellvei (Ca Susi)",
+        "fr": "Marché d'occasion de Bellvei (Ca Susi)",
+        "ca": "Mercat de segona mà de Bellvei (Ca Susi)",
+        "de": "Second-Hand-Markt Bellvei (Ca Susi)",
+        "nl": "Tweedehandsmarkt Bellvei (Ca Susi)"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat de segona mà Ca Susi",
+      "town": "Bellvei",
+      "place": "Carretera de Calafell",
+      "km_from_house": 12,
+      "lat": 41.236,
+      "lng": 1.578,
+      "schedule": [
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "09:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "secondhand"
+      ],
+      "flags": [
+        "check"
+      ],
+      "description": {
+        "en": "Sunday second-hand market on the Calafell road: used goods and bric-a-brac. Pairs well with La Papiola on a Sunday morning.",
+        "es": "Rastro dominical en la carretera de Calafell: artículos usados y cachivaches. Se combina bien con La Papiola un domingo por la mañana.",
+        "fr": "Brocante du dimanche sur la route de Calafell : objets d'occasion et bric-à-brac. À combiner avec La Papiola le dimanche matin.",
+        "ca": "Encants de diumenge a la carretera de Calafell: objectes usats i andròmines. Es combina bé amb La Papiola un diumenge al matí.",
+        "de": "Sonntäglicher Second-Hand-Markt an der Straße nach Calafell: Gebrauchtwaren und Trödel. Passt gut zu La Papiola an einem Sonntagvormittag.",
+        "nl": "Tweedehandsmarkt op zondag aan de weg naar Calafell: gebruikte spullen en snuisterijen. Goed te combineren met La Papiola op een zondagochtend."
+      }
+    },
+    {
+      "id": "santjaume",
+      "category": "street",
+      "name": {
+        "en": "Sant Jaume dels Domenys Thursday market",
+        "es": "Mercadillo de los jueves de Sant Jaume dels Domenys",
+        "fr": "Marché du jeudi de Sant Jaume dels Domenys",
+        "ca": "Mercat dels dijous de Sant Jaume dels Domenys",
+        "de": "Donnerstagsmarkt Sant Jaume dels Domenys",
+        "nl": "Donderdagmarkt Sant Jaume dels Domenys"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Sant Jaume dels Domenys",
+      "place": "Pl. de Sant Jaume",
+      "km_from_house": 12,
+      "lat": 41.302,
+      "lng": 1.56,
+      "stalls_approx": 3,
+      "schedule": [
+        {
+          "days": [
+            "thu"
+          ],
+          "open": "08:30",
+          "close": "13:30"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "cheese",
+        "deli"
+      ],
+      "flags": [
+        "older"
+      ],
+      "description": {
+        "en": "Just two or three stalls by the church: fruit and veg, homemade cheese and charcuterie. Eco cleaning products every other week.",
+        "es": "Solo dos o tres puestos junto a la iglesia: fruta y verdura, queso y embutido caseros. Productos de limpieza ecológicos cada dos semanas.",
+        "fr": "Seulement deux ou trois étals près de l'église : fruits et légumes, fromage et charcuterie maison. Produits d'entretien écologiques une semaine sur deux.",
+        "ca": "Només dues o tres parades al costat de l'església: fruita i verdura, formatge i embotit casolans. Productes de neteja ecològics cada dues setmanes.",
+        "de": "Nur zwei oder drei Stände bei der Kirche: Obst und Gemüse, hausgemachter Käse und Wurst. Alle zwei Wochen ökologische Reinigungsmittel.",
+        "nl": "Maar twee of drie kraampjes bij de kerk: groente en fruit, huisgemaakte kaas en vleeswaren. Om de week ecologische schoonmaakmiddelen."
+      }
+    },
+    {
+      "id": "comaruga",
+      "category": "street",
+      "name": {
+        "en": "Coma-ruga Saturday market",
+        "es": "Mercadillo de los sábados de Coma-ruga",
+        "fr": "Marché du samedi de Coma-ruga",
+        "ca": "Mercat dels dissabtes de Coma-ruga",
+        "de": "Samstagsmarkt Coma-ruga",
+        "nl": "Zaterdagmarkt Coma-ruga"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Coma-ruga",
+      "place": "Av. Parlament de Catalunya",
+      "km_from_house": 13,
+      "lat": 41.183,
+      "lng": 1.52,
+      "stalls_approx": 80,
+      "schedule": [
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "09:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "cheese",
+        "deli",
+        "clothes",
+        "shoes",
+        "home"
+      ],
+      "flags": [],
+      "description": {
+        "en": "About 80 stalls between the train station and the beach: fruit and veg, cheese, charcuterie, pickles and nuts, clothes, shoes, bags and household goods. Easy to combine with a beach morning.",
+        "es": "Unos 80 puestos entre la estación y la playa: fruta y verdura, quesos, embutidos, encurtidos y frutos secos, ropa, calzado, bolsos y menaje. Fácil de combinar con una mañana de playa.",
+        "fr": "Environ 80 étals entre la gare et la plage : fruits et légumes, fromages, charcuterie, olives et fruits secs, vêtements, chaussures, sacs et articles ménagers. Facile à combiner avec la plage.",
+        "ca": "Unes 80 parades entre l'estació i la platja: fruita i verdura, formatges, embotits, encurtits i fruits secs, roba, calçat, bosses i parament. Fàcil de combinar amb un matí de platja.",
+        "de": "Etwa 80 Stände zwischen Bahnhof und Strand: Obst und Gemüse, Käse, Wurst, Eingelegtes und Nüsse, Kleidung, Schuhe, Taschen und Haushaltswaren. Lässt sich gut mit einem Strandvormittag verbinden.",
+        "nl": "Zo'n 80 kramen tussen het station en het strand: groente en fruit, kaas, vleeswaren, ingemaakte groenten en noten, kleding, schoenen, tassen en huishoudspullen. Goed te combineren met een ochtend aan het strand."
+      }
+    },
+    {
+      "id": "arboc",
+      "category": "street",
+      "name": {
+        "en": "L'Arboç Tuesday market",
+        "es": "Mercadillo de los martes de L'Arboç",
+        "fr": "Marché du mardi de L'Arboç",
+        "ca": "Mercat dels dimarts de l'Arboç",
+        "de": "Dienstagsmarkt L'Arboç",
+        "nl": "Dinsdagmarkt L'Arboç"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "L'Arboç",
+      "place": "Carrer Major",
+      "km_from_house": 14,
+      "lat": 41.266,
+      "lng": 1.603,
+      "stalls_approx": 40,
+      "schedule": [
+        {
+          "days": [
+            "tue"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "food",
+        "clothes"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Around 40 stalls along Carrer Major, a proper village market with food and clothes.",
+        "es": "Unos 40 puestos por el Carrer Major, un mercadillo de pueblo de los de toda la vida, con comida y ropa.",
+        "fr": "Une quarantaine d'étals dans la Carrer Major, un vrai marché de village avec alimentation et vêtements.",
+        "ca": "Unes 40 parades al Carrer Major, un mercat de poble de tota la vida, amb alimentació i roba.",
+        "de": "Rund 40 Stände entlang der Carrer Major, ein echter Dorfmarkt mit Lebensmitteln und Kleidung.",
+        "nl": "Zo'n 40 kramen langs de Carrer Major, een echte dorpsmarkt met eten en kleding."
+      }
+    },
+    {
+      "id": "calafell-mm",
+      "category": "covered",
+      "name": {
+        "en": "Calafell covered market",
+        "es": "Mercado Municipal de Calafell",
+        "fr": "Halles de Calafell",
+        "ca": "Mercat Municipal de Calafell",
+        "de": "Markthalle Calafell",
+        "nl": "Overdekte markt Calafell"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat de Calafell",
+      "town": "Calafell Platja",
+      "place": "Ctra. Sanatori",
+      "km_from_house": 15,
+      "lat": 41.1905,
+      "lng": 1.569,
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "09:00",
+          "close": "21:00"
+        }
+      ],
+      "tags": [
+        "meat",
+        "fish",
+        "deli",
+        "tapas"
+      ],
+      "flags": [
+        "check"
+      ],
+      "description": {
+        "en": "Covered market by the beach with butchers, fishmongers and deli counters, plus wine and tapas bars that stay open later than the food stalls.",
+        "es": "Mercado cubierto cerca de la playa con carnicerías, pescaderías y charcuterías, además de bares de vino y tapas que cierran más tarde que los puestos.",
+        "fr": "Marché couvert près de la plage : bouchers, poissonniers, charcutiers, et bars à vin et tapas ouverts plus tard que les étals.",
+        "ca": "Mercat cobert a prop de la platja amb carnisseries, peixateries i xarcuteries, i bars de vins i tapes que tanquen més tard que les parades.",
+        "de": "Markthalle am Strand mit Metzgern, Fischhändlern und Feinkosttheken, dazu Wein- und Tapas-Bars, die länger offen haben als die Lebensmittelstände.",
+        "nl": "Overdekte markt bij het strand met slagers, vishandelaars en delicatessen, plus wijn- en tapasbars die langer open zijn dan de etenskramen."
+      }
+    },
+    {
+      "id": "calafell-w",
+      "category": "street",
+      "name": {
+        "en": "Calafell Tuesday market",
+        "es": "Mercadillo de los martes de Calafell",
+        "fr": "Marché du mardi de Calafell",
+        "ca": "Mercat dels dimarts de Calafell",
+        "de": "Dienstagsmarkt Calafell",
+        "nl": "Dinsdagmarkt Calafell"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Calafell",
+      "place": "Passeig de la Unió",
+      "km_from_house": 15,
+      "lat": 41.1925,
+      "lng": 1.5735,
+      "stalls_approx": 70,
+      "schedule": [
+        {
+          "days": [
+            "tue"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "clothes",
+        "shoes",
+        "home"
+      ],
+      "flags": [],
+      "description": {
+        "en": "About 70 stalls. An everyday local market rather than a tourist one, with good prices on fruit, veg, olives, linen, clothes and shoes.",
+        "es": "Unos 70 puestos. Un mercadillo de vecinos más que turístico, con buenos precios en fruta, verdura, aceitunas, ropa de casa, ropa y calzado.",
+        "fr": "Environ 70 étals. Un marché de quartier plus que touristique, avec de bons prix : fruits, légumes, olives, linge, vêtements et chaussures.",
+        "ca": "Unes 70 parades. Un mercat de veïns més que turístic, amb bons preus en fruita, verdura, olives, roba de casa, roba i calçat.",
+        "de": "Etwa 70 Stände. Eher ein Markt für Einheimische als für Touristen, mit guten Preisen für Obst, Gemüse, Oliven, Wäsche, Kleidung und Schuhe.",
+        "nl": "Zo'n 70 kramen. Meer een markt voor de buurt dan voor toeristen, met goede prijzen voor groente, fruit, olijven, linnengoed, kleding en schoenen."
+      }
+    },
+    {
+      "id": "segur",
+      "category": "street",
+      "name": {
+        "en": "Segur de Calafell Friday market",
+        "es": "Mercadillo de los viernes de Segur de Calafell",
+        "fr": "Marché du vendredi de Segur de Calafell",
+        "ca": "Mercat dels divendres de Segur de Calafell",
+        "de": "Freitagsmarkt Segur de Calafell",
+        "nl": "Vrijdagmarkt Segur de Calafell"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Segur de Calafell",
+      "place": "Passeig Marítim",
+      "km_from_house": 17,
+      "lat": 41.189,
+      "lng": 1.602,
+      "schedule": [
+        {
+          "days": [
+            "fri"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "clothes",
+        "fruitveg"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Large market along the seafront promenade, mostly clothes and accessories. The fruit and veg stalls are inside Port Segur.",
+        "es": "Mercadillo grande en el paseo marítimo, sobre todo ropa y complementos. Los puestos de fruta y verdura están dentro del Port de Segur.",
+        "fr": "Grand marché sur le front de mer, surtout vêtements et accessoires. Les étals de fruits et légumes sont dans le port de Segur.",
+        "ca": "Mercat gran al passeig marítim, sobretot roba i complements. Les parades de fruita i verdura són dins del Port de Segur.",
+        "de": "Großer Markt entlang der Strandpromenade, vor allem Kleidung und Accessoires. Die Obst- und Gemüsestände sind im Port Segur.",
+        "nl": "Grote markt langs de boulevard, vooral kleding en accessoires. De groente- en fruitkramen staan in Port Segur."
+      }
+    },
+    {
+      "id": "cunit",
+      "category": "street",
+      "name": {
+        "en": "Cunit Thursday market",
+        "es": "Mercadillo de los jueves de Cunit",
+        "fr": "Marché du jeudi de Cunit",
+        "ca": "Mercat dels dijous de Cunit",
+        "de": "Donnerstagsmarkt Cunit",
+        "nl": "Donderdagmarkt Cunit"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Cunit",
+      "place": "C/ Joaquim Mir",
+      "km_from_house": 20,
+      "lat": 41.198,
+      "lng": 1.633,
+      "stalls_approx": 85,
+      "schedule": [
+        {
+          "days": [
+            "thu"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "food"
+      ],
+      "flags": [],
+      "description": {
+        "en": "About 85 stalls, strong on fresh food: fruit, veg and local products, plus everyday goods.",
+        "es": "Unos 85 puestos, fuerte en producto fresco: fruta, verdura y productos locales, además de artículos del día a día.",
+        "fr": "Environ 85 étals, surtout des produits frais : fruits, légumes et produits locaux, plus des articles du quotidien.",
+        "ca": "Unes 85 parades, fort en producte fresc: fruita, verdura i productes locals, a més d'articles del dia a dia.",
+        "de": "Etwa 85 Stände mit vielen frischen Lebensmitteln: Obst, Gemüse und regionale Produkte, dazu Dinge für den Alltag.",
+        "nl": "Zo'n 85 kramen met veel verse producten: groente, fruit en streekproducten, plus spullen voor elke dag."
+      }
+    },
+    {
+      "id": "roda",
+      "category": "street",
+      "name": {
+        "en": "Roda de Berà Thursday market",
+        "es": "Mercadillo de los jueves de Roda de Berà",
+        "fr": "Marché du jeudi de Roda de Berà",
+        "ca": "Mercat dels dijous de Roda de Berà",
+        "de": "Donnerstagsmarkt Roda de Berà",
+        "nl": "Donderdagmarkt Roda de Berà"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercat setmanal",
+      "town": "Roda de Berà",
+      "place": "Car park, c/ Sant Salvador",
+      "km_from_house": 14,
+      "lat": 41.187,
+      "lng": 1.459,
+      "stalls_approx": 60,
+      "schedule": [
+        {
+          "days": [
+            "thu"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "clothes",
+        "food"
+      ],
+      "flags": [],
+      "description": {
+        "en": "About 60 stalls: regional produce and eggs, clothes and bags, plus a churros stand and roast chicken to take away.",
+        "es": "Unos 60 puestos: producto de la zona y huevos, ropa y bolsos, además de churrería y pollos a l'ast para llevar.",
+        "fr": "Environ 60 étals : produits régionaux et œufs, vêtements et sacs, plus un stand de churros et des poulets rôtis à emporter.",
+        "ca": "Unes 60 parades: producte de la zona i ous, roba i bosses, a més de xurreria i pollastres a l'ast per emportar.",
+        "de": "Etwa 60 Stände: regionale Produkte und Eier, Kleidung und Taschen, dazu ein Churros-Stand und Grillhähnchen zum Mitnehmen.",
+        "nl": "Zo'n 60 kramen: streekproducten en eieren, kleding en tassen, plus een churroskraam en kip van het spit om mee te nemen."
+      }
+    },
+    {
+      "id": "pobla",
+      "category": "street",
+      "name": {
+        "en": "La Pobla de Montornès Saturday market",
+        "es": "Mercadillo de los sábados de La Pobla de Montornès",
+        "fr": "Marché du samedi de La Pobla de Montornès",
+        "ca": "Mercat dels dissabtes de la Pobla de Montornès",
+        "de": "Samstagsmarkt La Pobla de Montornès",
+        "nl": "Zaterdagmarkt La Pobla de Montornès"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercat setmanal",
+      "town": "La Pobla de Montornès",
+      "km_from_house": 14,
+      "lat": 41.184,
+      "lng": 1.416,
+      "stalls_approx": 20,
+      "schedule": [
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "08:30",
+          "close": "13:30"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "food"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Small Saturday market with around 20 stalls.",
+        "es": "Mercadillo pequeño de los sábados, unos 20 puestos.",
+        "fr": "Petit marché du samedi, une vingtaine d'étals.",
+        "ca": "Mercat petit de dissabte, unes 20 parades.",
+        "de": "Kleiner Samstagsmarkt mit rund 20 Ständen.",
+        "nl": "Kleine zaterdagmarkt met zo'n 20 kramen."
+      },
+      "place": "Avinguda de Catalunya"
+    },
+    {
+      "id": "creixell",
+      "category": "street",
+      "name": {
+        "en": "Creixell Sunday market",
+        "es": "Mercadillo de los domingos de Creixell",
+        "fr": "Marché du dimanche de Creixell",
+        "ca": "Mercat dels diumenges de Creixell",
+        "de": "Sonntagsmarkt Creixell",
+        "nl": "Zondagmarkt Creixell"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercat setmanal",
+      "town": "Creixell",
+      "place": "Rambla de les Moreres",
+      "km_from_house": 16,
+      "lat": 41.1688,
+      "lng": 1.4403,
+      "stalls_approx": 150,
+      "schedule": [
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "09:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "deli",
+        "clothes",
+        "shoes",
+        "home",
+        "plants",
+        "crafts"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Big Sunday market with about 150 stalls: fruit and veg, nuts, spices, charcuterie, churros, clothes, shoes, bags, homeware, hardware, plants and crafts.",
+        "es": "Gran mercadillo dominical con unos 150 puestos: fruta y verdura, frutos secos, especias, embutidos, churros, ropa, calzado, bolsos, menaje, ferretería, plantas y artesanía.",
+        "fr": "Grand marché du dimanche, environ 150 étals : fruits et légumes, fruits secs, épices, charcuterie, churros, vêtements, chaussures, sacs, maison, quincaillerie, plantes et artisanat.",
+        "ca": "Gran mercat de diumenge amb unes 150 parades: fruita i verdura, fruits secs, espècies, embotits, xurros, roba, calçat, bosses, parament, ferreteria, plantes i artesania.",
+        "de": "Großer Sonntagsmarkt mit etwa 150 Ständen: Obst und Gemüse, Nüsse, Gewürze, Wurst, Churros, Kleidung, Schuhe, Taschen, Haushaltswaren, Eisenwaren, Pflanzen und Kunsthandwerk.",
+        "nl": "Grote zondagsmarkt met zo'n 150 kramen: groente en fruit, noten, specerijen, vleeswaren, churros, kleding, schoenen, tassen, huishoudspullen, ijzerwaren, planten en ambacht."
+      }
+    },
+    {
+      "id": "torredembarra",
+      "category": "street",
+      "name": {
+        "en": "Torredembarra Tuesday market",
+        "es": "Mercadillo de los martes de Torredembarra",
+        "fr": "Marché du mardi de Torredembarra",
+        "ca": "Mercat dels dimarts de Torredembarra",
+        "de": "Dienstagsmarkt Torredembarra",
+        "nl": "Dinsdagmarkt Torredembarra"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercat setmanal",
+      "town": "Torredembarra",
+      "place": "C/ Mañé i Flaquer",
+      "km_from_house": 20,
+      "lat": 41.146,
+      "lng": 1.399,
+      "stalls_approx": 100,
+      "schedule": [
+        {
+          "days": [
+            "tue"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "deli",
+        "clothes"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Around 100 stalls: fruit, charcuterie, teas and spices, clothes and accessories.",
+        "es": "Unos 100 puestos: fruta, embutidos, tés y especias, ropa y complementos.",
+        "fr": "Une centaine d'étals : fruits, charcuterie, thés et épices, vêtements et accessoires.",
+        "ca": "Unes 100 parades: fruita, embotits, tes i espècies, roba i complements.",
+        "de": "Rund 100 Stände: Obst, Wurst, Tee und Gewürze, Kleidung und Accessoires.",
+        "nl": "Zo'n 100 kramen: fruit, vleeswaren, thee en specerijen, kleding en accessoires."
+      }
+    },
+    {
+      "id": "constanti",
+      "category": "street",
+      "name": {
+        "en": "Constantí Thursday market",
+        "es": "Mercadillo de los jueves de Constantí",
+        "fr": "Marché du jeudi de Constantí",
+        "ca": "Mercat dels dijous de Constantí",
+        "de": "Donnerstagsmarkt Constantí",
+        "nl": "Donderdagmarkt Constantí"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercat setmanal",
+      "town": "Constantí",
+      "km_from_house": 32,
+      "lat": 41.154,
+      "lng": 1.215,
+      "stalls_approx": 30,
+      "schedule": [
+        {
+          "days": [
+            "thu"
+          ],
+          "open": "09:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "food"
+      ],
+      "flags": [],
+      "description": {
+        "en": "About 30 stalls, mainly food.",
+        "es": "Unos 30 puestos, sobre todo alimentación.",
+        "fr": "Une trentaine d'étals, surtout de l'alimentation.",
+        "ca": "Unes 30 parades, sobretot alimentació.",
+        "de": "Etwa 30 Stände, vor allem Lebensmittel.",
+        "nl": "Zo'n 30 kramen, vooral eten."
+      }
+    },
+    {
+      "id": "tgn-central",
+      "category": "covered",
+      "name": {
+        "en": "Tarragona Central Market",
+        "es": "Mercado Central de Tarragona",
+        "fr": "Marché central de Tarragone",
+        "ca": "Mercat Central de Tarragona",
+        "de": "Zentralmarkt Tarragona",
+        "nl": "Centrale markt Tarragona"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercat Central de Tarragona",
+      "town": "Tarragona",
+      "place": "Plaça Corsini",
+      "km_from_house": 35,
+      "lat": 41.1172,
+      "lng": 1.2531,
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "08:30",
+          "close": "21:00"
+        }
+      ],
+      "tags": [
+        "meat",
+        "fish",
+        "cheese",
+        "deli",
+        "tapas"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Big modernist food hall: meat, fish, cheese, bakeries, eat-in counters and a supermarket downstairs. Worth combining with a visit to the old town.",
+        "es": "Gran mercado modernista: carne, pescado, quesos, panaderías, barras para comer y supermercado abajo. Vale la pena combinarlo con la parte antigua.",
+        "fr": "Grande halle moderniste : viande, poisson, fromages, boulangeries, comptoirs où manger et supermarché au sous-sol. À combiner avec la vieille ville.",
+        "ca": "Gran mercat modernista: carn, peix, formatges, fleques, barres per menjar i supermercat a baix. Val la pena combinar-ho amb la part alta.",
+        "de": "Große modernistische Markthalle: Fleisch, Fisch, Käse, Bäckereien, Theken zum Essen und ein Supermarkt im Untergeschoss. Lohnt sich in Kombination mit der Altstadt.",
+        "nl": "Grote modernistische markthal: vlees, vis, kaas, bakkerijen, toogjes om te eten en een supermarkt in de kelder. Goed te combineren met een bezoek aan de oude stad."
+      }
+    },
+    {
+      "id": "tgn-corsini",
+      "category": "street",
+      "name": {
+        "en": "Tarragona Tuesday and Thursday market (Corsini)",
+        "es": "Mercadillo de los martes y jueves de Tarragona (Corsini)",
+        "fr": "Marché du mardi et du jeudi de Tarragone (Corsini)",
+        "ca": "Mercat dels dimarts i dijous de Tarragona (Corsini)",
+        "de": "Dienstags- und Donnerstagsmarkt Tarragona (Corsini)",
+        "nl": "Dinsdag- en donderdagmarkt Tarragona (Corsini)"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercadet de Corsini",
+      "town": "Tarragona",
+      "place": "Around the Mercat Central",
+      "km_from_house": 35,
+      "lat": 41.1168,
+      "lng": 1.254,
+      "stalls_approx": 70,
+      "schedule": [
+        {
+          "days": [
+            "tue",
+            "thu"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "clothes",
+        "home"
+      ],
+      "flags": [
+        "holidays"
+      ],
+      "description": {
+        "en": "Around 70 stalls next to the Mercat Central, mostly clothes, accessories and textiles.",
+        "es": "Unos 70 puestos junto al Mercat Central, sobre todo ropa, complementos y textil.",
+        "fr": "Environ 70 étals à côté du Mercat Central, surtout vêtements, accessoires et textile.",
+        "ca": "Unes 70 parades al costat del Mercat Central, sobretot roba, complements i tèxtil.",
+        "de": "Rund 70 Stände neben dem Mercat Central, vor allem Kleidung, Accessoires und Textilien.",
+        "nl": "Zo'n 70 kramen naast de Mercat Central, vooral kleding, accessoires en textiel."
+      }
+    },
+    {
+      "id": "tgn-quadrat",
+      "category": "antiques",
+      "name": {
+        "en": "Tarragona antiques market (Sant Quadrat)",
+        "es": "Mercadillo de antigüedades de Tarragona (Sant Quadrat)",
+        "fr": "Marché aux antiquités de Tarragone (Sant Quadrat)",
+        "ca": "Mercadet d'antiguitats de Tarragona (Sant Quadrat)",
+        "de": "Antiquitätenmarkt Tarragona (Sant Quadrat)",
+        "nl": "Antiekmarkt Tarragona (Sant Quadrat)"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercadet de Sant Quadrat",
+      "town": "Tarragona",
+      "place": "Rambla Nova",
+      "km_from_house": 35,
+      "lat": 41.116,
+      "lng": 1.251,
+      "stalls_approx": 20,
+      "schedule": [
+        {
+          "days": [
+            "fri"
+          ],
+          "open": "08:00",
+          "close": "15:00"
+        }
+      ],
+      "tags": [
+        "antiques"
+      ],
+      "flags": [],
+      "description": {
+        "en": "About 20 antiques and collectables stalls on the Rambla Nova every Friday.",
+        "es": "Unos 20 puestos de antigüedades y coleccionismo en la Rambla Nova cada viernes.",
+        "fr": "Une vingtaine d'étals d'antiquités et de collection sur la Rambla Nova chaque vendredi.",
+        "ca": "Unes 20 parades d'antiguitats i col·leccionisme a la Rambla Nova cada divendres.",
+        "de": "Etwa 20 Stände mit Antiquitäten und Sammlerstücken auf der Rambla Nova, jeden Freitag.",
+        "nl": "Zo'n 20 kramen met antiek en verzamelobjecten op de Rambla Nova, elke vrijdag."
+      }
+    },
+    {
+      "id": "tgn-seu",
+      "category": "antiques",
+      "name": {
+        "en": "Tarragona antiques market (Cathedral)",
+        "es": "Mercadillo de antigüedades de Tarragona (Catedral)",
+        "fr": "Marché aux antiquités de Tarragone (Cathédrale)",
+        "ca": "Mercadet d'antiguitats de Tarragona (Catedral)",
+        "de": "Antiquitätenmarkt Tarragona (Kathedrale)",
+        "nl": "Antiekmarkt Tarragona (Kathedraal)"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercadet de la Catedral",
+      "town": "Tarragona",
+      "place": "Pla de la Seu",
+      "km_from_house": 35,
+      "lat": 41.1189,
+      "lng": 1.2577,
+      "stalls_approx": 35,
+      "schedule": [
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "antiques"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Antiques and collectables at the foot of the cathedral steps, roughly 25 to 50 stalls. A lovely setting for a Sunday stroll.",
+        "es": "Antigüedades y coleccionismo al pie de la escalinata de la catedral, entre 25 y 50 puestos. Un sitio precioso para pasear un domingo.",
+        "fr": "Antiquités et objets de collection au pied des marches de la cathédrale, entre 25 et 50 étals. Un cadre superbe pour une balade du dimanche.",
+        "ca": "Antiguitats i col·leccionisme al peu de l'escalinata de la catedral, entre 25 i 50 parades. Un lloc preciós per passejar un diumenge.",
+        "de": "Antiquitäten und Sammlerstücke am Fuß der Kathedralentreppe, etwa 25 bis 50 Stände. Eine schöne Kulisse für einen Sonntagsspaziergang.",
+        "nl": "Antiek en verzamelobjecten aan de voet van de trappen van de kathedraal, zo'n 25 tot 50 kramen. Een prachtig decor voor een zondagse wandeling."
+      }
+    },
+    {
+      "id": "bonavista",
+      "category": "street",
+      "name": {
+        "en": "Bonavista Sunday market",
+        "es": "Mercadillo de los domingos de Bonavista",
+        "fr": "Marché du dimanche de Bonavista",
+        "ca": "Mercat dels diumenges de Bonavista",
+        "de": "Sonntagsmarkt Bonavista",
+        "nl": "Zondagmarkt Bonavista"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercadillo de Bonavista",
+      "town": "Tarragona",
+      "group": "Bonavista",
+      "place": "Bonavista",
+      "km_from_house": 40,
+      "lat": 41.137,
+      "lng": 1.2,
+      "stalls_approx": 400,
+      "schedule": [
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "clothes",
+        "shoes",
+        "food",
+        "home",
+        "secondhand"
+      ],
+      "flags": [],
+      "description": {
+        "en": "The biggest market in the province, around 400 stalls. A sprawling bargain market: clothes, shoes, food, household and odds and ends. Go early.",
+        "es": "El mercadillo más grande de la provincia, unos 400 puestos. Un mercadillo enorme de gangas: ropa, calzado, comida, hogar y de todo un poco. Mejor ir temprano.",
+        "fr": "Le plus grand marché de la province, environ 400 étals. Un immense marché aux bonnes affaires : vêtements, chaussures, alimentation, maison et un peu de tout. Allez-y tôt.",
+        "ca": "El mercat més gran de la província, unes 400 parades. Un mercat enorme de gangues: roba, calçat, menjar, llar i de tot una mica. Millor anar-hi d'hora.",
+        "de": "Der größte Markt der Provinz, rund 400 Stände. Ein riesiger Schnäppchenmarkt: Kleidung, Schuhe, Lebensmittel, Haushalt und allerlei Kram. Früh hingehen.",
+        "nl": "De grootste markt van de provincie, zo'n 400 kramen. Een enorme koopjesmarkt: kleding, schoenen, eten, huishouden en van alles wat. Ga vroeg."
+      }
+    },
+    {
+      "id": "vilarodona",
+      "category": "street",
+      "name": {
+        "en": "Vila-rodona Tuesday market",
+        "es": "Mercadillo de los martes de Vila-rodona",
+        "fr": "Marché du mardi de Vila-rodona",
+        "ca": "Mercat dels dimarts de Vila-rodona",
+        "de": "Dienstagsmarkt Vila-rodona",
+        "nl": "Dinsdagmarkt Vila-rodona"
+      },
+      "comarca": "Alt Camp",
+      "name_local": "Mercat setmanal",
+      "town": "Vila-rodona",
+      "km_from_house": 16,
+      "lat": 41.311,
+      "lng": 1.361,
+      "schedule": [
+        {
+          "days": [
+            "tue"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "plants",
+        "clothes",
+        "shoes",
+        "home"
+      ],
+      "flags": [
+        "holidays"
+      ],
+      "description": {
+        "en": "Village market with a bit of everything: fruit and veg, seedlings, salted fish, clothes, home linen, shoes, flowers and traditional clay cookware.",
+        "es": "Mercadillo de pueblo con de todo un poco: fruta y verdura, planteles, salazones, ropa, ropa de casa, calzado, flores y cazuelas de barro.",
+        "fr": "Marché de village avec un peu de tout : fruits et légumes, plants, salaisons, vêtements, linge, chaussures, fleurs et poterie de cuisson en terre.",
+        "ca": "Mercat de poble amb de tot una mica: fruita i verdura, planter, salaons, roba, roba de casa, calçat, flors i cassoles de fang.",
+        "de": "Dorfmarkt mit ein bisschen von allem: Obst und Gemüse, Setzlinge, Salzfisch, Kleidung, Haushaltswäsche, Schuhe, Blumen und traditionelles Tongeschirr.",
+        "nl": "Dorpsmarkt met van alles wat: groente en fruit, plantjes, gezouten vis, kleding, huislinnen, schoenen, bloemen en traditioneel aardewerk om in te koken."
+      }
+    },
+    {
+      "id": "valls",
+      "category": "street",
+      "name": {
+        "en": "Valls Wednesday and Saturday market",
+        "es": "Mercadillo de los miércoles y sábados de Valls",
+        "fr": "Marché du mercredi et du samedi de Valls",
+        "ca": "Mercat dels dimecres i dissabtes de Valls",
+        "de": "Mittwochs- und Samstagsmarkt Valls",
+        "nl": "Woensdag- en zaterdagmarkt Valls"
+      },
+      "comarca": "Alt Camp",
+      "name_local": "Mercat setmanal",
+      "town": "Valls",
+      "place": "El Pati, Pl. dels Quarters, Pl. del Blat",
+      "km_from_house": 25,
+      "lat": 41.286,
+      "lng": 1.25,
+      "stalls_approx": 100,
+      "schedule": [
+        {
+          "days": [
+            "wed",
+            "sat"
+          ],
+          "open": "08:30",
+          "close": "13:30"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "clothes"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Main market of the Alt Camp with about 100 stalls across the old squares. Saturday is the full market with fresh produce; Wednesday is mostly clothes.",
+        "es": "El mercado principal del Alt Camp, unos 100 puestos por las plazas del centro. El sábado es el completo con producto fresco; el miércoles es sobre todo ropa.",
+        "fr": "Le grand marché de l'Alt Camp, environ 100 étals dans les places du centre. Le samedi c'est le marché complet avec produits frais ; le mercredi surtout des vêtements.",
+        "ca": "El mercat principal de l'Alt Camp, unes 100 parades per les places del centre. El dissabte és el complet amb producte fresc; el dimecres és sobretot roba.",
+        "de": "Der Hauptmarkt des Alt Camp mit etwa 100 Ständen auf den Plätzen der Altstadt. Samstags ist der volle Markt mit frischen Produkten, mittwochs vor allem Kleidung.",
+        "nl": "De hoofdmarkt van de Alt Camp met zo'n 100 kramen op de pleinen van de oude stad. Op zaterdag de volledige markt met verse producten, op woensdag vooral kleding."
+      }
+    },
+    {
+      "id": "valls-b",
+      "category": "antiques",
+      "name": {
+        "en": "Valls antiques and collectors' market",
+        "es": "Mercado de antigüedades y coleccionismo de Valls",
+        "fr": "Marché des antiquités et de la collection de Valls",
+        "ca": "Mercat d'antiguitats i col·leccionisme de Valls",
+        "de": "Antiquitäten- und Sammlermarkt Valls",
+        "nl": "Antiek- en verzamelaarsmarkt Valls"
+      },
+      "comarca": "Alt Camp",
+      "name_local": "Mercat d'antiguitats i col·leccionisme",
+      "town": "Valls",
+      "place": "El Pati",
+      "km_from_house": 25,
+      "lat": 41.287,
+      "lng": 1.252,
+      "schedule": [
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "09:00",
+          "close": "14:00",
+          "week_of_month": 1
+        }
+      ],
+      "tags": [
+        "antiques"
+      ],
+      "flags": [
+        "check"
+      ],
+      "description": {
+        "en": "Antiques, brocante and collectors' stalls at El Pati, on the same morning as the Saturday market.",
+        "es": "Antigüedades, brocante y coleccionismo en El Pati, la misma mañana que el mercado del sábado.",
+        "fr": "Antiquités, brocante et collectionneurs à El Pati, le même matin que le marché du samedi.",
+        "ca": "Antiguitats, brocanteria i col·leccionisme a El Pati, el mateix matí que el mercat de dissabte.",
+        "de": "Antiquitäten-, Trödel- und Sammlerstände in El Pati, am selben Vormittag wie der Samstagsmarkt.",
+        "nl": "Antiek-, brocante- en verzamelaarskramen in El Pati, op dezelfde ochtend als de zaterdagmarkt."
+      }
+    },
+    {
+      "id": "alcover",
+      "category": "street",
+      "name": {
+        "en": "Alcover Tuesday market",
+        "es": "Mercadillo de los martes de Alcover",
+        "fr": "Marché du mardi d'Alcover",
+        "ca": "Mercat dels dimarts d'Alcover",
+        "de": "Dienstagsmarkt Alcover",
+        "nl": "Dinsdagmarkt Alcover"
+      },
+      "comarca": "Alt Camp",
+      "name_local": "Mercat setmanal",
+      "town": "Alcover",
+      "place": "Pl. President Lluís Companys",
+      "km_from_house": 35,
+      "lat": 41.263,
+      "lng": 1.17,
+      "stalls_approx": 25,
+      "schedule": [
+        {
+          "days": [
+            "tue"
+          ],
+          "open": "09:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "clothes"
+      ],
+      "flags": [
+        "holidays"
+      ],
+      "description": {
+        "en": "Around 25 stalls in the main square, food and clothes. The market dates back to the Middle Ages.",
+        "es": "Unos 25 puestos en la plaza mayor, comida y ropa. Un mercado con origen medieval.",
+        "fr": "Environ 25 étals sur la place principale, alimentation et vêtements. Un marché d'origine médiévale.",
+        "ca": "Unes 25 parades a la plaça, alimentació i roba. Un mercat d'origen medieval.",
+        "de": "Rund 25 Stände auf dem Hauptplatz, Lebensmittel und Kleidung. Der Markt geht auf das Mittelalter zurück.",
+        "nl": "Zo'n 25 kramen op het hoofdplein, eten en kleding. De markt gaat terug tot de middeleeuwen."
+      }
+    },
+    {
+      "id": "monjos",
+      "category": "street",
+      "name": {
+        "en": "Els Monjos Sunday market",
+        "es": "Mercadillo de los domingos de Els Monjos",
+        "fr": "Marché du dimanche d'Els Monjos",
+        "ca": "Mercat dels diumenges dels Monjos",
+        "de": "Sonntagsmarkt Els Monjos",
+        "nl": "Zondagmarkt Els Monjos"
+      },
+      "comarca": "Alt Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Santa Margarida i els Monjos",
+      "place": "Av. de Cal Salines",
+      "km_from_house": 22,
+      "lat": 41.318,
+      "lng": 1.664,
+      "stalls_approx": 200,
+      "schedule": [
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "food",
+        "clothes",
+        "shoes",
+        "home",
+        "crafts",
+        "plants"
+      ],
+      "flags": [],
+      "description": {
+        "en": "One of the biggest Sunday markets around, about 200 stalls: fruit and veg, food, clothes, shoes, bags, jewellery, homeware, crafts, flowers and plants.",
+        "es": "Uno de los mercadillos dominicales más grandes de la zona, unos 200 puestos: fruta y verdura, alimentación, ropa, calzado, bolsos, bisutería, hogar, artesanía, flores y plantas.",
+        "fr": "L'un des plus grands marchés du dimanche du secteur, environ 200 étals : fruits et légumes, alimentation, vêtements, chaussures, sacs, bijoux, maison, artisanat, fleurs et plantes.",
+        "ca": "Un dels mercats de diumenge més grans de la zona, unes 200 parades: fruita i verdura, alimentació, roba, calçat, bosses, bijuteria, llar, artesania, flors i plantes.",
+        "de": "Einer der größten Sonntagsmärkte der Gegend, etwa 200 Stände: Obst und Gemüse, Lebensmittel, Kleidung, Schuhe, Taschen, Schmuck, Haushaltswaren, Kunsthandwerk, Blumen und Pflanzen.",
+        "nl": "Een van de grootste zondagsmarkten in de omgeving, zo'n 200 kramen: groente en fruit, eten, kleding, schoenen, tassen, sieraden, huishoudspullen, ambacht, bloemen en planten."
+      }
+    },
+    {
+      "id": "monjos-art",
+      "category": "antiques",
+      "name": {
+        "en": "Els Monjos crafts and bric-a-brac market",
+        "es": "Mercado de artesanía y brocante de Els Monjos",
+        "fr": "Marché d'artisanat et de brocante d'Els Monjos",
+        "ca": "Mercat d'artesania i brocanters dels Monjos",
+        "de": "Kunsthandwerks- und Trödelmarkt Els Monjos",
+        "nl": "Ambachts- en brocantemarkt Els Monjos"
+      },
+      "comarca": "Alt Penedès",
+      "name_local": "Mercat d'artesania i brocanters",
+      "town": "Santa Margarida i els Monjos",
+      "km_from_house": 22,
+      "lat": 41.3195,
+      "lng": 1.661,
+      "stalls_approx": 20,
+      "schedule": [
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "week_of_month": 1
+        }
+      ],
+      "tags": [
+        "crafts",
+        "antiques",
+        "books"
+      ],
+      "flags": [],
+      "description": {
+        "en": "About 20 stalls of crafts, local food, collectors and old books, alongside the big Sunday market.",
+        "es": "Unos 20 puestos de artesanía, alimentación artesana, coleccionismo y libros viejos, junto al gran mercadillo del domingo.",
+        "fr": "Une vingtaine d'étals d'artisanat, produits locaux, collection et vieux livres, à côté du grand marché du dimanche.",
+        "ca": "Unes 20 parades d'artesania, alimentació artesana, col·leccionisme i llibres vells, al costat del gran mercat de diumenge.",
+        "de": "Etwa 20 Stände mit Kunsthandwerk, regionalen Lebensmitteln, Sammlerstücken und alten Büchern, neben dem großen Sonntagsmarkt.",
+        "nl": "Zo'n 20 kramen met ambacht, streekproducten, verzamelobjecten en oude boeken, naast de grote zondagsmarkt."
+      },
+      "place": "Plaça de Pau Casals"
+    },
+    {
+      "id": "vilafranca-sat",
+      "category": "street",
+      "name": {
+        "en": "Vilafranca Saturday market",
+        "es": "Mercadillo de los sábados de Vilafranca",
+        "fr": "Marché du samedi de Vilafranca",
+        "ca": "Mercat dels dissabtes de Vilafranca",
+        "de": "Samstagsmarkt Vilafranca",
+        "nl": "Zaterdagmarkt Vilafranca"
+      },
+      "comarca": "Alt Penedès",
+      "name_local": "Mercat dels dissabtes",
+      "town": "Vilafranca del Penedès",
+      "place": "Old town squares and Rambla",
+      "km_from_house": 27,
+      "lat": 41.3465,
+      "lng": 1.699,
+      "stalls_approx": 210,
+      "schedule": [
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "plants",
+        "food",
+        "clothes",
+        "home"
+      ],
+      "flags": [],
+      "description": {
+        "en": "The big one: an almost thousand-year-old market with about 210 stalls across the old town squares and some 20,000 visitors a week. Known for local produce, seedlings and even live poultry. Food from 8:00, other stalls from 9:00. Go early to park.",
+        "es": "El gran mercado: casi mil años de historia, unos 210 puestos por las plazas del casco antiguo y unos 20.000 visitantes a la semana. Famoso por el producto de la tierra, los planteles e incluso aves vivas. Comida desde las 8:00, el resto desde las 9:00. Id temprano para aparcar.",
+        "fr": "Le grand marché : presque mille ans d'histoire, environ 210 étals dans les places de la vieille ville et quelque 20 000 visiteurs par semaine. Réputé pour les produits du terroir, les plants et même la volaille vivante. Alimentation dès 8 h, le reste dès 9 h. Venez tôt pour vous garer.",
+        "ca": "El gran mercat: gairebé mil anys d'història, unes 210 parades per les places del centre i uns 20.000 visitants a la setmana. Famós pel producte de la terra, el planter i fins i tot l'aviram viu. Alimentació des de les 8:00, la resta des de les 9:00. Aneu-hi d'hora per aparcar.",
+        "de": "Der große Markt: fast tausend Jahre alt, mit etwa 210 Ständen auf den Plätzen der Altstadt und rund 20.000 Besuchern pro Woche. Bekannt für regionale Produkte, Setzlinge und sogar lebendes Geflügel. Lebensmittel ab 8:00, andere Stände ab 9:00. Früh kommen, um zu parken.",
+        "nl": "De grote: een bijna duizend jaar oude markt met zo'n 210 kramen op de pleinen van de oude stad en zo'n 20.000 bezoekers per week. Bekend om streekproducten, plantjes en zelfs levend pluimvee. Eten vanaf 8:00, andere kramen vanaf 9:00. Kom vroeg om te parkeren."
+      }
+    },
+    {
+      "id": "vilafranca-veg",
+      "category": "street",
+      "name": {
+        "en": "Vilafranca daily fruit and veg market",
+        "es": "Mercado diario de la verdura de Vilafranca",
+        "fr": "Marché quotidien aux fruits et légumes de Vilafranca",
+        "ca": "Mercat diari de la verdura de Vilafranca",
+        "de": "Täglicher Obst- und Gemüsemarkt Vilafranca",
+        "nl": "Dagelijkse groente- en fruitmarkt Vilafranca"
+      },
+      "comarca": "Alt Penedès",
+      "name_local": "Mercat diari de la verdura",
+      "town": "Vilafranca del Penedès",
+      "place": "Plaça de Sant Joan",
+      "km_from_house": 27,
+      "lat": 41.3462,
+      "lng": 1.698,
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "08:00",
+          "close": "13:30"
+        }
+      ],
+      "tags": [
+        "fruitveg"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Small fruit and veg market under the arcades of Plaça de Sant Joan, Monday to Friday mornings all year. On Saturdays the big market takes over the centre.",
+        "es": "Pequeño mercado de fruta y verdura bajo los porches de la plaça de Sant Joan, de lunes a viernes por la mañana todo el año. Los sábados el gran mercado ocupa el centro.",
+        "fr": "Petit marché de fruits et légumes sous les arcades de la plaça de Sant Joan, du lundi au vendredi matin toute l'année. Le samedi, le grand marché occupe le centre.",
+        "ca": "Petit mercat de fruita i verdura sota els porxos de la plaça de Sant Joan, de dilluns a divendres al matí tot l'any. Els dissabtes el gran mercat ocupa el centre.",
+        "de": "Kleiner Obst- und Gemüsemarkt unter den Arkaden der Plaça de Sant Joan, montags bis freitags vormittags, das ganze Jahr. Samstags füllt der große Markt das Zentrum.",
+        "nl": "Kleine groente- en fruitmarkt onder de arcaden van de Plaça de Sant Joan, maandag tot en met vrijdag 's ochtends, het hele jaar. Op zaterdag vult de grote markt het centrum."
+      }
+    },
+    {
+      "id": "vilafranca-tue",
+      "category": "street",
+      "name": {
+        "en": "Vilafranca Tuesday market (L'Espirall)",
+        "es": "Mercadillo de los martes de Vilafranca (L'Espirall)",
+        "fr": "Marché du mardi de Vilafranca (L'Espirall)",
+        "ca": "Mercat dels dimarts de Vilafranca (L'Espirall)",
+        "de": "Dienstagsmarkt Vilafranca (L'Espirall)",
+        "nl": "Dinsdagmarkt Vilafranca (L'Espirall)"
+      },
+      "comarca": "Alt Penedès",
+      "name_local": "Mercat del dimarts",
+      "town": "Vilafranca del Penedès",
+      "place": "L'Espirall, by La Pelegrina",
+      "km_from_house": 27,
+      "lat": 41.342,
+      "lng": 1.706,
+      "stalls_approx": 60,
+      "schedule": [
+        {
+          "days": [
+            "tue"
+          ],
+          "open": "09:00",
+          "close": "13:30"
+        }
+      ],
+      "tags": [
+        "clothes",
+        "home"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Neighbourhood market with about 60 stalls, mainly clothes and textiles.",
+        "es": "Mercadillo de barrio con unos 60 puestos, sobre todo ropa y textil.",
+        "fr": "Marché de quartier d'environ 60 étals, surtout vêtements et textile.",
+        "ca": "Mercat de barri amb unes 60 parades, sobretot roba i tèxtil.",
+        "de": "Viertelsmarkt mit etwa 60 Ständen, vor allem Kleidung und Textilien.",
+        "nl": "Buurtmarkt met zo'n 60 kramen, vooral kleding en textiel."
+      }
+    },
+    {
+      "id": "vilafranca-art",
+      "category": "antiques",
+      "name": {
+        "en": "Vilafranca crafts, antiques and painters' market",
+        "es": "Mercado de artesanía, brocante y pintores de Vilafranca",
+        "fr": "Marché des artisans, brocanteurs et peintres de Vilafranca",
+        "ca": "Mercat d'artesania, brocanters i pintors de Vilafranca",
+        "de": "Kunsthandwerks-, Trödel- und Malermarkt Vilafranca",
+        "nl": "Markt voor ambacht, brocante en schilders Vilafranca"
+      },
+      "comarca": "Alt Penedès",
+      "name_local": "Mercat d'artesania, brocanters i pintors",
+      "town": "Vilafranca del Penedès",
+      "place": "Rambla de Sant Francesc",
+      "km_from_house": 27,
+      "lat": 41.347,
+      "lng": 1.6975,
+      "stalls_approx": 50,
+      "schedule": [
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "week_of_month": 2
+        }
+      ],
+      "tags": [
+        "crafts",
+        "antiques"
+      ],
+      "flags": [
+        "octmay"
+      ],
+      "description": {
+        "en": "Crafts, antiques and painters with 50+ stalls on the Rambla de Sant Francesc.",
+        "es": "Artesanía, antigüedades y pintores con más de 50 puestos en la Rambla de Sant Francesc.",
+        "fr": "Artisanat, antiquités et peintres, plus de 50 étals sur la Rambla de Sant Francesc.",
+        "ca": "Artesania, antiguitats i pintors amb més de 50 parades a la Rambla de Sant Francesc.",
+        "de": "Kunsthandwerk, Antiquitäten und Maler mit über 50 Ständen auf der Rambla de Sant Francesc.",
+        "nl": "Ambacht, antiek en schilders met meer dan 50 kramen op de Rambla de Sant Francesc."
+      }
+    },
+    {
+      "id": "vilafranca-mm",
+      "category": "covered",
+      "name": {
+        "en": "Vilafranca covered market (Sant Salvador)",
+        "es": "Mercado Municipal de Vilafranca (Sant Salvador)",
+        "fr": "Halles de Vilafranca (Sant Salvador)",
+        "ca": "Mercat Municipal de Vilafranca (Sant Salvador)",
+        "de": "Markthalle Vilafranca (Sant Salvador)",
+        "nl": "Overdekte markt Vilafranca (Sant Salvador)"
+      },
+      "comarca": "Alt Penedès",
+      "name_local": "Mercat Municipal de Sant Salvador",
+      "town": "Vilafranca del Penedès",
+      "place": "C/ Francesc Macià, 1",
+      "km_from_house": 27,
+      "lat": 41.3445,
+      "lng": 1.693,
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "09:00",
+          "close": "21:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "meat",
+        "fish"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Covered neighbourhood food market, fully renovated: fresh produce from local stallholders.",
+        "es": "Mercado municipal cubierto de barrio, totalmente reformado: producto fresco de paradistas locales.",
+        "fr": "Marché couvert de quartier entièrement rénové : produits frais de commerçants locaux.",
+        "ca": "Mercat municipal cobert de barri, totalment reformat: producte fresc de paradistes locals.",
+        "de": "Überdachter Lebensmittelmarkt im Viertel, komplett renoviert: frische Produkte von Händlern aus der Region.",
+        "nl": "Overdekte buurtmarkt voor eten, volledig gerenoveerd: verse producten van lokale marktkramers."
+      }
+    },
+    {
+      "id": "santsadurni",
+      "category": "street",
+      "name": {
+        "en": "Sant Sadurní Thursday and Saturday market",
+        "es": "Mercadillo de los jueves y sábados de Sant Sadurní",
+        "fr": "Marché du jeudi et du samedi de Sant Sadurní",
+        "ca": "Mercat dels dijous i dissabtes de Sant Sadurní",
+        "de": "Donnerstags- und Samstagsmarkt Sant Sadurní",
+        "nl": "Donderdag- en zaterdagmarkt Sant Sadurní"
+      },
+      "comarca": "Alt Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Sant Sadurní d'Anoia",
+      "place": "Around Plaça de l'Ajuntament",
+      "km_from_house": 40,
+      "lat": 41.426,
+      "lng": 1.785,
+      "schedule": [
+        {
+          "days": [
+            "thu",
+            "sat"
+          ],
+          "open": "08:00",
+          "close": "13:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "deli",
+        "plants",
+        "clothes",
+        "home"
+      ],
+      "flags": [],
+      "description": {
+        "en": "The cava capital's market: fruit and veg, olives, salted fish, roast chicken, nuts, charcuterie, flowers, clothes and homeware. Pair it with a cava cellar visit.",
+        "es": "El mercado de la capital del cava: fruta y verdura, aceitunas, salazones, pollos asados, frutos secos, embutidos, flores, ropa y hogar. Combínalo con una visita a una bodega de cava.",
+        "fr": "Le marché de la capitale du cava : fruits et légumes, olives, salaisons, poulets rôtis, fruits secs, charcuterie, fleurs, vêtements et maison. À combiner avec une cave à cava.",
+        "ca": "El mercat de la capital del cava: fruita i verdura, olives, salaons, pollastres a l'ast, fruits secs, embotits, flors, roba i llar. Combina-ho amb una visita a un celler de cava.",
+        "de": "Der Markt der Cava-Hauptstadt: Obst und Gemüse, Oliven, Salzfisch, Grillhähnchen, Nüsse, Wurst, Blumen, Kleidung und Haushaltswaren. Ideal mit einem Besuch in einer Cava-Kellerei.",
+        "nl": "De markt van de cava-hoofdstad: groente en fruit, olijven, gezouten vis, kip van het spit, noten, vleeswaren, bloemen, kleding en huishoudspullen. Combineer het met een bezoek aan een cavakelder."
+      }
+    },
+    {
+      "id": "santquinti",
+      "category": "street",
+      "name": {
+        "en": "Sant Quintí Saturday market",
+        "es": "Mercadillo de los sábados de Sant Quintí",
+        "fr": "Marché du samedi de Sant Quintí",
+        "ca": "Mercat dels dissabtes de Sant Quintí",
+        "de": "Samstagsmarkt Sant Quintí",
+        "nl": "Zaterdagmarkt Sant Quintí"
+      },
+      "comarca": "Alt Penedès",
+      "name_local": "Mercat setmanal",
+      "town": "Sant Quintí de Mediona",
+      "place": "C/ de Pi i Margall",
+      "km_from_house": 38,
+      "lat": 41.459,
+      "lng": 1.665,
+      "stalls_approx": 10,
+      "schedule": [
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "08:00",
+          "close": "14:00"
+        }
+      ],
+      "tags": [
+        "fruitveg",
+        "clothes"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Small market of about 10 stalls: fruit, veg and clothes.",
+        "es": "Mercadillo pequeño de unos 10 puestos: fruta, verdura y ropa.",
+        "fr": "Petit marché d'une dizaine d'étals : fruits, légumes et vêtements.",
+        "ca": "Mercat petit d'unes 10 parades: fruita, verdura i roba.",
+        "de": "Kleiner Markt mit etwa 10 Ständen: Obst, Gemüse und Kleidung.",
+        "nl": "Kleine markt met zo'n 10 kramen: groente, fruit en kleding."
+      }
+    },
+    {
+      "id": "vendrell-teresa",
+      "category": "events",
+      "name": {
+        "en": "El Vendrell Santa Teresa fair",
+        "es": "Feria de Santa Teresa de El Vendrell",
+        "fr": "Foire de la Sainte-Thérèse d'El Vendrell",
+        "ca": "Fira de Santa Teresa del Vendrell",
+        "de": "Santa-Teresa-Fest El Vendrell",
+        "nl": "Santa Teresa-feest El Vendrell"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Fira de Santa Teresa",
+      "town": "El Vendrell",
+      "km_from_house": 10,
+      "lat": 41.22,
+      "lng": 1.536,
+      "schedule": [],
+      "occasional_when": {
+        "en": "Town festival fair around 15 October",
+        "es": "Feria de la fiesta mayor, alrededor del 15 de octubre",
+        "fr": "Foire de la fête patronale, autour du 15 octobre",
+        "ca": "Fira de la festa major, al voltant del 15 d'octubre",
+        "de": "Stadtfest um den 15. Oktober",
+        "nl": "Stadsfeest rond 15 oktober"
+      },
+      "tags": [
+        "food",
+        "crafts"
+      ],
+      "flags": [
+        "check"
+      ],
+      "description": {
+        "en": "El Vendrell's main festival, with fair stalls in town. Dates are set each year.",
+        "es": "La fiesta mayor de El Vendrell, con puestos de feria por el pueblo. Las fechas cambian cada año.",
+        "fr": "La fête patronale d'El Vendrell, avec des stands de foire en ville. Dates fixées chaque année.",
+        "ca": "La festa major del Vendrell, amb parades de fira pel poble. Les dates canvien cada any.",
+        "de": "Das Hauptfest von El Vendrell, mit Marktständen in der Stadt. Die Termine werden jedes Jahr festgelegt.",
+        "nl": "Het belangrijkste feest van El Vendrell, met marktkramen in het centrum. De data worden elk jaar vastgelegd."
+      }
+    },
+    {
+      "id": "comaruga-night",
+      "category": "events",
+      "name": {
+        "en": "Coma-ruga seafront night market",
+        "es": "Mercadillo nocturno del paseo marítimo de Coma-ruga",
+        "fr": "Marché nocturne du front de mer de Coma-ruga",
+        "ca": "Mercat nocturn del passeig marítim de Coma-ruga",
+        "de": "Nachtmarkt an der Promenade Coma-ruga",
+        "nl": "Avondmarkt op de boulevard Coma-ruga"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat del passeig marítim",
+      "town": "Coma-ruga",
+      "place": "Passeig Marítim",
+      "km_from_house": 13,
+      "lat": 41.1795,
+      "lng": 1.523,
+      "schedule": [],
+      "occasional_when": {
+        "en": "Summer evenings, 18:00 to 24:00",
+        "es": "Noches de verano, de 18:00 a 24:00",
+        "fr": "Soirs d'été, de 18 h à minuit",
+        "ca": "Vespres d'estiu, de 18:00 a 24:00",
+        "de": "Sommerabende, 18:00 bis 24:00",
+        "nl": "Zomeravonden, 18:00 tot 24:00"
+      },
+      "tags": [
+        "crafts",
+        "clothes"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Seafront evening market during the summer season.",
+        "es": "Mercadillo nocturno en el paseo marítimo durante la temporada de verano.",
+        "fr": "Marché du soir sur le front de mer pendant la saison d'été.",
+        "ca": "Mercat de vespre al passeig marítim durant la temporada d'estiu.",
+        "de": "Abendmarkt an der Strandpromenade während der Sommersaison.",
+        "nl": "Avondmarkt op de boulevard tijdens het zomerseizoen."
+      }
+    },
+    {
+      "id": "cunit-summer",
+      "category": "events",
+      "name": {
+        "en": "Cunit summer crafts fair",
+        "es": "Feria de artesanía de verano de Cunit",
+        "fr": "Foire artisanale d'été de Cunit",
+        "ca": "Fira d'artesania d'estiu de Cunit",
+        "de": "Sommerlicher Kunsthandwerksmarkt Cunit",
+        "nl": "Zomerse ambachtsmarkt Cunit"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Fira d'artesania d'estiu",
+      "town": "Cunit",
+      "km_from_house": 20,
+      "lat": 41.196,
+      "lng": 1.636,
+      "schedule": [],
+      "occasional_when": {
+        "en": "Weekends in July and August, 18:00 to 24:00",
+        "es": "Fines de semana de julio y agosto, de 18:00 a 24:00",
+        "fr": "Week-ends de juillet et août, de 18 h à minuit",
+        "ca": "Caps de setmana de juliol i agost, de 18:00 a 24:00",
+        "de": "Wochenenden im Juli und August, 18:00 bis 24:00",
+        "nl": "Weekenden in juli en augustus, 18:00 tot 24:00"
+      },
+      "tags": [
+        "crafts"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Summer crafts fair on weekend evenings.",
+        "es": "Feria de artesanía de verano las noches de fin de semana.",
+        "fr": "Foire artisanale d'été les soirs de week-end.",
+        "ca": "Fira d'artesania d'estiu els vespres de cap de setmana.",
+        "de": "Sommerlicher Kunsthandwerksmarkt an Wochenendabenden.",
+        "nl": "Zomerse ambachtsmarkt op weekendavonden."
+      }
+    },
+    {
+      "id": "calafell-medieval",
+      "category": "events",
+      "name": {
+        "en": "Calafell medieval market",
+        "es": "Mercado medieval de Calafell",
+        "fr": "Marché médiéval de Calafell",
+        "ca": "Mercat medieval de Calafell",
+        "de": "Mittelaltermarkt Calafell",
+        "nl": "Middeleeuwse markt Calafell"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat Medieval",
+      "town": "Calafell",
+      "place": "Around the castle",
+      "km_from_house": 15,
+      "lat": 41.2,
+      "lng": 1.568,
+      "stalls_approx": 50,
+      "schedule": [],
+      "occasional_when": {
+        "en": "Last weekend of August, 11:00 to 24:00",
+        "es": "Último fin de semana de agosto, de 11:00 a 24:00",
+        "fr": "Dernier week-end d'août, de 11 h à minuit",
+        "ca": "Últim cap de setmana d'agost, de 11:00 a 24:00",
+        "de": "Letztes Augustwochenende, 11:00 bis 24:00",
+        "nl": "Laatste weekend van augustus, 11:00 tot 24:00"
+      },
+      "tags": [
+        "crafts",
+        "food"
+      ],
+      "flags": [],
+      "description": {
+        "en": "About 50 craft stalls, shows and a historic atmosphere by the castle. Great for families.",
+        "es": "Unos 50 puestos de artesanía, espectáculos y ambiente histórico junto al castillo. Ideal en familia.",
+        "fr": "Une cinquantaine d'étals d'artisanat, spectacles et ambiance historique près du château. Idéal en famille.",
+        "ca": "Unes 50 parades d'artesania, espectacles i ambient històric al costat del castell. Ideal en família.",
+        "de": "Etwa 50 Handwerksstände, Vorführungen und historische Stimmung an der Burg. Toll für Familien.",
+        "nl": "Zo'n 50 ambachtskramen, voorstellingen en een historische sfeer bij het kasteel. Leuk voor gezinnen."
+      }
+    },
+    {
+      "id": "segur-swap",
+      "category": "events",
+      "name": {
+        "en": "Segur de Calafell swap and second-hand market",
+        "es": "Mercado de intercambio y segunda mano de Segur de Calafell",
+        "fr": "Marché de troc et d'occasion de Segur de Calafell",
+        "ca": "Mercat d'intercanvi i segona mà de Segur de Calafell",
+        "de": "Tausch- und Second-Hand-Markt Segur de Calafell",
+        "nl": "Ruil- en tweedehandsmarkt Segur de Calafell"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Mercat d'intercanvi i segona mà",
+      "town": "Segur de Calafell",
+      "place": "Passeig Marítim",
+      "km_from_house": 17,
+      "lat": 41.188,
+      "lng": 1.608,
+      "stalls_approx": 200,
+      "schedule": [],
+      "occasional_when": {
+        "en": "A few Sundays a year, usually spring, 8:00 to 15:00",
+        "es": "Algunos domingos al año, sobre todo en primavera, de 8:00 a 15:00",
+        "fr": "Quelques dimanches par an, surtout au printemps, de 8 h à 15 h",
+        "ca": "Alguns diumenges l'any, sobretot a la primavera, de 8:00 a 15:00",
+        "de": "Einige Sonntage im Jahr, meist im Frühling, 8:00 bis 15:00",
+        "nl": "Een paar zondagen per jaar, meestal in de lente, 8:00 tot 15:00"
+      },
+      "tags": [
+        "secondhand",
+        "books",
+        "toys",
+        "plants"
+      ],
+      "flags": [],
+      "description": {
+        "en": "About 200 private sellers swap or sell their things: books, furniture, records, tools, clothes, kids' gear and plants. No food, no traders.",
+        "es": "Unos 200 particulares intercambian o venden sus cosas: libros, muebles, discos, herramientas, ropa, cosas de niños y plantas. Sin comida ni comerciantes.",
+        "fr": "Environ 200 particuliers échangent ou vendent : livres, meubles, disques, outils, vêtements, affaires d'enfants et plantes. Ni alimentation ni professionnels.",
+        "ca": "Uns 200 particulars intercanvien o venen les seves coses: llibres, mobles, discos, eines, roba, coses d'infants i plantes. Sense menjar ni comerciants.",
+        "de": "Etwa 200 Privatleute tauschen oder verkaufen ihre Sachen: Bücher, Möbel, Schallplatten, Werkzeug, Kleidung, Kindersachen und Pflanzen. Keine Lebensmittel, keine Händler.",
+        "nl": "Zo'n 200 particulieren ruilen of verkopen hun spullen: boeken, meubels, platen, gereedschap, kleding, kinderspullen en planten. Geen eten, geen handelaars."
+      }
+    },
+    {
+      "id": "arboc-llucia",
+      "category": "events",
+      "name": {
+        "en": "L'Arboç Santa Llúcia fair",
+        "es": "Feria de Santa Lucía de L'Arboç",
+        "fr": "Foire de la Sainte-Lucie de L'Arboç",
+        "ca": "Fira de Santa Llúcia de l'Arboç",
+        "de": "Santa-Llúcia-Markt L'Arboç",
+        "nl": "Santa Llúcia-markt L'Arboç"
+      },
+      "comarca": "Baix Penedès",
+      "name_local": "Fira de Santa Llúcia",
+      "town": "L'Arboç",
+      "km_from_house": 14,
+      "lat": 41.2665,
+      "lng": 1.604,
+      "stalls_approx": 100,
+      "schedule": [],
+      "occasional_when": {
+        "en": "Santa Llúcia weekend, mid December",
+        "es": "Fin de semana de Santa Llúcia, a mediados de diciembre",
+        "fr": "Week-end de la Santa Llúcia, mi-décembre",
+        "ca": "Cap de setmana de Santa Llúcia, a mitjans de desembre",
+        "de": "Santa-Llúcia-Wochenende, Mitte Dezember",
+        "nl": "Santa Llúcia-weekend, half december"
+      },
+      "tags": [
+        "crafts",
+        "food"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Christmas fair with about 100 stalls: decorations, crafts and gifts.",
+        "es": "Feria navideña con unos 100 puestos: adornos, artesanía y regalos.",
+        "fr": "Marché de Noël d'environ 100 étals : décorations, artisanat et cadeaux.",
+        "ca": "Fira de Nadal amb unes 100 parades: guarniments, artesania i regals.",
+        "de": "Weihnachtsmarkt mit etwa 100 Ständen: Dekoration, Kunsthandwerk und Geschenke.",
+        "nl": "Kerstmarkt met zo'n 100 kramen: decoratie, ambacht en cadeaus."
+      }
+    },
+    {
+      "id": "torre-swap",
+      "category": "events",
+      "name": {
+        "en": "Torredembarra swap market",
+        "es": "Mercado de intercambio de Torredembarra",
+        "fr": "Marché de troc de Torredembarra",
+        "ca": "Mercat d'intercanvi de Torredembarra",
+        "de": "Tauschmarkt Torredembarra",
+        "nl": "Ruilmarkt Torredembarra"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercat d'intercanvi",
+      "town": "Torredembarra",
+      "km_from_house": 20,
+      "lat": 41.145,
+      "lng": 1.403,
+      "schedule": [],
+      "occasional_when": {
+        "en": "Twice a year, June and late November, Saturday 10:00 to 14:00",
+        "es": "Dos veces al año, junio y finales de noviembre, sábado de 10:00 a 14:00",
+        "fr": "Deux fois par an, juin et fin novembre, samedi de 10 h à 14 h",
+        "ca": "Dues vegades l'any, juny i finals de novembre, dissabte de 10:00 a 14:00",
+        "de": "Zweimal im Jahr, Juni und Ende November, samstags 10:00 bis 14:00",
+        "nl": "Twee keer per jaar, juni en eind november, zaterdag 10:00 tot 14:00"
+      },
+      "tags": [
+        "secondhand"
+      ],
+      "flags": [],
+      "description": {
+        "en": "Eco swap and second-hand market with repair and reuse stalls.",
+        "es": "Mercado ecológico de intercambio y segunda mano, con puestos de reparación y reutilización.",
+        "fr": "Marché écologique de troc et d'occasion, avec stands de réparation et de réemploi.",
+        "ca": "Mercat ecològic d'intercanvi i segona mà, amb parades de reparació i reutilització.",
+        "de": "Öko-Tausch- und Second-Hand-Markt mit Ständen zum Reparieren und Wiederverwenden.",
+        "nl": "Ecologische ruil- en tweedehandsmarkt met kramen voor reparatie en hergebruik."
+      }
+    },
+    {
+      "id": "tgn-medieval",
+      "category": "events",
+      "name": {
+        "en": "Tarragona medieval market",
+        "es": "Mercado medieval de Tarragona",
+        "fr": "Marché médiéval de Tarragone",
+        "ca": "Mercat medieval de Tarragona",
+        "de": "Mittelaltermarkt Tarragona",
+        "nl": "Middeleeuwse markt Tarragona"
+      },
+      "comarca": "Tarragonès",
+      "name_local": "Mercat Medieval",
+      "town": "Tarragona",
+      "place": "Pla de la Seu",
+      "km_from_house": 35,
+      "lat": 41.1195,
+      "lng": 1.2585,
+      "schedule": [],
+      "occasional_when": {
+        "en": "October, around the Pilar long weekend, 10:00 to 22:00",
+        "es": "Octubre, alrededor del puente del Pilar, de 10:00 a 22:00",
+        "fr": "Octobre, autour du pont du Pilar, de 10 h à 22 h",
+        "ca": "Octubre, al voltant del pont del Pilar, de 10:00 a 22:00",
+        "de": "Oktober, rund um das lange Pilar-Wochenende, 10:00 bis 22:00",
+        "nl": "Oktober, rond het lange Pilar-weekend, 10:00 tot 22:00"
+      },
+      "tags": [
+        "crafts",
+        "food"
+      ],
+      "flags": [
+        "check"
+      ],
+      "description": {
+        "en": "The cathedral square fills with craft beer, jewellery, sweets, charcuterie, cheese and wooden toys, plus parades and kids' activities.",
+        "es": "La plaza de la catedral se llena de cerveza artesana, bisutería, dulces, embutidos, quesos y juguetes de madera, con pasacalles y actividades infantiles.",
+        "fr": "La place de la cathédrale se remplit de bière artisanale, bijoux, douceurs, charcuterie, fromages et jouets en bois, avec défilés et animations pour enfants.",
+        "ca": "La plaça de la catedral s'omple de cervesa artesana, bijuteria, dolços, embotits, formatges i joguines de fusta, amb cercaviles i activitats infantils.",
+        "de": "Der Platz vor der Kathedrale füllt sich mit Craft-Bier, Schmuck, Süßem, Wurst, Käse und Holzspielzeug, dazu Umzüge und Aktivitäten für Kinder.",
+        "nl": "Het plein van de kathedraal loopt vol met ambachtelijk bier, sieraden, snoep, vleeswaren, kaas en houten speelgoed, plus optochten en activiteiten voor kinderen."
+      }
+    },
+    {
+      "id": "valls-fair",
+      "category": "events",
+      "name": {
+        "en": "Valls Santa Úrsula fair",
+        "es": "Feria de Santa Úrsula de Valls",
+        "fr": "Foire de la Sainte-Ursule de Valls",
+        "ca": "Fira de Santa Úrsula de Valls",
+        "de": "Santa-Úrsula-Fest Valls",
+        "nl": "Santa Úrsula-feest Valls"
+      },
+      "comarca": "Alt Camp",
+      "name_local": "Fira de Santa Úrsula",
+      "town": "Valls",
+      "km_from_house": 25,
+      "lat": 41.285,
+      "lng": 1.248,
+      "schedule": [],
+      "occasional_when": {
+        "en": "Mid October, all day",
+        "es": "Mediados de octubre, todo el día",
+        "fr": "Mi-octobre, toute la journée",
+        "ca": "Mitjans d'octubre, tot el dia",
+        "de": "Mitte Oktober, ganztägig",
+        "nl": "Half oktober, de hele dag"
+      },
+      "tags": [
+        "food",
+        "crafts"
+      ],
+      "flags": [
+        "check"
+      ],
+      "description": {
+        "en": "Valls' traditional autumn fair during its town festival.",
+        "es": "La feria tradicional de otoño de Valls, durante su fiesta mayor.",
+        "fr": "La foire d'automne traditionnelle de Valls, pendant sa fête patronale.",
+        "ca": "La fira tradicional de tardor de Valls, durant la festa major.",
+        "de": "Der traditionelle Herbstmarkt von Valls während des Stadtfestes.",
+        "nl": "De traditionele herfstmarkt van Valls tijdens het stadsfeest."
+      }
+    },
+    {
+      "id": "sarroca-medieval",
+      "category": "events",
+      "name": {
+        "en": "Sant Martí Sarroca medieval fair",
+        "es": "Feria medieval de Sant Martí Sarroca",
+        "fr": "Foire médiévale de Sant Martí Sarroca",
+        "ca": "Fira medieval de Sant Martí Sarroca",
+        "de": "Mittelalterfest Sant Martí Sarroca",
+        "nl": "Middeleeuws feest Sant Martí Sarroca"
+      },
+      "comarca": "Alt Penedès",
+      "name_local": "Fira Sarroca Medieval",
+      "town": "Sant Martí Sarroca",
+      "place": "Around the castle",
+      "km_from_house": 25,
+      "lat": 41.385,
+      "lng": 1.611,
+      "schedule": [],
+      "occasional_when": {
+        "en": "October, around the Pilar long weekend, 11:00 to 22:00",
+        "es": "Octubre, alrededor del puente del Pilar, de 11:00 a 22:00",
+        "fr": "Octobre, autour du pont du Pilar, de 11 h à 22 h",
+        "ca": "Octubre, al voltant del pont del Pilar, d'11:00 a 22:00",
+        "de": "Oktober, rund um das lange Pilar-Wochenende, 11:00 bis 22:00",
+        "nl": "Oktober, rond het lange Pilar-weekend, 11:00 tot 22:00"
+      },
+      "tags": [
+        "crafts",
+        "food"
+      ],
+      "flags": [
+        "check"
+      ],
+      "description": {
+        "en": "Medieval fair around the castle: craft stalls, food and wine, street shows, castle tours and a kids' area.",
+        "es": "Feria medieval junto al castillo: artesanía, gastronomía y vino, espectáculos, visitas al castillo y zona infantil.",
+        "fr": "Foire médiévale autour du château : artisanat, gastronomie et vin, spectacles, visites du château et espace enfants.",
+        "ca": "Fira medieval al voltant del castell: artesania, gastronomia i vi, espectacles, visites al castell i zona infantil.",
+        "de": "Mittelalterfest rund um die Burg: Handwerksstände, Essen und Wein, Straßenshows, Burgführungen und ein Kinderbereich.",
+        "nl": "Middeleeuws feest rond het kasteel: ambachtskramen, eten en wijn, straatvoorstellingen, rondleidingen in het kasteel en een kinderhoek."
+      }
+    }
+  ]
+}

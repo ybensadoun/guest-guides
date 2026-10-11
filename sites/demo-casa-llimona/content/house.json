@@ -1,0 +1,9 @@
+{
+  "_doc": "Demo house. lat/lng are an approximate area point, never the address.",
+  "name": "Casa Llimona",
+  "lat": 41.245,
+  "lng": 1.52,
+  "photo": "house.jpg",
+  "photoPos": "50% 55%",
+  "checkout": "11:00"
+}

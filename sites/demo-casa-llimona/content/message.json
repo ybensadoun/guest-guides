@@ -1,0 +1,127 @@
+{
+ "_doc": "Demo house guide (English and Spanish only).",
+ "blocks": [
+  {
+   "id": "living",
+   "icon": "sofa",
+   "tone": "blue",
+   "title": {
+    "en": "Living room",
+    "es": "Salón"
+   },
+   "sub": {
+    "en": "TV, fans",
+    "es": "Tele, ventiladores"
+   },
+   "items": [
+    {
+     "en": "The TV remote is in the drawer under the TV.",
+     "es": "El mando de la tele está en el cajón bajo la tele."
+    },
+    {
+     "en": "Ceiling fans: the switch is next to the door.",
+     "es": "Ventiladores de techo: el interruptor está junto a la puerta."
+    }
+   ]
+  },
+  {
+   "id": "wifi",
+   "icon": "home",
+   "tone": "green",
+   "title": {
+    "en": "Wi-Fi",
+    "es": "Wi-Fi"
+   },
+   "sub": {
+    "en": "Network and password",
+    "es": "Red y contraseña"
+   },
+   "items": [
+    {
+     "en": "Network: CasaLlimona_Guests. The password is on the card by the door.",
+     "es": "Red: CasaLlimona_Guests. La contraseña está en la tarjeta junto a la puerta."
+    }
+   ]
+  },
+  {
+   "id": "kitchen",
+   "icon": "kitchen",
+   "tone": "green",
+   "title": {
+    "en": "Kitchen",
+    "es": "Cocina"
+   },
+   "sub": {
+    "en": "Coffee, oven, dishwasher",
+    "es": "Café, horno, lavavajillas"
+   },
+   "items": [
+    {
+     "en": "Coffee capsules are in the top drawer, help yourself.",
+     "es": "Las cápsulas de café están en el cajón de arriba, servíos."
+    }
+   ]
+  },
+  {
+   "id": "bedrooms",
+   "icon": "bed",
+   "tone": "red",
+   "title": {
+    "en": "Bedrooms",
+    "es": "Habitaciones"
+   },
+   "sub": {
+    "en": "Linen, blankets",
+    "es": "Ropa de cama, mantas"
+   },
+   "items": [
+    {
+     "en": "Extra blankets are in the wardrobe of the main bedroom.",
+     "es": "Hay mantas extra en el armario del dormitorio principal."
+    }
+   ]
+  },
+  {
+   "id": "rules",
+   "icon": "home",
+   "tone": "ink",
+   "title": {
+    "en": "House rules",
+    "es": "Normas"
+   },
+   "sub": {
+    "en": "Quiet hours, smoking",
+    "es": "Silencio, tabaco"
+   },
+   "items": [
+    {
+     "en": "Quiet hours from 23:00 to 08:00.",
+     "es": "Silencio de 23:00 a 08:00."
+    },
+    {
+     "en": "No smoking inside the house.",
+     "es": "No se fuma dentro de casa."
+    }
+   ]
+  },
+  {
+   "id": "checkout",
+   "icon": "key",
+   "tone": "ink",
+   "title": {
+    "en": "Check-out",
+    "es": "Salida"
+   },
+   "sub": {
+    "en": "Before 11:00",
+    "es": "Antes de las 11:00"
+   },
+   "items": [
+    {
+     "en": "Leave the keys on the kitchen table and close the door behind you.",
+     "es": "Dejad las llaves en la mesa de la cocina y cerrad la puerta al salir."
+    }
+   ]
+  }
+ ]
+}

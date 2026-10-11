@@ -1,0 +1,1312 @@
+{
+  "_doc": "Local events. Item shape: id, type (castells/festa/carnival/parade/food/fair/film/music/historical/tradition), name{6}, town, venue, lat, lng, url, dates[{start,end (YYYY-MM-DD), status: confirmed|expected}], description{6}, sources[]. Past dates hide themselves; add next year's dates in the monthly check.",
+  "items": [
+    {
+      "id": "santa-teresa",
+      "type": "fair",
+      "name": {
+        "en": "Santa Teresa Fair",
+        "es": "Feria de Santa Teresa",
+        "fr": "Foire de Santa Teresa",
+        "ca": "Fira de Santa Teresa",
+        "de": "Santa-Teresa-Messe",
+        "nl": "Santa Teresa-markt"
+      },
+      "town": "El Vendrell",
+      "venue": "Centre",
+      "lat": 41.2196,
+      "lng": 1.535,
+      "url": "https://www.elvendrell.net",
+      "dates": [
+        {
+          "start": "2026-10-09",
+          "end": "2026-10-12",
+          "status": "confirmed"
+        },
+        {
+          "start": "2027-10-09",
+          "end": "2027-10-12",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "El Vendrell's autumn fair: local wineries, food stalls, crafts, funfair rides and a castells (human towers) performance by the Nens del Vendrell. The closest big fair to the house, easy with kids.",
+        "es": "La feria de otoño de El Vendrell: bodegas locales, puestos de comida, artesanía, atracciones y castells de los Nens del Vendrell. La gran feria más cercana a la casa, ideal con niños.",
+        "fr": "La foire d'automne d'El Vendrell : caves locales, stands de nourriture, artisanat, manèges et castells (tours humaines) des Nens del Vendrell. La grande foire la plus proche de la maison, facile avec des enfants.",
+        "ca": "La fira de tardor del Vendrell: cellers locals, parades de menjar, artesania, atraccions i castells dels Nens del Vendrell. La gran fira més propera a la casa, ideal amb canalla.",
+        "de": "Die Herbstmesse von El Vendrell: lokale Weingüter, Essensstände, Kunsthandwerk, Fahrgeschäfte und Castells (Menschentürme) der Nens del Vendrell. Die nächste große Messe, gut mit Kindern.",
+        "nl": "De herfstmarkt van El Vendrell: lokale wijnhuizen, eetkraampjes, ambachten, kermis en castells (menselijke torens) van de Nens del Vendrell. De dichtstbijzijnde grote markt, leuk met kinderen."
+      },
+      "sources": [
+        "https://laciutat.cat/laciutatdelpenedesgarraf/vendrell-celebra-fira-santa-teresa-9-12-octubre-protagonisme-local-gastronomia-territori_902026_102.html"
+      ]
+    },
+    {
+      "id": "sitges-film",
+      "type": "film",
+      "name": {
+        "en": "Sitges Film Festival",
+        "es": "Festival de Cine de Sitges",
+        "fr": "Festival du film de Sitges",
+        "ca": "Festival de Cinema de Sitges",
+        "de": "Filmfestival Sitges",
+        "nl": "Filmfestival van Sitges"
+      },
+      "town": "Sitges",
+      "venue": "Auditori Melià Sitges",
+      "lat": 41.229,
+      "lng": 1.794,
+      "url": "https://sitgesfilmfestival.com",
+      "dates": [
+        {
+          "start": "2026-10-08",
+          "end": "2026-10-18",
+          "status": "confirmed"
+        },
+        {
+          "start": "2027-10-07",
+          "end": "2027-10-17",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "The world's leading fantasy and horror film festival, with premieres, stars and the famous Zombie Walk. Even without tickets, the seaside atmosphere is worth it.",
+        "es": "El gran festival de cine fantástico y de terror, con estrenos, estrellas y la famosa Zombie Walk. Aunque no tengas entradas, el ambiente junto al mar vale la pena.",
+        "fr": "Le grand festival du film fantastique et d'horreur, avec avant-premières, stars et la célèbre Zombie Walk. Même sans billet, l'ambiance au bord de la mer vaut le détour.",
+        "ca": "El gran festival de cinema fantàstic i de terror, amb estrenes, estrelles i la famosa Zombie Walk. Encara que no tinguis entrades, l'ambient vora el mar s'ho val.",
+        "de": "Das führende Fantasy- und Horrorfilmfestival der Welt, mit Premieren, Stars und dem berühmten Zombie Walk. Auch ohne Tickets lohnt sich die Stimmung am Meer.",
+        "nl": "Het belangrijkste fantasy- en horrorfilmfestival ter wereld, met premières, sterren en de beroemde Zombie Walk. Ook zonder kaartjes is de sfeer aan zee de moeite waard."
+      },
+      "sources": [
+        "https://www.visitsitges.com/en/agenda/sitges-film-festival-2026-festival-de-cine-sitges-2026/"
+      ]
+    },
+    {
+      "id": "santa-ursula",
+      "type": "castells",
+      "name": {
+        "en": "Santa Úrsula human towers",
+        "es": "Castells de Santa Úrsula",
+        "fr": "Castells de Santa Úrsula",
+        "ca": "Diada Castellera de Santa Úrsula",
+        "de": "Menschentürme von Santa Úrsula",
+        "nl": "Menselijke torens van Santa Úrsula"
+      },
+      "town": "Valls",
+      "venue": "Plaça del Blat",
+      "lat": 41.2862,
+      "lng": 1.2499,
+      "url": "https://www.valls.cat",
+      "dates": [
+        {
+          "start": "2026-10-25",
+          "end": "2026-10-25",
+          "status": "confirmed"
+        },
+        {
+          "start": "2027-10-24",
+          "end": "2027-10-24",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Valls is where castells began, and its two historic teams compete head to head in the tiny Plaça del Blat at midday. Often the best castells day of the autumn.",
+        "es": "Valls es la cuna de los castells: sus dos colles históricas compiten cara a cara en la pequeña Plaça del Blat a mediodía. A menudo, la mejor diada castellera del otoño.",
+        "fr": "Valls est le berceau des castells : ses deux colles historiques s'affrontent sur la petite Plaça del Blat à midi. Souvent la plus belle journée de castells de l'automne.",
+        "ca": "Valls és el bressol dels castells: les dues colles històriques s'hi enfronten a la petita Plaça del Blat al migdia. Sovint, la millor diada de la tardor.",
+        "de": "In Valls begannen die Castells: Die zwei historischen Gruppen treten mittags auf der kleinen Plaça del Blat gegeneinander an. Oft der beste Castells-Tag im Herbst.",
+        "nl": "In Valls zijn de castells ontstaan: de twee historische groepen nemen het 's middags tegen elkaar op op het kleine Plaça del Blat. Vaak de beste castellsdag van de herfst."
+      },
+      "sources": [
+        "https://revistacastells.cat/2026/02/les-dates-de-les-diades-clau-del-2026/"
+      ]
+    },
+    {
+      "id": "tots-sants",
+      "type": "castells",
+      "name": {
+        "en": "All Saints' human towers",
+        "es": "Castells de Todos los Santos",
+        "fr": "Castells de la Toussaint",
+        "ca": "Diada de Tots Sants",
+        "de": "Menschentürme an Allerheiligen",
+        "nl": "Menselijke torens op Allerheiligen"
+      },
+      "town": "Vilafranca del Penedès",
+      "venue": "Plaça de la Vila",
+      "lat": 41.3459,
+      "lng": 1.6987,
+      "url": "https://castellersdevilafranca.cat/tots-sants/",
+      "dates": [
+        {
+          "start": "2026-11-01",
+          "end": "2026-11-01",
+          "status": "confirmed"
+        },
+        {
+          "start": "2027-11-01",
+          "end": "2027-11-01",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "The Castellers de Vilafranca close their season at home, usually with their hardest towers of the year. A public holiday: combine it with lunch in the Penedès.",
+        "es": "Los Castellers de Vilafranca cierran la temporada en casa, normalmente con sus castillos más difíciles del año. Es festivo: combínalo con una comida en el Penedès.",
+        "fr": "Les Castellers de Vilafranca terminent leur saison chez eux, souvent avec leurs tours les plus difficiles de l'année. Jour férié : à combiner avec un déjeuner dans le Penedès.",
+        "ca": "Els Castellers de Vilafranca tanquen la temporada a casa, normalment amb els castells més difícils de l'any. És festiu: combina-ho amb un dinar al Penedès.",
+        "de": "Die Castellers de Vilafranca beenden ihre Saison zu Hause, meist mit ihren schwierigsten Türmen des Jahres. Feiertag: am besten mit einem Mittagessen im Penedès verbinden.",
+        "nl": "De Castellers de Vilafranca sluiten hun seizoen thuis af, meestal met hun moeilijkste torens van het jaar. Feestdag: combineer het met een lunch in de Penedès."
+      },
+      "sources": [
+        "https://castellersdevilafranca.cat/tots-sants/"
+      ]
+    },
+    {
+      "id": "fira-gall",
+      "type": "food",
+      "name": {
+        "en": "Rooster Fair",
+        "es": "Feria del Gallo",
+        "fr": "Foire du Coq",
+        "ca": "Fira del Gall",
+        "de": "Hahnenmarkt",
+        "nl": "Hanenmarkt"
+      },
+      "town": "Vilafranca del Penedès",
+      "venue": "Parc de Sant Julià",
+      "lat": 41.3438,
+      "lng": 1.6955,
+      "url": "https://firadelgall.vilafranca.cat/",
+      "dates": [
+        {
+          "start": "2026-12-19",
+          "end": "2026-12-20",
+          "status": "expected"
+        },
+        {
+          "start": "2027-12-18",
+          "end": "2027-12-19",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "A Christmas market held for over 360 years around the Penedès blue-footed rooster, with poultry dishes, Penedès wines and many craft stalls. Good for Christmas food and gifts.",
+        "es": "Un mercado navideño con más de 360 años en torno al gallo del Penedès de pata azul, con platos de ave, vinos del Penedès y muchos puestos de artesanía. Ideal para comida y regalos de Navidad.",
+        "fr": "Un marché de Noël vieux de plus de 360 ans autour du coq du Penedès aux pattes bleues, avec volailles, vins du Penedès et de nombreux artisans. Parfait pour les achats de Noël.",
+        "ca": "Un mercat de Nadal de més de 360 anys al voltant del gall del Penedès de pota blava, amb plats d'aviram, vins del Penedès i moltes parades d'artesania. Ideal per a menjar i regals de Nadal.",
+        "de": "Ein Weihnachtsmarkt mit über 360 Jahren Tradition rund um den blaufüßigen Penedès-Hahn, mit Geflügelgerichten, Penedès-Weinen und vielen Handwerksständen. Gut für Weihnachtseinkäufe.",
+        "nl": "Een kerstmarkt met meer dan 360 jaar traditie rond de blauwpotige Penedès-haan, met gevogeltegerechten, Penedès-wijnen en veel ambachtskraampjes. Ideaal voor kersteten en cadeaus."
+      },
+      "sources": [
+        "https://www.penedesturisme.cat/en/activity/fira-del-gall-rooster-fair"
+      ]
+    },
+    {
+      "id": "reis",
+      "type": "parade",
+      "name": {
+        "en": "Three Kings parade",
+        "es": "Cabalgata de Reyes",
+        "fr": "Défilé des Rois mages",
+        "ca": "Cavalcada de Reis",
+        "de": "Dreikönigsumzug",
+        "nl": "Driekoningenoptocht"
+      },
+      "town": "Tarragona",
+      "venue": "Port del Serrallo",
+      "lat": 41.1077,
+      "lng": 1.2414,
+      "url": "https://www.tarragona.cat",
+      "dates": [
+        {
+          "start": "2027-01-05",
+          "end": "2027-01-05",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "The Kings arrive by boat at the Serrallo port with fireworks, then parade through the city throwing sweets. Every town has its own parade that evening, El Vendrell and La Bisbal included.",
+        "es": "Los Reyes llegan en barco al puerto del Serrallo con fuegos artificiales y luego desfilan por la ciudad lanzando caramelos. Cada pueblo tiene su cabalgata esa tarde, también El Vendrell y La Bisbal.",
+        "fr": "Les Rois arrivent en bateau au port du Serrallo avec un feu d'artifice, puis défilent en lançant des bonbons. Chaque village a son défilé ce soir-là, El Vendrell et La Bisbal compris.",
+        "ca": "Els Reis arriben en vaixell al port del Serrallo amb focs artificials i després desfilen per la ciutat llançant caramels. Cada poble fa la seva cavalcada aquell vespre, també el Vendrell i la Bisbal.",
+        "de": "Die Heiligen Drei Könige kommen mit Feuerwerk per Boot im Hafen Serrallo an und ziehen dann Bonbons werfend durch die Stadt. Jeder Ort hat an diesem Abend seinen Umzug, auch El Vendrell und La Bisbal.",
+        "nl": "De Drie Koningen komen met vuurwerk per boot aan in de haven van Serrallo en trekken dan snoep gooiend door de stad. Elk dorp heeft die avond een optocht, ook El Vendrell en La Bisbal."
+      },
+      "sources": [
+        "https://www.tarragona.cat/cultura/agenda/2026/gener/arribada-cavalcada-reis-dorient-tarragona"
+      ]
+    },
+    {
+      "id": "calcotada",
+      "type": "food",
+      "name": {
+        "en": "Valls Calçotada",
+        "es": "Gran Fiesta de la Calçotada",
+        "fr": "Grande fête de la calçotada",
+        "ca": "Gran Festa de la Calçotada",
+        "de": "Calçotada-Fest in Valls",
+        "nl": "Calçotada-feest in Valls"
+      },
+      "town": "Valls",
+      "venue": "Old town",
+      "lat": 41.2862,
+      "lng": 1.2499,
+      "url": "https://festacalcotadavalls.cat",
+      "dates": [
+        {
+          "start": "2027-01-31",
+          "end": "2027-01-31",
+          "status": "confirmed"
+        }
+      ],
+      "description": {
+        "en": "The birthplace of the calçot (grilled spring onion dipped in romesco): eating contests, a parade with giants and a huge public calçotada. The essential Catalan winter food day.",
+        "es": "La cuna del calçot (cebolla tierna a la brasa con salsa romesco): concursos, desfile de gigantes y una gran calçotada popular. La fiesta gastronómica de invierno por excelencia.",
+        "fr": "Le berceau du calçot (oignon grillé trempé dans la sauce romesco) : concours, défilé de géants et grande calçotada populaire. La fête gourmande catalane de l'hiver.",
+        "ca": "El bressol del calçot: concursos, cercavila de gegants i una gran calçotada popular. La festa gastronòmica d'hivern per excel·lència.",
+        "de": "Die Heimat des Calçot (gegrillte Frühlingszwiebel mit Romesco-Soße): Wettessen, Riesenumzug und eine riesige öffentliche Calçotada. Das katalanische Winter-Essensfest schlechthin.",
+        "nl": "De bakermat van de calçot (gegrilde lente-ui met romescosaus): eetwedstrijden, een optocht met reuzen en een grote openbare calçotada. Hét Catalaanse wintereetfeest."
+      },
+      "sources": [
+        "https://www.valls.cat/la-ciutat/la-calcotada"
+      ]
+    },
+    {
+      "id": "carnaval-sitges",
+      "type": "carnival",
+      "name": {
+        "en": "Sitges Carnival",
+        "es": "Carnaval de Sitges",
+        "fr": "Carnaval de Sitges",
+        "ca": "Carnaval de Sitges",
+        "de": "Karneval in Sitges",
+        "nl": "Carnaval van Sitges"
+      },
+      "town": "Sitges",
+      "venue": "Seafront and old town",
+      "lat": 41.2353,
+      "lng": 1.8106,
+      "url": "https://www.sitges.cat",
+      "dates": [
+        {
+          "start": "2027-02-04",
+          "end": "2027-02-10",
+          "status": "confirmed"
+        }
+      ],
+      "description": {
+        "en": "One of Spain's wildest carnivals, with two huge night parades on Sunday and Tuesday. Trains get packed, so plan your way back.",
+        "es": "Uno de los carnavales más locos de España, con dos grandes desfiles nocturnos el domingo y el martes. Los trenes van llenos, planifica la vuelta.",
+        "fr": "L'un des carnavals les plus fous d'Espagne, avec deux grands défilés de nuit le dimanche et le mardi. Les trains sont bondés, prévoyez le retour.",
+        "ca": "Un dels carnavals més esbojarrats d'Espanya, amb dues grans rues nocturnes diumenge i dimarts. Els trens van plens, planifica la tornada.",
+        "de": "Einer der wildesten Karnevals Spaniens, mit zwei großen Nachtumzügen am Sonntag und Dienstag. Die Züge sind voll, Rückweg vorher planen.",
+        "nl": "Een van de wildste carnavals van Spanje, met twee grote nachtelijke optochten op zondag en dinsdag. De treinen zitten vol, plan je terugweg."
+      },
+      "sources": [
+        "https://www.sitges.cat/serveis/festes/actualitat/noticies/el-casino-prado-fara-el-carnestoltes-i-la-reina-del-carnaval-de-sitges-2027"
+      ]
+    },
+    {
+      "id": "carnaval-vilanova",
+      "type": "carnival",
+      "name": {
+        "en": "Vilanova Carnival",
+        "es": "Carnaval de Vilanova",
+        "fr": "Carnaval de Vilanova",
+        "ca": "Carnaval de Vilanova i la Geltrú",
+        "de": "Karneval in Vilanova",
+        "nl": "Carnaval van Vilanova"
+      },
+      "town": "Vilanova i la Geltrú",
+      "venue": "Plaça de la Vila",
+      "lat": 41.2236,
+      "lng": 1.7257,
+      "url": "https://carnavaldevilanova.cat/",
+      "dates": [
+        {
+          "start": "2027-02-04",
+          "end": "2027-02-10",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "The most traditional carnival in Catalonia: on Sunday thousands of couples dance through town pelting each other with sweets, and the week opens with a meringue battle.",
+        "es": "El carnaval más tradicional de Cataluña: el domingo miles de parejas bailan por las calles lanzándose caramelos, y la semana empieza con una batalla de merengue.",
+        "fr": "Le carnaval le plus traditionnel de Catalogne : le dimanche, des milliers de couples dansent dans les rues en se lançant des bonbons, et la semaine s'ouvre sur une bataille de meringue.",
+        "ca": "El carnaval més tradicional de Catalunya: diumenge milers de parelles ballen pels carrers llançant-se caramels, i la setmana comença amb la Merengada.",
+        "de": "Der traditionellste Karneval Kataloniens: Am Sonntag tanzen tausende Paare durch die Stadt und bewerfen sich mit Bonbons, die Woche beginnt mit einer Baiserschlacht.",
+        "nl": "Het meest traditionele carnaval van Catalonië: op zondag dansen duizenden paren door de stad en bekogelen elkaar met snoep, en de week begint met een meringuegevecht."
+      },
+      "sources": [
+        "https://carnavaldevilanova.cat/el-nostre-carnaval/els-propers-carnavals/"
+      ]
+    },
+    {
+      "id": "carnaval-vendrell",
+      "type": "carnival",
+      "name": {
+        "en": "El Vendrell Carnival",
+        "es": "Carnaval de El Vendrell",
+        "fr": "Carnaval d'El Vendrell",
+        "ca": "Carnaval del Vendrell",
+        "de": "Karneval in El Vendrell",
+        "nl": "Carnaval van El Vendrell"
+      },
+      "town": "El Vendrell",
+      "venue": "Plaça Vella",
+      "lat": 41.2196,
+      "lng": 1.535,
+      "url": "https://www.elvendrell.net",
+      "dates": [
+        {
+          "start": "2027-02-04",
+          "end": "2027-02-05",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "A big evening parade with around 40 floats, plus a children's carnival with hot chocolate. Close to the house and calmer than Sitges.",
+        "es": "Un gran desfile nocturno con unas 40 carrozas y un carnaval infantil con chocolate caliente. Cerca de casa y más tranquilo que Sitges.",
+        "fr": "Un grand défilé du soir avec une quarantaine de chars et un carnaval des enfants avec chocolat chaud. Près de la maison et plus calme que Sitges.",
+        "ca": "Una gran rua al vespre amb unes 40 carrosses i un carnaval infantil amb xocolata desfeta. A prop de casa i més tranquil que Sitges.",
+        "de": "Ein großer Abendumzug mit rund 40 Wagen und ein Kinderkarneval mit heißer Schokolade. Nah am Haus und ruhiger als Sitges.",
+        "nl": "Een grote avondoptocht met zo'n 40 praalwagens en een kindercarnaval met warme chocolademelk. Dicht bij huis en rustiger dan Sitges."
+      },
+      "sources": [
+        "https://tarragonadigital.com/societat/programa-actes-carnaval-vendrell-2026.html"
+      ]
+    },
+    {
+      "id": "sant-enterrament",
+      "type": "tradition",
+      "name": {
+        "en": "Good Friday procession",
+        "es": "Procesión del Santo Entierro",
+        "fr": "Procession du Vendredi saint",
+        "ca": "Processó del Sant Enterrament",
+        "de": "Karfreitagsprozession",
+        "nl": "Goede Vrijdagprocessie"
+      },
+      "town": "Tarragona",
+      "venue": "Part Alta",
+      "lat": 41.1189,
+      "lng": 1.2584,
+      "url": "https://www.tarragonaturisme.cat",
+      "dates": [
+        {
+          "start": "2027-03-26",
+          "end": "2027-03-26",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "A centuries-old night procession of hooded penitents, drums and floats through the Roman and medieval old town. The most striking Holy Week event in the area.",
+        "es": "Una procesión nocturna centenaria de penitentes encapuchados, tambores y pasos por el casco antiguo romano y medieval. Lo más impresionante de la Semana Santa en la zona.",
+        "fr": "Une procession nocturne séculaire de pénitents encapuchonnés, tambours et chars dans la vieille ville romaine et médiévale. Le moment le plus saisissant de la Semaine sainte.",
+        "ca": "Una processó nocturna centenària de penitents encaputxats, tambors i passos per la Part Alta romana i medieval. El més impressionant de la Setmana Santa a la zona.",
+        "de": "Eine jahrhundertealte nächtliche Prozession mit vermummten Büßern, Trommeln und Figuren durch die römische und mittelalterliche Altstadt. Das eindrucksvollste Ereignis der Karwoche.",
+        "nl": "Een eeuwenoude nachtelijke processie van gekapte boetelingen, trommels en praalbeelden door de Romeinse en middeleeuwse oude stad. Het indrukwekkendste van de Goede Week."
+      },
+      "sources": [
+        "https://www.tarragonaturisme.cat/ca/esdeveniments/processo-del-sant-enterrament-2024"
+      ]
+    },
+    {
+      "id": "montblanc",
+      "type": "historical",
+      "name": {
+        "en": "Montblanc Medieval Week",
+        "es": "Semana Medieval de Montblanc",
+        "fr": "Semaine médiévale de Montblanc",
+        "ca": "Setmana Medieval de Montblanc",
+        "de": "Mittelalterwoche in Montblanc",
+        "nl": "Middeleeuwse week in Montblanc"
+      },
+      "town": "Montblanc",
+      "venue": "Walled old town",
+      "lat": 41.3758,
+      "lng": 1.163,
+      "url": "https://www.setmanamedieval.cat",
+      "dates": [
+        {
+          "start": "2027-04-16",
+          "end": "2027-04-25",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "The walled town where Saint George is said to have slain the dragon goes medieval: jousts, a market, costumed parades and the legend re-enacted.",
+        "es": "La villa amurallada donde, según la leyenda, Sant Jordi mató al dragón se vuelve medieval: justas, mercado, desfiles de época y la leyenda representada.",
+        "fr": "La ville fortifiée où saint Georges aurait tué le dragon redevient médiévale : joutes, marché, défilés costumés et reconstitution de la légende.",
+        "ca": "La vila emmurallada on diuen que Sant Jordi va matar el drac es torna medieval: justes, mercat, cercaviles d'època i la llegenda representada.",
+        "de": "Die ummauerte Stadt, in der der heilige Georg den Drachen getötet haben soll, wird mittelalterlich: Turniere, Markt, Kostümumzüge und die nachgespielte Legende.",
+        "nl": "Het ommuurde stadje waar Sint-Joris de draak zou hebben verslagen, wordt middeleeuws: steekspelen, een markt, optochten in kostuum en de nagespeelde legende."
+      },
+      "sources": [
+        "https://www.setmanamedieval.cat/wp-content/uploads/PROGRAMA-SETMED-2026-OK.pdf"
+      ]
+    },
+    {
+      "id": "tarraco-viva",
+      "type": "historical",
+      "name": {
+        "en": "Tarraco Viva Roman festival",
+        "es": "Tarraco Viva, festival romano",
+        "fr": "Tarraco Viva, festival romain",
+        "ca": "Tarraco Viva, festival romà",
+        "de": "Tarraco Viva, Römerfestival",
+        "nl": "Tarraco Viva, Romeins festival"
+      },
+      "town": "Tarragona",
+      "venue": "Roman sites",
+      "lat": 41.1147,
+      "lng": 1.2593,
+      "url": "https://tarracoviva.com/",
+      "dates": [
+        {
+          "start": "2027-05-10",
+          "end": "2027-05-23",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Europe's leading Roman history festival: legions, gladiators, Roman cooking and theatre in the amphitheatre, circus and walls of ancient Tarraco. Great for families.",
+        "es": "El gran festival de historia romana de Europa: legiones, gladiadores, cocina y teatro romanos en el anfiteatro, el circo y las murallas de Tarraco. Ideal en familia.",
+        "fr": "Le grand festival d'histoire romaine d'Europe : légions, gladiateurs, cuisine et théâtre romains dans l'amphithéâtre, le cirque et les remparts de Tarraco. Parfait en famille.",
+        "ca": "El gran festival d'història romana d'Europa: legions, gladiadors, cuina i teatre romans a l'amfiteatre, el circ i les muralles de Tarraco. Ideal en família.",
+        "de": "Europas führendes Römerfestival: Legionen, Gladiatoren, römische Küche und Theater im Amphitheater, Zirkus und an den Mauern von Tarraco. Toll für Familien.",
+        "nl": "Het belangrijkste Romeinse geschiedenisfestival van Europa: legioenen, gladiatoren, Romeinse keuken en theater in het amfitheater, het circus en de muren van Tarraco. Leuk voor gezinnen."
+      },
+      "sources": [
+        "https://www.tarragonaturisme.cat/en/events/tarraco-viva"
+      ]
+    },
+    {
+      "id": "corpus-sitges",
+      "type": "tradition",
+      "name": {
+        "en": "Sitges flower carpets",
+        "es": "Alfombras de flores de Sitges",
+        "fr": "Tapis de fleurs de Sitges",
+        "ca": "Catifes de flors de Sitges",
+        "de": "Blumenteppiche in Sitges",
+        "nl": "Bloementapijten in Sitges"
+      },
+      "town": "Sitges",
+      "venue": "Old town",
+      "lat": 41.2357,
+      "lng": 1.8115,
+      "url": "https://www.sitgescorpus.cat/",
+      "dates": [
+        {
+          "start": "2027-05-30",
+          "end": "2027-05-30",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "For Corpus Christi, around 30 carpets of carnations cover the old town streets for one day before the procession walks over them. Go in the morning to see them intact.",
+        "es": "Por Corpus, unas 30 alfombras de claveles cubren las calles del casco antiguo durante un día antes de que pase la procesión. Ve por la mañana para verlas intactas.",
+        "fr": "Pour la Fête-Dieu, une trentaine de tapis d'œillets couvrent les rues de la vieille ville pendant une journée avant le passage de la procession. Allez-y le matin pour les voir intacts.",
+        "ca": "Per Corpus, una trentena de catifes de clavells cobreixen els carrers del nucli antic durant un dia abans que hi passi la processó. Ves-hi al matí per veure-les intactes.",
+        "de": "Zu Fronleichnam bedecken rund 30 Nelkenteppiche einen Tag lang die Altstadtgassen, bevor die Prozession darüber zieht. Morgens hingehen, um sie unversehrt zu sehen.",
+        "nl": "Met Sacramentsdag bedekken zo'n 30 tapijten van anjers een dag lang de straten van de oude stad, voordat de processie eroverheen loopt. Ga 's ochtends om ze gaaf te zien."
+      },
+      "sources": [
+        "https://www.visitsitges.com/en/agenda/corpus-sitges-2026-2/"
+      ]
+    },
+    {
+      "id": "sant-joan",
+      "type": "castells",
+      "name": {
+        "en": "Sant Joan: bonfires and human towers",
+        "es": "San Juan: hogueras y castells",
+        "fr": "Saint-Jean : feux et castells",
+        "ca": "Sant Joan: revetlla i castells",
+        "de": "Sant Joan: Feuer und Menschentürme",
+        "nl": "Sant Joan: vreugdevuren en menselijke torens"
+      },
+      "town": "Valls",
+      "venue": "Plaça del Blat",
+      "lat": 41.2862,
+      "lng": 1.2499,
+      "url": "https://www.valls.cat",
+      "dates": [
+        {
+          "start": "2027-06-23",
+          "end": "2027-06-24",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Midsummer night (23 June) is celebrated with bonfires, fireworks and cava on every beach of the coast. The next morning, Valls opens the big castells season.",
+        "es": "La verbena de San Juan (23 de junio) se celebra con hogueras, petardos y cava en todas las playas de la costa. A la mañana siguiente, Valls abre la gran temporada castellera.",
+        "fr": "La nuit de la Saint-Jean (23 juin) se fête avec feux, pétards et cava sur toutes les plages de la côte. Le lendemain matin, Valls ouvre la grande saison des castells.",
+        "ca": "La revetlla de Sant Joan (23 de juny) se celebra amb fogueres, petards i cava a totes les platges. L'endemà al matí, Valls obre la gran temporada castellera.",
+        "de": "Die Johannisnacht (23. Juni) wird an allen Stränden mit Feuern, Feuerwerk und Cava gefeiert. Am nächsten Morgen eröffnet Valls die große Castells-Saison.",
+        "nl": "De Sint-Jansnacht (23 juni) wordt op alle stranden gevierd met vreugdevuren, vuurwerk en cava. De volgende ochtend opent Valls het grote castellsseizoen."
+      },
+      "sources": [
+        "https://www.valls.cat/36-cultura/645-festa-major-de-sant-joan-24"
+      ]
+    },
+    {
+      "id": "santa-anna",
+      "type": "festa",
+      "name": {
+        "en": "El Vendrell summer festival",
+        "es": "Fiesta Mayor de El Vendrell",
+        "fr": "Fête patronale d'El Vendrell",
+        "ca": "Festa Major del Vendrell",
+        "de": "Stadtfest von El Vendrell",
+        "nl": "Stadsfeest van El Vendrell"
+      },
+      "town": "El Vendrell",
+      "venue": "Plaça Vella",
+      "lat": 41.2196,
+      "lng": 1.535,
+      "url": "https://www.elvendrellturisme.com",
+      "dates": [
+        {
+          "start": "2027-07-24",
+          "end": "2027-07-28",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "El Vendrell's Santa Anna festival: castells on 26 July with the Nens del Vendrell and top teams, fire runs, giants and free concerts. The biggest festival near the house.",
+        "es": "La Fiesta Mayor de Santa Anna: castells el 26 de julio con los Nens del Vendrell y grandes colles, correfocs, gigantes y conciertos gratuitos. La mayor fiesta cerca de casa.",
+        "fr": "La fête de Santa Anna : castells le 26 juillet avec les Nens del Vendrell et les meilleures colles, correfocs, géants et concerts gratuits. La plus grande fête près de la maison.",
+        "ca": "La Festa Major de Santa Anna: castells el 26 de juliol amb els Nens del Vendrell i grans colles, correfocs, gegants i concerts gratuïts. La festa més gran a prop de casa.",
+        "de": "Das Santa-Anna-Fest: Castells am 26. Juli mit den Nens del Vendrell und Spitzengruppen, Feuerläufe, Riesen und Gratiskonzerte. Das größte Fest in der Nähe.",
+        "nl": "Het Santa Anna-feest: castells op 26 juli met de Nens del Vendrell en topgroepen, vuurlopen, reuzen en gratis concerten. Het grootste feest in de buurt."
+      },
+      "sources": [
+        "https://www.elvendrell.net/informacio/9702-la-festa-major-del-vendrell-2026-es-presenta-amb-el-lema-ho-tenim-tot-i-un-ampli-cartell-musical"
+      ]
+    },
+    {
+      "id": "bisbal",
+      "type": "festa",
+      "name": {
+        "en": "La Bisbal summer festival",
+        "es": "Fiesta Mayor de La Bisbal",
+        "fr": "Fête patronale de La Bisbal",
+        "ca": "Festa Major de la Bisbal del Penedès",
+        "de": "Dorffest von La Bisbal",
+        "nl": "Dorpsfeest van La Bisbal"
+      },
+      "town": "La Bisbal del Penedès",
+      "venue": "Village centre",
+      "lat": 41.277,
+      "lng": 1.488,
+      "url": "https://bisbalpenedes.com",
+      "dates": [
+        {
+          "start": "2027-08-01",
+          "end": "2027-08-15",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Our village's festival: correfoc, giants, traditional dances and orchestras, and on 15 August a castells day with top teams. A rare chance to see elite castells in a small village square.",
+        "es": "La fiesta de nuestro pueblo: correfoc, gigantes, bailes tradicionales y orquestas, y el 15 de agosto una diada castellera con grandes colles. Castells de primer nivel en una plaza pequeña.",
+        "fr": "La fête de notre village : correfoc, géants, danses traditionnelles et orchestres, et le 15 août une journée de castells avec les meilleures colles. Des castells d'élite sur une petite place.",
+        "ca": "La festa del nostre poble: correfoc, gegants, balls tradicionals i orquestres, i el 15 d'agost una diada castellera amb grans colles. Castells de primer nivell en una plaça petita.",
+        "de": "Das Fest unseres Dorfes: Correfoc, Riesen, traditionelle Tänze und Orchester, und am 15. August ein Castells-Tag mit Spitzengruppen auf einem kleinen Dorfplatz.",
+        "nl": "Het feest van ons dorp: correfoc, reuzen, traditionele dansen en orkesten, en op 15 augustus een castellsdag met topgroepen op een klein dorpsplein."
+      },
+      "sources": [
+        "https://bisbalpenedes.com/web/2026/07/28/la-festa-major-2026-omplira-la-bisbal-del-penedes-dactivitats-del-2-al-16-dagost/"
+      ]
+    },
+    {
+      "id": "arboc",
+      "type": "festa",
+      "name": {
+        "en": "L'Arboç summer festival",
+        "es": "Fiesta Mayor de L'Arboç",
+        "fr": "Fête patronale de L'Arboç",
+        "ca": "Festa Major de l'Arboç",
+        "de": "Stadtfest von L'Arboç",
+        "nl": "Dorpsfeest van L'Arboç"
+      },
+      "town": "L'Arboç",
+      "venue": "Plaça de la Vila",
+      "lat": 41.265,
+      "lng": 1.602,
+      "url": null,
+      "dates": [
+        {
+          "start": "2027-08-20",
+          "end": "2027-08-25",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "A festival documented since 1659: castells by four teams on the Sunday, a long procession with traditional dances and the Carretillada, 15 minutes of fire by the devils. Ten minutes away.",
+        "es": "Una fiesta documentada desde 1659: castells de cuatro colles el domingo, una larga procesión con bailes tradicionales y la Carretillada, 15 minutos de fuego de los diablos. A diez minutos.",
+        "fr": "Une fête attestée depuis 1659 : castells de quatre colles le dimanche, longue procession avec danses traditionnelles et la Carretillada, 15 minutes de feu des diables. À dix minutes.",
+        "ca": "Una festa documentada des del 1659: castells de quatre colles el diumenge, una llarga processó amb balls tradicionals i la Carretillada dels diables. A deu minuts.",
+        "de": "Ein Fest, belegt seit 1659: Castells von vier Gruppen am Sonntag, eine lange Prozession mit traditionellen Tänzen und die Carretillada, 15 Minuten Feuer der Teufel. Zehn Minuten entfernt.",
+        "nl": "Een feest dat sinds 1659 bestaat: castells van vier groepen op zondag, een lange processie met traditionele dansen en de Carretillada, 15 minuten vuur van de duivels. Tien minuten rijden."
+      },
+      "sources": [
+        "https://el3devuit.cat/2026/08/18/143202/actualitat/tot-a-punt-per-a-la-festa-major-de-larboc-una-de-les-mes-tipiques-de-catalunya/"
+      ]
+    },
+    {
+      "id": "sant-felix",
+      "type": "castells",
+      "name": {
+        "en": "Vilafranca summer festival",
+        "es": "Fiesta Mayor de Vilafranca",
+        "fr": "Fête patronale de Vilafranca",
+        "ca": "Festa Major de Vilafranca",
+        "de": "Stadtfest von Vilafranca",
+        "nl": "Stadsfeest van Vilafranca"
+      },
+      "town": "Vilafranca del Penedès",
+      "venue": "Plaça de la Vila",
+      "lat": 41.3459,
+      "lng": 1.6987,
+      "url": "https://www.vilafranca.cat",
+      "dates": [
+        {
+          "start": "2027-08-28",
+          "end": "2027-09-02",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "One of Catalonia's great festivals. On 30 August (Sant Fèlix) the best teams attempt their biggest towers of the year in Plaça de la Vila. Arrive very early for a spot.",
+        "es": "Una de las grandes fiestas de Cataluña. El 30 de agosto (Sant Fèlix) las mejores colles intentan sus castillos más grandes del año en la Plaça de la Vila. Llega muy pronto.",
+        "fr": "L'une des grandes fêtes de Catalogne. Le 30 août (Sant Fèlix), les meilleures colles tentent leurs plus grandes tours de l'année sur la Plaça de la Vila. Arrivez très tôt.",
+        "ca": "Una de les grans festes de Catalunya. El 30 d'agost (Sant Fèlix) les millors colles intenten els castells més grans de l'any a la plaça de la Vila. Arriba-hi molt d'hora.",
+        "de": "Eines der großen Feste Kataloniens. Am 30. August (Sant Fèlix) versuchen die besten Gruppen ihre höchsten Türme des Jahres auf der Plaça de la Vila. Sehr früh kommen.",
+        "nl": "Een van de grote feesten van Catalonië. Op 30 augustus (Sant Fèlix) proberen de beste groepen hun hoogste torens van het jaar op het Plaça de la Vila. Kom heel vroeg."
+      },
+      "sources": [
+        "https://castellersdevilafranca.cat/sant-felix/"
+      ]
+    },
+    {
+      "id": "santa-tecla",
+      "type": "festa",
+      "name": {
+        "en": "Santa Tecla festival",
+        "es": "Fiestas de Santa Tecla",
+        "fr": "Fêtes de Santa Tecla",
+        "ca": "Festes de Santa Tecla",
+        "de": "Santa-Tecla-Fest",
+        "nl": "Santa Tecla-feesten"
+      },
+      "town": "Tarragona",
+      "venue": "Plaça de la Font",
+      "lat": 41.1166,
+      "lng": 1.2557,
+      "url": "https://www.tarragona.cat",
+      "dates": [
+        {
+          "start": "2027-09-14",
+          "end": "2027-09-24",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Tarragona's festival of dragons, devils, giants and a huge procession. The highlights are the castells in Plaça de la Font and the fire on 23 September.",
+        "es": "La fiesta de Tarragona: dragones, diablos, gigantes y una gran procesión. Lo mejor: los castells en la Plaça de la Font y el fuego del 23 de septiembre.",
+        "fr": "La fête de Tarragone : dragons, diables, géants et une immense procession. Les temps forts : les castells sur la Plaça de la Font et le feu du 23 septembre.",
+        "ca": "La festa de Tarragona: dracs, diables, gegants i una gran processó. El millor: els castells a la plaça de la Font i el foc del 23 de setembre.",
+        "de": "Tarragonas Stadtfest mit Drachen, Teufeln, Riesen und großer Prozession. Höhepunkte: die Castells auf der Plaça de la Font und das Feuer am 23. September.",
+        "nl": "Het feest van Tarragona met draken, duivels, reuzen en een grote processie. Hoogtepunten: de castells op het Plaça de la Font en het vuur op 23 september."
+      },
+      "sources": [
+        "https://femturisme.cat/en/events/santa-tecla-in-tarragona"
+      ]
+    },
+    {
+      "id": "escumostra",
+      "type": "food",
+      "name": {
+        "en": "Escumostra cava fair",
+        "es": "Escumostra, feria del cava",
+        "fr": "Escumostra, salon du cava",
+        "ca": "Escumostra, mostra de vins escumosos",
+        "de": "Escumostra, Cava-Messe",
+        "nl": "Escumostra, cavabeurs"
+      },
+      "town": "Sant Sadurní d'Anoia",
+      "venue": "Parc Lluís Companys",
+      "lat": 41.4263,
+      "lng": 1.7853,
+      "url": "https://santsadurni.cat",
+      "dates": [
+        {
+          "start": "2027-10-01",
+          "end": "2027-10-03",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "In the capital of cava, around 60 producers pour sparkling wines with local food and live music in a park. Buy a glass and tokens and make an afternoon of it.",
+        "es": "En la capital del cava, unos 60 productores sirven espumosos con comida local y música en directo en un parque. Compra copa y tíquets y disfruta de la tarde.",
+        "fr": "Dans la capitale du cava, une soixantaine de producteurs servent leurs vins effervescents avec cuisine locale et concerts dans un parc. Achetez un verre et des tickets et profitez de l'après-midi.",
+        "ca": "A la capital del cava, uns 60 elaboradors serveixen escumosos amb menjar local i música en directe en un parc. Compra copa i tiquets i gaudeix de la tarda.",
+        "de": "In der Cava-Hauptstadt schenken rund 60 Erzeuger Schaumweine aus, dazu lokales Essen und Live-Musik im Park. Glas und Marken kaufen und den Nachmittag genießen.",
+        "nl": "In de hoofdstad van de cava schenken zo'n 60 producenten mousserende wijn, met lokaal eten en livemuziek in een park. Koop een glas en muntjes en maak er een middag van."
+      },
+      "sources": [
+        "https://www.penedesturisme.cat/en/activity/escumostra-sparkling-wine-and-gastronomy-fair"
+      ]
+    },
+    {
+      "id": "vijazz",
+      "type": "music",
+      "name": {
+        "en": "VIJAZZ Penedès",
+        "es": "VIJAZZ Penedès",
+        "fr": "VIJAZZ Penedès",
+        "ca": "VIJAZZ Penedès",
+        "de": "VIJAZZ Penedès",
+        "nl": "VIJAZZ Penedès"
+      },
+      "town": "Vilafranca del Penedès",
+      "venue": "Rambla de Sant Francesc",
+      "lat": 41.3459,
+      "lng": 1.699,
+      "url": "https://vijazzpenedes.com/",
+      "dates": [
+        {
+          "start": "2027-07-02",
+          "end": "2027-07-04",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Three days of jazz in the old town of Vilafranca, many concerts free, with a big street fair where local wineries pour wine and cava. An easy summer evening out.",
+        "es": "Tres días de jazz en el casco antiguo de Vilafranca, con muchos conciertos gratuitos y una gran feria en la calle donde las bodegas de la zona sirven vino y cava. Un plan fácil para una tarde de verano.",
+        "fr": "Trois jours de jazz dans la vieille ville de Vilafranca, avec beaucoup de concerts gratuits et une grande foire de rue où les caves locales servent vin et cava. Une soirée d'été facile.",
+        "ca": "Tres dies de jazz al nucli antic de Vilafranca, amb molts concerts gratuïts i una gran fira al carrer on els cellers de la zona serveixen vi i cava. Un pla fàcil per a un vespre d'estiu.",
+        "de": "Drei Tage Jazz in der Altstadt von Vilafranca, viele Konzerte kostenlos, dazu eine große Straßenmesse, auf der lokale Weingüter Wein und Cava ausschenken. Ein entspannter Sommerabend.",
+        "nl": "Drie dagen jazz in de oude stad van Vilafranca, veel concerten gratis, met een grote straatbeurs waar lokale wijnhuizen wijn en cava schenken. Een makkelijk zomeravondje uit."
+      },
+      "sources": [
+        "https://vijazzpenedes.com/",
+        "https://www.penedesturisme.cat/en/activity/vijazz-penedes-2026"
+      ]
+    },
+    {
+      "id": "pau-casals-festival",
+      "type": "music",
+      "name": {
+        "en": "Pau Casals Music Festival",
+        "es": "Festival de Música Pau Casals",
+        "fr": "Festival de musique Pau Casals",
+        "ca": "Festival de Música Pau Casals",
+        "de": "Pau-Casals-Musikfestival",
+        "nl": "Pau Casals-muziekfestival"
+      },
+      "town": "Sant Salvador",
+      "venue": "Auditori Pau Casals",
+      "lat": 41.1835,
+      "lng": 1.5413,
+      "url": "https://www.paucasals.org/",
+      "dates": [
+        {
+          "start": "2027-07-09",
+          "end": "2027-07-20",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "About two weeks of classical music in the seaside auditorium next to the cellist Pau Casals' house and museum. Top soloists and chamber music on summer evenings, 15 minutes from the house.",
+        "es": "Unas dos semanas de música clásica en el auditorio junto al mar, al lado de la casa museo del violonchelista Pau Casals. Grandes solistas y música de cámara en noches de verano, a 15 minutos de casa.",
+        "fr": "Environ deux semaines de musique classique dans l'auditorium en bord de mer, à côté de la maison-musée du violoncelliste Pau Casals. Grands solistes et musique de chambre les soirs d'été, à 15 minutes de la maison.",
+        "ca": "Unes dues setmanes de música clàssica a l'auditori arran de mar, al costat de la casa museu del violoncel·lista Pau Casals. Grans solistes i música de cambra les nits d'estiu, a 15 minuts de casa.",
+        "de": "Rund zwei Wochen Klassik im Auditorium am Meer, neben dem Haus-Museum des Cellisten Pau Casals. Spitzensolisten und Kammermusik an Sommerabenden, 15 Minuten vom Haus.",
+        "nl": "Zo'n twee weken klassieke muziek in het auditorium aan zee, naast het huis-museum van cellist Pau Casals. Topsolisten en kamermuziek op zomeravonden, 15 minuten van het huis."
+      },
+      "sources": [
+        "https://www.paucasals.org/en/activity/pablo-casals-international-music-festival-2026/"
+      ]
+    },
+    {
+      "id": "filloxera",
+      "type": "tradition",
+      "name": {
+        "en": "Phylloxera Festival",
+        "es": "Fiesta de la Filoxera",
+        "fr": "Fête du Phylloxéra",
+        "ca": "Festa de la Fil·loxera",
+        "de": "Reblaus-Fest",
+        "nl": "Druifluisfeest"
+      },
+      "town": "Sant Sadurní d'Anoia",
+      "venue": "Plaça de l'Església",
+      "lat": 41.4262,
+      "lng": 1.7856,
+      "url": "https://www.festadelafiloxera.cat/",
+      "dates": [
+        {
+          "start": "2027-09-07",
+          "end": "2027-09-08",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "The cava capital re-enacts its victory over the phylloxera plague that wiped out the vineyards in the 19th century: a giant insect parades among fire, drums and devils, is defeated in the church square, and everyone toasts with cava. A loud, fiery night you'll only see here.",
+        "es": "La capital del cava escenifica su victoria sobre la plaga de la filoxera que arrasó los viñedos en el siglo XIX: un insecto gigante desfila entre fuego, tambores y diablos, es derrotado en la plaza de la iglesia y se brinda con cava. Una noche de fuego que solo se ve aquí.",
+        "fr": "La capitale du cava rejoue sa victoire sur le phylloxéra qui a ravagé les vignes au XIXe siècle : un insecte géant défile entre feu, tambours et diables, est vaincu sur la place de l'église, et on trinque au cava. Une nuit de feu unique.",
+        "ca": "La capital del cava escenifica la victòria sobre la plaga de la fil·loxera que va arrasar les vinyes al segle XIX: un insecte gegant desfila entre foc, tabals i diables, és derrotat a la plaça de l'Església i es brinda amb cava. Una nit de foc que només es veu aquí.",
+        "de": "Die Cava-Hauptstadt spielt ihren Sieg über die Reblaus nach, die im 19. Jahrhundert die Weinberge vernichtete: Ein Riesen-Insekt zieht mit Feuer, Trommeln und Teufeln durch die Straßen, wird auf dem Kirchplatz besiegt, und alle stoßen mit Cava an. Eine feurige Nacht, die es nur hier gibt.",
+        "nl": "De cavahoofdstad speelt haar overwinning na op de druifluis die in de 19e eeuw de wijngaarden verwoestte: een reuzeninsect trekt met vuur, trommels en duivels door de straten, wordt op het kerkplein verslagen en iedereen proost met cava. Een vurige nacht die je alleen hier ziet."
+      },
+      "sources": [
+        "https://www.festadelafiloxera.cat/",
+        "https://www.penedesturisme.cat/en/activity/festa-de-la-filloxera-phylloxera-fest"
+      ]
+    },
+    {
+      "id": "vilanova-neus",
+      "type": "festa",
+      "name": {
+        "en": "Vilanova summer festival",
+        "es": "Fiesta Mayor de Vilanova",
+        "fr": "Fête patronale de Vilanova",
+        "ca": "Festa Major de Vilanova i la Geltrú",
+        "de": "Stadtfest von Vilanova",
+        "nl": "Stadsfeest van Vilanova"
+      },
+      "town": "Vilanova i la Geltrú",
+      "venue": "Plaça de la Vila",
+      "lat": 41.224,
+      "lng": 1.7255,
+      "url": "https://festamajorvng.cat/",
+      "dates": [
+        {
+          "start": "2027-08-04",
+          "end": "2027-08-05",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "For the Mare de Déu de les Neus the whole town is out with giants, dances, devils and castells, and the evening ends with big fireworks. One of the most complete festivals in Catalonia.",
+        "es": "Por la Mare de Déu de les Neus toda la ciudad sale a la calle con gigantes, bailes, diablos y castells, y la noche acaba con un gran castillo de fuegos. Una de las fiestas mayores más completas de Cataluña.",
+        "fr": "Pour la Mare de Déu de les Neus, toute la ville sort avec géants, danses, diables et castells, et la soirée se termine par un grand feu d'artifice. L'une des fêtes les plus complètes de Catalogne.",
+        "ca": "Per la Mare de Déu de les Neus tota la vila surt al carrer amb gegants, balls, diables i castells, i el vespre acaba amb un gran castell de focs. Una de les festes majors més completes de Catalunya.",
+        "de": "Zur Mare de Déu de les Neus ist die ganze Stadt mit Riesen, Tänzen, Teufeln und Castells unterwegs, am Abend gibt es ein großes Feuerwerk. Eines der vollständigsten Feste Kataloniens.",
+        "nl": "Voor de Mare de Déu de les Neus komt de hele stad op straat met reuzen, dansen, duivels en castells, en de avond eindigt met groot vuurwerk. Een van de meest complete feesten van Catalonië."
+      },
+      "sources": [
+        "https://www.vilanovaturisme.cat/que_fer/festa_major",
+        "https://festamajorvng.cat/Programa%20FMVNG2026.pdf"
+      ]
+    },
+    {
+      "id": "sitges-bartomeu",
+      "type": "festa",
+      "name": {
+        "en": "Sitges summer festival",
+        "es": "Fiesta Mayor de Sitges",
+        "fr": "Fête patronale de Sitges",
+        "ca": "Festa Major de Sitges",
+        "de": "Stadtfest von Sitges",
+        "nl": "Stadsfeest van Sitges"
+      },
+      "town": "Sitges",
+      "venue": "Church of Sant Bartomeu i Santa Tecla",
+      "lat": 41.2346,
+      "lng": 1.8116,
+      "url": "https://www.sitgesfestamajor.cat/",
+      "dates": [
+        {
+          "start": "2027-08-23",
+          "end": "2027-08-24",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Giants, traditional dances and devils in the old town, and on the night of 23 August famous fireworks light up the church above the sea. The most spectacular night of the Sitges summer.",
+        "es": "Gigantes, bailes tradicionales y diablos en el casco antiguo, y la noche del 23 de agosto un famoso castillo de fuegos ilumina la iglesia sobre el mar. La noche más espectacular del verano en Sitges.",
+        "fr": "Géants, danses traditionnelles et diables dans la vieille ville, et le soir du 23 août un célèbre feu d'artifice illumine l'église au-dessus de la mer. La nuit la plus spectaculaire de l'été à Sitges.",
+        "ca": "Gegants, balls tradicionals i diables al nucli antic, i la nit del 23 d'agost un famós castell de focs il·lumina l'església sobre el mar. La nit més espectacular de l'estiu a Sitges.",
+        "de": "Riesen, traditionelle Tänze und Teufel in der Altstadt, und in der Nacht zum 24. August erhellt ein berühmtes Feuerwerk die Kirche über dem Meer. Die spektakulärste Sommernacht in Sitges.",
+        "nl": "Reuzen, traditionele dansen en duivels in de oude stad, en in de nacht van 23 augustus verlicht beroemd vuurwerk de kerk boven de zee. De spectaculairste zomernacht van Sitges."
+      },
+      "sources": [
+        "https://www.sitgesfestamajor.cat/",
+        "https://femturisme.cat/en/events/the-festival-of-sant-bartomeu-de-sitges"
+      ]
+    },
+    {
+      "id": "tarragona-fireworks-contest",
+      "type": "festa",
+      "name": {
+        "en": "International Fireworks Contest",
+        "es": "Concurso Internacional de Fuegos Artificiales",
+        "fr": "Concours international de feux d'artifice",
+        "ca": "Concurs Internacional de Focs Artificials",
+        "de": "Internationaler Feuerwerkswettbewerb",
+        "nl": "Internationale vuurwerkwedstrijd"
+      },
+      "town": "Tarragona",
+      "venue": "Punta del Miracle (Platja del Miracle)",
+      "lat": 41.1118,
+      "lng": 1.2627,
+      "url": "https://www.tarragona.cat/cultura/festes-i-cultura-popular/concurs-internacional-de-focs-artificials-ciutat-de-tarragona",
+      "dates": [
+        {
+          "start": "2027-07-07",
+          "end": "2027-07-10",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Four nights of competing fireworks by top European pyrotechnic firms, fired over the sea at 22:30. Free to watch from Miracle beach or the Balcó del Mediterrani, and the winner fires the Santa Tecla display.",
+        "es": "Cuatro noches de espectáculos pirotécnicos en competición, con empresas punteras de Europa, sobre el mar a las 22:30. Se ven gratis desde la playa del Miracle o el Balcó del Mediterrani, y el ganador dispara el castillo de Santa Tecla.",
+        "fr": "Quatre soirées de feux d'artifice en compétition, tirés au-dessus de la mer à 22h30 par les meilleurs artificiers européens. Gratuit depuis la plage du Miracle ou le Balcó del Mediterrani, et le gagnant tire le feu de la Santa Tecla.",
+        "ca": "Quatre nits de focs artificials en competició, a càrrec de pirotècnies europees de primer nivell, sobre el mar a les 22.30. Es veuen de franc des de la platja del Miracle o el Balcó del Mediterrani, i el guanyador dispara el castell de Santa Tecla.",
+        "de": "Vier Nächte mit Feuerwerken europäischer Spitzenfirmen im Wettbewerb, um 22:30 Uhr über dem Meer. Kostenlos vom Miracle-Strand oder dem Balcó del Mediterrani zu sehen, der Sieger zündet das Feuerwerk zu Santa Tecla.",
+        "nl": "Vier avonden vuurwerk van Europese topbedrijven in competitie, om 22.30 uur boven zee. Gratis te zien vanaf het Miracle-strand of het Balcó del Mediterrani, en de winnaar steekt het vuurwerk van Santa Tecla af."
+      },
+      "sources": [
+        "https://www.tarragona.cat/cultura/festes-i-cultura-popular/concurs-internacional-de-focs-artificials-ciutat-de-tarragona/34e-concurs-internacional-de-focs-artificials-ciutat-de-tarragona",
+        "https://www.tarragonaturisme.cat/en/events/international-ciutat-de-tarragona-fireworks-contest"
+      ]
+    },
+    {
+      "id": "tarragona-sant-magi",
+      "type": "castells",
+      "name": {
+        "en": "Sant Magí Festival",
+        "es": "Fiestas de Sant Magí",
+        "fr": "Fêtes de Sant Magí",
+        "ca": "Festes de Sant Magí",
+        "de": "Sant-Magí-Fest",
+        "nl": "Feest van Sant Magí"
+      },
+      "town": "Tarragona",
+      "venue": "Plaça de les Cols and Portal del Carro, Part Alta (old town)",
+      "lat": 41.1189,
+      "lng": 1.2583,
+      "url": "https://www.tarragona.cat/cultura/festes-i-cultura-popular/sant-magi",
+      "dates": [
+        {
+          "start": "2027-08-15",
+          "end": "2027-08-19",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Tarragona's summer festival: on 18 August horse-drawn carts bring the saint's water into the old town, and at noon on the 19th the city's four castell teams build human towers in Plaça de les Cols. A great castells day in the middle of beach season.",
+        "es": "La fiesta de verano de Tarragona: el 18 de agosto carros tirados por caballos traen el agua del santo al casco antiguo, y el 19 a mediodía las cuatro collas de la ciudad levantan castells en la plaza de les Cols. Una gran jornada castellera en plena temporada de playa.",
+        "fr": "La fête d'été de Tarragone : le 18 août, des charrettes tirées par des chevaux apportent l'eau du saint dans la vieille ville, et le 19 à midi les quatre colles de la ville montent des tours humaines place de les Cols. Une belle journée de castells en pleine saison balnéaire.",
+        "ca": "La festa major petita de Tarragona: el 18 d'agost els carros i cavalls porten l'aigua del sant a la Part Alta, i el 19 al migdia les quatre colles de la ciutat aixequen castells a la plaça de les Cols. Una gran diada castellera en plena temporada de platja.",
+        "de": "Tarragonas Sommerfest: Am 18. August bringen Pferdewagen das Wasser des Heiligen in die Altstadt, am 19. mittags bauen die vier Castell-Gruppen der Stadt Menschentürme auf der Plaça de les Cols. Ein großer Castells-Tag mitten in der Badesaison.",
+        "nl": "Het zomerfeest van Tarragona: op 18 augustus brengen paard-en-wagens het water van de heilige naar de oude stad, en op de 19e om twaalf uur bouwen de vier castell-groepen van de stad menselijke torens op de Plaça de les Cols. Een topdag voor castells midden in het strandseizoen."
+      },
+      "sources": [
+        "https://www.tarragona.cat/cultura/festes-i-cultura-popular/sant-magi/sant-magi-1",
+        "https://www.festes.org/ca/calendari/festes-d-estiu/1088/article/343/festes-de-sant-magi"
+      ]
+    },
+    {
+      "id": "barcelona-sitges-vintage-car-rally",
+      "type": "parade",
+      "name": {
+        "en": "Barcelona-Sitges Vintage Car Rally",
+        "es": "Rally de Coches de Época Barcelona-Sitges",
+        "fr": "Rallye de voitures anciennes Barcelone-Sitges",
+        "ca": "Ral·li de Cotxes d'Època Barcelona-Sitges",
+        "de": "Oldtimer-Rallye Barcelona-Sitges",
+        "nl": "Oldtimerrally Barcelona-Sitges"
+      },
+      "town": "Sitges",
+      "venue": "Passeig de la Ribera seafront",
+      "lat": 41.2357,
+      "lng": 1.807,
+      "url": "https://rallybarcelonasitges.com",
+      "dates": [
+        {
+          "start": "2027-03-06",
+          "end": "2027-03-07",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Veteran cars and motorbikes from the early 1900s, many with crews in period costume, drive from Barcelona to Sitges and line up on the seafront for an elegance contest. Running since 1959, it is free to watch and fun for all ages.",
+        "es": "Coches y motos de principios del siglo XX, muchos con tripulantes vestidos de época, viajan de Barcelona a Sitges y se exponen en el paseo marítimo en un concurso de elegancia. Se celebra desde 1959, es gratis y gusta a todas las edades.",
+        "fr": "Des voitures et motos du début du XXe siècle, souvent avec un équipage en costume d'époque, roulent de Barcelone à Sitges et s'exposent sur le front de mer pour un concours d'élégance. Organisé depuis 1959, gratuit et pour tous les âges.",
+        "ca": "Cotxes i motos de principis del segle XX, molts amb tripulants vestits d'època, fan el camí de Barcelona a Sitges i s'exposen al passeig marítim en un concurs d'elegància. Se celebra des del 1959, és gratuït i agrada a totes les edats.",
+        "de": "Veteranen-Autos und Motorräder aus dem frühen 20. Jahrhundert, oft mit Besatzung in historischen Kostümen, fahren von Barcelona nach Sitges und stehen zum Eleganzwettbewerb an der Strandpromenade. Seit 1959, kostenlos und für jedes Alter.",
+        "nl": "Auto's en motoren uit het begin van de twintigste eeuw, vaak met bemanning in historische kleding, rijden van Barcelona naar Sitges en staan op de boulevard voor een elegantiewedstrijd. Sinds 1959, gratis en leuk voor alle leeftijden."
+      },
+      "sources": [
+        "https://rallybarcelonasitges.com",
+        "https://www.festacatalunya.cat/experiencies-i-rutes/experiencies-i-rutes-esdeveniments-esportius/ralli-internacional-de-cotxes-depoca-barcelona-sitges",
+        "https://www.spain.info/en/calendar/barcelona-sitges-international-vintage-car-rally/"
+      ]
+    },
+    {
+      "id": "sitges-pride",
+      "type": "parade",
+      "name": {
+        "en": "Sitges Pride",
+        "es": "Sitges Pride",
+        "fr": "Sitges Pride",
+        "ca": "Sitges Pride",
+        "de": "Sitges Pride",
+        "nl": "Sitges Pride"
+      },
+      "town": "Sitges",
+      "venue": "Seafront (Passeig Marítim) and town centre",
+      "lat": 41.2337,
+      "lng": 1.8033,
+      "url": "https://sitgespride.com",
+      "dates": [
+        {
+          "start": "2027-06-09",
+          "end": "2027-06-13",
+          "status": "confirmed"
+        }
+      ],
+      "description": {
+        "en": "One of Europe's best-known beach Prides: five days of parties and concerts, with a big parade along the seafront on the Saturday. Expect large crowds, so arrive early and park outside the centre.",
+        "es": "Uno de los Pride de playa más conocidos de Europa: cinco días de fiestas y conciertos, con un gran desfile por el paseo marítimo el sábado. Hay mucha gente, así que conviene llegar pronto y aparcar fuera del centro.",
+        "fr": "L'une des Pride balnéaires les plus connues d'Europe : cinq jours de fêtes et de concerts, avec une grande parade sur le front de mer le samedi. Il y a foule, mieux vaut arriver tôt et se garer hors du centre.",
+        "ca": "Un dels Pride de platja més coneguts d'Europa: cinc dies de festes i concerts, amb una gran desfilada pel passeig marítim el dissabte. Hi ha molta gent, val la pena arribar d'hora i aparcar fora del centre.",
+        "de": "Eine der bekanntesten Strand-Prides Europas: fünf Tage Partys und Konzerte, mit großer Parade an der Strandpromenade am Samstag. Es wird sehr voll, also früh kommen und außerhalb des Zentrums parken.",
+        "nl": "Een van de bekendste strand-Prides van Europa: vijf dagen feesten en concerten, met een grote parade over de boulevard op zaterdag. Het wordt erg druk, dus kom vroeg en parkeer buiten het centrum."
+      },
+      "sources": [
+        "https://sitgespride.com/homepage/"
+      ]
+    },
+    {
+      "id": "vilanova-tres-tombs",
+      "type": "tradition",
+      "name": {
+        "en": "Tres Tombs Horse Parade",
+        "es": "Tres Tombs de Vilanova",
+        "fr": "Tres Tombs de Vilanova",
+        "ca": "Tres Tombs de Vilanova",
+        "de": "Tres Tombs (Pferdeumzug)",
+        "nl": "Tres Tombs (paardenoptocht)"
+      },
+      "town": "Vilanova i la Geltrú",
+      "venue": "Town centre, Rambla Principal",
+      "lat": 41.224,
+      "lng": 1.7255,
+      "url": "https://www.vilanovaturisme.cat/que_fer/tres_tombs",
+      "dates": [
+        {
+          "start": "2027-01-17",
+          "end": "2027-01-17",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "For Sant Antoni, the animals are blessed and then hundreds of horses, carts and carriages ride three laps around the town centre. One of the biggest and oldest Tres Tombs in Catalonia, and a treat for children.",
+        "es": "Por Sant Antoni se bendicen los animales y cientos de caballos, carros y carruajes dan tres vueltas al centro de la ciudad. Uno de los Tres Tombs más grandes y antiguos de Cataluña, y un regalo para los niños.",
+        "fr": "Pour la Saint-Antoine, les animaux sont bénis puis des centaines de chevaux, charrettes et calèches font trois tours du centre-ville. L'un des plus grands et plus anciens Tres Tombs de Catalogne, un régal pour les enfants.",
+        "ca": "Per Sant Antoni es beneeixen els animals i centenars de cavalls, carros i carruatges fan tres tombs pel centre. Uns dels Tres Tombs més grans i antics de Catalunya, i una festa per a la mainada.",
+        "de": "Zu Sant Antoni werden die Tiere gesegnet, danach ziehen Hunderte Pferde, Karren und Kutschen drei Runden durch das Zentrum. Einer der größten und ältesten Tres Tombs Kataloniens, ein Fest für Kinder.",
+        "nl": "Voor Sant Antoni worden de dieren gezegend, waarna honderden paarden, karren en koetsen drie rondjes door het centrum rijden. Een van de grootste en oudste Tres Tombs van Catalonië, en een feest voor kinderen."
+      },
+      "sources": [
+        "https://www.eixdiari.cat/cultura/doc/119655/vilanova-ja-prepara-els-tres-tombs-2026--tradicio-cavalleries-i-festa-major-dhivern.html",
+        "https://www.eixdiari.cat/cultura/doc/114619/mes-de-250-cavalls-i-una-seixantena-de-carros-i-carruatges-han-protagonitzat-els-tres-tombs-de-vilan.html",
+        "https://surtdecasa.cat/penedes/fires-i-festes/la-festa-dels-tres-tombs-al-penedes",
+        "https://patrimonifestiu.cultura.gencat.cat/Festes-i-elements-festius-catalogats-o-declarats/Sant-Antoni/Festa-de-Sant-Antoni-de-Vilanova-i-la-Geltru"
+      ]
+    },
+    {
+      "id": "corbera-living-nativity",
+      "type": "tradition",
+      "name": {
+        "en": "Corbera Living Nativity",
+        "es": "Belén Viviente de Corbera",
+        "fr": "Crèche vivante de Corbera",
+        "ca": "Pessebre Vivent de Corbera",
+        "de": "Lebende Krippe von Corbera",
+        "nl": "Levende kerststal van Corbera"
+      },
+      "town": "Corbera de Llobregat",
+      "venue": "Pessebre Vivent, C/ Canigó 41, Corbera d'Amunt",
+      "lat": 41.419,
+      "lng": 1.925,
+      "url": "https://www.pessebrecorbera.cat",
+      "dates": [
+        {
+          "start": "2026-11-28",
+          "end": "2027-01-10",
+          "status": "expected"
+        },
+        {
+          "start": "2027-11-27",
+          "end": "2028-01-09",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Catalonia's most famous living nativity: an afternoon walk through a hillside village of moss, streams and old trades, where costumed locals act out rural life and the Christmas story. Open on selected weekends and holidays, and tickets sell out online.",
+        "es": "El belén viviente más famoso de Cataluña: un paseo vespertino por un pueblo de montaña con musgo, riachuelos y oficios antiguos, donde vecinos disfrazados recrean la vida rural y la Navidad. Abre algunos fines de semana y festivos, y las entradas online se agotan.",
+        "fr": "La crèche vivante la plus célèbre de Catalogne : une promenade en fin d'après-midi dans un village à flanc de colline, entre mousse, ruisseaux et métiers d'antan, où les habitants costumés font revivre la vie rurale et Noël. Ouverte certains week-ends et jours fériés, billets vite épuisés en ligne.",
+        "ca": "El pessebre vivent més famós de Catalunya: un passeig de tarda per un poble de muntanya amb molsa, rierols i oficis antics, on veïns vestits d'època representen la vida de pagès i el Nadal. Obre alguns caps de setmana i festius, i les entrades en línia s'exhaureixen.",
+        "de": "Die berühmteste lebende Krippe Kataloniens: ein Spaziergang am späten Nachmittag durch ein Hangdorf mit Moos, Bächen und alten Handwerken, in dem kostümierte Einheimische das Landleben und die Weihnachtsgeschichte spielen. Geöffnet an ausgewählten Wochenenden und Feiertagen, Online-Tickets sind schnell weg.",
+        "nl": "De beroemdste levende kerststal van Catalonië: een middagwandeling door een heuveldorp met mos, beekjes en oude ambachten, waar verklede dorpelingen het boerenleven en het kerstverhaal naspelen. Open op bepaalde weekenden en feestdagen, en online kaartjes raken snel op."
+      },
+      "sources": [
+        "https://www.turismebaixllobregat.com/ca/que-fer/activitats-oci/pessebre-vivent-de-corbera-0",
+        "https://beteve.cat/agenda/pessebres-vivents-catalunya/",
+        "https://www.metropoliabierta.cat/gran-barcelona/20251215/pessebre-vivent-mes-famos-catalunya-minuts-barcelona-ubicacio-detalls-comprar-entrades/1003742716302_0.html"
+      ]
+    },
+    {
+      "id": "sant-jordi",
+      "type": "tradition",
+      "name": {
+        "en": "Sant Jordi: Books and Roses",
+        "es": "Sant Jordi: libros y rosas",
+        "fr": "Sant Jordi : livres et roses",
+        "ca": "Sant Jordi: llibres i roses",
+        "de": "Sant Jordi: Bücher und Rosen",
+        "nl": "Sant Jordi: boeken en rozen"
+      },
+      "town": "Vilafranca del Penedès",
+      "venue": "Rambla and Plaça de la Vila",
+      "lat": 41.3463,
+      "lng": 1.6997,
+      "url": null,
+      "dates": [
+        {
+          "start": "2027-04-23",
+          "end": "2027-04-23",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Catalonia's day of books and roses: streets fill with book and flower stalls, couples swap a rose and a book, and the whole day feels like a festival. Every town takes part, Vilafranca is the easiest nearby and Tarragona's Rambla Nova the biggest.",
+        "es": "El día catalán de los libros y las rosas: las calles se llenan de puestos de libros y flores, las parejas se regalan una rosa y un libro, y todo el día es una fiesta. Lo celebran todos los pueblos; Vilafranca es lo más cómodo y la Rambla Nova de Tarragona, lo más grande.",
+        "fr": "La journée catalane des livres et des roses : les rues se couvrent d'étals de livres et de fleurs, les couples s'offrent une rose et un livre, et toute la journée a un air de fête. Partout en Catalogne, Vilafranca est le plus pratique et la Rambla Nova de Tarragone le plus grand.",
+        "ca": "La diada dels llibres i les roses: els carrers s'omplen de parades de llibres i flors, les parelles s'intercanvien rosa i llibre, i tot el dia és festa. Ho celebren tots els pobles; Vilafranca és el més còmode i la Rambla Nova de Tarragona, el més gran.",
+        "de": "Kataloniens Tag der Bücher und Rosen: Die Straßen füllen sich mit Buch- und Blumenständen, Paare schenken sich Rose und Buch, und der ganze Tag ist ein Fest. Jeder Ort feiert, Vilafranca ist am bequemsten, die Rambla Nova in Tarragona am größten.",
+        "nl": "De Catalaanse dag van boeken en rozen: de straten staan vol boeken- en bloemenkraampjes, stellen geven elkaar een roos en een boek, en de hele dag voelt als een feest. Elke stad doet mee, Vilafranca is het makkelijkst en de Rambla Nova in Tarragona het grootst."
+      },
+      "sources": [
+        "https://www.festacatalunya.cat/municipi/la-bisbal-del-penedes"
+      ]
+    },
+    {
+      "id": "sitges-terramar-festival",
+      "type": "music",
+      "name": {
+        "en": "Terramar Gardens Festival",
+        "es": "Festival Jardins de Terramar",
+        "fr": "Festival des Jardins de Terramar",
+        "ca": "Festival Jardins de Terramar",
+        "de": "Festival Jardins de Terramar",
+        "nl": "Festival Jardins de Terramar"
+      },
+      "town": "Sitges",
+      "venue": "Jardins de Terramar, C/ Cristòfol Colom 20",
+      "lat": 41.229,
+      "lng": 1.7935,
+      "url": "https://festivalterramarcaixabank.com/",
+      "dates": [
+        {
+          "start": "2027-07-30",
+          "end": "2027-08-12",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Open-air summer concerts by big Spanish and international names in the seaside gardens of Terramar, with food and drinks before the show. Ticketed, gates open around 20:00 and concerts start around 22:00.",
+        "es": "Conciertos de verano al aire libre con grandes nombres nacionales e internacionales en los jardines de Terramar, junto al mar, con zona de comida antes del espectáculo. Con entrada; puertas hacia las 20:00 y conciertos sobre las 22:00.",
+        "fr": "Concerts d'été en plein air avec de grands noms espagnols et internationaux dans les jardins de Terramar, en bord de mer, avec restauration avant le spectacle. Payant, ouverture vers 20h et concerts vers 22h.",
+        "ca": "Concerts d'estiu a l'aire lliure amb grans noms d'aquí i internacionals als jardins de Terramar, vora el mar, amb zona de restauració abans de l'espectacle. Amb entrada; portes cap a les 20.00 i concerts cap a les 22.00.",
+        "de": "Open-Air-Sommerkonzerte großer spanischer und internationaler Künstler in den Gärten von Terramar am Meer, mit Essen und Getränken vor der Show. Mit Ticket, Einlass gegen 20 Uhr, Konzerte gegen 22 Uhr.",
+        "nl": "Zomerconcerten in de open lucht met grote Spaanse en internationale namen in de tuinen van Terramar aan zee, met eten en drinken voor de show. Met kaartje, deuren rond 20.00 uur en concerten rond 22.00 uur."
+      },
+      "sources": [
+        "https://www.visitsitges.com/en/festival-jardins-de-terramar-2026/",
+        "https://www.staysitges.com/blog/2026/07/03/jardins-de-terramar-festival-2026-from-31-july-to-12-august/"
+      ]
+    },
+    {
+      "id": "calafell-medieval-market",
+      "type": "historical",
+      "name": {
+        "en": "Calafell Medieval Market",
+        "es": "Mercado Medieval de Calafell",
+        "fr": "Marché médiéval de Calafell",
+        "ca": "Mercat Medieval de Calafell",
+        "de": "Mittelaltermarkt Calafell",
+        "nl": "Middeleeuwse markt van Calafell"
+      },
+      "town": "Calafell",
+      "venue": "Castell de la Santa Creu and old town (Calafell poble)",
+      "lat": 41.2004,
+      "lng": 1.5686,
+      "url": "https://turismebaixpenedes.cat/events/xxiv-mercat-medieval/",
+      "dates": [
+        {
+          "start": "2027-08-27",
+          "end": "2027-08-29",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Craft stalls, falconry, archery, sword fights and children's workshops around Calafell's hilltop castle, ending with a medieval concert. Just 15 minutes away and very family-friendly.",
+        "es": "Puestos de artesanía, cetrería, tiro con arco, combates y talleres infantiles alrededor del castillo de Calafell, con un concierto medieval de cierre. A solo 15 minutos y muy familiar.",
+        "fr": "Étals d'artisans, fauconnerie, tir à l'arc, combats et ateliers pour enfants autour du château perché de Calafell, avec un concert médiéval en clôture. À 15 minutes seulement, idéal en famille.",
+        "ca": "Parades d'artesania, falconeria, tir amb arc, combats i tallers infantils al voltant del castell de Calafell, amb un concert medieval de cloenda. A només 15 minuts i molt familiar.",
+        "de": "Handwerksstände, Falknerei, Bogenschießen, Schwertkämpfe und Kinderworkshops rund um die Burg von Calafell, zum Abschluss ein mittelalterliches Konzert. Nur 15 Minuten entfernt und sehr familienfreundlich.",
+        "nl": "Ambachtskraampjes, valkerij, boogschieten, zwaardgevechten en kinderworkshops rond het kasteel op de heuvel van Calafell, afgesloten met een middeleeuws concert. Op 15 minuten en heel kindvriendelijk."
+      },
+      "sources": [
+        "https://femturisme.cat/en/events/medieval-market-in-calafell",
+        "https://turismebaixpenedes.cat/events/xxiv-mercat-medieval/",
+        "https://www.socpetit.cat/xxiv-mercat-medieval-de-calafell-el-baix-penedes/"
+      ]
+    },
+    {
+      "id": "tarragona-dixieland-festival",
+      "type": "music",
+      "name": {
+        "en": "Tarragona Dixieland Festival",
+        "es": "Festival Dixieland de Tarragona",
+        "fr": "Festival Dixieland de Tarragone",
+        "ca": "Festival Dixieland de Tarragona",
+        "de": "Dixieland-Festival Tarragona",
+        "nl": "Dixielandfestival Tarragona"
+      },
+      "town": "Tarragona",
+      "venue": "Old town streets, squares and Rambla Nova",
+      "lat": 41.117,
+      "lng": 1.253,
+      "url": "https://www.tarragona.cat/cultura/arts-esceniques/musica/festival-dixieland-tarragona",
+      "dates": [
+        {
+          "start": "2027-04-15",
+          "end": "2027-04-18",
+          "status": "expected"
+        }
+      ],
+      "description": {
+        "en": "Four days of New Orleans jazz, swing and brass bands in Tarragona's streets, squares and bars, with many concerts free. A cheerful spring excuse to explore the Roman old town.",
+        "es": "Cuatro días de jazz de Nueva Orleans, swing y brass bands por las calles, plazas y bares de Tarragona, muchos conciertos gratuitos. Una excusa alegre para recorrer la ciudad romana en primavera.",
+        "fr": "Quatre jours de jazz New Orleans, swing et fanfares dans les rues, places et bars de Tarragone, avec de nombreux concerts gratuits. Un joyeux prétexte printanier pour explorer la vieille ville romaine.",
+        "ca": "Quatre dies de jazz de Nova Orleans, swing i brass bands pels carrers, places i bars de Tarragona, amb molts concerts gratuïts. Una excusa alegre per descobrir la Part Alta romana a la primavera.",
+        "de": "Vier Tage New-Orleans-Jazz, Swing und Brassbands in Straßen, Plätzen und Bars von Tarragona, viele Konzerte kostenlos. Ein fröhlicher Anlass, im Frühling die römische Altstadt zu erkunden.",
+        "nl": "Vier dagen New Orleans-jazz, swing en brassbands in de straten, op de pleinen en in de bars van Tarragona, veel concerten gratis. Een vrolijk lentetje om de Romeinse oude stad te verkennen."
+      },
+      "sources": [
+        "https://www.tarragona.cat/cultura/arts-esceniques/musica/festival-dixieland-tarragona",
+        "https://www.tarragonaturisme.cat/en/events/tarragona-dixieland-festival"
+      ]
+    }
+  ]
+}

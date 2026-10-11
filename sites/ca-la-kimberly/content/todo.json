@@ -1,0 +1,1822 @@
+{
+  "_doc": "Same shape as restaurants.json: id, name{6}, type{6}, icon, group (fun, beach, beachbars, sights: the quick filters), tone (colour, one per group: fun red, beach blue, sights purple) (colour: blue, red, orange, purple, green, pink), town, place, lat, lng, km_from_house (by road), description{6}, tags[], flags[], phone, url, schedule (same format as markets; close earlier than open = after midnight; optional from/to as MM-DD for seasons) and/or always:true, hours{6} (note under the hours: say when dates are expected). Use flags only for warnings that matter. Naming: generic places are translated with the place name in each language's natural order (Creixell Beach, Playa de Creixell); businesses keep their real name; type says what it is, then the town when the name does not include it.",
+  "items": [
+    {
+      "id": "aqualeon",
+      "name": {
+        "en": "Aqualeon",
+        "es": "Aqualeon",
+        "fr": "Aqualeon",
+        "ca": "Aqualeon",
+        "de": "Aqualeon",
+        "nl": "Aqualeon"
+      },
+      "type": {
+        "en": "Water park, Albinyana",
+        "es": "Parque acuático, Albinyana",
+        "fr": "Parc aquatique, Albinyana",
+        "ca": "Parc aquàtic, Albinyana",
+        "de": "Wasserpark, Albinyana",
+        "nl": "Waterpark, Albinyana"
+      },
+      "town": "Albinyana",
+      "place": "Finca Les Basses",
+      "lat": 41.228938,
+      "lng": 1.487437,
+      "km_from_house": 5,
+      "description": {
+        "en": "The closest day out, 10 minutes by car. Slides for every age, a wave pool, a kids' area and picnic spots. Busy on summer weekends: arrive at opening time or buy the fast pass.",
+        "es": "La excursión más cercana, a 10 minutos en coche. Toboganes para todas las edades, piscina de olas, zona infantil y zonas de pícnic. Lleno los fines de semana de verano: llega a la apertura o compra el pase rápido.",
+        "fr": "La sortie la plus proche, à 10 minutes en voiture. Toboggans pour tous les âges, piscine à vagues, espace enfants et coins pique-nique. Bondé les week-ends d'été : arrivez à l'ouverture ou prenez le coupe-file.",
+        "ca": "La sortida més propera, a 10 minuts amb cotxe. Tobogans per a totes les edats, piscina d'onades, zona infantil i zones de pícnic. Ple els caps de setmana d'estiu: arriba a l'obertura o compra el passi ràpid.",
+        "de": "Der nächste Ausflug, 10 Minuten mit dem Auto. Rutschen für jedes Alter, Wellenbad, Kinderbereich und Picknickplätze. An Sommerwochenenden voll: zur Öffnung kommen oder den Fast Pass kaufen.",
+        "nl": "Het dichtstbijzijnde uitje, 10 minuten met de auto. Glijbanen voor elke leeftijd, golfslagbad, kinderzone en picknickplekken. Druk in zomerweekends: kom bij opening of koop de fast pass."
+      },
+      "hours": {
+        "en": "Expected dates and hours, based on the 2026 season. The park usually announces the new dates in spring.",
+        "es": "Fechas y horarios previstos, según la temporada 2026. El parque suele anunciar las nuevas fechas en primavera.",
+        "fr": "Dates et horaires prévus, d'après la saison 2026. Le parc annonce en général les nouvelles dates au printemps.",
+        "ca": "Dates i horaris previstos, segons la temporada 2026. El parc sol anunciar les noves dates a la primavera.",
+        "de": "Erwartete Daten und Zeiten, basierend auf der Saison 2026. Der Park gibt die neuen Daten meist im Frühling bekannt.",
+        "nl": "Verwachte data en tijden, op basis van het seizoen 2026. Het park maakt de nieuwe data meestal in het voorjaar bekend."
+      },
+      "tags": [],
+      "flags": [],
+      "phone": "977 68 76 56",
+      "url": "https://www.aqualeon.es/",
+      "icon": "waterpark",
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "11:00",
+          "close": "18:00",
+          "from": "06-13",
+          "to": "07-12"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "10:30",
+          "close": "18:00",
+          "from": "07-13",
+          "to": "08-23"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "11:00",
+          "close": "18:00",
+          "from": "08-24",
+          "to": "08-31"
+        }
+      ],
+      "tone": "red",
+      "group": "fun",
+      "rating": {
+        "stars": 3.5,
+        "count": 5937
+      },
+      "gmaps": "https://www.google.com/maps/place/Aqualeon/data=!4m2!3m1!1s0x12a3f50ecf498d79:0xd229d7b858521f8a"
+    },
+    {
+      "id": "bowling",
+      "name": {
+        "en": "Bowling & Arcade El Vendrell",
+        "es": "Bolera y recreativos El Vendrell",
+        "fr": "Bowling et arcade El Vendrell",
+        "ca": "Bitlles i recreatius El Vendrell",
+        "de": "Bowling & Arcade El Vendrell",
+        "nl": "Bowling & arcade El Vendrell"
+      },
+      "type": {
+        "en": "Bowling alley and big arcade, El Vendrell",
+        "es": "Bolera y gran sala de recreativos, El Vendrell",
+        "fr": "Bowling et grande salle d'arcade, El Vendrell",
+        "ca": "Bitlles i gran sala de recreatius, El Vendrell",
+        "de": "Bowlingbahn und große Spielhalle, El Vendrell",
+        "nl": "Bowlingbaan en grote speelhal, El Vendrell"
+      },
+      "town": "El Vendrell",
+      "place": "Centre d'Oci Les Mates",
+      "lat": 41.225187,
+      "lng": 1.544813,
+      "km_from_house": 10,
+      "description": {
+        "en": "As much fun for adults as for kids: bowling lanes and a huge arcade where you win tickets to swap for prizes, plus a bar, next to the cinema. Some days have great offers: check Packs y ofertas on the website.",
+        "es": "Tan divertido para adultos como para niños: pistas de bolos y una enorme sala de recreativos donde ganas tíquets para cambiar por premios, con bar, al lado del cine. Algunos días hay muy buenas ofertas: mira Packs y ofertas en la web.",
+        "fr": "Aussi amusant pour les adultes que pour les enfants : pistes de bowling et une immense salle d'arcade où l'on gagne des tickets à échanger contre des lots, avec un bar, à côté du cinéma. Certains jours, il y a de super offres : voir Packs y ofertas sur le site.",
+        "ca": "Tan divertit per als adults com per als nens: pistes de bitlles i una sala de recreatius enorme on guanyes tiquets per bescanviar per premis, amb bar, al costat del cinema. Alguns dies hi ha molt bones ofertes: mira Packs y ofertas al web.",
+        "de": "Für Erwachsene genauso lustig wie für Kinder: Bowlingbahnen und eine riesige Spielhalle, in der man Tickets gegen Preise sammelt, dazu eine Bar, neben dem Kino. An manchen Tagen gibt es tolle Angebote: siehe Packs y ofertas auf der Website.",
+        "nl": "Net zo leuk voor volwassenen als voor kinderen: bowlingbanen en een enorme speelhal waar je tickets wint om in te ruilen voor prijzen, plus een bar, naast de bioscoop. Sommige dagen zijn er mooie aanbiedingen: zie Packs y ofertas op de website."
+      },
+      "tags": [],
+      "flags": [],
+      "phone": "615 49 26 96",
+      "url": "https://bowlingelvendrell.com/packs-y-ofertas/",
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "sun"
+          ],
+          "open": "17:00",
+          "close": "23:00"
+        },
+        {
+          "days": [
+            "fri",
+            "sat"
+          ],
+          "open": "17:00",
+          "close": "02:00"
+        }
+      ],
+      "icon": "bowling",
+      "tone": "red",
+      "group": "fun",
+      "rating": {
+        "stars": 4.0,
+        "count": 1324
+      },
+      "gmaps": "https://www.google.com/maps/place/Bowling+El+Vendrell/data=!4m2!3m1!1s0x12a38b1eb6f643e3:0x920b1d3fdd897ab"
+    },
+    {
+      "id": "salting",
+      "name": {
+        "en": "Salting",
+        "es": "Salting",
+        "fr": "Salting",
+        "ca": "Salting",
+        "de": "Salting",
+        "nl": "Salting"
+      },
+      "type": {
+        "en": "Trampoline park, El Vendrell",
+        "es": "Camas elásticas, El Vendrell",
+        "fr": "Parc de trampolines, El Vendrell",
+        "ca": "Llits elàstics, El Vendrell",
+        "de": "Trampolinpark, El Vendrell",
+        "nl": "Trampolinepark, El Vendrell"
+      },
+      "town": "El Vendrell",
+      "place": "Carretera de Tarragona, 20",
+      "lat": 41.210437,
+      "lng": 1.533813,
+      "km_from_house": 10,
+      "description": {
+        "en": "Indoor trampolines for kids from about 3 years old, with a bar and seats for the grown-ups. Grip socks are required: about 2.50 € a pair, yours to keep. Good when it rains or it is too hot.",
+        "es": "Camas elásticas cubiertas para niños desde unos 3 años, con bar y asientos para los mayores. Calcetines antideslizantes obligatorios: unos 2,50 € el par, te los quedas. Ideal si llueve o hace demasiado calor.",
+        "fr": "Trampolines en intérieur pour les enfants dès 3 ans environ, avec un bar et des sièges pour les grands. Chaussettes antidérapantes obligatoires : environ 2,50 € la paire, à garder. Idéal s'il pleut ou s'il fait trop chaud.",
+        "ca": "Llits elàstics coberts per a nens a partir d'uns 3 anys, amb bar i seients per als grans. Mitjons antilliscants obligatoris: uns 2,50 € el parell, te'ls quedes. Ideal si plou o fa massa calor.",
+        "de": "Indoor-Trampoline für Kinder ab etwa 3 Jahren, mit Bar und Sitzplätzen für die Großen. Rutschsocken sind Pflicht: etwa 2,50 € pro Paar, zum Behalten. Gut bei Regen oder großer Hitze.",
+        "nl": "Overdekte trampolines voor kinderen vanaf ongeveer 3 jaar, met een bar en zitplekken voor de volwassenen. Antislipsokken verplicht: ongeveer 2,50 € per paar, die je houdt. Goed bij regen of als het te warm is."
+      },
+      "tags": [],
+      "flags": [],
+      "phone": "602 25 01 95",
+      "url": "https://www.salting.es/parque-de-camas-elasticas-vendrell/",
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu"
+          ],
+          "open": "17:00",
+          "close": "21:00"
+        },
+        {
+          "days": [
+            "fri"
+          ],
+          "open": "17:00",
+          "close": "23:00"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "11:00",
+          "close": "23:00"
+        },
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "11:00",
+          "close": "21:00"
+        }
+      ],
+      "icon": "trampoline",
+      "tone": "red",
+      "group": "fun",
+      "rating": {
+        "stars": 3.9,
+        "count": 271
+      },
+      "gmaps": "https://www.google.com/maps/place/Salting/data=!4m2!3m1!1s0x12a38b26c757895d:0xbb100b11de703146"
+    },
+    {
+      "id": "karting-comaruga",
+      "name": {
+        "en": "Karting Coma-ruga",
+        "es": "Karting Coma-ruga",
+        "fr": "Karting Coma-ruga",
+        "ca": "Karting Coma-ruga",
+        "de": "Karting Coma-ruga",
+        "nl": "Karting Coma-ruga"
+      },
+      "type": {
+        "en": "Go-karts, Coma-ruga",
+        "es": "Karts, Coma-ruga",
+        "fr": "Karting, Coma-ruga",
+        "ca": "Karts, Coma-ruga",
+        "de": "Kartbahn, Coma-ruga",
+        "nl": "Karting, Coma-ruga"
+      },
+      "town": "Coma-ruga",
+      "place": "N-340, km 1188",
+      "lat": 41.192437,
+      "lng": 1.526062,
+      "km_from_house": 12,
+      "description": {
+        "en": "A small, fun track with a separate circuit for kids and two-seater karts, so little ones can ride with a parent. No booking needed. Marc and Álex Márquez learned to race here.",
+        "es": "Un circuito pequeño y divertido, con pista aparte para niños y karts biplaza para que los peques vayan con un adulto. No hace falta reservar. Aquí aprendieron a correr Marc y Álex Márquez.",
+        "fr": "Un petit circuit très amusant, avec une piste pour les enfants et des karts biplaces pour que les petits roulent avec un parent. Pas besoin de réserver. Marc et Álex Márquez y ont appris à piloter.",
+        "ca": "Un circuit petit i divertit, amb pista a part per a nens i karts biplaça perquè els petits vagin amb un adult. No cal reservar. Aquí van aprendre a córrer el Marc i l'Àlex Márquez.",
+        "de": "Eine kleine, lustige Bahn mit eigener Kinderstrecke und Doppelsitzer-Karts, so fahren die Kleinen mit einem Elternteil. Keine Reservierung nötig. Hier haben Marc und Álex Márquez das Rennfahren gelernt.",
+        "nl": "Een klein, leuk circuit met een aparte kinderbaan en tweezitters, zodat kleintjes met een ouder kunnen meerijden. Reserveren is niet nodig. Marc en Álex Márquez leerden hier racen."
+      },
+      "tags": [],
+      "flags": [],
+      "phone": "678 32 06 56",
+      "url": "https://kartingcomaruga.com/",
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "10:00",
+          "close": "14:00"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "16:00",
+          "close": "20:00"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "10:00",
+          "close": "21:00"
+        },
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "20:00"
+        }
+      ],
+      "icon": "kart",
+      "tone": "red",
+      "group": "fun",
+      "rating": {
+        "stars": 4.5,
+        "count": 905
+      },
+      "gmaps": "https://www.google.com/maps/place/Karting+Coma-ruga/data=!4m2!3m1!1s0x12a38b30a72263cb:0x556ce06e75a62c1a"
+    },
+    {
+      "id": "karting-vendrell",
+      "name": {
+        "en": "Karting Vendrell",
+        "es": "Karting Vendrell",
+        "fr": "Karting Vendrell",
+        "ca": "Karting Vendrell",
+        "de": "Karting Vendrell",
+        "nl": "Karting Vendrell"
+      },
+      "type": {
+        "en": "Go-karts & laser tag, El Vendrell",
+        "es": "Karts y láser tag, El Vendrell",
+        "fr": "Karting et laser game, El Vendrell",
+        "ca": "Karts i làser tag, El Vendrell",
+        "de": "Kartbahn & Lasertag, El Vendrell",
+        "nl": "Karting & lasergame, El Vendrell"
+      },
+      "town": "El Vendrell",
+      "place": "N-340, km 1189",
+      "lat": 41.198187,
+      "lng": 1.528688,
+      "km_from_house": 12,
+      "description": {
+        "en": "The big one: a 1.3 km track with fast karts for teens and adults, a kids' track and laser tag. Just next to Karting Coma-ruga, so you can compare.",
+        "es": "El grande: un circuito de 1,3 km con karts rápidos para adolescentes y adultos, pista infantil y láser tag. Justo al lado de Karting Coma-ruga.",
+        "fr": "Le grand : un circuit de 1,3 km avec des karts rapides pour ados et adultes, une piste enfants et du laser game. Juste à côté de Karting Coma-ruga.",
+        "ca": "El gran: un circuit d'1,3 km amb karts ràpids per a adolescents i adults, pista infantil i làser tag. Just al costat de Karting Coma-ruga.",
+        "de": "Die große Bahn: 1,3 km mit schnellen Karts für Teenager und Erwachsene, eine Kinderstrecke und Lasertag. Gleich neben Karting Coma-ruga.",
+        "nl": "De grote: een circuit van 1,3 km met snelle karts voor tieners en volwassenen, een kinderbaan en lasergame. Vlak naast Karting Coma-ruga."
+      },
+      "tags": [],
+      "flags": [],
+      "phone": "977 66 37 76",
+      "url": "https://kartingvendrell.com/",
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "10:00",
+          "close": "14:00"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "16:00",
+          "close": "20:00"
+        },
+        {
+          "days": [
+            "sat",
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "21:00"
+        }
+      ],
+      "icon": "kart",
+      "tone": "red",
+      "group": "fun",
+      "rating": {
+        "stars": 4.3,
+        "count": 2876
+      },
+      "gmaps": "https://www.google.com/maps/place/Karting+Vendrell/data=!4m2!3m1!1s0x12a38b505ce6e4fb:0xfdcf344837c1c3d0"
+    },
+    {
+      "id": "portaventura",
+      "icon": "themepark",
+      "group": "fun",
+      "tone": "red",
+      "name": {
+        "en": "PortAventura",
+        "es": "PortAventura",
+        "fr": "PortAventura",
+        "ca": "PortAventura",
+        "de": "PortAventura",
+        "nl": "PortAventura"
+      },
+      "type": {
+        "en": "Theme park, Salou",
+        "es": "Parque temático, Salou",
+        "fr": "Parc d'attractions, Salou",
+        "ca": "Parc temàtic, Salou",
+        "de": "Freizeitpark, Salou",
+        "nl": "Pretpark, Salou"
+      },
+      "town": "Salou",
+      "place": "PortAventura World",
+      "lat": 41.0872134,
+      "lng": 1.1533633,
+      "km_from_house": 45,
+      "description": {
+        "en": "The big theme park of the coast, 40 minutes away: rides for every age, shows, and next door Ferrari Land and a water park in summer. Plan a full day and buy tickets online.",
+        "es": "El gran parque temático de la costa, a 40 minutos: atracciones para todas las edades, espectáculos y, al lado, Ferrari Land y un parque acuático en verano. Cuenta con un día entero y compra las entradas online.",
+        "fr": "Le grand parc d'attractions de la côte, à 40 minutes : manèges pour tous les âges, spectacles, et à côté Ferrari Land et un parc aquatique en été. Prévoyez une journée entière et achetez les billets en ligne.",
+        "ca": "El gran parc temàtic de la costa, a 40 minuts: atraccions per a totes les edats, espectacles i, al costat, Ferrari Land i un parc aquàtic a l'estiu. Compta un dia sencer i compra les entrades online.",
+        "de": "Der große Freizeitpark an der Küste, 40 Minuten entfernt: Fahrgeschäfte für jedes Alter, Shows, nebenan Ferrari Land und im Sommer ein Wasserpark. Einen ganzen Tag einplanen und Tickets online kaufen.",
+        "nl": "Het grote pretpark aan de kust, 40 minuten verderop: attracties voor alle leeftijden, shows, en ernaast Ferrari Land en in de zomer een waterpark. Reken op een hele dag en koop tickets online."
+      },
+      "hours": {
+        "en": "Open most of the year. The 2026 season runs from late March to 6 January 2027, with some weekends from mid-February. Hours change day by day: check the calendar on portaventuraworld.com.",
+        "es": "Abre casi todo el año. La temporada 2026 va de finales de marzo al 6 de enero de 2027, con algunos fines de semana desde mediados de febrero. El horario cambia cada día: mira el calendario en portaventuraworld.com.",
+        "fr": "Ouvert presque toute l'année. La saison 2026 va de fin mars au 6 janvier 2027, avec quelques week-ends dès mi-février. Les horaires changent chaque jour : consultez le calendrier sur portaventuraworld.com.",
+        "ca": "Obre gairebé tot l'any. La temporada 2026 va de finals de març al 6 de gener de 2027, amb alguns caps de setmana des de mitjan febrer. L'horari canvia cada dia: mira el calendari a portaventuraworld.com.",
+        "de": "Fast das ganze Jahr geöffnet. Die Saison 2026 läuft von Ende März bis 6. Januar 2027, dazu einige Wochenenden ab Mitte Februar. Die Zeiten ändern sich täglich: Kalender auf portaventuraworld.com prüfen.",
+        "nl": "Bijna het hele jaar open. Het seizoen 2026 loopt van eind maart tot 6 januari 2027, met een paar weekenden vanaf half februari. De tijden verschillen per dag: kijk op de kalender van portaventuraworld.com."
+      },
+      "tags": [],
+      "url": "https://www.portaventuraworld.com/",
+      "flags": [],
+      "rating": {
+        "stars": 4.1,
+        "count": 34912
+      },
+      "gmaps": "https://www.google.com/maps/place/PortAventura/data=!4m2!3m1!1s0x12a159bb97a24019:0x9bb01aabaec2d626"
+    },
+    {
+      "id": "posesion",
+      "icon": "escape",
+      "group": "fun",
+      "tone": "red",
+      "name": {
+        "en": "La Posesión",
+        "es": "La Posesión",
+        "fr": "La Posesión",
+        "ca": "La Posesión",
+        "de": "La Posesión",
+        "nl": "La Posesión"
+      },
+      "type": {
+        "en": "Horror escape room, Sant Sadurní d'Anoia",
+        "es": "Escape room de terror, Sant Sadurní d'Anoia",
+        "fr": "Escape game d'horreur, Sant Sadurní d'Anoia",
+        "ca": "Escape room de terror, Sant Sadurní d'Anoia",
+        "de": "Horror-Escape-Room, Sant Sadurní d'Anoia",
+        "nl": "Horror-escaperoom, Sant Sadurní d'Anoia"
+      },
+      "town": "Sant Sadurní d'Anoia",
+      "place": "Passeig de Can Ferrer del Mas, 24",
+      "lat": 41.430437,
+      "lng": 1.785562,
+      "km_from_house": 43,
+      "description": {
+        "en": "A horror escape room with live actors, and genuinely scary. Highly recommended if you like being scared, not for young children. Easy to combine with a cava tasting in the same town.",
+        "es": "Un escape room de terror con actores, y da miedo de verdad. Muy recomendable si te gusta pasar miedo, no apto para niños pequeños. Fácil de combinar con una cata de cava en el mismo pueblo.",
+        "fr": "Un escape game d'horreur avec des acteurs, qui fait vraiment peur. Très recommandé si vous aimez avoir peur, pas pour les jeunes enfants. Facile à combiner avec une dégustation de cava dans la même ville.",
+        "ca": "Un escape room de terror amb actors, i fa por de debò. Molt recomanable si t'agrada passar por, no apte per a nens petits. Fàcil de combinar amb un tast de cava al mateix poble.",
+        "de": "Ein Horror-Escape-Room mit Schauspielern, und wirklich gruselig. Sehr zu empfehlen, wenn man sich gern fürchtet, nichts für kleine Kinder. Gut zu verbinden mit einer Cava-Verkostung im selben Ort.",
+        "nl": "Een horror-escaperoom met acteurs, en echt eng. Een aanrader als je graag bang wordt, niet voor jonge kinderen. Makkelijk te combineren met een cavaproeverij in hetzelfde stadje."
+      },
+      "hours": {
+        "en": "By booking only, from 10:00.",
+        "es": "Solo con reserva, desde las 10:00.",
+        "fr": "Sur réservation uniquement, dès 10h.",
+        "ca": "Només amb reserva, des de les 10:00.",
+        "de": "Nur mit Reservierung, ab 10 Uhr.",
+        "nl": "Alleen op reservering, vanaf 10:00."
+      },
+      "tags": [],
+      "flags": [
+        "book"
+      ],
+      "phone": "651 42 91 33",
+      "rating": {
+        "stars": 4.9,
+        "count": 853
+      },
+      "gmaps": "https://www.google.com/maps/place/La+Posesi%C3%B3n/data=!4m2!3m1!1s0x12a463d3e4093171:0x44632f8a90227da3",
+      "url": "https://www.fearfactoryexp.com/"
+    },
+    {
+      "id": "spa",
+      "icon": "spring",
+      "group": "fun",
+      "tone": "red",
+      "name": {
+        "en": "Balneari de Coma-ruga",
+        "es": "Balneari de Coma-ruga",
+        "fr": "Balneari de Coma-ruga",
+        "ca": "Balneari de Coma-ruga",
+        "de": "Balneari de Coma-ruga",
+        "nl": "Balneari de Coma-ruga"
+      },
+      "type": {
+        "en": "Thermal spa, Coma-ruga",
+        "es": "Balneario, Coma-ruga",
+        "fr": "Spa thermal, Coma-ruga",
+        "ca": "Balneari, Coma-ruga",
+        "de": "Thermalbad, Coma-ruga",
+        "nl": "Kuurbad, Coma-ruga"
+      },
+      "town": "Coma-ruga",
+      "place": "Avinguda Balneari, 4-6",
+      "lat": 41.181812,
+      "lng": 1.524312,
+      "km_from_house": 14,
+      "description": {
+        "en": "The spa of the Hotel Balneari, on the seafront, using Coma-ruga's mineral water: thermal pools and circuit, plus massages and treatments. Day visits can be booked without staying at the hotel. A treat for a grey day.",
+        "es": "El balneario del Hotel Balneari, frente al mar, con el agua mineral de Coma-ruga: piscinas y circuito termal, además de masajes y tratamientos. Se puede reservar una visita de día sin alojarse en el hotel. Un capricho para un día gris.",
+        "fr": "Le spa de l'Hôtel Balneari, face à la mer, avec l'eau minérale de Coma-ruga : bassins et parcours thermal, plus massages et soins. On peut réserver une visite à la journée sans dormir à l'hôtel. Un plaisir pour un jour gris.",
+        "ca": "El balneari de l'Hotel Balneari, davant del mar, amb l'aigua mineral de Coma-ruga: piscines i circuit termal, a més de massatges i tractaments. Es pot reservar una visita de dia sense allotjar-se a l'hotel. Un caprici per a un dia gris.",
+        "de": "Das Thermalbad des Hotel Balneari direkt am Meer, mit dem Mineralwasser von Coma-ruga: Thermalbecken und -parcours, dazu Massagen und Anwendungen. Tagesbesuche sind auch ohne Hotelübernachtung buchbar. Ein Genuss für einen grauen Tag.",
+        "nl": "Het kuurbad van het Hotel Balneari aan zee, met het mineraalwater van Coma-ruga: thermale baden en circuit, plus massages en behandelingen. Je kunt een dagbezoek boeken zonder in het hotel te slapen. Een verwennerij voor een grijze dag."
+      },
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "10:30",
+          "close": "14:00"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "16:00",
+          "close": "21:00"
+        }
+      ],
+      "hours": {
+        "en": "Book the circuit or treatments in advance on the hotel's website or by phone.",
+        "es": "Reserva el circuito o los tratamientos con antelación en la web del hotel o por teléfono.",
+        "fr": "Réservez le parcours ou les soins à l'avance sur le site de l'hôtel ou par téléphone.",
+        "ca": "Reserva el circuit o els tractaments amb antelació a la web de l'hotel o per telèfon.",
+        "de": "Parcours oder Anwendungen vorher auf der Website des Hotels oder telefonisch buchen.",
+        "nl": "Boek het circuit of behandelingen vooraf via de website van het hotel of telefonisch."
+      },
+      "tags": [],
+      "flags": [
+        "book"
+      ],
+      "phone": "977 68 48 08",
+      "url": "https://www.hotelbalnearioplayadecomarruga.com/es-ES/balneario.aspx",
+      "rating": {
+        "stars": 4.0,
+        "count": 2460
+      },
+      "gmaps": "https://www.google.com/maps/place/Balneari+de+Coma-ruga/data=!4m2!3m1!1s0x12a1583585e8b8f5:0x1de2a6d17457c1dc"
+    },
+    {
+      "id": "riuet",
+      "name": {
+        "en": "El Riuet",
+        "es": "El Riuet",
+        "fr": "El Riuet",
+        "ca": "El Riuet",
+        "de": "El Riuet",
+        "nl": "El Riuet"
+      },
+      "type": {
+        "en": "Natural spring on the beach, Coma-ruga",
+        "es": "Manantial en la playa, Coma-ruga",
+        "fr": "Source sur la plage, Coma-ruga",
+        "ca": "Font a la platja, Coma-ruga",
+        "de": "Quelle am Strand, Coma-ruga",
+        "nl": "Bron op het strand, Coma-ruga"
+      },
+      "town": "Coma-ruga",
+      "place": "Platja de Coma-ruga",
+      "lat": 41.180563,
+      "lng": 1.524063,
+      "km_from_house": 14,
+      "description": {
+        "en": "A mineral spring that rises right on Coma-ruga beach and flows into the sea as a little stream. The water stays between 18 and 21 °C all year: lovely in winter, refreshing in summer. Shallow with a sandy bottom, safe for small children. Free.",
+        "es": "Un manantial de agua mineral que brota en plena playa de Coma-ruga y llega al mar como un riachuelo. El agua está entre 18 y 21 °C todo el año: agradable en invierno, refrescante en verano. Poco profundo y con fondo de arena, seguro para los peques. Gratis.",
+        "fr": "Une source d'eau minérale qui jaillit sur la plage de Coma-ruga et rejoint la mer en petit ruisseau. L'eau reste entre 18 et 21 °C toute l'année : agréable en hiver, rafraîchissante en été. Peu profond, fond de sable, sans danger pour les petits. Gratuit.",
+        "ca": "Una font d'aigua mineral que brolla a la platja de Coma-ruga i arriba al mar com un rierol. L'aigua és entre 18 i 21 °C tot l'any: agradable a l'hivern, refrescant a l'estiu. Poc fondo i amb fons de sorra, segur per als petits. Gratuït.",
+        "de": "Eine Mineralquelle direkt am Strand von Coma-ruga, die als kleiner Bach ins Meer fließt. Das Wasser hat das ganze Jahr 18 bis 21 °C: angenehm im Winter, erfrischend im Sommer. Flach mit Sandboden, sicher für kleine Kinder. Kostenlos.",
+        "nl": "Een minerale bron die midden op het strand van Coma-ruga opborrelt en als beekje naar zee stroomt. Het water is het hele jaar 18 tot 21 °C: heerlijk in de winter, verfrissend in de zomer. Ondiep met zandbodem, veilig voor kleine kinderen. Gratis."
+      },
+      "hours": {
+        "en": "The town started works on the spring in 2026 and recent visitors are unhappy with the changes, so take a look before planning a day around it. A lifeguard watches the Riuet in summer.",
+        "es": "El ayuntamiento empezó obras en el manantial en 2026 y a los visitantes recientes no les gustan los cambios: échale un vistazo antes de organizar el día. En verano hay un socorrista en el Riuet.",
+        "fr": "La mairie a lancé des travaux sur la source en 2026 et les visiteurs récents n'aiment pas les changements : jetez un œil avant d'organiser la journée. Un sauveteur surveille le Riuet en été.",
+        "ca": "L'ajuntament va començar obres a la font el 2026 i als visitants recents no els agraden els canvis: fes-hi un cop d'ull abans d'organitzar el dia. A l'estiu hi ha un socorrista al Riuet.",
+        "de": "Die Gemeinde hat 2026 mit Bauarbeiten an der Quelle begonnen, und neuere Besucher mögen die Änderungen nicht. Vorher kurz anschauen. Im Sommer passt ein Rettungsschwimmer am Riuet auf.",
+        "nl": "De gemeente is in 2026 met werkzaamheden aan de bron begonnen en recente bezoekers zijn niet blij met de veranderingen: kijk even voor je je dag eromheen plant. In de zomer let een strandwacht op de Riuet."
+      },
+      "tags": [
+        "free"
+      ],
+      "flags": [
+        "check"
+      ],
+      "icon": "spring",
+      "always": true,
+      "tone": "blue",
+      "group": "beach",
+      "rating": {
+        "stars": 4.4,
+        "count": 906
+      },
+      "gmaps": "https://www.google.com/maps/place/El+Riuet/data=!4m2!3m1!1s0x12a38d0046d98bfd:0xd5f410b5f63ffdbf"
+    },
+    {
+      "id": "beach-creixell",
+      "name": {
+        "en": "Creixell Beach",
+        "es": "Playa de Creixell",
+        "fr": "Plage de Creixell",
+        "ca": "Platja de Creixell",
+        "de": "Strand von Creixell",
+        "nl": "Strand van Creixell"
+      },
+      "type": {
+        "en": "Our favourite beach",
+        "es": "Nuestra playa favorita",
+        "fr": "Notre plage préférée",
+        "ca": "La nostra platja preferida",
+        "de": "Unser Lieblingsstrand",
+        "nl": "Ons favoriete strand"
+      },
+      "town": "Creixell",
+      "place": "Avinguda de la Platja",
+      "lat": 41.1560667,
+      "lng": 1.4415813,
+      "km_from_house": 17,
+      "description": {
+        "en": "Our favourite beach: more than 1.5 km of fine white sand, shallow and clear water, and calmer than the town beaches. The south end, El Gorg, is protected, with dunes and marshes and no buildings. Lifeguards, toilets and beach bars in summer.",
+        "es": "Nuestra playa favorita: más de 1,5 km de arena blanca y fina, agua clara y poco profunda, y más tranquila que las playas de los pueblos. El extremo sur, El Gorg, está protegido, con dunas y marismas y sin edificios. Socorristas, lavabos y chiringuitos en verano.",
+        "fr": "Notre plage préférée : plus de 1,5 km de sable blanc et fin, une eau claire et peu profonde, et plus calme que les plages des villes. Le bout sud, El Gorg, est protégé, avec dunes et marais, sans immeubles. Sauveteurs, toilettes et paillotes en été.",
+        "ca": "La nostra platja preferida: més d'1,5 km de sorra blanca i fina, aigua clara i poc fonda, i més tranquil·la que les platges dels pobles. L'extrem sud, El Gorg, és protegit, amb dunes i aiguamolls i sense edificis. Socorristes, lavabos i xiringuitos a l'estiu.",
+        "de": "Unser Lieblingsstrand: über 1,5 km feiner weißer Sand, flaches klares Wasser und ruhiger als die Ortsstrände. Das Südende, El Gorg, ist geschützt, mit Dünen und Feuchtgebieten, ohne Bebauung. Rettungsschwimmer, Toiletten und Strandbars im Sommer.",
+        "nl": "Ons favoriete strand: meer dan 1,5 km fijn wit zand, helder en ondiep water, en rustiger dan de stadsstranden. Het zuidelijke deel, El Gorg, is beschermd, met duinen en moeras en geen gebouwen. Strandwacht, toiletten en strandbars in de zomer."
+      },
+      "tags": [
+        "free"
+      ],
+      "flags": [],
+      "icon": "beach",
+      "always": true,
+      "hours": {
+        "en": "Lifeguards every day from 11:00 to 19:00 in summer: in 2026 from 20 June to 31 August.",
+        "es": "Socorristas todos los días de 11:00 a 19:00 en verano: en 2026, del 20 de junio al 31 de agosto.",
+        "fr": "Sauveteurs tous les jours de 11h à 19h en été : en 2026, du 20 juin au 31 août.",
+        "ca": "Socorristes cada dia d'11:00 a 19:00 a l'estiu: el 2026, del 20 de juny al 31 d'agost.",
+        "de": "Rettungsschwimmer im Sommer täglich von 11 bis 19 Uhr: 2026 vom 20. Juni bis 31. August.",
+        "nl": "Strandwacht in de zomer elke dag van 11:00 tot 19:00: in 2026 van 20 juni tot 31 augustus."
+      },
+      "tone": "blue",
+      "group": "beach",
+      "rating": {
+        "stars": 4.5,
+        "count": 179
+      },
+      "gmaps": "https://www.google.com/maps/place/Platja+de+Creixell/data=!4m2!3m1!1s0x12a3f17e5fd4fc85:0xbbfa2790e3dd600c"
+    },
+    {
+      "id": "beach-comaruga",
+      "name": {
+        "en": "Coma-ruga Beach",
+        "es": "Playa de Coma-ruga",
+        "fr": "Plage de Coma-ruga",
+        "ca": "Platja de Coma-ruga",
+        "de": "Strand von Coma-ruga",
+        "nl": "Strand van Coma-ruga"
+      },
+      "type": {
+        "en": "Town beach with promenade",
+        "es": "Playa urbana con paseo",
+        "fr": "Plage urbaine avec promenade",
+        "ca": "Platja urbana amb passeig",
+        "de": "Ortsstrand mit Promenade",
+        "nl": "Stadsstrand met boulevard"
+      },
+      "town": "Coma-ruga",
+      "place": "Passeig Marítim",
+      "lat": 41.1792149,
+      "lng": 1.5257316,
+      "km_from_house": 14,
+      "description": {
+        "en": "A wide town beach, over 2 km of golden sand with a gentle slope into calm water. The promenade has shops, ice cream and restaurants, lively on summer evenings. The Riuet spring is on this beach.",
+        "es": "Una playa urbana amplia, más de 2 km de arena dorada que entra suave en un agua tranquila. El paseo tiene tiendas, heladerías y restaurantes, con ambiente las noches de verano. El Riuet está en esta playa.",
+        "fr": "Une large plage urbaine, plus de 2 km de sable doré qui descend doucement dans une eau calme. La promenade a des boutiques, des glaciers et des restaurants, animée les soirs d'été. Le Riuet est sur cette plage.",
+        "ca": "Una platja urbana àmplia, més de 2 km de sorra daurada que entra suau en una aigua tranquil·la. El passeig té botigues, gelateries i restaurants, amb ambient les nits d'estiu. El Riuet és en aquesta platja.",
+        "de": "Ein breiter Ortsstrand, über 2 km goldener Sand, sanft abfallend ins ruhige Wasser. Auf der Promenade gibt es Geschäfte, Eis und Restaurants, an Sommerabenden belebt. Die Riuet-Quelle liegt an diesem Strand.",
+        "nl": "Een breed stadsstrand, ruim 2 km goudgeel zand dat zacht afloopt in rustig water. De boulevard heeft winkels, ijs en restaurants, gezellig op zomeravonden. De Riuet-bron ligt op dit strand."
+      },
+      "tags": [
+        "free"
+      ],
+      "flags": [],
+      "icon": "beach",
+      "always": true,
+      "hours": {
+        "en": "Lifeguards every day in summer: in 2026 from late June to mid-September.",
+        "es": "Socorristas todos los días en verano: en 2026, de finales de junio a mediados de septiembre.",
+        "fr": "Sauveteurs tous les jours en été : en 2026, de fin juin à mi-septembre.",
+        "ca": "Socorristes cada dia a l'estiu: el 2026, de finals de juny a mitjan setembre.",
+        "de": "Rettungsschwimmer täglich im Sommer: 2026 von Ende Juni bis Mitte September.",
+        "nl": "Strandwacht elke dag in de zomer: in 2026 van eind juni tot half september."
+      },
+      "tone": "blue",
+      "group": "beach",
+      "rating": {
+        "stars": 4.4,
+        "count": 2395
+      },
+      "gmaps": "https://www.google.com/maps/place/Platja+de+Coma-ruga/data=!4m2!3m1!1s0x12a3f34dac8af585:0x3aa5c63ddfff877c"
+    },
+    {
+      "id": "beach-santsalvador",
+      "name": {
+        "en": "Sant Salvador Beach",
+        "es": "Playa de Sant Salvador",
+        "fr": "Plage de Sant Salvador",
+        "ca": "Platja de Sant Salvador",
+        "de": "Strand von Sant Salvador",
+        "nl": "Strand van Sant Salvador"
+      },
+      "type": {
+        "en": "Quieter beach with promenade",
+        "es": "Playa tranquila con paseo",
+        "fr": "Plage plus calme avec promenade",
+        "ca": "Platja tranquil·la amb passeig",
+        "de": "Ruhigerer Strand mit Promenade",
+        "nl": "Rustiger strand met boulevard"
+      },
+      "town": "Sant Salvador",
+      "place": "Passeig Marítim",
+      "lat": 41.1818202,
+      "lng": 1.5344812,
+      "km_from_house": 14,
+      "description": {
+        "en": "Next to Coma-ruga and quieter: almost 3 km of fine sand and clear water in front of a residential area. Our favourite rice, Casinet, is on the promenade, and the Pau Casals museum is a short walk away.",
+        "es": "Al lado de Coma-ruga y más tranquila: casi 3 km de arena fina y agua clara frente a una zona residencial. Nuestro arroz favorito, Casinet, está en el paseo, y el museo Pau Casals a un paso.",
+        "fr": "À côté de Coma-ruga et plus calme : près de 3 km de sable fin et d'eau claire devant un quartier résidentiel. Notre riz préféré, Casinet, est sur la promenade, et le musée Pau Casals à deux pas.",
+        "ca": "Al costat de Coma-ruga i més tranquil·la: gairebé 3 km de sorra fina i aigua clara davant d'una zona residencial. El nostre arròs preferit, el Casinet, és al passeig, i el museu Pau Casals a tocar.",
+        "de": "Neben Coma-ruga und ruhiger: fast 3 km feiner Sand und klares Wasser vor einem Wohnviertel. Unser Lieblingsreis, Casinet, liegt an der Promenade, das Pau-Casals-Museum ist ein paar Schritte entfernt.",
+        "nl": "Naast Coma-ruga en rustiger: bijna 3 km fijn zand en helder water voor een woonwijk. Onze favoriete rijst, Casinet, zit aan de boulevard, en het Pau Casals-museum is om de hoek."
+      },
+      "tags": [
+        "free"
+      ],
+      "flags": [],
+      "icon": "beach",
+      "always": true,
+      "hours": {
+        "en": "Lifeguards every day in summer: in 2026 from late June to mid-September.",
+        "es": "Socorristas todos los días en verano: en 2026, de finales de junio a mediados de septiembre.",
+        "fr": "Sauveteurs tous les jours en été : en 2026, de fin juin à mi-septembre.",
+        "ca": "Socorristes cada dia a l'estiu: el 2026, de finals de juny a mitjan setembre.",
+        "de": "Rettungsschwimmer täglich im Sommer: 2026 von Ende Juni bis Mitte September.",
+        "nl": "Strandwacht elke dag in de zomer: in 2026 van eind juni tot half september."
+      },
+      "tone": "blue",
+      "group": "beach",
+      "rating": {
+        "stars": 4.5,
+        "count": 838
+      },
+      "gmaps": "https://www.google.com/maps/place/Platja+de+Sant+Salvador/data=!4m2!3m1!1s0x12a38ca4d08bf98d:0x3cbc06e60982e2d6"
+    },
+    {
+      "id": "beach-dogs",
+      "icon": "beach",
+      "group": "beach",
+      "tone": "blue",
+      "name": {
+        "en": "Coma-ruga Dog Beach",
+        "es": "Playa para perros de Coma-ruga",
+        "fr": "Plage pour chiens de Coma-ruga",
+        "ca": "Platja per a gossos de Coma-ruga",
+        "de": "Hundestrand Coma-ruga",
+        "nl": "Hondenstrand Coma-ruga"
+      },
+      "type": {
+        "en": "Beach where dogs can swim",
+        "es": "Playa donde los perros pueden bañarse",
+        "fr": "Plage où les chiens peuvent se baigner",
+        "ca": "Platja on els gossos es poden banyar",
+        "de": "Strand, an dem Hunde baden dürfen",
+        "nl": "Strand waar honden mogen zwemmen"
+      },
+      "town": "Coma-ruga",
+      "place": "Passeig Marítim, in front of the Alberg gardens",
+      "lat": 41.181687,
+      "lng": 1.531438,
+      "km_from_house": 14,
+      "always": true,
+      "description": {
+        "en": "El Vendrell's beach area for dogs, about 2,500 m² in front of the youth hostel gardens in Coma-ruga. Dogs can go in the water with you, even in summer when the other beaches do not allow them.",
+        "es": "La zona de playa para perros de El Vendrell, unos 2.500 m² frente a los jardines del albergue de Coma-ruga. Los perros pueden bañarse contigo, incluso en verano cuando las otras playas no lo permiten.",
+        "fr": "L'espace plage pour chiens d'El Vendrell, environ 2 500 m² devant les jardins de l'auberge de jeunesse de Coma-ruga. Les chiens peuvent se baigner avec vous, même en été quand les autres plages ne les acceptent pas.",
+        "ca": "La zona de platja per a gossos del Vendrell, uns 2.500 m² davant dels jardins de l'alberg de Coma-ruga. Els gossos es poden banyar amb tu, fins i tot a l'estiu quan les altres platges no ho permeten.",
+        "de": "Der Hundestrand von El Vendrell, etwa 2.500 m² vor dem Garten der Jugendherberge in Coma-ruga. Hunde dürfen mit ins Wasser, auch im Sommer, wenn die anderen Strände sie nicht erlauben.",
+        "nl": "Het hondenstrand van El Vendrell, ongeveer 2.500 m² voor de tuin van de jeugdherberg in Coma-ruga. Honden mogen mee het water in, ook in de zomer als de andere stranden ze niet toelaten."
+      },
+      "tags": [
+        "dogs",
+        "free"
+      ],
+      "flags": [],
+      "rating": {
+        "stars": 4.4,
+        "count": 30
+      },
+      "gmaps": "https://www.google.com/maps/place/Platja+per+a+gossos+de+Coma-ruga/data=!4m2!3m1!1s0x12a38d00626e54b3:0x1c96191fc2d45489"
+    },
+    {
+      "id": "vilafranca",
+      "icon": "wine",
+      "name": {
+        "en": "Vilafranca del Penedès",
+        "es": "Vilafranca del Penedès",
+        "fr": "Vilafranca del Penedès",
+        "ca": "Vilafranca del Penedès",
+        "de": "Vilafranca del Penedès",
+        "nl": "Vilafranca del Penedès"
+      },
+      "type": {
+        "en": "Wine capital and Vinseum museum",
+        "es": "Capital del vino y museo Vinseum",
+        "fr": "Capitale du vin et musée Vinseum",
+        "ca": "Capital del vi i museu Vinseum",
+        "de": "Weinhauptstadt und Vinseum",
+        "nl": "Wijnhoofdstad en Vinseum-museum"
+      },
+      "town": "Vilafranca del Penedès",
+      "place": "Old town",
+      "lat": 41.346687,
+      "lng": 1.696937,
+      "km_from_house": 27,
+      "description": {
+        "en": "The capital of Penedès wine, 20 minutes away. Vinseum, the wine culture museum, is in a medieval palace in the old town, with tastings in its tavern. Come on Saturday morning for the big market.",
+        "es": "La capital del vino del Penedès, a 20 minutos. El Vinseum, museo de las culturas del vino, está en un palacio medieval del casco antiguo, con catas en su taberna. Ven el sábado por la mañana, hay un gran mercado.",
+        "fr": "La capitale du vin du Penedès, à 20 minutes. Le Vinseum, musée des cultures du vin, occupe un palais médiéval de la vieille ville, avec dégustations dans sa taverne. Venez le samedi matin pour le grand marché.",
+        "ca": "La capital del vi del Penedès, a 20 minuts. El Vinseum, museu de les cultures del vi, és en un palau medieval del nucli antic, amb tastos a la seva taverna. Vine dissabte al matí, hi ha un gran mercat.",
+        "de": "Die Weinhauptstadt des Penedès, 20 Minuten entfernt. Das Vinseum, Museum der Weinkultur, liegt in einem mittelalterlichen Palast in der Altstadt, mit Verkostungen in seiner Taverne. Samstagvormittag kommen: großer Markt.",
+        "nl": "De wijnhoofdstad van de Penedès, 20 minuten verderop. Het Vinseum, museum van de wijncultuur, zit in een middeleeuws paleis in de oude stad, met proeverijen in de taverne. Kom zaterdagochtend voor de grote markt."
+      },
+      "hours": {
+        "en": "Walking around the town is free. Vinseum (paid): Tue-Sat 10:00-19:00, Sun 10:00-14:00, closed on Mondays. Free for children under 12.",
+        "es": "Pasear por la ciudad es gratis. Vinseum (de pago): mar-sáb 10:00-19:00, dom 10:00-14:00, cerrado los lunes. Gratis para menores de 12 años.",
+        "fr": "Se promener dans la ville est gratuit. Vinseum (payant) : mar-sam 10h00-19h00, dim 10h00-14h00, fermé le lundi. Gratuit pour les moins de 12 ans.",
+        "ca": "Passejar per la vila és gratuït. Vinseum (de pagament): dt-ds 10:00-19:00, dg 10:00-14:00, tancat els dilluns. Gratuït per a menors de 12 anys.",
+        "de": "Ein Stadtbummel ist kostenlos. Vinseum (Eintritt): Di-Sa 10:00-19:00, So 10:00-14:00, montags geschlossen. Kinder unter 12 frei.",
+        "nl": "Rondlopen in de stad is gratis. Vinseum (betaald): di-za 10:00-19:00, zo 10:00-14:00, maandag dicht. Gratis voor kinderen onder 12."
+      },
+      "tags": [
+        "free"
+      ],
+      "phone": "938 90 05 82",
+      "group": "wine",
+      "tone": "wine",
+      "flags": [],
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=Vilafranca+del+Pened%C3%A8s",
+      "wiki": "Vilafranca del Penedès"
+    },
+    {
+      "id": "codorniu",
+      "icon": "wine",
+      "name": {
+        "en": "Codorníu",
+        "es": "Codorníu",
+        "fr": "Codorníu",
+        "ca": "Codorníu",
+        "de": "Codorníu",
+        "nl": "Codorníu"
+      },
+      "type": {
+        "en": "Cava cellars and tasting, Sant Sadurní d'Anoia",
+        "es": "Bodega de cava y cata, Sant Sadurní d'Anoia",
+        "fr": "Caves de cava et dégustation, Sant Sadurní d'Anoia",
+        "ca": "Caves de cava i tast, Sant Sadurní d'Anoia",
+        "de": "Cava-Kellerei & Verkostung, Sant Sadurní d'Anoia",
+        "nl": "Cavakelders & proeverij, Sant Sadurní d'Anoia"
+      },
+      "town": "Sant Sadurní d'Anoia",
+      "place": "Avinguda Jaume Codorníu",
+      "lat": 41.4336955,
+      "lng": 1.7968728,
+      "km_from_house": 43,
+      "description": {
+        "en": "Massive: the oldest cava house, with Modernista buildings and kilometres of underground cellars, and the tour ends with a tasting. Sant Sadurní is the capital of cava, with many smaller family cellars too if you prefer something more intimate.",
+        "es": "Enorme: la casa de cava más antigua, con edificios modernistas y kilómetros de cavas subterráneas, y la visita termina con una cata. Sant Sadurní es la capital del cava, con muchas bodegas familiares más pequeñas si prefieres algo más íntimo.",
+        "fr": "Immense : la plus ancienne maison de cava, avec des bâtiments modernistes et des kilomètres de caves souterraines, et la visite se termine par une dégustation. Sant Sadurní est la capitale du cava, avec aussi beaucoup de petites caves familiales si vous préférez plus intime.",
+        "ca": "Immensa: la casa de cava més antiga, amb edificis modernistes i quilòmetres de caves subterrànies, i la visita acaba amb un tast. Sant Sadurní és la capital del cava, amb moltes caves familiars més petites si prefereixes una cosa més íntima.",
+        "de": "Riesig: das älteste Cava-Haus, mit Jugendstilgebäuden und kilometerlangen unterirdischen Kellern, die Führung endet mit einer Verkostung. Sant Sadurní ist die Hauptstadt des Cava, mit vielen kleineren Familienkellereien, wenn man es persönlicher mag.",
+        "nl": "Enorm: het oudste cavahuis, met modernistische gebouwen en kilometers ondergrondse kelders, en de rondleiding eindigt met een proeverij. Sant Sadurní is de hoofdstad van de cava, met ook veel kleinere familiekelders als je het liever kleinschaliger hebt."
+      },
+      "hours": {
+        "en": "Guided visits only, booked online on codorniu.com.",
+        "es": "Solo visitas guiadas, con reserva en codorniu.com.",
+        "fr": "Visites guidées uniquement, sur réservation sur codorniu.com.",
+        "ca": "Només visites guiades, amb reserva a codorniu.com.",
+        "de": "Nur Führungen, online auf codorniu.com buchen.",
+        "nl": "Alleen rondleidingen, online te boeken via codorniu.com."
+      },
+      "tags": [],
+      "url": "https://www.codorniu.com/",
+      "group": "wine",
+      "tone": "wine",
+      "flags": [],
+      "rating": {
+        "stars": 4.5,
+        "count": 1813
+      },
+      "gmaps": "https://www.google.com/maps/place/Codorn%C3%ADu/data=!4m2!3m1!1s0x12a47cd299c6f307:0xb8d6fc3febc832b5"
+    },
+    {
+      "id": "gramona",
+      "name": {
+        "en": "Gramona",
+        "es": "Gramona",
+        "fr": "Gramona",
+        "ca": "Gramona",
+        "de": "Gramona",
+        "nl": "Gramona"
+      },
+      "type": {
+        "en": "Cava cellars and tasting, Sant Sadurní d'Anoia",
+        "es": "Bodega de cava y cata, Sant Sadurní d'Anoia",
+        "fr": "Caves de cava et dégustation, Sant Sadurní d'Anoia",
+        "ca": "Caves de cava i tast, Sant Sadurní d'Anoia",
+        "de": "Cava-Kellerei & Verkostung, Sant Sadurní d'Anoia",
+        "nl": "Cavakelders & proeverij, Sant Sadurní d'Anoia"
+      },
+      "place": "Carrer de la Indústria, 36",
+      "town": "Sant Sadurní d'Anoia",
+      "phone": "938 91 01 13",
+      "url": "https://www.gramona.com/",
+      "description": {
+        "en": "A family cava house with a long history and some of the most respected long-aged cavas. Smaller, more personal visits than the big brands.",
+        "es": "Una casa familiar de cava con larga historia y algunos de los cavas de larga crianza más respetados. Visitas más pequeñas y personales que las grandes marcas.",
+        "fr": "Une maison familiale de cava à la longue histoire, avec certains des cavas de longue garde les plus réputés. Des visites plus petites et personnelles que les grandes marques.",
+        "ca": "Una casa familiar de cava amb una llarga història i alguns dels caves de llarga criança més respectats. Visites més petites i personals que les grans marques.",
+        "de": "Ein Familienhaus mit langer Geschichte und einigen der angesehensten lang gereiften Cavas. Kleinere, persönlichere Besuche als bei den großen Marken.",
+        "nl": "Een cavahuis van een familie met een lange geschiedenis en enkele van de meest gewaardeerde lang gerijpte cava's. Kleinere, persoonlijkere bezoeken dan bij de grote merken."
+      },
+      "lat": 41.423312,
+      "lng": 1.786312,
+      "km_from_house": 42,
+      "icon": "wine",
+      "group": "wine",
+      "tone": "wine",
+      "tags": [],
+      "flags": [],
+      "hours": {
+        "en": "Visits by booking only, on the winery's website.",
+        "es": "Visitas solo con reserva, en la web de la bodega.",
+        "fr": "Visites sur réservation uniquement, sur le site de la cave.",
+        "ca": "Visites només amb reserva, a la web del celler.",
+        "de": "Besuche nur mit Reservierung über die Website des Weinguts.",
+        "nl": "Bezoek alleen op reservering, via de website van de wijnmakerij."
+      },
+      "rating": {
+        "stars": 4.8,
+        "count": 304
+      },
+      "gmaps": "https://www.google.com/maps/place/Gramona/data=!4m2!3m1!1s0x12a47cd3c5c71465:0x867c1adf38ff6fe7"
+    },
+    {
+      "id": "recaredo",
+      "name": {
+        "en": "Recaredo",
+        "es": "Recaredo",
+        "fr": "Recaredo",
+        "ca": "Recaredo",
+        "de": "Recaredo",
+        "nl": "Recaredo"
+      },
+      "type": {
+        "en": "Cava cellars and tasting, Sant Sadurní d'Anoia",
+        "es": "Bodega de cava y cata, Sant Sadurní d'Anoia",
+        "fr": "Caves de cava et dégustation, Sant Sadurní d'Anoia",
+        "ca": "Caves de cava i tast, Sant Sadurní d'Anoia",
+        "de": "Cava-Kellerei & Verkostung, Sant Sadurní d'Anoia",
+        "nl": "Cavakelders & proeverij, Sant Sadurní d'Anoia"
+      },
+      "place": "Carrer de Tamarit, 10",
+      "town": "Sant Sadurní d'Anoia",
+      "phone": "938 91 02 14",
+      "url": "https://www.recaredo.com/",
+      "description": {
+        "en": "A small family cellar working its vineyards biodynamically, a favourite of wine lovers. The best-rated visit in town.",
+        "es": "Una pequeña bodega familiar que cultiva sus viñas en biodinámica, la favorita de los amantes del vino. La visita mejor valorada del pueblo.",
+        "fr": "Une petite cave familiale qui travaille ses vignes en biodynamie, la préférée des amateurs de vin. La visite la mieux notée de la ville.",
+        "ca": "Un petit celler familiar que treballa les vinyes en biodinàmica, el preferit dels amants del vi. La visita més ben valorada del poble.",
+        "de": "Eine kleine Familienkellerei, die ihre Weinberge biodynamisch bewirtschaftet, ein Liebling der Weinkenner. Der am besten bewertete Besuch im Ort.",
+        "nl": "Een kleine familiewijnmakerij die haar wijngaarden biodynamisch bewerkt, een favoriet van wijnliefhebbers. Het best beoordeelde bezoek in het stadje."
+      },
+      "lat": 41.425187,
+      "lng": 1.786938,
+      "km_from_house": 42,
+      "icon": "wine",
+      "group": "wine",
+      "tone": "wine",
+      "tags": [],
+      "flags": [],
+      "hours": {
+        "en": "Visits by booking only, on the winery's website.",
+        "es": "Visitas solo con reserva, en la web de la bodega.",
+        "fr": "Visites sur réservation uniquement, sur le site de la cave.",
+        "ca": "Visites només amb reserva, a la web del celler.",
+        "de": "Besuche nur mit Reservierung über die Website des Weinguts.",
+        "nl": "Bezoek alleen op reservering, via de website van de wijnmakerij."
+      },
+      "rating": {
+        "stars": 4.9,
+        "count": 328
+      },
+      "gmaps": "https://www.google.com/maps/place/Recaredo/data=!4m2!3m1!1s0x12a47cd37148efc3:0x4b1cebbf10967f84"
+    },
+    {
+      "id": "barcelona",
+      "icon": "city",
+      "name": {
+        "en": "Barcelona",
+        "es": "Barcelona",
+        "fr": "Barcelona",
+        "ca": "Barcelona",
+        "de": "Barcelona",
+        "nl": "Barcelona"
+      },
+      "type": {
+        "en": "City, a day trip",
+        "es": "Ciudad, excursión de un día",
+        "fr": "Ville, sortie à la journée",
+        "ca": "Ciutat, excursió d'un dia",
+        "de": "Stadt, Tagesausflug",
+        "nl": "Stad, dagtrip"
+      },
+      "town": "Barcelona",
+      "place": "Plaça de Catalunya",
+      "lat": 41.3866298,
+      "lng": 2.1693988,
+      "km_from_house": 75,
+      "description": {
+        "en": "About an hour away. Sagrada Família, Park Güell, the Gothic Quarter, La Boqueria market and the beaches: pick two or three for one day. Tip: park at El Vendrell or Sant Vicenç de Calders station and take the train to Barcelona Sants (about an hour), no traffic and no parking to find.",
+        "es": "A una hora más o menos. Sagrada Família, Park Güell, el Barrio Gótico, el mercado de La Boqueria y las playas: elige dos o tres para un día. Consejo: aparca en la estación de El Vendrell o Sant Vicenç de Calders y coge el tren a Barcelona Sants (una hora), sin tráfico ni buscar aparcamiento.",
+        "fr": "À une heure environ. Sagrada Família, Park Güell, le quartier gothique, le marché de La Boqueria et les plages : choisissez-en deux ou trois pour une journée. Astuce : garez-vous à la gare d'El Vendrell ou de Sant Vicenç de Calders et prenez le train jusqu'à Barcelona Sants (environ une heure), sans bouchons ni place à chercher.",
+        "ca": "A una hora, més o menys. Sagrada Família, Park Güell, el Barri Gòtic, el mercat de la Boqueria i les platges: tria'n dues o tres per a un dia. Consell: aparca a l'estació del Vendrell o de Sant Vicenç de Calders i agafa el tren fins a Barcelona Sants (una hora), sense trànsit ni buscar aparcament.",
+        "de": "Etwa eine Stunde entfernt. Sagrada Família, Park Güell, das Gotische Viertel, der Markt La Boqueria und die Strände: für einen Tag zwei oder drei auswählen. Tipp: am Bahnhof El Vendrell oder Sant Vicenç de Calders parken und mit dem Zug nach Barcelona Sants fahren (etwa eine Stunde), ohne Stau und Parkplatzsuche.",
+        "nl": "Ongeveer een uur rijden. Sagrada Família, Park Güell, de Gotische wijk, de markt La Boqueria en de stranden: kies er twee of drie voor één dag. Tip: parkeer bij station El Vendrell of Sant Vicenç de Calders en neem de trein naar Barcelona Sants (ongeveer een uur), geen file en geen parkeerplek zoeken."
+      },
+      "hours": {
+        "en": "Book Sagrada Família and Park Güell online in advance.",
+        "es": "Reserva la Sagrada Família y el Park Güell por internet con antelación.",
+        "fr": "Réservez la Sagrada Família et le Park Güell en ligne à l'avance.",
+        "ca": "Reserva la Sagrada Família i el Park Güell per internet amb antelació.",
+        "de": "Sagrada Família und Park Güell vorher online buchen.",
+        "nl": "Boek de Sagrada Família en Park Güell vooraf online."
+      },
+      "tags": [
+        "free"
+      ],
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "gmaps": "https://www.google.com/maps/place/Barcelona/data=!4m2!3m1!1s0x12a4a2f15c5d0d5d:0x9567440d3cf19374",
+      "wiki": "Barcelona"
+    },
+    {
+      "id": "tarragona",
+      "icon": "roman",
+      "name": {
+        "en": "Tarragona",
+        "es": "Tarragona",
+        "fr": "Tarragona",
+        "ca": "Tarragona",
+        "de": "Tarragona",
+        "nl": "Tarragona"
+      },
+      "type": {
+        "en": "Roman city, UNESCO",
+        "es": "Ciudad romana, UNESCO",
+        "fr": "Ville romaine, UNESCO",
+        "ca": "Ciutat romana, UNESCO",
+        "de": "Römerstadt, UNESCO",
+        "nl": "Romeinse stad, UNESCO"
+      },
+      "town": "Tarragona",
+      "place": "Part Alta (old town) and Roman sites",
+      "lat": 41.114563,
+      "lng": 1.258813,
+      "km_from_house": 33,
+      "description": {
+        "en": "The Roman Tarraco: an amphitheatre right above the sea, the circus vaults, the old town walls and the cathedral, then the Rambla and the Balcó del Mediterrani. The Roman aqueduct, Pont del Diable, is just outside the city.",
+        "es": "La Tarraco romana: un anfiteatro justo sobre el mar, las bóvedas del circo, las murallas y la catedral, y después la Rambla y el Balcó del Mediterrani. El acueducto romano, el Pont del Diable, está a las afueras.",
+        "fr": "La Tarraco romaine : un amphithéâtre juste au-dessus de la mer, les voûtes du cirque, les remparts et la cathédrale, puis la Rambla et le Balcó del Mediterrani. L'aqueduc romain, le Pont del Diable, est juste à la sortie de la ville.",
+        "ca": "La Tàrraco romana: un amfiteatre just sobre el mar, les voltes del circ, les muralles i la catedral, i després la Rambla i el Balcó del Mediterrani. L'aqüeducte romà, el Pont del Diable, és als afores.",
+        "de": "Das römische Tarraco: ein Amphitheater direkt über dem Meer, die Gewölbe des Zirkus, die Stadtmauern und die Kathedrale, danach die Rambla und der Balcó del Mediterrani. Das römische Aquädukt, Pont del Diable, liegt kurz vor der Stadt.",
+        "nl": "Het Romeinse Tarraco: een amfitheater pal boven de zee, de gewelven van het circus, de stadsmuren en de kathedraal, daarna de Rambla en de Balcó del Mediterrani. Het Romeinse aquaduct, Pont del Diable, ligt net buiten de stad."
+      },
+      "hours": {
+        "en": "Walking around the city is free. The amphitheatre and the other Roman sites need a ticket and close on Mondays. Summer (April to late October): Tue-Sat 9:00-20:45, Sun 9:00-14:30. Winter: Tue-Fri 9:00-18:30, Sat 9:30-18:30, Sun 9:30-14:30.",
+        "es": "Pasear por la ciudad es gratis. El anfiteatro y los demás restos romanos son de pago y cierran los lunes. Verano (abril a finales de octubre): mar-sáb 9:00-20:45, dom 9:00-14:30. Invierno: mar-vie 9:00-18:30, sáb 9:30-18:30, dom 9:30-14:30.",
+        "fr": "Se promener dans la ville est gratuit. L'amphithéâtre et les autres sites romains sont payants et ferment le lundi. Été (avril à fin octobre) : mar-sam 9h00-20h45, dim 9h00-14h30. Hiver : mar-ven 9h00-18h30, sam 9h30-18h30, dim 9h30-14h30.",
+        "ca": "Passejar per la ciutat és gratuït. L'amfiteatre i la resta de restes romanes són de pagament i tanquen els dilluns. Estiu (abril a finals d'octubre): dt-ds 9:00-20:45, dg 9:00-14:30. Hivern: dt-dv 9:00-18:30, ds 9:30-18:30, dg 9:30-14:30.",
+        "de": "Ein Stadtbummel ist kostenlos. Das Amphitheater und die anderen Römerstätten kosten Eintritt und sind montags geschlossen. Sommer (April bis Ende Oktober): Di-Sa 9:00-20:45, So 9:00-14:30. Winter: Di-Fr 9:00-18:30, Sa 9:30-18:30, So 9:30-14:30.",
+        "nl": "Rondlopen in de stad is gratis. Het amfitheater en de andere Romeinse plekken kosten entree en zijn op maandag dicht. Zomer (april tot eind oktober): di-za 9:00-20:45, zo 9:00-14:30. Winter: di-vr 9:00-18:30, za 9:30-18:30, zo 9:30-14:30."
+      },
+      "tags": [
+        "free"
+      ],
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=Part+Alta%2C+Tarragona",
+      "wiki": "Tarragona"
+    },
+    {
+      "id": "sitges",
+      "icon": "town",
+      "name": {
+        "en": "Sitges",
+        "es": "Sitges",
+        "fr": "Sitges",
+        "ca": "Sitges",
+        "de": "Sitges",
+        "nl": "Sitges"
+      },
+      "type": {
+        "en": "Seaside old town",
+        "es": "Pueblo antiguo junto al mar",
+        "fr": "Vieille ville en bord de mer",
+        "ca": "Poble antic vora mar",
+        "de": "Altstadt am Meer",
+        "nl": "Oud stadje aan zee"
+      },
+      "town": "Sitges",
+      "place": "Església de Sant Bartomeu i Santa Tecla",
+      "lat": 41.234563,
+      "lng": 1.811563,
+      "km_from_house": 37,
+      "description": {
+        "en": "White streets, a church on a rock above the sea, the promenade and small beaches in town. Lovely for a late afternoon walk and dinner. Parking is hard in summer: arrive early.",
+        "es": "Calles blancas, una iglesia sobre una roca frente al mar, el paseo y pequeñas playas en el pueblo. Ideal para pasear al atardecer y cenar. En verano cuesta aparcar: llega pronto.",
+        "fr": "Des rues blanches, une église sur un rocher au-dessus de la mer, la promenade et de petites plages en ville. Parfait pour une balade en fin d'après-midi et un dîner. Difficile de se garer en été : arrivez tôt.",
+        "ca": "Carrers blancs, una església sobre una roca davant del mar, el passeig i petites platges al poble. Ideal per passejar a la tarda i sopar. A l'estiu costa aparcar: arriba aviat.",
+        "de": "Weiße Gassen, eine Kirche auf einem Felsen über dem Meer, die Promenade und kleine Strände im Ort. Schön für einen Spaziergang am späten Nachmittag und ein Abendessen. Im Sommer schwer zu parken: früh kommen.",
+        "nl": "Witte straatjes, een kerk op een rots boven de zee, de boulevard en kleine stranden in het stadje. Heerlijk voor een wandeling aan het eind van de middag en een diner. Parkeren is lastig in de zomer: kom op tijd."
+      },
+      "tags": [
+        "free"
+      ],
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "gmaps": "https://www.google.com/maps/place/Sitges/data=!4m2!3m1!1s0x12a3804821656681:0x6032a24df8915ac3",
+      "wiki": "Sitges"
+    },
+    {
+      "id": "montserrat",
+      "icon": "mountain",
+      "name": {
+        "en": "Montserrat",
+        "es": "Montserrat",
+        "fr": "Montserrat",
+        "ca": "Montserrat",
+        "de": "Montserrat",
+        "nl": "Montserrat"
+      },
+      "type": {
+        "en": "Mountain and monastery",
+        "es": "Montaña y monasterio",
+        "fr": "Montagne et monastère",
+        "ca": "Muntanya i monestir",
+        "de": "Berg und Kloster",
+        "nl": "Berg en klooster"
+      },
+      "town": "Montserrat",
+      "place": "Basílica de Montserrat",
+      "lat": 41.5932281,
+      "lng": 1.8378434,
+      "km_from_house": 85,
+      "description": {
+        "en": "A Benedictine monastery among giant rock pinnacles, home of the Black Madonna. Take the funicular up for the views and easy walks. The boys' choir, the Escolania, sings in the basilica on weekdays at 13:00 and on Sundays at 12:00.",
+        "es": "Un monasterio benedictino entre enormes agujas de roca, hogar de la Moreneta. Sube en funicular para las vistas y paseos fáciles. La Escolania canta en la basílica entre semana a las 13:00 y los domingos a las 12:00.",
+        "fr": "Un monastère bénédictin au milieu d'immenses aiguilles de roche, avec la Vierge noire. Montez en funiculaire pour la vue et des balades faciles. Le chœur d'enfants, l'Escolania, chante dans la basilique en semaine à 13h et le dimanche à 12h.",
+        "ca": "Un monestir benedictí entre agulles de roca gegants, casa de la Moreneta. Puja amb funicular per les vistes i passejades fàcils. L'Escolania canta a la basílica entre setmana a les 13:00 i els diumenges a les 12:00.",
+        "de": "Ein Benediktinerkloster zwischen riesigen Felsnadeln, Heimat der Schwarzen Madonna. Mit der Standseilbahn hinauf für die Aussicht und leichte Wanderungen. Der Knabenchor Escolania singt werktags um 13 Uhr und sonntags um 12 Uhr in der Basilika.",
+        "nl": "Een benedictijnenklooster tussen enorme rotspieken, thuis van de Zwarte Madonna. Neem de kabelspoorbaan omhoog voor het uitzicht en makkelijke wandelingen. Het jongenskoor Escolania zingt op weekdagen om 13:00 en op zondag om 12:00 in de basiliek."
+      },
+      "hours": {
+        "en": "The basilica is open every day from 7:00 to 20:00. About an hour by car: go early, it gets busy by late morning.",
+        "es": "La basílica abre todos los días de 7:00 a 20:00. Una hora en coche: ve temprano, a media mañana se llena.",
+        "fr": "La basilique est ouverte tous les jours de 7h à 20h. Environ une heure en voiture : partez tôt, c'est bondé en fin de matinée.",
+        "ca": "La basílica obre cada dia de 7:00 a 20:00. Una hora amb cotxe: ves-hi aviat, a mig matí s'omple.",
+        "de": "Die Basilika ist täglich von 7 bis 20 Uhr geöffnet. Etwa eine Stunde mit dem Auto: früh losfahren, ab dem späten Vormittag ist es voll.",
+        "nl": "De basiliek is elke dag open van 7:00 tot 20:00. Ongeveer een uur rijden: ga vroeg, rond het eind van de ochtend wordt het druk."
+      },
+      "tags": [
+        "free"
+      ],
+      "url": "https://www.montserratvisita.com/",
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "rating": {
+        "stars": 4.7,
+        "count": 60488
+      },
+      "gmaps": "https://www.google.com/maps/place/Montserrat/data=!4m2!3m1!1s0x12a4f5513a53dd33:0xf3a841dba1734af1"
+    },
+    {
+      "id": "santescreus",
+      "icon": "monastery",
+      "name": {
+        "en": "Santes Creus Monastery",
+        "es": "Monasterio de Santes Creus",
+        "fr": "Monastère de Santes Creus",
+        "ca": "Monestir de Santes Creus",
+        "de": "Kloster Santes Creus",
+        "nl": "Klooster van Santes Creus"
+      },
+      "type": {
+        "en": "Cistercian monastery, Aiguamúrcia",
+        "es": "Monasterio cisterciense, Aiguamúrcia",
+        "fr": "Monastère cistercien, Aiguamúrcia",
+        "ca": "Monestir cistercenc, Aiguamúrcia",
+        "de": "Zisterzienserkloster, Aiguamúrcia",
+        "nl": "Cisterciënzer klooster, Aiguamúrcia"
+      },
+      "town": "Aiguamúrcia",
+      "place": "Plaça Jaume el Just",
+      "lat": 41.346062,
+      "lng": 1.363813,
+      "km_from_house": 22,
+      "description": {
+        "en": "The closest of the three great Cistercian monasteries, 20 minutes away in the vineyards. A huge Gothic cloister, royal tombs and the monks' dormitory. Free for children under 16.",
+        "es": "El más cercano de los tres grandes monasterios cistercienses, a 20 minutos entre viñedos. Un gran claustro gótico, tumbas reales y el dormitorio de los monjes. Gratis para menores de 16 años.",
+        "fr": "Le plus proche des trois grands monastères cisterciens, à 20 minutes au milieu des vignes. Un grand cloître gothique, des tombeaux royaux et le dortoir des moines. Gratuit pour les moins de 16 ans.",
+        "ca": "El més proper dels tres grans monestirs cistercencs, a 20 minuts entre vinyes. Un gran claustre gòtic, tombes reials i el dormitori dels monjos. Gratuït per a menors de 16 anys.",
+        "de": "Das nächste der drei großen Zisterzienserklöster, 20 Minuten entfernt zwischen Weinbergen. Ein großer gotischer Kreuzgang, Königsgräber und der Schlafsaal der Mönche. Für Kinder unter 16 kostenlos.",
+        "nl": "Het dichtstbijzijnde van de drie grote cisterciënzer kloosters, 20 minuten verderop tussen de wijngaarden. Een grote gotische kloostergang, koningsgraven en de slaapzaal van de monniken. Gratis voor kinderen onder 16."
+      },
+      "schedule": [
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "10:00",
+          "close": "19:00",
+          "from": "05-01",
+          "to": "09-30"
+        },
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "10:00",
+          "close": "17:30",
+          "from": "10-01",
+          "to": "04-30"
+        },
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "15:00"
+        }
+      ],
+      "hours": {
+        "en": "Closed on Mondays. Last entry 30 minutes before closing.",
+        "es": "Cerrado los lunes. Última entrada 30 minutos antes del cierre.",
+        "fr": "Fermé le lundi. Dernière entrée 30 minutes avant la fermeture.",
+        "ca": "Tancat els dilluns. Última entrada 30 minuts abans del tancament.",
+        "de": "Montags geschlossen. Letzter Einlass 30 Minuten vor Schluss.",
+        "nl": "Maandag gesloten. Laatste toegang 30 minuten voor sluiting."
+      },
+      "tags": [],
+      "phone": "977 63 83 29",
+      "url": "https://patrimoni.gencat.cat/ca/monuments/monuments/reial-monestir-de-santes-creus",
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "rating": {
+        "stars": 4.6,
+        "count": 5347
+      },
+      "gmaps": "https://www.google.com/maps/place/Monestir+de+Santes+Creus/data=!4m2!3m1!1s0x12a40603ad308c3f:0xa6719c909c687c47"
+    },
+    {
+      "id": "poblet",
+      "icon": "monastery",
+      "name": {
+        "en": "Poblet Monastery",
+        "es": "Monasterio de Poblet",
+        "fr": "Monastère de Poblet",
+        "ca": "Monestir de Poblet",
+        "de": "Kloster Poblet",
+        "nl": "Klooster van Poblet"
+      },
+      "type": {
+        "en": "Cistercian monastery, UNESCO",
+        "es": "Monasterio cisterciense, UNESCO",
+        "fr": "Monastère cistercien, UNESCO",
+        "ca": "Monestir cistercenc, UNESCO",
+        "de": "Zisterzienserkloster, UNESCO",
+        "nl": "Cisterciënzer klooster, UNESCO"
+      },
+      "town": "Poblet",
+      "place": "Vimbodí i Poblet",
+      "lat": 41.380688,
+      "lng": 1.083562,
+      "km_from_house": 55,
+      "description": {
+        "en": "The largest Cistercian monastery in Europe, still home to a community of monks, with the tombs of the kings of Aragon. Combine it with Montblanc, 10 minutes away.",
+        "es": "El mayor monasterio cisterciense de Europa, todavía habitado por monjes, con las tumbas de los reyes de Aragón. Combínalo con Montblanc, a 10 minutos.",
+        "fr": "Le plus grand monastère cistercien d'Europe, toujours habité par des moines, avec les tombeaux des rois d'Aragon. À combiner avec Montblanc, à 10 minutes.",
+        "ca": "El monestir cistercenc més gran d'Europa, encara habitat per monjos, amb les tombes dels reis d'Aragó. Combina'l amb Montblanc, a 10 minuts.",
+        "de": "Das größte Zisterzienserkloster Europas, noch von Mönchen bewohnt, mit den Gräbern der Könige von Aragón. Gut zu verbinden mit Montblanc, 10 Minuten entfernt.",
+        "nl": "Het grootste cisterciënzer klooster van Europa, nog altijd bewoond door monniken, met de graven van de koningen van Aragón. Te combineren met Montblanc, 10 minuten verderop."
+      },
+      "hours": {
+        "en": "Open every day, morning and afternoon, closed at lunchtime. Times change during the year: check poblet.cat before going.",
+        "es": "Abre todos los días, mañana y tarde, cerrado al mediodía. El horario cambia durante el año: consulta poblet.cat antes de ir.",
+        "fr": "Ouvert tous les jours, matin et après-midi, fermé à midi. Les horaires changent dans l'année : vérifiez sur poblet.cat avant d'y aller.",
+        "ca": "Obre cada dia, matí i tarda, tancat al migdia. L'horari canvia durant l'any: consulta poblet.cat abans d'anar-hi.",
+        "de": "Täglich geöffnet, vormittags und nachmittags, mittags geschlossen. Die Zeiten ändern sich im Jahr: vorher auf poblet.cat prüfen.",
+        "nl": "Elke dag open, 's ochtends en 's middags, dicht rond lunchtijd. De tijden veranderen door het jaar: kijk vooraf op poblet.cat."
+      },
+      "tags": [],
+      "url": "https://www.poblet.cat/",
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "rating": {
+        "stars": 4.6,
+        "count": 8510
+      },
+      "gmaps": "https://www.google.com/maps/place/Monestir+de+Poblet/data=!4m2!3m1!1s0x12a6ae43fb104f4d:0x21267493d4daaff3"
+    },
+    {
+      "id": "montblanc",
+      "icon": "castle",
+      "name": {
+        "en": "Montblanc",
+        "es": "Montblanc",
+        "fr": "Montblanc",
+        "ca": "Montblanc",
+        "de": "Montblanc",
+        "nl": "Montblanc"
+      },
+      "type": {
+        "en": "Walled medieval town",
+        "es": "Villa medieval amurallada",
+        "fr": "Village médiéval fortifié",
+        "ca": "Vila medieval emmurallada",
+        "de": "Mittelalterliche Stadt mit Mauer",
+        "nl": "Ommuurd middeleeuws stadje"
+      },
+      "town": "Montblanc",
+      "place": "Muralla de Montblanc",
+      "lat": 41.374812,
+      "lng": 1.162813,
+      "km_from_house": 50,
+      "description": {
+        "en": "Almost complete medieval walls with towers you can walk along, and the town where the legend of Saint George and the dragon is set. Kids love it. Easy to combine with Poblet.",
+        "es": "Murallas medievales casi enteras, con torres que se pueden recorrer, y el pueblo de la leyenda de Sant Jordi y el dragón. A los niños les encanta. Fácil de combinar con Poblet.",
+        "fr": "Des remparts médiévaux presque intacts, avec des tours où l'on peut marcher, et la ville de la légende de saint Georges et du dragon. Les enfants adorent. Facile à combiner avec Poblet.",
+        "ca": "Muralles medievals gairebé senceres, amb torres que es poden recórrer, i la vila de la llegenda de Sant Jordi i el drac. Als nens els encanta. Fàcil de combinar amb Poblet.",
+        "de": "Fast vollständige mittelalterliche Mauern mit begehbaren Türmen, und der Ort der Legende vom heiligen Georg und dem Drachen. Kinder lieben es. Gut mit Poblet zu verbinden.",
+        "nl": "Bijna complete middeleeuwse stadsmuren met torens waar je over kunt lopen, en het stadje van de legende van Sint-Joris en de draak. Kinderen vinden het geweldig. Makkelijk te combineren met Poblet."
+      },
+      "tags": [
+        "free"
+      ],
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "rating": {
+        "stars": 4.6,
+        "count": 92
+      },
+      "gmaps": "https://www.google.com/maps/place/Montblanc/data=!4m2!3m1!1s0x12a6a96cd8dc1a0f:0xd655a785204079be",
+      "wiki": "Montblanc Conca de Barberà"
+    },
+    {
+      "id": "ciutadella",
+      "icon": "castle",
+      "name": {
+        "en": "Calafell Iberian Citadel",
+        "es": "Ciudadela Ibérica de Calafell",
+        "fr": "Citadelle ibère de Calafell",
+        "ca": "Ciutadella Ibèrica de Calafell",
+        "de": "Iberische Zitadelle Calafell",
+        "nl": "Iberische citadel van Calafell"
+      },
+      "type": {
+        "en": "Iberian village, rebuilt",
+        "es": "Poblado ibérico reconstruido",
+        "fr": "Village ibère reconstitué",
+        "ca": "Poblat ibèric reconstruït",
+        "de": "Iberisches Dorf, rekonstruiert",
+        "nl": "Iberisch dorp, herbouwd"
+      },
+      "town": "Calafell",
+      "place": "Ctra. de Barcelona, km 141",
+      "lat": 41.190312,
+      "lng": 1.581188,
+      "km_from_house": 16,
+      "description": {
+        "en": "A fortified Iberian village from 2,500 years ago, rebuilt as it was: houses, walls and towers you can walk into. A great history lesson for kids, 15 minutes away.",
+        "es": "Un poblado ibérico fortificado de hace 2.500 años, reconstruido tal como era: casas, murallas y torres en las que se puede entrar. Una gran clase de historia para los niños, a 15 minutos.",
+        "fr": "Un village ibère fortifié d'il y a 2 500 ans, reconstitué tel qu'il était : maisons, remparts et tours où l'on peut entrer. Une super leçon d'histoire pour les enfants, à 15 minutes.",
+        "ca": "Un poblat ibèric fortificat de fa 2.500 anys, reconstruït tal com era: cases, muralles i torres on es pot entrar. Una gran classe d'història per als nens, a 15 minuts.",
+        "de": "Ein befestigtes iberisches Dorf von vor 2.500 Jahren, so wieder aufgebaut, wie es war: Häuser, Mauern und Türme zum Betreten. Eine tolle Geschichtsstunde für Kinder, 15 Minuten entfernt.",
+        "nl": "Een versterkt Iberisch dorp van 2.500 jaar geleden, herbouwd zoals het was: huizen, muren en torens waar je in kunt. Een mooie geschiedenisles voor kinderen, 15 minuten verderop."
+      },
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "from": "07-01",
+          "to": "09-15"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "17:30",
+          "close": "20:30",
+          "from": "07-01",
+          "to": "09-15"
+        },
+        {
+          "days": [
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "from": "09-16",
+          "to": "06-30"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "16:00",
+          "close": "18:00",
+          "from": "09-16",
+          "to": "06-30"
+        }
+      ],
+      "tags": [],
+      "phone": "977 69 46 83",
+      "url": "https://visit.calafell.cat/list/ciutadella-iberica/",
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "rating": {
+        "stars": 4.4,
+        "count": 1754
+      },
+      "gmaps": "https://www.google.com/maps/place/Ciutadella+Ib%C3%A8rica+de+Calafell/data=!4m2!3m1!1s0x12a38bf573c35029:0xbbdde16743050ef9"
+    },
+    {
+      "id": "ferrocarril",
+      "icon": "train",
+      "name": {
+        "en": "Vilanova Railway Museum",
+        "es": "Museo del Ferrocarril de Vilanova",
+        "fr": "Musée du chemin de fer de Vilanova",
+        "ca": "Museu del Ferrocarril de Vilanova",
+        "de": "Eisenbahnmuseum Vilanova",
+        "nl": "Spoorwegmuseum Vilanova"
+      },
+      "type": {
+        "en": "Museum, Vilanova i la Geltrú",
+        "es": "Museo, Vilanova i la Geltrú",
+        "fr": "Musée, Vilanova i la Geltrú",
+        "ca": "Museu, Vilanova i la Geltrú",
+        "de": "Museum, Vilanova i la Geltrú",
+        "nl": "Museum, Vilanova i la Geltrú"
+      },
+      "town": "Vilanova i la Geltrú",
+      "place": "Plaça Eduard Maristany",
+      "lat": 41.220938,
+      "lng": 1.731188,
+      "km_from_house": 29,
+      "description": {
+        "en": "Dozens of real steam and electric locomotives in an old roundhouse next to Vilanova station. Children can climb into some of them. Free for under 4s.",
+        "es": "Decenas de locomotoras de vapor y eléctricas de verdad en una antigua rotonda junto a la estación de Vilanova. Los niños pueden subir a algunas. Gratis para menores de 4 años.",
+        "fr": "Des dizaines de vraies locomotives à vapeur et électriques dans une ancienne rotonde à côté de la gare de Vilanova. Les enfants peuvent monter dans certaines. Gratuit pour les moins de 4 ans.",
+        "ca": "Desenes de locomotores de vapor i elèctriques de veritat en una antiga rotonda al costat de l'estació de Vilanova. Els nens poden pujar a alguns. Gratuït per a menors de 4 anys.",
+        "de": "Dutzende echte Dampf- und Elektrolokomotiven in einem alten Ringlokschuppen neben dem Bahnhof Vilanova. Kinder dürfen in einige hineinklettern. Unter 4 Jahren kostenlos.",
+        "nl": "Tientallen echte stoom- en elektrische locomotieven in een oude locomotievenloods naast station Vilanova. Kinderen mogen in sommige klimmen. Gratis onder de 4 jaar."
+      },
+      "schedule": [
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "14:30",
+          "from": "09-01",
+          "to": "06-30"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "16:00",
+          "close": "19:00",
+          "from": "09-01",
+          "to": "06-30"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "14:30",
+          "from": "07-01",
+          "to": "07-31"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "17:00",
+          "close": "20:00",
+          "from": "07-01",
+          "to": "07-31"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "14:30",
+          "from": "08-01",
+          "to": "08-31"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "16:00",
+          "close": "20:00",
+          "from": "08-01",
+          "to": "08-31"
+        }
+      ],
+      "tags": [],
+      "phone": "938 15 84 91",
+      "url": "https://museudelferrocarril.org/",
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "rating": {
+        "stars": 4.5,
+        "count": 3793
+      },
+      "gmaps": "https://www.google.com/maps/place/Museu+del+Ferrocarril+de+Vilanova/data=!4m2!3m1!1s0x12a386e6f52e1cf1:0xf950013d7ecf391"
+    },
+    {
+      "id": "paucasals",
+      "icon": "music",
+      "name": {
+        "en": "Pau Casals Museum",
+        "es": "Museo Pau Casals",
+        "fr": "Musée Pau Casals",
+        "ca": "Museu Pau Casals",
+        "de": "Pau-Casals-Museum",
+        "nl": "Pau Casals Museum"
+      },
+      "type": {
+        "en": "The cellist's house, Sant Salvador",
+        "es": "Casa del violonchelista, Sant Salvador",
+        "fr": "Maison du violoncelliste, Sant Salvador",
+        "ca": "Casa del violoncel·lista, Sant Salvador",
+        "de": "Haus des Cellisten, Sant Salvador",
+        "nl": "Huis van de cellist, Sant Salvador"
+      },
+      "town": "Sant Salvador",
+      "place": "Avinguda de Palfuriana, 67",
+      "lat": 41.183562,
+      "lng": 1.541313,
+      "km_from_house": 14,
+      "description": {
+        "en": "The seaside summer house of Pau Casals, the great cellist from El Vendrell, with his garden, instruments and music. Right on the Sant Salvador promenade, close to Casinet.",
+        "es": "La casa de verano junto al mar de Pau Casals, el gran violonchelista de El Vendrell, con su jardín, instrumentos y música. En el paseo de Sant Salvador, cerca del Casinet.",
+        "fr": "La maison d'été en bord de mer de Pau Casals, le grand violoncelliste d'El Vendrell, avec son jardin, ses instruments et sa musique. Sur la promenade de Sant Salvador, près du Casinet.",
+        "ca": "La casa d'estiueig vora mar de Pau Casals, el gran violoncel·lista del Vendrell, amb el seu jardí, instruments i música. Al passeig de Sant Salvador, a prop del Casinet.",
+        "de": "Das Sommerhaus am Meer von Pau Casals, dem großen Cellisten aus El Vendrell, mit Garten, Instrumenten und Musik. Direkt an der Promenade von Sant Salvador, nahe Casinet.",
+        "nl": "Het zomerhuis aan zee van Pau Casals, de grote cellist uit El Vendrell, met zijn tuin, instrumenten en muziek. Aan de boulevard van Sant Salvador, vlak bij Casinet."
+      },
+      "schedule": [
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "from": "09-12",
+          "to": "06-23"
+        },
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "16:00",
+          "close": "18:00",
+          "from": "09-12",
+          "to": "06-23"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "from": "09-12",
+          "to": "06-23"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "16:00",
+          "close": "19:00",
+          "from": "09-12",
+          "to": "06-23"
+        },
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "from": "06-24",
+          "to": "09-11"
+        },
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "16:30",
+          "close": "20:00",
+          "from": "06-24",
+          "to": "09-11"
+        },
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "14:00"
+        }
+      ],
+      "hours": {
+        "en": "Closed on Mondays. Free for children under 8.",
+        "es": "Cerrado los lunes. Gratis para menores de 8 años.",
+        "fr": "Fermé le lundi. Gratuit pour les moins de 8 ans.",
+        "ca": "Tancat els dilluns. Gratuït per a menors de 8 anys.",
+        "de": "Montags geschlossen. Für Kinder unter 8 kostenlos.",
+        "nl": "Maandag gesloten. Gratis voor kinderen onder 8."
+      },
+      "tags": [],
+      "phone": "977 68 42 76",
+      "url": "https://www.paucasals.org/",
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "rating": {
+        "stars": 4.6,
+        "count": 2045
+      },
+      "gmaps": "https://www.google.com/maps/place/Museu+Pau+Casals/data=!4m2!3m1!1s0x12a38c98e62384bb:0xd448bdcb4ed3b6c5"
+    },
+    {
+      "id": "altafulla",
+      "icon": "castle",
+      "name": {
+        "en": "Altafulla",
+        "es": "Altafulla",
+        "fr": "Altafulla",
+        "ca": "Altafulla",
+        "de": "Altafulla",
+        "nl": "Altafulla"
+      },
+      "type": {
+        "en": "Old village and castle",
+        "es": "Pueblo antiguo y castillo",
+        "fr": "Vieux village et château",
+        "ca": "Vila closa i castell",
+        "de": "Altes Dorf mit Burg",
+        "nl": "Oud dorp met kasteel"
+      },
+      "town": "Altafulla",
+      "place": "Vila Closa",
+      "lat": 41.142687,
+      "lng": 1.375938,
+      "km_from_house": 21,
+      "description": {
+        "en": "A tiny walled village around its castle, with stone lanes, then down to the old fishermen's houses on the beach. Nice for a stroll and a drink, 20 minutes away.",
+        "es": "Un pequeño pueblo amurallado alrededor de su castillo, con calles de piedra, y abajo las antiguas casas de pescadores en la playa. Bonito para pasear y tomar algo, a 20 minutos.",
+        "fr": "Un petit village fortifié autour de son château, aux ruelles de pierre, puis en bas les anciennes maisons de pêcheurs sur la plage. Agréable pour flâner et boire un verre, à 20 minutes.",
+        "ca": "Una petita vila closa al voltant del castell, amb carrers de pedra, i a baix les antigues cases de pescadors a la platja. Bonic per passejar i prendre alguna cosa, a 20 minuts.",
+        "de": "Ein kleines ummauertes Dorf rund um seine Burg, mit Steingassen, und unten die alten Fischerhäuser am Strand. Schön zum Bummeln und für einen Drink, 20 Minuten entfernt.",
+        "nl": "Een klein ommuurd dorpje rond het kasteel, met stenen straatjes, en beneden de oude vissershuisjes op het strand. Leuk om rond te lopen en iets te drinken, 20 minuten verderop."
+      },
+      "tags": [
+        "free"
+      ],
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "gmaps": "https://www.google.com/maps/place/Altafulla/data=!4m2!3m1!1s0x12a3f11f8119aa05:0x11ec9d9b48b4408c",
+      "wiki": "Altafulla"
+    }
+  ]
+}

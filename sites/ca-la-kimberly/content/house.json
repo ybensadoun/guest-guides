@@ -1,0 +1,11 @@
+{
+  "name": "Can Gordei",
+  "lat": 41.2665,
+  "lng": 1.478,
+  "photo": "house.jpg",
+  "checkout": "12:00",
+  "airbnbPhotos": "https://www.airbnb.com/rooms/1022457118238842125/photos",
+  "photoPos": "60% 50%",
+  "_doc": "lat/lng are deliberately approximate (about 350 m from the house) so the address is never exposed. Do not put the real coordinates or street address here.",
+  "_wifi": "Wi-Fi (networks, password, QR codes) is kept out of git in private/wifi.json; on Netlify it comes from the WIFI_JSON environment variable."
+}

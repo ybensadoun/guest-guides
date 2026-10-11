@@ -1,0 +1,38 @@
+{
+  "_doc": "Everything that makes this guide this listing's guide, apart from content/, public/, i18n/ and theme.css. The engine reads it at build time.",
+  "slug": "ca-la-kimberly",
+  "name": "Ca La Kimberly",
+  "description": "Ca La Kimberly, guest guide for Can Gordei in La Bisbal del Penedès: local markets, opening times, map and directions.",
+  "shareDescription": "Guest guide for Can Gordei: local markets, opening times, map and directions.",
+  "manifestDescription": "Guest guide for Can Gordei, La Bisbal del Penedès: markets, map and local tips.",
+  "logo": "logo-head.png",
+  "shareImage": "kimberly-art.jpg",
+  "languages": ["en", "es", "fr", "ca", "de", "nl"],
+  "storageKey": "clk",
+  "area": {
+    "radiusKm": 40,
+    "searchBbox": [-0.5, 40.3, 3.4, 43.0]
+  },
+  "modules": {
+    "house": true,
+    "garbage": true,
+    "message": true,
+    "emergency": true,
+    "markets": true,
+    "restaurants": true,
+    "todo": true,
+    "events": true,
+    "quick": true,
+    "map": true
+  },
+  "theme": {
+    "preset": "bauhaus",
+    "fonts": ["jost/400.css", "jost/500.css", "jost/600.css", "jost/700.css"],
+    "paper": "#F3EEE3",
+    "manifestBackground": "#FAF7F0",
+    "manifestTheme": "#005DAA",
+    "darkMode": false
+  },
+  "previewImages": ["logo-head.png", "kimberly-banner.jpg", "favicon.png", "house.jpg"],
+  "netlify": { "project": "ca-la-kimberly" }
+}

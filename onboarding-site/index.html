@@ -1,0 +1,1571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Porta · Build your guest guide</title>
+<meta name="description" content="Tell us about your place and we build a guest guide for your guests' phones.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Onest:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a Home of flat colour tiles (one per onboarding module, any order), each opening its own page.
+   Same craft as the guides: flat colours, one geometric shape per tile, round arrow buttons, big type. */
+:root{
+  --paper:#EEECE6;--surface:#FFFFFF;--sunk:#F6F5F1;--ink:#151515;--muted:#55534E;--faint:#7E7B74;--line:#DAD6CC;
+  --pine:#1E5E50;--sun:#F2B33D;--tomato:#D8483A;--sky:#3567AD;--plum:#6A3D73;--clay:#C9783E;
+  --on-dark:#FFFFFF;--ok:#1E7A4A;--warn:#B7791F;--danger:#B23E28;--focus:#F2B33D;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;--body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:22px;--r-s:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#121312;--surface:#1C1D1C;--sunk:#171817;--ink:#EDEBE6;--muted:#A9A69F;--faint:#85827B;--line:#2E2F2D;
+  --ok:#6FD39C;--warn:#F2B33D;--danger:#F08A73;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#121312;--surface:#1C1D1C;--sunk:#171817;--ink:#EDEBE6;--muted:#A9A69F;--faint:#85827B;--line:#2E2F2D;
+  --ok:#6FD39C;--warn:#F2B33D;--danger:#F08A73;color-scheme:dark}
+html{color-scheme:light}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+img{max-width:100%}
+[hidden]{display:none!important}
+body{margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.5 var(--body);padding-inline:16px;padding-block:14px 90px;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.05;letter-spacing:-.02em}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.wrap{max-width:920px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+
+/* Brand bar */
+.top{display:flex;align-items:center;gap:12px;min-height:48px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.door{width:30px;height:38px;border-radius:15px 15px 3px 3px;background:var(--pine);position:relative;flex:none}
+.door::after{content:"";position:absolute;right:7px;top:19px;width:6px;height:6px;border-radius:50%;background:var(--sun)}
+.brand b{font:800 23px/1 var(--display);letter-spacing:-.03em}
+.save{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);font-weight:600}
+.sdot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.sdot.ok{background:var(--ok)}.sdot.busy{background:var(--warn)}.sdot.err{background:var(--danger)}
+.owner{border:0;background:var(--surface);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 0 0 1.5px var(--line)}
+
+/* Hero: the guide being built + progress */
+.hero{background:var(--ink);color:var(--paper);border-radius:var(--r);padding:22px 20px 20px;position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;gap:14px}
+.hero::before{content:"";position:absolute;z-index:-1;width:190px;height:190px;border-radius:50%;background:var(--sun);right:-60px;top:-80px}
+.hero::after{content:"";position:absolute;z-index:-1;width:90px;height:45px;border-radius:90px 90px 0 0;background:var(--tomato);right:40px;bottom:0}
+.hero small{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.75}
+.hero h1{font-size:clamp(30px,6vw,44px);font-weight:800;max-width:15ch}
+.hero p{margin:0;opacity:.85;max-width:46ch;font-size:15px}
+.meter{display:flex;gap:4px;max-width:520px}
+.meter i{flex:1;height:10px;border-radius:3px;background:rgba(255,255,255,.18)}
+.meter i.c{background:var(--sun);opacity:.55}
+.meter i.d{background:var(--sun);opacity:1}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;font-weight:600;opacity:.9}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;background:var(--sun)}
+.legend i.c{opacity:.55}.legend i.n{background:rgba(255,255,255,.18)}
+.go-next{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;background:var(--sun);color:#1b1407;border:0;border-radius:999px;padding:11px 12px 11px 18px;font-weight:700;cursor:pointer;text-decoration:none;max-width:100%}
+.go-next span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.go-next .ar{width:30px;height:30px;border-radius:50%;background:#1b1407;color:var(--sun);display:grid;place-items:center;flex:none}
+.ar svg,.go svg{width:17px;height:17px}
+
+/* Groups and tiles */
+.gh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:6px}
+.gh h2{font-size:24px;font-weight:700}
+.gh span{font-size:14px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;min-height:150px;padding:16px;border-radius:var(--r);background:var(--tc);color:var(--ti);text-decoration:none;-webkit-tap-highlight-color:transparent;transition:transform .12s}
+.tile:active{transform:scale(.98)}
+.tile .ic{width:32px;height:32px;margin-bottom:auto}
+.tile .ic svg{width:32px;height:32px}
+.tile b{font-family:var(--display);font-weight:700;font-size:21px;line-height:1.08;letter-spacing:-.01em;margin-top:16px;position:relative;z-index:1;padding-right:6px}
+.tile small{font-size:14px;font-weight:600;opacity:.85;margin-top:3px;position:relative;z-index:1}
+.tile::before,.tile::after{content:"";position:absolute;z-index:-1;pointer-events:none}
+.tile[data-shape="circle"]::before{width:130px;height:130px;border-radius:50%;background:var(--sh);right:-46px;top:-46px}
+.tile[data-shape="half"]::before{width:104px;height:52px;border-radius:0 0 104px 104px;background:var(--sh);right:-6px;top:0}
+.tile[data-shape="tri"]::before{width:0;height:0;border-left:50px solid transparent;border-right:50px solid transparent;border-top:80px solid var(--sh);right:-16px;top:0}
+.tile[data-shape="square"]::before{width:62px;height:62px;background:var(--sh);right:-12px;top:-14px;transform:rotate(14deg)}
+.tile[data-shape="bar"]::before{width:96px;height:96px;border-radius:50%;border:16px solid var(--sh);right:-34px;top:-34px}
+.tile[data-shape="quarter"]::before{width:110px;height:110px;border-radius:0 0 0 110px;background:var(--sh);right:0;top:0}
+.pill{position:absolute;top:14px;right:14px;z-index:2;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--surface);color:var(--ink);white-space:nowrap}
+.pill.new{background:rgba(255,255,255,.22);color:inherit;box-shadow:inset 0 0 0 1.5px currentColor}
+.pill.chk{background:var(--surface);color:var(--warn)}
+.pill.done{background:var(--surface);color:var(--ok)}
+.pill svg{width:13px;height:13px}
+.tile.send{grid-column:1/-1;flex-direction:row;align-items:center;gap:14px;min-height:0;padding:20px;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+.tile.send b{margin:0;font-size:24px}
+.tile.send small{margin:0;color:var(--muted);opacity:1}
+.tile.send .go{margin-left:auto;flex:none;width:42px;height:42px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+.tile.send .tx{display:flex;flex-direction:column;min-width:0}
+.tile.send.locked .go{background:var(--line);color:var(--muted)}
+
+/* Module page */
+.mhead{display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;isolation:isolate;background:var(--tc);color:var(--ti);border-radius:var(--r);padding:20px 20px 22px}
+.mhead::before{content:"";position:absolute;z-index:-1;width:170px;height:170px;border-radius:50%;background:var(--sh);right:-60px;top:-70px}
+.mhead .row1{display:flex;align-items:center;gap:10px}
+.back{display:inline-flex;align-items:center;gap:6px;border:0;background:rgba(255,255,255,.2);color:inherit;border-radius:999px;padding:7px 14px 7px 10px;font-weight:700;font-size:14px;cursor:pointer;text-decoration:none}
+.back svg{width:16px;height:16px}
+.mhead .pill{position:static;margin-left:auto}
+.mhead h1{font-size:clamp(30px,6vw,42px);font-weight:800;max-width:18ch}
+.mhead p{margin:0;max-width:56ch;font-size:16px;opacity:.92}
+.card{background:var(--surface);border-radius:var(--r);padding:clamp(18px,4vw,28px);display:flex;flex-direction:column;gap:22px;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px}
+@media (max-width:620px){.grid{grid-template-columns:minmax(0,1fr)}}
+.full{grid-column:1/-1}
+.f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.f>label,.f>.lab{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.req{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--sun);color:#1b1407}
+.req.ok{background:none;color:var(--ok);box-shadow:inset 0 0 0 1.5px var(--ok)}
+.opt{color:var(--faint);font-weight:500;font-size:13px}
+.hint{color:var(--muted);font-size:13.5px;margin:0}
+input[type=text],input[type=url],input[type=tel],input[type=email],input[type=number],input[type=time],select,textarea{width:100%;background:var(--sunk);border:1.5px solid var(--line);border-radius:var(--r-s);padding:11px 12px;font-size:16px}
+textarea{min-height:96px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;background:var(--surface)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.chip span{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--sunk);font-weight:600;font-size:14.5px}
+.chip input:checked+span{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.chip input:focus-visible+span{outline:3px solid var(--focus);outline-offset:2px}
+.note{display:flex;gap:10px;background:var(--sunk);border-radius:var(--r-s);padding:12px 14px;font-size:14px;box-shadow:inset 3px 0 0 var(--sun)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border-radius:999px;border:2px solid var(--ink);background:var(--surface);font-weight:700;cursor:pointer;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.sun{background:var(--sun);border-color:var(--sun);color:#1b1407}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.small{padding:7px 12px;font-size:14px;border-width:1.5px}
+.btn svg{width:17px;height:17px}
+.foot{display:flex;flex-direction:column;gap:12px;border-top:1.5px solid var(--line);padding-top:18px}
+.foot .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.todo{margin:0;font-size:14px;color:var(--muted)}
+.todo b{color:var(--ink)}
+/* Uploads */
+.drop{border:2px dashed var(--line);border-radius:var(--r-s);padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--sunk)}
+.drop.over{border-color:var(--ink)}
+.drop .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.drop .row p{margin:0;color:var(--muted);font-size:14px}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.thumb{position:relative;border-radius:var(--r-s);overflow:hidden;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column}
+.thumb img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.thumb .doc{aspect-ratio:4/3;display:grid;place-items:center;font-weight:700;color:var(--muted);font-size:13px;padding:8px;text-align:center;word-break:break-word}
+.thumb select{border-radius:0;border:0;border-top:1px solid var(--line);padding:6px 8px;font-size:13px;background:var(--surface)}
+.thumb .x{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:16px;line-height:1}
+.thumb.pending{opacity:.6}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.err{color:var(--danger);font-size:14px;margin:0}
+/* Mood cards */
+.moods{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}
+.mood{position:relative;cursor:pointer}
+.mood input{position:absolute;opacity:0;inset:0;cursor:pointer;z-index:2}
+.mood .box{border:2px solid var(--line);border-radius:16px;padding:9px;display:flex;flex-direction:column;gap:7px;background:var(--surface);height:100%}
+.mood input:checked~.box{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
+.mood input:focus-visible~.box{outline:3px solid var(--focus);outline-offset:2px}
+.mock{height:110px;border-radius:9px;overflow:hidden;display:grid;gap:4px;padding:6px}
+.mood b{font-size:15px}.mood small{color:var(--muted);font-size:12.5px;line-height:1.35}
+.m-bold{background:#F3EEE3;grid-template-columns:1fr 1fr;grid-template-rows:26px 1fr 1fr}
+.m-bold i{display:block;border-radius:6px}
+.m-bold i:nth-child(1){grid-column:1/-1;background:#fff;border:2px solid #121212}
+.m-bold i:nth-child(2){background:#1D4FA0}.m-bold i:nth-child(3){background:#F5C400}.m-bold i:nth-child(4){background:#D52B1E}.m-bold i:nth-child(5){background:#121212}
+.m-edit{background:#FAF8F4;grid-template-rows:50px 8px 6px 1px 1px 1px}
+.m-edit i{display:block}
+.m-edit i:nth-child(1){background:linear-gradient(135deg,#6d7d5c,#c9b48a)}
+.m-edit i:nth-child(2){background:#222;width:70%}
+.m-edit i:nth-child(3){background:#bbb;width:90%}
+.m-edit i:nth-child(n+4){background:#222;margin-top:6px}
+.m-soft{background:#F6EEF0;grid-template-columns:1fr 1fr;grid-template-rows:36px 1fr 1fr}
+.m-soft i{display:block;border-radius:14px}
+.m-soft i:nth-child(1){grid-column:1/-1;background:#fff}
+.m-soft i:nth-child(2){background:#CFE3F2}.m-soft i:nth-child(3){background:#F6D5C9}.m-soft i:nth-child(4){background:#DCEFD9}.m-soft i:nth-child(5){background:#EADCF5}
+.m-min{background:#fff;grid-template-columns:1fr 1fr;grid-template-rows:12px 1fr 1fr;padding:8px;gap:0}
+.m-min i{display:block;border:1px solid #ddd}
+.m-min i:nth-child(1){grid-column:1/-1;border:0;background:#111;width:45%;height:8px}
+.m-auto{background:repeating-linear-gradient(45deg,var(--sunk),var(--sunk) 8px,var(--surface) 8px,var(--surface) 16px);place-items:center;font:700 26px var(--display);color:var(--faint)}
+/* Section picker */
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.mod{position:relative}
+.mod input{position:absolute;opacity:0;inset:0;cursor:pointer;z-index:2}
+.mod .box{display:grid;grid-template-columns:24px 1fr;gap:10px;border:2px solid var(--line);border-radius:14px;padding:12px;background:var(--sunk);height:100%}
+.mod .tick{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;font-size:14px;color:transparent}
+.mod input:checked~.box{border-color:var(--ink);background:var(--surface)}
+.mod input:checked~.box .tick{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.mod input:focus-visible~.box{outline:3px solid var(--focus);outline-offset:2px}
+.mod b{font-size:15px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.mod small{color:var(--muted);font-size:13px;display:block;line-height:1.35}
+.tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--sun);color:#1b1407}
+.tag.q{background:var(--sunk);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+/* Review summary */
+.sum{display:flex;flex-direction:column;gap:2px;border-radius:var(--r-s);overflow:hidden}
+.sum a{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;background:var(--sunk);text-decoration:none}
+.sum .sw{width:12px;height:12px;border-radius:3px;background:var(--tc)}
+.sum b{font-size:15px}
+.sum p{margin:2px 0 0;color:var(--muted);font-size:13.5px;overflow-wrap:anywhere}
+/* Status view */
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:620px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.steps li{border-top:5px solid var(--line);padding-top:8px;font-size:14px;color:var(--muted)}
+.steps li.done{border-color:var(--pine);color:var(--ink)}
+.steps li.now{border-color:var(--sun);color:var(--ink);font-weight:700}
+.steps li span{display:block;font-weight:400;color:var(--muted)}
+.msg{border-radius:var(--r-s);padding:12px 14px;background:var(--sunk);box-shadow:inset 3px 0 0 var(--pine);white-space:pre-line}
+.stars{display:flex;gap:6px}
+.stars label{position:relative}
+.stars input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.stars span{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;border:2px solid var(--line);font-weight:700;background:var(--sunk)}
+.stars input:checked+span{background:var(--sun);border-color:var(--sun);color:#1b1407}
+.rounds{display:flex;flex-direction:column;gap:8px}
+.rounds div{font-size:14px;color:var(--muted);background:var(--sunk);border-radius:var(--r-s);padding:10px 12px}
+.tbl{overflow-x:auto}
+.tbl table{border-collapse:collapse;width:100%;font-size:14px}
+.tbl th,.tbl td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+.loading{padding:40px;text-align:center;color:var(--muted)}
+.pill.pre{background:var(--surface);color:var(--sky)}
+.meter i.p{background:#8FB3E8}
+.legend i.p{background:#8FB3E8}
+.sic .pre{width:16px;height:16px;border-radius:50%;background:var(--sky)}
+.si.s-pre .sl{color:var(--sky)}
+.frm{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--sky) 15%,transparent);color:var(--sky)}
+:root:not([data-theme="light"]) .pill.pre{color:#2c5aa0}
+.notebox{display:flex;flex-direction:column;gap:8px;background:var(--sunk);border-radius:var(--r-s);padding:14px}
+.notebox label{display:flex;flex-direction:column;gap:2px}
+.notebox label span{font-size:13.5px;color:var(--muted)}
+.nrow{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.nrow textarea{flex:1 1 220px;min-height:52px}
+.survey{display:flex;flex-direction:column;gap:18px;border-top:1.5px solid var(--line);padding-top:18px}
+.survey h2{font-size:22px}
+#sendState{margin:0;font-size:14px;color:var(--muted)}
+/* Step navigation: rail on wide screens, bottom bar and list sheet everywhere */
+.split{display:grid;grid-template-columns:240px minmax(0,1fr);gap:22px;align-items:start}
+.col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 14px);max-height:calc(100vh - 120px);overflow-y:auto;scrollbar-width:thin}
+@media (max-width:900px){.split{grid-template-columns:minmax(0,1fr)}.rail{display:none}}
+.wrap:has(.split){max-width:1120px}
+.si{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;text-decoration:none;color:var(--muted);font-weight:600;font-size:14.5px}
+.si:hover{background:var(--surface)}
+.si[aria-current]{background:var(--surface);color:var(--ink);box-shadow:inset 3px 0 0 var(--tc,var(--ink))}
+.si .st{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.si .sl{font-size:12px;font-weight:700;color:var(--faint)}
+.si.s-done .sl{color:var(--ok)}.si.s-chk .sl{color:var(--warn)}
+.sic{width:22px;height:22px;display:grid;place-items:center;color:var(--ink)}
+.sic svg{width:18px;height:18px}
+.s-done .sic{background:var(--ok);color:#fff;border-radius:50%}
+.s-done .sic svg{width:13px;height:13px;stroke-width:3}
+.sic .ring{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--line)}
+.sic .half{width:16px;height:16px;border-radius:50%;background:linear-gradient(90deg,var(--warn) 50%,transparent 50%);box-shadow:inset 0 0 0 2px var(--warn)}
+.si.send{color:var(--ink)}
+.sg{margin:14px 10px 4px;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+#navbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1.5px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.nbin{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+.nbin > :first-child{justify-self:start}.nbin > :last-child{justify-self:end}
+.nb{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;border-radius:999px;border:2px solid var(--ink);background:var(--surface);color:var(--ink);font-weight:700;text-decoration:none;cursor:pointer;white-space:nowrap;max-width:100%}
+.nb span{overflow:hidden;text-overflow:ellipsis}
+.nb svg{width:18px;height:18px;flex:none}
+.nb.primary{background:var(--ink);color:var(--paper)}
+.nb.ghost{border-color:transparent;padding:0 10px 0 6px;color:var(--muted);max-width:30vw}
+.nb.count{border:0;background:var(--sunk);font-weight:600;color:var(--muted);gap:6px}
+.nb.count b{color:var(--ink);font-variant-numeric:tabular-nums}
+.nb.count .chev{width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-135deg) translate(-2px,-2px)}
+@media (max-width:520px){.hide-s{display:none}.nb.ghost{padding:0 8px}}
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(10,10,10,.5);display:flex;align-items:flex-end;justify-content:center}
+.sheet-card{width:100%;max-width:520px;max-height:82vh;overflow:auto;background:var(--paper);border-radius:22px 22px 0 0;padding:10px 12px calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;padding:8px 10px}
+.sheet-h b{font:700 22px var(--display)}
+.sheet-x{width:40px;height:40px;border-radius:50%;border:0;background:var(--surface);font-size:24px;cursor:pointer;color:var(--ink)}
+.slugbox{display:flex;align-items:stretch;border:1.5px solid var(--line);border-radius:var(--r-s);background:var(--sunk);overflow:hidden;min-width:0}
+.slugbox:focus-within{border-color:var(--ink);background:var(--surface)}
+.slugbox span{display:flex;align-items:center;padding:0 2px 0 12px;color:var(--muted);font-size:15px;white-space:nowrap;flex:none;max-width:60%;overflow:hidden;text-overflow:ellipsis}
+.slugbox input{border:0!important;background:none!important;padding-left:0!important;min-width:0;flex:1}
+.hint.okc{color:var(--ok)}
+.hint.err{color:var(--danger)}
+
+/* Porta look v2: arriving at night. A deep blue night, the warm light of an open door,
+   white plaster cards. Serif display for warmth, a plain sans for reading. */
+:root{
+  --paper:#EFEDE8;--surface:#FFFFFF;--sunk:#F6F4F0;--ink:#16202E;--muted:#59606B;--faint:#848A93;--line:#DEDAD2;
+  --night:#14233A;--night2:#1E3352;--lamp:#F3B55B;--lamp2:#FFD99A;--sea:#2F6F8F;--olive:#6B7B3E;--clay:#B65A3C;--rose:#D98C8C;
+  --pine:var(--olive);--sun:var(--lamp);--tomato:var(--clay);--sky:var(--sea);--plum:#6E4A7E;
+  --display:"Gloock",Georgia,"Times New Roman",serif;--body:"Onest",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:20px;--shadow:0 1px 2px rgba(20,35,58,.06),0 8px 24px rgba(20,35,58,.07);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#0F1622;--surface:#172131;--sunk:#131C2A;--ink:#ECEEF2;--muted:#A6ADB8;--faint:#7F8794;--line:#283447;--shadow:none}}
+:root[data-theme="dark"]{--paper:#0F1622;--surface:#172131;--sunk:#131C2A;--ink:#ECEEF2;--muted:#A6ADB8;--faint:#7F8794;--line:#283447;--shadow:none}
+body{background:var(--paper);font-family:var(--body)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.wrap{position:relative;z-index:1}
+h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
+.brand b{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:0}
+.door{background:var(--night)}
+.door::after{background:var(--lamp)}
+
+/* Start: a night scene with a lit doorway */
+.start{position:relative;overflow:hidden;isolation:isolate;border-radius:28px;background:linear-gradient(180deg,var(--night) 0%,var(--night2) 100%);color:#F4F1EA;padding:28px 22px 24px;display:grid;gap:22px}
+.st-art{position:absolute;inset:0;z-index:-1;pointer-events:none}
+.st-moon{position:absolute;right:28px;top:26px;width:46px;height:46px;border-radius:50%;box-shadow:-10px 6px 0 0 #F4E6C8;transform:rotate(-20deg)}
+.st-door{position:absolute;right:-30px;bottom:-10px;width:170px;height:250px;border-radius:85px 85px 0 0;background:radial-gradient(ellipse at 50% 70%,var(--lamp2),var(--lamp) 55%,#E28F3A);box-shadow:0 0 90px 30px rgba(243,181,91,.28)}
+.st-door i{position:absolute;left:-26px;bottom:0;width:30px;height:230px;border-radius:12px 0 0 0;background:#0C1626;transform:skewY(-14deg);transform-origin:right bottom}
+.st-tx{max-width:30rem;display:grid;gap:10px}
+.st-tx small{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--lamp2)}
+.st-tx h1{font-size:clamp(36px,8.5vw,56px);line-height:1;max-width:12ch}
+.st-tx p{margin:0;font-size:17px;line-height:1.5;opacity:.88}
+.st-form{background:rgba(255,255,255,.96);color:#16202E;border-radius:20px;padding:18px;display:grid;gap:8px;max-width:34rem;box-shadow:0 20px 40px rgba(0,0,0,.25)}
+.st-form label{font-weight:700;font-size:15px;margin-top:6px}
+.st-form .opt{font-weight:500;color:#7a808a}
+.st-form input,.st-form textarea{width:100%;font:inherit;font-size:16px;padding:13px 14px;border-radius:12px;border:1.5px solid #D9DCE2;background:#F7F8FA;color:#16202E}
+.st-form input:focus,.st-form textarea:focus{outline:none;border-color:#16202E;background:#fff}
+.st-hint{margin:0;font-size:13.5px;color:#5c636e}
+.st-hint.bad{color:#A8402A;font-weight:600}
+.st-msg{margin:4px 0 0;padding:10px 12px;border-radius:10px;background:#EEF2F7;font-size:14px}
+.st-msg.warn{background:#FCEFD9;color:#5a3a06}
+.st-go{margin-top:10px;justify-content:center;min-height:52px;background:var(--lamp);border-color:var(--lamp);color:#2A1A04;font-size:17px}
+.st-go:disabled{opacity:1;cursor:progress}
+.st-skip{justify-self:center;border:0;background:none;font:inherit;font-size:14px;color:#5c636e;text-decoration:underline;cursor:pointer;padding:6px}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(42,26,4,.25);border-top-color:#2A1A04;animation:sp .8s linear infinite;display:inline-block;vertical-align:-3px}
+.spin.dark{border-color:rgba(22,32,46,.15);border-top-color:var(--ink)}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (min-width:760px){.start{padding:44px 40px 36px;grid-template-columns:minmax(0,1fr)}.st-door{right:40px;width:200px;height:300px}}
+
+/* Home hero and first-version banner */
+.hero{background:var(--night);color:#F4F1EA;border-radius:24px}
+.hero::before{width:120px;height:180px;border-radius:60px 60px 0 0;background:radial-gradient(ellipse at 50% 70%,var(--lamp2),var(--lamp) 60%);right:22px;top:auto;bottom:0;box-shadow:0 0 60px 16px rgba(243,181,91,.25)}
+.hero::after{display:none}
+.hero h1{font-weight:400}
+.hero > *{position:relative;z-index:1}
+@media (max-width:620px){.hero::before{width:70px;height:110px;right:14px;opacity:.85}.hero p{max-width:30ch}.legend{max-width:75%}}
+.mhead p{max-width:34ch}
+@media (max-width:620px){.mhead::before{width:56px;height:90px;right:16px}}
+.go-next{background:var(--lamp);color:#2A1A04}
+.go-next .ar{background:#2A1A04;color:var(--lamp)}
+.meter i.d,.legend i{background:var(--lamp)}
+.draft{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;display:grid;gap:14px;border-left:5px solid var(--lamp)}
+.draft small{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--clay)}
+.draft h2{font-size:26px;margin-top:4px}
+.draft p{margin:10px 0 4px;color:var(--muted);font-size:14.5px}
+.draft ul{margin:0;padding-left:20px;display:grid;gap:4px;font-size:15px}
+.draft-act{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Step cards: white plaster cards, one coloured badge, no shapes */
+.gh h2{font-size:26px}
+.tile{background:var(--surface)!important;color:var(--ink)!important;box-shadow:var(--shadow);border:0;min-height:132px}
+.tile::before,.tile::after{display:none!important}
+.tile .ic{width:44px;height:44px;border-radius:14px;background:var(--tc);color:#fff;display:grid;place-items:center}
+.tile .ic svg{width:24px;height:24px}
+.tile b{font-family:var(--display);font-weight:400;font-size:22px;margin-top:14px}
+.tile small{color:var(--muted);opacity:1;font-weight:500}
+.pill{background:var(--sunk);color:var(--muted);box-shadow:none}
+.pill.new{background:var(--sunk);color:var(--muted);box-shadow:none}
+.pill.pre{background:#E5EEF4;color:var(--sea)}
+.pill.chk{background:#FCEFD9;color:#8A5A12}
+.pill.done{background:#E6EFE0;color:#46612A}
+.tile.send{box-shadow:var(--shadow);background:var(--night)!important;color:#F4F1EA!important}
+.tile.send small{color:#C9CFD8!important}
+.tile.send .go{background:var(--lamp);color:#2A1A04}
+.mhead{background:var(--night)!important;color:#F4F1EA!important}
+.mhead::before{width:90px;height:140px;border-radius:45px 45px 0 0;background:var(--tc);opacity:.9;right:24px;top:auto;bottom:0}
+.mhead h1{font-weight:400}
+.card{box-shadow:var(--shadow)}
+.btn.primary{background:var(--night);border-color:var(--night);color:#fff}
+.btn.sun{background:var(--lamp);border-color:var(--lamp)}
+.req{background:var(--lamp)}
+.si[aria-current]{box-shadow:inset 3px 0 0 var(--lamp)}
+.nb.primary{background:var(--night);border-color:var(--night);color:#fff}
+#navbar{background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.chip input:checked+span{background:var(--night);border-color:var(--night);color:#fff}
+
+/* Swipe cards */
+.sw{display:grid;gap:12px}
+.sw-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.sw-tabs::-webkit-scrollbar{display:none}
+.sw-tabs button{flex:none;border:1.5px solid var(--line);background:var(--sunk);border-radius:999px;padding:8px 14px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;color:var(--ink)}
+.sw-tabs button[aria-selected="true"]{background:var(--night);border-color:var(--night);color:#fff}
+.sw-count{margin:0;font-size:13px;color:var(--muted)}
+.sw-card{background:var(--surface);border-radius:22px;box-shadow:0 12px 32px rgba(20,35,58,.14);overflow:hidden;display:grid;max-width:440px;transition:transform .22s ease,opacity .22s ease}
+.sw-card.go-yes{transform:translateX(40%) rotate(6deg);opacity:0}
+.sw-card.go-no{transform:translateX(-40%) rotate(-6deg);opacity:0}
+.sw-ph{height:220px;background:var(--sunk) center/cover no-repeat;display:grid;place-items:center;font:400 64px var(--display);color:var(--faint)}
+.sw-tx{padding:14px 16px 4px;display:grid;gap:4px}
+.sw-tx small{font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.sw-tx h3{font-size:26px}
+.sw-tx p{margin:0;font-size:14.5px;color:var(--muted)}
+.sw-meta b{color:var(--ink)}
+.sw-tx a{font-size:14px;color:var(--sea);font-weight:600}
+.sw-btns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;padding:14px 16px 16px}
+.sw-btns button{min-height:50px;border-radius:999px;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.sw-no{border:1.5px solid var(--line);background:var(--surface);color:var(--muted)}
+.sw-yes{border:0;background:var(--clay);color:#fff}
+.sw-empty{padding:22px;border-radius:18px;background:var(--sunk);color:var(--muted);font-size:15px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sw-picks{display:grid;gap:8px;max-width:520px}
+.sw-picks > b{font-size:14px}
+.sw-pick{display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center;background:var(--sunk);border-radius:14px;padding:10px 12px}
+.sw-pick span{font-weight:600}
+.sw-pick small{font-weight:500;color:var(--muted)}
+.sw-pick input{grid-column:1/-1;grid-row:2;font-size:14px!important;padding:8px 10px!important}
+.sw-pick .x{grid-column:2;grid-row:1;border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)}
+
+@media (max-width:620px){.mhead::before{width:52px!important;height:84px!important;right:14px!important}.mhead p{padding-right:44px}}
+
+/* Host lists */
+.pl{display:flex;flex-direction:column;gap:12px;margin-bottom:10px}
+.pl-row{display:grid;grid-template-columns:minmax(0,1fr) 36px;gap:8px;align-items:start;padding:12px;background:var(--sunk);border-radius:var(--r-s)}
+.pl-row input,.pl-row textarea{grid-column:1}
+.pl-row .x{grid-column:2;grid-row:1;width:36px;height:36px;border-radius:50%;border:0;background:var(--surface);cursor:pointer;font-size:20px;color:var(--ink)}
+.plan{display:flex;flex-direction:column;gap:12px}
+.plan-row{display:flex;flex-direction:column;gap:6px;padding:12px;background:var(--sunk);border-radius:var(--r-s)}
+
+.frm.sug{background:color-mix(in srgb,var(--sun) 30%,transparent);color:#7a5200}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#home" aria-label="Porta, all steps"><span class="door" aria-hidden="true"></span><b>Porta</b></a>
+    <span class="save" id="saveState"><span class="sdot"></span><span>Connecting…</span></span>
+  </header>
+  <main id="main" class="wrap" style="gap:18px"><div class="loading">Loading your onboarding…</div></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const toast = t => { const e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => e.hidden = true, 2600); };
+const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ARROW = svg('<path d="M5 12h13M13 6l6 6-6 6"/>'), BACK = svg('<path d="M15 5l-7 7 7 7"/>'), CHECK = svg('<path d="M4 12.5l5 5L20 6"/>');
+const I = {
+  link: svg('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
+  tag: svg('<path d="M3 12V4h8l9 9-8 8z"/><circle cx="7.5" cy="7.5" r="1.5"/>'),
+  eye: svg('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+  grid: svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  cam: svg('<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M8 6l2-3h4l2 3"/><circle cx="12" cy="13" r="3.5"/>'),
+  tool: svg('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/>'),
+  key: svg('<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>'),
+  wifi: svg('<path d="M2 9a15 15 0 0 1 20 0"/><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor"/>'),
+  car: svg('<path d="M4 17h16v-5l-2.5-5h-11L4 12z"/><path d="M4 12h16"/><circle cx="8" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/>'),
+  bin: svg('<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/>'),
+  phone: svg('<path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/>'),
+  gift: svg('<rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M3 12h18M12 8v13M12 8c-1.5-3-5-4-5-1.5S10 8 12 8c2 0 5 .5 5-1.5S13.5 5 12 8z"/>'),
+  heart: svg('<path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/>'),
+  compass: svg('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'),
+  kite: svg('<path d="M12 3l7 7-7 7-7-7z"/><path d="M12 17v4M9 21h6"/>'),
+  send: svg('<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>'),
+  bag: svg('<path d="M5 8h14l-1.5 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>')
+};
+
+/* ---------- Answer options ---------- */
+const LANGS = [['en','English'],['es','Español'],['fr','Français'],['ca','Català'],['de','Deutsch'],['nl','Nederlands'],['it','Italiano'],['pt','Português']];
+const GUESTS = ['Families with kids','Couples','Groups of friends','Remote workers','Older guests','Guests with pets','Wedding or event guests'];
+const AMEN = ['Pool','Garden','BBQ','Air conditioning','Heating or fireplace','Washing machine','Dishwasher','Coffee machine','Smart TV','Cot or high chair','Pets allowed','Free parking','EV charger','Hot tub','Bikes','Workspace','Sea view','Lift'];
+const ROOMS = ['Outside','Living room','Kitchen','Bedroom','Bathroom','Pool','Garden','Terrace','Office','Laundry','View','Other'];
+const INTERESTS = ['Beaches','Wine and food','Hiking and nature','Culture and history','Local markets','Nightlife','Festivals','Sports','Shopping','Wellness'];
+const MOODS = [
+  {id:'auto',name:'Decide for me',d:'We match it to your images.',cls:'m-auto',n:0},
+  {id:'editorial',name:'Editorial',d:'Photo-led, elegant type, like a magazine.',cls:'m-edit',n:6},
+  {id:'soft',name:'Soft and airy',d:'Rounded cards, gentle colours.',cls:'m-soft',n:5},
+  {id:'minimal',name:'Minimal and calm',d:'Text first, thin lines, white.',cls:'m-min',n:5},
+  {id:'bold',name:'Bold and graphic',d:'Colour blocks, strong shapes, poster energy.',cls:'m-bold',n:5}
+];
+
+/* ---------- Guide sections (what the finished guide contains) ---------- */
+// Same sections as the live Ca La Kimberly guide. Optional extra sections (arrival, extras, shops, kids corner, day trips) come later.
+const SECTIONS = [
+  {id:'welcome',name:'Welcome and photos',d:'Cover photo, name and a short welcome.',built:true,on:()=>true,fixed:true},
+  {id:'houseguide',name:'House guide by room',d:'How everything works, room by room.',built:true,on:()=>true},
+  {id:'wifi',name:'Wi-Fi card',d:'Network, password and a QR code to join.',built:true,on:()=>true},
+  {id:'checkout',name:'Check-out',d:'Time and the short list before leaving.',built:true,on:()=>true},
+  {id:'rubbish',name:'Rubbish and recycling',d:'Which bin goes out tonight.',built:true,on:()=>true},
+  {id:'emergency',name:'Emergency and health',d:'112, hospital, pharmacy, your number.',built:true,on:()=>true},
+  {id:'markets',name:'Local markets',d:'Weekly markets, with what is on today.',built:true,on:a=>(a.interests||[]).includes('Local markets')},
+  {id:'eat',name:'Eat and drink',d:'Your favourites plus researched picks.',built:true,on:()=>true},
+  {id:'todo',name:'Things to do',d:'Beaches, walks, wine, sights nearby.',built:true,on:()=>true},
+  {id:'events',name:'Local events',d:'Festivals and fairs during the stay.',built:true,on:a=>(a.interests||[]).includes('Festivals')},
+  {id:'map',name:'Map',d:'Every place in the guide on one map.',built:true,on:()=>true},
+  {id:'quick',name:'Quick calls',d:'One tap to call a taxi or you.',built:true,on:()=>true}
+];
+const secOn = id => { const m = A.modules || {}; const s = SECTIONS.find(x => x.id === id); return id in m ? !!m[id] : !!(s && s.on(A)); };
+
+/* ---------- Onboarding modules ----------
+   One module = one page of questions. To add an idea: add one object here.
+   sec: shown only while that guide section is switched on.
+   need: what must be filled for "Done" (answer keys, or "upload:<kind>"). */
+const MODULES = [
+  {id:'listing',group:'basics',title:'Your listing',sub:'Link, name, town',icon:'link',tc:'var(--pine)',sh:'var(--sun)',shape:'circle',
+   lead:'Your listing is where everything starts. With the link (or its text) and the town, we write the rest.',
+   need:['source','town'],fields:['listingUrl','listingText','fillBtn','placeName','propertyType','town','region','sleeps','hostName','privacyNote']},
+  {id:'guide',group:'basics',title:'Name, address, languages',sub:'What guests see',icon:'tag',tc:'var(--sun)',ti:'#1b1407',sh:'var(--tomato)',shape:'half',
+   lead:'Most hosts use the house name. It becomes the title of the guide and the app name on guests’ phones.',
+   need:[],fields:['guideName','slug','tagline','languages','guests','up:logo']},
+  {id:'look',group:'basics',title:'The look',sub:'Images and mood',icon:'eye',tc:'var(--tomato)',sh:'var(--ink)',shape:'tri',
+   lead:'Your guide should look and work the way you like, not like ours. Show us images and apps you love and tell us how guests should find things.',
+   need:['styleBrief'],fields:['styleBrief','up:inspiration','refLinks','feelWords','navStyle','homeFirst','up:cover','lookAvoid']},
+  {id:'sections',group:'basics',title:'Guide sections',sub:'Pick what goes in',icon:'grid',tc:'var(--ink)',ti:'#fff',sh:'var(--sky)',shape:'square',
+   lead:'Each section you keep adds its own short set of questions to this page. Ticked ones fit your answers so far.',
+   need:[],fields:['sectionPicker','moduleIdeas']},
+  {id:'photos',group:'house',title:'Photos by room',sub:'Up to 16',icon:'cam',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'quarter',
+   lead:'Tag each photo with its room: it lands in the right part of the house guide.',need:[],fields:['up:photo']},
+  {id:'howto',group:'house',title:'How things work',sub:'Boiler, pool, TV…',icon:'tool',tc:'var(--clay)',ti:'#fff',sh:'var(--ink)',shape:'bar',sec:'houseguide',
+   lead:'One line per thing guests get stuck on. We put each line in the right room.',need:[],fields:['amenities','howTos','up:manual']},
+  {id:'stay',group:'house',title:'Check-in and rules',sub:'Times, rules, leaving',icon:'key',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
+   lead:'The times and the few rules that matter.',need:[],fields:['checkIn','checkOut','houseRules','checkoutTasks']},
+  {id:'wifi',group:'house',title:'Wi-Fi',sub:'Name and password',icon:'wifi',tc:'var(--pine)',ti:'#fff',sh:'var(--tomato)',shape:'half',sec:'wifi',
+   lead:'We make a QR code so guests join with one tap.',need:[],fields:['wifiName','wifiPassword','wifiNote']},
+  {id:'arrival',group:'practical',title:'Arrival and parking',sub:'For a night arrival',icon:'car',tc:'var(--sun)',ti:'#1b1407',sh:'var(--sky)',shape:'square',sec:'houseguide',
+   lead:'Written for guests who arrive in the dark. No door codes here: send those privately.',need:[],fields:['arrival','up:arrivalPhoto']},
+  {id:'rubbish',group:'practical',title:'Rubbish',sub:'Bins and days',icon:'bin',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'circle',sec:'rubbish',
+   lead:'Only you know how this works at the house, so we do not look it up. Tell us how it is collected and, if bins go out at the house, which day each one is emptied.',need:[],fields:['rubbishMode','rubbishWhere','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto']},
+  {id:'contacts',group:'practical',title:'Contacts',sub:'You, backup, taxi',icon:'phone',tc:'var(--tomato)',ti:'#fff',sh:'var(--ink)',shape:'tri',
+   lead:'Numbers guests can call. We add 112, the nearest hospital and pharmacy.',need:[],fields:['hostPhone','backupContact','taxi']},
+  {id:'nearby',group:'area',title:'Places nearby',sub:'Swipe the best-rated',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',
+   lead:'The best-rated places around you, one at a time. Keep the ones you would send a friend to, and add a word if you like. All optional.',need:[],fields:['swipe']},
+  {id:'taste',group:'area',title:'Your taste',sub:'Food, outings, tone',icon:'heart',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
+   lead:'Everything here is optional. It tells us what kind of places to research and how to write about them, wherever your place is.',need:[],fields:['eatStyle','eatPrice','eatVibe','dietary','doStyle','avoidTypes','tone','voiceNotes']},
+  {id:'favourites',group:'area',title:'Your places',sub:'Where you go',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',
+   lead:'Where you eat and drink is your call, so we add nothing of our own there: give us the places you send friends to, as a Google Maps link, a website or just a name, with a few words from you.',need:[],fields:['favEat','favDo','favourites','localTips','avoidPlaces']},
+  {id:'area',group:'area',title:'Your area',sub:'Interests and distance',icon:'link',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'circle',
+   lead:'We research markets, things to do and events within the distance you pick.',need:[],fields:['interests','radius']},
+];
+const GROUPS = [['basics','The basics'],['house','The house'],['practical','Practical'],['area','Around you']];
+
+/* ---------- Questions ---------- */
+const Q = {
+  listingUrl:{t:'url',label:'Listing link',ph:'https://www.airbnb.com/rooms/…',hint:'Airbnb, Booking or your own site.',full:true},
+  listingText:{t:'area',rows:8,label:'Your listing text',opt:true,full:true,ph:'Entire home in [town], [country]\n6 guests · 4 bedrooms · 5 beds\n…\nCheck-in after 4:00 PM\nCheckout before 11:00 AM\nNo parties or events…',hint:'On your listing page, select everything from the title down to the house rules (including “What this place offers”), copy and paste it here.'},
+  placeName:{label:'Name of the place',ph:'Villa Mar, Apartment 3B…'},
+  propertyType:{t:'select',label:'Type of place',opts:['House','Villa','Apartment','Cottage','Farmhouse','Room','Other']},
+  town:{label:'Town or village',ph:'Where the place is'},
+  region:{label:'Region and country',ph:'Region, country',opt:true},
+  sleeps:{t:'number',label:'Sleeps',ph:'6',opt:true},
+  hostName:{label:'Your first name',ph:'As guests know you',opt:true},
+  guideName:{label:'Guide name',opt:true,hintFn:()=>v('placeName')?`Leave empty to use “${v('placeName')}”.`:''},
+  tagline:{label:'Welcome line',opt:true,ph:'Make yourself at home'},
+  languages:{t:'chips',label:'Languages',opts:LANGS,hint:'The guide opens in the guest’s phone language when it can.'},
+  guests:{t:'chips',label:'Who usually stays',opts:GUESTS,opt:true},
+  styleBrief:{t:'area',rows:4,label:'In your own words, what should your guide feel like?',full:true,ph:'Like a small hotel in Tuscany: warm, earthy, lots of white space. Or: bright and playful, like a children\u2019s picture book.',hint:'The more specific you are, the more different your guide looks. We design a look just for you, not from a template.'},
+  lookLikes:{t:'area',rows:3,label:'What do you like about them?',opt:true,full:true,ph:'The blue of the sea, the hand-drawn feel…'},
+  mood:{t:'mood',label:'Which style feels closest?',opt:true,hint:'Optional. “Decide for me” builds it from your images.'},
+  slug:{t:'slug',label:'Web address of your guide',hint:'The first part is ours, the last part is yours. Short and easy to type works best.'},
+  refLinks:{t:'area',rows:2,label:'Apps or websites you love using',opt:true,full:true,ph:'Airbnb, Citymapper, a hotel site, a magazine…',hint:'Links or names. We look at how they feel and work.'},
+  feelWords:{t:'chips',label:'Words for the feel',opt:true,opts:['Cosy','Elegant','Playful','Modern','Rustic','Calm','Local and authentic','Luxurious','Family friendly','Colourful']},
+  navStyle:{t:'radio',label:'How should guests find things?',opts:['Big tiles, like an app','A simple list','Photo-led, like a magazine','Map first','Search first','Not sure']},
+  homeFirst:{t:'chips',label:'What should guests see first?',opt:true,hint:'Pick up to four.',opts:['Wi-Fi','Check-out time','House guide','How to get in','Places to eat','What\u2019s on today','Beaches','Map','Your phone number','Rubbish tonight']},
+  lookAvoid:{t:'area',rows:2,label:'Anything to avoid?',opt:true,full:true,ph:'No pink, nothing too corporate…'},
+  moduleIdeas:{t:'area',rows:2,label:'An idea we don’t have yet?',opt:true,full:true,ph:'A page about the vineyard next door…',hint:'We build new ideas as new sections.'},
+  amenities:{t:'chips',label:'What the place has',opts:AMEN,opt:true},
+  howTos:{t:'area',rows:7,label:'How things work',full:true,ph:'Boiler: press the red button for 3 seconds\nPool cover: the key is on the hook by the door\nTV: Netflix app, sign in with your own account'},
+  checkIn:{t:'time',label:'Check-in from'},
+  checkOut:{t:'time',label:'Check-out by'},
+  houseRules:{t:'area',rows:4,label:'House rules',opt:true,full:true,ph:'Quiet after 23:00\nNo parties\nNo smoking inside'},
+  checkoutTasks:{t:'area',rows:3,label:'Before leaving',opt:true,full:true,ph:'Dishes in the dishwasher, keys in the box…'},
+  wifiName:{label:'Network name'},
+  wifiPassword:{label:'Password',hint:'Shown to guests in the guide.'},
+  arrival:{t:'area',rows:5,label:'Finding the place and parking',full:true,ph:'From the roundabout take the dirt road, park under the pine tree…'},
+  rubbishMode:{t:'radio',label:'How is rubbish collected where you are?',opt:true,opts:['Shared containers in the street','Bins collected at the house','A mix of both']},
+  rubbishWhere:{t:'area',rows:2,label:'Where are the containers?',opt:true,full:true,ph:'At the end of the lane, 100 m to the left of the gate. Glass is by the church.',show:()=>/container|mix/i.test(v('rubbishMode'))},
+  rubbishPlan:{t:'plan',label:'Which bin goes out, and which days is it emptied?',opt:true,full:true,hint:'Tick the days each bin is collected. Leave a row empty if it is not collected.',show:()=>/house|mix/i.test(v('rubbishMode'))},
+  rubbishTime:{t:'time',label:'Bins must be out by',opt:true,show:()=>/house|mix/i.test(v('rubbishMode'))},
+  rubbishNotes:{t:'area',rows:3,label:'Anything guests must know',opt:true,full:true,ph:'Organic goes in the small brown bin under the sink. Bring cardboard flat…'},
+  hostPhone:{t:'tel',label:'Your phone for guests',ph:'With the country code'},
+  backupContact:{label:'Backup contact',opt:true,ph:'A neighbour or friend, with their number'},
+  taxi:{label:'Taxi you trust',opt:true,ph:'Name and number'},
+  essentials:{t:'area',rows:4,label:'Shops you use',opt:true,full:true,ph:'The supermarket you use and why\nThe best bakery, the pharmacy that opens on Sundays…'},
+  extras:{t:'area',rows:3,label:'Extras you offer',full:true,ph:'Late check-out, with the price\nAirport transfer, breakfast basket…'},
+  favEat:{t:'places',label:'Where you eat and drink',opt:true,full:true,hint:'Paste a Google Maps link, a website, or just type the name. Then add your comment: what to order, when to go.'},
+  favDo:{t:'area',rows:5,label:'What you do around here',opt:true,full:true,ph:'A walk, a beach, a view, a museum, with the best time to go…'},
+  favourites:{t:'area',rows:3,label:'Anything else you recommend',opt:true,full:true,ph:'Shops, a market, a local producer, a hidden spot…'},
+  eatStyle:{t:'chips',label:'The food you recommend',opt:true,opts:['Local and traditional','Seafood','Grill and meat','Fine dining','Cheap and cheerful','Cafés and brunch','Vegetarian friendly','International','Wine and tapas bars','Street food','Bakeries and sweets']},
+  eatPrice:{t:'radio',label:'Usual price level',opt:true,opts:['Budget','Mid-range','Special occasion','A mix']},
+  eatVibe:{t:'chips',label:'The places you like',opt:true,opts:['Where locals go','Great views','Terrace or garden','Quiet','Lively','Kid friendly','Dog friendly','Open late','Walking distance']},
+  dietary:{t:'chips',label:'Diets your guests often ask about',opt:true,opts:['Vegetarian','Vegan','Gluten free','Halal','Kosher','Lactose free']},
+  doStyle:{t:'chips',label:'The things you suggest',opt:true,opts:['Outdoors and active','Relaxing','Culture and history','Hidden gems','Classic sights','Rainy-day ideas','With kids','Nightlife','Food and wine experiences','Shopping']},
+  avoidTypes:{t:'area',rows:2,label:'What you never recommend',opt:true,full:true,ph:'Tourist traps, chains, places that need a car…',hint:'Kept private. It just shapes our research.'},
+  tone:{t:'radio',label:'How should the guide talk to guests?',opt:true,opts:['Warm and personal','Short and practical','Fun and playful','Elegant and calm']},
+  voiceNotes:{t:'area',rows:3,label:'Anything about your style with guests?',opt:true,full:true,ph:'We use first names, we love dogs, we always leave a bottle of local wine…'},
+  localTips:{t:'area',rows:4,label:'Local tips only you know',opt:true,full:true,ph:'When the market is quietest, where to park for the old town, the best spot for sunset…'},
+  avoidPlaces:{t:'area',rows:2,label:'Places you would not recommend',opt:true,full:true,hint:'Kept private. We just leave them out.'},
+  interests:{t:'chips',label:'What your guests come for',opts:INTERESTS},
+  radius:{t:'radio',label:'How far should we look?',opts:['15 min','30 min','45 min','1 hour'],suffix:' by car'},
+  kidsAges:{t:'chips',label:'Kids who usually stay',opts:['Babies','Toddlers','4 to 8','9 to 12','Teenagers']},
+  kidsGear:{t:'chips',label:'Kids gear at the house',opts:['Cot','High chair','Stair gate','Pool fence','Toys and games','Bike seats'],opt:true},
+  kidsNotes:{t:'area',rows:2,label:'Anything for parents to know?',opt:true,full:true,ph:'The pool has no fence, the stairs are steep…'},
+  email:{t:'email',label:'Email for your review link',ph:'you@example.com'},
+  notes:{t:'area',rows:3,label:'Anything else?',opt:true,full:true},
+  sMinutes:{t:'radio',label:'How did filling this in feel?',opt:true,opts:['Quick and easy','About right','Too long','Confusing in places']},
+  sMissing:{t:'area',rows:3,label:'What did we not ask that we should have?',opt:true,full:true},
+  sIdeal:{t:'area',rows:3,label:'Describe your ideal guest guide in one or two sentences',opt:true,full:true,ph:'Guests open it and immediately see…'},
+  sUseNow:{t:'radio',label:'What do you use today for guests?',opt:true,opts:['Nothing, I answer messages','A printed folder','A PDF or Google Doc','Airbnb guidebook','Another app (Touch Stay, Hostfully…)']},
+  sPay:{t:'radio',label:'Would you pay for this?',opt:true,opts:['No','Up to 5 € a month','5 to 10 € a month','10 to 20 € a month','A one-off price']}
+};
+const UP = {
+  logo:{label:'Logo or symbol',opt:true,max:1,hint:'A logo, a drawing, a photo of your dog. None? We design a simple one.'},
+  inspiration:{label:'Images for the look',max:3,what:'1 to 3 images',hint:'Artwork, a photo of the place, a poster or a website screenshot.'},
+  cover:{label:'Main photo',max:1,hint:'The photo at the top of the guide. Landscape works best.'},
+  photo:{label:'Photos of the place',max:16,rooms:true,what:'Up to 16 photos'},
+  manual:{label:'Manuals or labels',opt:true,max:6,doc:true,hint:'Photos of labels or instructions are fine.'},
+  arrivalPhoto:{label:'Photos of the way in',opt:true,max:4,hint:'The gate, the turning, where to park.'},
+  rubbishPhoto:{label:'Town collection calendar',opt:true,max:2,hint:'A photo of the leaflet is enough.'},
+  feedback:{label:'Screenshots',opt:true,max:6,hint:'Circle the problem on a screenshot if that is easier.'}
+};
+/* ---------- Field rendering ---------- */
+const NEEDED = new Set(MODULES.flatMap(m => m.need));
+function badge(k){ const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k; if (!NEEDED.has(key)) return '<span class="opt">optional</span>'; return filled(key) ? `<span class="req ok">${CHECK.replace('<svg','<svg width="11" height="11"')} Done</span>` : '<span class="req">Needed</span>'; }
+function field(k){
+  if (k === 'slug') { const pr = slugProblem(v('slug')); return `<div class="f full"><label for="f_slug">${esc(Q.slug.label)} ${badge('slug')}</label><p class="hint">${esc(Q.slug.hint)}</p><div class="slugbox"><span>${esc(BASE)}/</span><input id="f_slug" data-k="slug" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(v('slug'))}" placeholder="villa-mar" maxlength="40"></div><p id="slugMsg" class="hint${pr ? ' err' : ' okc'}">${esc(pr || `Your guests will open ${BASE}/${v('slug')}`)}</p></div>`; }
+  if (k === 'fillBtn') return `<div class="full" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn sun" type="button" id="fillListing">Fill in from my listing</button><span class="hint">Fills the steps it can and marks them “Review”. Nothing you typed is replaced.</span></div>`;
+  if (k === 'swipe') return swipeHTML();
+  if (k === 'privacyNote') return `<div class="note full"><span aria-hidden="true">⌂</span><div>We never show your street address. The map uses a point near the house.</div></div>`;
+  if (k === 'wifiNote') return `<div class="note full"><div>Guests see the password in the guide, so use your guest network if you have one.</div></div>`;
+  if (k === 'sectionPicker') return sectionPicker();
+  if (k.startsWith('up:')) return drop(k.slice(3));
+  const q = Q[k]; if (!q) return '';
+  if (q.show && !q.show()) return '';
+  const hint = q.hintFn ? q.hintFn() : q.hint;
+  const head = `${esc(q.label)} ${badge(k)}${A._pre && A._pre[k] && filled(k) ? (A._basis && A._basis[k] === 'suggested' ? ' <span class="frm sug">Suggested by Claude: please check</span>' : ' <span class="frm">From your listing</span>') : ''}`;
+  const t = q.t || 'text';
+  if (t === 'chips') { const cur = A[k] || []; return `<div class="f full"><span class="lab" id="l_${k}">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="chips" role="group" aria-labelledby="l_${k}">${q.opts.map(x => { const [val, lab] = Array.isArray(x) ? x : [x, x]; return `<label class="chip"><input type="checkbox" data-multi="${k}" value="${esc(val)}"${cur.includes(val)?' checked':''}><span>${esc(lab)}</span></label>`; }).join('')}</div></div>`; }
+  if (t === 'radio') return `<div class="f full"><span class="lab" id="l_${k}">${head}</span><div class="chips" role="radiogroup" aria-labelledby="l_${k}">${q.opts.map(x => `<label class="chip"><input type="radio" name="${k}" data-radio="${k}" value="${esc(x)}"${v(k)===x?' checked':''}><span>${esc(x + (q.suffix||''))}</span></label>`).join('')}</div></div>`;
+  if (t === 'plan') { const cur = A[k] || {}; return `<div class="f full"><span class="lab" id="l_${k}">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="plan">${BIN_ROWS.map(([id, lab]) => `<div class="plan-row"><b>${esc(lab)}</b><div class="chips" role="group" aria-label="${esc(lab)}">${DAYS7.map(([d, dl]) => `<label class="chip"><input type="checkbox" data-plan="${k}" data-bin="${id}" value="${d}"${(cur[id] || []).includes(d) ? ' checked' : ''}><span>${dl}</span></label>`).join('')}</div></div>`).join('')}</div></div>`; }
+  if (t === 'places') { const rows = placeRowsRaw(k); return `<div class="f full" id="pl_${k}"><span class="lab">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="pl">${rows.map((r, i) => `<div class="pl-row"><input data-pl="${k}" data-i="${i}" data-f="p" value="${esc(r.p)}" placeholder="Name, Google Maps link or website" aria-label="Place ${i + 1}"><textarea data-pl="${k}" data-i="${i}" data-f="c" rows="2" placeholder="Your comment: what to order, when to go…" aria-label="Comment on place ${i + 1}">${esc(r.c)}</textarea><button type="button" class="x" data-plrm="${k}" data-i="${i}" aria-label="Remove place ${i + 1}">×</button></div>`).join('')}</div><button type="button" class="btn small" data-pladd="${k}">+ Add a place</button></div>`; }
+  if (t === 'mood') return `<div class="f full"><span class="lab" id="l_${k}">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="moods" role="radiogroup" aria-labelledby="l_${k}">${MOODS.map(m => `<label class="mood"><input type="radio" name="mood" data-radio="mood" value="${m.id}"${v('mood')===m.id?' checked':''}><div class="box"><div class="mock ${m.cls}">${m.n?'<i></i>'.repeat(m.n):'?'}</div><b>${m.name}</b><small>${m.d}</small></div></label>`).join('')}</div></div>`;
+  if (t === 'select') return `<div class="f${q.full?' full':''}"><label for="f_${k}">${head}</label><select id="f_${k}" data-k="${k}"><option value="">Choose…</option>${q.opts.map(x => `<option${v(k)===x?' selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
+  const inp = t === 'area' ? `<textarea id="f_${k}" data-k="${k}" rows="${q.rows||4}" placeholder="${esc(q.ph||'')}">${esc(v(k))}</textarea>`
+    : `<input id="f_${k}" data-k="${k}" type="${t}" value="${esc(v(k))}" placeholder="${esc(q.ph||'')}"${t==='number'?' inputmode="numeric"':''}>`;
+  return `<div class="f${q.full?' full':''}"><label for="f_${k}">${head}</label>${hint?`<p class="hint">${esc(hint)}</p>`:''}${inp}</div>`;
+}
+function drop(kind){
+  const o = UP[kind]; const mine = uploads.filter(u => u.kind === kind && !u.round), pend = [...pending.values()].filter(p => p.kind === kind);
+  const accept = 'image/*';
+  return `<div class="f full"><span class="lab">${esc(o.label)} ${badge('up:' + kind)}</span>${o.hint?`<p class="hint">${esc(o.hint)}</p>`:''}
+  <div class="drop" data-drop="${kind}" data-max="${o.max}">
+    <div class="row"><p>${mine.length} of ${o.max} · ${esc(o.what || 'Photos or screenshots')}</p>
+      ${true ? `<label class="btn small"><input class="sr" type="file" data-file="${kind}" accept="${accept}"${o.max > 1 ? ' multiple' : ''}>${mine.length ? 'Add more' : 'Choose files'}</label>` : '<p class="err">Open in Claude to upload</p>'}</div>
+    ${mine.length || pend.length ? `<div class="thumbs">${mine.map(u => `<div class="thumb">${/^image\//.test(u.type) || u.dataUrl ? `<img src="${esc(srcOf(u))}" alt="${esc(u.name)}" loading="lazy">` : `<div class="doc">${esc(u.name)}</div>`}
+      ${o.rooms ? `<select data-room="${u.id}" aria-label="Room for ${esc(u.name)}"><option value="">Room…</option>${ROOMS.map(r => `<option${u.room===r?' selected':''}>${r}</option>`).join('')}</select>` : ''}
+      <button class="x" type="button" data-del="${u.id}" aria-label="Remove ${esc(u.name)}">×</button></div>`).join('')}
+      ${pend.map(p => `<div class="thumb pending">${p.preview ? `<img src="${p.preview}" alt="">` : `<div class="doc">${esc(p.name)}</div>`}</div>`).join('')}</div>` : ''}
+  </div></div>`;
+}
+function sectionPicker(){
+  const qmod = id => MODULES.find(m => m.sec === id);
+  return `<div class="f full"><span class="lab">Sections of your guide</span><div class="mods">${SECTIONS.map(s => { const on = secOn(s.id); const q = qmod(s.id);
+    return `<label class="mod"><input type="checkbox" data-sec="${s.id}"${on?' checked':''}${s.fixed?' disabled':''}${!s.built?' disabled':''}><div class="box"><span class="tick" aria-hidden="true">✓</span><div><b>${esc(s.name)}${!s.built?' <span class="tag">Coming</span>':''}${q && on?` <span class="tag q">+ ${esc(q.title)} questions</span>`:''}</b><small>${esc(s.d)}</small></div></div></label>`; }).join('')}</div></div>`;
+}
+
+/* ---------- Views ---------- */
+const route = () => (location.hash || '#home').slice(1);
+function tileVars(m){ return `--tc:${m.tc};--ti:${m.ti || '#fff'};--sh:${m.sh}`; }
+function homeHTML(){
+  const mods = visible(), st = mods.map(m => statusOf(m)), done = st.filter(s => s.k === 'done').length, chk = st.filter(s => s.k === 'chk').length;
+  const next = mods.find(m => statusOf(m).k !== 'done');
+  const last = A._last && mods.find(m => m.id === A._last && statusOf(m).k !== 'done');
+  const go = last || next;
+  const name = v('guideName') || v('placeName');
+  const miss = sendMissing();
+  return `<section class="hero">
+      <small>${name ? 'Your guide' : 'New guide'}</small>
+      <h1>${esc(name || 'Let’s build your guest guide')}</h1>
+      <p>${A._draftAt ? 'Everything here is optional apart from your listing. Review what we wrote, add what is missing, send when you like.' : 'Go in any order. Only your listing and town are needed; the rest makes your guide better. Everything saves as you type.'}</p>
+      <div class="meter" aria-label="${done} of ${mods.length} done">${st.map(s => `<i class="${s.k === 'done' ? 'd' : s.k === 'chk' ? 'c' : s.k === 'pre' ? 'p' : ''}"></i>`).join('')}</div>
+      <div class="legend"><span><i></i>${done} done</span>${st.some(s => s.k === 'pre') ? `<span><i class="p"></i>${st.filter(s => s.k === 'pre').length} to review</span>` : ''}<span><i class="c"></i>${chk} checked</span><span><i class="n"></i>${mods.length - done - chk - st.filter(s => s.k === 'pre').length} not started</span></div>
+      ${go ? `<a class="go-next" href="#${go.id}"><span>${statusOf(go).k === 'pre' ? 'Review' : last ? 'Continue' : done || chk ? 'Next' : 'Start'}: ${esc(go.title)}</span><span class="ar">${ARROW}</span></a>` : `<a class="go-next" href="#send"><span>Review and send</span><span class="ar">${ARROW}</span></a>`}
+    </section>
+    ${draftBanner()}
+    ${GROUPS.map(([g, gt]) => { const ms = mods.filter(m => m.group === g); if (!ms.length) return ''; const n = ms.filter(m => statusOf(m).k === 'done').length;
+      return `<div class="gh"><h2>${gt}</h2><span>${n}/${ms.length} done</span></div><div class="tiles">${ms.map(tileHTML).join('')}</div>`; }).join('')}
+    <div class="tiles"><a class="tile send${miss.length ? ' locked' : ''}" href="#send"><span class="ic">${I.send}</span><span class="tx"><b>Review and send</b><small>${miss.length ? `${miss.length} thing${miss.length > 1 ? 's' : ''} left before sending` : 'Ready to send'}</small></span><span class="go">${ARROW}</span></a></div>`;
+}
+function tileHTML(m){
+  const s = statusOf(m);
+  return `<a class="tile${s.k === 'done' ? ' is-done' : ''}" href="#${m.id}" data-shape="${m.shape}" style="${tileVars(m)}">
+    <span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span>
+    <span class="ic">${I[m.icon] || ''}</span><b>${esc(m.title)}</b><small>${esc(m.sub)}</small></a>`;
+}
+/* ---------- Navigation between steps ----------
+   Desktop: a rail with every step and its status, always visible next to the page.
+   Phone: a bottom bar with Back, "3 of 15" (opens the full list) and Done / Next.
+   The browser back button works too: every step has its own address (#look, #wifi…). */
+const STATUS_ICON = { pre: '<i class="pre" aria-hidden="true"></i>', done: CHECK, chk: '<i class="half" aria-hidden="true"></i>', new: '<i class="ring" aria-hidden="true"></i>' };
+const stepsOrder = () => [...visible().map(m => m.id), 'send'];
+const titleOf = id => id === 'send' ? 'Review and send' : (MODULES.find(m => m.id === id) || {}).title;
+function stepListHTML(cur){
+  const mods = visible();
+  const item = (m) => { const s = statusOf(m); return `<a class="si s-${s.k}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${STATUS_ICON[s.k]}</span><span class="st">${esc(m.title)}</span><span class="sl">${esc(s.k === 'done' ? 'Done' : s.k === 'chk' || s.k === 'pre' ? s.label : '')}</span></a>`; };
+  const miss = sendMissing().length;
+  return `<a class="si home" href="#home"${cur === 'home' ? ' aria-current="step"' : ''}><span class="sic">${I.grid}</span><span class="st">Overview</span></a>
+    ${GROUPS.map(([g, gt]) => { const ms = mods.filter(m => m.group === g); return ms.length ? `<p class="sg">${gt}</p>${ms.map(item).join('')}` : ''; }).join('')}
+    <p class="sg">Finish</p><a class="si s-${miss ? 'new' : 'done'} send" href="#send"${cur === 'send' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Review and send</span><span class="sl">${miss ? miss + ' left' : 'Ready'}</span></a>`;
+}
+function railHTML(cur){ return `<aside class="rail" aria-label="All steps"><nav>${stepListHTML(cur)}</nav></aside>`; }
+function navbarHTML(cur){
+  const order = stepsOrder(), i = order.indexOf(cur), prev = order[i - 1], next = order[i + 1];
+  const m = MODULES.find(x => x.id === cur);
+  let main = '';
+  if (m) {
+    const s = statusOf(m), miss = missingOf(m).length;
+    if (s.k === 'done') main = next ? `<a class="nb primary" href="#${next}"><span>Next</span>${ARROW}</a>` : '';
+    else if (!miss) main = `<button class="nb primary" type="button" data-donenext="${m.id}"><span>${s.k === 'pre' ? 'Looks right' : 'Done'}${next ? ', next' : ''}</span>${next ? ARROW : CHECK}</button>`;
+    else main = next ? `<a class="nb" href="#${next}"><span>Skip for now</span>${ARROW}</a>` : '';
+  }
+  return `<div class="nbin">
+    ${prev ? `<a class="nb ghost" href="#${prev}" aria-label="Back to ${esc(titleOf(prev))}">${BACK}<span class="hide-s">${esc(titleOf(prev))}</span></a>` : `<a class="nb ghost" href="#home" aria-label="Overview">${BACK}<span class="hide-s">Overview</span></a>`}
+    <button class="nb count" type="button" id="openSteps" aria-haspopup="dialog"><b>${i + 1}</b> of ${order.length}<i class="chev" aria-hidden="true"></i></button>
+    ${main || '<span></span>'}</div>`;
+}
+function refreshNav(){
+  const r = route(), nb = document.getElementById('navbar'); if (nb) nb.innerHTML = navbarHTML(r);
+  const rail = document.querySelector('.rail nav'); if (rail) rail.innerHTML = stepListHTML(r);
+}
+function openSteps(){
+  const o = document.createElement('div'); o.className = 'sheet';
+  o.innerHTML = `<div class="sheet-card" role="dialog" aria-modal="true" aria-label="All steps"><div class="sheet-h"><b>All steps</b><button type="button" class="sheet-x" aria-label="Close">×</button></div><nav>${stepListHTML(route())}</nav></div>`;
+  document.body.appendChild(o); document.body.style.overflow = 'hidden';
+  const close = () => { o.remove(); document.body.style.overflow = ''; removeEventListener('hashchange', close); };
+  o.addEventListener('click', e => { if (e.target === o || e.target.closest('.sheet-x') || e.target.closest('a')) close(); });
+  addEventListener('hashchange', close);
+  const c = o.querySelector('[aria-current]'); if (c) c.scrollIntoView({ block: 'center' });
+}
+function moduleHTML(m){
+  const s = statusOf(m), miss = missingOf(m);
+  return `<div class="split">${railHTML(m.id)}<div class="col">
+    <section class="mhead" style="${tileVars(m)}">
+      <div class="row1"><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
+      <h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
+    <section class="card"><div class="grid">${m.fields.map(field).join('')}</div>
+      <div class="foot">
+        <p class="todo">${miss.length ? `Still needed for Done: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>` : s.k === 'done' ? 'This step is done. You can still change anything.' : 'Everything needed is here. Press Done when you are happy with it.'}</p>
+        ${s.k === 'done' ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
+      </div></section>
+    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
+}
+function sendHTML(){
+  const mods = visible(), miss = sendMissing();
+  return `<div class="split">${railHTML('send')}<div class="col">
+    <section class="mhead" style="--tc:var(--ink);--ti:var(--paper);--sh:var(--sun)">
+      <h1>Review and send</h1><p>We build your guide from your answers and email you a link to try it. Every round of changes is included.</p></section>
+    <section class="card">
+      <div class="sum">${mods.map(m => { const s = statusOf(m); return `<a href="#${m.id}" style="--tc:${m.tc}"><span class="sw"></span><span><b>${esc(m.title)}</b><p>${esc(summary(m))}</p></span><span class="pill ${s.k}" style="position:static">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></a>`; }).join('')}</div>
+      <div class="grid">${field('email')}${field('notes')}
+        <div class="survey full"><h2>Five quick questions about this form</h2><div class="grid">${['sMinutes','sMissing','sIdeal','sUseNow','sPay'].map(field).join('')}</div></div>
+        <label class="f full" style="flex-direction:row;gap:10px;align-items:flex-start"><input type="checkbox" data-check="consent"${A.consent ? ' checked' : ''} style="width:20px;height:20px;margin-top:2px;flex:none"><span>I own these photos and texts or may use them, and I understand the guide is visible to anyone who has its link.</span></label></div>
+      <div class="foot">${miss.length ? `<p class="todo">Before sending: <b>${miss.map(esc).join(', ')}</b></p>` : '<p class="todo"></p>'}
+        <p id="sendState"></p>
+        <div class="row"><button class="btn" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Preview my guide</button><button class="btn primary" type="button" id="send"${miss.length ? ' disabled' : ''}>${I.send.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Send to build my guide</button></div></div>
+    </section></div></div>`;
+}
+
+/* ---------- Pre-fill from the host's listing ----------
+   The host pastes their listing text (Airbnb or other). We read the facts out of it here, in the browser,
+   and mark those answers "From your listing". Steps that got answers this way show "Review": the host only
+   checks and approves them. We never fetch Airbnb ourselves. */
+const AMEN_RX = {
+  'Pool': /\bpool\b|piscina|piscine/i, 'Garden': /garden|jard[ií]n|jardin/i, 'BBQ': /\bbbq\b|barbecue|\bgrill\b|barbacoa/i,
+  'Air conditioning': /air ?condition|aire acondicionado|climatisation/i, 'Heating or fireplace': /heating|fireplace|calefacci[oó]n|chimenea|chauffage|chemin[ée]e/i,
+  'Washing machine': /\bwasher\b|washing machine|lavadora|lave-linge/i, 'Dishwasher': /dishwasher|lavavajillas|lave-vaisselle/i,
+  'Coffee machine': /coffee maker|coffee machine|nespresso|espresso|cafetera|machine [àa] caf/i, 'Smart TV': /\btv\b|television|televisi[oó]n|t[ée]l[ée]/i,
+  'Cot or high chair': /\bcrib\b|\bcot\b|high chair|cuna|trona|lit pour b[ée]b[ée]|chaise haute/i, 'Pets allowed': /pets allowed|se admiten mascotas|animaux accept/i,
+  'Free parking': /free parking|aparcamiento gratuito|parking gratuit/i, 'EV charger': /\bev charger|cargador|borne de recharge/i, 'Hot tub': /hot tub|jacuzzi|bain [àa] remous/i,
+  'Bikes': /\bbikes?\b|bicicleta|v[ée]lo/i, 'Workspace': /workspace|espacio de trabajo|espace de travail/i, 'Sea view': /(sea|ocean|beach) view|vistas al mar|vue sur (la )?mer/i,
+  'Lift': /elevator|\blift\b|ascensor|ascenseur/i
+};
+const TYPE_RX = [[/villa/i, 'Villa'], [/cottage|casa rural|g[iî]te/i, 'Cottage'], [/farm|masia|finca|ferme/i, 'Farmhouse'],
+  [/apartment|rental unit|condo|loft|flat|apartamento|piso|appartement|logement/i, 'Apartment'], [/private room|room in|habitaci[oó]n|chambre/i, 'Room'],
+  [/home|house|casa|maison|bungalow|cabin|chalet/i, 'House']];
+function hhmm(h, m, ap){ h = +h; m = m ? +m : 0; if (/pm/i.test(ap || '') && h < 12) h += 12; if (/am/i.test(ap || '') && h === 12) h = 0; return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); }
+function parseListing(text){
+  const t = text.replace(/\r/g, ''), L = t.split('\n').map(x => x.trim()).filter(Boolean), out = {};
+  if (L[0] && L[0].length <= 80 && !/guests|hu[ée]sped|voyageur|entire|alojamiento|logement/i.test(L[0])) out.placeName = L[0];
+  const where = t.match(/(?:^|\n)\s*(entire [^\n]*?|private room [^\n]*?|[^\n]*?(?:villa|home|house|cottage|apartment|rental unit|loft|condo|cabin|bungalow|alojamiento entero|casa|apartamento|logement entier|maison))\s+(?:in|en|[àa])\s+([^,\n]+)(?:,\s*([^\n]+))?/i);
+  if (where) { out.town = where[2].trim(); if (where[3]) out.region = where[3].trim(); const ty = TYPE_RX.find(([rx]) => rx.test(where[1])); if (ty) out.propertyType = ty[1]; }
+  const g = t.match(/(\d{1,2})\s+(?:guests|hu[ée]spedes|viajeros|voyageurs)/i); if (g) out.sleeps = g[1];
+  const ci = t.match(/check-?\s?in[^\n\d]{0,25}(\d{1,2})(?:[:.h](\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?/i) || t.match(/llegada[^\n\d]{0,25}(\d{1,2})(?:[:.](\d{2}))?/i) || t.match(/arriv[ée]e[^\n\d]{0,25}(\d{1,2})(?:[:h](\d{2}))?/i);
+  if (ci) out.checkIn = hhmm(ci[1], ci[2], ci[3]);
+  const co = t.match(/check-?\s?out[^\n\d]{0,25}(\d{1,2})(?:[:.h](\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?/i) || t.match(/salida[^\n\d]{0,25}(\d{1,2})(?:[:.](\d{2}))?/i) || t.match(/d[ée]part[^\n\d]{0,25}(\d{1,2})(?:[:h](\d{2}))?/i);
+  if (co) out.checkOut = hhmm(co[1], co[2], co[3]);
+  const rules = L.filter(l => l.length < 140 && /no (parties|smoking|pets|events|parties or events)|quiet hours|not allowed|smoking|pets allowed|prohibid|no se permite|silencio|interdit|non autoris|f[êe]tes/i.test(l));
+  if (rules.length) out.houseRules = [...new Set(rules)].join('\n');
+  const am = Object.keys(AMEN_RX).filter(k => AMEN_RX[k].test(t)); if (am.length) out.amenities = am;
+  out._wifi = /wi-?fi/i.test(t);
+  return out;
+}
+const FIELD_MODULE = { placeName: 'listing', town: 'listing', region: 'listing', propertyType: 'listing', sleeps: 'listing', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', amenities: 'howto' };
+function applyListing(){
+  const r = parseListing(v('listingText')), got = [];
+  for (const [k, mod] of Object.entries(FIELD_MODULE)) {
+    if (r[k] == null) continue;
+    const empty = Array.isArray(A[k]) ? !A[k].length : !String(A[k] ?? '').trim();
+    if (!empty) continue;
+    A[k] = r[k]; got.push(k);
+    A._pre = { ...(A._pre || {}), [k]: mod };
+  }
+  if (!A._slugTouched && (v('placeName'))) A.slug = cleanSlug(v('guideName') || v('placeName'));
+  if (r.amenities && r.amenities.includes('Cot or high chair')) A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), ...(A.modules || {}), kids: true };
+  log('prefill', 'listing', { n: got.length }); queueSave();
+  return got;
+}
+const preKeys = m => Object.entries(A._pre || {}).filter(([k, mod]) => mod === m.id && filled(k)).map(([k]) => k);
+
+/* ---------- Instant preview of the host's guide ----------
+   Built in the browser from the host's own answers and photos, the moment they send (or press Preview).
+   Lives at /<their-address> on this device. Researched sections (places, markets, events) show what the
+   full guide will add. A Feedback button on every screen sends notes tagged with that screen. */
+const PV = { screen: 'home', palette: null, preset: null };
+
+// Colours from the inspiration images: k-means on a small sample, then readable roles.
+async function paletteFromImages(){
+  const imgs = uploads.filter(u => u.kind === 'inspiration').concat(uploads.filter(u => u.kind === 'cover')).slice(0, 4);
+  const px = [];
+  for (const u of imgs) {
+    try {
+      const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = u.url; });
+      const c = document.createElement('canvas'); c.width = 48; c.height = 48; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 48, 48);
+      const d = x.getImageData(0, 0, 48, 48).data; for (let i = 0; i < d.length; i += 4) px.push([d[i], d[i + 1], d[i + 2]]);
+    } catch (e) {}
+  }
+  const hsl = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; let h = 0, s = 0; if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h /= 6; } return [h, s, l]; };
+  const rgb = ([h, s, l]) => { const f = n => { const k = (n + h * 12) % 12, a = s * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); }; return [f(0), f(8), f(4)]; };
+  const hex = c => '#' + c.map(x => x.toString(16).padStart(2, '0')).join('');
+  const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
+  const con = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
+  if (px.length < 50) return { paper: '#F7F5F0', ink: '#1E1E1E', acc: ['#2F5D8A', '#C2502E', '#E2A93B', '#3E7D4F'], sat: .4, light: .6 };
+  let cent = [0, 1, 2, 3, 4, 5, 6, 7].map(i => px[Math.floor(i * px.length / 8)].slice());
+  let lab = [];
+  for (let it = 0; it < 10; it++) {
+    lab = px.map(p => { let bi = 0, bd = 1e9; cent.forEach((c, i) => { const d = (p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2; if (d < bd) { bd = d; bi = i; } }); return bi; });
+    cent = cent.map((c, i) => { const m = px.filter((_, j) => lab[j] === i); return m.length ? [0, 1, 2].map(k => m.reduce((a, p) => a + p[k], 0) / m.length) : c; });
+  }
+  const cl = cent.map((c, i) => ({ c: c.map(Math.round), w: lab.filter(x => x === i).length / px.length, h: hsl(c) }));
+  const sat = cl.reduce((a, x) => a + x.h[1] * x.w, 0), light = cl.reduce((a, x) => a + x.h[2] * x.w, 0);
+  const lightest = cl.filter(x => x.h[2] > .8 && x.h[1] < .55).sort((a, b) => b.h[2] - a.h[2])[0];
+  const base = cl.sort((a, b) => b.w - a.w)[0].h;
+  let paper = lightest ? lightest.h : [base[0], .25, .96]; paper = rgb([paper[0], Math.min(paper[1], .35), Math.max(paper[2], .945)]);
+  const dk = cl.slice().sort((a, b) => a.h[2] - b.h[2])[0].h; const ink = rgb([dk[0], Math.min(dk[1], .35), Math.min(dk[2], .13)]);
+  const acc = [];
+  cl.slice().sort((a, b) => b.h[1] * (.3 + b.w) - a.h[1] * (.3 + a.w)).forEach(x => { if (x.h[1] < .25) return; if (acc.some(a => Math.min(Math.abs(a[0] - x.h[0]), 1 - Math.abs(a[0] - x.h[0])) < .06)) return; acc.push(x.h); });
+  while (acc.length < 4) acc.push([((acc[acc.length - 1] || base)[0] + .3) % 1, .55, .45]);
+  const onWhite = h => { let [a, s, l] = h; let c = rgb([a, s, l]); while (con(c, [255, 255, 255]) < 3.2 && l > .08) { l -= .03; c = rgb([a, s, l]); } return c; };
+  return { paper: hex(paper), ink: hex(ink), acc: acc.slice(0, 4).map(h => hex(onWhite(h))), sat, light };
+}
+function choosePreset(p){
+  const mood = v('mood'), nav = v('navStyle');
+  if (mood && mood !== 'auto') return mood;
+  if (/magazine/i.test(nav)) return 'editorial';
+  if (/list|search|map/i.test(nav)) return 'minimal';
+  if (/tiles/i.test(nav)) return p.light > .66 && p.sat < .5 ? 'soft' : 'bold';
+  const feel = A.feelWords || [];
+  if (feel.some(f => /Elegant|Luxurious/.test(f))) return 'editorial';
+  if (feel.some(f => /Calm|Modern/.test(f))) return 'minimal';
+  if (feel.some(f => /Cosy|Family|Rustic/.test(f))) return 'soft';
+  return p.sat > .45 ? 'bold' : 'editorial';
+}
+const PRESET_FONTS = {
+  bold: ['Jost:wght@400;500;600;700', '"Jost",system-ui,sans-serif', '"Jost",system-ui,sans-serif'],
+  editorial: ['Instrument+Serif&family=Geist:wght@400;500;600', '"Instrument Serif",Georgia,serif', '"Geist",system-ui,sans-serif'],
+  soft: ['Outfit:wght@400;500;600;700', '"Outfit",system-ui,sans-serif', '"Outfit",system-ui,sans-serif'],
+  minimal: ['Geist:wght@400;500;600;700', '"Geist",system-ui,sans-serif', '"Geist",system-ui,sans-serif']
+};
+
+// The guide's sections, built from what the host chose and wrote.
+const lines = k => (v(k) || '').split('\n').map(x => x.replace(/^\s*[-*•]\s*/, '').trim()).filter(Boolean);
+const ROOMKW = { Kitchen: /coffee|oven|hob|stove|dishwasher|fridge|kettle|microwave|kitchen|nespresso|toaster/i, 'Living room': /\btv\b|television|sofa|living|netflix|speaker|fireplace|heating/i,
+  Bedroom: /bed|sheet|linen|blanket|pillow|wardrobe/i, Bathroom: /shower|bath|towel|hot water|boiler|toilet|hairdryer/i, Pool: /pool|swim|sunbed/i,
+  Outside: /bbq|barbecue|garden|terrace|patio|hammock|outdoor|grill|shutter|awning/i, Laundry: /wash|dryer|iron|laundry|detergent/i, Office: /desk|office|printer|monitor/i };
+function guideSections(){
+  const S = [], on = id => secOn(id);
+  const photosOf = room => uploads.filter(u => u.kind === 'photo' && (u.room || 'Other') === room).map(u => u.url);
+  if (on('houseguide')) {
+    const rooms = {}; lines('howTos').forEach(l => { const r = Object.keys(ROOMKW).find(k => ROOMKW[k].test(l)) || 'Good to know'; (rooms[r] = rooms[r] || []).push(l); });
+    uploads.filter(u => u.kind === 'photo').forEach(u => { const r = u.room || 'Other'; rooms[r] = rooms[r] || []; });
+    S.push({ id: 'houseguide', title: 'House guide', sub: 'How everything works', icon: 'tool', kind: 'rooms', rooms: Object.entries(rooms).map(([r, items]) => ({ r, items, photos: photosOf(r) })) });
+  }
+  if (on('wifi') && v('wifiName')) S.push({ id: 'wifi', title: 'Wi-Fi', sub: v('wifiName'), icon: 'wifi', kind: 'wifi' });
+  if (on('arrival') && v('arrival')) S.push({ id: 'arrival', title: 'Getting here', sub: 'Arrival and parking', icon: 'car', kind: 'text', items: lines('arrival'), photos: uploads.filter(u => u.kind === 'arrivalPhoto').map(u => u.url) });
+  S.push({ id: 'stay', title: 'Check-in and check-out', sub: `In from ${v('checkIn') || '?'} · out by ${v('checkOut') || '?'}`, icon: 'key', kind: 'text', items: [v('checkIn') && `Check-in from ${v('checkIn')}.`, v('checkOut') && `Check-out by ${v('checkOut')}.`, ...lines('checkoutTasks')].filter(Boolean), extra: lines('houseRules').length ? { h: 'House rules', items: lines('houseRules') } : null });
+  if (on('rubbish')) S.push({ id: 'rubbish', title: 'Rubbish and recycling', sub: 'Which bin, which day', icon: 'bin', kind: 'text', items: rubbishLines(), research: !rubbishLines().length && 'Tell us how rubbish works at the house and we write it here.' });
+  if (on('emergency')) S.push({ id: 'emergency', title: 'Emergency and contacts', sub: '112, your number', icon: 'phone', kind: 'contacts', research: 'We add the nearest hospital, pharmacy and on-call doctor, with hours.' });
+  if (on('essentials')) S.push({ id: 'essentials', title: 'Shops and essentials', sub: 'Supermarket, bakery, pharmacy', icon: 'bag', kind: 'places', items: lines('essentials'), research: 'We add opening hours, distances and the ones you did not list.' });
+  const picks = cats => Object.values(A.swipes || {}).filter(x => x.d === 'yes' && cats.includes(x.cat));
+  if (on('eat')) S.push({ picks: picks(['eat', 'coffee', 'drinks']), id: 'eat', title: 'Eat and drink', sub: 'Our favourite places', icon: 'heart', kind: 'places', items: placeRows('favEat').map(r => r.p + (r.c ? ': ' + r.c : '')), research: !placeRows('favEat').length && 'Add the places you recommend, with a link or a name and a comment. We do not add restaurants of our own.' });
+  if (on('todo')) S.push({ picks: picks(['todo']), id: 'todo', title: 'Things to do', sub: (A.interests || []).slice(0, 3).join(', ') || 'Around you', icon: 'compass', kind: 'places', items: [...lines('favDo'), ...lines('favourites')], research: `We research ${(A.interests || ['beaches', 'walks', 'sights']).join(', ').toLowerCase()} within ${v('radius') || '30 min'}.` });
+  if (on('markets')) S.push({ id: 'markets', title: 'Local markets', sub: 'What is on today', icon: 'bag', kind: 'places', items: [], research: 'We list every weekly market nearby, with what runs today.' });
+  if (on('events')) S.push({ id: 'events', title: 'Local events', sub: 'During your stay', icon: 'kite', kind: 'places', items: [], research: 'We list festivals and fairs, with dates.' });
+  if (on('kids')) S.push({ id: 'kids', title: 'Kids corner', sub: (A.kidsAges || []).join(', ') || 'Families', icon: 'kite', kind: 'text', items: [...(A.kidsGear || []).map(g => `${g} at the house`), ...lines('kidsNotes')], research: 'We add playgrounds and family days out.' });
+  if (on('daytrips')) S.push({ id: 'daytrips', title: 'Day trips', sub: 'Worth the drive', icon: 'car', kind: 'places', items: [], research: 'We pick the best trips within two hours.' });
+  if (on('extras') && v('extras')) S.push({ id: 'extras', title: 'Extras', sub: 'Ask us', icon: 'gift', kind: 'text', items: lines('extras') });
+  if (v('localTips')) S.push({ id: 'tips', title: 'Local tips', sub: 'From your host', icon: 'heart', kind: 'text', items: lines('localTips') });
+  if (on('map')) S.push({ id: 'map', title: 'Map', sub: 'Everything in one place', icon: 'compass', kind: 'map' });
+  return S;
+}
+// Order follows "What should guests see first?"
+const FIRST = { 'Wi-Fi': 'wifi', 'Check-out time': 'stay', 'House guide': 'houseguide', 'How to get in': 'arrival', 'Places to eat': 'eat', 'What’s on today': 'events', 'Beaches': 'todo', 'Map': 'map', 'Your phone number': 'emergency', 'Rubbish tonight': 'rubbish' };
+function ordered(S){ const pri = (A.homeFirst || []).map(x => FIRST[x]).filter(Boolean); return [...S].sort((a, b) => { const ia = pri.indexOf(a.id), ib = pri.indexOf(b.id); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); }
+
+function pvStyle(p, preset){
+  const [fam, disp, body] = PRESET_FONTS[preset];
+  const a = p.acc;
+  const base = `:root{--pp:${p.paper};--pi:${p.ink};--a1:${a[0]};--a2:${a[1]};--a3:${a[2]};--a4:${a[3]};--pd:${disp};--pb:${body}}`;
+  const shared = `html,body{background:var(--pp)!important;margin:0!important;padding:0!important}
+.pv{background:var(--pp);color:var(--pi);font:16px/1.5 var(--pb);min-height:100vh;padding-bottom:96px}
+.pv *{box-sizing:border-box}.pv a{color:inherit}
+.pv-in{max-width:620px;margin:0 auto;padding:0 16px;display:flex;flex-direction:column;gap:16px}
+.pv h1,.pv h2,.pv h3{font-family:var(--pd);margin:0;line-height:1.05;text-wrap:balance}
+.pv-cover{position:relative;height:clamp(240px,42vh,380px);background:var(--a1) center/cover no-repeat;margin:0 -16px}
+.pv-cover::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.55))}
+.pv-name{position:absolute;left:20px;right:20px;bottom:18px;z-index:1;color:#fff}
+.pv-name small{display:block;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.9}
+.pv-name h1{font-size:clamp(34px,9vw,52px)}
+.pv-welcome{font-size:18px;margin:4px 0 0}
+.pv-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pv-fact{display:flex;flex-direction:column;gap:2px;padding:12px 14px;text-decoration:none;cursor:pointer;border:0;font:inherit;text-align:left;color:inherit;background:none}
+.pv-fact small{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.pv-fact b{font-size:17px}
+.pv-search{width:100%;font:inherit;font-size:17px;padding:14px 16px;border-radius:14px;border:2px solid var(--pi);background:#fff;color:#111}
+.pv-h{font-size:24px;margin-top:8px}
+.pv-secs{display:grid;gap:12px}
+.pv-sec{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;text-decoration:none;cursor:pointer;border:0;font:inherit;text-align:left;color:inherit}
+.pv-sec b{font-family:var(--pd);font-size:22px;line-height:1.1}
+.pv-sec small{opacity:.8;font-size:14px}
+.pv-sec .ic svg{width:28px;height:28px}
+.pv-top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--pp)}
+.pv-back{display:inline-flex;align-items:center;gap:6px;border:0;background:none;font:inherit;font-weight:700;cursor:pointer;color:inherit;padding:8px 4px}
+.pv-back svg{width:18px;height:18px}
+.pv-page h2{font-size:36px}
+.pv-list{display:flex;flex-direction:column}
+.pv-row{padding:14px 0;border-top:1px solid color-mix(in srgb,var(--pi) 15%,transparent)}
+.pv-row:first-child{border-top:0}
+.pv-row b{display:block}
+.pv-photos{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory}
+.pv-photos img{height:150px;border-radius:12px;scroll-snap-align:start;flex:none}
+.pv-research{padding:14px 16px;border-radius:14px;background:color-mix(in srgb,var(--a3) 22%,var(--pp));font-size:15px}
+.pv-research b{display:block;margin-bottom:2px}
+.pv-pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--a3);color:#111;margin-left:6px;vertical-align:2px}
+.pv-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:999px;background:var(--pi);color:var(--pp);font-weight:700;text-decoration:none;border:0;font:inherit;cursor:pointer}
+.pv-card{padding:16px;border-radius:16px;background:#fff;color:#111}
+.pv-bar{position:fixed;left:0;right:0;top:0;z-index:40;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px 12px;background:#111;color:#fff;font:600 13px/1.3 system-ui,sans-serif}
+.pv-bar a{color:#F2B33D}
+.pv-shell{padding-top:32px}
+.pv-fb{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:45;display:inline-flex;align-items:center;gap:8px;padding:13px 18px;border-radius:999px;border:0;background:#F2B33D;color:#1b1407;font:700 15px system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer}
+.pv-fb svg{width:18px;height:18px}
+.fbs{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center}
+.fbs-card{width:100%;max-width:520px;max-height:90vh;overflow:auto;background:#fff;color:#151515;border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;font:16px/1.45 system-ui,sans-serif}
+.fbs-card h3{font:700 22px system-ui,sans-serif;margin:0}
+.fbs-card textarea{width:100%;border:1.5px solid #ddd;border-radius:12px;padding:10px 12px;font:inherit;min-height:70px}
+.fbs-card .tabs{display:flex;gap:6px}
+.fbs-card .tabs button{flex:1;border:1.5px solid #ddd;background:#f6f5f1;border-radius:999px;padding:9px;font:600 14px system-ui;cursor:pointer;color:#151515}
+.fbs-card .tabs button[aria-pressed="true"]{background:#151515;color:#fff;border-color:#151515}
+.fbs-card .row{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.fbs-card .stars{display:flex;gap:6px}.fbs-card .stars button{width:42px;height:42px;border-radius:10px;border:1.5px solid #ddd;background:#f6f5f1;font:700 16px system-ui;cursor:pointer;color:#151515}
+.fbs-card .stars button[aria-pressed="true"]{background:#F2B33D;border-color:#F2B33D}
+.fbs-card .hint{font-size:13px;color:#666;margin:0}`;
+  const P = {
+    bold: `.pv-sec{min-height:140px;padding:16px;border-radius:20px;color:#fff;background:var(--sc)}
+.pv-sec::before{content:"";position:absolute;z-index:-1;width:120px;height:120px;border-radius:50%;background:var(--a3);right:-40px;top:-40px;opacity:.9}
+.pv-sec:nth-child(3n+2)::before{border-radius:0;transform:rotate(14deg);width:70px;height:70px;right:-10px;top:-10px;background:var(--pi)}
+.pv-sec:nth-child(3n)::before{width:0;height:0;border-left:44px solid transparent;border-right:44px solid transparent;border-bottom:72px solid var(--a3);border-radius:0;top:auto;bottom:-6px;right:-10px;background:none}
+.pv-sec .ic{margin-bottom:auto}.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:96px}
+.pv-fact{background:#fff;border-radius:14px;border:2px solid var(--pi)}.pv-h{font-weight:700}.pv h1,.pv h2{font-weight:700}`,
+    soft: `.pv-sec{min-height:130px;padding:16px;border-radius:26px;background:color-mix(in srgb,var(--sc) 24%,#fff);box-shadow:0 6px 22px rgba(0,0,0,.07)}
+.pv-sec::before{content:"";position:absolute;z-index:-1;width:130px;height:130px;border-radius:50%;background:var(--sc);filter:blur(26px);opacity:.45;right:-30px;top:-30px}
+.pv-sec .ic{margin-bottom:auto}.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:90px}
+.pv-fact{background:#fff;border-radius:18px;box-shadow:0 4px 16px rgba(0,0,0,.06)}.pv-cover{border-radius:0 0 28px 28px}.pv h1,.pv h2{font-weight:600}.pv-card{border-radius:22px}`,
+    editorial: `.pv-secs{counter-reset:s;gap:0}.pv-sec{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;border-top:1px solid var(--pi);counter-increment:s}
+.pv-sec .ic{display:none}.pv-sec b{font-size:30px;font-weight:400}.pv-sec small{display:block}
+.pv-sec::before{content:counter(s,decimal-leading-zero);font:600 12px var(--pb);letter-spacing:.14em;opacity:.6;align-self:flex-start;margin-top:6px}
+.pv-sec .tx{flex:1}.pv-sec.has-photo{display:grid;grid-template-columns:auto 1fr 96px}.pv-sec .ph{width:96px;height:72px;object-fit:cover}
+.pv-fact{border-top:1px solid var(--pi);border-radius:0;padding:12px 0}.pv-fact b{font-family:var(--pd);font-weight:400;font-size:24px}
+.pv-h{font:600 12px var(--pb);letter-spacing:.16em;text-transform:uppercase;opacity:.7}.pv h1,.pv h2{font-weight:400}.pv-cover{height:clamp(300px,58vh,520px)}`,
+    minimal: `.pv-secs{gap:0;border:1px solid color-mix(in srgb,var(--pi) 15%,transparent);border-radius:10px;overflow:hidden;background:#fff;color:#111}
+.pv-sec{flex-direction:row;align-items:center;gap:14px;justify-content:flex-start;padding:14px 16px;border-top:1px solid #eee}.pv-sec:first-child{border-top:0}
+.pv-sec .ic{color:var(--a1)}.pv-sec .ic svg{width:22px;height:22px}.pv-sec b{font-size:17px;font-weight:600;font-family:var(--pb)}.pv-sec .tx{display:flex;flex-direction:column}
+.pv-fact{background:#fff;color:#111;border:1px solid #eee;border-radius:10px}.pv h1,.pv h2{font-weight:600;letter-spacing:-.02em}.pv-h{font-size:15px;font-weight:600;opacity:.7}
+.pv-cover{height:clamp(200px,32vh,280px)}`
+  };
+  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fam}&display=swap"><style>${base}${shared}${P[preset]}</style>`;
+}
+
+async function renderPreview(){
+  const p = PV.palette || (PV.palette = await paletteFromImages());
+  const preset = PV.preset || (PV.preset = choosePreset(p));
+  const S = ordered(guideSections()), name = v('guideName') || v('placeName') || 'Your guide';
+  const cover = (uploads.find(u => u.kind === 'cover') || {}).url || A.coverUrl || (uploads.find(u => u.kind === 'photo') || uploads.find(u => u.kind === 'inspiration') || {}).url;
+  const colours = [p.acc[0], p.acc[1], p.ink, p.acc[3], p.acc[2]];
+  const scr = PV.screen, sec = S.find(x => x.id === scr);
+  const facts = [];
+  for (const f of (A.homeFirst && A.homeFirst.length ? A.homeFirst : ['Wi-Fi', 'Check-out time'])) {
+    if (f === 'Wi-Fi' && v('wifiName')) facts.push(['wifi', 'Wi-Fi', 'Tap to connect']);
+    if (f === 'Check-out time' && v('checkOut')) facts.push(['stay', 'Check-out', 'Before ' + v('checkOut')]);
+    if (f === 'Your phone number' && v('hostPhone')) facts.push(['emergency', 'Call ' + (v('hostName') || 'us'), v('hostPhone')]);
+    if (f === 'How to get in' && v('arrival')) facts.push(['arrival', 'Getting here', 'Directions']);
+    if (f === 'House guide') facts.push(['houseguide', 'House guide', 'How things work']);
+    if (f === 'Places to eat') facts.push(['eat', 'Eat', lines('favourites').length + ' favourites']);
+  }
+  const ph = id => { const r = (S.find(x => x.id === 'houseguide') || {}).rooms || []; return id === 'houseguide' && r.find(x => x.photos.length) ? r.find(x => x.photos.length).photos[0] : null; };
+  const home = `<div class="pv-cover" style="background-image:url('${cover || ''}')"><div class="pv-name"><small>Welcome to</small><h1>${esc(name)}</h1></div></div>
+    ${v('tagline') ? `<p class="pv-welcome">${esc(v('tagline'))}</p>` : ''}${v('welcome') ? `<p style="margin:0;opacity:.85">${esc(v('welcome'))}</p>` : ''}
+    ${/search/i.test(v('navStyle')) ? `<input class="pv-search" id="pvSearch" placeholder="Search the guide: wifi, bins, beach…" aria-label="Search the guide">` : ''}
+    ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
+    <h2 class="pv-h">${/map/i.test(v('navStyle')) ? 'Around you' : 'Your guide'}</h2>
+    <div class="pv-secs" id="pvSecs">${S.map((x, i) => { const pic = preset === 'editorial' && ph(x.id); return `<button type="button" class="pv-sec${(preset === 'bold' || preset === 'soft') && (i === S.length - 1 && S.length % 2 === 1) ? ' wide' : ''}${pic ? ' has-photo' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span>${pic ? `<img class="ph" src="${pic}" alt="">` : ''}</button>`; }).join('')}</div>`;
+  const page = sec ? pageHTML(sec) : '';
+  document.body.innerHTML = `${pvStyle(p, preset)}
+    <div class="pv-bar">Preview of ${esc(name)} · ${esc(BASE)}/${esc(v('slug'))} · <a href="/#home">Back to my answers</a></div>
+    <div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
+      <div class="pv-in">${sec ? page : home}</div></div>
+    <button class="pv-fb" type="button" id="pvFb">${I.heart}Feedback</button><div class="toast" id="toast" hidden></div>`;
+  const q = document.getElementById('pvSearch');
+  if (q) q.addEventListener('input', () => { const t = q.value.toLowerCase().trim(); document.querySelectorAll('#pvSecs .pv-sec').forEach(b => { b.hidden = t && !b.dataset.q.includes(t); }); });
+}
+function pageHTML(x){
+  const research = x.research ? `<div class="pv-research"><b>In your full guide</b>${esc(x.research)}</div>` : '';
+  const list = items => items.length ? `<div class="pv-list">${items.map(t => { const [a, ...b] = t.split(/:\s|,\s| - /); return `<div class="pv-row"><b>${esc(a)}</b>${b.length ? esc(b.join(', ')) : ''}</div>`; }).join('')}</div>` : '';
+  let body = '';
+  if (x.kind === 'rooms') body = x.rooms.length ? x.rooms.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3>${r.photos.length ? `<div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${list(r.items)}</section>`).join('') : `<div class="pv-research"><b>Nothing here yet</b>Add how things work and photos by room in your answers.</div>`;
+  else if (x.kind === 'wifi') body = `<section class="pv-card"><p style="margin:0 0 6px;opacity:.7">Network</p><h3 style="font-size:24px">${esc(v('wifiName'))}</h3><p style="margin:12px 0 6px;opacity:.7">Password</p><h3 style="font-size:24px">${esc(v('wifiPassword'))}</h3></section><div class="pv-research"><b>In your full guide</b>A QR code to join with one tap, and a copy button.</div>`;
+  else if (x.kind === 'contacts') body = `<section class="pv-card"><div class="pv-list"><div class="pv-row"><b>Emergencies: 112</b>Police, ambulance, fire</div>${v('hostPhone') ? `<div class="pv-row"><b>${esc(v('hostName') || 'Your host')}</b>${esc(v('hostPhone'))}</div>` : ''}${v('backupContact') ? `<div class="pv-row"><b>Backup</b>${esc(v('backupContact'))}</div>` : ''}${v('taxi') ? `<div class="pv-row"><b>Taxi</b>${esc(v('taxi'))}</div>` : ''}</div></section>${research}`;
+  else if (x.kind === 'places') body = `${(x.picks || []).length ? `<section class="pv-card"><div class="pv-list">${x.picks.map(p => `<div class="pv-row"><b>${esc(p.name)}<span class="pv-pill">Host\u2019s pick</span></b>${esc([p.type, p.rating ? '★ ' + p.rating.toFixed(1) : '', p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}${p.c ? `<br><i>“${esc(p.c)}”</i>` : ''}<br><a href="${esc(p.maps)}" target="_blank" rel="noopener">Directions</a></div>`).join('')}</div></section>` : ''}${x.items.length ? `<section class="pv-card"><div class="pv-list">${x.items.map(t => { const [a, ...b] = t.split(/,\s| - |:\s/); return `<div class="pv-row"><b>${esc(a)}<span class="pv-pill">Host’s pick</span></b>${esc(b.join(', '))}<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a + ', ' + v('town'))}" target="_blank" rel="noopener">Directions</a></div>`; }).join('')}</div></section>` : ''}${research}`;
+  else if (x.kind === 'map') body = `<section class="pv-card"><p style="margin:0">Every place in the guide on one map, centred near ${esc(v('town') || 'the house')} (never on the house itself).</p></section><a class="pv-btn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v('town'))}" target="_blank" rel="noopener">Open ${esc(v('town') || 'the area')} in Maps</a>`;
+  else body = `${x.photos && x.photos.length ? `<div class="pv-photos">${x.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${x.items && x.items.length ? `<section class="pv-card">${list(x.items)}</section>` : ''}${x.extra ? `<section class="pv-card"><h3>${esc(x.extra.h)}</h3>${list(x.extra.items)}</section>` : ''}${research}`;
+  return `<div class="pv-page"><h2>${esc(x.title)}</h2><p style="opacity:.75;margin:6px 0 0">${esc(x.sub)}</p></div>${body}`;
+}
+function openFeedback(){
+  const o = document.createElement('div'); o.className = 'fbs';
+  let mode = 'screen', rating = 0;
+  const screenName = PV.screen === 'home' ? 'Home' : (guideSections().find(x => x.id === PV.screen) || {}).title || PV.screen;
+  const draw = () => { o.innerHTML = `<div class="fbs-card" role="dialog" aria-modal="true" aria-label="Feedback">
+    <div class="row"><h3>Feedback</h3><button type="button" class="pv-back" data-x style="color:#151515">Close</button></div>
+    <div class="tabs"><button type="button" data-mode="screen" aria-pressed="${mode === 'screen'}">This screen</button><button type="button" data-mode="all" aria-pressed="${mode === 'all'}">The whole guide</button></div>
+    ${mode === 'screen' ? `<p class="hint">About “${esc(screenName)}”: what is missing, wrong or how should it look?</p><textarea id="fbt" placeholder="I would expect…"></textarea>`
+      : `<div class="stars">${[1,2,3,4,5].map(n => `<button type="button" data-star="${n}" aria-pressed="${n === rating}">${n}</button>`).join('')}</div>
+      <textarea id="fbr" placeholder="What feels right"></textarea><textarea id="fbw" placeholder="What is wrong or missing"></textarea><textarea id="fbu" placeholder="How would you like it to look or work instead?"></textarea>`}
+    <div class="row"><span class="hint">Goes straight to the Porta team.</span><button type="button" class="pv-btn" data-send style="background:#151515;color:#fff">Send</button></div></div>`; };
+  draw(); document.body.appendChild(o);
+  o.addEventListener('click', async e => {
+    if (e.target === o || e.target.closest('[data-x]')) { o.remove(); return; }
+    const m = e.target.closest('[data-mode]'); if (m) { mode = m.dataset.mode; draw(); return; }
+    const s = e.target.closest('[data-star]'); if (s) { rating = +s.dataset.star; draw(); return; }
+    if (e.target.closest('[data-send]')) {
+      const val = id => (o.querySelector('#' + id) || {}).value || '';
+      const d = device();
+      const fields = mode === 'screen' ? { kind: 'screen', screen: screenName, wrong: val('fbt') } : { kind: 'overall', screen: '', rating: rating || '', right: val('fbr'), wrong: val('fbw'), ux: val('fbu') };
+      if (!(fields.wrong || fields.right || fields.ux || fields.rating)) { toast('Write a few words first'); return; }
+      try { await nf('feedback', { sid, guide: v('slug'), round: 'preview', email: v('email'), preset: PV.preset, device: deviceLine(d), device_json: JSON.stringify(d), ...fields }); log('feedback', PV.screen); flush(); o.remove(); toast('Thank you, sent!'); }
+      catch (err) { toast('Could not send. Check your connection.'); }
+    }
+  });
+}
+document.addEventListener('click', e => {
+  if (!document.querySelector('.pv')) return;
+  const b = e.target.closest('[data-pv]'); if (b) { PV.screen = b.dataset.pv; log('preview', PV.screen); queueSave(); renderPreview().then(() => window.scrollTo(0, 0)); return; }
+  if (e.target.closest('#pvFb')) openFeedback();
+});
+
+
+function rubbishLines(){
+  const m = v('rubbishMode'), out = [];
+  if (/container|mix/i.test(m)) out.push('Shared containers in the street.' + (v('rubbishWhere') ? ' ' + v('rubbishWhere') : ''));
+  if (/house|mix/i.test(m)) for (const [id, lab] of BIN_ROWS) { const d = ((A.rubbishPlan || {})[id] || []); if (d.length) out.push(`${lab}: ${d.map(x => (DAYS7.find(y => y[0] === x) || [0, x])[1]).join(', ')}`); }
+  if (v('rubbishNotes')) out.push(v('rubbishNotes'));
+  return out;
+}
+
+/* ---------- Start: one link, a first version of everything ----------
+   The host pastes their listing link (and the town if we cannot read it). The site's assistant writes
+   a first version of every step; the host then only reviews. If the link is wrong or unreadable,
+   we say exactly what to do instead. */
+const LINK_OK = [/^https?:\/\/([a-z]{2,3}\.)?(www\.)?airbnb\.[a-z.]+\/(rooms\/(plus\/)?\d+|h\/[\w-]+)/i, /^https?:\/\/(www\.)?abnb\.me\/\S+/i,
+  /^https?:\/\/(www\.)?booking\.com\/hotel\/[a-z]{2}\/[\w-]+/i, /^https?:\/\/(www\.)?vrbo\.com\/(\d+|[\w-]+\/\d+)/i];
+const linkProblem = u => { u = (u || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) return 'Paste the full address, starting with https://'; return LINK_OK.some(rx => rx.test(u)) ? '' : 'This is not a listing page. Open your listing and copy the address from the browser bar: it looks like airbnb.com/rooms/12345678.'; };
+const hasSource = () => !!A._draftAt || (!!v('listingUrl') && !linkProblem(v('listingUrl'))) || v('listingText').length > 200;
+const START = { busy: false, need: '', msg: '', step: 0 };
+const STEPS_MSG = ['Opening your listing…', 'Reading the house, the rules and what it offers…', 'Writing your house guide…', 'Choosing sections for your guests…', 'Almost there…'];
+const DRAFT_MAP = { placeName: 'listing', propertyType: 'listing', town: 'listing', region: 'listing', sleeps: 'listing',
+  guideName: 'guide', tagline: 'guide', welcome: 'guide', guests: 'guide', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
+  amenities: 'howto', howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
+
+function startHTML(){
+  const lp = linkProblem(v('listingUrl'));
+  return `<section class="start">
+    <div class="st-art" aria-hidden="true"><span class="st-door"><i></i></span><span class="st-moon"></span></div>
+    <div class="st-tx">
+      <small>Porta · guest guides</small>
+      <h1>Your guest guide, written for you.</h1>
+      <p>Paste your listing link. In about a minute we write a first version of your whole guide: the house, the rules, the area. You then only check it and make it yours.</p>
+    </div>
+    <form class="st-form" id="startForm" novalidate>
+      <label for="st_url">Your listing link</label>
+      <input id="st_url" data-k="listingUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://www.airbnb.com/rooms/…" value="${esc(v('listingUrl'))}">
+      <p class="st-hint${lp ? ' bad' : ''}" id="st_urlMsg">${esc(lp || 'Airbnb, Booking.com or Vrbo.')}</p>
+      <label for="st_town">Town <span class="opt">if we cannot find it in your listing</span></label>
+      <input id="st_town" data-k="town" type="text" autocomplete="off" placeholder="The town or village of your place" value="${esc(v('town'))}">
+      ${START.need === 'text' || v('listingText') ? `<label for="st_text">Your listing text</label>
+        <p class="st-hint">On your listing page, select everything from the title down to the house rules, copy, and paste here.</p>
+        <textarea id="st_text" data-k="listingText" rows="7" placeholder="Entire home in …">${esc(v('listingText'))}</textarea>` : ''}
+      ${START.msg ? `<p class="st-msg ${START.need === 'retry' ? '' : 'warn'}" role="status">${esc(START.msg)}</p>` : ''}
+      <button class="btn st-go" type="submit" id="startGo"${START.busy ? ' disabled' : ''}>${START.busy ? `<span class="spin" aria-hidden="true"></span><span id="stStep">${esc(STEPS_MSG[START.step])}</span>` : `Create my first version ${ARROW}`}</button>
+      <button class="st-skip" type="button" id="skipStart">Or fill it in step by step</button>
+    </form></section>`;
+}
+async function createDraft(){
+  const url = v('listingUrl').trim(), text = v('listingText').trim(), town = v('town').trim();
+  const lp = linkProblem(url);
+  if (lp) { START.msg = lp; START.need = 'link'; render(); return; }
+  if (!url && text.length < 200) { START.msg = 'Paste your listing link, or the text of your listing.'; START.need = url ? 'text' : 'link'; render(); return; }
+  START.busy = true; START.msg = ''; START.step = 0; render(); log('draft_start', 'start');
+  const tick = setInterval(() => { START.step = Math.min(STEPS_MSG.length - 1, START.step + 1); const e = document.getElementById('stStep'); if (e) e.textContent = STEPS_MSG[START.step]; }, 4500);
+  try {
+    const r = await fetch('/api/listing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url, text, town }) });
+    const d = await r.json();
+    if (!d.ok) { START.need = d.need || 'text'; START.msg = d.message; log('draft_fail', d.need || 'error'); return; }
+    applyDraft(d); log('draft_ok', d.source); START.need = ''; START.msg = '';
+    location.hash = '#home'; toast('Your first version is ready');
+  } catch (e) { START.need = 'retry'; START.msg = 'We could not reach the assistant. Check your connection and press the button again.'; }
+  finally { clearInterval(tick); START.busy = false; queueSave(); render(); }
+}
+function applyDraft(d){
+  const D = d.draft || {}, pre = { ...(A._pre || {}) };
+  for (const [k, mod] of Object.entries(DRAFT_MAP)) {
+    let val = D[k]; if (val == null || val === '' || (Array.isArray(val) && !val.length)) continue;
+    if (k === 'sleeps') val = String(val);
+    if (k === 'amenities') val = val.filter(x => AMEN.includes(x));
+    const empty = Array.isArray(A[k]) ? !A[k].length : !String(A[k] ?? '').trim();
+    if (!empty) continue;
+    A[k] = val; pre[k] = mod;
+  }
+  A._pre = pre;
+  if (D.basis && typeof D.basis === 'object') A._basis = { ...(A._basis || {}), ...D.basis };
+  if (D.sections && typeof D.sections === 'object') {
+    const map = { wifi: 'wifi', rubbish: 'rubbish', markets: 'markets', eat: 'eat', todo: 'todo', events: 'events' };
+    const cur = Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)]));
+    for (const [k, id] of Object.entries(map)) if (typeof D.sections[k] === 'boolean' && !(A.modules && id in A.modules)) cur[id] = D.sections[k];
+    A.modules = { ...cur, ...(A.modules || {}) };
+  }
+  if (Array.isArray(D.toConfirm)) A.toConfirm = D.toConfirm.slice(0, 6);
+  if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
+  if (d.cover) A.coverUrl = d.cover;
+  if (Array.isArray(d.photos)) A.listingPhotos = d.photos;
+  if (!A._slugTouched && (v('guideName') || v('placeName'))) A.slug = cleanSlug(v('guideName') || v('placeName'));
+  A._draftAt = new Date().toISOString(); A._draftSource = d.source;
+}
+document.addEventListener('submit', e => { if (e.target.id === 'startForm') { e.preventDefault(); flush(); createDraft(); } });
+document.addEventListener('input', e => { if (e.target.id === 'st_url') { const m = document.getElementById('st_urlMsg'); const p = linkProblem(e.target.value); if (m) { m.textContent = p || 'Airbnb, Booking.com or Vrbo.'; m.className = 'st-hint' + (p ? ' bad' : ''); } } });
+
+/* ---------- Swipe: top-rated places near the house ---------- */
+const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {} };
+// Eating and drinking is the host's own list (see "Your places"): we only suggest things to do.
+const SW_CATS = [['todo', 'Things to do']];
+const swipes = () => A.swipes || (A.swipes = {});
+async function loadPlaces(cat){
+  if (SW.lists[cat] || SW.loading) return;
+  SW.loading = true; SW.err = ''; refreshSwipe();
+  try {
+    const q = new URLSearchParams({ cat, lang: (A.languages || ['en'])[0] || 'en', radius: String(({ '15 min': 6000, '30 min': 15000, '45 min': 25000, '1 hour': 30000 })[v('radius')] || 10000) });
+    if (A.lat && A.lng) { q.set('lat', A.lat); q.set('lng', A.lng); } else q.set('town', [v('town'), v('region')].filter(Boolean).join(', '));
+    const r = await fetch('/api/places?' + q); const d = await r.json();
+    if (!d.ok) SW.err = d.message || 'Could not load places.'; else { SW.lists[cat] = d.places; if (!A.lat && d.lat) { A.lat = d.lat; A.lng = d.lng; queueSave(); } }
+  } catch (e) { SW.err = 'Could not load places. Check your connection.'; }
+  finally { SW.loading = false; refreshSwipe(); }
+}
+function swipeHTML(){
+  if (!v('town') && !A.lat) return `<div class="note full"><div>Add your town in <a href="#listing">Your listing</a> first, so we know where to look.</div></div>`;
+  return `<div class="full sw" id="swipe">${swipeInner()}</div>`;
+}
+function swipeInner(){
+  const list = SW.lists[SW.cat];
+  const S = swipes();
+  const yes = Object.values(S).filter(x => x.d === 'yes').length;
+  const tabs = `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>`;
+  if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<div class="sw-empty">${SW.err ? esc(SW.err) : '<span class="spin dark"></span> Finding the best-rated places near you…'}</div>`; }
+  const left = list.filter(p => !S[p.id]);
+  const p = left[0];
+  const done = list.length - left.length;
+  const card = p ? `<article class="sw-card" data-pid="${esc(p.id)}">
+      <div class="sw-ph" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : ''}">${p.photo ? '' : `<span>${esc((p.type || '').slice(0, 1))}</span>`}</div>
+      <div class="sw-tx"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
+        <p class="sw-meta"><b>★ ${p.rating ? p.rating.toFixed(1) : '?'}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} ${p.price ? '· ' + esc(String(p.price).replace('PRICE_LEVEL_', '').toLowerCase().replace('_', ' ')) : ''}</p>
+        ${p.summary ? `<p>${esc(p.summary)}</p>` : ''}<a href="${esc(p.maps)}" target="_blank" rel="noopener">See on Google Maps</a></div>
+      <div class="sw-btns"><button type="button" class="sw-no" data-sw="no">Not for us</button><button type="button" class="sw-yes" data-sw="yes">${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>
+    </article>` : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> Missing a favourite? Add it in <a href="#favourites">Your places</a>.</div>`;
+  const picks = Object.values(S).filter(x => x.d === 'yes' && x.cat === SW.cat);
+  return `${tabs}<p class="sw-count">${done} of ${list.length} seen · ${yes} recommended in total</p>${card}
+    ${picks.length ? `<div class="sw-picks"><b>Your picks here</b>${picks.map(x => `<div class="sw-pick"><span>${esc(x.name)} <small>★ ${x.rating ? (+x.rating).toFixed(1) : ''}</small></span>
+      <input type="text" data-swc="${esc(x.id)}" value="${esc(x.c || '')}" placeholder="Why you love it, what to order (optional)" aria-label="Comment on ${esc(x.name)}"><button type="button" class="x" data-swundo="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">×</button></div>`).join('')}</div>` : ''}`;
+}
+function refreshSwipe(){ const el = document.getElementById('swipe'); if (el) el.innerHTML = swipeInner(); }
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-swcat]'); if (t) { SW.cat = t.dataset.swcat; refreshSwipe(); loadPlaces(SW.cat); return; }
+  const b = e.target.closest('[data-sw]'); if (b) {
+    const c = b.closest('.sw-card'), id = c.dataset.pid, p = (SW.lists[SW.cat] || []).find(x => x.id === id); if (!p) return;
+    swipes()[id] = { id, d: b.dataset.sw, cat: SW.cat, name: p.name, rating: p.rating, reviews: p.reviews, type: p.type, maps: p.maps, lat: p.lat, lng: p.lng, km: p.km, photo: p.photo, c: '' };
+    log('swipe', b.dataset.sw); queueSave(); c.classList.add(b.dataset.sw === 'yes' ? 'go-yes' : 'go-no'); setTimeout(refreshSwipe, 220); softRefresh(); return;
+  }
+  const u = e.target.closest('[data-swundo]'); if (u) { const s = swipes(); delete s[u.dataset.swundo]; queueSave(); refreshSwipe(); }
+});
+document.addEventListener('input', e => { const id = e.target.dataset && e.target.dataset.swc; if (id && swipes()[id]) { swipes()[id].c = e.target.value; queueSave(); } });
+
+
+/* ---------- Host lists: places (name or link + comment) and the rubbish plan ---------- */
+const DAYS7 = [['mon', 'Mon'], ['tue', 'Tue'], ['wed', 'Wed'], ['thu', 'Thu'], ['fri', 'Fri'], ['sat', 'Sat'], ['sun', 'Sun']];
+const BIN_ROWS = [['organic', 'Organic (food scraps)'], ['packaging', 'Packaging (plastic, cans)'], ['paper', 'Paper and cardboard'], ['glass', 'Glass'], ['rest', 'General waste']];
+const placeRowsRaw = k => (Array.isArray(A[k]) && A[k].length ? A[k] : [{ p: '', c: '' }]);
+const placeRows = k => (Array.isArray(A[k]) ? A[k] : []).filter(r => r && String(r.p || '').trim());
+document.addEventListener('input', e => {
+  const t = e.target; if (!t.dataset || !t.dataset.pl) return;
+  const k = t.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })); rows[+t.dataset.i][t.dataset.f] = t.value; set(k, rows);
+});
+document.addEventListener('click', e => {
+  const add = e.target.closest('[data-pladd]'); if (add) { const k = add.dataset.pladd; set(k, [...placeRowsRaw(k), { p: '', c: '' }]); render(); return; }
+  const rm = e.target.closest('[data-plrm]'); if (rm) { const k = rm.dataset.plrm, rows = placeRowsRaw(k).filter((_, i) => i !== +rm.dataset.i); set(k, rows.length ? rows : [{ p: '', c: '' }]); render(); }
+});
+document.addEventListener('change', e => {
+  const t = e.target; if (!t.dataset || !t.dataset.plan) return;
+  const k = t.dataset.plan, cur = { ...(A[k] || {}) }, s = new Set(cur[t.dataset.bin] || []); t.checked ? s.add(t.value) : s.delete(t.value);
+  cur[t.dataset.bin] = DAYS7.map(d => d[0]).filter(d => s.has(d)); set(k, cur); softRefresh();
+});
+document.addEventListener('change', e => { const t = e.target; if (t.dataset && t.dataset.radio === 'rubbishMode') { const y = scrollY; render(); scrollTo(0, y); } });
+
+function summary(m){
+  const n = k => uploads.filter(u => u.kind === k && !u.round).length;
+  const lines = k => (v(k).match(/\S.*$/gm) || []).length;
+  switch (m.id) {
+    case 'listing': return [v('placeName'), v('propertyType'), [v('town'), v('region')].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'Not filled';
+    case 'guide': return [v('guideName') || v('placeName'), v('slug') ? BASE + '/' + v('slug') : '', (A.languages || []).map(l => l.toUpperCase()).join(' '), n('logo') ? 'logo' : 'no logo'].filter(Boolean).join(' · ');
+    case 'look': return `${n('inspiration')} image(s) · ${(MOODS.find(x => x.id === v('mood')) || {}).name || 'no mood'} · ${n('cover') ? 'main photo' : 'no main photo'}`;
+    case 'sections': return SECTIONS.filter(s => secOn(s.id)).map(s => s.name).join(', ');
+    case 'photos': return `${n('photo')} photos, ${uploads.filter(u => u.kind === 'photo' && u.room).length} tagged`;
+    case 'howto': return `${lines('howTos')} how-tos · ${(A.amenities || []).length} amenities`;
+    case 'stay': return `In ${v('checkIn') || '?'} · out ${v('checkOut') || '?'} · ${lines('houseRules')} rules`;
+    case 'wifi': return v('wifiName') || 'Not filled';
+    case 'favourites': return `${placeRows('favEat').length + lines('favDo').length + lines('favourites').length} places${v('localTips') ? ' · local tips' : ''}`;
+    case 'nearby': { const y = Object.values(A.swipes || {}).filter(x => x.d === 'yes').length; return y ? `${y} places recommended` : 'Not started'; }
+    case 'taste': return [(A.eatStyle || []).slice(0, 3).join(', '), v('eatPrice'), v('tone')].filter(Boolean).join(' · ') || 'Not filled';
+    case 'area': return [(A.interests || []).join(', '), v('radius')].filter(Boolean).join(' · ') || 'Not filled';
+    case 'kids': return (A.kidsAges || []).join(', ') || 'Not filled';
+    default: { const k = m.fields.find(f => Q[f] && v(f)); return k ? v(k).split('\n')[0].slice(0, 80) : 'Not filled'; }
+  }
+}
+/* ---------- State (public version: everything stays on this device until Send) ---------- */
+let A = {}, uploads = [], sid = '';
+const pending = new Map();
+const KEY = 'porta-onboarding-v1';
+const v = k => A[k] ?? '';
+const visible = () => MODULES.filter(m => !m.sec || secOn(m.sec));
+const filled = k => { if (k === 'source') return hasSource(); if (k === 'slug') return !slugProblem(v('slug')); if (k.startsWith('upload:')) return uploads.some(u => u.kind === k.slice(7)); const x = A[k]; return Array.isArray(x) ? x.length > 0 : !!String(x ?? '').trim(); };
+const missingOf = m => m.need.filter(k => !filled(k));
+const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k] || {}).label;
+function statusOf(m){
+  const miss = missingOf(m).length, seen = (A._seen || []).includes(m.id), done = !!(A._done || {})[m.id];
+  if (done && !miss) return { k:'done', label:'Done', miss };
+  if (preKeys(m).length) return { k:'pre', label: miss ? `Review · ${miss} to do` : 'Review', miss };
+  if (seen || done) return { k:'chk', label: miss ? `${miss} to do` : 'Checked', miss };
+  return { k:'new', label:'Start', miss };
+}
+// Only the listing and the town are needed to send. Everything else is a first version to review, or optional.
+const sendMissing = () => [...(hasSource() ? [] : ['Your listing link or text']), ...(v('town') ? [] : ['The town']), ...(A.consent ? [] : ['The consent box'])];
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+/* ---------- The guide's web address: a common part (this site) plus the host's own part ---------- */
+const BASE = location.host || 'porta-guides.netlify.app';
+const RESERVED = ['feedback','admin','api','assets','g','new','www','porta','index','login','help','about'];
+const cleanSlug = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').slice(0, 40);
+const slugProblem = x => !x ? 'Choose an address' : x.length < 3 ? 'At least 3 letters' : RESERVED.includes(x.replace(/-$/, '')) ? 'This one is taken, try another' : /-$/.test(x) ? 'Cannot end with a dash' : '';
+function slugCheck(){ const e = document.getElementById('slugMsg'); if (!e) return; const pr = slugProblem(v('slug')); e.textContent = pr || `Your guests will open ${BASE}/${v('slug')}`; e.className = 'hint' + (pr ? ' err' : ' okc'); }
+
+/* ---------- Device and walkthrough (so each person can be compared by device) ---------- */
+function device(){
+  const ua = navigator.userAgent || '', w = screen.width, h = screen.height;
+  const touch = (navigator.maxTouchPoints || 0) > 0 || matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  const os = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) || (/Macintosh/.test(ua) && touch) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Mac OS X/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : 'Other';
+  const browser = /EdgA?\//.test(ua) ? 'Edge' : /SamsungBrowser/.test(ua) ? 'Samsung Internet' : /CriOS|Chrome\//.test(ua) ? 'Chrome' : /FxiOS|Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'Other';
+  const short = Math.min(w, h);
+  const type = os === 'iPad' || (touch && short >= 600) ? 'tablet' : touch && short < 600 ? 'phone' : 'desktop';
+  return { type, os, browser, screen: `${w}x${h}`, viewport: `${innerWidth}x${innerHeight}`, dpr: devicePixelRatio || 1, touch,
+    lang: navigator.language || '', tz: (Intl.DateTimeFormat().resolvedOptions().timeZone) || '', dark: matchMedia('(prefers-color-scheme: dark)').matches, ua };
+}
+const deviceLine = d => `${d.type} · ${d.os} · ${d.browser} · ${d.viewport}`;
+function log(e, m, extra){
+  const L = A._log || (A._log = []);
+  L.push({ t: Date.now(), e, ...(m ? { m } : {}), ...(extra || {}) });
+  if (L.length > 600) L.splice(0, L.length - 600);
+}
+// Time spent per module: from opening it until the next event (gaps over 10 minutes count as a break).
+function journey(){
+  const L = A._log || [], per = {}, order = [];
+  for (let i = 0; i < L.length; i++) {
+    const x = L[i]; if (x.e !== 'open') continue;
+    if (order[order.length - 1] !== x.m) order.push(x.m);
+    const next = L[i + 1]; const dt = next ? Math.min(next.t - x.t, 10 * 60e3) : 0;
+    per[x.m] = (per[x.m] || 0) + dt;
+  }
+  const active = Object.values(per).reduce((a, b) => a + b, 0);
+  const first = L[0] ? L[0].t : Date.now();
+  return { order, secondsPerModule: Object.fromEntries(Object.entries(per).map(([k, x]) => [k, Math.round(x / 1000)])),
+    activeMinutes: Math.round(active / 6e4), spanHours: Math.round((Date.now() - first) / 36e5 * 10) / 10,
+    sessions: (A._sessions || []).length, devicesUsed: [...new Set((A._sessions || []).map(s => s.d))] };
+}
+
+/* ---------- Saving on this device ---------- */
+let saveTimer = null;
+function setSave(state, text){ const el = $('#saveState'); if (!el) return; el.innerHTML = `<span class="sdot ${state}"></span><span>${esc(text)}</span>`; }
+function queueSave(){ setSave('busy','Saving…'); clearTimeout(saveTimer); saveTimer = setTimeout(flush, 400); }
+function flush(){
+  try { localStorage.setItem(KEY, JSON.stringify({ sid, A })); setSave('ok','Saved on this device'); }
+  catch (e) { setSave('err','Could not save on this device'); }
+}
+const set = (k, val) => { A[k] = val; queueSave(); };
+function markSeen(id){ const s = new Set(A._seen || []); if (!s.has(id)) { s.add(id); A._seen = [...s]; queueSave(); } }
+
+// Photos live in IndexedDB (too big for localStorage). If it is blocked, they stay in memory for this visit.
+const idb = (() => {
+  let p = null;
+  const open = () => p || (p = new Promise((res, rej) => { try { const r = indexedDB.open('porta', 1); r.onupgradeneeded = () => r.result.createObjectStore('files', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }));
+  const tx = async (mode, fn) => { const d = await open(); return new Promise((res, rej) => { const t = d.transaction('files', mode); const s = t.objectStore('files'); const out = fn(s); t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error); }); };
+  return { all: () => tx('readonly', s => s.getAll()), put: rec => tx('readwrite', s => s.put(rec)), del: id => tx('readwrite', s => s.delete(id)) };
+})();
+async function saveUpload(rec){ try { await idb.put(rec); } catch (e) { /* memory only */ } }
+
+/* ---------- Images ---------- */
+function loadImg(file){ return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); }); }
+async function shrink(file, max, limitBytes){
+  const img = await loadImg(file);
+  let s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  for (let k = 0; k < 6; k++) {
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', [0.84,0.76,0.68,0.6,0.55,0.5][k]));
+    if (blob && blob.size < limitBytes) return blob;
+    s *= 0.8;
+  }
+  throw new Error('too_big');
+}
+async function addFiles(kind, files, max){
+  const have = uploads.filter(u => u.kind === kind).length + [...pending.values()].filter(p => p.kind === kind).length;
+  const list = [...files].slice(0, Math.max(0, max - have));
+  if (files.length > list.length) toast(`Up to ${max} here`);
+  for (const f of list) {
+    const tmp = 'p' + newId();
+    pending.set(tmp, { kind, name: f.name, preview: /^image\//.test(f.type) ? URL.createObjectURL(f) : null }); render();
+    try {
+      if (!/^image\//.test(f.type)) throw new Error('not_image');
+      const blob = await shrink(f, 2000, 1.5e6);
+      const rec = { id: newId(), kind, name: f.name.replace(/\.[^.]+$/, '') + '.jpg', room: '', blob, createdAt: new Date().toISOString() };
+      rec.url = URL.createObjectURL(blob);
+      uploads.push(rec); await saveUpload(rec); log('upload', kind); queueSave();
+    } catch (e) { toast(e && e.message === 'not_image' ? `${f.name}: please send a photo or screenshot` : `${f.name} could not be added`); }
+    finally { pending.delete(tmp); render(); }
+  }
+}
+const srcOf = u => u.url;
+
+/* ---------- Sending to Netlify Forms ---------- */
+async function nf(form, fields, file){
+  let body, headers = {};
+  if (file) { body = new FormData(); body.append('form-name', form); for (const [k, x] of Object.entries(fields)) body.append(k, x ?? ''); body.append('file', file.blob, file.name); }
+  else { body = new URLSearchParams({ 'form-name': form, ...Object.fromEntries(Object.entries(fields).map(([k, x]) => [k, x ?? ''])) }).toString(); headers = { 'Content-Type': 'application/x-www-form-urlencoded' }; }
+  const r = await fetch('/', { method: 'POST', headers, body });
+  if (!r.ok) throw new Error('http_' + r.status);
+}
+// "Missing something here?" notes go out straight away, so we learn even from people who never finish.
+async function sendNote(mod, text){
+  const d = device(); log('note', mod);
+  await nf('note', { sid, module: mod, note: text, place: v('placeName'), town: v('town'), email: v('email'), progress: progressText(), device: deviceLine(d), device_json: JSON.stringify(d) });
+}
+const progressText = () => { const ms = visible(); return `${ms.filter(m => statusOf(m).k === 'done').length}/${ms.length} done`; };
+
+/* ---------- After the first version: what to check ---------- */
+function draftBanner(){
+  if (!A._draftAt) return '';
+  const pre = visible().filter(m => statusOf(m).k === 'pre');
+  return `<section class="draft">
+    <div><small>First version ready</small><h2>${pre.length ? `${pre.length} step${pre.length > 1 ? 's' : ''} written for you. Check them and make them yours.` : 'All checked. Add photos and your places to finish.'}</h2>
+    ${(A.toConfirm || []).length ? `<p>Things your listing does not say, worth adding:</p><ul>${A.toConfirm.map(q => `<li>${esc(q)}</li>`).join('')}</ul>` : ''}</div>
+    <div class="draft-act"><button class="btn primary" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"', 'stroke-width="2.2" width="17" height="17"')}See your guide</button>${pre[0] ? `<a class="btn" href="#${pre[0].id}">Start reviewing</a>` : ''}</div></section>`;
+}
+
+/* ---------- Extra questions for the public test ---------- */
+function noteBox(mod){
+  const sent = (A._notes || {})[mod] || [];
+  return `<div class="notebox"><label for="note_${mod}"><b>Missing a question here, or something unclear?</b><span>Tell us in a few words. It goes straight to the team, even if you don’t finish.</span></label>
+    <div class="nrow"><textarea id="note_${mod}" rows="2" placeholder="I expected a question about…"></textarea><button class="btn small" type="button" data-note="${mod}">Send note</button></div>
+    ${sent.length ? `<p class="hint">${sent.length} note${sent.length > 1 ? 's' : ''} sent from this page. Thank you!</p>` : ''}</div>`;
+}
+
+/* ---------- After sending ---------- */
+function thanksHTML(){
+  const when = A._sentAt ? new Date(A._sentAt).toLocaleString() : '';
+  return `<section class="hero"><small>${esc(v('guideName') || v('placeName') || 'Your guide')}</small>
+      <h1>Thank you. Your preview is ready.</h1>
+      <p>Try it like a guest and tell us what you think. Then we research your area and email the full guide to <b>${esc(v('email'))}</b>, usually within two days.</p>
+      <button class="go-next" type="button" id="openPreview"><span>Open my preview</span><span class="ar">${ARROW}</span></button></section>
+    <section class="card">
+      <div class="msg">Sent ${esc(when)}. Your answers stay on this device, so you can come back, change anything and send again.</div>
+      <div class="note"><div><b>Your preview is ready.</b> It is built from your own answers and photos, on this device, at ${esc(BASE)}/${esc(v('slug'))}. Places, markets and events get researched for the full guide. Use the Feedback button on every screen: that is what helps us most.</div></div>
+      <div class="row"><button class="btn primary" type="button" id="openPreview">Open my preview ${ARROW}</button></div>
+      <div class="foot"><div class="row"><a class="btn" href="#home">See or change my answers</a></div></div></section>`;
+}
+function notHereHTML(path){
+  return `<section class="hero"><small>${esc(BASE)}/${esc(path)}</small><h1>This guide is being prepared</h1>
+    <p>Its host is still setting it up. If it is yours, open it on the device where you filled in your answers.</p>
+    <a class="go-next" href="/"><span>Build a guide for your place</span><span class="ar">${ARROW}</span></a></section>`;
+}
+function feedbackPageHTML(){
+  const p = new URLSearchParams(location.search);
+  const guide = p.get('guide') || '', round = p.get('round') || '1';
+  return `<section class="hero"><small>Round ${esc(round)}</small><h1>How does your guide feel?</h1>
+      <p>Open it on your phone, use it like a guest, then tell us what works and what does not.</p>
+      ${guide ? `<a class="go-next" href="/g/${encodeURIComponent(guide)}/" target="_blank" rel="noopener"><span>Open your guide</span><span class="ar">${ARROW}</span></a>` : ''}</section>
+    <form id="fb" class="card">
+      <div class="f"><span class="lab" id="l_rate">Overall</span><div class="stars" role="radiogroup" aria-labelledby="l_rate">${[1,2,3,4,5].map(n => `<label><input type="radio" name="rating" value="${n}" required><span>${n}</span></label>`).join('')}</div></div>
+      <div class="f"><label for="fb_right">What feels right</label><textarea id="fb_right" name="right" rows="3"></textarea></div>
+      <div class="f"><label for="fb_wrong">What is wrong or missing</label><textarea id="fb_wrong" name="wrong" rows="4" placeholder="The bakery closed last year, I want the pool first…"></textarea></div>
+      <div class="f"><label for="fb_ux">How would you like it to look or work instead?</label><textarea id="fb_ux" name="ux" rows="3" placeholder="Bigger photos, a list instead of tiles, the map first…"></textarea></div>
+      <div class="f"><span class="lab">Where</span><div class="chips">${['Look and colours','Layout','Texts and tone','Wrong information','Missing places','Photos','Languages','Navigation'].map(x => `<label class="chip"><input type="checkbox" name="areas" value="${x}"><span>${x}</span></label>`).join('')}</div></div>
+      <div class="f"><label for="fb_shot">A screenshot <span class="opt">optional</span></label><input id="fb_shot" name="shot" type="file" accept="image/*"></div>
+      <div class="f"><span class="lab">Next step</span><div class="chips"><label class="chip"><input type="radio" name="next" value="changes" checked><span>Make these changes</span></label><label class="chip"><input type="radio" name="next" value="publish"><span>It is ready, publish it</span></label></div></div>
+      <div class="f"><label for="fb_email">Your email</label><input id="fb_email" name="email" type="email" value="${esc(v('email'))}" required></div>
+      <div><button class="btn primary" type="submit">Send feedback</button></div></form>`;
+}
+
+/* ---------- Render ---------- */
+let lastRoute = null;
+function render(){
+  const r = route(), main = $('#main');
+  if (!main) return;
+  const ae = document.activeElement, fid = ae && ae.id, sel = ae && ae.selectionStart;
+  const m = visible().find(x => x.id === r);
+  const path = decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g, ''));
+  if (path && path !== 'index.html') { if (path === v('slug') || path === 'preview') { renderPreview(); return; } main.innerHTML = notHereHTML(path); return; }
+  if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
+  else if (r === 'thanks' || (A._sentAt && !location.hash)) main.innerHTML = thanksHTML();
+  else if (m) { main.innerHTML = moduleHTML(m); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
+  else if (r === 'send') { main.innerHTML = sendHTML(); if (r !== lastRoute) { log('open', 'send'); queueSave(); } }
+  else if ((r === 'home' || r === 'start') && (r === 'start' || (!A._draftAt && !A._skipStart && !visible().some(m => statusOf(m).k !== 'new')))) { main.innerHTML = startHTML(); if (r !== lastRoute) { log('open', 'start'); queueSave(); } }
+  else { main.innerHTML = homeHTML(); if (r !== lastRoute) { log('open', 'home'); queueSave(); } }
+  let nb = document.getElementById('navbar'); if (!nb) { nb = document.createElement('div'); nb.id = 'navbar'; nb.hidden = true; document.body.appendChild(nb); }
+  const stepView = r === 'send' || !!m;
+  nb.hidden = !stepView || new URLSearchParams(location.search).has('feedback') || (r === 'thanks');
+  if (!nb.hidden) nb.innerHTML = navbarHTML(r);
+  if (r !== lastRoute) { window.scrollTo(0, 0); lastRoute = r; const c = document.querySelector('.rail [aria-current]'); if (c) c.scrollIntoView({ block: 'nearest' }); }
+  if (fid) { const el = document.getElementById(fid); if (el && el !== document.activeElement) { el.focus({ preventScroll: true }); try { if (sel != null) el.setSelectionRange(sel, sel); } catch (e) {} } }
+}
+function softRefresh(){
+  const m = MODULES.find(x => x.id === route());
+  if (!m) return;
+  const s = statusOf(m), miss = missingOf(m);
+  const p = document.querySelector('.mhead .pill'); if (p) { p.className = 'pill ' + s.k; p.innerHTML = (s.k === 'done' ? CHECK : '') + esc(s.label); }
+  const d = document.querySelector('[data-done]'); if (d) d.disabled = !!miss.length;
+  const t = document.querySelector('.foot .todo'); if (t) t.innerHTML = miss.length ? `Still needed for Done: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>` : s.k === 'done' ? 'This step is done. You can still change anything.' : 'Everything needed is here. Press Done when you are happy with it.';
+  document.querySelectorAll('[data-k],[data-multi],[data-radio]').forEach(el => { const k = el.dataset.k || el.dataset.multi || el.dataset.radio; const f = el.closest('.f'); const b = f && f.querySelector('.req'); if (b) b.outerHTML = badge(k); });
+  refreshNav();
+}
+window.addEventListener('hashchange', render);
+function refreshSend(){ if (route() !== 'send') return; refreshNav(); const miss = sendMissing(); const b = $('#send'); if (b) b.disabled = !!miss.length; const tt = document.querySelector('.foot .todo'); if (tt) tt.innerHTML = miss.length ? `Before sending: <b>${miss.map(esc).join(', ')}</b>` : ''; }
+
+/* ---------- Events ---------- */
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.k === 'slug') { const c = cleanSlug(t.value); if (c !== t.value) { const p0 = t.selectionStart; t.value = c; try { t.setSelectionRange(p0, p0); } catch (er) {} } set('slug', c); A._slugTouched = true; slugCheck(); softRefresh(); return; }
+  if (t.dataset.k && A._pre && A._pre[t.dataset.k]) { const p = { ...A._pre }; delete p[t.dataset.k]; A._pre = p; }
+  if (t.dataset.k) { set(t.dataset.k, t.value); if ((t.dataset.k === 'guideName' || t.dataset.k === 'placeName') && !A._slugTouched) A.slug = cleanSlug(v('guideName') || v('placeName')); if (route() === 'send') refreshSend(); else softRefresh(); }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if ((t.dataset.multi || t.dataset.radio) && A._pre && A._pre[t.dataset.multi || t.dataset.radio]) { const p = { ...A._pre }; delete p[t.dataset.multi || t.dataset.radio]; A._pre = p; }
+  if (t.dataset.multi) { const k = t.dataset.multi, cur = new Set(A[k] || []); t.checked ? cur.add(t.value) : cur.delete(t.value); set(k, [...cur]); softRefresh(); }
+  else if (t.dataset.radio) { set(t.dataset.radio, t.value); softRefresh(); refreshSend(); }
+  else if (t.dataset.k && t.tagName === 'SELECT') { set(t.dataset.k, t.value); softRefresh(); }
+  else if (t.dataset.sec) { A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), [t.dataset.sec]: t.checked }; queueSave(); render(); }
+  else if (t.dataset.check) { set(t.dataset.check, t.checked); refreshSend(); }
+  else if (t.dataset.file) { addFiles(t.dataset.file, t.files, +t.closest('[data-drop]').dataset.max); t.value = ''; }
+  else if (t.dataset.room) { const u = uploads.find(x => x.id === t.dataset.room); if (u) { u.room = t.value; saveUpload(u); } }
+});
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.donenext) { const id = b.dataset.donenext; A._done = { ...(A._done || {}), [id]: true }; log('done', id); queueSave(); const o = stepsOrder(); const nx = o[o.indexOf(id) + 1]; toast('Done'); location.hash = '#' + (nx || 'home'); render(); }
+  else if (b.id === 'openSteps') openSteps();
+  else if (b.id === 'skipStart') { A._skipStart = true; queueSave(); location.hash = '#listing'; render(); }
+  else if (b.dataset.done) { A._done = { ...(A._done || {}), [b.dataset.done]: true }; log('done', b.dataset.done); queueSave(); render(); toast('Done'); }
+  else if (b.dataset.undone) { const d = { ...(A._done || {}) }; delete d[b.dataset.undone]; A._done = d; log('reopen', b.dataset.undone); queueSave(); render(); }
+  else if (b.dataset.del) { uploads = uploads.filter(x => x.id !== b.dataset.del); try { await idb.del(b.dataset.del); } catch (err) {} render(); }
+  else if (b.dataset.note) {
+    const mod = b.dataset.note, ta = document.getElementById('note_' + mod), text = (ta.value || '').trim();
+    if (!text) { ta.focus(); return; }
+    b.disabled = true;
+    try { await sendNote(mod, text); A._notes = { ...(A._notes || {}), [mod]: [...((A._notes || {})[mod] || []), text] }; queueSave(); ta.value = ''; toast('Note sent. Thank you!'); render(); }
+    catch (err) { toast('Could not send the note. Check your connection.'); b.disabled = false; }
+  }
+  else if (b.id === 'send') send(b);
+  else if (b.id === 'fillListing') { const got = applyListing(); const mods = [...new Set(got.map(k => FIELD_MODULE[k]))].map(id => (MODULES.find(m => m.id === id) || {}).title).filter(Boolean); render(); toast(got.length ? `Filled ${got.length} answers in ${mods.join(', ')}. Marked “Review”.` : 'Nothing new found. Try pasting more of the listing.'); }
+  else if (b.id === 'openPreview') { flush(); location.href = '/' + (v('slug') || 'preview'); }
+});
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'fb') return;
+  e.preventDefault();
+  const f = new FormData(e.target), p = new URLSearchParams(location.search);
+  const btn = e.target.querySelector('[type=submit]'); btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const shot = f.get('shot');
+    const d = device();
+    const fields = { device: deviceLine(d), device_json: JSON.stringify(d), sid: p.get('feedback') || sid, guide: p.get('guide') || '', round: p.get('round') || '1', email: f.get('email'), rating: f.get('rating'), right: f.get('right'), wrong: f.get('wrong'), ux: f.get('ux'), areas: f.getAll('areas').join(', '), next: f.get('next') };
+    if (shot && shot.size) { const blob = await shrink(shot, 1800, 1.5e6); await nf('feedback', fields, { blob, name: 'screenshot.jpg' }); }
+    else await nf('feedback', fields);
+    e.target.outerHTML = `<section class="card"><h2 style="font-size:28px">Thank you!</h2><p class="hint" style="font-size:16px">We read every word and send you the next version soon.</p></section>`;
+  } catch (err) { btn.disabled = false; btn.textContent = 'Send feedback'; toast('Could not send. Try again.'); }
+});
+['dragover','dragleave','drop'].forEach(ev => document.addEventListener(ev, e => {
+  const d = e.target.closest && e.target.closest('[data-drop]'); if (!d) return; e.preventDefault();
+  d.classList.toggle('over', ev === 'dragover');
+  if (ev === 'drop' && e.dataTransfer.files.length) addFiles(d.dataset.drop, e.dataTransfer.files, +d.dataset.max);
+}));
+async function send(b){
+  b.disabled = true;
+  const st = $('#sendState');
+  try {
+    log('send'); const d = device(), j = journey();
+    const clean = { ...A }; delete clean._notes; delete clean._log;
+    const total = uploads.length + 1; let n = 0;
+    const tick = () => { n++; if (st) st.textContent = `Sending ${n} of ${total}…`; };
+    tick();
+    await nf('onboarding', { sid, email: v('email'), place: v('placeName'), town: v('town'), slug: v('slug'), progress: progressText(), photos: String(uploads.length),
+      device: deviceLine(d), device_type: d.type, device_json: JSON.stringify(d), active_minutes: String(j.activeMinutes), journey: JSON.stringify(j), events: JSON.stringify(A._log || []),
+      sent_before: A._sentAt || '', answers: JSON.stringify(clean) });
+    for (const u of uploads) { tick(); await nf('file', { sid, kind: u.kind, room: u.room || '', name: u.name }, u); }
+    A._sentAt = new Date().toISOString(); flush();
+    toast('Sent! Opening your preview…'); setTimeout(() => { location.href = '/' + (v('slug') || 'preview'); }, 900);
+  } catch (err) { b.disabled = false; if (st) st.textContent = 'Something did not go through. Check your connection and press Send again.'; }
+}
+
+// Save straight away when the page is hidden or closed (phones kill tabs without warning).
+addEventListener('pagehide', () => { clearTimeout(saveTimer); flush(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { clearTimeout(saveTimer); flush(); } });
+
+/* ---------- Boot ---------- */
+(async () => {
+  try { const saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved) { A = saved.A || {}; sid = saved.sid; } } catch (e) {}
+  if (!sid) sid = newId();
+  { const d = device(); A._sessions = [...(A._sessions || []), { t: Date.now(), d: deviceLine(d) }].slice(-50); log('session', null, { d: deviceLine(d) }); flush(); }
+  try { uploads = (await idb.all() || []).map(u => ({ ...u, url: URL.createObjectURL(u.blob) })).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')); } catch (e) { uploads = []; }
+  setSave('ok', A._seen ? 'Saved on this device' : 'Answers save on this device');
+  render();
+})();
+
+})();
+</script>
+<!-- Netlify Forms: declared here so Netlify detects them at deploy. The page sends them with fetch. -->
+<form name="onboarding" data-netlify="true" netlify-honeypot="bot" hidden>
+  <input name="sid"><input name="email"><input name="place"><input name="town"><input name="slug"><input name="progress"><input name="photos">
+  <input name="device"><input name="device_type"><textarea name="device_json"></textarea><input name="active_minutes"><textarea name="journey"></textarea><textarea name="events"></textarea>
+  <input name="sent_before"><textarea name="answers"></textarea><input name="bot">
+</form>
+<form name="file" data-netlify="true" netlify-honeypot="bot" enctype="multipart/form-data" hidden>
+  <input name="sid"><input name="kind"><input name="room"><input name="name"><input type="file" name="file"><input name="bot">
+</form>
+<form name="note" data-netlify="true" netlify-honeypot="bot" hidden>
+  <input name="sid"><input name="module"><textarea name="note"></textarea><input name="place"><input name="town"><input name="email"><input name="progress"><input name="device"><textarea name="device_json"></textarea><input name="bot">
+</form>
+<form name="feedback" data-netlify="true" netlify-honeypot="bot" enctype="multipart/form-data" hidden>
+  <input name="sid"><input name="guide"><input name="round"><input name="email"><input name="rating"><textarea name="right"></textarea><textarea name="wrong"></textarea><textarea name="ux"></textarea>
+  <input name="areas"><input name="next"><input name="kind"><input name="screen"><input name="preset"><input name="device"><textarea name="device_json"></textarea><input type="file" name="file"><input name="bot">
+</form>
+</body>
+</html>

@@ -1,0 +1,1140 @@
+{
+ "_doc": "Source ledger for the monthly check. One entry per item id: the URLs to check FIRST (cheapest, most official first), when it was last verified, and the result. The monthly task updates this file: add any new source it finds, move dead links to `dead`, set `checked` (YYYY-MM-DD) and `result` (ok / changed / unverified / closed).",
+ "files": {
+  "markets.json": {
+   "bisbal": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "papiola-sun": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "papiola-sat": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "bonastre": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "llorenc": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "santaoliva": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vendrell-mm": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vendrell-w": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vendrell-a": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vendrell-art": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "banyeres": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "bellvei": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "santjaume": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "comaruga": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "arboc": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "calafell-mm": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "calafell-w": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "segur": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "cunit": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "roda": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "pobla": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "creixell": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "torredembarra": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "constanti": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "tgn-central": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "tgn-corsini": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "tgn-quadrat": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "tgn-seu": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "bonavista": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vilarodona": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "valls": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "valls-b": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "alcover": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "monjos": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "monjos-art": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vilafranca-sat": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vilafranca-veg": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vilafranca-tue": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vilafranca-art": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vilafranca-mm": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "santsadurni": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "santquinti": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vendrell-teresa": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "comaruga-night": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "cunit-summer": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "calafell-medieval": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "segur-swap": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "arboc-llucia": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "torre-swap": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "tgn-medieval": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "valls-fair": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "sarroca-medieval": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   }
+  },
+  "restaurants.json": {
+   "locanda": {
+    "sources": [
+     "https://www.facebook.com/LaLocandaElVendrell",
+     "https://www.google.com/maps/place/La+Locanda+dei+Sapori/data=!4m2!3m1!1s0x12a38b237f1c227f:0x5588072edcbdf82"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "obrador": {
+    "sources": [
+     "https://www.l-obrador.com/",
+     "https://www.google.com/maps/place/L%27Obrador+d%27Oriol+Rossell/data=!4m2!3m1!1s0x12a38b2344d76479:0xdbdf4466666d5ad2"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "casinet": {
+    "sources": [
+     "https://www.casinet.net/",
+     "https://www.google.com/maps/place/Casinet/data=!4m2!3m1!1s0x12a38c9bea80d6b3:0x177d14ea1d7111f9"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "ulldellebre": {
+    "sources": [
+     "https://restaurantulldellebre.com/",
+     "https://www.google.com/maps/place/Ull+de+Llebre/data=!4m2!3m1!1s0x12a40a862fb699c9:0x70c43759d025f86e"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "esencia": {
+    "sources": [
+     "https://www.google.com/maps/place/Esencia/data=!4m2!3m1!1s0x12a3f5588dc7a129:0xdbe0c178ca5437dc"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "ancora": {
+    "sources": [
+     "https://ancoradelserrallo.es/",
+     "https://www.google.com/maps/place/L%27%C3%80ncora+del+Serrallo/data=!4m2!3m1!1s0x12a3e2d272462ee5:0xa5346325642161ff"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "pernil": {
+    "sources": [
+     "https://fabricadelpernil.com/",
+     "https://www.google.com/maps/place/La+F%C3%A0brica+del+Pernil/data=!4m2!3m1!1s0x12a38b40c30bdda7:0xf29396492ed5c471"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "marga": {
+    "sources": [
+     "https://www.lacuinadelamarga.com/",
+     "https://www.google.com/maps/place/La+Cuina+de+la+Marga/data=!4m2!3m1!1s0x12a38ca11df2c82f:0xc3d484415286ded8"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "rest101": {
+    "sources": [
+     "https://grup101.com/",
+     "https://www.google.com/maps/place/101+Restaurante/data=!4m2!3m1!1s0x12a38b7a23b9b6c1:0xb7defca9509a1b03"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "llepol": {
+    "sources": [
+     "https://llepol.com/",
+     "https://www.google.com/maps/place/Ll%C3%A9pol/data=!4m2!3m1!1s0x12a407d2127922a1:0x203e9f43212b8552"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "quijote": {
+    "sources": [
+     "https://www.google.com/maps/place/Quijote+Beach/data=!4m2!3m1!1s0x12a3f39f4be6ca0b:0x669f4d66326cc1ef"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "brisa": {
+    "sources": [
+     "https://www.google.com/maps/place/La+Brisa+Beach+Club/data=!4m2!3m1!1s0x12a38dbfd9df20b5:0x290afc9eaae10c6c"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   }
+  },
+  "todo.json": {
+   "aqualeon": {
+    "sources": [
+     "https://www.aqualeon.es/",
+     "https://www.google.com/maps/place/Aqualeon/data=!4m2!3m1!1s0x12a3f50ecf498d79:0xd229d7b858521f8a"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "bowling": {
+    "sources": [
+     "https://bowlingelvendrell.com/packs-y-ofertas/",
+     "https://www.google.com/maps/place/Bowling+El+Vendrell/data=!4m2!3m1!1s0x12a38b1eb6f643e3:0x920b1d3fdd897ab"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "salting": {
+    "sources": [
+     "https://www.salting.es/parque-de-camas-elasticas-vendrell/",
+     "https://www.google.com/maps/place/Salting/data=!4m2!3m1!1s0x12a38b26c757895d:0xbb100b11de703146"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "karting-comaruga": {
+    "sources": [
+     "https://kartingcomaruga.com/",
+     "https://www.google.com/maps/place/Karting+Coma-ruga/data=!4m2!3m1!1s0x12a38b30a72263cb:0x556ce06e75a62c1a"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "karting-vendrell": {
+    "sources": [
+     "https://kartingvendrell.com/",
+     "https://www.google.com/maps/place/Karting+Vendrell/data=!4m2!3m1!1s0x12a38b505ce6e4fb:0xfdcf344837c1c3d0"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "portaventura": {
+    "sources": [
+     "https://www.portaventuraworld.com/",
+     "https://www.google.com/maps/place/PortAventura/data=!4m2!3m1!1s0x12a159bb97a24019:0x9bb01aabaec2d626"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "posesion": {
+    "sources": [
+     "https://www.fearfactoryexp.com/",
+     "https://www.google.com/maps/place/La+Posesi%C3%B3n/data=!4m2!3m1!1s0x12a463d3e4093171:0x44632f8a90227da3"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "spa": {
+    "sources": [
+     "https://www.hotelbalnearioplayadecomarruga.com/es-ES/balneario.aspx",
+     "https://www.google.com/maps/place/Balneari+de+Coma-ruga/data=!4m2!3m1!1s0x12a1583585e8b8f5:0x1de2a6d17457c1dc"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "riuet": {
+    "sources": [
+     "https://www.google.com/maps/place/El+Riuet/data=!4m2!3m1!1s0x12a38d0046d98bfd:0xd5f410b5f63ffdbf"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "beach-creixell": {
+    "sources": [
+     "https://www.google.com/maps/place/Platja+de+Creixell/data=!4m2!3m1!1s0x12a3f17e5fd4fc85:0xbbfa2790e3dd600c"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "beach-comaruga": {
+    "sources": [
+     "https://www.google.com/maps/place/Platja+de+Coma-ruga/data=!4m2!3m1!1s0x12a3f34dac8af585:0x3aa5c63ddfff877c"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "beach-santsalvador": {
+    "sources": [
+     "https://www.google.com/maps/place/Platja+de+Sant+Salvador/data=!4m2!3m1!1s0x12a38ca4d08bf98d:0x3cbc06e60982e2d6"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "beach-dogs": {
+    "sources": [
+     "https://www.google.com/maps/place/Platja+per+a+gossos+de+Coma-ruga/data=!4m2!3m1!1s0x12a38d00626e54b3:0x1c96191fc2d45489"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vilafranca": {
+    "sources": [
+     "https://www.vinseum.cat/",
+     "https://www.google.com/maps/search/?api=1&query=Vilafranca+del+Pened%C3%A8s"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "codorniu": {
+    "sources": [
+     "https://www.codorniu.com/",
+     "https://www.google.com/maps/place/Codorn%C3%ADu/data=!4m2!3m1!1s0x12a47cd299c6f307:0xb8d6fc3febc832b5"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "gramona": {
+    "sources": [
+     "https://www.gramona.com/",
+     "https://www.google.com/maps/place/Gramona/data=!4m2!3m1!1s0x12a47cd3c5c71465:0x867c1adf38ff6fe7"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "recaredo": {
+    "sources": [
+     "https://www.recaredo.com/",
+     "https://www.google.com/maps/place/Recaredo/data=!4m2!3m1!1s0x12a47cd37148efc3:0x4b1cebbf10967f84"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "barcelona": {
+    "sources": [
+     "https://www.barcelonaturisme.com/",
+     "https://www.google.com/maps/place/Barcelona/data=!4m2!3m1!1s0x12a4a2f15c5d0d5d:0x9567440d3cf19374"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "tarragona": {
+    "sources": [
+     "https://www.tarragonaturisme.cat/",
+     "https://www.google.com/maps/search/?api=1&query=Part+Alta%2C+Tarragona"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "sitges": {
+    "sources": [
+     "https://www.sitgestur.cat/",
+     "https://www.google.com/maps/place/Sitges/data=!4m2!3m1!1s0x12a3804821656681:0x6032a24df8915ac3"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "montserrat": {
+    "sources": [
+     "https://www.montserratvisita.com/",
+     "https://www.google.com/maps/place/Montserrat/data=!4m2!3m1!1s0x12a4f5513a53dd33:0xf3a841dba1734af1"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "santescreus": {
+    "sources": [
+     "https://patrimoni.gencat.cat/ca/monuments/monuments/reial-monestir-de-santes-creus",
+     "https://www.google.com/maps/place/Monestir+de+Santes+Creus/data=!4m2!3m1!1s0x12a40603ad308c3f:0xa6719c909c687c47"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "poblet": {
+    "sources": [
+     "https://www.poblet.cat/",
+     "https://www.google.com/maps/place/Monestir+de+Poblet/data=!4m2!3m1!1s0x12a6ae43fb104f4d:0x21267493d4daaff3"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "montblanc": {
+    "sources": [
+     "https://www.google.com/maps/place/Montblanc/data=!4m2!3m1!1s0x12a6a96cd8dc1a0f:0xd655a785204079be"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "ciutadella": {
+    "sources": [
+     "https://visit.calafell.cat/list/ciutadella-iberica/",
+     "https://www.google.com/maps/place/Ciutadella+Ib%C3%A8rica+de+Calafell/data=!4m2!3m1!1s0x12a38bf573c35029:0xbbdde16743050ef9"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "ferrocarril": {
+    "sources": [
+     "https://museudelferrocarril.org/",
+     "https://www.google.com/maps/place/Museu+del+Ferrocarril+de+Vilanova/data=!4m2!3m1!1s0x12a386e6f52e1cf1:0xf950013d7ecf391"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "paucasals": {
+    "sources": [
+     "https://www.paucasals.org/",
+     "https://www.google.com/maps/place/Museu+Pau+Casals/data=!4m2!3m1!1s0x12a38c98e62384bb:0xd448bdcb4ed3b6c5"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "altafulla": {
+    "sources": [
+     "https://www.altafulla.cat/",
+     "https://www.google.com/maps/place/Altafulla/data=!4m2!3m1!1s0x12a3f11f8119aa05:0x11ec9d9b48b4408c"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   }
+  },
+  "events.json": {
+   "santa-teresa": {
+    "sources": [
+     "https://www.elvendrell.net",
+     "https://laciutat.cat/laciutatdelpenedesgarraf/vendrell-celebra-fira-santa-teresa-9-12-octubre-protagonisme-local-gastronomia-territori_902026_102.html"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "sitges-film": {
+    "sources": [
+     "https://sitgesfilmfestival.com",
+     "https://www.visitsitges.com/en/agenda/sitges-film-festival-2026-festival-de-cine-sitges-2026/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "santa-ursula": {
+    "sources": [
+     "https://www.valls.cat",
+     "https://revistacastells.cat/2026/02/les-dates-de-les-diades-clau-del-2026/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "tots-sants": {
+    "sources": [
+     "https://castellersdevilafranca.cat/tots-sants/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "fira-gall": {
+    "sources": [
+     "https://firadelgall.vilafranca.cat/",
+     "https://www.penedesturisme.cat/en/activity/fira-del-gall-rooster-fair"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "reis": {
+    "sources": [
+     "https://www.tarragona.cat",
+     "https://www.tarragona.cat/cultura/agenda/2026/gener/arribada-cavalcada-reis-dorient-tarragona"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "calcotada": {
+    "sources": [
+     "https://festacalcotadavalls.cat",
+     "https://www.valls.cat/la-ciutat/la-calcotada"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "carnaval-sitges": {
+    "sources": [
+     "https://www.sitges.cat",
+     "https://www.sitges.cat/serveis/festes/actualitat/noticies/el-casino-prado-fara-el-carnestoltes-i-la-reina-del-carnaval-de-sitges-2027"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "carnaval-vilanova": {
+    "sources": [
+     "https://carnavaldevilanova.cat/",
+     "https://carnavaldevilanova.cat/el-nostre-carnaval/els-propers-carnavals/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "carnaval-vendrell": {
+    "sources": [
+     "https://www.elvendrell.net",
+     "https://tarragonadigital.com/societat/programa-actes-carnaval-vendrell-2026.html"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "sant-enterrament": {
+    "sources": [
+     "https://www.tarragonaturisme.cat",
+     "https://www.tarragonaturisme.cat/ca/esdeveniments/processo-del-sant-enterrament-2024"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "montblanc": {
+    "sources": [
+     "https://www.setmanamedieval.cat",
+     "https://www.setmanamedieval.cat/wp-content/uploads/PROGRAMA-SETMED-2026-OK.pdf"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "tarraco-viva": {
+    "sources": [
+     "https://tarracoviva.com/",
+     "https://www.tarragonaturisme.cat/en/events/tarraco-viva"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "corpus-sitges": {
+    "sources": [
+     "https://www.sitgescorpus.cat/",
+     "https://www.visitsitges.com/en/agenda/corpus-sitges-2026-2/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "sant-joan": {
+    "sources": [
+     "https://www.valls.cat",
+     "https://www.valls.cat/36-cultura/645-festa-major-de-sant-joan-24"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "santa-anna": {
+    "sources": [
+     "https://www.elvendrellturisme.com",
+     "https://www.elvendrell.net/informacio/9702-la-festa-major-del-vendrell-2026-es-presenta-amb-el-lema-ho-tenim-tot-i-un-ampli-cartell-musical"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "bisbal": {
+    "sources": [
+     "https://bisbalpenedes.com",
+     "https://bisbalpenedes.com/web/2026/07/28/la-festa-major-2026-omplira-la-bisbal-del-penedes-dactivitats-del-2-al-16-dagost/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "arboc": {
+    "sources": [
+     "https://el3devuit.cat/2026/08/18/143202/actualitat/tot-a-punt-per-a-la-festa-major-de-larboc-una-de-les-mes-tipiques-de-catalunya/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "sant-felix": {
+    "sources": [
+     "https://www.vilafranca.cat",
+     "https://castellersdevilafranca.cat/sant-felix/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "santa-tecla": {
+    "sources": [
+     "https://www.tarragona.cat",
+     "https://femturisme.cat/en/events/santa-tecla-in-tarragona"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "escumostra": {
+    "sources": [
+     "https://santsadurni.cat",
+     "https://www.penedesturisme.cat/en/activity/escumostra-sparkling-wine-and-gastronomy-fair"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vijazz": {
+    "sources": [
+     "https://vijazzpenedes.com/",
+     "https://www.penedesturisme.cat/en/activity/vijazz-penedes-2026"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "pau-casals-festival": {
+    "sources": [
+     "https://www.paucasals.org/",
+     "https://www.paucasals.org/en/activity/pablo-casals-international-music-festival-2026/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "filloxera": {
+    "sources": [
+     "https://www.festadelafiloxera.cat/",
+     "https://www.penedesturisme.cat/en/activity/festa-de-la-filloxera-phylloxera-fest"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vilanova-neus": {
+    "sources": [
+     "https://festamajorvng.cat/",
+     "https://www.vilanovaturisme.cat/que_fer/festa_major",
+     "https://festamajorvng.cat/Programa%20FMVNG2026.pdf"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "sitges-bartomeu": {
+    "sources": [
+     "https://www.sitgesfestamajor.cat/",
+     "https://femturisme.cat/en/events/the-festival-of-sant-bartomeu-de-sitges"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "tarragona-fireworks-contest": {
+    "sources": [
+     "https://www.tarragona.cat/cultura/festes-i-cultura-popular/concurs-internacional-de-focs-artificials-ciutat-de-tarragona",
+     "https://www.tarragona.cat/cultura/festes-i-cultura-popular/concurs-internacional-de-focs-artificials-ciutat-de-tarragona/34e-concurs-internacional-de-focs-artificials-ciutat-de-tarragona",
+     "https://www.tarragonaturisme.cat/en/events/international-ciutat-de-tarragona-fireworks-contest"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "tarragona-sant-magi": {
+    "sources": [
+     "https://www.tarragona.cat/cultura/festes-i-cultura-popular/sant-magi",
+     "https://www.tarragona.cat/cultura/festes-i-cultura-popular/sant-magi/sant-magi-1",
+     "https://www.festes.org/ca/calendari/festes-d-estiu/1088/article/343/festes-de-sant-magi"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "barcelona-sitges-vintage-car-rally": {
+    "sources": [
+     "https://rallybarcelonasitges.com",
+     "https://www.festacatalunya.cat/experiencies-i-rutes/experiencies-i-rutes-esdeveniments-esportius/ralli-internacional-de-cotxes-depoca-barcelona-sitges",
+     "https://www.spain.info/en/calendar/barcelona-sitges-international-vintage-car-rally/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "sitges-pride": {
+    "sources": [
+     "https://sitgespride.com",
+     "https://sitgespride.com/homepage/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vilanova-tres-tombs": {
+    "sources": [
+     "https://www.vilanovaturisme.cat/que_fer/tres_tombs",
+     "https://www.eixdiari.cat/cultura/doc/119655/vilanova-ja-prepara-els-tres-tombs-2026--tradicio-cavalleries-i-festa-major-dhivern.html",
+     "https://www.eixdiari.cat/cultura/doc/114619/mes-de-250-cavalls-i-una-seixantena-de-carros-i-carruatges-han-protagonitzat-els-tres-tombs-de-vilan.html",
+     "https://surtdecasa.cat/penedes/fires-i-festes/la-festa-dels-tres-tombs-al-penedes",
+     "https://patrimonifestiu.cultura.gencat.cat/Festes-i-elements-festius-catalogats-o-declarats/Sant-Antoni/Festa-de-Sant-Antoni-de-Vilanova-i-la-Geltru"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "corbera-living-nativity": {
+    "sources": [
+     "https://www.pessebrecorbera.cat",
+     "https://www.turismebaixllobregat.com/ca/que-fer/activitats-oci/pessebre-vivent-de-corbera-0",
+     "https://beteve.cat/agenda/pessebres-vivents-catalunya/",
+     "https://www.metropoliabierta.cat/gran-barcelona/20251215/pessebre-vivent-mes-famos-catalunya-minuts-barcelona-ubicacio-detalls-comprar-entrades/1003742716302_0.html"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "sant-jordi": {
+    "sources": [
+     "https://www.festacatalunya.cat/municipi/la-bisbal-del-penedes"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "sitges-terramar-festival": {
+    "sources": [
+     "https://festivalterramarcaixabank.com/",
+     "https://www.visitsitges.com/en/festival-jardins-de-terramar-2026/",
+     "https://www.staysitges.com/blog/2026/07/03/jardins-de-terramar-festival-2026-from-31-july-to-12-august/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "calafell-medieval-market": {
+    "sources": [
+     "https://turismebaixpenedes.cat/events/xxiv-mercat-medieval/",
+     "https://femturisme.cat/en/events/medieval-market-in-calafell",
+     "https://www.socpetit.cat/xxiv-mercat-medieval-de-calafell-el-baix-penedes/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "tarragona-dixieland-festival": {
+    "sources": [
+     "https://www.tarragona.cat/cultura/arts-esceniques/musica/festival-dixieland-tarragona",
+     "https://www.tarragonaturisme.cat/en/events/tarragona-dixieland-festival"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   }
+  },
+  "emergency.json": {
+   "112": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "061": {
+    "sources": [
+     "https://catsalut.gencat.cat/ca/serveis-sanitaris/urgencies-mediques/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "hospital": {
+    "sources": [
+     "https://www.xarxatecla.cat/es/hospital-del-vendrell"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "vet": {
+    "sources": [
+     "https://www.vidavet.es/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "toxic": {
+    "sources": [
+     "https://www.mjusticia.gob.es/es/institucional/organismos/instituto-nacional/servicios/servicio-informacion/servicio-informacion1"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "pharmacy": {
+    "sources": [
+     "https://www.coft.cat/font/gcomarques.php?CODICOMARCA=3"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "consultori": {
+    "sources": [
+     "https://www.xarxatecla.cat/consultori-la-bisbal-del-penedes"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "mossos": {
+    "sources": [
+     "https://mossos.gencat.cat/en/serveis_i_tramits/localitzacio_de_comissaries/index.html",
+     "https://mossos.gencat.cat/ca/temes/denuncies/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "car": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "power": {
+    "sources": [
+     "https://www.edistribucion.com/es/averias.html"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "ajuntament": {
+    "sources": [
+     "https://bisbalpenedes.com/web/horaris-datencio-a-la-ciutadania/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   }
+  },
+  "quick.json": {
+   "shop": {
+    "sources": [
+     "https://www.google.com/maps/place/Local+social+Can+Gordei/data=!4m2!3m1!1s0x12a3f581668a9fbd:0xf9e92fb8160c91c5"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "pizza": {
+    "sources": [
+     "https://www.facebook.com/elracodelapedra/",
+     "https://www.google.com/maps/place/El+rac%C3%B3+de+la+pedra/data=!4m2!3m1!1s0x12a40a85ba6233eb:0xc8af8fa8947e802"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   },
+   "taxi": {
+    "sources": [
+     "https://www.elvendrellturisme.com/en/telephone-numbers-of-interest/"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   }
+  },
+  "house-page.json": {
+   "airbnb": {
+    "sources": [
+     "https://www.airbnb.com/rooms/1022457118238842125"
+    ],
+    "dead": [],
+    "checked": null,
+    "result": null
+   }
+  },
+  "garbage.json": {
+   "calendar": {
+    "sources": [],
+    "dead": [],
+    "checked": null,
+    "result": null
+   }
+  }
+ }
+}

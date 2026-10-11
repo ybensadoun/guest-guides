@@ -1,0 +1,22 @@
+node_modules/
+sites/*/public/vendor/
+sites/*/dist/
+sites/*/preview/
+.DS_Store
+.tmp.drive*
+_xfer*.tgz
+_to_delete/
+# Host answers and photos (personal data): never on GitHub
+test-submissions/
+.env
+.netlify/
+# Private values per site (Wi-Fi password etc.): never on GitHub
+sites/*/private/*
+!sites/*/private/README.md
+# Test built from a real person's public listing: never public
+sites/torre-de-campos/
+
+# Local helpers' leftovers
+.trash-preview/
+onboarding-site/src/index.html
+onboarding-site/src/ob-test.html

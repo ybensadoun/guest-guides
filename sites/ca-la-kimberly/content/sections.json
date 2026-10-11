@@ -1,0 +1,68 @@
+{
+  "_doc": "Order here is the order on the Home page, inside each group (house, area). To launch a section: fill content/<id>.json, check its i18n keys in src/i18n/*.json, then set status to live.",
+  "sections": [
+    {
+      "id": "house",
+      "group": "house",
+      "kind": "house",
+      "labelKey": "theHouse",
+      "status": "live",
+      "file": "house-page"
+    },
+    {
+      "id": "garbage",
+      "group": "house",
+      "kind": "garbage",
+      "labelKey": "garbage",
+      "status": "live",
+      "color": "glass",
+      "mapLabelKey": "glassChip"
+    },
+    {
+      "id": "message",
+      "group": "house",
+      "kind": "info",
+      "labelKey": "houseGuide",
+      "status": "live"
+    },
+    {
+      "id": "emergency",
+      "group": "house",
+      "kind": "contacts",
+      "labelKey": "emergency",
+      "status": "live"
+    },
+    {
+      "id": "markets",
+      "group": "area",
+      "kind": "markets",
+      "labelKey": "markets",
+      "status": "live"
+    },
+    {
+      "id": "restaurants",
+      "group": "area",
+      "kind": "spots",
+      "labelKey": "barsRestaurants",
+      "status": "live",
+      "color": "restaurants",
+      "highlight": "shop"
+    },
+    {
+      "id": "todo",
+      "group": "area",
+      "kind": "spots",
+      "labelKey": "whatToDo",
+      "status": "live",
+      "color": "todo"
+    },
+    {
+      "id": "events",
+      "group": "area",
+      "kind": "events",
+      "labelKey": "events",
+      "status": "live",
+      "color": "events"
+    }
+  ]
+}

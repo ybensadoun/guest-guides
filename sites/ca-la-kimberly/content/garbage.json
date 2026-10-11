@@ -1,0 +1,374 @@
+{
+  "_doc": "Garbage section. Collection is door to door, in the morning from collectionTime. fractions[].days are collection mornings (mon..sun); the app shows them the evening before. bin = which bin it goes out in: grey (big municipal bin), brown (small organic bin), red (sanitary bin), street (container on the street). items[] are map points (spot shape, see restaurants.json).",
+  "collectionTime": "06:00",
+  "bins": {
+    "grey": {
+      "en": "big grey bin",
+      "es": "contenedor gris grande",
+      "fr": "grand bac gris",
+      "ca": "contenidor gris gran",
+      "de": "große graue Tonne",
+      "nl": "grote grijze container"
+    },
+    "brown": {
+      "en": "small brown bin",
+      "es": "cubo marrón pequeño",
+      "fr": "petit bac marron",
+      "ca": "cubell marró petit",
+      "de": "kleine braune Tonne",
+      "nl": "kleine bruine bak"
+    },
+    "red": {
+      "en": "red bin",
+      "es": "cubo rojo",
+      "fr": "bac rouge",
+      "ca": "cubell vermell",
+      "de": "rote Tonne",
+      "nl": "rode bak"
+    },
+    "street": {
+      "en": "street container",
+      "es": "contenedor de la calle",
+      "fr": "conteneur dans la rue",
+      "ca": "contenidor del carrer",
+      "de": "Container auf der Straße",
+      "nl": "container op straat"
+    },
+    "kitchen": {
+      "en": "in the kitchen",
+      "es": "en la cocina",
+      "fr": "dans la cuisine",
+      "ca": "a la cuina",
+      "de": "in der Küche",
+      "nl": "in de keuken"
+    }
+  },
+  "fractions": [
+    {
+      "id": "organic",
+      "bin": "brown",
+      "days": [
+        "mon",
+        "thu",
+        "sun"
+      ],
+      "name": {
+        "en": "Organic",
+        "es": "Orgánico",
+        "fr": "Organique",
+        "ca": "Orgànica",
+        "de": "Bioabfall",
+        "nl": "Gft-afval"
+      },
+      "examples": {
+        "en": "Food scraps, fruit and veg peels, coffee grounds, tea bags, eggshells, paper napkins, greasy pizza boxes.",
+        "es": "Restos de comida, pieles de fruta y verdura, posos de café, bolsitas de té, cáscaras de huevo, servilletas de papel, cajas de pizza con grasa.",
+        "fr": "Restes de repas, épluchures, marc de café, sachets de thé, coquilles d'œufs, serviettes en papier, boîtes à pizza grasses.",
+        "ca": "Restes de menjar, pells de fruita i verdura, marro de cafè, bossetes de te, closques d'ou, tovallons de paper, capses de pizza amb greix.",
+        "de": "Essensreste, Obst- und Gemüseschalen, Kaffeesatz, Teebeutel, Eierschalen, Papierservietten, fettige Pizzakartons.",
+        "nl": "Etensresten, groente- en fruitschillen, koffiedik, theezakjes, eierschalen, papieren servetten, vette pizzadozen."
+      }
+    },
+    {
+      "id": "packaging",
+      "bin": "grey",
+      "days": [
+        "mon",
+        "thu",
+        "sun"
+      ],
+      "name": {
+        "en": "Packaging",
+        "es": "Envases",
+        "fr": "Emballages",
+        "ca": "Envasos",
+        "de": "Verpackungen",
+        "nl": "Verpakkingen"
+      },
+      "examples": {
+        "en": "Plastic bottles and packaging, cans, drink cartons, yoghurt pots, aluminium foil, plastic bags.",
+        "es": "Botellas y envases de plástico, latas, bricks, envases de yogur, papel de aluminio, bolsas de plástico.",
+        "fr": "Bouteilles et emballages plastiques, canettes, briques, pots de yaourt, papier aluminium, sacs plastiques.",
+        "ca": "Ampolles i envasos de plàstic, llaunes, brics, envasos de iogurt, paper d'alumini, bosses de plàstic.",
+        "de": "Plastikflaschen und -verpackungen, Dosen, Getränkekartons, Joghurtbecher, Alufolie, Plastiktüten.",
+        "nl": "Plastic flessen en verpakkingen, blikjes, drankkartons, yoghurtbekers, aluminiumfolie, plastic zakken."
+      }
+    },
+    {
+      "id": "paper",
+      "bin": "grey",
+      "days": [
+        "wed",
+        "sat"
+      ],
+      "name": {
+        "en": "Paper and cardboard",
+        "es": "Papel y cartón",
+        "fr": "Papier et carton",
+        "ca": "Paper i cartró",
+        "de": "Papier und Karton",
+        "nl": "Papier en karton"
+      },
+      "examples": {
+        "en": "Boxes (flattened), newspapers, magazines, paper bags, egg cartons. Greasy pizza boxes go in organic.",
+        "es": "Cajas (plegadas), periódicos, revistas, bolsas de papel, hueveras de cartón. Las cajas de pizza con grasa van al orgánico.",
+        "fr": "Cartons (aplatis), journaux, magazines, sacs en papier, boîtes à œufs. Les boîtes à pizza grasses vont dans l'organique.",
+        "ca": "Capses (plegades), diaris, revistes, bosses de paper, oueres de cartró. Les capses de pizza amb greix van a l'orgànica.",
+        "de": "Kartons (flach gefaltet), Zeitungen, Zeitschriften, Papiertüten, Eierkartons. Fettige Pizzakartons gehören zum Bioabfall.",
+        "nl": "Dozen (plat gevouwen), kranten, tijdschriften, papieren zakken, eierdozen. Vette pizzadozen gaan bij het gft-afval."
+      }
+    },
+    {
+      "id": "rest",
+      "bin": "grey",
+      "days": [
+        "tue"
+      ],
+      "name": {
+        "en": "Rest",
+        "es": "Resto",
+        "fr": "Ordures ménagères",
+        "ca": "Rebuig",
+        "de": "Restmüll",
+        "nl": "Restafval"
+      },
+      "examples": {
+        "en": "Everything that fits nowhere else: broken objects, ceramics, dust, cigarette ends, used kitchen paper, pet waste.",
+        "es": "Todo lo que no va en otro sitio: objetos rotos, cerámica, polvo, colillas, papel de cocina usado, excrementos de mascotas.",
+        "fr": "Tout ce qui ne va nulle part ailleurs : objets cassés, céramique, poussière, mégots, essuie-tout usagé, déjections animales.",
+        "ca": "Tot el que no va enlloc més: objectes trencats, ceràmica, pols, burilles, paper de cuina usat, excrements d'animals.",
+        "de": "Alles, was nirgendwo sonst hingehört: kaputte Gegenstände, Keramik, Staub, Zigarettenstummel, benutztes Küchenpapier, Tierkot.",
+        "nl": "Alles wat nergens anders thuishoort: kapotte voorwerpen, keramiek, stof, sigarettenpeuken, gebruikt keukenpapier, uitwerpselen van huisdieren."
+      }
+    },
+    {
+      "id": "sanitary",
+      "bin": "red",
+      "days": [
+        "mon",
+        "tue",
+        "wed",
+        "thu",
+        "fri",
+        "sat",
+        "sun"
+      ],
+      "name": {
+        "en": "Sanitary textiles",
+        "es": "Textiles sanitarios",
+        "fr": "Textiles sanitaires",
+        "ca": "Tèxtils sanitaris",
+        "de": "Hygieneartikel",
+        "nl": "Sanitair textiel"
+      },
+      "examples": {
+        "en": "Nappies, wipes, sanitary pads, tampons and cotton pads.",
+        "es": "Pañales, toallitas, compresas, tampones y discos de algodón.",
+        "fr": "Couches, lingettes, serviettes hygiéniques, tampons et cotons.",
+        "ca": "Bolquers, tovalloletes, compreses, tampons i cotons.",
+        "de": "Windeln, Feuchttücher, Binden, Tampons und Wattepads.",
+        "nl": "Luiers, vochtige doekjes, maandverband, tampons en wattenschijfjes."
+      }
+    },
+    {
+      "id": "glass",
+      "bin": "street",
+      "days": [],
+      "name": {
+        "en": "Glass",
+        "es": "Vidrio",
+        "fr": "Verre",
+        "ca": "Vidre",
+        "de": "Glas",
+        "nl": "Glas"
+      },
+      "examples": {
+        "en": "Glass bottles and jars, without caps or lids. Any time, in the green container next to the house.",
+        "es": "Botellas y tarros de vidrio, sin tapones ni tapas. A cualquier hora, en el contenedor verde junto a la casa.",
+        "fr": "Bouteilles et bocaux en verre, sans bouchons ni couvercles. À toute heure, dans le conteneur vert à côté de la maison.",
+        "ca": "Ampolles i pots de vidre, sense taps ni tapes. A qualsevol hora, al contenidor verd al costat de la casa.",
+        "de": "Glasflaschen und -gläser, ohne Deckel und Verschlüsse. Jederzeit, in den grünen Container neben dem Haus.",
+        "nl": "Glazen flessen en potten, zonder doppen of deksels. Altijd, in de groene container naast het huis."
+      }
+    },
+    {
+      "id": "kitchen",
+      "bin": "kitchen",
+      "days": [],
+      "name": {
+        "en": "Used oil and batteries",
+        "es": "Aceite usado y pilas",
+        "fr": "Huile usagée et piles",
+        "ca": "Oli usat i piles",
+        "de": "Altöl und Batterien",
+        "nl": "Gebruikte olie en batterijen"
+      },
+      "examples": {
+        "en": "There are containers for used cooking oil and batteries in the kitchen. Leave them there, no need to take them out.",
+        "es": "En la cocina hay recipientes para el aceite de cocina usado y las pilas. Déjalos ahí, no hace falta sacarlos.",
+        "fr": "Il y a des récipients pour l'huile de cuisson usagée et les piles dans la cuisine. Laissez-les là, inutile de les sortir.",
+        "ca": "A la cuina hi ha recipients per a l'oli de cuina usat i les piles. Deixa'ls allà, no cal treure'ls.",
+        "de": "In der Küche gibt es Behälter für gebrauchtes Speiseöl und Batterien. Lass sie einfach dort, du musst sie nicht rausbringen.",
+        "nl": "In de keuken staan bakjes voor gebruikte frituurolie en batterijen. Laat ze daar staan, je hoeft ze niet buiten te zetten."
+      }
+    }
+  ],
+  "steps": [
+    {
+      "en": "Sort as you go, using the recycling bins inside the house.",
+      "es": "Separa a medida que generes residuos, con los cubos de reciclaje de la casa.",
+      "fr": "Triez au fur et à mesure, avec les poubelles de tri de la maison.",
+      "ca": "Separa a mesura que generes residus, amb els cubells de reciclatge de la casa.",
+      "de": "Trenne den Müll gleich beim Wegwerfen, mit den Recyclingbehältern im Haus.",
+      "nl": "Sorteer meteen bij het weggooien, met de recyclingbakken in het huis."
+    },
+    {
+      "en": "The evening before collection, empty the matching indoor bin into the big grey municipal bin and put it out on the street. Organic goes in the small brown bin, which goes out the same way.",
+      "es": "La noche antes de la recogida, vacía el cubo de casa que toca en el contenedor gris grande municipal y sácalo a la calle. El orgánico va en el cubo marrón pequeño, que se saca igual.",
+      "fr": "La veille au soir de la collecte, videz la poubelle de tri concernée dans le grand bac gris municipal et sortez-le dans la rue. L'organique va dans le petit bac marron, à sortir de la même façon.",
+      "ca": "El vespre abans de la recollida, buida el cubell de casa que toca al contenidor gris gran municipal i treu-lo al carrer. L'orgànica va al cubell marró petit, que es treu igual.",
+      "de": "Am Abend vor der Abholung leerst du den passenden Behälter aus dem Haus in die große graue Tonne der Gemeinde und stellst sie auf die Straße. Bioabfall kommt in die kleine braune Tonne, die genauso rausgestellt wird.",
+      "nl": "De avond voor de ophaling leeg je de juiste bak uit het huis in de grote grijze gemeentecontainer en zet je die op straat. Gft-afval gaat in de kleine bruine bak, die je op dezelfde manier buiten zet."
+    },
+    {
+      "en": "Sanitary textiles go in the red bin, which goes out every evening.",
+      "es": "Los textiles sanitarios van en el cubo rojo, que se saca cada noche.",
+      "fr": "Les textiles sanitaires vont dans le bac rouge, à sortir tous les soirs.",
+      "ca": "Els tèxtils sanitaris van al cubell vermell, que es treu cada vespre.",
+      "de": "Hygieneartikel kommen in die rote Tonne, die jeden Abend rausgestellt wird.",
+      "nl": "Sanitair textiel gaat in de rode bak, die je elke avond buiten zet."
+    },
+    {
+      "en": "Collection starts at 6:00 in the morning. During the day, bring the bins back in.",
+      "es": "La recogida empieza a las 6:00 de la mañana. Durante el día, vuelve a entrar los cubos.",
+      "fr": "La collecte commence à 6 h du matin. Dans la journée, rentrez les bacs.",
+      "ca": "La recollida comença a les 6:00 del matí. Durant el dia, torna a entrar els cubells.",
+      "de": "Die Abholung beginnt um 6:00 morgens. Hole die Tonnen im Laufe des Tages wieder herein.",
+      "nl": "De ophaling begint om 6:00 's ochtends. Zet de bakken in de loop van de dag weer binnen."
+    },
+    {
+      "en": "Glass goes in the green street container next to the house, any time.",
+      "es": "El vidrio va al contenedor verde de la calle, junto a la casa, a cualquier hora.",
+      "fr": "Le verre va dans le conteneur vert de la rue, à côté de la maison, à toute heure.",
+      "ca": "El vidre va al contenidor verd del carrer, al costat de la casa, a qualsevol hora.",
+      "de": "Glas kommt jederzeit in den grünen Container auf der Straße neben dem Haus.",
+      "nl": "Glas gaat altijd in de groene container op straat naast het huis."
+    }
+  ],
+  "missed": {
+    "en": "Keep it in the large bins outside the entrance until the next collection of that type.",
+    "es": "Guárdalo en los cubos grandes de fuera de la entrada hasta la siguiente recogida de ese tipo.",
+    "fr": "Gardez-les dans les grands bacs devant l'entrée jusqu'à la prochaine collecte de ce type.",
+    "ca": "Guarda-ho als cubells grans de fora de l'entrada fins a la propera recollida d'aquest tipus.",
+    "de": "Bewahre ihn bis zur nächsten Abholung dieser Art in den großen Tonnen vor dem Eingang auf.",
+    "nl": "Bewaar het in de grote bakken bij de ingang tot de volgende ophaling van dat soort afval."
+  },
+  "items": [
+    {
+      "id": "glass",
+      "name": {
+        "en": "Glass container",
+        "es": "Contenedor de vidrio",
+        "fr": "Conteneur à verre",
+        "ca": "Contenidor de vidre",
+        "de": "Glascontainer",
+        "nl": "Glasbak"
+      },
+      "town": "Can Gordei",
+      "group": "Can Gordei (glass)",
+      "lat": 41.26425022723202,
+      "lng": 1.4747840899517828,
+      "km_from_house": null,
+      "description": {
+        "en": "Green street container for glass bottles and jars, next to the house. There are others around, this is the closest.",
+        "es": "Contenedor verde en la calle para botellas y tarros de vidrio, al lado de la casa. Hay otros cerca, este es el más próximo.",
+        "fr": "Conteneur vert dans la rue pour les bouteilles et bocaux en verre, à côté de la maison. Il y en a d'autres, celui-ci est le plus proche.",
+        "ca": "Contenidor verd al carrer per a ampolles i pots de vidre, al costat de la casa. N'hi ha d'altres, aquest és el més proper.",
+        "de": "Grüner Straßencontainer für Glasflaschen und Gläser, neben dem Haus. Es gibt weitere, dieser ist der nächste.",
+        "nl": "Groene container op straat voor glazen flessen en potten, naast het huis. Er zijn er meer, dit is de dichtstbijzijnde."
+      },
+      "tags": [],
+      "flags": [],
+      "cat": "glass",
+      "utility": true,
+      "always": true
+    },
+    {
+      "id": "deixalleria",
+      "name": {
+        "en": "Municipal recycling centre",
+        "es": "Punto limpio municipal",
+        "fr": "Déchetterie municipale",
+        "ca": "Deixalleria municipal",
+        "de": "Wertstoffhof der Gemeinde",
+        "nl": "Gemeentelijk recyclingpark"
+      },
+      "town": "La Bisbal del Penedès",
+      "place": "Camí de Gosch, 6",
+      "group": "Deixalleria",
+      "lat": 41.2751595,
+      "lng": 1.4890904,
+      "km_from_house": 2,
+      "description": {
+        "en": "Too much organic waste or packaging to wait for the next collection? Bring it here during opening hours, any day it is open.",
+        "es": "¿Se acumula orgánico o envases y no quieres esperar a la próxima recogida? Tráelo aquí en horario de apertura, cualquier día que esté abierto.",
+        "fr": "Trop de déchets organiques ou d'emballages pour attendre le prochain ramassage ? Déposez-les ici pendant les heures d'ouverture, n'importe quel jour d'ouverture.",
+        "ca": "S'acumula orgànica o envasos i no vols esperar la propera recollida? Porta-ho aquí en horari d'obertura, qualsevol dia que estigui obert.",
+        "de": "Zu viel Bioabfall oder Verpackungen, um auf die nächste Abholung zu warten? Bringen Sie sie während der Öffnungszeiten hierher, an jedem Öffnungstag.",
+        "nl": "Te veel gft-afval of verpakkingen om op de volgende ophaling te wachten? Breng het hier tijdens de openingsuren, op elke dag dat het open is."
+      },
+      "tags": [],
+      "flags": [],
+      "mapsUrl": "https://maps.app.goo.gl/SiGVW33ung3MXXBZ7",
+      "name_local": "Deixalleria municipal La Bisbal del Penedès",
+      "cat": "deixalleria",
+      "utility": false,
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "09:00",
+          "close": "13:00"
+        },
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "15:00",
+          "close": "18:00"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "09:00",
+          "close": "12:00"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "15:00",
+          "close": "17:00"
+        }
+      ]
+    }
+  ],
+  "deixalleria": {
+    "en": "For anything else, the municipal recycling centre (deixalleria) is about 2 km away, on Camí de Gosch. Anyone can use it during opening hours.",
+    "es": "Para todo lo demás, el punto limpio municipal (deixalleria) está a unos 2 km, en el Camí de Gosch. Cualquiera puede usarlo en horario de apertura.",
+    "fr": "Pour tout le reste, la déchetterie municipale (deixalleria) est à environ 2 km, Camí de Gosch. Tout le monde peut y aller pendant les heures d'ouverture.",
+    "ca": "Per a tota la resta, la deixalleria municipal és a uns 2 km, al Camí de Gosch. Tothom la pot fer servir en horari d'obertura.",
+    "de": "Für alles andere liegt der Wertstoffhof der Gemeinde (Deixalleria) etwa 2 km entfernt, am Camí de Gosch. Während der Öffnungszeiten kann ihn jeder nutzen.",
+    "nl": "Voor al het andere ligt het gemeentelijke recyclingpark (deixalleria) op zo'n 2 km, aan de Camí de Gosch. Tijdens de openingsuren kan iedereen er terecht."
+  }
+}

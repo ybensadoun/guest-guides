@@ -1,0 +1,64 @@
+/* Map view */
+.mapbox{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;height:min(64vh,620px);min-height:340px;background:var(--sea)}
+#mapgl{position:absolute;inset:0}
+.map-top{position:absolute;left:10px;top:10px;right:56px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start;z-index:2;pointer-events:none}
+.map-top > *{pointer-events:auto}
+.map-bottom{position:absolute;left:10px;bottom:10px;right:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;z-index:2;pointer-events:none}
+.map-bottom > *{pointer-events:auto}
+.btn.float{box-shadow:0 2px 8px rgb(0 0 0 / .15)}
+.btn.float svg{width:14px;height:14px}
+.locmsg{font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;color:var(--muted);max-width:340px;box-shadow:0 2px 8px rgb(0 0 0 / .12)}
+.locmsg[hidden]{display:none}
+.map-msg{position:absolute;left:10px;right:56px;top:56px;display:flex;justify-content:center;text-align:center;color:var(--muted);font-size:13px;z-index:1;pointer-events:none}
+.map-msg[hidden]{display:none}
+.map-msg p{max-width:36ch;margin:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;box-shadow:0 2px 8px rgb(0 0 0 / .12)}
+
+/* MapLibre chrome in our colours */
+.maplibregl-ctrl-group{background:var(--surface)!important;border:1px solid var(--line);box-shadow:0 2px 8px rgb(0 0 0 / .12)!important;border-radius:10px!important}
+.maplibregl-ctrl-group button{width:38px!important;height:38px!important}
+.maplibregl-ctrl-group button+button{border-top:1px solid var(--line)!important}
+:root[data-scheme="dark"] .maplibregl-ctrl-group .maplibregl-ctrl-icon{filter:invert(1)}
+.maplibregl-ctrl-attrib{font-size:11px;background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--muted)}
+.maplibregl-ctrl-attrib a{color:var(--muted)!important}
+:root[data-scheme="dark"] .maplibregl-ctrl-attrib-button{filter:invert(1)}
+.maplibregl-ctrl-bottom-right{bottom:0}
+
+/* Markers */
+.mk{all:unset;cursor:pointer;display:block;position:relative;-webkit-tap-highlight-color:transparent}
+.mk:focus-visible .pin,.mk:focus-visible .gp{outline:2px solid var(--accent);outline-offset:2px}
+.pin{width:28px;height:28px;border-radius:50%;background:var(--cc);color:#fff;display:grid;place-items:center;border:2px solid var(--surface);box-shadow:0 1px 4px rgb(0 0 0 / .35);transition:transform .15s}
+.mk:hover .pin{transform:scale(1.12)}
+.mk.sel{z-index:3}
+.mk.sel .pin{transform:scale(1.35);box-shadow:0 0 0 4px color-mix(in srgb,var(--cc) 35%,transparent),0 1px 4px rgb(0 0 0 / .35)}
+.mk.dim .pin{opacity:.55}
+.gp{width:30px;height:30px;border-radius:50%;padding:3px;background:var(--ring);box-shadow:0 1px 5px rgb(0 0 0 / .35);transition:transform .15s}
+.gp b{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.mk:hover .gp{transform:scale(1.08)}
+.mk-label{position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11.5px;font-weight:600;line-height:1;color:var(--ink);background:color-mix(in srgb,var(--surface) 88%,transparent);padding:3px 6px;border-radius:6px;box-shadow:0 1px 3px rgb(0 0 0 / .18);pointer-events:none}
+.mk-label.sm{font-weight:500;font-size:11px}
+.house{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:var(--ink);color:var(--bg);box-shadow:0 1px 5px rgb(0 0 0 / .35)}
+.house svg{width:17px;height:17px}
+.house::after{content:"";position:absolute;right:-3px;top:-3px;width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--surface)}
+.me-dot{width:16px;height:16px;border-radius:50%;background:var(--me);border:3px solid #fff;box-shadow:0 0 0 1px rgb(0 0 0 / .15),0 1px 4px rgb(0 0 0 / .35);position:relative}
+.me-dot::before{content:"";position:absolute;inset:-9px;border-radius:50%;background:var(--me);opacity:.25;animation:mepulse 2s ease-out infinite}
+@keyframes mepulse{0%{transform:scale(.6);opacity:.35}100%{transform:scale(1.8);opacity:0}}
+
+/* Sheet under the map */
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:10px;scroll-margin-top:64px}
+.sheet .hd{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.sheet h3{margin:0;font-size:17px;font-weight:600}
+.sheet .sub2{font-size:13px;color:var(--muted)}
+.x{border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;padding:4px 6px}
+.sheet .card{border-color:var(--line);box-shadow:none}
+
+@media (max-width:560px){
+  .mapbox{height:58vh;margin-inline:-16px;border-radius:0;border-inline:0}
+}
+.maplibregl-marker{z-index:1}
+.maplibregl-marker:has(.house){z-index:0}
+.maplibregl-marker:has(.me-dot){z-index:5}
+.maplibregl-marker.sel,.mk.sel{z-index:3}
+.mk.cl .gp b{background:var(--ink);color:var(--bg)}
+.maplibregl-marker.me-mk{z-index:10;pointer-events:none}
+
+.pin .ci{width:15px;height:15px}

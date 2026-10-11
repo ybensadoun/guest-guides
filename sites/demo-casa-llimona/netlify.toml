@@ -1,0 +1,10 @@
+# Netlify project for this site: set "Base directory" to sites/demo-casa-llimona in the Netlify UI.
+# The build runs from the repo root so it uses the shared engine.
+[build]
+  command = "cd ../.. && npm ci && npm run build -- demo-casa-llimona"
+  publish = "dist"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"

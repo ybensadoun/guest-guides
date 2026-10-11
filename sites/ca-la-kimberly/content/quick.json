@@ -1,0 +1,575 @@
+{
+ "_doc": "Home quick tiles. Each opens its own place page (#p/<id>) with map, description, hours and buttons. Fields: id (shop, pizza, taxi: picks the icon), name{6} (tile title), sub{6} (tile subtitle), title{6} (page title, the real name), kind{6} (category line), what{6} (description), lat/lng (map preview and distance; omit if unknown), map (Google Maps link; else built from lat/lng), phone, alt [{name{6}, phone}] (other numbers), schedule (same format as markets) or always:true, hours{6} (hours note shown when there is no schedule, or extra caveat), web (official page), wide (full-width tile), verify (true = from a directory, check it).",
+ "items": [
+  {
+   "id": "shop",
+   "phone": "",
+   "name": {
+    "en": "Local bar & shop",
+    "es": "Local social Can Gordei",
+    "fr": "Bar & supérette locale",
+    "ca": "Local social Can Gordei",
+    "de": "Bar & Laden um die Ecke",
+    "nl": "Buurtcafé & winkeltje"
+   },
+   "sub": {
+    "en": "Bar, snacks & convenience shop\n1 min walk from the house",
+    "es": "Bar, picoteo y tienda\nA 1 min a pie de la casa",
+    "fr": "Bar, snacks et épicerie\nÀ 1 min à pied de la maison",
+    "ca": "Bar, pica-pica i botiga\nA 1 min a peu de la casa",
+    "de": "Bar, Snacks & kleiner Laden\n1 Min. zu Fuß vom Haus",
+    "nl": "Bar, snacks & buurtwinkel\n1 min lopen van het huis"
+   },
+   "map": "https://maps.app.goo.gl/yUf87ft4um44iacU8",
+   "wide": true,
+   "title": {
+    "en": "Local social Can Gordei",
+    "es": "Local social Can Gordei",
+    "fr": "Local social Can Gordei",
+    "ca": "Local social Can Gordei",
+    "de": "Local social Can Gordei",
+    "nl": "Local social Can Gordei"
+   },
+   "kind": {
+    "en": "Bar, terrace and convenience shop, Can Gordei",
+    "es": "Bar, terraza y tienda, Can Gordei",
+    "fr": "Bar, terrasse et épicerie, Can Gordei",
+    "ca": "Bar, terrassa i botiga, Can Gordei",
+    "de": "Bar, Terrasse und kleiner Laden, Can Gordei",
+    "nl": "Bar, terras en buurtwinkel, Can Gordei"
+   },
+   "what": {
+    "en": "The only place within walking distance of the house: one minute on foot, no car needed. Coffee and breakfast from 7:30, sandwiches and tapas, and a big terrace with a playground next to it. The small shop has the basics for the house: milk, coffee, toilet paper, oil, vinegar and more, including some frozen meat.",
+    "es": "El único sitio al que puedes ir andando desde la casa: a un minuto a pie, sin coger el coche. Café y desayunos desde las 7:30, bocadillos y tapas, y una gran terraza con un parque infantil al lado. La pequeña tienda tiene lo básico para la casa: leche, café, papel higiénico, aceite, vinagre y más, incluida algo de carne congelada.",
+    "fr": "Le seul endroit accessible à pied depuis la maison : une minute de marche, sans voiture. Café et petit-déjeuner dès 7h30, sandwichs et tapas, et une grande terrasse avec une aire de jeux à côté. La petite épicerie a l'essentiel pour la maison : lait, café, papier toilette, huile, vinaigre et plus, y compris un peu de viande surgelée.",
+    "ca": "L'únic lloc on pots anar a peu des de la casa: a un minut caminant, sense agafar el cotxe. Cafè i esmorzars des de les 7:30, entrepans i tapes, i una gran terrassa amb un parc infantil al costat. La botigueta té el bàsic per a la casa: llet, cafè, paper de vàter, oli, vinagre i més, inclosa una mica de carn congelada.",
+    "de": "Der einzige Ort, den man vom Haus zu Fuß erreicht: eine Minute, ganz ohne Auto. Kaffee und Frühstück ab 7:30, Bocadillos und Tapas, eine große Terrasse mit Spielplatz daneben. Der kleine Laden hat das Nötigste fürs Haus: Milch, Kaffee, Toilettenpapier, Öl, Essig und mehr, auch etwas Tiefkühlfleisch.",
+    "nl": "De enige plek op loopafstand van het huis: één minuut lopen, zonder auto. Koffie en ontbijt vanaf 7:30, broodjes en tapas, en een groot terras met een speeltuin ernaast. Het winkeltje heeft de basis voor het huis: melk, koffie, wc-papier, olie, azijn en meer, ook wat diepvriesvlees."
+   },
+   "hours": {
+    "en": "Most days it closes from 15:00 to 18:00, even if Google shows it open all day.",
+    "es": "Casi todos los días cierra de 15:00 a 18:00, aunque Google lo muestre abierto todo el día.",
+    "fr": "La plupart des jours, fermé de 15h à 18h, même si Google l'indique ouvert toute la journée.",
+    "ca": "Gairebé cada dia tanca de 15:00 a 18:00, encara que Google el mostri obert tot el dia.",
+    "de": "An den meisten Tagen von 15 bis 18 Uhr zu, auch wenn Google es den ganzen Tag offen anzeigt.",
+    "nl": "De meeste dagen dicht van 15:00 tot 18:00, ook al toont Google het de hele dag open."
+   },
+   "lat": 41.2637741,
+   "lng": 1.4746681,
+   "schedule": [
+    {
+     "days": [
+      "tue",
+      "wed",
+      "thu",
+      "sun"
+     ],
+     "open": "07:30",
+     "close": "15:00"
+    },
+    {
+     "days": [
+      "tue",
+      "wed",
+      "thu",
+      "sun"
+     ],
+     "open": "18:00",
+     "close": "22:00"
+    },
+    {
+     "days": [
+      "fri",
+      "sat"
+     ],
+     "open": "07:30",
+     "close": "15:00"
+    },
+    {
+     "days": [
+      "fri",
+      "sat"
+     ],
+     "open": "18:00",
+     "close": "23:00"
+    }
+   ],
+   "gmaps": "https://www.google.com/maps/place/Local+social+Can+Gordei/data=!4m2!3m1!1s0x12a3f581668a9fbd:0xf9e92fb8160c91c5",
+   "price": "5-10",
+   "priceNote": {
+    "en": "Coffee and a croissant about €3. A sandwich or tapas with a drink about €6-10.",
+    "es": "Café y cruasán unos 3 €. Un bocadillo o tapas con bebida unos 6-10 €.",
+    "fr": "Café et croissant environ 3 €. Un sandwich ou des tapas avec une boisson environ 6-10 €.",
+    "ca": "Cafè i croissant uns 3 €. Un entrepà o tapes amb beguda uns 6-10 €.",
+    "de": "Kaffee und Croissant etwa 3 €. Ein Sandwich oder Tapas mit Getränk etwa 6-10 €.",
+    "nl": "Koffie met croissant ongeveer € 3. Een broodje of tapas met drankje ongeveer € 6-10."
+   }
+  },
+  {
+   "id": "pizza",
+   "phone": "977 68 82 26",
+   "name": {
+    "en": "Pizza delivery",
+    "es": "Pizza a domicilio",
+    "fr": "Livraison à domicile de pizza",
+    "ca": "Pizza a domicili",
+    "de": "Pizza-Lieferung",
+    "nl": "Pizza bezorgd"
+   },
+   "sub": {
+    "en": "El Racó de la Pedra\n30 min delivery",
+    "es": "El Racó de la Pedra\nEntrega en 30 min",
+    "fr": "El Racó de la Pedra\nLivrée en 30 min",
+    "ca": "El Racó de la Pedra\nEntrega en 30 min",
+    "de": "El Racó de la Pedra\nLieferung in 30 Min.",
+    "nl": "El Racó de la Pedra\nBezorgd in 30 min"
+   },
+   "web": "https://www.facebook.com/elracodelapedra/",
+   "lat": 41.2799427,
+   "lng": 1.4880825,
+   "title": {
+    "en": "El Racó de la Pedra",
+    "es": "El Racó de la Pedra",
+    "fr": "El Racó de la Pedra",
+    "ca": "El Racó de la Pedra",
+    "de": "El Racó de la Pedra",
+    "nl": "El Racó de la Pedra"
+   },
+   "kind": {
+    "en": "Pizzeria, La Bisbal del Penedès",
+    "es": "Pizzería, La Bisbal del Penedès",
+    "fr": "Pizzeria, La Bisbal del Penedès",
+    "ca": "Pizzeria, la Bisbal del Penedès",
+    "de": "Pizzeria, La Bisbal del Penedès",
+    "nl": "Pizzeria, La Bisbal del Penedès"
+   },
+   "what": {
+    "en": "Wood-fired pizzas, sandwiches and burgers from the village, delivered to the house in about 30 minutes. It is the only place that delivers here. You can also eat there, inside or on the terrace.",
+    "es": "Pizzas al horno de leña, bocadillos y hamburguesas del pueblo, a domicilio en unos 30 minutos. Es el único sitio que reparte aquí. También se puede comer allí, dentro o en la terraza.",
+    "fr": "Pizzas au feu de bois, sandwichs et burgers du village, livrés à la maison en 30 minutes environ. C'est le seul endroit qui livre ici. On peut aussi manger sur place, à l'intérieur ou en terrasse.",
+    "ca": "Pizzes al forn de llenya, entrepans i hamburgueses del poble, a domicili en uns 30 minuts. És l'únic lloc que porta a casa aquí. També s'hi pot menjar, a dins o a la terrassa.",
+    "de": "Holzofenpizza, Sandwiches und Burger aus dem Dorf, in etwa 30 Minuten ans Haus geliefert. Der einzige Lieferdienst hier. Man kann auch dort essen, drinnen oder auf der Terrasse.",
+    "nl": "Houtovenpizza's, broodjes en burgers uit het dorp, in ongeveer 30 minuten aan huis bezorgd. De enige die hier bezorgt. Je kunt er ook eten, binnen of op het terras."
+   },
+   "hours": {
+    "en": "Pizzas in the evening, 18:00 to 23:00. Closed on Mondays. At weekends, order early: it gets busy.",
+    "es": "Pizzas por la noche, de 18:00 a 23:00. Cerrado los lunes. El fin de semana, pide con tiempo: hay mucha demanda.",
+    "fr": "Pizzas le soir, de 18h00 à 23h00. Fermé le lundi. Le week-end, commandez tôt : il y a du monde.",
+    "ca": "Pizzes al vespre, de 18:00 a 23:00. Tancat els dilluns. El cap de setmana, demana amb temps: hi ha molta demanda.",
+    "de": "Pizza abends von 18:00 bis 23:00. Montags geschlossen. Am Wochenende früh bestellen, dann ist viel los.",
+    "nl": "Pizza's 's avonds van 18:00 tot 23:00. Maandag gesloten. Bestel in het weekend op tijd: het is dan druk."
+   },
+   "gmaps": "https://www.google.com/maps/place/El+rac%C3%B3+de+la+pedra/data=!4m2!3m1!1s0x12a40a85ba6233eb:0xc8af8fa8947e802",
+   "schedule": [
+    {
+     "days": [
+      "tue",
+      "wed",
+      "thu",
+      "fri",
+      "sat"
+     ],
+     "open": "09:00",
+     "close": "13:00"
+    },
+    {
+     "days": [
+      "tue",
+      "wed",
+      "thu",
+      "fri",
+      "sat",
+      "sun"
+     ],
+     "open": "18:00",
+     "close": "23:00"
+    }
+   ]
+  },
+  {
+   "id": "taxi",
+   "phone": "977 66 61 11",
+   "verify": true,
+   "name": {
+    "en": "Taxi & train",
+    "es": "Taxi y tren",
+    "fr": "Taxi et train",
+    "ca": "Taxi i tren",
+    "de": "Taxi & Zug",
+    "nl": "Taxi & trein"
+   },
+   "sub": {
+    "en": "Taxi in 30 min, 24/7\n3 train stations",
+    "es": "Taxi en 30 min, 24/7\n3 estaciones de tren",
+    "fr": "Taxi en 30 min, 24/7\n3 gares proches",
+    "ca": "Taxi en 30 min, 24/7\n3 estacions de tren",
+    "de": "Taxi in 30 Min., 24/7\n3 Bahnhöfe",
+    "nl": "Taxi in 30 min, 24/7\n3 treinstations"
+   },
+   "web": "https://www.elvendrellturisme.com/en/telephone-numbers-of-interest/",
+   "always": true,
+   "title": {
+    "en": "Taxi & train",
+    "es": "Taxi y tren",
+    "fr": "Taxi et train",
+    "ca": "Taxi i tren",
+    "de": "Taxi & Zug",
+    "nl": "Taxi & trein"
+   },
+   "kind": {
+    "en": "Four ways to get around without a car.",
+    "es": "Cuatro formas de moverse sin coche.",
+    "fr": "Quatre façons de se déplacer sans voiture.",
+    "ca": "Quatre maneres de moure's sense cotxe.",
+    "de": "Vier Wege, ohne Auto unterwegs zu sein.",
+    "nl": "Vier manieren om zonder auto op pad te gaan."
+   },
+   "what": {
+    "en": "Handy for a night out in El Vendrell without driving, or to get to the train station. It picks you up at the house, usually in about 30 minutes or a bit less, longer at busy times, so call ahead, especially for an early train. Say you are at Can Gordei, La Bisbal del Penedès.",
+    "es": "Ideal para salir por la noche en El Vendrell sin coger el coche, o para ir a la estación. Te recoge en la casa, normalmente en unos 30 minutos o algo menos, más en horas punta, así que llama con antelación, sobre todo para un tren temprano. Di que estás en Can Gordei, La Bisbal del Penedès.",
+    "fr": "Pratique pour une soirée à El Vendrell sans prendre la voiture, ou pour aller à la gare. Il vient vous chercher à la maison, en général en 30 minutes ou un peu moins, plus aux heures chargées : appelez à l'avance, surtout pour un train tôt le matin. Dites que vous êtes à Can Gordei, La Bisbal del Penedès.",
+    "ca": "Ideal per sortir al vespre al Vendrell sense agafar el cotxe, o per anar a l'estació. Et recull a casa, normalment en uns 30 minuts o una mica menys, més a les hores punta, així que truca amb antelació, sobretot per a un tren d'hora. Digues que ets a Can Gordei, la Bisbal del Penedès.",
+    "de": "Praktisch für einen Abend in El Vendrell ohne Auto oder für die Fahrt zum Bahnhof. Es holt Sie am Haus ab, meist in etwa 30 Minuten oder etwas weniger, zu Stoßzeiten länger, also vorher anrufen, besonders für einen frühen Zug. Sagen Sie: Can Gordei, La Bisbal del Penedès.",
+    "nl": "Handig voor een avondje uit in El Vendrell zonder te rijden, of om naar het station te gaan. Hij haalt je op bij het huis, meestal binnen 30 minuten of iets sneller, op drukke momenten later, dus bel vooraf, zeker voor een vroege trein. Zeg dat je in Can Gordei, La Bisbal del Penedès bent."
+   },
+   "alt": [
+    {
+     "phone": "977 66 20 42",
+     "name": {
+      "en": "Radio Taxi Baix Penedès",
+      "es": "Radio Taxi Baix Penedès",
+      "fr": "Radio Taxi Baix Penedès",
+      "ca": "Ràdio Taxi Baix Penedès",
+      "de": "Radio Taxi Baix Penedès",
+      "nl": "Radio Taxi Baix Penedès"
+     }
+    }
+   ],
+   "taxiName": {
+    "en": "Taxi El Vendrell",
+    "es": "Taxi El Vendrell",
+    "fr": "Taxi El Vendrell",
+    "ca": "Taxi El Vendrell",
+    "de": "Taxi El Vendrell",
+    "nl": "Taxi El Vendrell"
+   },
+   "trains": [
+    {
+     "id": "vendrell",
+     "name": {
+      "en": "El Vendrell station",
+      "es": "Estación de El Vendrell",
+      "fr": "Gare d'El Vendrell",
+      "ca": "Estació del Vendrell",
+      "de": "Bahnhof El Vendrell",
+      "nl": "Station El Vendrell"
+     },
+     "lat": 41.2208359,
+     "lng": 1.5379195,
+     "km": 10,
+     "min": 12,
+     "tag": {
+      "en": "Reliable, slow",
+      "es": "Fiable, lento",
+      "fr": "Fiable, lent",
+      "ca": "Fiable, lent",
+      "de": "Zuverlässig, langsam",
+      "nl": "Betrouwbaar, traag"
+     },
+     "what": {
+      "en": "The closest station. Rodalies R4: very reliable and you keep mobile internet the whole way, but slow, because it stops in every town. About 1 h 30 to Barcelona Sants. Usually one or two trains an hour.",
+      "es": "La estación más cercana. Rodalies R4: muy fiable y tienes internet en el móvil todo el trayecto, pero lento, porque para en todos los pueblos. Una hora y media hasta Barcelona Sants. Normalmente uno o dos trenes por hora.",
+      "fr": "La gare la plus proche. Rodalies R4 : très fiable et vous gardez internet sur le téléphone tout le trajet, mais lent, car il s'arrête dans chaque ville. Environ 1 h 30 jusqu'à Barcelona Sants. En général un ou deux trains par heure.",
+      "ca": "L'estació més propera. Rodalies R4: molt fiable i tens internet al mòbil tot el trajecte, però lent, perquè para a tots els pobles. Una hora i mitja fins a Barcelona Sants. Normalment un o dos trens per hora.",
+      "de": "Der nächste Bahnhof. Rodalies R4: sehr zuverlässig, und das mobile Internet funktioniert die ganze Fahrt, aber langsam, weil er in jedem Ort hält. Etwa 1 Std. 30 bis Barcelona Sants. Meist ein oder zwei Züge pro Stunde.",
+      "nl": "Het dichtstbijzijnde station. Rodalies R4: heel betrouwbaar en je houdt de hele rit mobiel internet, maar traag, want hij stopt in elk dorp. Ongeveer 1 u 30 tot Barcelona Sants. Meestal één of twee treinen per uur."
+     },
+     "link": "https://rodalies.gencat.cat/ca/horaris/",
+     "linkKey": "timetable",
+     "toBcn": "1 h 30",
+     "badges": [
+      {
+       "t": "R4",
+       "c": "#F7A30E",
+       "ink": true
+      }
+     ],
+     "to": [
+      {
+       "dest": {
+        "en": "Barcelona Sants",
+        "es": "Barcelona Sants",
+        "fr": "Barcelona Sants",
+        "ca": "Barcelona Sants",
+        "de": "Barcelona Sants",
+        "nl": "Barcelona Sants"
+       },
+       "time": "1 h 30"
+      },
+      {
+       "dest": {
+        "en": "Tarragona",
+        "es": "Tarragona",
+        "fr": "Tarragone",
+        "ca": "Tarragona",
+        "de": "Tarragona",
+        "nl": "Tarragona"
+       },
+       "time": "40 min",
+       "note": {
+        "en": "1 change",
+        "es": "1 transbordo",
+        "fr": "1 changement",
+        "ca": "1 transbord",
+        "de": "1x umsteigen",
+        "nl": "1x overstappen"
+       }
+      }
+     ],
+     "gmaps": "https://www.google.com/maps/place/Estaci%C3%B3+del+Vendrell/data=!4m2!3m1!1s0x12a38b007459d451:0xfe2653bff917a9c"
+    },
+    {
+     "id": "santvicenc",
+     "name": {
+      "en": "Sant Vicenç de Calders station",
+      "es": "Estación de Sant Vicenç de Calders",
+      "fr": "Gare de Sant Vicenç de Calders",
+      "ca": "Estació de Sant Vicenç de Calders",
+      "de": "Bahnhof Sant Vicenç de Calders",
+      "nl": "Station Sant Vicenç de Calders"
+     },
+     "lat": 41.18617,
+     "lng": 1.52484,
+     "km": 14,
+     "min": 17,
+     "tag": {
+      "en": "Faster, less reliable",
+      "es": "Más rápido, menos fiable",
+      "fr": "Plus rapide, moins fiable",
+      "ca": "Més ràpid, menys fiable",
+      "de": "Schneller, weniger zuverlässig",
+      "nl": "Sneller, minder betrouwbaar"
+     },
+     "what": {
+      "en": "Next to Coma-ruga. Faster, with express regional trains to Barcelona Sants in about 50 minutes, plus the R2 Sud along the coast. Less reliable, and the line goes through many tunnels, so you often lose mobile internet.",
+      "es": "Junto a Coma-ruga. Más rápido, con regionales exprés a Barcelona Sants en unos 50 minutos, y la R2 Sud por la costa. Menos fiable, y la línea pasa por muchos túneles, así que a menudo pierdes internet en el móvil.",
+      "fr": "À côté de Coma-ruga. Plus rapide, avec des trains régionaux express jusqu'à Barcelona Sants en 50 minutes environ, et la R2 Sud par la côte. Moins fiable, et la ligne passe par beaucoup de tunnels : on perd souvent internet sur le téléphone.",
+      "ca": "Al costat de Coma-ruga. Més ràpid, amb regionals exprés a Barcelona Sants en uns 50 minuts, i l'R2 Sud per la costa. Menys fiable, i la línia passa per molts túnels, així que sovint perds internet al mòbil.",
+      "de": "Neben Coma-ruga. Schneller, mit Regional-Express nach Barcelona Sants in etwa 50 Minuten, dazu die R2 Sud an der Küste entlang. Weniger zuverlässig, und die Strecke führt durch viele Tunnel, das mobile Internet bricht oft ab.",
+      "nl": "Naast Coma-ruga. Sneller, met snelle regionale treinen naar Barcelona Sants in ongeveer 50 minuten, plus de R2 Sud langs de kust. Minder betrouwbaar, en de lijn gaat door veel tunnels, dus je verliest vaak mobiel internet."
+     },
+     "link": "https://rodalies.gencat.cat/ca/horaris/",
+     "linkKey": "timetable",
+     "toBcn": "50 min",
+     "badges": [
+      {
+       "t": "R2 Sud",
+       "c": "#00A651",
+       "ink": false
+      },
+      {
+       "t": "R4",
+       "c": "#F7A30E",
+       "ink": true
+      },
+      {
+       "t": "R14",
+       "c": "#6C5BA7",
+       "ink": false
+      },
+      {
+       "t": "R15",
+       "c": "#978570",
+       "ink": false
+      },
+      {
+       "t": "R16",
+       "c": "#B41E3B",
+       "ink": false
+      },
+      {
+       "t": "R17",
+       "c": "#E87722",
+       "ink": false
+      },
+      {
+       "t": "Euromed · Alvia",
+       "c": "#5B2C83",
+       "ink": false
+      }
+     ],
+     "to": [
+      {
+       "dest": {
+        "en": "Barcelona Sants",
+        "es": "Barcelona Sants",
+        "fr": "Barcelona Sants",
+        "ca": "Barcelona Sants",
+        "de": "Barcelona Sants",
+        "nl": "Barcelona Sants"
+       },
+       "time": "50 min"
+      },
+      {
+       "dest": {
+        "en": "Tarragona",
+        "es": "Tarragona",
+        "fr": "Tarragone",
+        "ca": "Tarragona",
+        "de": "Tarragona",
+        "nl": "Tarragona"
+       },
+       "time": "25 min"
+      },
+      {
+       "dest": {
+        "en": "PortAventura",
+        "es": "PortAventura",
+        "fr": "PortAventura",
+        "ca": "PortAventura",
+        "de": "PortAventura",
+        "nl": "PortAventura"
+       },
+       "time": "40 min",
+       "note": {
+        "en": "few direct trains",
+        "es": "pocos trenes directos",
+        "fr": "peu de trains directs",
+        "ca": "pocs trens directes",
+        "de": "wenige Direktzüge",
+        "nl": "weinig directe treinen"
+       }
+      },
+      {
+       "dest": {
+        "en": "Valencia",
+        "es": "Valencia",
+        "fr": "Valence",
+        "ca": "València",
+        "de": "Valencia",
+        "nl": "Valencia"
+       },
+       "time": "4 h 15",
+       "note": {
+        "en": "long distance",
+        "es": "larga distancia",
+        "fr": "grandes lignes",
+        "ca": "llarga distància",
+        "de": "Fernverkehr",
+        "nl": "lange afstand"
+       }
+      }
+     ],
+     "gmaps": "https://www.google.com/maps/place/Estaci%C3%B3+de+Sant+Vicen%C3%A7+de+Calders/data=!4m2!3m1!1s0x12a38cabe44f1315:0x4f8f2b7df07de263"
+    },
+    {
+     "id": "camptgn",
+     "name": {
+      "en": "Camp de Tarragona station",
+      "es": "Estación Camp de Tarragona",
+      "fr": "Gare de Camp de Tarragona",
+      "ca": "Estació del Camp de Tarragona",
+      "de": "Bahnhof Camp de Tarragona",
+      "nl": "Station Camp de Tarragona"
+     },
+     "lat": 41.1922074,
+     "lng": 1.2739232,
+     "km": 29,
+     "min": 29,
+     "tag": {
+      "en": "Fastest, book ahead",
+      "es": "El más rápido, reserva antes",
+      "fr": "Le plus rapide, réservez",
+      "ca": "El més ràpid, reserva abans",
+      "de": "Am schnellsten, früh buchen",
+      "nl": "Snelst, vooraf boeken"
+     },
+     "what": {
+      "en": "The best option: high-speed trains to Barcelona Sants in about 30 minutes. Prices change with demand, from about 10 € to 50 € for the same trip, so book as early as you can. Paid parking at the station.",
+      "es": "La mejor opción: trenes de alta velocidad a Barcelona Sants en unos 30 minutos. El precio cambia según la demanda, de unos 10 € a 50 € por el mismo trayecto, así que reserva lo antes posible. Aparcamiento de pago en la estación.",
+      "fr": "La meilleure option : des trains à grande vitesse jusqu'à Barcelona Sants en 30 minutes environ. Les prix varient selon la demande, d'environ 10 € à 50 € pour le même trajet : réservez le plus tôt possible. Parking payant à la gare.",
+      "ca": "La millor opció: trens d'alta velocitat a Barcelona Sants en uns 30 minuts. El preu canvia segons la demanda, d'uns 10 € a 50 € pel mateix trajecte, així que reserva com més aviat millor. Aparcament de pagament a l'estació.",
+      "de": "Die beste Wahl: Hochgeschwindigkeitszüge nach Barcelona Sants in etwa 30 Minuten. Die Preise richten sich nach der Nachfrage, etwa 10 € bis 50 € für dieselbe Fahrt, also so früh wie möglich buchen. Kostenpflichtiger Parkplatz am Bahnhof.",
+      "nl": "De beste optie: hogesnelheidstreinen naar Barcelona Sants in ongeveer 30 minuten. De prijs hangt af van de vraag, van ongeveer 10 € tot 50 € voor dezelfde rit, dus boek zo vroeg mogelijk. Betaald parkeren bij het station."
+     },
+     "link": "https://www.renfe.com/",
+     "linkKey": "bookTickets",
+     "toBcn": "30 min",
+     "badges": [
+      {
+       "t": "AVE",
+       "c": "#5B2C83",
+       "ink": false
+      },
+      {
+       "t": "Avlo",
+       "c": "#5B2C83",
+       "ink": false
+      },
+      {
+       "t": "Alvia",
+       "c": "#5B2C83",
+       "ink": false
+      },
+      {
+       "t": "Euromed",
+       "c": "#5B2C83",
+       "ink": false
+      },
+      {
+       "t": "iryo",
+       "c": "#5B2C83",
+       "ink": false
+      },
+      {
+       "t": "Ouigo",
+       "c": "#5B2C83",
+       "ink": false
+      }
+     ],
+     "to": [
+      {
+       "dest": {
+        "en": "Barcelona Sants",
+        "es": "Barcelona Sants",
+        "fr": "Barcelona Sants",
+        "ca": "Barcelona Sants",
+        "de": "Barcelona Sants",
+        "nl": "Barcelona Sants"
+       },
+       "time": "30 min"
+      },
+      {
+       "dest": {
+        "en": "Madrid",
+        "es": "Madrid",
+        "fr": "Madrid",
+        "ca": "Madrid",
+        "de": "Madrid",
+        "nl": "Madrid"
+       },
+       "time": "2 h 40",
+       "note": {
+        "en": "long distance",
+        "es": "larga distancia",
+        "fr": "grandes lignes",
+        "ca": "llarga distància",
+        "de": "Fernverkehr",
+        "nl": "lange afstand"
+       }
+      }
+     ],
+     "gmaps": "https://www.google.com/maps/place/Estaci%C3%B3+del+Camp+de+Tarragona/data=!4m2!3m1!1s0x12a3fc1fe6df1459:0x5556ee753f25f546"
+    }
+   ],
+   "taxiSub": {
+    "en": "Home pickup in about 30 min",
+    "es": "Recogida en casa en unos 30 min",
+    "fr": "Prise en charge à la maison en 30 min environ",
+    "ca": "Recollida a casa en uns 30 min",
+    "de": "Abholung am Haus in etwa 30 Min.",
+    "nl": "Ophalen aan huis in ongeveer 30 min"
+   }
+  }
+ ]
+}

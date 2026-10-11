@@ -1,0 +1,657 @@
+{
+  "_doc": "House guide, organised by room (v4, Oct 2026): living, kitchen, bedrooms, bathrooms, office, laundry, pool, outside, rules, checkout. One-word titles, no '&'. Each item sits in the room where the thing is.",
+  "blocks": [
+    {
+      "id": "living",
+      "icon": "sofa",
+      "tone": "blue",
+      "title": {
+        "en": "Living room",
+        "es": "Salón",
+        "fr": "Salon",
+        "ca": "Menjador",
+        "de": "Wohnzimmer",
+        "nl": "Woonkamer"
+      },
+      "sub": {
+        "en": "TV, games, heating",
+        "es": "Tele, juegos, calefacción",
+        "fr": "Télé, jeux, chauffage",
+        "ca": "Tele, jocs, calefacció",
+        "de": "TV, Spiele, Heizung",
+        "nl": "Tv, spellen, verwarming"
+      },
+      "photos": [
+        "guide/living-1.jpg",
+        "guide/living-2.jpg",
+        "guide/living-3.jpg",
+        "guide/dining-2.jpg"
+      ],
+      "items": [
+        {
+          "en": "Smart TV: sign in to your own streaming apps, and sign out before you leave.",
+          "es": "Smart TV: entrad con vuestras propias apps de streaming y cerrad sesión antes de iros.",
+          "fr": "Smart TV : connectez-vous à vos propres applis de streaming et déconnectez-vous avant de partir.",
+          "ca": "Smart TV: entreu amb les vostres apps de streaming i tanqueu la sessió abans de marxar.",
+          "de": "Smart-TV: Meldet euch mit euren eigenen Streaming-Apps an und vor der Abreise wieder ab.",
+          "nl": "Smart-tv: log in met je eigen streamingapps en log uit voordat je vertrekt."
+        },
+        {
+          "en": "Board games and books for rainy days.",
+          "es": "Juegos de mesa y libros para los días de lluvia.",
+          "fr": "Jeux de société et livres pour les jours de pluie.",
+          "ca": "Jocs de taula i llibres per als dies de pluja.",
+          "de": "Brettspiele und Bücher für Regentage.",
+          "nl": "Bordspellen en boeken voor regenachtige dagen."
+        },
+        {
+          "en": "Spare batteries are in the TV unit.",
+          "es": "Hay pilas de recambio en el mueble de la tele.",
+          "fr": "Des piles de rechange sont dans le meuble télé.",
+          "ca": "Hi ha piles de recanvi al moble de la tele.",
+          "de": "Ersatzbatterien sind im TV-Möbel.",
+          "nl": "Reservebatterijen liggen in het tv-meubel."
+        },
+        {
+          "en": "Central heating is set on the thermostat by the front door. Please use it responsibly.",
+          "es": "La calefacción central se regula en el termostato junto a la puerta de entrada. Usadla con responsabilidad.",
+          "fr": "Le chauffage central se règle sur le thermostat près de la porte d'entrée. Merci de l'utiliser raisonnablement.",
+          "ca": "La calefacció central es regula al termòstat de la porta d'entrada. Feu-la servir amb responsabilitat.",
+          "de": "Die Zentralheizung wird am Thermostat neben der Haustür eingestellt. Bitte verantwortungsvoll nutzen.",
+          "nl": "De centrale verwarming stel je in op de thermostaat bij de voordeur. Gebruik hem met mate."
+        },
+        {
+          "en": "Air conditioning and a ceiling fan for the summer.",
+          "es": "Aire acondicionado y ventilador de techo para el verano.",
+          "fr": "Climatisation et ventilateur de plafond pour l'été.",
+          "ca": "Aire condicionat i ventilador de sostre per a l'estiu.",
+          "de": "Klimaanlage und Deckenventilator für den Sommer.",
+          "nl": "Airco en een plafondventilator voor de zomer."
+        }
+      ]
+    },
+    {
+      "id": "kitchen",
+      "icon": "kitchen",
+      "tone": "green",
+      "title": {
+        "en": "Kitchen",
+        "es": "Cocina",
+        "fr": "Cuisine",
+        "ca": "Cuina",
+        "de": "Küche",
+        "nl": "Keuken"
+      },
+      "sub": {
+        "en": "Appliances, basics, bins",
+        "es": "Electrodomésticos, básicos, basura",
+        "fr": "Équipement, produits de base, poubelles",
+        "ca": "Electrodomèstics, bàsics, escombraries",
+        "de": "Geräte, Grundvorrat, Müll",
+        "nl": "Apparaten, basis, afval"
+      },
+      "photos": [
+        "guide/kitchen-1.jpg",
+        "guide/kitchen-2.jpg",
+        "guide/kitchen-3.jpg",
+        "guide/dining-1.jpg",
+        "guide/dining-2.jpg",
+        "guide/dining-3.jpg"
+      ],
+      "body": {
+        "en": "Also in the kitchen: dishwasher, oven, microwave, electric hob, fridge and freezer, filter coffee maker, kettle, toaster and blender.",
+        "es": "En la cocina también hay: lavavajillas, horno, microondas, placa eléctrica, nevera y congelador, cafetera de filtro, hervidor, tostadora y batidora.",
+        "fr": "Dans la cuisine, il y a aussi : lave-vaisselle, four, micro-ondes, plaques électriques, réfrigérateur et congélateur, cafetière filtre, bouilloire, grille-pain et mixeur.",
+        "ca": "A la cuina també hi ha: rentaplats, forn, microones, placa elèctrica, nevera i congelador, cafetera de filtre, bullidor, torradora i batedora.",
+        "de": "Außerdem in der Küche: Spülmaschine, Backofen, Mikrowelle, Elektroherd, Kühlschrank und Gefrierfach, Filterkaffeemaschine, Wasserkocher, Toaster und Mixer.",
+        "nl": "Verder in de keuken: vaatwasser, oven, magnetron, elektrische kookplaat, koelkast en vriezer, filterkoffiezetapparaat, waterkoker, broodrooster en blender."
+      },
+      "items": [
+        {
+          "en": "Cleaning products and dishwasher tablets are under the kitchen sink.",
+          "es": "Los productos de limpieza y las pastillas del lavavajillas están debajo del fregadero.",
+          "fr": "Les produits ménagers et les pastilles pour le lave-vaisselle sont sous l'évier.",
+          "ca": "Els productes de neteja i les pastilles del rentaplats són sota l'aigüera.",
+          "de": "Putzmittel und Spülmaschinentabs sind unter der Spüle.",
+          "nl": "Schoonmaakmiddelen en vaatwastabletten staan onder de gootsteen."
+        },
+        {
+          "en": "Help yourselves to the basics we keep to avoid waste: oil, salt, pepper, spices, sugar, tea and coffee.",
+          "es": "Podéis usar los básicos que dejamos para no desperdiciar: aceite, sal, pimienta, especias, azúcar, té y café.",
+          "fr": "Servez-vous des produits de base que nous laissons pour éviter le gaspillage : huile, sel, poivre, épices, sucre, thé et café.",
+          "ca": "Podeu fer servir els bàsics que deixem per no malbaratar: oli, sal, pebre, espècies, sucre, te i cafè.",
+          "de": "Bedient euch an den Vorräten, die wir gegen Verschwendung dalassen: Öl, Salz, Pfeffer, Gewürze, Zucker, Tee und Kaffee.",
+          "nl": "Gebruik gerust de basisproducten die we bewaren tegen verspilling: olie, zout, peper, kruiden, suiker, thee en koffie."
+        },
+        {
+          "en": "Please use the tea towels provided.",
+          "es": "Usad los paños de cocina que dejamos, por favor.",
+          "fr": "Merci d'utiliser les torchons fournis.",
+          "ca": "Feu servir els draps de cuina que deixem, si us plau.",
+          "de": "Bitte die bereitgelegten Geschirrtücher benutzen.",
+          "nl": "Gebruik de theedoeken die klaarliggen."
+        },
+        {
+          "en": "The fridge shelves break easily: please handle them with care.",
+          "es": "Las baldas de la nevera se rompen fácilmente: tratadlas con cuidado.",
+          "fr": "Les clayettes du réfrigérateur cassent facilement : manipulez-les avec soin.",
+          "ca": "Els prestatges de la nevera es trenquen fàcilment: tracteu-los amb cura.",
+          "de": "Die Kühlschrankfächer gehen leicht kaputt: bitte vorsichtig behandeln.",
+          "nl": "De koelkastplaten breken makkelijk: ga er voorzichtig mee om."
+        },
+        {
+          "en": "Bin bags are in the kitchen drawers. When the kitchen bin is full, empty it into the large bins with lids at the front gate.",
+          "es": "Las bolsas de basura están en los cajones de la cocina. Cuando el cubo esté lleno, vaciadlo en los contenedores grandes con tapa de la puerta de entrada.",
+          "fr": "Les sacs poubelle sont dans les tiroirs de la cuisine. Quand la poubelle est pleine, videz-la dans les grands bacs à couvercle au portail.",
+          "ca": "Les bosses d'escombraries són als calaixos de la cuina. Quan el cubell sigui ple, buideu-lo als contenidors grans amb tapa de la porta d'entrada.",
+          "de": "Müllbeutel sind in den Küchenschubladen. Ist der Küchenmülleimer voll, leert ihn in die großen Tonnen mit Deckel am Eingangstor.",
+          "nl": "Vuilniszakken liggen in de keukenlades. Is de keukenbak vol, leeg hem dan in de grote containers met deksel bij het hek."
+        }
+      ],
+      "links": [
+        {
+          "href": "#s/garbage",
+          "labelKey": "garbage"
+        }
+      ]
+    },
+    {
+      "id": "bedrooms",
+      "icon": "bed",
+      "tone": "red",
+      "title": {
+        "en": "Bedrooms",
+        "es": "Habitaciones",
+        "fr": "Chambres",
+        "ca": "Habitacions",
+        "de": "Schlafzimmer",
+        "nl": "Slaapkamers"
+      },
+      "sub": {
+        "en": "Beds, suitcases, air conditioning",
+        "es": "Camas, maletas, aire acondicionado",
+        "fr": "Lits, valises, climatisation",
+        "ca": "Llits, maletes, aire condicionat",
+        "de": "Betten, Koffer, Klimaanlage",
+        "nl": "Bedden, koffers, airco"
+      },
+      "photos": [
+        "guide/bed1-1.jpg",
+        "guide/bed1-2.jpg",
+        "guide/bed2-1.jpg",
+        "guide/bed2-2.jpg",
+        "guide/bed3-1.jpg",
+        "guide/bed3-2.jpg"
+      ],
+      "items": [
+        {
+          "en": "Bedroom 1: king-size bed and a smart TV. Bedroom 2: double bed. Bedroom 3: two single beds (one pull-out). The fourth bed is the sofa bed in the attic office.",
+          "es": "Habitación 1: cama king y smart TV. Habitación 2: cama de matrimonio. Habitación 3: dos camas individuales (una nido). La cuarta cama es el sofá cama del despacho del ático.",
+          "fr": "Chambre 1 : lit king size et smart TV. Chambre 2 : lit double. Chambre 3 : deux lits simples (un gigogne). Le quatrième couchage est le canapé-lit du bureau sous les toits.",
+          "ca": "Habitació 1: llit king i smart TV. Habitació 2: llit de matrimoni. Habitació 3: dos llits individuals (un niu). El quart llit és el sofà llit del despatx de les golfes.",
+          "de": "Schlafzimmer 1: Kingsize-Bett und Smart-TV. Schlafzimmer 2: Doppelbett. Schlafzimmer 3: zwei Einzelbetten (eines ausziehbar). Der vierte Schlafplatz ist das Schlafsofa im Dachbüro.",
+          "nl": "Slaapkamer 1: kingsize bed en smart-tv. Slaapkamer 2: tweepersoonsbed. Slaapkamer 3: twee eenpersoonsbedden (een uitschuifbaar). De vierde slaapplek is de slaapbank in het zolderkantoor."
+        },
+        {
+          "en": "The beds in the two double rooms lift up: store your suitcases underneath.",
+          "es": "Las camas de las dos habitaciones dobles se levantan: guardad las maletas debajo.",
+          "fr": "Les lits des deux chambres doubles se relèvent : rangez vos valises dessous.",
+          "ca": "Els llits de les dues habitacions dobles s'aixequen: deseu-hi les maletes a sota.",
+          "de": "Die Betten in den beiden Doppelzimmern lassen sich hochklappen: Koffer darunter verstauen.",
+          "nl": "De bedden in de twee tweepersoonskamers klappen omhoog: berg je koffers eronder op."
+        },
+        {
+          "en": "Air conditioning and a ceiling fan in every bedroom.",
+          "es": "Aire acondicionado y ventilador de techo en cada habitación.",
+          "fr": "Climatisation et ventilateur de plafond dans chaque chambre.",
+          "ca": "Aire condicionat i ventilador de sostre a cada habitació.",
+          "de": "Klimaanlage und Deckenventilator in jedem Schlafzimmer.",
+          "nl": "Airco en een plafondventilator in elke slaapkamer."
+        },
+        {
+          "en": "Extra pillows and blankets are available.",
+          "es": "Hay almohadas y mantas extra.",
+          "fr": "Oreillers et couvertures supplémentaires disponibles.",
+          "ca": "Hi ha coixins i mantes extra.",
+          "de": "Extra Kissen und Decken sind da.",
+          "nl": "Extra kussens en dekens zijn aanwezig."
+        },
+        {
+          "en": "Travel cot and high chair available on request. They are kept in the children's room (Bedroom 3).",
+          "es": "Cuna de viaje y trona disponibles bajo petición. Se guardan en la habitación infantil (habitación 3).",
+          "fr": "Lit parapluie et chaise haute disponibles sur demande. Ils sont rangés dans la chambre des enfants (chambre 3).",
+          "ca": "Bressol de viatge i cadira alta disponibles a petició. Es guarden a l'habitació infantil (habitació 3).",
+          "de": "Reisebett und Hochstuhl auf Anfrage. Sie stehen im Kinderzimmer (Schlafzimmer 3).",
+          "nl": "Campingbedje en kinderstoel op aanvraag. Ze staan in de kinderkamer (slaapkamer 3)."
+        }
+      ]
+    },
+    {
+      "id": "bathrooms",
+      "icon": "drop",
+      "tone": "yellow",
+      "title": {
+        "en": "Bathrooms",
+        "es": "Baños",
+        "fr": "Salles de bain",
+        "ca": "Banys",
+        "de": "Bäder",
+        "nl": "Badkamers"
+      },
+      "sub": {
+        "en": "Towels, toilet, toiletries",
+        "es": "Toallas, inodoro, aseo",
+        "fr": "Serviettes, toilettes, produits",
+        "ca": "Tovalloles, vàter, higiene",
+        "de": "Handtücher, Toilette, Pflege",
+        "nl": "Handdoeken, toilet, verzorging"
+      },
+      "photos": [
+        "guide/bath1-1.jpg",
+        "guide/bath1-2.jpg",
+        "guide/bath2-1.jpg"
+      ],
+      "items": [
+        {
+          "en": "There is one bath towel per person for use in the house. Please don't take them to the beach.",
+          "es": "Hay una toalla de baño por persona para usar en casa. Por favor, no las llevéis a la playa.",
+          "fr": "Il y a une serviette de bain par personne pour la maison. Merci de ne pas les emporter à la plage.",
+          "ca": "Hi ha una tovallola de bany per persona per fer servir a casa. Si us plau, no les porteu a la platja.",
+          "de": "Es gibt ein Badetuch pro Person für das Haus. Bitte nicht mit an den Strand nehmen.",
+          "nl": "Er is één badhanddoek per persoon voor in huis. Neem ze alsjeblieft niet mee naar het strand."
+        },
+        {
+          "en": "Only toilet paper goes down the toilet. Use the small bin for everything else (wipes, sanitary items, tissues).",
+          "es": "Solo el papel higiénico va al inodoro. Usad la papelera para todo lo demás (toallitas, compresas, pañuelos).",
+          "fr": "Seul le papier toilette va dans les toilettes. Utilisez la petite poubelle pour le reste (lingettes, protections, mouchoirs).",
+          "ca": "Només el paper higiènic va al vàter. Feu servir la paperera per a tot el que no ho sigui (tovalloletes, compreses, mocadors).",
+          "de": "Nur Toilettenpapier gehört in die Toilette. Alles andere (Feuchttücher, Hygieneartikel, Taschentücher) in den kleinen Eimer.",
+          "nl": "Alleen wc-papier mag in het toilet. Gebruik het kleine bakje voor de rest (doekjes, maandverband, tissues)."
+        },
+        {
+          "en": "Shampoo, shower gel and a hair dryer are provided.",
+          "es": "Hay champú, gel de ducha y secador de pelo.",
+          "fr": "Shampooing, gel douche et sèche-cheveux fournis.",
+          "ca": "Hi ha xampú, gel de dutxa i assecador de cabells.",
+          "de": "Shampoo, Duschgel und Föhn sind vorhanden.",
+          "nl": "Shampoo, douchegel en een föhn zijn aanwezig."
+        }
+      ]
+    },
+    {
+      "id": "office",
+      "icon": "desk",
+      "tone": "blue",
+      "title": {
+        "en": "Office",
+        "es": "Despacho",
+        "fr": "Bureau",
+        "ca": "Despatx",
+        "de": "Büro",
+        "nl": "Kantoor"
+      },
+      "sub": {
+        "en": "Desk, sofa bed, TV in the attic",
+        "es": "Escritorio, sofá cama, tele en el ático",
+        "fr": "Bureau, canapé-lit, télé sous les toits",
+        "ca": "Escriptori, sofà llit, tele a les golfes",
+        "de": "Schreibtisch, Schlafsofa, TV im Dach",
+        "nl": "Bureau, slaapbank, tv op zolder"
+      },
+      "photos": [
+        "guide/bed4-1.jpg"
+      ],
+      "items": [
+        {
+          "en": "The office is in the attic: a desk to work, a sofa bed and a smart TV.",
+          "es": "El despacho está en el ático: escritorio para trabajar, sofá cama y smart TV.",
+          "fr": "Le bureau est sous les toits : une table de travail, un canapé-lit et une smart TV.",
+          "ca": "El despatx és a les golfes: escriptori per treballar, sofà llit i smart TV.",
+          "de": "Das Büro ist im Dachgeschoss: Schreibtisch zum Arbeiten, Schlafsofa und Smart-TV.",
+          "nl": "Het kantoor is op zolder: een bureau om te werken, een slaapbank en een smart-tv."
+        },
+        {
+          "en": "Wifi: tap Wifi on the Home screen. If the signal is weak, switch to the long range network.",
+          "es": "Wifi: toca Wifi en la pantalla de inicio. Si la señal es débil, cambia a la red de largo alcance.",
+          "fr": "Wifi : touchez Wifi sur l'écran d'accueil. Si le signal est faible, passez au réseau longue portée.",
+          "ca": "Wifi: toca Wifi a la pantalla d'inici. Si el senyal és feble, canvia a la xarxa de llarg abast.",
+          "de": "WLAN: Auf dem Startbildschirm auf WLAN tippen. Bei schwachem Signal ins Netz mit großer Reichweite wechseln.",
+          "nl": "Wifi: tik op Wifi op het startscherm. Is het signaal zwak, kies dan het netwerk met groot bereik."
+        },
+        {
+          "en": "Air conditioning and a ceiling fan here too.",
+          "es": "También hay aire acondicionado y ventilador de techo.",
+          "fr": "Climatisation et ventilateur de plafond ici aussi.",
+          "ca": "També hi ha aire condicionat i ventilador de sostre.",
+          "de": "Auch hier Klimaanlage und Deckenventilator.",
+          "nl": "Ook hier airco en een plafondventilator."
+        }
+      ]
+    },
+    {
+      "id": "laundry",
+      "icon": "washer",
+      "tone": "green",
+      "title": {
+        "en": "Laundry",
+        "es": "Lavadero",
+        "fr": "Buanderie",
+        "ca": "Safareig",
+        "de": "Waschraum",
+        "nl": "Wasruimte"
+      },
+      "sub": {
+        "en": "Washing machine, dryer, iron",
+        "es": "Lavadora, secadora, plancha",
+        "fr": "Lave-linge, sèche-linge, fer",
+        "ca": "Rentadora, assecadora, planxa",
+        "de": "Waschmaschine, Trockner, Bügeleisen",
+        "nl": "Wasmachine, droger, strijkijzer"
+      },
+      "photos": [
+        "guide/laundry-1.jpg"
+      ],
+      "items": [
+        {
+          "en": "Washing machine, tumble dryer, drying rack, iron and ironing board.",
+          "es": "Lavadora, secadora, tendedero, plancha y tabla de planchar.",
+          "fr": "Lave-linge, sèche-linge, étendoir, fer et table à repasser.",
+          "ca": "Rentadora, assecadora, estenedor, planxa i taula de planxar.",
+          "de": "Waschmaschine, Trockner, Wäscheständer, Bügeleisen und Bügelbrett.",
+          "nl": "Wasmachine, droger, droogrek, strijkijzer en strijkplank."
+        }
+      ]
+    },
+    {
+      "id": "pool",
+      "icon": "pool",
+      "tone": "blue",
+      "title": {
+        "en": "Pool",
+        "es": "Piscina",
+        "fr": "Piscine",
+        "ca": "Piscina",
+        "de": "Pool",
+        "nl": "Zwembad"
+      },
+      "sub": {
+        "en": "Not heated, children supervised, top up in summer",
+        "es": "Sin climatizar, niños vigilados, rellenar en verano",
+        "fr": "Non chauffée, enfants surveillés, remplir en été",
+        "ca": "No climatitzada, infants vigilats, omplir a l'estiu",
+        "de": "Unbeheizt, Kinder beaufsichtigen, im Sommer nachfüllen",
+        "nl": "Onverwarmd, kinderen onder toezicht, bijvullen in de zomer"
+      },
+      "photos": [
+        "guide/pool-1.jpg",
+        "guide/pool-3.jpg",
+        "guide/pool-6.jpg",
+        "guide/pool-2.jpg",
+        "guide/pool-7.jpg"
+      ],
+      "items": [
+        {
+          "en": "The pool is private and open all year, day and night. It is not heated, so the water follows the season. Roughly: 26 to 28 °C in July and August, 23 to 25 °C in June and September, 19 to 21 °C in May and October, and cold from November to April.",
+          "es": "La piscina es privada y está abierta todo el año, de día y de noche. No está climatizada, así que el agua sigue la estación. Aproximadamente: 26 a 28 °C en julio y agosto, 23 a 25 °C en junio y septiembre, 19 a 21 °C en mayo y octubre, y fría de noviembre a abril.",
+          "fr": "La piscine est privée et ouverte toute l'année, de jour comme de nuit. Elle n'est pas chauffée : l'eau suit la saison. Environ 26 à 28 °C en juillet et août, 23 à 25 °C en juin et septembre, 19 à 21 °C en mai et octobre, et froide de novembre à avril.",
+          "ca": "La piscina és privada i oberta tot l'any, de dia i de nit. No està climatitzada, així que l'aigua segueix l'estació. Aproximadament: 26 a 28 °C al juliol i l'agost, 23 a 25 °C al juny i el setembre, 19 a 21 °C al maig i l'octubre, i freda de novembre a abril.",
+          "de": "Der Pool ist privat und das ganze Jahr Tag und Nacht nutzbar. Er ist nicht beheizt, das Wasser folgt also der Jahreszeit. Ungefähr: 26 bis 28 °C im Juli und August, 23 bis 25 °C im Juni und September, 19 bis 21 °C im Mai und Oktober, und kalt von November bis April.",
+          "nl": "Het zwembad is privé en het hele jaar open, dag en nacht. Het is niet verwarmd, dus het water volgt het seizoen. Ongeveer: 26 tot 28 °C in juli en augustus, 23 tot 25 °C in juni en september, 19 tot 21 °C in mei en oktober, en koud van november tot april."
+        },
+        {
+          "en": "Children must be supervised at all times outside: the pool is directly accessible from the garden.",
+          "es": "Los niños deben estar vigilados en todo momento fuera: se accede a la piscina directamente desde el jardín.",
+          "fr": "Les enfants doivent être surveillés en permanence à l'extérieur : la piscine est directement accessible depuis le jardin.",
+          "ca": "Els infants han d'estar vigilats en tot moment a fora: s'accedeix a la piscina directament des del jardí.",
+          "de": "Kinder draußen immer beaufsichtigen: Der Pool ist direkt vom Garten aus zugänglich.",
+          "nl": "Houd kinderen buiten altijd in het oog: het zwembad is direct vanuit de tuin bereikbaar."
+        },
+        {
+          "en": "In summer the water evaporates fast: if the level drops below the skimmers (the openings in the pool wall), please top it up.",
+          "es": "En verano el agua se evapora rápido: si el nivel baja de los skimmers (las bocas de la pared de la piscina), por favor rellénala.",
+          "fr": "En été, l'eau s'évapore vite : si le niveau descend sous les skimmers (les ouvertures dans la paroi), merci de remettre de l'eau.",
+          "ca": "A l'estiu l'aigua s'evapora de pressa: si el nivell baixa dels skimmers (les boques de la paret de la piscina), si us plau, omple-la.",
+          "de": "Im Sommer verdunstet das Wasser schnell: Wenn der Pegel unter die Skimmer (die Öffnungen in der Beckenwand) fällt, bitte Wasser nachfüllen.",
+          "nl": "In de zomer verdampt het water snel: zakt het niveau onder de skimmers (de openingen in de wand), vul het zwembad dan bij."
+        },
+        {
+          "en": "Someone looks after the pool and the garden and sometimes comes early in the morning. We can't say on which day.",
+          "es": "Una persona se ocupa de la piscina y el jardín y a veces viene temprano por la mañana. No podemos decir qué día.",
+          "fr": "Une personne s'occupe de la piscine et du jardin et passe parfois tôt le matin. Nous ne pouvons pas dire quel jour.",
+          "ca": "Una persona s'ocupa de la piscina i el jardí i de vegades ve d'hora al matí. No podem dir quin dia.",
+          "de": "Jemand kümmert sich um Pool und Garten und kommt manchmal früh am Morgen. Den Tag können wir nicht sagen.",
+          "nl": "Iemand onderhoudt het zwembad en de tuin en komt soms vroeg in de ochtend. Welke dag kunnen we niet zeggen."
+        }
+      ]
+    },
+    {
+      "id": "outside",
+      "icon": "flame",
+      "tone": "orange",
+      "title": {
+        "en": "Outside",
+        "es": "Exterior",
+        "fr": "Extérieur",
+        "ca": "Exterior",
+        "de": "Draußen",
+        "nl": "Buiten"
+      },
+      "sub": {
+        "en": "Barbecue, outdoor kitchen, garden",
+        "es": "Barbacoa, cocina exterior, jardín",
+        "fr": "Barbecue, cuisine extérieure, jardin",
+        "ca": "Barbacoa, cuina exterior, jardí",
+        "de": "Grill, Außenküche, Garten",
+        "nl": "Barbecue, buitenkeuken, tuin"
+      },
+      "photos": [
+        "guide/patio-1.jpg",
+        "guide/patio-3.jpg",
+        "guide/patio-4.jpg",
+        "guide/patio-5.jpg",
+        "guide/garden-3.jpg",
+        "guide/garden-4.jpg"
+      ],
+      "items": [
+        {
+          "en": "Barbecue for charcoal or wood, with tools and fuel. Please treat it with respect.",
+          "es": "Barbacoa de carbón o leña, con utensilios y combustible. Tratadla con cuidado.",
+          "fr": "Barbecue au charbon ou au bois, avec ustensiles et combustible. Merci d'en prendre soin.",
+          "ca": "Barbacoa de carbó o llenya, amb estris i combustible. Tracteu-la amb cura.",
+          "de": "Grill für Holzkohle oder Holz, mit Besteck und Brennstoff. Bitte pfleglich behandeln.",
+          "nl": "Barbecue op houtskool of hout, met gereedschap en brandstof. Ga er zorgvuldig mee om."
+        },
+        {
+          "en": "Ashes go in the metal bin only, once they are cold, never in the normal rubbish. Use the dustpan and brush.",
+          "es": "La ceniza va solo al cubo metálico, una vez fría, nunca a la basura normal. Usa el recogedor.",
+          "fr": "Les cendres vont uniquement dans la poubelle en métal, une fois froides, jamais dans les poubelles normales. Utilisez la pelle et la balayette.",
+          "ca": "La cendra va només al cubell metàl·lic, un cop freda, mai a les escombraries normals. Fes servir el recollidor.",
+          "de": "Asche nur in den Metalleimer, wenn sie kalt ist, nie in den normalen Müll. Kehrblech und Besen benutzen.",
+          "nl": "As alleen in de metalen emmer, als die koud is, nooit bij het gewone afval. Gebruik stoffer en blik."
+        },
+        {
+          "en": "Outdoor kitchen with a sink, and a dining table for 8.",
+          "es": "Cocina exterior con fregadero y mesa para 8.",
+          "fr": "Cuisine d'été avec évier et table pour 8.",
+          "ca": "Cuina exterior amb aigüera i taula per a 8.",
+          "de": "Außenküche mit Spüle und Esstisch für 8.",
+          "nl": "Buitenkeuken met gootsteen en een eettafel voor 8."
+        },
+        {
+          "en": "Outdoor shower, hammock and sun loungers.",
+          "es": "Ducha exterior, hamaca y tumbonas.",
+          "fr": "Douche extérieure, hamac et transats.",
+          "ca": "Dutxa exterior, hamaca i gandules.",
+          "de": "Außendusche, Hängematte und Liegen.",
+          "nl": "Buitendouche, hangmat en ligbedden."
+        },
+        {
+          "en": "Mosquito repellent coils are there for the evenings outside.",
+          "es": "Hay espirales antimosquitos para las noches fuera.",
+          "fr": "Des spirales anti-moustiques sont à disposition pour les soirées dehors.",
+          "ca": "Hi ha espirals antimosquits per als vespres a fora.",
+          "de": "Für die Abende draußen gibt es Mückenspiralen.",
+          "nl": "Voor de avonden buiten zijn er muggenspiralen."
+        },
+        {
+          "en": "The garden is fully fenced.",
+          "es": "El jardín está vallado en todo su perímetro.",
+          "fr": "Le jardin est entièrement clôturé.",
+          "ca": "El jardí està tancat amb tanca a tot el perímetre.",
+          "de": "Der Garten ist rundum eingezäunt.",
+          "nl": "De tuin is volledig omheind."
+        }
+      ]
+    },
+    {
+      "id": "rules",
+      "icon": "home",
+      "tone": "ink",
+      "title": {
+        "en": "House rules",
+        "es": "Normas de la casa",
+        "fr": "Règles de la maison",
+        "ca": "Normes de la casa",
+        "de": "Hausregeln",
+        "nl": "Huisregels"
+      },
+      "sub": {
+        "en": "No smoking inside, respect the neighbours",
+        "es": "No fumar dentro, respetar a los vecinos",
+        "fr": "Pas de tabac à l'intérieur, respect des voisins",
+        "ca": "No fumar a dins, respectar els veïns",
+        "de": "Drinnen nicht rauchen, Rücksicht auf Nachbarn",
+        "nl": "Binnen niet roken, rekening houden met buren"
+      },
+      "items": [
+        {
+          "en": "Please don't smoke inside the house.",
+          "es": "Por favor, no fuméis dentro de la casa.",
+          "fr": "Merci de ne pas fumer à l'intérieur de la maison.",
+          "ca": "Si us plau, no fumeu dins de la casa.",
+          "de": "Bitte im Haus nicht rauchen.",
+          "nl": "Niet roken in het huis, alsjeblieft."
+        },
+        {
+          "en": "Please be respectful of the neighbours, especially in the evening and at night.",
+          "es": "Por favor, sed respetuosos con los vecinos, sobre todo por la tarde y por la noche.",
+          "fr": "Merci de respecter les voisins, surtout le soir et la nuit.",
+          "ca": "Si us plau, sigueu respectuosos amb els veïns, sobretot al vespre i a la nit.",
+          "de": "Bitte nehmt Rücksicht auf die Nachbarn, besonders abends und nachts.",
+          "nl": "Houd alsjeblieft rekening met de buren, vooral 's avonds en 's nachts."
+        },
+        {
+          "en": "Treat the house as if it were your own.",
+          "es": "Cuidad la casa como si fuera vuestra.",
+          "fr": "Prenez soin de la maison comme si c'était la vôtre.",
+          "ca": "Cuideu la casa com si fos vostra.",
+          "de": "Behandelt das Haus, als wäre es euer eigenes.",
+          "nl": "Behandel het huis alsof het je eigen huis is."
+        },
+        {
+          "en": "A printed copy of this guide is in the house.",
+          "es": "En la casa hay una copia impresa de esta guía.",
+          "fr": "Une version imprimée de ce guide se trouve dans la maison.",
+          "ca": "A la casa hi ha una còpia impresa d'aquesta guia.",
+          "de": "Ein gedrucktes Exemplar dieses Guides liegt im Haus.",
+          "nl": "Een gedrukte versie van deze gids ligt in het huis."
+        }
+      ]
+    },
+    {
+      "id": "checkout",
+      "icon": "key",
+      "tone": "ink",
+      "title": {
+        "en": "Check-out",
+        "es": "Salida",
+        "fr": "Départ",
+        "ca": "Sortida",
+        "de": "Abreise",
+        "nl": "Vertrek"
+      },
+      "sub": {
+        "en": "Before you leave",
+        "es": "Antes de iros",
+        "fr": "Avant de partir",
+        "ca": "Abans de marxar",
+        "de": "Bevor ihr fahrt",
+        "nl": "Voordat je vertrekt"
+      },
+      "items": [
+        {
+          "en": "Bring in any towels from outside and leave used towels hanging, not in a pile on the floor.",
+          "es": "Recoged las toallas de fuera y dejad las usadas colgadas, no amontonadas en el suelo.",
+          "fr": "Rentrez les serviettes laissées dehors et laissez les serviettes utilisées suspendues, pas en tas par terre.",
+          "ca": "Recolliu les tovalloles de fora i deixeu les usades penjades, no amuntegades a terra.",
+          "de": "Handtücher von draußen reinholen und benutzte aufhängen, nicht auf einen Haufen auf den Boden.",
+          "nl": "Haal handdoeken van buiten binnen en hang gebruikte handdoeken op, niet op een hoop op de grond."
+        },
+        {
+          "en": "Unused towels can be left on a bed.",
+          "es": "Las toallas sin usar se pueden dejar sobre una cama.",
+          "fr": "Les serviettes non utilisées peuvent être laissées sur un lit.",
+          "ca": "Les tovalloles sense fer servir es poden deixar sobre un llit.",
+          "de": "Unbenutzte Handtücher einfach auf ein Bett legen.",
+          "nl": "Ongebruikte handdoeken mag je op een bed leggen."
+        },
+        {
+          "en": "No need to strip the beds: we take care of the sheets and pillowcases.",
+          "es": "No hace falta deshacer las camas: nosotros nos ocupamos de las sábanas y fundas.",
+          "fr": "Inutile de défaire les lits : nous nous occupons des draps et des taies.",
+          "ca": "No cal desfer els llits: nosaltres ens ocupem dels llençols i les fundes.",
+          "de": "Betten nicht abziehen: Um Laken und Kissenbezüge kümmern wir uns.",
+          "nl": "Je hoeft de bedden niet af te halen: wij zorgen voor de lakens en kussenslopen."
+        },
+        {
+          "en": "Take out the rubbish.",
+          "es": "Sacad la basura.",
+          "fr": "Sortez les poubelles.",
+          "ca": "Traieu les escombraries.",
+          "de": "Müll rausbringen.",
+          "nl": "Breng het afval weg."
+        },
+        {
+          "en": "Switch off the lights and small appliances.",
+          "es": "Apagad las luces y los pequeños electrodomésticos.",
+          "fr": "Éteignez les lumières et les petits appareils.",
+          "ca": "Apagueu els llums i els petits electrodomèstics.",
+          "de": "Licht und kleine Elektrogeräte ausschalten.",
+          "nl": "Doe de lichten en kleine apparaten uit."
+        },
+        {
+          "en": "Check under the beds and in the drawers so nothing gets left behind.",
+          "es": "Mirad debajo de las camas y en los cajones para no olvidar nada.",
+          "fr": "Regardez sous les lits et dans les tiroirs pour ne rien oublier.",
+          "ca": "Mireu sota els llits i als calaixos per no deixar-vos res.",
+          "de": "Unter den Betten und in den Schubladen nachsehen, damit nichts liegen bleibt.",
+          "nl": "Kijk onder de bedden en in de lades, zodat je niets vergeet."
+        },
+        {
+          "en": "Leave the house tidy, as you found it.",
+          "es": "Dejad la casa ordenada, como la encontrasteis.",
+          "fr": "Laissez la maison rangée, comme vous l'avez trouvée.",
+          "ca": "Deixeu la casa endreçada, com la vau trobar.",
+          "de": "Das Haus ordentlich hinterlassen, so wie ihr es vorgefunden habt.",
+          "nl": "Laat het huis netjes achter, zoals je het aantrof."
+        },
+        {
+          "en": "Lock the garage door, the front door and the sliding gate.",
+          "es": "Cerrad con llave la puerta del garaje, la puerta de entrada y la verja corredera.",
+          "fr": "Fermez à clé la porte du garage, la porte d'entrée et le portail coulissant.",
+          "ca": "Tanqueu amb clau la porta del garatge, la porta d'entrada i la porta corredissa.",
+          "de": "Garagentor, Haustür und Schiebetor abschließen.",
+          "nl": "Doe de garagedeur, de voordeur en het schuifhek op slot."
+        },
+        {
+          "en": "Put the keys back in the lockbox.",
+          "es": "Dejad las llaves en la caja de seguridad.",
+          "fr": "Remettez les clés dans la boîte à clés.",
+          "ca": "Deixeu les claus a la caixa de seguretat.",
+          "de": "Schlüssel zurück in die Schlüsselbox legen.",
+          "nl": "Leg de sleutels terug in de sleutelkluis."
+        }
+      ]
+    }
+  ]
+}
