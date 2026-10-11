@@ -24,3 +24,6 @@ onboarding-site/src/ob-test.html
 onboarding-site/src/ob-test*
 onboarding-site/.ob-test*
 test-submissions/*.csv
+
+.trash*/
+.trash*
