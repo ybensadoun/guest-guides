@@ -18,6 +18,15 @@ function htmlToText(html){
 }
 const meta = (html, p) => { const m = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${p}["'][^>]+content=["']([^"']+)`, 'i')) || html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${p}["']`, 'i')); return m ? m[1] : ''; };
 
+const roomOf = n => /bed|dormit|habitaci|chambre|cambra/i.test(n) ? 'Bedroom' : /bath|ba[ñn]o|toilet|salle de bain/i.test(n) ? 'Bathroom' : /kitchen|cocina|cuisine|cuina/i.test(n) ? 'Kitchen' : /living|sal[oó]n|dining|comedor|lounge|\bsala\b|menjador/i.test(n) ? 'Living room' : /pool|piscina/i.test(n) ? 'Pool' : /garden|jard[ií]n|jardí/i.test(n) ? 'Garden' : /patio|porch|balcon|terrace|terraza|veranda/i.test(n) ? 'Terrace' : /laundry|lavander/i.test(n) ? 'Laundry' : /office|study|workspace|despacho/i.test(n) ? 'Office' : /exterior|outside|fachada|entrance|entrada|front/i.test(n) ? 'Outside' : 'Other';
+// Airbnb's photo tour and sleeping arrangements are "MediaTour" blocks: stops with a name ("Bedroom 1"), photos and a description ("1 king bed").
+function tourStops(blk, cl){
+  const ms = [...blk.matchAll(/"__typename":"MediaTourStop","id":"[^"]*","name":"([^"]+)","items":\[/g)];
+  return ms.map((m, i) => { const seg = blk.slice(m.index, i + 1 < ms.length ? ms[i + 1].index : m.index + 6000);
+    return { name: cl(m[1]), imgs: [...new Set([...seg.matchAll(/"uri":"(https:\/\/a0\.muscache\.com\/im\/pictures\/[^"?]+)"/g)].map(x => x[1]))],
+      desc: cl((seg.match(/"descriptions":\[\{"__typename":"LocalizedText","text":"([^"]+)"/) || [])[1] || '') }; });
+}
+
 async function readPage(url){
   try {
     const r = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(7000), headers: {
@@ -26,29 +35,40 @@ async function readPage(url){
     if (!r.ok) return null;
     const html = await r.text();
     const coords = html.match(/"lat(?:itude)?"\s*:\s*(-?\d+\.\d+)\s*,\s*"(?:lng|longitude)"\s*:\s*(-?\d+\.\d+)/);
+    const cl = x => x.replace(/\\u0026/g, '&').replace(/\\"/g, '"').replace(/\\u2019/g, '’').replace(/\\n/g, ' ').trim();
+    const iv = (k, n) => { const i = html.indexOf(k); return i < 0 ? '' : html.slice(i, i + n); };
+    const tourBlk = iv('"mediaTour":{"__typename":"MediaTour"', 150000);
+    const tour = tourBlk ? tourStops(tourBlk, cl) : [];
+    const sleepAll = iv('"sleepingArrangements":{"__typename":"MediaTour"', 14000);
+    const sleepStops = sleepAll ? tourStops(sleepAll.split('"overview":{"__typename":"StaysPdpOverview"')[0], cl) : [];
+    const sleepLines = sleepStops.filter(x => x.desc).map(x => x.name + ': ' + x.desc);
     // Airbnb lists every photo with its caption: ..."accessibilityLabel":"Salón","baseUrl":"https://a0.muscache.com/im/pictures/....jpg"
     const seen = new Map();
     for (const m of html.matchAll(/"accessibilityLabel":"([^"]{0,140})","baseUrl":"(https:\/\/a0\.muscache\.com\/im\/pictures\/[^"?]+\.(?:jpe?g|webp))/gi)) { if (!seen.has(m[2])) seen.set(m[2], m[1]); }
     for (const u of (html.match(/https:\/\/a0\.muscache\.com\/im\/pictures\/[^"'\s?\\]+\.(?:jpe?g|webp)/gi) || [])) if (!seen.has(u) && !/\/(user|profile|Hosting|airbnb-platform)/i.test(u)) seen.set(u, '');
-    const pics = [...seen.entries()].slice(0, 16).map(([url, caption]) => ({ url, caption }));
+    let pics = [...seen.entries()].slice(0, 16).map(([url, caption]) => ({ url, caption }));
+    if (tour.length) {   // exact rooms from the host's own photo tour, up to 16 photos spread over the rooms
+      const take = tour.map(() => 0), got = []; let more = true;
+      for (let r = 0; r < 3 && got.length < 16 && more; r++) { more = false; tour.forEach((st, i) => { if (got.length < 16 && st.imgs[r]) { got.push({ i, r, url: st.imgs[r], caption: st.name, room: roomOf(st.name) }); more = true; } }); }
+      pics = got.sort((a, b) => a.i - b.i || a.r - b.r).map(({ url, caption, room }) => ({ url, caption, room }));
+    }
     const photos = pics.map(x => x.url);
     // "4 habitaciones · 7 camas · 2 baños": the counts Claude needs for the rooms
     const counts = [...new Set((html.match(/\b\d{1,2}\s(?:bedrooms?|beds?|baths?|bathrooms?|habitaci[oó]n(?:es)?|camas?|ba[ñn]os?|chambres?|lits?|salles? de bains?)\b/gi) || []))].slice(0, 12).join(' · ');
-    const cl = x => x.replace(/\\u0026/g, '&').replace(/\\"/g, '"').replace(/\\u2019/g, '’').replace(/\\n/g, ' ').trim();
-    const iv = (k, n) => { const i = html.indexOf(k); return i < 0 ? '' : html.slice(i, i + n); };
     const strs = (blk) => [...new Set([...blk.matchAll(/"(?:title|subtitle|text|html)":"([^"]{2,220})"/g)].map(m => cl(m[1])))];
     const overview = (iv('"overview":{"__typename":"StaysPdpOverview"', 700).match(/"items":\[([^\]]*)\]/) || [, ''])[1].replace(/"/g, '').split(',').map(x => x.trim()).filter(Boolean);
     const rules = strs(iv('"rules":{"__typename":"StaysPdpRuleDetails"', 6000).split('"__typename":"StaysPdpSection"')[0]).filter(x => !/^Normas de la casa$|trátala como/i.test(x));
     const amenities = [...new Set([...html.matchAll(/"__typename":"AmenityItem","available":true,"title":"([^"]+)"/g)].map(m => cl(m[1])))];
-    const sleepBlk = iv('"sleepingArrangements":[', 3000); const sleeping = sleepBlk ? strs(sleepBlk).slice(0, 24) : [];
+    const sleeping = sleepLines;
     const rt = html.match(/"ratingAverage":([\d.]+),"ratingCount":"?(\d+)/);
     const facts = [overview.length && 'Overview: ' + overview.join(' · '), rules.length && 'House rules section: ' + rules.join(' | '), amenities.length && 'Amenities listed: ' + amenities.join(', '),
-      sleeping.length && 'Sleeping arrangements: ' + sleeping.join(' | '), rt && 'Rating: ' + rt[1] + ' from ' + rt[2] + ' reviews'].filter(Boolean).join('\n');
+      sleeping.length && 'Sleeping arrangements: ' + sleeping.join(' | '), tour.length && 'Photo tour rooms: ' + tour.map(x => x.name + ' (' + x.imgs.length + ' photos)').join(', '), rt && 'Rating: ' + rt[1] + ' from ' + rt[2] + ' reviews'].filter(Boolean).join('\n');
     const text = (facts ? 'FACTS READ FROM THE PAGE DATA:\n' + facts + '\n\n' : '') + htmlToText(html);
-    const out = { title: meta(html, 'og:title'), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, facts, text: text.slice(0, 40000),
+    const out = { sleeping: sleepLines, tourRooms: tour.length, rating: rt ? { avg: +rt[1], count: +rt[2] } : null, title: meta(html, 'og:title'), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, facts, text: text.slice(0, 40000),
       lat: coords ? +coords[1] : null, lng: coords ? +coords[2] : null };
     // A blocked or empty page has almost no text and no title.
     if (!out.title && out.text.length < 1500) return null;
+    out.via = 'page';
     return out;
   } catch (e) { return null; }
 }
@@ -65,7 +85,7 @@ async function readViaReader(url){
     const counts = [...new Set((md.match(/\b\d{1,2}\s(?:bedrooms?|beds?|baths?|bathrooms?|habitaci[oó]n(?:es)?|camas?|ba[ñn]os?|chambres?|lits?|salles? de bains?)\b/gi) || []))].slice(0, 12).join(' · ');
     const title = (md.match(/^Title:\s*(.+)$/m) || [])[1] || '';
     if (!title && text.length < 1500) return null;
-    return { title, description: '', image: pics[0] ? pics[0].url : '', photos: pics.slice(0, 16).map(x => x.url), pics: pics.slice(0, 16), counts, text: text.slice(0, 40000), lat: null, lng: null };
+    return { via: 'reader', sleeping: [], tourRooms: 0, rating: null, title, description: '', image: pics[0] ? pics[0].url : '', photos: pics.slice(0, 16).map(x => x.url), pics: pics.slice(0, 16), counts, text: text.slice(0, 40000), lat: null, lng: null };
   } catch (e) { return null; }
 }
 
@@ -143,7 +163,7 @@ export default async (req) => {
       if (!src || src.text.length < 6000) {
         const alt = await readViaReader(url);
         if (alt && !src) src = alt;
-        else if (alt && src) { src.text = (src.facts ? src.text.split('\n\n')[0] + '\n\n' : '') + alt.text; src.counts = src.counts || alt.counts; if (!src.pics.length) { src.pics = alt.pics; src.photos = alt.photos; src.image = src.image || alt.image; } }
+        else if (alt && src) { src.via = 'page + reader'; src.text = (src.facts ? src.text.split('\n\n')[0] + '\n\n' : '') + alt.text; src.counts = src.counts || alt.counts; if (!src.pics.length) { src.pics = alt.pics; src.photos = alt.photos; src.image = src.image || alt.image; } }
       }
     }
   }
@@ -152,12 +172,19 @@ export default async (req) => {
       ? 'Your link is right, but the listing site did not let us read it. Copy the text of your listing page and paste it below: everything from the title down to the house rules.'
       : 'Paste the text of your listing: everything from the title down to the house rules.' });
   }
-  if (!src) src = { title: '', description: '', text, photos: [], pics: [], counts: '', lat: null, lng: null };
+  if (!src) src = { via: 'text', sleeping: [], tourRooms: 0, rating: null, title: '', description: '', text, photos: [], pics: [], counts: '', lat: null, lng: null };
   else if (text) src.text = text + '\n\n' + src.text;
   src.url = url;
   try {
     const draft = await askClaude(src, town);
-    return json({ ok: true, source: src.title ? 'page' : 'text', site, draft, photos: src.photos || [], photoRooms: (draft && draft.photoRooms) || [], photoCaps: (src.pics || []).map(x => x.caption), cover: src.image || (src.photos || [])[0] || null, lat: src.lat, lng: src.lng });
+    // What the page states exactly is copied as is, not left to the model.
+    if (src.sleeping && src.sleeping.length) draft.sleeping = src.sleeping.join('\n');
+    if (src.rating) { draft.rating = src.rating.avg; draft.reviewCount = src.rating.count; }
+    const photoRooms = (src.pics || []).map((x, i) => x.room || (draft.photoRooms || [])[i] || null);
+    const has = k => draft[k] != null && String(draft[k]).trim() !== '' && !(Array.isArray(draft[k]) && !draft[k].length);
+    const report = { via: src.via, photos: (src.photos || []).length, roomsFromPage: !!src.tourRooms,
+      found: { counts: has('bedrooms') || has('bathrooms') || has('beds'), rules: has('houseRules'), times: has('checkIn') && has('checkOut'), amenities: has('amenities'), sleeping: has('sleeping'), rating: has('rating') } };
+    return json({ ok: true, report, source: src.title ? 'page' : 'text', site, draft, photos: src.photos || [], photoRooms, photoCaps: (src.pics || []).map(x => x.caption), cover: src.image || (src.photos || [])[0] || null, lat: src.lat, lng: src.lng });
   } catch (e) {
     return json({ ok: false, need: 'retry', message: e.message === 'no_key' ? 'The writing assistant is not set up yet. You can still fill in the steps by hand.' : 'Writing your first version took too long. Press the button again.' }, 200);
   }

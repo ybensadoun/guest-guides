@@ -73,6 +73,7 @@ function applyDraft(d){
   if (Array.isArray(D.toConfirm)) A.toConfirm = D.toConfirm.slice(0, 6);
   if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
   if (d.cover) A.coverUrl = d.cover;
+  if (d.report) A._report = d.report;
   if (Array.isArray(d.photos)) {
     A.listingPhotos = d.photos;
     // The listing's own photos become the first photos of the house guide, each with the room we could tell from its caption.
@@ -175,8 +176,23 @@ function loadListingHTML(){
     <input id="ll_town" data-k="town" type="text" autocomplete="off" placeholder="The town or village of your place" value="${esc(v('town'))}" style="margin-bottom:12px">
     ${START.msg ? `<p class="st-msg ${START.need === 'retry' ? '' : 'warn'}" role="status">${esc(START.msg)}</p>` : ''}
     <button class="btn sun" type="button" id="loadListing"${START.busy ? ' disabled' : ''}>${START.busy ? `<span class="spin" aria-hidden="true"></span> <span id="stStep">${esc(STEPS_MSG[START.step])}</span>` : got ? 'Load it again' : 'Load my listing'}</button>
-    ${got && !START.busy ? `<div class="note" style="margin-top:12px"><div><b>Loaded.</b> ${n ? `${n} photos are in “Photos by room”. ` : 'No photos came through: add them in “Photos by room”. '}${[v('bedrooms') && v('bedrooms') + ' bedrooms', v('bathrooms') && v('bathrooms') + ' bathrooms', v('beds') && v('beds') + ' beds'].filter(Boolean).join(', ') || ''} The next steps are filled in: check them one by one.</div></div>` : ''}
+    ${got && !START.busy ? reportHTML() : ''}
   </div>`;
+}
+function reportHTML(){
+  const R = A._report || {}, f = R.found || {}, n = uploads.filter(u => u.remote).length;
+  const VIA = { page: 'We read your listing page.', reader: 'We read your listing page through a page reader, so some details may be missing.', 'page + reader': 'We read your listing page.', text: 'We used the text you pasted: photos cannot come from pasted text.' };
+  const row = (ok, yes, no) => `<li style="margin:3px 0"><b style="color:${ok ? '#1f7a4a' : '#a14b1f'}">${ok ? '✓' : '✕'}</b> ${esc(ok ? yes : no)}</li>`;
+  return `<div class="note" style="margin-top:12px;display:block"><div><b>Loaded.</b> ${esc(VIA[R.via] || '')} Here is what we found and what we did not:
+    <ul style="list-style:none;padding:0;margin:8px 0 0">
+      ${row(n > 0, `${n} photos${R.roomsFromPage ? ', already sorted by room as on your listing' : ''}`, 'Photos: none came through. Add yours in “Photos by room”.')}
+      ${row(!!f.counts, 'Bedrooms, bathrooms and beds', 'Bedrooms, bathrooms and beds: not found. Fill them in “About the place”.')}
+      ${row(!!f.sleeping, 'Sleeping arrangements', 'Sleeping arrangements: not on your listing page. Add them in “About the place”.')}
+      ${row(!!f.times, 'Check-in and check-out times', 'Check-in and check-out times: not found. Add them in “Check-in and rules”.')}
+      ${row(!!f.rules, 'House rules', 'House rules: not found. Add them in “Check-in and rules”.')}
+      ${row(!!f.amenities, 'What the place offers (amenities)', 'Amenities: not found. Add them in “How things work”.')}
+      ${row(!!f.rating, 'Rating and number of reviews', 'Rating: not found (optional).')}
+    </ul>The next steps are filled in with this: check them one by one.</div></div>`;
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#loadListing'); if (!b || START.busy) return; e.preventDefault(); flush(); createDraft(true); });
 
