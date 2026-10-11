@@ -201,6 +201,7 @@ async function renderPreview(){
     <div class="pv-secs" id="pvSecs">${S.map((x, i) => { const pic = preset === 'editorial' && ph(x.id); return `<button type="button" class="pv-sec${(preset === 'bold' || preset === 'soft') && (i === S.length - 1 && S.length % 2 === 1) ? ' wide' : ''}${pic ? ' has-photo' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span>${pic ? `<img class="ph" src="${pic}" alt="">` : ''}</button>`; }).join('')}</div>`;
   const page = sec ? pageHTML(sec) : '';
   document.body.innerHTML = `${pvStyle(p, preset)}
+    <div class="pv-bar" style="background:#fff3d6;color:#5a3a00;font-weight:600">This is a generic preview, not the final look and feel. Get in touch with Yohann to activate the final look.</div>
     <div class="pv-bar">Preview of ${esc(name)} · ${esc(BASE)}/${esc(v('slug'))} · <a href="/#home">Back to my answers</a></div>
     <div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
       <div class="pv-in">${sec ? page : home}</div></div>

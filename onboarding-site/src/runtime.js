@@ -154,6 +154,7 @@ function thanksHTML(){
       <button class="go-next" type="button" id="openPreview"><span>Open my preview</span><span class="ar">${ARROW}</span></button></section>
     <section class="card">
       <div class="msg">Sent ${esc(when)}. Your answers stay on this device, so you can come back, change anything and send again.</div>
+      <div class="note"><div><b>This is a generic preview, not the final look and feel.</b> Get in touch with Yohann to activate the final look.</div></div>
       <div class="note"><div><b>Your preview is ready.</b> It is built from your own answers and photos, on this device, at ${esc(BASE)}/${esc(v('slug'))}. Places, markets and events get researched for the full guide. Use the Feedback button on every screen: that is what helps us most.</div></div>
       <div class="row"><button class="btn primary" type="button" id="openPreview">Open my preview ${ARROW}</button></div>
       <div class="foot"><div class="row"><a class="btn" href="#home">See or change my answers</a></div></div></section>`;

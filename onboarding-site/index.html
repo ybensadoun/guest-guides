@@ -1040,6 +1040,7 @@ async function renderPreview(){
     <div class="pv-secs" id="pvSecs">${S.map((x, i) => { const pic = preset === 'editorial' && ph(x.id); return `<button type="button" class="pv-sec${(preset === 'bold' || preset === 'soft') && (i === S.length - 1 && S.length % 2 === 1) ? ' wide' : ''}${pic ? ' has-photo' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span>${pic ? `<img class="ph" src="${pic}" alt="">` : ''}</button>`; }).join('')}</div>`;
   const page = sec ? pageHTML(sec) : '';
   document.body.innerHTML = `${pvStyle(p, preset)}
+    <div class="pv-bar" style="background:#fff3d6;color:#5a3a00;font-weight:600">This is a generic preview, not the final look and feel. Get in touch with Yohann to activate the final look.</div>
     <div class="pv-bar">Preview of ${esc(name)} · ${esc(BASE)}/${esc(v('slug'))} · <a href="/#home">Back to my answers</a></div>
     <div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
       <div class="pv-in">${sec ? page : home}</div></div>
@@ -1417,7 +1418,7 @@ async function resetAll(){
 /* ---------- Version stamp, tiny, so you can tell which build you are looking at ---------- */
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Version 12 Oct 00:12 after cd6bbcb'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Version 12 Oct 00:16 after 3eeeff6'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" step needs a Google key on our side. If it is not connected, the step is hidden instead of showing a dead page. ---------- */
@@ -1600,6 +1601,7 @@ function thanksHTML(){
       <button class="go-next" type="button" id="openPreview"><span>Open my preview</span><span class="ar">${ARROW}</span></button></section>
     <section class="card">
       <div class="msg">Sent ${esc(when)}. Your answers stay on this device, so you can come back, change anything and send again.</div>
+      <div class="note"><div><b>This is a generic preview, not the final look and feel.</b> Get in touch with Yohann to activate the final look.</div></div>
       <div class="note"><div><b>Your preview is ready.</b> It is built from your own answers and photos, on this device, at ${esc(BASE)}/${esc(v('slug'))}. Places, markets and events get researched for the full guide. Use the Feedback button on every screen: that is what helps us most.</div></div>
       <div class="row"><button class="btn primary" type="button" id="openPreview">Open my preview ${ARROW}</button></div>
       <div class="foot"><div class="row"><a class="btn" href="#home">See or change my answers</a></div></div></section>`;
