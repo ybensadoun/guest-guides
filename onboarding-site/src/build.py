@@ -187,4 +187,9 @@ views=rep(views,"""'Ready to send'}</small></span><span class="go">${ARROW}</spa
     <div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div>`;""")
 forms=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'forms.html')).read()
 html=seg1+'\n'+views+'\n'+runtime+'\n})();\n</script>\n'+forms+'</body>\n</html>\n'
+import subprocess,datetime
+try: _h=subprocess.run(['git','rev-parse','--short','HEAD'],capture_output=True,text=True,cwd=__import__('os').path.dirname(__file__)).stdout.strip()
+except Exception: _h=''
+_stamp=(datetime.datetime.utcnow()+datetime.timedelta(hours=2)).strftime('%d %b %H:%M')+(' after '+_h if _h else '')
+html=html.replace('__BUILD__',_stamp)
 open(__import__('os').path.join(__import__('os').path.dirname(__file__),'index.html'),'w').write(html)

@@ -1407,6 +1407,12 @@ async function resetAll(){
   location.hash = ''; location.reload();
 }
 
+/* ---------- Version stamp, tiny, so you can tell which build you are looking at ---------- */
+(function(){
+  const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Version 12 Oct 00:00 after 171dfa5'; document.body.appendChild(d);
+})();
+
 function summary(m){
   const n = k => uploads.filter(u => u.kind === k && !u.round).length;
   const lines = k => (v(k).match(/\S.*$/gm) || []).length;
