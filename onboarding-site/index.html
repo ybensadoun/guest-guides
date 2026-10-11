@@ -580,7 +580,7 @@ const Q = {
   arrival:{t:'area',rows:5,label:'Finding the place and parking',full:true,ph:'From the roundabout take the dirt road, park under the pine tree…'},
   rubbishMode:{t:'radio',label:'How is rubbish collected where you are?',opt:true,opts:['Shared containers in the street','Bins collected at the house','A mix of both']},
   rubbishWhere:{t:'area',rows:2,label:'Where are the containers?',opt:true,full:true,ph:'At the end of the lane, 100 m to the left of the gate. Glass is by the church.',show:()=>/container|mix/i.test(v('rubbishMode'))},
-  rubbishPlan:{t:'plan',label:'Which bin goes out, and which days is it emptied?',opt:true,full:true,hint:'Tick the days each bin is collected. Leave a row empty if it is not collected.',show:()=>/house|mix/i.test(v('rubbishMode'))},
+  rubbishPlan:{t:'plan',label:'Which bin is collected, and on which days?',opt:true,full:true,hint:'Tick the day the bin is collected, not the day it goes out. Guests are told to take it out the night before. Leave a row empty if it is not collected.',show:()=>/house|mix/i.test(v('rubbishMode'))},
   rubbishTime:{t:'time',label:'Bins must be out by',opt:true,show:()=>/house|mix/i.test(v('rubbishMode'))},
   rubbishNotes:{t:'area',rows:3,label:'Anything guests must know',opt:true,full:true,ph:'Organic goes in the small brown bin under the sink. Bring cardboard flat…'},
   hostPhone:{t:'tel',label:'Your phone for guests',ph:'With the country code'},
@@ -1410,7 +1410,7 @@ async function resetAll(){
 /* ---------- Version stamp, tiny, so you can tell which build you are looking at ---------- */
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Version 12 Oct 00:00 after 171dfa5'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Version 12 Oct 00:09 after 69085b3'; document.body.appendChild(d);
 })();
 
 function summary(m){

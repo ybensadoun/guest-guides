@@ -22,3 +22,4 @@ onboarding-site/src/index.html
 onboarding-site/src/ob-test.html
 .regen-torre.sh
 onboarding-site/src/ob-test*
+onboarding-site/.ob-test*
