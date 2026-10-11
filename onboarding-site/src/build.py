@@ -183,8 +183,8 @@ views=rep(views,"  if (k === 'privacyNote')","  if (k === 'reviewsNote') return 
 # ---- v5: photos show their image, room names match the tiles, start over ----
 views=rep(views,"${/^image\\//.test(u.type) || u.dataUrl ?","${/^image\\//.test(u.type) || u.dataUrl || u.remote ?")
 views=rep(views,"${ROOMS.map(r => `<option${u.room===r?' selected':''}>${r}</option>`).join('')}","${roomChoices(u).map(r => `<option${(u.roomLabel||u.room)===r?' selected':''}>${esc(r)}</option>`).join('')}")
-views=rep(views,"Send to build my guide</button></div></div>",'''Send to build my guide</button></div></div>
-      <div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div>''')
+views=rep(views,"""'Ready to send'}</small></span><span class="go">${ARROW}</span></a></div>`;""","""'Ready to send'}</small></span><span class="go">${ARROW}</span></a></div>
+    <div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div>`;""")
 forms=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'forms.html')).read()
 html=seg1+'\n'+views+'\n'+runtime+'\n})();\n</script>\n'+forms+'</body>\n</html>\n'
 open(__import__('os').path.join(__import__('os').path.dirname(__file__),'index.html'),'w').write(html)
