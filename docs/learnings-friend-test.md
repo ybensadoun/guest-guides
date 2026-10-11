@@ -29,3 +29,11 @@ See docs/runbook-friend-test.md. Add: read the brief, write the designed theme, 
 - Rubbish and markets switch on by themselves when the host answered (rubbish) or researched content exists (markets).
 - `--research <folder>` copies researched files (emergency.json, markets.json, todo.json) into the guide. The research itself (markets, emergency numbers, things to do) is still done by hand or by an agent with web access.
 - Test: regenerating the Querol CSV now gives the same sections, palette, fonts and theme as the hand-built guide.
+
+## Design: be bold (host feedback, 12 Oct)
+The first guides were boring: safe fonts, flat pale backgrounds, the same layout. Rule: follow the host's brief as far as it goes, and where the brief is silent, take a position instead of staying neutral.
+- Fonts: pick a distinctive pairing that fits the feel words (an expressive serif or display face for headlines, a clean sans for reading). Do not default to the same pair twice in a row. Install the font if the brief names one.
+- Backgrounds: use colour, tint or the cover photo, not flat pale grey or white. Try a deep colour hero, a coloured band between sections, large photo sections, or a dark theme when the feel words say so (cosy, luxurious, playful).
+- Layout: vary scale and rhythm: oversized headline, asymmetric photo, one full-colour section. One signature move per guide.
+- Limits that stay: strong contrast and readable text, the host's avoid list, accent colour kept for the main actions, and every page checked at 390 px.
+- The generator template (engine/templates/designed-theme.css) is a safe starting point, not the finish: the design pass should push it further for each guide.
