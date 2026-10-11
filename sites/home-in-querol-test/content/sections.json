@@ -1,0 +1,27 @@
+{
+ "_doc": "Generated from onboarding. Order = Home order within each group.",
+ "sections": [
+  {
+   "id": "message",
+   "group": "house",
+   "kind": "info",
+   "labelKey": "houseGuide",
+   "status": "live"
+  },
+  {
+   "id": "emergency",
+   "group": "house",
+   "kind": "contacts",
+   "labelKey": "emergency",
+   "status": "soon"
+  },
+  {
+   "id": "todo",
+   "group": "area",
+   "kind": "spots",
+   "labelKey": "whatToDo",
+   "status": "soon",
+   "color": "todo"
+  }
+ ]
+}

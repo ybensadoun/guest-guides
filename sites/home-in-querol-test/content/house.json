@@ -1,0 +1,10 @@
+{
+ "_doc": "lat/lng: an approximate area point, never the address.",
+ "name": "Home in Querol · ★5.0 · 4 bedrooms · 6 beds · 2 baths",
+ "lat": 41.399,
+ "lng": 1.4479,
+ "photo": "house.jpg",
+ "photoPos": "50% 55%",
+ "checkout": "11:00",
+ "listing": "https://www.airbnb.com/rooms/1739244593055809135"
+}

@@ -1,0 +1,173 @@
+{
+ "_doc": "House guide by room, from the host’s onboarding answers.",
+ "blocks": [
+  {
+   "id": "wifi",
+   "icon": "wifi",
+   "tone": "green",
+   "title": {
+    "en": "Wi-Fi",
+    "fr": "Wi-Fi"
+   },
+   "items": [
+    {
+     "en": "Tap Wi-Fi on the home page for the network, the password and a QR code.",
+     "fr": "Touchez Wi-Fi sur la page d'accueil pour le réseau, le mot de passe et un QR code."
+    }
+   ]
+  },
+  {
+   "id": "living",
+   "icon": "sofa",
+   "tone": "blue",
+   "title": {
+    "en": "Living room",
+    "fr": "Salon"
+   },
+   "photos": [
+    "guide/living-1.jpg",
+    "guide/living-2.jpg",
+    "guide/living-3.jpg",
+    "guide/living-4.jpg"
+   ]
+  },
+  {
+   "id": "kitchen",
+   "icon": "kitchen",
+   "tone": "green",
+   "title": {
+    "en": "Kitchen",
+    "fr": "Cuisine"
+   },
+   "photos": [
+    "guide/kitchen-1.jpg"
+   ]
+  },
+  {
+   "id": "bedrooms",
+   "icon": "bed",
+   "tone": "red",
+   "title": {
+    "en": "Bedrooms",
+    "fr": "Chambres"
+   },
+   "photos": [
+    "guide/bedrooms-1.jpg",
+    "guide/bedrooms-2.jpg",
+    "guide/bedrooms-3.jpg",
+    "guide/bedrooms-4.jpg",
+    "guide/bedrooms-5.jpg"
+   ],
+   "items": [
+    {
+     "en": "Bedroom 1: 1 double bed",
+     "fr": "Chambre 1 : 1 lit double"
+    },
+    {
+     "en": "Bedroom 2: 1 double bed",
+     "fr": "Chambre 2 : 1 lit double"
+    },
+    {
+     "en": "Bedroom 3: 1 double bed",
+     "fr": "Chambre 3 : 1 lit double"
+    },
+    {
+     "en": "Bedroom 4: 2 single beds",
+     "fr": "Chambre 4 : 2 lits simples"
+    }
+   ]
+  },
+  {
+   "id": "bathrooms",
+   "icon": "drop",
+   "tone": "yellow",
+   "title": {
+    "en": "Bathrooms",
+    "fr": "Salles de bain"
+   },
+   "photos": [
+    "guide/bathrooms-1.jpg",
+    "guide/bathrooms-2.jpg"
+   ]
+  },
+  {
+   "id": "outside",
+   "icon": "flame",
+   "tone": "orange",
+   "title": {
+    "en": "Outside",
+    "fr": "Extérieur"
+   },
+   "photos": [
+    "guide/outside-1.jpg",
+    "guide/outside-2.jpg"
+   ]
+  },
+  {
+   "id": "laundry",
+   "icon": "washer",
+   "tone": "green",
+   "title": {
+    "en": "Laundry",
+    "fr": "Buanderie"
+   },
+   "photos": [
+    "guide/laundry-1.jpg"
+   ]
+  },
+  {
+   "id": "other",
+   "icon": "box",
+   "tone": "ink",
+   "title": {
+    "en": "Good to know",
+    "fr": "Bon à savoir"
+   },
+   "photos": [
+    "guide/other-1.jpg"
+   ]
+  },
+  {
+   "id": "rules",
+   "icon": "home",
+   "tone": "ink",
+   "title": {
+    "en": "House rules",
+    "fr": "Règlement intérieur"
+   },
+   "items": [
+    {
+     "en": "9 guests maximum",
+     "fr": "9 personnes maximum"
+    },
+    {
+     "en": "No parties or events",
+     "fr": "Pas de fêtes ni d'événements"
+    },
+    {
+     "en": "Commercial photography allowed",
+     "fr": "Photographie commerciale autorisée"
+    }
+   ]
+  },
+  {
+   "id": "checkout",
+   "icon": "key",
+   "tone": "ink",
+   "title": {
+    "en": "Check-in and check-out",
+    "fr": "Arrivée et départ"
+   },
+   "items": [
+    {
+     "en": "Check-in from 15:00.",
+     "fr": "Arrivée à partir de 15 h 00."
+    },
+    {
+     "en": "Check-out by 11:00.",
+     "fr": "Départ avant 11 h 00."
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,95 @@
+{
+ "_doc": "Generated from what the host said about rubbish. Not researched. Bin colours for door-to-door collection are a default: confirm with the host.",
+ "collectionTime": "",
+ "bins": {},
+ "fractions": [
+  {
+   "id": "organic",
+   "bin": "street",
+   "days": [],
+   "name": {
+    "en": "Organic",
+    "fr": "Organique"
+   },
+   "examples": {
+    "en": "Food and garden scraps, if the village has a brown bin. If you do not see one, it goes in the general waste bin.",
+    "fr": "Restes alimentaires et de jardin, si le village a un bac marron. Sinon, direction le bac des ordures générales."
+   }
+  },
+  {
+   "id": "packaging",
+   "bin": "street",
+   "days": [],
+   "name": {
+    "en": "Packaging (yellow)",
+    "fr": "Emballages (jaune)"
+   },
+   "examples": {
+    "en": "Plastic bottles, cans, trays and cartons, plastic bags.",
+    "fr": "Bouteilles en plastique, boîtes de conserve, barquettes et briques, sacs plastiques."
+   }
+  },
+  {
+   "id": "paper",
+   "bin": "street",
+   "days": [],
+   "name": {
+    "en": "Paper and cardboard (blue)",
+    "fr": "Papier et carton (bleu)"
+   },
+   "examples": {
+    "en": "Flattened boxes, newspapers, magazines, paper bags.",
+    "fr": "Cartons aplatis, journaux, magazines, sacs en papier."
+   }
+  },
+  {
+   "id": "glass",
+   "bin": "street",
+   "days": [],
+   "name": {
+    "en": "Glass (green)",
+    "fr": "Verre (vert)"
+   },
+   "examples": {
+    "en": "Bottles and jars without lids. No window glass, mirrors or ceramics.",
+    "fr": "Bouteilles et bocaux sans bouchon. Ni vitres, ni miroirs, ni céramique."
+   }
+  },
+  {
+   "id": "rest",
+   "bin": "street",
+   "days": [],
+   "name": {
+    "en": "General waste",
+    "fr": "Ordures générales"
+   },
+   "examples": {
+    "en": "Everything that fits nowhere else: nappies, cold cigarette ends, broken ceramics, sweepings.",
+    "fr": "Tout ce qui n'entre dans aucune autre catégorie: couches, mégots éteints, céramique cassée, balayures."
+   }
+  }
+ ],
+ "steps": [
+  {
+   "en": "Sort at home: packaging, paper and cardboard, glass and general waste.",
+   "fr": "Triez à la maison: emballages, papier et carton, verre et ordures générales."
+  },
+  {
+   "en": "Take closed bags to the nearest group of containers in the village; do not leave them in the countryside or by the house.",
+   "fr": "Portez les sacs fermés au groupe de conteneurs le plus proche dans le village; ne les laissez ni dans la campagne ni près de la maison."
+  },
+  {
+   "en": "Flatten boxes and plastic bottles so they fit, and take the lids off glass jars.",
+   "fr": "Aplatissez cartons et bouteilles en plastique pour qu'ils tiennent, et retirez les couvercles des bocaux en verre."
+  },
+  {
+   "en": "Check the label on each container: colours can vary from one village to another.",
+   "fr": "Regardez l'étiquette de chaque conteneur: les couleurs peuvent varier d'un village à l'autre."
+  }
+ ],
+ "missed": {
+  "en": "There is no collection day to miss: the street containers are emptied by the municipal or comarca service on its own schedule. If one is full, use the next group of containers in the village and do not leave bags on the ground.",
+  "fr": "Il n'y a pas de jour de collecte à manquer: les conteneurs de rue sont vidés par le service municipal ou de la comarca selon son propre calendrier. S'il est plein, utilisez le groupe de conteneurs suivant dans le village et ne laissez pas de sacs par terre."
+ },
+ "items": []
+}

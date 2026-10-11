@@ -1,0 +1,8 @@
+/* Home in Querol · ★5.0 · 4 bedrooms · 6 beds · 2 baths: generated from the host's inspiration images (preset "soft").
+   Edit freely: these tokens sit on top of the engine look and the preset. */
+:root{
+  --paper:#F7F5F0;--ink:#1E1E1E;
+  --blue:#2F5D8A;--red:#C2502E;--yellow:#E2A93B;--orange:#3E7D4F;--green:#3E7D4F;
+  --accent:#2F5D8A;--k-sky:var(--blue);
+  --display:"Fraunces",Georgia,serif;--font:"DM Sans",system-ui,sans-serif;--r:18px;--r-s:10px;--r-m:10px;
+}

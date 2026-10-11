@@ -1,0 +1,9 @@
+# Netlify: set "Base directory" to sites/home-in-querol-test.
+[build]
+  command = "cd ../.. && npm ci && npm run build -- home-in-querol-test"
+  publish = "dist"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"

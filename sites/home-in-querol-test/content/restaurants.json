@@ -1,0 +1,51 @@
+{
+ "_doc": "The host's own list, written by generate-site.py. No researched places are added here.",
+ "items": [
+  {
+   "id": "mcdonalds",
+   "name": {
+    "en": "mcdonalds",
+    "fr": "mcdonalds"
+   },
+   "type": {
+    "en": "Host's pick",
+    "fr": "Le choix de l'hôte"
+   },
+   "town": "Querol",
+   "place": "",
+   "lat": 41.399,
+   "lng": 1.4479,
+   "km_from_house": 0,
+   "description": {},
+   "tags": [],
+   "flags": [
+    "check"
+   ],
+   "hostPick": true,
+   "gmaps": "https://www.google.com/maps/search/?api=1&query=mcdonalds+Querol"
+  },
+  {
+   "id": "kfc",
+   "name": {
+    "en": "kfc",
+    "fr": "kfc"
+   },
+   "type": {
+    "en": "Host's pick",
+    "fr": "Le choix de l'hôte"
+   },
+   "town": "Querol",
+   "place": "",
+   "lat": 41.399,
+   "lng": 1.4479,
+   "km_from_house": 0,
+   "description": {},
+   "tags": [],
+   "flags": [
+    "check"
+   ],
+   "hostPick": true,
+   "gmaps": "https://www.google.com/maps/search/?api=1&query=kfc+Querol"
+  }
+ ]
+}
