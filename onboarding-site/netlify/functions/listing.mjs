@@ -43,6 +43,22 @@ async function readPage(url){
   } catch (e) { return null; }
 }
 
+// Airbnb often refuses servers. A public page reader (r.jina.ai) opens the page like a browser and hands back text with the photo links.
+async function readViaReader(url){
+  try {
+    const r = await fetch('https://r.jina.ai/' + url, { signal: AbortSignal.timeout(14000), headers: { accept: 'text/plain', 'x-return-format': 'markdown' } });
+    if (!r.ok) return null;
+    const md = await r.text();
+    const seen = new Set(), pics = [];
+    for (const m of md.matchAll(/https:\/\/a0\.muscache\.com\/im\/pictures\/(?!airbnb-platform|AirbnbPlatform|user)[^)\s"'?]+\.(?:jpe?g|webp)/gi)) { if (!seen.has(m[0]) && !/\/(profile|Hosting-\d+\/original\/[^/]*profile)/i.test(m[0])) { seen.add(m[0]); pics.push({ url: m[0], caption: '' }); } }
+    const text = md.replace(/!\[[^\]]*\]\([^)]*\)/g, ' ').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\n\s*\n+/g, '\n').trim();
+    const counts = [...new Set((md.match(/\b\d{1,2}\s(?:bedrooms?|beds?|baths?|bathrooms?|habitaci[oó]n(?:es)?|camas?|ba[ñn]os?|chambres?|lits?|salles? de bains?)\b/gi) || []))].slice(0, 12).join(' · ');
+    const title = (md.match(/^Title:\s*(.+)$/m) || [])[1] || '';
+    if (!title && text.length < 1500) return null;
+    return { title, description: '', image: pics[0] ? pics[0].url : '', photos: pics.slice(0, 16).map(x => x.url), pics: pics.slice(0, 16), counts, text: text.slice(0, 40000), lat: null, lng: null };
+  } catch (e) { return null; }
+}
+
 const SYSTEM = `You turn a holiday-rental listing into the first version of a guest guide, for the host to review.
 Write in the language of the listing. Be accurate: only state what the listing says or what is obviously true for this kind of place.
 When something is likely but not stated, phrase it as something for the host to confirm, ending with " (please confirm)".
@@ -110,7 +126,7 @@ export default async (req) => {
   if (url) {
     site = (LINK_RX.find(x => x.rx.test(url)) || {}).site;
     if (!site && !text) return json({ ok: false, need: 'link', message: 'That does not look like a listing page. Open your listing on Airbnb (or Booking, Vrbo) and copy the address from the browser: it looks like airbnb.com/rooms/12345678.' });
-    if (site) src = await readPage(url);
+    if (site) src = (await readPage(url)) || (await readViaReader(url));
   }
   if (!src && text.length < 200) {
     return json({ ok: false, need: 'text', site, message: url && site

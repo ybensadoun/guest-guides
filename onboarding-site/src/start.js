@@ -35,7 +35,7 @@ function startHTML(){
       <button class="st-skip" type="button" id="skipStart">Or fill it in step by step</button>
     </form></section>`;
 }
-async function createDraft(){
+async function createDraft(fromStep){
   const url = v('listingUrl').trim(), text = v('listingText').trim(), town = v('town').trim();
   const lp = linkProblem(url);
   if (lp) { START.msg = lp; START.need = 'link'; render(); return; }
@@ -46,8 +46,8 @@ async function createDraft(){
     const r = await fetch('/api/listing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url, text, town }) });
     const d = await r.json();
     if (!d.ok) { START.need = d.need || 'text'; START.msg = d.message; log('draft_fail', d.need || 'error'); return; }
-    applyDraft(d); log('draft_ok', d.source); START.need = ''; START.msg = '';
-    location.hash = '#home'; toast('Your first version is ready');
+    applyDraft(d); log('draft_ok', d.source); classifyPhotos(); START.need = ''; START.msg = '';
+    location.hash = fromStep ? '#place' : '#home'; toast('Your first version is ready');
   } catch (e) { START.need = 'retry'; START.msg = 'We could not reach the assistant. Check your connection and press the button again.'; }
   finally { clearInterval(tick); START.busy = false; queueSave(); render(); }
 }
@@ -164,3 +164,29 @@ document.addEventListener('change', e => {
   cur[t.dataset.bin] = DAYS7.map(d => d[0]).filter(d => s.has(d)); set(k, cur); softRefresh();
 });
 document.addEventListener('change', e => { const t = e.target; if (t.dataset && t.dataset.radio === 'rubbishMode') { const y = scrollY; render(); scrollTo(0, y); } });
+
+/* ---------- Step 1: load the listing ---------- */
+function loadListingHTML(){
+  const n = uploads.filter(u => u.remote).length, got = !!A._draftAt;
+  return `<div class="full ll">
+    ${v('town') || START.need === 'text' ? '' : ''}
+    <label for="ll_town" class="lab">Town <span class="opt">only if we cannot find it in your listing</span></label>
+    <input id="ll_town" data-k="town" type="text" autocomplete="off" placeholder="The town or village of your place" value="${esc(v('town'))}" style="margin-bottom:12px">
+    ${START.msg ? `<p class="st-msg ${START.need === 'retry' ? '' : 'warn'}" role="status">${esc(START.msg)}</p>` : ''}
+    <button class="btn sun" type="button" id="loadListing"${START.busy ? ' disabled' : ''}>${START.busy ? `<span class="spin" aria-hidden="true"></span> <span id="stStep">${esc(STEPS_MSG[START.step])}</span>` : got ? 'Load it again' : 'Load my listing'}</button>
+    ${got && !START.busy ? `<div class="note" style="margin-top:12px"><div><b>Loaded.</b> ${n ? `${n} photos are in “Photos by room”. ` : 'No photos came through: add them in “Photos by room”. '}${[v('bedrooms') && v('bedrooms') + ' bedrooms', v('bathrooms') && v('bathrooms') + ' bathrooms', v('beds') && v('beds') + ' beds'].filter(Boolean).join(', ') || ''} The next steps are filled in: check them one by one.</div></div>` : ''}
+  </div>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#loadListing'); if (!b || START.busy) return; e.preventDefault(); flush(); createDraft(true); });
+
+// Claude looks at the photos and proposes a room for each one that has none yet. The host confirms.
+async function classifyPhotos(){
+  const todo = uploads.filter(u => u.remote && !u.room);
+  if (!todo.length) return;
+  try {
+    const r = await fetch('/api/photorooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ photos: todo.map(u => u.src) }) });
+    const d = await r.json(); if (!d.ok) return;
+    todo.forEach((u, i) => { if (d.rooms[i] && !u.room) { u.room = d.rooms[i]; saveUpload(u); } });
+    queueSave(); render();
+  } catch (e) { /* the host can tag the rooms by hand */ }
+}

@@ -146,6 +146,25 @@ views=rep(views,"    ${GROUPS.map(([g, gt]) => { const ms = mods.filter(m => m.g
 views=rep(views,"    case 'taste':","    case 'nearby': { const y = Object.values(A.swipes || {}).filter(x => x.d === 'yes').length; return y ? `${y} places recommended` : 'Not started'; }\n    case 'taste':")
 views=rep(views,"${done === mods.length ? 'Everything is done. Check it once more, then send it.' : `Do the steps in any order. Each one is “Done” once its needed answers are in and you press Done. You can come back any time: everything saves as you type.`}","${A._draftAt ? 'Everything here is optional apart from your listing. Review what we wrote, add what is missing, send when you like.' : 'Go in any order. Only your listing and town are needed; the rest makes your guide better. Everything saves as you type.'}")
 views=rep(views,"<span>${last ? 'Continue' : done || chk ? 'Next' : 'Start'}: ${esc(go.title)}</span>","<span>${statusOf(go).k === 'pre' ? 'Review' : last ? 'Continue' : done || chk ? 'Next' : 'Start'}: ${esc(go.title)}</span>")
+# ---- v3: loading the listing is its own first step; the place details come right after ----
+seg1=rep(seg1,"{id:'listing',group:'basics',title:'Your listing',sub:'Link, name, town',icon:'link',tc:'var(--pine)',sh:'var(--sun)',shape:'circle',",
+ "{id:'listing',group:'basics',title:'Load your listing',sub:'We read it for you',icon:'link',tc:'var(--pine)',sh:'var(--sun)',shape:'circle',")
+seg1=rep(seg1,"lead:'Your listing is where everything starts. With the link (or its text) and the town, we write the rest.',",
+ "lead:'Paste your listing link and press the button. We read the listing: the photos, the rooms, the rules and the times. The next steps arrive already filled in, and you only check them.',")
+seg1=rep(seg1,"need:['source','town'],fields:['listingUrl','listingText','fillBtn','placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','hostName','privacyNote']},",
+ "need:['source'],fields:['listingUrl','listingText','loadListing']},\n  {id:'place',group:'basics',title:'About the place',sub:'Name, town, size',icon:'tag',tc:'var(--pine)',ti:'#fff',sh:'var(--sky)',shape:'half',\n   lead:'What we found in your listing. Fix anything that is off.',\n   need:['placeName','town'],fields:['placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','hostName','privacyNote']},")
+seg1=rep(seg1,"  town:{label:'Town or village',ph:'Where the place is'},","  town:{label:'Town or village',ph:'Where the place is'},\n  source:{label:'Your listing link or text'},")
+views=rep(views,"  if (k === 'privacyNote')","""  if (k === 'loadListing') return loadListingHTML();
+  if (k === 'listingText' && !(START.need === 'text' || v('listingText'))) return '';
+  if (k === 'privacyNote')""")
+views=rep(views,"    case 'listing': return","    case 'place': return")
+views=views.replace("    case 'place': return [v('placeName')","    case 'listing': return A._draftAt ? `Loaded: ${uploads.filter(u => u.remote).length} photos, details filled in` : 'Not loaded yet';\n    case 'place': return [v('placeName')",1)
+
+# sections come right after the place: what you keep here decides which questions follow
+_i=seg1.index("  {id:'sections',"); _j=seg1.index("  {id:'photos',")
+_blk=seg1[_i:_j]; seg1=seg1[:_i]+seg1[_j:]
+_blk=_blk.replace("lead:'Each section you keep adds its own short set of questions to this page. Ticked ones fit your answers so far.'","lead:'Choose what goes into your guide. Each section you keep adds its questions to the steps that follow, and each one you remove takes them away. Ticked ones already fit your listing.'")
+_k=seg1.index("  {id:'guide',"); seg1=seg1[:_k]+_blk+seg1[_k:]
 forms=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'forms.html')).read()
 html=seg1+'\n'+views+'\n'+runtime+'\n})();\n</script>\n'+forms+'</body>\n</html>\n'
 open(__import__('os').path.join(__import__('os').path.dirname(__file__),'index.html'),'w').write(html)

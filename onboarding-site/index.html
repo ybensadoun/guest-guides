@@ -493,18 +493,21 @@ const secOn = id => { const m = A.modules || {}; const s = SECTIONS.find(x => x.
    sec: shown only while that guide section is switched on.
    need: what must be filled for "Done" (answer keys, or "upload:<kind>"). */
 const MODULES = [
-  {id:'listing',group:'basics',title:'Your listing',sub:'Link, name, town',icon:'link',tc:'var(--pine)',sh:'var(--sun)',shape:'circle',
-   lead:'Your listing is where everything starts. With the link (or its text) and the town, we write the rest.',
-   need:['source','town'],fields:['listingUrl','listingText','fillBtn','placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','hostName','privacyNote']},
+  {id:'listing',group:'basics',title:'Load your listing',sub:'We read it for you',icon:'link',tc:'var(--pine)',sh:'var(--sun)',shape:'circle',
+   lead:'Paste your listing link and press the button. We read the listing: the photos, the rooms, the rules and the times. The next steps arrive already filled in, and you only check them.',
+   need:['source'],fields:['listingUrl','listingText','loadListing']},
+  {id:'place',group:'basics',title:'About the place',sub:'Name, town, size',icon:'tag',tc:'var(--pine)',ti:'#fff',sh:'var(--sky)',shape:'half',
+   lead:'What we found in your listing. Fix anything that is off.',
+   need:['placeName','town'],fields:['placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','hostName','privacyNote']},
+  {id:'sections',group:'basics',title:'Guide sections',sub:'Pick what goes in',icon:'grid',tc:'var(--ink)',ti:'#fff',sh:'var(--sky)',shape:'square',
+   lead:'Choose what goes into your guide. Each section you keep adds its questions to the steps that follow, and each one you remove takes them away. Ticked ones already fit your listing.',
+   need:[],fields:['sectionPicker','moduleIdeas']},
   {id:'guide',group:'basics',title:'Name, address, languages',sub:'What guests see',icon:'tag',tc:'var(--sun)',ti:'#1b1407',sh:'var(--tomato)',shape:'half',
    lead:'Most hosts use the house name. It becomes the title of the guide and the app name on guests’ phones.',
    need:[],fields:['guideName','slug','tagline','languages','guests','up:logo']},
   {id:'look',group:'basics',title:'The look',sub:'Images and mood',icon:'eye',tc:'var(--tomato)',sh:'var(--ink)',shape:'tri',
    lead:'Your guide should look and work the way you like, not like ours. Show us images and apps you love and tell us how guests should find things.',
    need:['styleBrief'],fields:['styleBrief','up:inspiration','refLinks','feelWords','navStyle','homeFirst','up:cover','lookAvoid']},
-  {id:'sections',group:'basics',title:'Guide sections',sub:'Pick what goes in',icon:'grid',tc:'var(--ink)',ti:'#fff',sh:'var(--sky)',shape:'square',
-   lead:'Each section you keep adds its own short set of questions to this page. Ticked ones fit your answers so far.',
-   need:[],fields:['sectionPicker','moduleIdeas']},
   {id:'photos',group:'house',title:'Photos by room',sub:'Up to 16',icon:'cam',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'quarter',
    lead:'Tag each photo with its room: it lands in the right part of the house guide. Photos from your listing are already here: check the room on each one, remove any you do not want and add your own.',need:[],fields:['up:photo']},
   {id:'howto',group:'house',title:'How things work',sub:'Boiler, pool, TV…',icon:'tool',tc:'var(--clay)',ti:'#fff',sh:'var(--ink)',shape:'bar',sec:'houseguide',
@@ -537,6 +540,7 @@ const Q = {
   placeName:{label:'Name of the place',ph:'Villa Mar, Apartment 3B…'},
   propertyType:{t:'select',label:'Type of place',opts:['House','Villa','Apartment','Cottage','Farmhouse','Room','Other']},
   town:{label:'Town or village',ph:'Where the place is'},
+  source:{label:'Your listing link or text'},
   region:{label:'Region and country',ph:'Region, country',opt:true},
   sleeps:{t:'number',label:'Sleeps',ph:'6',opt:true},
   bedrooms:{t:'number',label:'Bedrooms',ph:'3',opt:true},
@@ -619,6 +623,8 @@ function field(k){
   if (k === 'slug') { const pr = slugProblem(v('slug')); return `<div class="f full"><label for="f_slug">${esc(Q.slug.label)} ${badge('slug')}</label><p class="hint">${esc(Q.slug.hint)}</p><div class="slugbox"><span>${esc(BASE)}/</span><input id="f_slug" data-k="slug" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(v('slug'))}" placeholder="villa-mar" maxlength="40"></div><p id="slugMsg" class="hint${pr ? ' err' : ' okc'}">${esc(pr || `Your guests will open ${BASE}/${v('slug')}`)}</p></div>`; }
   if (k === 'fillBtn') return `<div class="full" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn sun" type="button" id="fillListing">Fill in from my listing</button><span class="hint">Fills the steps it can and marks them “Review”. Nothing you typed is replaced.</span></div>`;
   if (k === 'swipe') return swipeHTML();
+  if (k === 'loadListing') return loadListingHTML();
+  if (k === 'listingText' && !(START.need === 'text' || v('listingText'))) return '';
   if (k === 'privacyNote') return `<div class="note full"><span aria-hidden="true">⌂</span><div>We never show your street address. The map uses a point near the house.</div></div>`;
   if (k === 'wifiNote') return `<div class="note full"><div>Guests see the password in the guide, so use your guest network if you have one.</div></div>`;
   if (k === 'sectionPicker') return sectionPicker();
@@ -1114,7 +1120,7 @@ function startHTML(){
       <button class="st-skip" type="button" id="skipStart">Or fill it in step by step</button>
     </form></section>`;
 }
-async function createDraft(){
+async function createDraft(fromStep){
   const url = v('listingUrl').trim(), text = v('listingText').trim(), town = v('town').trim();
   const lp = linkProblem(url);
   if (lp) { START.msg = lp; START.need = 'link'; render(); return; }
@@ -1125,8 +1131,8 @@ async function createDraft(){
     const r = await fetch('/api/listing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url, text, town }) });
     const d = await r.json();
     if (!d.ok) { START.need = d.need || 'text'; START.msg = d.message; log('draft_fail', d.need || 'error'); return; }
-    applyDraft(d); log('draft_ok', d.source); START.need = ''; START.msg = '';
-    location.hash = '#home'; toast('Your first version is ready');
+    applyDraft(d); log('draft_ok', d.source); classifyPhotos(); START.need = ''; START.msg = '';
+    location.hash = fromStep ? '#place' : '#home'; toast('Your first version is ready');
   } catch (e) { START.need = 'retry'; START.msg = 'We could not reach the assistant. Check your connection and press the button again.'; }
   finally { clearInterval(tick); START.busy = false; queueSave(); render(); }
 }
@@ -1244,11 +1250,38 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('change', e => { const t = e.target; if (t.dataset && t.dataset.radio === 'rubbishMode') { const y = scrollY; render(); scrollTo(0, y); } });
 
+/* ---------- Step 1: load the listing ---------- */
+function loadListingHTML(){
+  const n = uploads.filter(u => u.remote).length, got = !!A._draftAt;
+  return `<div class="full ll">
+    ${v('town') || START.need === 'text' ? '' : ''}
+    <label for="ll_town" class="lab">Town <span class="opt">only if we cannot find it in your listing</span></label>
+    <input id="ll_town" data-k="town" type="text" autocomplete="off" placeholder="The town or village of your place" value="${esc(v('town'))}" style="margin-bottom:12px">
+    ${START.msg ? `<p class="st-msg ${START.need === 'retry' ? '' : 'warn'}" role="status">${esc(START.msg)}</p>` : ''}
+    <button class="btn sun" type="button" id="loadListing"${START.busy ? ' disabled' : ''}>${START.busy ? `<span class="spin" aria-hidden="true"></span> <span id="stStep">${esc(STEPS_MSG[START.step])}</span>` : got ? 'Load it again' : 'Load my listing'}</button>
+    ${got && !START.busy ? `<div class="note" style="margin-top:12px"><div><b>Loaded.</b> ${n ? `${n} photos are in “Photos by room”. ` : 'No photos came through: add them in “Photos by room”. '}${[v('bedrooms') && v('bedrooms') + ' bedrooms', v('bathrooms') && v('bathrooms') + ' bathrooms', v('beds') && v('beds') + ' beds'].filter(Boolean).join(', ') || ''} The next steps are filled in: check them one by one.</div></div>` : ''}
+  </div>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#loadListing'); if (!b || START.busy) return; e.preventDefault(); flush(); createDraft(true); });
+
+// Claude looks at the photos and proposes a room for each one that has none yet. The host confirms.
+async function classifyPhotos(){
+  const todo = uploads.filter(u => u.remote && !u.room);
+  if (!todo.length) return;
+  try {
+    const r = await fetch('/api/photorooms', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ photos: todo.map(u => u.src) }) });
+    const d = await r.json(); if (!d.ok) return;
+    todo.forEach((u, i) => { if (d.rooms[i] && !u.room) { u.room = d.rooms[i]; saveUpload(u); } });
+    queueSave(); render();
+  } catch (e) { /* the host can tag the rooms by hand */ }
+}
+
 function summary(m){
   const n = k => uploads.filter(u => u.kind === k && !u.round).length;
   const lines = k => (v(k).match(/\S.*$/gm) || []).length;
   switch (m.id) {
-    case 'listing': return [v('placeName'), v('propertyType'), [v('town'), v('region')].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'Not filled';
+    case 'listing': return A._draftAt ? `Loaded: ${uploads.filter(u => u.remote).length} photos, details filled in` : 'Not loaded yet';
+    case 'place': return [v('placeName'), v('propertyType'), [v('town'), v('region')].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'Not filled';
     case 'guide': return [v('guideName') || v('placeName'), v('slug') ? BASE + '/' + v('slug') : '', (A.languages || []).map(l => l.toUpperCase()).join(' '), n('logo') ? 'logo' : 'no logo'].filter(Boolean).join(' · ');
     case 'look': return `${n('inspiration')} image(s) · ${(MOODS.find(x => x.id === v('mood')) || {}).name || 'no mood'} · ${n('cover') ? 'main photo' : 'no main photo'}`;
     case 'sections': return SECTIONS.filter(s => secOn(s.id)).map(s => s.name).join(', ');
