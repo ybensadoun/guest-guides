@@ -1,4 +1,4 @@
-# Style brief for Home in Querol · ★5.0 · 4 bedrooms · 6 beds · 2 baths
+# Style brief for Masía Ca La Puça
 
 The host described the look in their own words. The generator picks the closest starting kit (fonts, radii, layout base) and the palette from their images;
 the design pass then writes this guide's own theme.css so it does not look like any other guide.

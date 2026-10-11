@@ -1,0 +1,149 @@
+{
+ "_doc": "Researched from public sources (femturisme.cat, komoot, OpenStreetMap, official sites). Distances are rough by road from the house.",
+ "items": [
+  {
+   "id": "castell-querol",
+   "name": {
+    "en": "Querol Castle",
+    "fr": "Château de Querol"
+   },
+   "type": {
+    "en": "Castle ruins, Querol",
+    "fr": "Ruines de château, Querol"
+   },
+   "town": "Querol",
+   "lat": 41.4234458,
+   "lng": 1.3978705,
+   "km_from_house": 7,
+   "description": {
+    "en": "The ruins of a castle from the 10th century, with what is left of its round towers. A short, free stop in the village, easy to combine with a walk.",
+    "fr": "Les ruines d'un château du Xe siècle, avec ce qui reste de ses tours rondes. Un arrêt court et gratuit dans le village, facile à combiner avec une promenade."
+   },
+   "hours": {
+    "en": "Opening times change by season: check the official page before you go.",
+    "fr": "Les horaires changent selon la saison : vérifiez la page officielle avant de partir."
+   },
+   "tags": [],
+   "flags": [],
+   "icon": "castle",
+   "group": "sights",
+   "tone": "purple"
+  },
+  {
+   "id": "miravinya",
+   "name": {
+    "en": "Miravinya, Balcó del Penedès",
+    "fr": "Miravinya, Balcó del Penedès"
+   },
+   "type": {
+    "en": "Viewpoint, Font-rubí",
+    "fr": "Point de vue, Font-rubí"
+   },
+   "town": "Font-rubí",
+   "lat": 41.4363132,
+   "lng": 1.5884788,
+   "km_from_house": 17,
+   "description": {
+    "en": "A viewpoint over the Penedès plain, the coastal mountains and the sea. Bring a jacket on windy days and come for the late light.",
+    "fr": "Un point de vue sur la plaine du Penedès, les montagnes côtières et la mer. Prenez une veste les jours de vent et venez pour la lumière de fin de journée."
+   },
+   "hours": {
+    "en": "Opening times change by season: check the official page before you go.",
+    "fr": "Les horaires changent selon la saison : vérifiez la page officielle avant de partir."
+   },
+   "tags": [],
+   "flags": [],
+   "icon": "mountain",
+   "group": "sights",
+   "tone": "purple"
+  },
+  {
+   "id": "santes-creus",
+   "name": {
+    "en": "Royal Monastery of Santes Creus",
+    "fr": "Monastère royal de Santes Creus"
+   },
+   "type": {
+    "en": "Monastery, Aiguamúrcia",
+    "fr": "Monastère, Aiguamúrcia"
+   },
+   "town": "Aiguamúrcia",
+   "lat": 41.3462722,
+   "lng": 1.3640993,
+   "km_from_house": 12,
+   "description": {
+    "en": "A Cistercian abbey from the 12th century on the Gaià river, one of the great monasteries of Catalonia. Plan about two hours with the cloister.",
+    "fr": "Une abbaye cistercienne du XIIe siècle au bord du Gaià, l'un des grands monastères de Catalogne. Prévoyez environ deux heures avec le cloître."
+   },
+   "hours": {
+    "en": "Opening times change by season: check the official page before you go.",
+    "fr": "Les horaires changent selon la saison : vérifiez la page officielle avant de partir."
+   },
+   "tags": [],
+   "flags": [],
+   "icon": "monastery",
+   "group": "sights",
+   "tone": "purple",
+   "url": "https://patrimoni.gencat.cat/ca/monuments/monumentos/reial-monestir-de-santes-creus"
+  },
+  {
+   "id": "poblet",
+   "name": {
+    "en": "Poblet Monastery",
+    "fr": "Monastère de Poblet"
+   },
+   "type": {
+    "en": "Monastery, Vimbodí i Poblet",
+    "fr": "Monastère, Vimbodí i Poblet"
+   },
+   "town": "Poblet",
+   "lat": 41.381231,
+   "lng": 1.0824256,
+   "km_from_house": 41,
+   "description": {
+    "en": "A large Cistercian monastery and a UNESCO World Heritage Site, the best known of the three monasteries of the Cistercian Route. A longer outing, about 45 minutes by car.",
+    "fr": "Un grand monastère cistercien classé au patrimoine mondial de l'UNESCO, le plus connu des trois monastères de la Route cistercienne. Une sortie plus longue, environ 45 minutes en voiture."
+   },
+   "hours": {
+    "en": "Opening times change by season: check the official page before you go.",
+    "fr": "Les horaires changent selon la saison : vérifiez la page officielle avant de partir."
+   },
+   "tags": [],
+   "flags": [],
+   "icon": "monastery",
+   "group": "sights",
+   "tone": "purple",
+   "url": "https://www.poblet.cat/"
+  },
+  {
+   "id": "mon-casteller",
+   "name": {
+    "en": "Món Casteller, human tower museum",
+    "fr": "Món Casteller, musée des tours humaines"
+   },
+   "type": {
+    "en": "Museum, Valls",
+    "fr": "Musée, Valls"
+   },
+   "town": "Valls",
+   "lat": 41.2840325,
+   "lng": 1.2484386,
+   "km_from_house": 28,
+   "description": {
+    "en": "The museum of the castells, the human towers that Catalonia is famous for, in Valls where the tradition began. A good rainy-day visit, and fun for children.",
+    "fr": "Le musée des castells, les tours humaines qui font la réputation de la Catalogne, à Valls, où la tradition est née. Une bonne visite les jours de pluie, amusante pour les enfants."
+   },
+   "hours": {
+    "en": "Opening times change by season: check the official page before you go.",
+    "fr": "Les horaires changent selon la saison : vérifiez la page officielle avant de partir."
+   },
+   "tags": [],
+   "flags": [],
+   "icon": "city",
+   "group": "fun",
+   "tone": "red",
+   "url": "https://www.museucasteller.cat/",
+   "phone": "977 66 00 30"
+  }
+ ]
+}

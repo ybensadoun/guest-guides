@@ -13,14 +13,14 @@
    "group": "house",
    "kind": "contacts",
    "labelKey": "emergency",
-   "status": "soon"
+   "status": "live"
   },
   {
    "id": "todo",
    "group": "area",
    "kind": "spots",
    "labelKey": "whatToDo",
-   "status": "soon",
+   "status": "live",
    "color": "todo"
   }
  ]
