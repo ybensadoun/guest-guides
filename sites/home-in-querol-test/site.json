@@ -17,10 +17,10 @@
     "house": false,
     "quick": false,
     "map": true,
-    "garbage": false,
+    "garbage": true,
     "message": true,
     "emergency": true,
-    "markets": false,
+    "markets": true,
     "restaurants": false,
     "todo": true,
     "events": false
@@ -28,16 +28,17 @@
   "theme": {
     "preset": "soft",
     "fonts": [
-      "fraunces/400.css",
-      "fraunces/600.css",
-      "fraunces/700.css",
-      "dm-sans/400.css",
-      "dm-sans/500.css",
-      "dm-sans/700.css"
+      "cormorant-garamond/500.css",
+      "cormorant-garamond/600.css",
+      "cormorant-garamond/700.css",
+      "inter/400.css",
+      "inter/500.css",
+      "inter/600.css",
+      "inter/700.css"
     ],
-    "paper": "#F7F5F0",
-    "manifestBackground": "#F7F5F0",
-    "manifestTheme": "#2F5D8A",
+    "paper": "#F2EADF",
+    "manifestBackground": "#F2EADF",
+    "manifestTheme": "#565F45",
     "darkMode": false
   },
   "previewImages": [

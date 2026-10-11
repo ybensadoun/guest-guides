@@ -2,6 +2,15 @@
  "_doc": "Generated from onboarding. Order = Home order within each group.",
  "sections": [
   {
+   "id": "garbage",
+   "group": "house",
+   "kind": "garbage",
+   "labelKey": "garbage",
+   "status": "live",
+   "color": "glass",
+   "mapLabelKey": "glassChip"
+  },
+  {
    "id": "message",
    "group": "house",
    "kind": "info",
@@ -13,6 +22,13 @@
    "group": "house",
    "kind": "contacts",
    "labelKey": "emergency",
+   "status": "live"
+  },
+  {
+   "id": "markets",
+   "group": "area",
+   "kind": "markets",
+   "labelKey": "markets",
    "status": "live"
   },
   {
