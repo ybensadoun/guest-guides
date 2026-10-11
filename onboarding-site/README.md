@@ -6,4 +6,4 @@ Live at https://porta-guides.netlify.app (Netlify project `porta-guides`).
 - On Send it posts to Netlify Forms: `onboarding` (answers, device, walkthrough timings), one `file` submission per photo,
   `note` (the "Missing a question here?" notes, sent immediately), `feedback` (review rounds, `?feedback=<sid>&guide=<slug>`).
 - Edit the sources in `src/` and rebuild: `cd src && python3 build.py` (writes `src/index.html`; copy it up one level).
-- Deploy: drag this folder onto the project's Deploys page in Netlify.
+- Deploy: Netlify (porta-guides) builds from GitHub (guest-guides, main, base directory onboarding-site). Test first, commit on main, the user clicks Push origin in GitHub Desktop. Anything pushed to main goes live. No dragging.
