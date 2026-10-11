@@ -174,11 +174,11 @@ seg1=rep(seg1,"  source:{label:'Your listing link or text'},","""  source:{label
   reviewQuotes:{t:'area',rows:5,label:'Reviews you would like to show',opt:true,full:true,ph:'Lovely house, we did not want to leave. - Marie\\nPerfect for a family weekend. - Jordi',hint:'Up to three short reviews, one per line, with the first name after a dash. Only add reviews you are happy to share.'},
   reviewsNote:{label:'Ratings and reviews'},""")
 seg1=rep(seg1,"'beds','hostName','privacyNote']}","'beds','sleeping','hostName','privacyNote']}")
-seg1=rep(seg1,"  {id:'map',name:'Map'","  {id:'reviews',name:'Ratings and reviews',d:'Your rating and a few guest reviews, if you want them shown.',built:true,on:()=>false},\n  {id:'map',name:'Map'")
+seg1=rep(seg1,"  {id:'map',name:'Map'","  {id:'reviews',name:'Ratings and reviews',d:'Your listing rating and latest reviews, shown as they are.',built:true,on:()=>false},\n  {id:'map',name:'Map'")
 seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'reviews',group:'area',title:'Ratings and reviews',sub:'Optional',icon:'heart',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'half',sec:'reviews',
-   lead:'Show your rating and a few reviews at the end of the guide. We read the rating from your listing. Reviews are yours to choose.',need:[],fields:['ratingAvg','ratingCount','reviewQuotes','reviewsNote']},
+   lead:'Show your listing rating and reviews at the end of the guide, as they are on your listing. We read them from your listing, you do not pick or type anything.',need:[],fields:['ratingAvg','ratingCount','reviewsNote']},
   {id:'taste',group:'area'""")
-views=rep(views,"  if (k === 'privacyNote')","  if (k === 'reviewsNote') return `<div class=\"note full\"><div>We show your rating and the reviews you pick, with a link to your listing for the rest. Reviews belong to your guests: only add ones you are comfortable showing.</div></div>`;\n  if (k === 'privacyNote')")
+views=rep(views,"  if (k === 'privacyNote')","  if (k === 'reviewsNote') return `<div class=\"note full\"><div>Guests see your rating and your latest reviews as they are on your listing, with a link to read the rest. We do not choose or edit them.</div></div>`;\n  if (k === 'privacyNote')")
 forms=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'forms.html')).read()
 html=seg1+'\n'+views+'\n'+runtime+'\n})();\n</script>\n'+forms+'</body>\n</html>\n'
 open(__import__('os').path.join(__import__('os').path.dirname(__file__),'index.html'),'w').write(html)

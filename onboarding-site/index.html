@@ -483,7 +483,7 @@ const SECTIONS = [
   {id:'eat',name:'Eat and drink',d:'Your favourites plus researched picks.',built:true,on:()=>true},
   {id:'todo',name:'Things to do',d:'Beaches, walks, wine, sights nearby.',built:true,on:()=>true},
   {id:'events',name:'Local events',d:'Festivals and fairs during the stay.',built:true,on:a=>(a.interests||[]).includes('Festivals')},
-  {id:'reviews',name:'Ratings and reviews',d:'Your rating and a few guest reviews, if you want them shown.',built:true,on:()=>false},
+  {id:'reviews',name:'Ratings and reviews',d:'Your listing rating and latest reviews, shown as they are.',built:true,on:()=>false},
   {id:'map',name:'Map',d:'Every place in the guide on one map.',built:true,on:()=>true},
   {id:'quick',name:'Quick calls',d:'One tap to call a taxi or you.',built:true,on:()=>true}
 ];
@@ -526,7 +526,7 @@ const MODULES = [
   {id:'nearby',group:'area',title:'Places nearby',sub:'Swipe the best-rated',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',
    lead:'The best-rated places around you, one at a time. Keep the ones you would send a friend to, and add a word if you like. All optional.',need:[],fields:['swipe']},
   {id:'reviews',group:'area',title:'Ratings and reviews',sub:'Optional',icon:'heart',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'half',sec:'reviews',
-   lead:'Show your rating and a few reviews at the end of the guide. We read the rating from your listing. Reviews are yours to choose.',need:[],fields:['ratingAvg','ratingCount','reviewQuotes','reviewsNote']},
+   lead:'Show your listing rating and reviews at the end of the guide, as they are on your listing. We read them from your listing, you do not pick or type anything.',need:[],fields:['ratingAvg','ratingCount','reviewsNote']},
   {id:'taste',group:'area',title:'Your taste',sub:'Food, outings, tone',icon:'heart',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
    lead:'Everything here is optional. It tells us what kind of places to research and how to write about them, wherever your place is.',need:[],fields:['eatStyle','eatPrice','eatVibe','dietary','doStyle','avoidTypes','tone','voiceNotes']},
   {id:'favourites',group:'area',title:'Your places',sub:'Where you go',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',
@@ -633,7 +633,7 @@ function field(k){
   if (k === 'swipe') return swipeHTML();
   if (k === 'loadListing') return loadListingHTML();
   if (k === 'listingText' && !(START.need === 'text' || v('listingText'))) return '';
-  if (k === 'reviewsNote') return `<div class="note full"><div>We show your rating and the reviews you pick, with a link to your listing for the rest. Reviews belong to your guests: only add ones you are comfortable showing.</div></div>`;
+  if (k === 'reviewsNote') return `<div class="note full"><div>Guests see your rating and your latest reviews as they are on your listing, with a link to read the rest. We do not choose or edit them.</div></div>`;
   if (k === 'privacyNote') return `<div class="note full"><span aria-hidden="true">⌂</span><div>We never show your street address. The map uses a point near the house.</div></div>`;
   if (k === 'wifiNote') return `<div class="note full"><div>Guests see the password in the guide, so use your guest network if you have one.</div></div>`;
   if (k === 'sectionPicker') return sectionPicker();
