@@ -31,6 +31,7 @@ ap.add_argument('src_dir'); ap.add_argument('--slug', required=True)
 ap.add_argument('--lat', type=float, required=True); ap.add_argument('--lng', type=float, required=True)
 ap.add_argument('--src', default='en'); ap.add_argument('--translations')
 ap.add_argument('--preset', default=None)
+ap.add_argument('--research', default=None, help='folder with researched content files (emergency.json, markets.json, todo.json...) copied into the site when missing')
 args = ap.parse_args()
 
 S = Path(args.src_dir)
@@ -192,6 +193,48 @@ kit_id = max(score, key=score.get) if any(score.values()) else None
 KIT = KITS.get(kit_id)
 if KIT and not args.preset and A.get('mood') in (None, '', 'auto'): preset = KIT['preset']
 
+# ---------- the host's written brief wins: palette and fonts ----------
+def _hx(h): return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
+def _mix(a, b, t): return '#%02X%02X%02X' % tuple(round(x + (y - x) * t) for x, y in zip(_hx(a), _hx(b)))
+def brief_palette(text):
+    roles, found = {}, []
+    for ln in text.splitlines():
+        low = ln.lower()
+        for m in re.finditer(r'#[0-9a-fA-F]{6}\b', ln):
+            h = m.group(0).upper(); found.append(h)
+            for role, kw in (('paper', 'background|backdrop'), ('ink', 'typograph|text|icons'), ('cta', 'call to action|calls to action|cta|buttons'),
+                             ('primary', 'brand|identity|selected'), ('stone', 'divider|secondary|surface|border')):
+                if re.search(kw, low) and role not in roles: roles[role] = h
+    found = list(dict.fromkeys(found))
+    if len(found) >= 3 and not all(k in roles for k in ('paper', 'ink', 'primary', 'cta')):   # no labels: guess from the colours themselves
+        by_l = sorted(found, key=lambda h: lum(_hx(h)))
+        roles.setdefault('ink', by_l[0]); roles.setdefault('paper', by_l[-1])
+        rest = [h for h in found if h not in (roles['ink'], roles['paper'])]
+        rest.sort(key=lambda h: -hls(_hx(h))[2])
+        if rest: roles.setdefault('cta', rest[0])
+        if len(rest) > 1: roles.setdefault('primary', rest[1])
+    return roles if all(k in roles for k in ('paper', 'ink', 'primary', 'cta')) else None
+BRIEF = A.get('styleBrief') or ''
+BP = brief_palette(BRIEF)
+FONTS_DIR = ROOT / 'node_modules/@fontsource'
+SERIFS = {'Cormorant Garamond': ('cormorant-garamond', [500, 600, 700]), 'Playfair Display': ('playfair-display', [500, 600, 700]), 'Fraunces': ('fraunces', [400, 600, 700]),
+          'DM Serif Display': ('dm-serif-display', [400]), 'Instrument Serif': ('instrument-serif', [400])}
+SANSES = {'Inter': ('inter', [400, 500, 600, 700]), 'Jost': ('jost', [400, 500, 600]), 'DM Sans': ('dm-sans', [400, 500, 700]), 'Nunito': ('nunito', [400, 600, 700]),
+          'Geist': ('geist', [400, 500, 600, 700]), 'Space Grotesk': ('space-grotesk', [400, 500, 600, 700])}
+WARN = []
+def brief_font(table):
+    hits = sorted((BRIEF.lower().find(n.lower()), n) for n in table if n.lower() in BRIEF.lower())
+    for _, n in hits:
+        d, ws = table[n]
+        got = [w for w in ws if (FONTS_DIR / d / f'{w}.css').exists()]
+        if got: return n, [f'{d}/{w}.css' for w in got]
+        WARN.append(f'Font "{n}" is named in the brief but is not installed: add @fontsource/{d} to use it.')
+    return None, []
+DISP, DISP_FILES = brief_font(SERIFS)
+TXT, TXT_FILES = brief_font(SANSES)
+if BP:
+    palette = {'paper': BP['paper'], 'ink': BP['ink'], 'accents': [BP['primary'], BP['cta'], BP.get('stone', _mix(BP['paper'], BP['ink'], .12))]}
+
 a = palette['accents'] + palette['accents']
 ink_on = lambda c: '#FFFFFF' if contrast(tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)), (255, 255, 255)) >= 3 else palette['ink']
 theme_css = f"""/* {A.get('guideName') or A.get('placeName')}: generated from the host's inspiration images (preset "{preset}").
@@ -205,6 +248,16 @@ theme_css = f"""/* {A.get('guideName') or A.get('placeName')}: generated from th
 _tc = SITE / 'theme.css'
 if _tc.exists() and _tc.read_text().lstrip().startswith('/* designed:'):
     print('theme.css was designed by hand: kept as is')   # the design pass owns it once it starts with "/* designed:"
+elif BP:   # designed from the brief: the template keeps the layout that worked (full-bleed cover, hairline frames, quiet chrome), the brief supplies colours and fonts
+    PAPER, INK, PRIMARY, CTA = BP['paper'], BP['ink'], BP['primary'], BP['cta']
+    STONE = BP.get('stone') or _mix(PAPER, INK, .12)
+    sub = {'PAPER': PAPER, 'INK': INK, 'PRIMARY': PRIMARY, 'CTA': CTA, 'STONE': STONE, 'WHITE': _mix(PAPER, '#FFFFFF', .55),   # cards are a lighter tint of the page colour, never grey
+           'MUTED': _mix(INK, PAPER, .25), 'FAINT': _mix(INK, PAPER, .5), 'OCHRE': _mix(PRIMARY, CTA, .4), 'SLATE': _mix(PRIMARY, INK, .3),
+           'DISPLAY_NAME': DISP or (KIT and KIT['display'].split(',')[0].strip('"')) or 'Cormorant Garamond', 'TEXT_NAME': TXT or (KIT and KIT['font'].split(',')[0].strip('"')) or 'Inter',
+           'HEADER': f"/* generated-design: {A.get('guideName') or A.get('placeName')}, built from the host's written brief (palette, fonts) on engine/templates/designed-theme.css.\n   Rename this comment to /* designed: once a person has edited the file, and the generator will never overwrite it. */"}
+    css = (ROOT / 'engine/templates/designed-theme.css').read_text()
+    for k, v in sub.items(): css = css.replace('{{' + k + '}}', v)
+    _tc.write_text(css)
 else: _tc.write_text(theme_css)
 
 # ---------- photos, cover, logo, icons ----------
@@ -270,6 +323,12 @@ if not logo_im:
 for fn, sz in [('logo-head.png', 256), ('favicon.png', 64), ('apple-touch-icon.png', 180), ('icons/icon-192.png', 192), ('icons/icon-512.png', 512)]:
     square(logo_im, sz).save(SITE / 'public' / fn)
 mask = Image.new('RGBA', (512, 512), palette['paper']); mask.alpha_composite(square(logo_im, 410), (51, 51)); mask.save(SITE / 'public/icons/icon-maskable-512.png')
+
+# ---------- researched content (done outside this script: web research) ----------
+if args.research:
+    import shutil
+    for f in sorted(Path(args.research).glob('*.json')):
+        if not (SITE / 'content' / f.name).exists(): shutil.copy(f, SITE / 'content' / f.name); print('research copied:', f.name)
 
 # ---------- modules ----------
 M = A.get('modules') or {}
@@ -424,7 +483,7 @@ SEC = [
 ]
 sections, modules, research = [], {'house': False, 'quick': bool(quick) and on('quick'), 'map': on('map')}, []
 for sid, grp, kind, label, extra, mod in SEC:
-    want = on(mod, mod in ('houseguide', 'emergency', 'todo'))
+    want = on(mod, mod in ('houseguide', 'emergency', 'todo', 'rubbish', 'markets'))   # rubbish needs the host's answer, markets need researched content: both checked below
     if sid == 'garbage': want = want and bool(rmode)   # only the host can tell us: no answer, no section
     if sid == 'restaurants': want = want and bool(fav)
     modules[sid] = bool(want)
@@ -450,7 +509,7 @@ site = {
     'logo': 'logo-head.png', 'shareImage': 'house.jpg', 'languages': LANGS, 'storageKey': args.slug,
     'area': {'radiusKm': {'15 min': 15, '30 min': 30, '45 min': 45, '1 hour': 60}.get(A.get('radius'), 30)},
     'modules': modules,
-    'theme': {'preset': preset, **({'fonts': KIT['fonts']} if KIT else {}), 'paper': palette['paper'], 'manifestBackground': palette['paper'], 'manifestTheme': a[0], 'darkMode': False},
+    'theme': {'preset': preset, **({'fonts': (DISP_FILES or (KIT['fonts'] if KIT else [])) + (TXT_FILES or [])} if (KIT or DISP_FILES or TXT_FILES) else {}), 'paper': palette['paper'], 'manifestBackground': palette['paper'], 'manifestTheme': a[0], 'darkMode': False},
     'previewImages': ['logo-head.png', 'favicon.png', 'house.jpg'],
     'onboarding': {'mood': A.get('mood'), 'styleKit': kit_id, 'imageStats': stats, 'palette': palette, 'presetChosen': preset}
 }
@@ -479,4 +538,4 @@ if not nf.exists():
 
 print(json.dumps({'site': str(SITE.relative_to(ROOT)), 'preset': preset, 'palette': palette, 'imageStats': stats,
                   'languages': LANGS, 'sections': [(s['id'], s['status']) for s in sections], 'research': research,
-                  'untranslated': len(untranslated), 'photos': {k: len(v) for k, v in room_photos.items()}}, indent=1))
+                  'warnings': WARN, 'untranslated': len(untranslated), 'photos': {k: len(v) for k, v in room_photos.items()}}, indent=1))

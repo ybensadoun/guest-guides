@@ -22,3 +22,10 @@ It gives a good first version that still needs a human pass. What is automatic a
 
 ## Steps for the next guide
 See docs/runbook-friend-test.md. Add: read the brief, write the designed theme, check the first screenshot against rule 2, then deploy.
+
+## Now automatic in generate-site.py (12 Oct)
+- Palette and fonts are read from the host's written brief (hex codes with labels, or the font names it mentions; a named font that is not installed is reported in `warnings` and the closest kit font is used).
+- A designed theme.css is written from `engine/templates/designed-theme.css`: sand-tinted page and cards (never grey), full-bleed cover, hairline frames, accent colour only on the main button and urgent calls. It starts with `/* generated-design:` so it is regenerated; rename it to `/* designed:` after hand edits and it is never overwritten.
+- Rubbish and markets switch on by themselves when the host answered (rubbish) or researched content exists (markets).
+- `--research <folder>` copies researched files (emergency.json, markets.json, todo.json) into the guide. The research itself (markets, emergency numbers, things to do) is still done by hand or by an agent with web access.
+- Test: regenerating the Querol CSV now gives the same sections, palette, fonts and theme as the hand-built guide.

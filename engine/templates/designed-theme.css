@@ -1,0 +1,79 @@
+{{HEADER}}
+:root{
+  --paper:{{PAPER}};--white:{{WHITE}};--ink:{{INK}};--muted:{{MUTED}};--faint:{{FAINT}};--line:{{STONE}};
+  --olive:{{PRIMARY}};--terracotta:{{CTA}};--stone:{{STONE}};
+  --wine:var(--olive);--clay:var(--terracotta);--ochre:{{OCHRE}};--slate:{{SLATE}};
+  --red:var(--terracotta);--blue:var(--olive);--yellow:var(--stone);--orange:var(--terracotta);--green:var(--olive);
+  --accent:var(--olive);--k-sky:var(--olive);
+  --display:"{{DISPLAY_NAME}}",Georgia,serif;--font:"{{TEXT_NAME}}",system-ui,sans-serif;
+  --r:12px;--r-s:8px;--r-m:10px;--shadow:none;
+}
+body{background:var(--paper);color:var(--ink);font-family:var(--font)}
+h2.title{font-family:var(--display);font-weight:500;font-size:44px;line-height:1.02;letter-spacing:-.005em;color:var(--olive)}
+.lead{color:var(--muted)}
+
+/* Section headings: small caps between two rules, like the lines on a label */
+.sh,.section-h{display:flex;align-items:center;gap:12px;font-family:var(--font);font-size:12.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--wine);margin-top:26px}
+.sh::before,.sh::after,.section-h::before,.section-h::after{content:"";height:1px;flex:1;background:linear-gradient(var(--wine),var(--wine)) center/100% 1px no-repeat;opacity:.55}
+.sh::before,.section-h::before{max-width:22px}
+
+/* Home cover: full-bleed photo, the name set underneath in the serif */
+.hcard{background:none!important;box-shadow:none!important;border:0!important;border-radius:0;padding:4px 0 0;text-align:left;overflow:visible}
+.hc-ph{display:block;width:100%;margin:0;height:clamp(300px,54vh,480px)!important;border-radius:var(--r);overflow:hidden}
+.hc-ph img{width:100%;height:100%;object-fit:cover}
+.hc-id{flex-direction:column!important;align-items:flex-start!important;text-align:left;background:none!important;border:0!important;padding:22px 2px 4px!important;gap:0!important}
+.hc-id > img,.hc-id .go{display:none!important}
+.hc-nm{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.hc-nm .hc-w{font-size:11.5px!important;font-weight:500;letter-spacing:.18em!important;text-transform:uppercase!important;color:var(--olive)!important}
+.hc-nm b{font-family:var(--display);font-weight:500;font-size:50px!important;line-height:1;letter-spacing:-.01em!important;text-transform:none!important;color:var(--ink)}
+.hc-nm small:last-child{font-size:12px!important;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+
+/* Wifi and check-out: one ruled strip */
+.keyfacts{background:none!important;border-block:1px solid var(--wine);box-shadow:0 3px 0 -2px var(--paper),0 4px 0 -2px var(--wine);margin-top:18px;padding-block:2px}
+.keyfacts b{font-family:var(--display);font-weight:600;font-size:22px!important;color:var(--wine)!important}
+.keyfacts small,.keyfacts span{color:var(--muted)}
+
+/* Section tiles: label cards with a double-ruled frame and a wine seal for the arrow */
+.ggrid,.ggrid.mosaic{gap:12px}
+.gt{background:var(--white)!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:var(--r);box-shadow:none!important}
+.gt::before,.gt::after{display:none!important}
+.gt .ib,.gt .ib .ci{color:var(--wine)!important}
+.gt-t,.ggrid.mosaic > .gt:first-child .gt-t{font-family:var(--display);font-weight:600;font-size:21px!important;line-height:1.1;color:var(--ink)}
+.gt-m{color:var(--muted);font-weight:500}
+.gt .go{background:var(--wine)!important;color:var(--white)!important;box-shadow:none}
+.soon-tag{background:none;color:var(--faint);border:1px solid var(--line)}
+.gt-tonight,.gtn{color:var(--wine)!important;font-weight:700}
+.gtb{background:var(--paper)!important;border:1px solid var(--line)}
+.gt-tl svg{color:var(--olive)!important}
+.gt[data-k="map"]{background:var(--olive)!important;color:var(--white)!important;border:0!important;box-shadow:none!important}
+.gt[data-k="map"] .gt-t,.gt[data-k="map"] .gt-m,.gt[data-k="map"] .ib,.gt[data-k="map"] .ib .ci{color:var(--white)!important}
+.gt[data-k="map"] .go{background:var(--white)!important;color:var(--olive)!important}
+
+/* Lists, cards and "what's on": paper with a hairline frame, a serif for the day names */
+.whatson,.mlist,.clist,.hsec,.allphotos,.pl-hours,.pl-alt,#mapview .maplist,.filters,.sheet{background:var(--white)!important;box-shadow:none!important;border:1px solid var(--line)!important;border-radius:var(--r-s)!important}
+.mbody,.mrow[open] summary,.mlist > .mrow[open] > summary{background:color-mix(in srgb,var(--paper) 55%,var(--white))!important}
+.mrow,.crow,.wo-sec,.wo-day,.wo-links{border-color:var(--line)!important}
+.wo-day b,.wo-sec > summary.wo-day b{font-family:var(--display);font-weight:600;font-size:22px;color:var(--wine)}
+.dot{border-radius:50%;background:color-mix(in srgb,var(--cc) 18%,var(--white))!important;color:var(--cc);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--cc) 45%,transparent)}
+.dbadge{border-radius:6px;background:var(--wine)!important;color:var(--white)!important}
+.dbadge b{font-family:var(--display);font-weight:600}
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-s);box-shadow:none}
+.card .hd .hdt b,.card h3{font-family:var(--display);font-weight:600}
+.wo-links a,.wo-more,.cmap{color:var(--wine)!important}
+.tag{background:color-mix(in srgb,var(--olive) 14%,var(--white));color:var(--olive);border-radius:6px}
+
+/* Controls: ink-blotted pills, wine when selected */
+.btn,.chip,.gchip,.pills,.mapseg .seg,.mapat,.hbook,.amall summary{border:0!important;border-radius:var(--r-s)!important;box-shadow:inset 0 0 0 1px var(--wine)!important;color:var(--wine);background:none}
+.btn.primary{background:var(--terracotta)!important;color:var(--white)!important;box-shadow:none!important}
+.gchip[aria-pressed="true"],.chip[aria-pressed="true"],.pills button[aria-pressed="true"],.mapseg .seg button[aria-checked="true"]{background:var(--wine)!important;color:var(--white)!important}
+.pills button,.mapseg .seg button{border-radius:var(--r-s)!important}
+.qcall{background:var(--white);border:0;box-shadow:inset 0 0 0 1px var(--wine);border-radius:var(--r-s);color:var(--ink)}
+.qcall .qi{background:var(--wine)!important;color:var(--white)!important;border-radius:50%}
+.qcall b{font-family:var(--display);font-weight:600}
+.ccall{background:var(--wine)!important;border-radius:6px}
+.cgroup[data-g="urgent"] .ccall{background:var(--terracotta)!important}
+.pl-map,#mapview .mapbox{border:1px solid var(--wine)!important;box-shadow:none;border-radius:var(--r-s)!important}
+.hero{background:var(--paper)!important;border-bottom:1px solid var(--wine)}
+.hero .back,.langsel{box-shadow:inset 0 0 0 1px var(--wine)!important;background:var(--white)}
+.bnav,.hbar{background:var(--paper)}
+.gphotos img{border-radius:6px}
