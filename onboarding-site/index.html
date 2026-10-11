@@ -736,7 +736,7 @@ function navbarHTML(cur){
 }
 function refreshNav(){
   const r = route(), nb = document.getElementById('navbar'); if (nb) nb.innerHTML = navbarHTML(r);
-  const rail = document.querySelector('.rail nav'); if (rail) rail.innerHTML = stepListHTML(r);
+  const rail = document.querySelector('.rail nav'); if (rail) { const keep = rail.parentElement.scrollTop; rail.innerHTML = stepListHTML(r); rail.parentElement.scrollTop = keep; fixRail(); }
 }
 function openSteps(){
   const o = document.createElement('div'); o.className = 'sheet';
@@ -774,6 +774,13 @@ function sendHTML(){
         <p id="sendState"></p>
         <div class="row"><button class="btn" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Preview my guide</button><button class="btn primary" type="button" id="send"${miss.length ? ' disabled' : ''}>${I.send.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Send to build my guide</button></div></div>
     </section><div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div></div></div>`;
+}
+
+// Keep the current step visible in the left list, whatever re-drew it.
+function fixRail(){
+  const rail = document.querySelector('.rail'), cur = rail && rail.querySelector('[aria-current]'); if (!cur) return;
+  const rr = rail.getBoundingClientRect(), cr = cur.getBoundingClientRect();
+  if (cr.top < rr.top + 8 || cr.bottom > rr.bottom - 8) rail.scrollTop += (cr.top - rr.top) - (rail.clientHeight - cur.clientHeight) / 2;
 }
 
 /* ---------- Pre-fill from the host's listing ----------
@@ -1410,7 +1417,7 @@ async function resetAll(){
 /* ---------- Version stamp, tiny, so you can tell which build you are looking at ---------- */
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Version 12 Oct 00:11 after 820dbc5'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Version 12 Oct 00:12 after cd6bbcb'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" step needs a Google key on our side. If it is not connected, the step is hidden instead of showing a dead page. ---------- */
@@ -1639,7 +1646,8 @@ function render(){
   const stepView = r === 'send' || !!m;
   nb.hidden = !stepView || new URLSearchParams(location.search).has('feedback') || (r === 'thanks');
   if (!nb.hidden) nb.innerHTML = navbarHTML(r);
-  if (r !== lastRoute) { window.scrollTo(0, 0); lastRoute = r; const c = document.querySelector('.rail [aria-current]'); if (c) c.scrollIntoView({ block: 'nearest' }); }
+  if (r !== lastRoute) { window.scrollTo(0, 0); lastRoute = r; }
+  fixRail(); setTimeout(fixRail, 60);
   if (fid) { const el = document.getElementById(fid); if (el && el !== document.activeElement) { el.focus({ preventScroll: true }); try { if (sel != null) el.setSelectionRange(sel, sel); } catch (e) {} } }
 }
 function softRefresh(){

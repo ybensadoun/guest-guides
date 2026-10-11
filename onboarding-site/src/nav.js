@@ -31,7 +31,7 @@ function navbarHTML(cur){
 }
 function refreshNav(){
   const r = route(), nb = document.getElementById('navbar'); if (nb) nb.innerHTML = navbarHTML(r);
-  const rail = document.querySelector('.rail nav'); if (rail) rail.innerHTML = stepListHTML(r);
+  const rail = document.querySelector('.rail nav'); if (rail) { const keep = rail.parentElement.scrollTop; rail.innerHTML = stepListHTML(r); rail.parentElement.scrollTop = keep; fixRail(); }
 }
 function openSteps(){
   const o = document.createElement('div'); o.className = 'sheet';
@@ -69,4 +69,11 @@ function sendHTML(){
         <p id="sendState"></p>
         <div class="row"><button class="btn" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Preview my guide</button><button class="btn primary" type="button" id="send"${miss.length ? ' disabled' : ''}>${I.send.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Send to build my guide</button></div></div>
     </section><div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div></div></div>`;
+}
+
+// Keep the current step visible in the left list, whatever re-drew it.
+function fixRail(){
+  const rail = document.querySelector('.rail'), cur = rail && rail.querySelector('[aria-current]'); if (!cur) return;
+  const rr = rail.getBoundingClientRect(), cr = cur.getBoundingClientRect();
+  if (cr.top < rr.top + 8 || cr.bottom > rr.bottom - 8) rail.scrollTop += (cr.top - rr.top) - (rail.clientHeight - cur.clientHeight) / 2;
 }

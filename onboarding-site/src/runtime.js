@@ -200,7 +200,8 @@ function render(){
   const stepView = r === 'send' || !!m;
   nb.hidden = !stepView || new URLSearchParams(location.search).has('feedback') || (r === 'thanks');
   if (!nb.hidden) nb.innerHTML = navbarHTML(r);
-  if (r !== lastRoute) { window.scrollTo(0, 0); lastRoute = r; const c = document.querySelector('.rail [aria-current]'); if (c) c.scrollIntoView({ block: 'nearest' }); }
+  if (r !== lastRoute) { window.scrollTo(0, 0); lastRoute = r; }
+  fixRail(); setTimeout(fixRail, 60);
   if (fid) { const el = document.getElementById(fid); if (el && el !== document.activeElement) { el.focus({ preventScroll: true }); try { if (sel != null) el.setSelectionRange(sel, sel); } catch (e) {} } }
 }
 function softRefresh(){
