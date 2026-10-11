@@ -111,7 +111,7 @@ function applyDraft(d){
       const room = r => ROOMS.includes(r) ? r : '';
       d.photos.slice(0, Math.max(0, 16 - have.length)).forEach((src, i) => {
         const cap = (d.photoCaps || [])[i] || '';
-        const rec = { id: newId(), kind: 'photo', remote: true, src, name: cap || 'Listing photo ' + (i + 1), room: room((d.photoRooms || [])[i]), url: src + '?im_w=720', createdAt: new Date(Date.now() + i).toISOString() };
+        const rec = { id: newId(), kind: 'photo', remote: true, src, name: cap || 'Listing photo ' + (i + 1), room: room((d.photoRooms || [])[i]), roomLabel: (cap && cap.length <= 30) ? cap : '', url: src + '?im_w=720', createdAt: new Date(Date.now() + i).toISOString() };
         uploads.push(rec); saveUpload(rec);
       });
     }
@@ -236,4 +236,78 @@ async function classifyPhotos(){
     todo.forEach((u, i) => { if (d.rooms[i] && !u.room) { u.room = d.rooms[i]; saveUpload(u); } });
     queueSave(); render();
   } catch (e) { /* the host can tag the rooms by hand */ }
+}
+
+
+/* ---------- Photos by room: names that match the tiles, a viewer, and a way to start over ---------- */
+function catOf(n){
+  n = String(n || '').trim(); if (ROOMS.includes(n)) return n;
+  const t = [[/bed/i, 'Bedroom'], [/bath|shower|toilet|wc|restroom/i, 'Bathroom'], [/living|lounge|sitting|salon/i, 'Living room'], [/kitchen|dining/i, 'Kitchen'], [/pool/i, 'Pool'], [/garden|yard|lawn/i, 'Garden'], [/terrace|balcon|patio|porch/i, 'Terrace'], [/office|study|work/i, 'Office'], [/laundry|utility/i, 'Laundry'], [/view/i, 'View'], [/exterior|outside|entrance|facade|front|parking/i, 'Outside']].find(x => x[0].test(n));
+  return t ? t[1] : 'Other';
+}
+function roomChoices(cur){
+  const num = (k, label) => { const c = parseInt(v(k), 10); return c > 1 && c <= 12 ? Array.from({ length: c }, (_, i) => label + ' ' + (i + 1)) : [label]; };
+  const base = [];
+  ROOMS.forEach(r => { if (r === 'Bedroom') base.push(...num('bedrooms', 'Bedroom')); else if (r === 'Bathroom') base.push(...num('bathrooms', 'Bathroom')); else if (r !== 'Other') base.push(r); });
+  uploads.filter(u => u.remote && u.roomLabel).forEach(u => { if (!base.some(b => b.toLowerCase() === u.roomLabel.toLowerCase())) base.push(u.roomLabel); });
+  const c = cur && (cur.roomLabel || cur.room);
+  if (c && c !== 'Other' && !base.some(b => b.toLowerCase() === c.toLowerCase())) base.push(c);
+  base.push('Other'); return base;
+}
+function setRoom(u, val){ u.roomLabel = val; u.room = val ? catOf(val) : ''; saveUpload(u); queueSave(); }
+
+let LB = null;
+function lbList(){ return uploads.filter(u => u.kind === 'photo'); }
+function lbShow(i){
+  const L = lbList(); if (!L.length) { lbClose(); return; }
+  LB = { i: (i + L.length) % L.length }; const u = L[LB.i];
+  let el = document.getElementById('lb');
+  if (!el) { el = document.createElement('div'); el.id = 'lb'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); document.body.appendChild(el); }
+  const big = u.remote ? u.src + '?im_w=1200' : srcOf(u);
+  el.innerHTML = `<div class="lbin"><button type="button" class="lbx" data-lb="close" aria-label="Close">×</button>
+    <div class="lbimg"><button type="button" class="lbn" data-lb="prev" aria-label="Previous photo">‹</button><img src="${esc(big)}" alt="${esc(u.name)}"><button type="button" class="lbn" data-lb="next" aria-label="Next photo">›</button></div>
+    <div class="lbbar"><span>${LB.i + 1} of ${L.length}</span>
+    <select data-room="${u.id}" aria-label="Room for this photo"><option value="">Room…</option>${roomChoices(u).map(r => `<option${(u.roomLabel || u.room) === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>
+    <button type="button" class="btn small" data-lb="del">Remove this photo</button></div></div>`;
+}
+function lbClose(){ const el = document.getElementById('lb'); if (el) el.remove(); LB = null; }
+(function(){
+  if (document.getElementById('lbCss')) return; const st = document.createElement('style'); st.id = 'lbCss'; st.textContent = `
+#lb{position:fixed;inset:0;background:rgba(15,15,15,.88);z-index:9999;display:grid;place-items:center;padding:12px}
+#lb .lbin{width:min(920px,100%);max-height:100%;display:flex;flex-direction:column;gap:10px;position:relative}
+#lb .lbimg{display:flex;align-items:center;gap:8px;justify-content:center}
+#lb img{max-width:100%;max-height:68vh;border-radius:10px;object-fit:contain;flex:1;min-width:0}
+#lb .lbn{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:#fff;font-size:26px;cursor:pointer}
+#lb .lbx{position:absolute;right:0;top:-4px;width:40px;height:40px;border-radius:50%;border:0;background:#fff;font-size:24px;cursor:pointer;z-index:2}
+#lb .lbbar{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;color:#fff}
+#lb .lbbar select{padding:8px 10px;border-radius:8px;font-size:15px;color:#111;background:#fff;border:0}
+.thumb img{cursor:zoom-in}
+.resetrow{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);text-align:center}
+.resetrow p{margin:6px 0 0;font-size:13px;opacity:.7}`; document.head.appendChild(st);
+})();
+document.addEventListener('click', e => {
+  const im = e.target.closest && e.target.closest('.thumb img');
+  if (im) { const th = im.closest('.thumb'), sel = th && th.querySelector('select[data-room]'); const L = lbList(); const i = sel ? L.findIndex(u => u.id === sel.dataset.room) : -1; if (i >= 0) lbShow(i); return; }
+  const b = e.target.closest && e.target.closest('[data-lb]');
+  if (b && LB) {
+    const a = b.dataset.lb, L = lbList();
+    if (a === 'close') lbClose(); else if (a === 'prev') lbShow(LB.i - 1); else if (a === 'next') lbShow(LB.i + 1);
+    else if (a === 'del') { const u = L[LB.i], x = u && document.querySelector('button[data-del="' + u.id + '"]'); if (x) x.click(); setTimeout(() => lbShow(Math.min(LB ? LB.i : 0, lbList().length - 1)), 150); }
+    return;
+  }
+  if (e.target.id === 'lb') lbClose();
+  const r = e.target.closest && e.target.closest('#resetAll');
+  if (r) {
+    if (!r.dataset.armed) { r.dataset.armed = '1'; r.textContent = 'Click again to erase everything'; setTimeout(() => { if (r.isConnected) { delete r.dataset.armed; r.textContent = 'Start over'; } }, 5000); return; }
+    resetAll();
+  }
+});
+document.addEventListener('keydown', e => { if (!LB) return; if (e.key === 'Escape') lbClose(); else if (e.key === 'ArrowLeft') lbShow(LB.i - 1); else if (e.key === 'ArrowRight') lbShow(LB.i + 1); });
+document.addEventListener('change', e => { const t = e.target; if (t && t.dataset && t.dataset.room && t.closest('#lb')) setTimeout(render, 0); });
+async function resetAll(){
+  window.__resetting = true; clearTimeout(saveTimer);
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  try { for (const u of await idb.all()) await idb.del(u.id); } catch (e) {}
+  try { sessionStorage.clear(); } catch (e) {}
+  location.hash = ''; location.reload();
 }

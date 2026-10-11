@@ -63,6 +63,7 @@ let saveTimer = null;
 function setSave(state, text){ const el = $('#saveState'); if (!el) return; el.innerHTML = `<span class="sdot ${state}"></span><span>${esc(text)}</span>`; }
 function queueSave(){ setSave('busy','Saving…'); clearTimeout(saveTimer); saveTimer = setTimeout(flush, 400); }
 function flush(){
+  if (window.__resetting) return;
   try { localStorage.setItem(KEY, JSON.stringify({ sid, A })); setSave('ok','Saved on this device'); }
   catch (e) { setSave('err','Could not save on this device'); }
 }
@@ -231,7 +232,7 @@ document.addEventListener('change', e => {
   else if (t.dataset.sec) { A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), [t.dataset.sec]: t.checked }; queueSave(); render(); }
   else if (t.dataset.check) { set(t.dataset.check, t.checked); refreshSend(); }
   else if (t.dataset.file) { addFiles(t.dataset.file, t.files, +t.closest('[data-drop]').dataset.max); t.value = ''; }
-  else if (t.dataset.room) { const u = uploads.find(x => x.id === t.dataset.room); if (u) { u.room = t.value; saveUpload(u); } }
+  else if (t.dataset.room) { const u = uploads.find(x => x.id === t.dataset.room); if (u) setRoom(u, t.value); }
 });
 document.addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return;
