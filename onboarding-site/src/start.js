@@ -296,7 +296,7 @@ document.addEventListener('click', e => {
     return;
   }
   if (e.target.id === 'lb') lbClose();
-  const r = e.target.closest && e.target.closest('#resetAll');
+  const r = e.target.closest && e.target.closest('#resetAll,.resetTop');
   if (r) {
     if (!r.dataset.armed) { r.dataset.armed = '1'; r.textContent = 'Click again to erase everything'; setTimeout(() => { if (r.isConnected) { delete r.dataset.armed; r.textContent = 'Start over'; } }, 5000); return; }
     resetAll();
@@ -315,6 +315,8 @@ async function resetAll(){
 /* ---------- Version stamp, tiny, so you can tell which build you are looking at ---------- */
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
+  const st2 = document.createElement('style'); st2.textContent = '.resetTop{position:fixed;bottom:10px;left:10px;z-index:40;font:600 12px/1 inherit;font-family:inherit;padding:8px 12px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;opacity:.85;cursor:pointer}.resetTop:hover{opacity:1}'; document.head.appendChild(st2);
+  const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'resetTop'; rb.textContent = 'Start over'; rb.title = 'Erase everything on this device and begin again'; document.body.appendChild(rb);
   const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Version __BUILD__'; document.body.appendChild(d);
 })();
 
