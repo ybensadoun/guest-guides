@@ -8,7 +8,8 @@
     "check": "node engine/scripts/run.js check",
     "preview": "node engine/scripts/run.js preview",
     "preview-file": "node engine/scripts/run.js preview-file",
-    "sites": "node engine/scripts/run.js sites"
+    "sites": "node engine/scripts/run.js sites",
+    "check-places": "node engine/scripts/check-places.js"
   },
   "devDependencies": {
     "qrcode": "^1.5.4",
