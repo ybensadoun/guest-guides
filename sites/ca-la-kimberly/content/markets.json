@@ -223,47 +223,6 @@
       }
     },
     {
-      "id": "santaoliva",
-      "category": "street",
-      "name": {
-        "en": "Santa Oliva Saturday market",
-        "es": "Mercadillo de los sábados de Santa Oliva",
-        "fr": "Marché du samedi de Santa Oliva",
-        "ca": "Mercat dels dissabtes de Santa Oliva",
-        "de": "Samstagsmarkt Santa Oliva",
-        "nl": "Zaterdagmarkt Santa Oliva"
-      },
-      "comarca": "Baix Penedès",
-      "name_local": "Mercat setmanal",
-      "town": "Santa Oliva",
-      "place": "Pol. Ind. Molí d'en Serra",
-      "km_from_house": 9,
-      "lat": 41.2367,
-      "lng": 1.5444,
-      "schedule": [
-        {
-          "days": [
-            "sat"
-          ],
-          "open": "09:00",
-          "close": "14:00"
-        }
-      ],
-      "tags": [
-        "food",
-        "clothes"
-      ],
-      "flags": [],
-      "description": {
-        "en": "Saturday market on the Molí d'en Serra industrial estate with food, clothes and accessories. Easy parking.",
-        "es": "Mercadillo de los sábados en el polígono Molí d'en Serra, con alimentación, ropa y complementos. Fácil para aparcar.",
-        "fr": "Marché du samedi dans la zone d'activité Molí d'en Serra : alimentation, vêtements et accessoires. Stationnement facile.",
-        "ca": "Mercat de dissabte al polígon Molí d'en Serra, amb alimentació, roba i complements. Fàcil d'aparcar.",
-        "de": "Samstagsmarkt im Gewerbegebiet Molí d'en Serra mit Lebensmitteln, Kleidung und Accessoires. Parken ist einfach.",
-        "nl": "Zaterdagmarkt op het bedrijventerrein Molí d'en Serra met eten, kleding en accessoires. Makkelijk parkeren."
-      }
-    },
-    {
       "id": "vendrell-mm",
       "category": "covered",
       "name": {

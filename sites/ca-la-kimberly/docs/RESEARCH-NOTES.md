@@ -62,7 +62,6 @@ Each market has `name: {ca, es, en, fr, de, nl}`, shown as the card title. All n
 | papiola-sat | Albinyana | La Papiola second-hand market | Mercadillo de segunda mano de La Papiola | Marché d'occasion de La Papiola | Mercat de segona mà de la Papiola |
 | bonastre | Bonastre | Bonastre Tuesday market | Mercadillo de los martes de Bonastre | Marché du mardi de Bonastre | Mercat dels dimarts de Bonastre |
 | llorenc | Llorenç del Penedès | Llorenç Monday market | Mercadillo de los lunes de Llorenç | Marché du lundi de Llorenç | Mercat dels dilluns de Llorenç |
-| santaoliva | Santa Oliva | Santa Oliva Saturday market | Mercadillo de los sábados de Santa Oliva | Marché du samedi de Santa Oliva | Mercat dels dissabtes de Santa Oliva |
 | vendrell-mm | El Vendrell | El Vendrell covered market | Mercado Municipal de El Vendrell | Halles d'El Vendrell | Mercat Municipal del Vendrell |
 | vendrell-w | El Vendrell | El Vendrell Friday market | Mercadillo de los viernes de El Vendrell | Marché du vendredi d'El Vendrell | Mercat dels divendres del Vendrell |
 | vendrell-a | El Vendrell | El Vendrell antiques and bric-a-brac market | Mercado de antigüedades y brocante de El Vendrell | Marché des antiquaires et brocanteurs d'El Vendrell | Mercat d'antiquaris i brocanters del Vendrell |
@@ -116,7 +115,7 @@ Each market has `name: {ca, es, en, fr, de, nl}`, shown as the card title. All n
 - At the widest zoom, towns whose pins would overlap on screen share a cluster pin (for example "El Vendrell +6"). Tapping it zooms in until they separate.
 
 ## Opening hours research (October 2026)
-- Santa Oliva Saturday market: 9:00 to 14:00, Molí d'en Serra estate. Source: Diari de Tarragona, 22 March 2021.
+- Santa Oliva Saturday market: REMOVED 16 Oct 2026. Guests found no market there. Only source was Diari de Tarragona, 22 March 2021 (restart after closing in 2018); the town hall site lists no current weekly market. Do not re-add without a recent source.
 - El Vendrell Racó de l'Art: 10:00 to 21:00 (El Vendrell town hall procedures page). The town hall pages disagree on the day: the markets page says 2nd Saturday, the procedures page says 1st Saturday plus festival dates. Kept 2nd Saturday, flagged "check".
 - Calafell covered market: Monday to Saturday 9:00 to 21:00, plus summer Sundays 9:00 to 14:00 (calafell.cat). Food stalls may close earlier than the bars, flag "check" kept.
 - Els Monjos crafts and bric-a-brac market: 1st Sunday, 10:00 to 14:00, Plaça de Pau Casals (mercatsetmanal.cat).
