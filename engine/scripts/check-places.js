@@ -39,6 +39,7 @@ const search = async (textQuery, lat, lng) => {
 };
 
 const rows = [];
+let errRun = 0; // stop after 3 errors in a row (bad key, quota): saves the daily quota
 for (const [file, key] of Object.entries(FILES)) {
   if (only && only !== file) continue;
   const p = resolve(content, file + '.json'); if (!existsSync(p)) continue;
@@ -53,6 +54,8 @@ for (const [file, key] of Object.entries(FILES)) {
     const status = err ? 'ERROR' : closed ? closed.businessStatus : best ? 'OK' : 'NOT_FOUND';
     rows.push({ file, id: it.id, query: q, status, match: best ? { name: best.displayName?.text, address: best.formattedAddress, km: +best.km.toFixed(2), url: best.googleMapsUri } : null, err });
     process.stdout.write(`${status.padEnd(20)} ${file}/${it.id}\n`);
+    errRun = err ? errRun + 1 : 0;
+    if (errRun >= 3) { console.error(`\nStopped after 3 errors in a row: ${err}`); process.exit(2); }
     await new Promise(r => setTimeout(r, 200));
   }
 }
