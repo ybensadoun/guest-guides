@@ -27,3 +27,6 @@ test-submissions/*.csv
 
 .trash*/
 .trash*
+
+# Google Places check output (regenerated)
+sites/*/docs/places-check.*

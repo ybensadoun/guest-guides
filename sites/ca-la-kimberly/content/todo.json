@@ -452,60 +452,6 @@
       "gmaps": "https://www.google.com/maps/place/PortAventura/data=!4m2!3m1!1s0x12a159bb97a24019:0x9bb01aabaec2d626"
     },
     {
-      "id": "posesion",
-      "icon": "escape",
-      "group": "fun",
-      "tone": "red",
-      "name": {
-        "en": "La Posesión",
-        "es": "La Posesión",
-        "fr": "La Posesión",
-        "ca": "La Posesión",
-        "de": "La Posesión",
-        "nl": "La Posesión"
-      },
-      "type": {
-        "en": "Horror escape room, Sant Sadurní d'Anoia",
-        "es": "Escape room de terror, Sant Sadurní d'Anoia",
-        "fr": "Escape game d'horreur, Sant Sadurní d'Anoia",
-        "ca": "Escape room de terror, Sant Sadurní d'Anoia",
-        "de": "Horror-Escape-Room, Sant Sadurní d'Anoia",
-        "nl": "Horror-escaperoom, Sant Sadurní d'Anoia"
-      },
-      "town": "Sant Sadurní d'Anoia",
-      "place": "Passeig de Can Ferrer del Mas, 24",
-      "lat": 41.430437,
-      "lng": 1.785562,
-      "km_from_house": 43,
-      "description": {
-        "en": "A horror escape room with live actors, and genuinely scary. Highly recommended if you like being scared, not for young children. Easy to combine with a cava tasting in the same town.",
-        "es": "Un escape room de terror con actores, y da miedo de verdad. Muy recomendable si te gusta pasar miedo, no apto para niños pequeños. Fácil de combinar con una cata de cava en el mismo pueblo.",
-        "fr": "Un escape game d'horreur avec des acteurs, qui fait vraiment peur. Très recommandé si vous aimez avoir peur, pas pour les jeunes enfants. Facile à combiner avec une dégustation de cava dans la même ville.",
-        "ca": "Un escape room de terror amb actors, i fa por de debò. Molt recomanable si t'agrada passar por, no apte per a nens petits. Fàcil de combinar amb un tast de cava al mateix poble.",
-        "de": "Ein Horror-Escape-Room mit Schauspielern, und wirklich gruselig. Sehr zu empfehlen, wenn man sich gern fürchtet, nichts für kleine Kinder. Gut zu verbinden mit einer Cava-Verkostung im selben Ort.",
-        "nl": "Een horror-escaperoom met acteurs, en echt eng. Een aanrader als je graag bang wordt, niet voor jonge kinderen. Makkelijk te combineren met een cavaproeverij in hetzelfde stadje."
-      },
-      "hours": {
-        "en": "By booking only, from 10:00.",
-        "es": "Solo con reserva, desde las 10:00.",
-        "fr": "Sur réservation uniquement, dès 10h.",
-        "ca": "Només amb reserva, des de les 10:00.",
-        "de": "Nur mit Reservierung, ab 10 Uhr.",
-        "nl": "Alleen op reservering, vanaf 10:00."
-      },
-      "tags": [],
-      "flags": [
-        "book"
-      ],
-      "phone": "651 42 91 33",
-      "rating": {
-        "stars": 4.9,
-        "count": 853
-      },
-      "gmaps": "https://www.google.com/maps/place/La+Posesi%C3%B3n/data=!4m2!3m1!1s0x12a463d3e4093171:0x44632f8a90227da3",
-      "url": "https://www.fearfactoryexp.com/"
-    },
-    {
       "id": "spa",
       "icon": "spring",
       "group": "fun",

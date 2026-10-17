@@ -449,3 +449,14 @@ Low ones to watch: Aqualeon 3.5 (queues, crowds), La Brisa Beach Club 3.8 (86 re
 - Status labels wrap on two lines (times kept whole) so long names have room; Emergency tile uses a short label; "On now" fixed in de/es/ca.
 - Home (Markets tile, What's on) always uses the default market types, never the Markets page filters; Home links into Markets reset the filters.
 - Recycling centre text: bring organic waste or packaging here during opening hours instead of waiting for the next collection (no resident card / emergency container mention).
+
+## Existence audit, 17 Oct 2026 (after guests found Santa Oliva closed)
+Method: every market, restaurant and business activity checked on Google Maps (listing exists near the pin, not "Permanently closed") plus a web search for a source from October 2024 or later. Removed, do not re-add without a recent source AND a live Google listing:
+- banyeres: Google lists the Wednesday market (Plaça de l'Ajuntament) as Permanently closed.
+- vendrell-a (antiques, 2nd Saturday) and vendrell-art (Racó de l'Art): no Google listing, no source after 2024.
+- bellvei (Ca Susi second-hand market): only the bar is listed; no evidence of the market.
+- valls-b (antiques and collectors): not on the town hall commerce page, no listing.
+- segur-swap and torre-swap: no edition found in 2025 or 2026.
+- todo/posesion (La Posesión escape room): it is in L'Hospitalet de Llobregat (Fear Factory, Carretera de Collblanc 205), not Sant Sadurní.
+Fixed: Mercadet de Sant Quadrat closes 14:00 (Mercats de Tarragona); La Pobla market is on Passeig de l'Estació (Google).
+Weakest still kept (listing exists, old reviews): Constantí (latest review about 3 years), Torredembarra (town hall page, review 5 years), Vila-rodona and Alcover (listing, no reviews). Re-check these first next month.

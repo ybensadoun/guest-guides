@@ -325,172 +325,6 @@
       }
     },
     {
-      "id": "vendrell-a",
-      "category": "antiques",
-      "name": {
-        "en": "El Vendrell antiques and bric-a-brac market",
-        "es": "Mercado de antigüedades y brocante de El Vendrell",
-        "fr": "Marché des antiquaires et brocanteurs d'El Vendrell",
-        "ca": "Mercat d'antiquaris i brocanters del Vendrell",
-        "de": "Antiquitäten- und Trödelmarkt El Vendrell",
-        "nl": "Antiek- en brocantemarkt El Vendrell"
-      },
-      "comarca": "Baix Penedès",
-      "name_local": "Mercat d'antiquaris i brocanters",
-      "town": "El Vendrell",
-      "place": "La Rambla",
-      "km_from_house": 10,
-      "lat": 41.2176,
-      "lng": 1.5345,
-      "schedule": [
-        {
-          "days": [
-            "sat"
-          ],
-          "open": "09:00",
-          "close": "15:00",
-          "week_of_month": 2
-        }
-      ],
-      "tags": [
-        "antiques"
-      ],
-      "flags": [],
-      "description": {
-        "en": "Antique dealers and brocante along the Rambla: old furniture, tools, ceramics and collectables. Only genuine antique and second-hand goods are allowed.",
-        "es": "Anticuarios y brocantes por la Rambla: muebles antiguos, herramientas, cerámica y objetos de colección. Solo se admiten antigüedades y artículos de brocante.",
-        "fr": "Antiquaires et brocanteurs sur la Rambla : meubles anciens, outils, céramiques et objets de collection. Uniquement de l'ancien et de la brocante.",
-        "ca": "Antiquaris i brocanters a la Rambla: mobles antics, eines, ceràmica i objectes de col·lecció. Només s'hi admeten antiguitats i brocanteria.",
-        "de": "Antiquitätenhändler und Trödel entlang der Rambla: alte Möbel, Werkzeug, Keramik und Sammlerstücke. Nur echte Antiquitäten und Gebrauchtwaren sind erlaubt.",
-        "nl": "Antiekhandelaars en brocante langs de Rambla: oude meubels, gereedschap, keramiek en verzamelobjecten. Alleen echt antiek en tweedehands is toegestaan."
-      }
-    },
-    {
-      "id": "vendrell-art",
-      "category": "antiques",
-      "name": {
-        "en": "El Vendrell crafts market (Racó de l'Art)",
-        "es": "Mercado de artesanía de El Vendrell (Racó de l'Art)",
-        "fr": "Marché artisanal d'El Vendrell (Racó de l'Art)",
-        "ca": "Mercat d'artesania del Vendrell (Racó de l'Art)",
-        "de": "Kunsthandwerksmarkt El Vendrell (Racó de l'Art)",
-        "nl": "Ambachtsmarkt El Vendrell (Racó de l'Art)"
-      },
-      "comarca": "Baix Penedès",
-      "name_local": "Racó de l'Art",
-      "town": "El Vendrell",
-      "place": "C/ dels Cafès",
-      "km_from_house": 10,
-      "lat": 41.2183,
-      "lng": 1.533,
-      "schedule": [
-        {
-          "days": [
-            "sat"
-          ],
-          "open": "10:00",
-          "close": "21:00",
-          "week_of_month": 2
-        }
-      ],
-      "tags": [
-        "crafts"
-      ],
-      "flags": [
-        "check"
-      ],
-      "description": {
-        "en": "Handmade crafts on the same morning as the antiques market: soaps, painted clothes, ceramics, glass, jewellery and puppets.",
-        "es": "Artesanía hecha a mano la misma mañana que el mercado de antigüedades: jabones, ropa pintada, cerámica, vidrio, bisutería y títeres.",
-        "fr": "Artisanat le même matin que le marché d'antiquités : savons, vêtements peints, céramique, verre, bijoux et marionnettes.",
-        "ca": "Artesania feta a mà el mateix matí que el mercat d'antiguitats: sabons, roba pintada, ceràmica, vidre, bijuteria i titelles.",
-        "de": "Handgemachtes Kunsthandwerk am selben Tag wie der Antiquitätenmarkt: Seifen, bemalte Kleidung, Keramik, Glas, Schmuck und Puppen.",
-        "nl": "Handgemaakt ambacht op dezelfde dag als de antiekmarkt: zeep, beschilderde kleding, keramiek, glas, sieraden en poppen."
-      }
-    },
-    {
-      "id": "banyeres",
-      "category": "street",
-      "name": {
-        "en": "Banyeres Wednesday market",
-        "es": "Mercadillo de los miércoles de Banyeres",
-        "fr": "Marché du mercredi de Banyeres",
-        "ca": "Mercat dels dimecres de Banyeres",
-        "de": "Mittwochsmarkt Banyeres",
-        "nl": "Woensdagmarkt Banyeres"
-      },
-      "comarca": "Baix Penedès",
-      "name_local": "Mercat setmanal",
-      "town": "Banyeres del Penedès",
-      "km_from_house": 11,
-      "lat": 41.28,
-      "lng": 1.581,
-      "stalls_approx": 15,
-      "schedule": [
-        {
-          "days": [
-            "wed"
-          ],
-          "open": "08:30",
-          "close": "13:30"
-        }
-      ],
-      "tags": [
-        "fruitveg"
-      ],
-      "flags": [],
-      "description": {
-        "en": "Small village market, fewer than 20 stalls, mostly fruit and veg.",
-        "es": "Mercadillo pequeño, menos de 20 puestos, sobre todo fruta y verdura.",
-        "fr": "Petit marché de village, moins de 20 étals, surtout fruits et légumes.",
-        "ca": "Mercat petit, menys de 20 parades, sobretot fruita i verdura.",
-        "de": "Kleiner Dorfmarkt mit weniger als 20 Ständen, vor allem Obst und Gemüse.",
-        "nl": "Kleine dorpsmarkt met minder dan 20 kramen, vooral groente en fruit."
-      }
-    },
-    {
-      "id": "bellvei",
-      "category": "flea",
-      "name": {
-        "en": "Bellvei second-hand market (Ca Susi)",
-        "es": "Mercadillo de segunda mano de Bellvei (Ca Susi)",
-        "fr": "Marché d'occasion de Bellvei (Ca Susi)",
-        "ca": "Mercat de segona mà de Bellvei (Ca Susi)",
-        "de": "Second-Hand-Markt Bellvei (Ca Susi)",
-        "nl": "Tweedehandsmarkt Bellvei (Ca Susi)"
-      },
-      "comarca": "Baix Penedès",
-      "name_local": "Mercat de segona mà Ca Susi",
-      "town": "Bellvei",
-      "place": "Carretera de Calafell",
-      "km_from_house": 12,
-      "lat": 41.236,
-      "lng": 1.578,
-      "schedule": [
-        {
-          "days": [
-            "sun"
-          ],
-          "open": "09:00",
-          "close": "14:00"
-        }
-      ],
-      "tags": [
-        "secondhand"
-      ],
-      "flags": [
-        "check"
-      ],
-      "description": {
-        "en": "Sunday second-hand market on the Calafell road: used goods and bric-a-brac. Pairs well with La Papiola on a Sunday morning.",
-        "es": "Rastro dominical en la carretera de Calafell: artículos usados y cachivaches. Se combina bien con La Papiola un domingo por la mañana.",
-        "fr": "Brocante du dimanche sur la route de Calafell : objets d'occasion et bric-à-brac. À combiner avec La Papiola le dimanche matin.",
-        "ca": "Encants de diumenge a la carretera de Calafell: objectes usats i andròmines. Es combina bé amb La Papiola un diumenge al matí.",
-        "de": "Sonntäglicher Second-Hand-Markt an der Straße nach Calafell: Gebrauchtwaren und Trödel. Passt gut zu La Papiola an einem Sonntagvormittag.",
-        "nl": "Tweedehandsmarkt op zondag aan de weg naar Calafell: gebruikte spullen en snuisterijen. Goed te combineren met La Papiola op een zondagochtend."
-      }
-    },
-    {
       "id": "santjaume",
       "category": "street",
       "name": {
@@ -662,9 +496,7 @@
         "deli",
         "tapas"
       ],
-      "flags": [
-        "check"
-      ],
+      "flags": [],
       "description": {
         "en": "Covered market by the beach with butchers, fishmongers and deli counters, plus wine and tapas bars that stay open later than the food stalls.",
         "es": "Mercado cubierto cerca de la playa con carnicerías, pescaderías y charcuterías, además de bares de vino y tapas que cierran más tarde que los puestos.",
@@ -884,7 +716,7 @@
         "de": "Kleiner Samstagsmarkt mit rund 20 Ständen.",
         "nl": "Kleine zaterdagmarkt met zo'n 20 kramen."
       },
-      "place": "Avinguda de Catalunya"
+      "place": "Passeig de l'Estació"
     },
     {
       "id": "creixell",
@@ -1135,7 +967,7 @@
             "fri"
           ],
           "open": "08:00",
-          "close": "15:00"
+          "close": "14:00"
         }
       ],
       "tags": [
@@ -1324,49 +1156,6 @@
         "ca": "El mercat principal de l'Alt Camp, unes 100 parades per les places del centre. El dissabte és el complet amb producte fresc; el dimecres és sobretot roba.",
         "de": "Der Hauptmarkt des Alt Camp mit etwa 100 Ständen auf den Plätzen der Altstadt. Samstags ist der volle Markt mit frischen Produkten, mittwochs vor allem Kleidung.",
         "nl": "De hoofdmarkt van de Alt Camp met zo'n 100 kramen op de pleinen van de oude stad. Op zaterdag de volledige markt met verse producten, op woensdag vooral kleding."
-      }
-    },
-    {
-      "id": "valls-b",
-      "category": "antiques",
-      "name": {
-        "en": "Valls antiques and collectors' market",
-        "es": "Mercado de antigüedades y coleccionismo de Valls",
-        "fr": "Marché des antiquités et de la collection de Valls",
-        "ca": "Mercat d'antiguitats i col·leccionisme de Valls",
-        "de": "Antiquitäten- und Sammlermarkt Valls",
-        "nl": "Antiek- en verzamelaarsmarkt Valls"
-      },
-      "comarca": "Alt Camp",
-      "name_local": "Mercat d'antiguitats i col·leccionisme",
-      "town": "Valls",
-      "place": "El Pati",
-      "km_from_house": 25,
-      "lat": 41.287,
-      "lng": 1.252,
-      "schedule": [
-        {
-          "days": [
-            "sat"
-          ],
-          "open": "09:00",
-          "close": "14:00",
-          "week_of_month": 1
-        }
-      ],
-      "tags": [
-        "antiques"
-      ],
-      "flags": [
-        "check"
-      ],
-      "description": {
-        "en": "Antiques, brocante and collectors' stalls at El Pati, on the same morning as the Saturday market.",
-        "es": "Antigüedades, brocante y coleccionismo en El Pati, la misma mañana que el mercado del sábado.",
-        "fr": "Antiquités, brocante et collectionneurs à El Pati, le même matin que le marché du samedi.",
-        "ca": "Antiguitats, brocanteria i col·leccionisme a El Pati, el mateix matí que el mercat de dissabte.",
-        "de": "Antiquitäten-, Trödel- und Sammlerstände in El Pati, am selben Vormittag wie der Samstagsmarkt.",
-        "nl": "Antiek-, brocante- en verzamelaarskramen in El Pati, op dezelfde ochtend als de zaterdagmarkt."
       }
     },
     {
@@ -1979,50 +1768,6 @@
       }
     },
     {
-      "id": "segur-swap",
-      "category": "events",
-      "name": {
-        "en": "Segur de Calafell swap and second-hand market",
-        "es": "Mercado de intercambio y segunda mano de Segur de Calafell",
-        "fr": "Marché de troc et d'occasion de Segur de Calafell",
-        "ca": "Mercat d'intercanvi i segona mà de Segur de Calafell",
-        "de": "Tausch- und Second-Hand-Markt Segur de Calafell",
-        "nl": "Ruil- en tweedehandsmarkt Segur de Calafell"
-      },
-      "comarca": "Baix Penedès",
-      "name_local": "Mercat d'intercanvi i segona mà",
-      "town": "Segur de Calafell",
-      "place": "Passeig Marítim",
-      "km_from_house": 17,
-      "lat": 41.188,
-      "lng": 1.608,
-      "stalls_approx": 200,
-      "schedule": [],
-      "occasional_when": {
-        "en": "A few Sundays a year, usually spring, 8:00 to 15:00",
-        "es": "Algunos domingos al año, sobre todo en primavera, de 8:00 a 15:00",
-        "fr": "Quelques dimanches par an, surtout au printemps, de 8 h à 15 h",
-        "ca": "Alguns diumenges l'any, sobretot a la primavera, de 8:00 a 15:00",
-        "de": "Einige Sonntage im Jahr, meist im Frühling, 8:00 bis 15:00",
-        "nl": "Een paar zondagen per jaar, meestal in de lente, 8:00 tot 15:00"
-      },
-      "tags": [
-        "secondhand",
-        "books",
-        "toys",
-        "plants"
-      ],
-      "flags": [],
-      "description": {
-        "en": "About 200 private sellers swap or sell their things: books, furniture, records, tools, clothes, kids' gear and plants. No food, no traders.",
-        "es": "Unos 200 particulares intercambian o venden sus cosas: libros, muebles, discos, herramientas, ropa, cosas de niños y plantas. Sin comida ni comerciantes.",
-        "fr": "Environ 200 particuliers échangent ou vendent : livres, meubles, disques, outils, vêtements, affaires d'enfants et plantes. Ni alimentation ni professionnels.",
-        "ca": "Uns 200 particulars intercanvien o venen les seves coses: llibres, mobles, discos, eines, roba, coses d'infants i plantes. Sense menjar ni comerciants.",
-        "de": "Etwa 200 Privatleute tauschen oder verkaufen ihre Sachen: Bücher, Möbel, Schallplatten, Werkzeug, Kleidung, Kindersachen und Pflanzen. Keine Lebensmittel, keine Händler.",
-        "nl": "Zo'n 200 particulieren ruilen of verkopen hun spullen: boeken, meubels, platen, gereedschap, kleding, kinderspullen en planten. Geen eten, geen handelaars."
-      }
-    },
-    {
       "id": "arboc-llucia",
       "category": "events",
       "name": {
@@ -2061,45 +1806,6 @@
         "ca": "Fira de Nadal amb unes 100 parades: guarniments, artesania i regals.",
         "de": "Weihnachtsmarkt mit etwa 100 Ständen: Dekoration, Kunsthandwerk und Geschenke.",
         "nl": "Kerstmarkt met zo'n 100 kramen: decoratie, ambacht en cadeaus."
-      }
-    },
-    {
-      "id": "torre-swap",
-      "category": "events",
-      "name": {
-        "en": "Torredembarra swap market",
-        "es": "Mercado de intercambio de Torredembarra",
-        "fr": "Marché de troc de Torredembarra",
-        "ca": "Mercat d'intercanvi de Torredembarra",
-        "de": "Tauschmarkt Torredembarra",
-        "nl": "Ruilmarkt Torredembarra"
-      },
-      "comarca": "Tarragonès",
-      "name_local": "Mercat d'intercanvi",
-      "town": "Torredembarra",
-      "km_from_house": 20,
-      "lat": 41.145,
-      "lng": 1.403,
-      "schedule": [],
-      "occasional_when": {
-        "en": "Twice a year, June and late November, Saturday 10:00 to 14:00",
-        "es": "Dos veces al año, junio y finales de noviembre, sábado de 10:00 a 14:00",
-        "fr": "Deux fois par an, juin et fin novembre, samedi de 10 h à 14 h",
-        "ca": "Dues vegades l'any, juny i finals de novembre, dissabte de 10:00 a 14:00",
-        "de": "Zweimal im Jahr, Juni und Ende November, samstags 10:00 bis 14:00",
-        "nl": "Twee keer per jaar, juni en eind november, zaterdag 10:00 tot 14:00"
-      },
-      "tags": [
-        "secondhand"
-      ],
-      "flags": [],
-      "description": {
-        "en": "Eco swap and second-hand market with repair and reuse stalls.",
-        "es": "Mercado ecológico de intercambio y segunda mano, con puestos de reparación y reutilización.",
-        "fr": "Marché écologique de troc et d'occasion, avec stands de réparation et de réemploi.",
-        "ca": "Mercat ecològic d'intercanvi i segona mà, amb parades de reparació i reutilització.",
-        "de": "Öko-Tausch- und Second-Hand-Markt mit Ständen zum Reparieren und Wiederverwenden.",
-        "nl": "Ecologische ruil- en tweedehandsmarkt met kramen voor reparatie en hergebruik."
       }
     },
     {
