@@ -47,3 +47,4 @@ The first guides were boring: safe fonts, flat pale backgrounds, the same layout
 - Sheets and pop-ups (Wi-Fi etc.) fit the visible screen (100dvh, not 100vh) and keep the close button visible; test French on a short phone.
 - Inner pages: the title starts right under the floating back and language buttons; no empty band at the top.
 - The house page: a slim bar (name, rating, guests, bedrooms, bathrooms) fades in once the facts scroll away; tap it to go back to the photos. The description shows its first, most appealing paragraph and a "Read more" for the rest (keep the first paragraph short and inviting).
+- Sticky bars and anything that appears on scroll must follow the scroll gradually (opacity and position driven by scroll position), never switch on/off with a transition: that flickers on iPhone.
