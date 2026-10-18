@@ -517,7 +517,8 @@ site = {
 
 # What is left for research, with the host's own hints.
 todo = [f'# Research to do for {name}', '', f'Area: {area} · radius {site["area"]["radiusKm"]} km · point {args.lat}, {args.lng}', '',
-        'Fill each file in content/ (same shapes as sites/ca-la-kimberly/content), then set its section to "live" (re-running this script does it).', '']
+        'Fill each file in content/ (same shapes as sites/ca-la-kimberly/content), then set its section to "live" (re-running this script does it).',
+        'Before researching, read docs/CURATION.md: list what a guest would not find by searching Google themselves (no groceries, no golf courses for golfers), each with a one-line reason.', '']
 hints = {'todo': 'favourites', 'essentials': 'essentials'}   # rubbish and restaurants are never researched
 for sid in research:
     todo.append(f'- [ ] {sid}' + (f": host notes: {A.get(hints[sid], '')!r}" if hints.get(sid) and A.get(hints[sid]) else ''))
