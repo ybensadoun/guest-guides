@@ -44,3 +44,4 @@ The first guides were boring: safe fonts, flat pale backgrounds, the same layout
 - Coming back to Home returns to where the guest was, not the top.
 - "Map centred on" behaves the same for the house and any other place (same view, same small centre ring).
 - "Great for kids" (tag kidsfun) is for places kids will really love, not for anything merely kid friendly.
+- Sheets and pop-ups (Wi-Fi etc.) fit the visible screen (100dvh, not 100vh) and keep the close button visible; test French on a short phone.
