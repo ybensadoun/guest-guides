@@ -80,7 +80,11 @@ function syncTitle() {
 }
 
 let lastView = null;
+// Coming back to Home puts you where you were on it (standard back navigation), not at the top.
+const homeScroll = { y: 0 };
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 function route() {
+  if (lastView === 'home') homeScroll.y = scrollY;
   const r = parse();
   if (r.view === 'markets' && (r.today || r.day != null)) {
     st.mk = 'days';
@@ -96,7 +100,10 @@ function route() {
   MV.hidden = !onMap;
   if (onMap) { showMap(MV, r.sel, prev === 'map'); syncTitle(); }
   else render();
-  if (prev !== r.view) window.scrollTo(0, 0);
+  if (prev !== r.view) {
+    if (r.view === 'home' && homeScroll.y) { const y = homeScroll.y; window.scrollTo(0, y); requestAnimationFrame(() => window.scrollTo(0, y)); }
+    else window.scrollTo(0, 0);
+  }
 }
 
 function render() {

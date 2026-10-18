@@ -128,10 +128,10 @@ function atSearch(qs, localOnly) {
     }).catch(() => { if (seq === atSeq) { atRemote = []; draw(); } });
 }
 let atMarker = null;
-// A small target marks a chosen place (never shown for the house: no house pin on any map).
+// A small target marks the place the map is centred on, the house included (a centre mark, not an exact house pin).
 function atMark() {
   if (atMarker) { atMarker.remove(); atMarker = null; }
-  const v = st.mapAt; if (!map || !ml || !v || v.me) return;
+  const v = st.mapAt || { lat: HOUSE.lat, lng: HOUSE.lng }; if (!map || !ml || v.me) return;
   const d = document.createElement('div'); d.className = 'at-mk'; d.style.zIndex = '4';
   atMarker = new ml.Marker({ element: d }).setLngLat([v.lng, v.lat]).addTo(map);
 }
@@ -139,7 +139,8 @@ function atSet(v) {
   st.mapAt = v; atLabel(); atOpen(false); atMark();
   if (location.hash !== '#map') { location.hash = '#map'; return; }
   st.mapSel = null; expanded.clear();
-  if (map) { if (!v) map.fitBounds(overviewBounds(), { padding: 30, duration: 900 }); else map.flyTo({ center: [v.lng, v.lat], zoom: 12, duration: 900, essential: true }); }
+  // Same view for every choice, the house included: centred on it, showing the places around it.
+  if (map) map.fitBounds(overviewBounds(), { padding: 30, duration: 900 });
   drawMarkers(); renderSheet();
 }
 
@@ -236,6 +237,7 @@ async function initMap() {
 
   texts();
   drawMarkers();
+  atMark();
   if (st.me) placeMe();
   if (pendingRoute) { const r = pendingRoute; pendingRoute = null; applyRoute(r, false); }
 }
