@@ -150,9 +150,10 @@ export function renderSection(V, id) {
     let ofsel = timed && ['now', 'later'].includes(st.openf[id]) ? st.openf[id] : 'any';
     const byGroup = gsel === 'all' ? all : all.filter(s => s.group === gsel);
     
-    // Feature filters (restaurants): only the ones some place has; several can be on at once.
-    const FEATS = { menuDia: s => (s.setMenus || []).some(x => x.kind === 'menuDia'), tasting: s => (s.setMenus || []).some(x => /^tasting/.test(x.kind)), dogs: s => (s.tags || []).includes('dogs'), veggie: s => (s.tags || []).includes('veggie') };
-    const feats = id === 'restaurants' ? Object.keys(FEATS).filter(k => all.some(FEATS[k])) : [];
+    // Feature filters (restaurants, things to do): only the ones some place has; several can be on at once.
+    const FEATS = { menuDia: s => (s.setMenus || []).some(x => x.kind === 'menuDia'), tasting: s => (s.setMenus || []).some(x => /^tasting/.test(x.kind)), dogs: s => (s.tags || []).includes('dogs'), veggie: s => (s.tags || []).includes('veggie'), kidsfun: s => (s.tags || []).includes('kidsfun') };
+    const FEAT_SECS = { restaurants: ['menuDia', 'tasting', 'dogs', 'veggie'], todo: ['kidsfun', 'dogs'] };
+    const feats = (FEAT_SECS[id] || []).filter(k => all.some(FEATS[k]));
     const fsel = (st.featf[id] || []).filter(k => feats.includes(k));
     const byFeat = byGroup.filter(s => fsel.every(k => FEATS[k](s)));
     const nNow = byFeat.filter(s => stateOf(s) === 0).length, nLater = byFeat.filter(s => stateOf(s) === 1).length;

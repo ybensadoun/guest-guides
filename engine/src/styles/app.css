@@ -807,7 +807,9 @@ body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) +
 .dk.price{color:var(--ink);font-weight:600}
 .tstrip i.setm{background:var(--ink)!important;color:var(--white);font-weight:600}
 .ochips{margin-top:-4px}
-.ochips{flex-wrap:nowrap!important;gap:6px}.ochips .gchip{white-space:nowrap;padding-inline:12px}
+.ochips{gap:6px}.ochips .gchip{white-space:nowrap;padding-inline:12px}
+/* Chip rows never make the page wider than the phone: they wrap, and a chip longer than the screen wraps its text. */
+.gchips{max-width:100%}.gchip{max-width:100%;white-space:normal;text-align:left}
 .tstrip i.top{background:var(--yellow)!important;color:var(--ink);font-weight:700;letter-spacing:.01em}
 .tstrip i.note{background:none!important;border:1.5px solid var(--ink);color:var(--ink);font-weight:600}
 
