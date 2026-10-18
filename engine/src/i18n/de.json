@@ -247,6 +247,8 @@
   "wifiNet": "Netzwerk",
   "wifiPw": "Passwort",
   "copyPw": "Passwort kopieren",
+  "copyShort": "Kopieren",
+  "wifiScan": "Anderes Handy? Zum Verbinden scannen:",
   "copied": "Kopiert",
   "wifiHow": "Öffne die WLAN-Einstellungen, wähle eines dieser Netzwerke und füge das Passwort ein.",
   "wifiQr": "Noch ein Handy oder Tablet? Scanne einen Code mit der Kamera und du bist ohne Tippen verbunden.",

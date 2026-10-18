@@ -247,6 +247,8 @@
   "wifiNet": "Réseau",
   "wifiPw": "Mot de passe",
   "copyPw": "Copier le mot de passe",
+  "copyShort": "Copier",
+  "wifiScan": "Un autre téléphone ? Scannez pour vous connecter :",
   "copied": "Copié",
   "wifiHow": "Ouvrez vos réglages wifi, choisissez l'un de ces réseaux et collez le mot de passe.",
   "wifiQr": "Un autre téléphone ou une tablette ? Scannez un code avec l'appareil photo pour vous connecter sans rien taper.",

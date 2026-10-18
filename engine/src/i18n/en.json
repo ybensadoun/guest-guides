@@ -247,6 +247,8 @@
   "wifiNet": "Network",
   "wifiPw": "Password",
   "copyPw": "Copy password",
+  "copyShort": "Copy",
+  "wifiScan": "Another phone? Scan to join:",
   "copied": "Copied",
   "wifiHow": "Open your Wi-Fi settings, choose one of these networks and paste the password.",
   "wifiQr": "Another phone or tablet? Scan a code with its camera to join without typing.",

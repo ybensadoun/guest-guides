@@ -247,6 +247,8 @@
   "wifiNet": "Red",
   "wifiPw": "Contraseña",
   "copyPw": "Copiar contraseña",
+  "copyShort": "Copiar",
+  "wifiScan": "¿Otro teléfono? Escanea para conectarte:",
   "copied": "Copiada",
   "wifiHow": "Abre los ajustes de wifi, elige una de estas redes y pega la contraseña.",
   "wifiQr": "¿Otro móvil o tableta? Escanea un código con su cámara y se conecta sin escribir nada.",

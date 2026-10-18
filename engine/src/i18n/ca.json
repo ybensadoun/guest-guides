@@ -247,6 +247,8 @@
   "wifiNet": "Xarxa",
   "wifiPw": "Contrasenya",
   "copyPw": "Copiar la contrasenya",
+  "copyShort": "Copiar",
+  "wifiScan": "Un altre telèfon? Escaneja per connectar-te:",
   "copied": "Copiada",
   "wifiHow": "Obre els ajustos de wifi, tria una d'aquestes xarxes i enganxa la contrasenya.",
   "wifiQr": "Un altre mòbil o tauleta? Escaneja un codi amb la càmera i es connecta sense escriure res.",

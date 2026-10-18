@@ -247,6 +247,8 @@
   "wifiNet": "Netwerk",
   "wifiPw": "Wachtwoord",
   "copyPw": "Wachtwoord kopiëren",
+  "copyShort": "Kopiëren",
+  "wifiScan": "Andere telefoon? Scan om te verbinden:",
   "copied": "Gekopieerd",
   "wifiHow": "Open je wifi-instellingen, kies een van deze netwerken en plak het wachtwoord.",
   "wifiQr": "Nog een telefoon of tablet? Scan een code met de camera en je bent verbonden zonder te typen.",
