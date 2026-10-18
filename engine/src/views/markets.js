@@ -3,7 +3,8 @@ import { MARKETS, CATS } from '../content.js';
 import { st } from '../state.js';
 import { runsOn, dayName, cap } from '../schedule.js';
 import { kmMe } from '../geo.js';
-import { esc, row, chips } from '../ui.js';
+import { esc, row, chips, ICON } from '../ui.js';
+import { overviewMap } from './map.js';
 
 const FILTER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>';
 
@@ -20,12 +21,15 @@ export const sortRow = () => `<div class="row"><div class="pills" role="group">
 const emptyBox = () => `<div class="emptybox" role="status"><b>${esc(t('noneMatch'))}</b>${st.cats.size < CATS.length ? `<button class="btn" data-resetcats>${esc(t('showAllTypes'))}</button>` : ''}</div>`;
 const list = (l, rowOpts) => (l.length ? `<div class="mlist">${l.map(m => row(m, rowOpts(m))).join('')}</div>` : emptyBox());
 
+// A compact map of the markets in the list; tapping it opens the full map on Markets.
+const mapBox = l => (l.length ? `<a class="pl-map secmap mkmapbox" href="#map" data-mapcat="${esc(l[0].cat)}" aria-label="${esc(t('openMap'))}"><div id="mkmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openMap'))}</span></a>` : '');
+
 export function renderMarkets(V) {
   // Keep expanded rows open across re-renders (filters, the 1-minute status refresh).
   const openIds = new Set([...V.querySelectorAll('.mrow[open]')].map(e => e.dataset.id));
   const now = new Date();
   const vis = m => st.cats.has(m.cat);
-  let body = '';
+  let body = '', shown = [], mkey = '';
   if (st.mk === 'days') {
     // Next 14 days as real dates, so monthly markets (2nd Saturday...) only show on their date.
     const DAYS = 14;
@@ -38,11 +42,15 @@ export function renderMarkets(V) {
     const bar = `<div class="daybar" id="daybar">${dates.map((d, i) => `<button class="dchip ${i === 0 ? 'today' : ''}" data-day="${i}" aria-pressed="${i === off}">
       <span>${esc(cap(short.format(d)))} ${d.getDate()}</span><small>${esc(rel(i) ? rel(i) + ' · ' : '')}${count(d)}</small></button>`).join('')}</div>`;
     const head = (rel(off) ? rel(off) + ' · ' : '') + cap(new Intl.DateTimeFormat(locale(), { weekday: 'long', day: 'numeric', month: 'long' }).format(sel));
-    body = bar + `<h3 class="section-h">${esc(head)}</h3>` +
-      list(sorted(MARKETS.filter(m => vis(m) && runsOn(m, sel).length)), () => ({ date: off === 0 ? now : sel, live: off === 0 }));
+    shown = MARKETS.filter(m => vis(m) && runsOn(m, sel).length); mkey = 'd' + off;
+    body = bar + mapBox(shown) + `<h3 class="section-h">${esc(head)}</h3>` +
+      list(sorted(shown), () => ({ date: off === 0 ? now : sel, live: off === 0 }));
   } else {
-    body = list(sorted(MARKETS.filter(vis)), () => ({}));
+    shown = MARKETS.filter(vis); mkey = 'all';
+    body = mapBox(shown) + list(sorted(shown), () => ({}));
   }
+  mkey += '|' + [...st.cats].sort().join(',');
+  const oldMap = V.dataset.mkkey === mkey ? V.querySelector('#mkmap') : null;
   // Filters (types and distance basis) live in a fold-out panel so the list starts high on the screen.
   // Badge = how many settings differ from the default (all types except covered, distance from the house).
   const def = new Set(CATS.filter(c => c !== 'covered'));
@@ -62,6 +70,10 @@ export function renderMarkets(V) {
     ${body}
     <p class="foot">${esc(t('mkLead'))} ${esc(t('foot'))}</p></div>`;
   V.querySelectorAll('.mrow').forEach(e => { if (openIds.has(e.dataset.id)) e.open = true; });
+  // The small map of the markets listed: kept as is when only the status refreshes, redrawn when the day or filters change.
+  const box = V.querySelector('#mkmap');
+  if (box && oldMap) box.replaceWith(oldMap); else if (box) overviewMap(box, shown);
+  V.dataset.mkkey = mkey;
   // Keep the selected day visible in the scrolling strip.
   const bar = V.querySelector('#daybar');
   const selChip = bar && bar.querySelector('[aria-pressed="true"]');

@@ -48,3 +48,4 @@ The first guides were boring: safe fonts, flat pale backgrounds, the same layout
 - Inner pages: the title starts right under the floating back and language buttons; no empty band at the top.
 - The house page: a slim bar (name, rating, guests, bedrooms, bathrooms) fades in once the facts scroll away; tap it to go back to the photos. The description shows its first, most appealing paragraph and a "Read more" for the rest (keep the first paragraph short and inviting).
 - Sticky bars and anything that appears on scroll must follow the scroll gradually (opacity and position driven by scroll position), never switch on/off with a transition: that flickers on iPhone.
+- Inner pages: the big title sits on the row of the back and language buttons; once it scrolls away, a slim page bar with the same title follows the scroll in (tap = back to top). The house page shows name, rating and facts in that bar instead.

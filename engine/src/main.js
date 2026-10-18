@@ -104,7 +104,27 @@ function route() {
     if (r.view === 'home' && homeScroll.y) { const y = homeScroll.y; window.scrollTo(0, y); requestAnimationFrame(() => window.scrollTo(0, y)); }
     else window.scrollTo(0, 0);
   }
+  pageBar();
 }
+
+// Page bar (inner pages): the page title fades and slides in, following the scroll, once the big title has
+// slid under the buttons; tap it to go back to the top. The house page has its own richer bar (#hsticky).
+const PB = document.createElement('a');
+PB.className = 'hsticky pbar'; PB.href = '#'; PB.tabIndex = -1; PB.setAttribute('aria-hidden', 'true');
+PB.innerHTML = '<span class="hs-t"><b></b></span>';
+document.body.appendChild(PB);
+PB.addEventListener('click', e => { e.preventDefault(); scrollTo({ top: 0, behavior: 'smooth' }); });
+let pbRaf = 0;
+function pageBar() {
+  pbRaf = 0;
+  const h = st.view !== 'home' && !document.getElementById('hsticky') && document.querySelector('#view:not([hidden]) h2.title');
+  let k = 0;
+  if (h) { PB.querySelector('b').textContent = h.textContent; k = Math.min(1, Math.max(0, (scrollY - 6) / Math.max(40, h.offsetHeight))); }
+  PB.style.setProperty('--k', k.toFixed(3));
+  const on = k > 0.5;
+  if (PB.classList.contains('on') !== on) { PB.classList.toggle('on', on); PB.setAttribute('aria-hidden', String(!on)); PB.tabIndex = on ? 0 : -1; }
+}
+addEventListener('scroll', () => { if (!pbRaf) pbRaf = requestAnimationFrame(pageBar); }, { passive: true });
 
 function render() {
   if (st.view === 'home') renderHome(V);
@@ -113,6 +133,7 @@ function render() {
   else if (st.view === 'more') renderMore(V);
   else if (st.view === 'place') renderPlace(V, parse().id, quickIcon);
   syncTitle();
+  pageBar();
 }
 
 document.addEventListener('click', e => {

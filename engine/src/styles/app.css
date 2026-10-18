@@ -898,3 +898,11 @@ p,li,small,b,h2,h3,h4,.nm,.note,.ws-how,.mbody,.hsec,.tags,.lead{overflow-wrap:b
 /* The house bar follows the scroll (--k from 0 to 1, set in section.js): no transition, no visibility jump. */
 .hsticky{--k:0;opacity:var(--k);visibility:visible;transition:none;transform:translateY(calc((var(--k) - 1) * 12px));pointer-events:none;will-change:opacity,transform}
 .hsticky.on{pointer-events:auto;opacity:var(--k)}
+/* Inner pages: the big title sits on the row of the floating back and language buttons, no band above it.
+   When it scrolls under them, the page bar (main.js) takes over with the same title. */
+body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) + 10px)!important}
+body:not(.is-home) #view h2.title{min-height:44px;display:flex;align-items:center;padding:0 52px 0 56px;font-size:clamp(25px,7.6vw,32px)}
+.pbar .hs-t b{font-size:17px}
+/* Markets: a compact map of the markets listed. */
+.mkmapbox{height:170px}
+.mkmapbox #mkmap{position:absolute;inset:0}
