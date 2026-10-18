@@ -30,3 +30,7 @@ test-submissions/*.csv
 
 # Google Places check output (regenerated)
 sites/*/docs/places-check.*
+
+# Python bytecode
+__pycache__/
+*.pyc
