@@ -11,8 +11,8 @@
     "guide/pool-1.jpg",
     "guide/porch-3.jpg",
     "guide/living-1.jpg",
-    "guide/kitchen-2.jpg",
     "guide/dining-2.jpg",
+    "guide/kitchen-2.jpg",
     "guide/bed1-1.jpg",
     "guide/bed2-1.jpg",
     "guide/bed3-2.jpg",
@@ -840,21 +840,6 @@
     },
     {
       "room": {
-        "en": "Kitchen",
-        "es": "Cocina",
-        "fr": "Cuisine",
-        "ca": "Cuina",
-        "de": "Küche",
-        "nl": "Keuken"
-      },
-      "photos": [
-        "guide/kitchen-1.jpg",
-        "guide/kitchen-2.jpg",
-        "guide/kitchen-3.jpg"
-      ]
-    },
-    {
-      "room": {
         "en": "Dining area",
         "es": "Comedor",
         "fr": "Coin repas",
@@ -866,6 +851,21 @@
         "guide/dining-1.jpg",
         "guide/dining-2.jpg",
         "guide/dining-3.jpg"
+      ]
+    },
+    {
+      "room": {
+        "en": "Kitchen",
+        "es": "Cocina",
+        "fr": "Cuisine",
+        "ca": "Cuina",
+        "de": "Küche",
+        "nl": "Keuken"
+      },
+      "photos": [
+        "guide/kitchen-1.jpg",
+        "guide/kitchen-2.jpg",
+        "guide/kitchen-3.jpg"
       ]
     },
     {

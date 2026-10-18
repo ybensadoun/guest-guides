@@ -611,6 +611,15 @@
     "dead": [],
     "checked": null,
     "result": null
+   },
+   "golf-vendrell": {
+    "sources": [
+     "https://pitchandputtvendrell.com/tarifes",
+     "https://www.google.com/maps/place/Pitch+and+Putt+Golf+el+Vendrell/data=!4m2!3m1!1s0x12a38b6da2bd7229:0xec6e109160e2f91f"
+    ],
+    "dead": [],
+    "checked": "2026-10-18",
+    "result": "ok"
    }
   },
   "events.json": {

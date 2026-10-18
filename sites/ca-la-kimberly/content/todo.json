@@ -411,6 +411,65 @@
       "gmaps": "https://www.google.com/maps/place/Karting+Vendrell/data=!4m2!3m1!1s0x12a38b505ce6e4fb:0xfdcf344837c1c3d0"
     },
     {
+      "id": "golf-vendrell",
+      "name": {
+        "en": "Pitch & Putt Golf El Vendrell",
+        "es": "Pitch & Putt Golf El Vendrell",
+        "fr": "Pitch & Putt Golf El Vendrell",
+        "ca": "Pitch & Putt Golf El Vendrell",
+        "de": "Pitch & Putt Golf El Vendrell",
+        "nl": "Pitch & Putt Golf El Vendrell"
+      },
+      "type": {
+        "en": "Golf practice range and pitch & putt, El Vendrell",
+        "es": "Campo de prácticas de golf y pitch & putt, El Vendrell",
+        "fr": "Practice de golf et pitch & putt, El Vendrell",
+        "ca": "Camp de pràctiques de golf i pitch & putt, El Vendrell",
+        "de": "Golf-Übungsplatz und Pitch & Putt, El Vendrell",
+        "nl": "Golfoefenbaan en pitch & putt, El Vendrell"
+      },
+      "town": "El Vendrell",
+      "place": "Carrer Schubert, Urb. Vendrell Mar",
+      "lat": 41.2063369,
+      "lng": 1.5490483,
+      "km_from_house": 11,
+      "description": {
+        "en": "Close to the house and ideal for a quick practice: the practice range costs €5 on weekdays and €7 at weekends. Fancy more? Play 9 holes on the oldest pitch & putt course in Catalonia.",
+        "es": "Cerca de casa e ideal para practicar un rato: el campo de prácticas cuesta 5 € entre semana y 7 € el fin de semana. ¿Quieres más? Juega 9 hoyos en el pitch & putt más antiguo de Cataluña.",
+        "fr": "Près de la maison et idéal pour s'entraîner un moment : le practice coûte 5 € en semaine et 7 € le week-end. Envie de plus ? Jouez 9 trous sur le plus ancien pitch & putt de Catalogne.",
+        "ca": "A prop de casa i ideal per practicar una estona: el camp de pràctiques costa 5 € entre setmana i 7 € el cap de setmana. En vols més? Juga 9 forats al pitch & putt més antic de Catalunya.",
+        "de": "Nah am Haus und ideal für eine schnelle Übungsrunde: der Übungsplatz kostet 5 € unter der Woche und 7 € am Wochenende. Lust auf mehr? Spielen Sie 9 Löcher auf dem ältesten Pitch-&-Putt-Platz Kataloniens.",
+        "nl": "Dicht bij het huis en ideaal om even te oefenen: de oefenbaan kost € 5 door de week en € 7 in het weekend. Zin in meer? Speel 9 holes op de oudste pitch & putt-baan van Catalonië."
+      },
+      "tags": [],
+      "flags": [],
+      "phone": "977 66 80 31",
+      "url": "https://pitchandputtvendrell.com/",
+      "schedule": [
+        {
+          "days": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "open": "09:00",
+          "close": "20:00"
+        }
+      ],
+      "icon": "golf",
+      "tone": "red",
+      "group": "fun",
+      "rating": {
+        "stars": 4.4,
+        "count": 637
+      },
+      "gmaps": "https://www.google.com/maps/place/Pitch+and+Putt+Golf+el+Vendrell/data=!4m2!3m1!1s0x12a38b6da2bd7229:0xec6e109160e2f91f"
+    },
+    {
       "id": "portaventura",
       "icon": "themepark",
       "group": "fun",
