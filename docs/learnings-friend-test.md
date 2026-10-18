@@ -37,3 +37,10 @@ The first guides were boring: safe fonts, flat pale backgrounds, the same layout
 - Layout: vary scale and rhythm: oversized headline, asymmetric photo, one full-colour section. One signature move per guide.
 - Limits that stay: strong contrast and readable text, the host's avoid list, accent colour kept for the main actions, and every page checked at 390 px.
 - The generator template (engine/templates/designed-theme.css) is a safe starting point, not the finish: the design pass should push it further for each guide.
+
+## Engine UI decisions from the Ca La Kimberly owner (18 Oct 2026), for every guide
+- No top bar on Home: only the floating back and language buttons. The slim bar with the house name was not clickable, added nothing and flickered. Do not bring it back in a theme or a new template.
+- Filter chip rows wrap; nothing may make a page wider than the phone (test the longest language, usually French or German).
+- Coming back to Home returns to where the guest was, not the top.
+- "Map centred on" behaves the same for the house and any other place (same view, same small centre ring).
+- "Great for kids" (tag kidsfun) is for places kids will really love, not for anything merely kid friendly.
