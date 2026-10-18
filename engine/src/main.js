@@ -62,7 +62,7 @@ function chrome() {
 // Once the page title scrolls away, a frosted bar fades in with that title (large-title pattern).
 const onScroll = () => {
   document.getElementById('hero').classList.toggle('scrolled', scrollY > 48);
-  // Home: once the photo has scrolled away, a slim bar with the house name stays at the top (no animation).
+  // Home has no top bar (removed 18 Oct 2026: it added nothing and flickered); only the floating buttons stay.
   const hb = document.getElementById('hbar'), ph = document.querySelector('.hc-id');
   if (hb && ph) {
     // Progressive: the bar eases in over the last 70px of the house card, instead of popping in.

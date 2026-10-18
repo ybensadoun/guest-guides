@@ -87,7 +87,6 @@ export function renderHome(V) {
   // The house itself on top, like the standard guest guides: its photo (from the Airbnb listing),
   // the name as a small label, then the three facts guests look for first. Each opens its House guide row.
   const top = `<section class="sthero">
-     <div class="hbar" id="hbar" aria-hidden="true"><img src="${esc(SITE.logo || 'logo-head.png')}" alt=""><span>${esc(SITE.name)}</span></div>
      <div class="hcard">
      <a class="hc-ph" href="${HOUSE_LINK}"><img src="${esc(HOUSE.photo)}" style="object-position:${esc(HOUSE.photoPos || '50% 60%')}" alt=" loading="eager" decoding="async" onerror="this.remove()"></a>
      <a class="hc-id" href="${HOUSE_LINK}"><img src="${esc(SITE.logo || 'logo-head.png')}" alt=""><span class="hc-nm"><small class="hc-w">${esc(t('welcomeTo'))}</small><b>${esc(SITE.name)}</b><small>${esc(t('seeHouse'))}</small></span><span class="go" aria-hidden="true">${ARROW}</span></a>
