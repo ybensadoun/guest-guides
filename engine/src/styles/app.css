@@ -864,3 +864,9 @@ body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) +
 .st .nw{white-space:nowrap}
 /* Half-width Home tiles: long words hyphenate instead of running off the tile. */
 .gt:not(.wide) .gt-t{hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word}
+
+/* Wifi sheet: never taller than the visible screen (dvh follows the browser bars on iPhone), and the title row
+   with the close button stays pinned at the top while the rest scrolls. */
+.ws-card{max-height:calc(100vh - 24px);max-height:calc(100dvh - 12px - env(safe-area-inset-top,0px));overscroll-behavior:contain;padding-top:0}
+.ws-hd{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -20px;padding:16px 12px 8px 20px;background:var(--white)}
+.ws-hd .ws-x{position:static;flex:none}

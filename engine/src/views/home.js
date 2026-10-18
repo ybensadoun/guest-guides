@@ -191,8 +191,7 @@ function wifiSheet() {
   const o = document.createElement('div');
   o.className = 'wsheet';
   o.innerHTML = `<div class="ws-card" role="dialog" aria-modal="true">
-    <button type="button" class="ws-x" aria-label="${esc(t('close'))}">×</button>
-    <h3>${esc(t('qWifi'))}</h3>
+    <div class="ws-hd"><h3>${esc(t('qWifi'))}</h3><button type="button" class="ws-x" aria-label="${esc(t('close'))}">×</button></div>
     <div class="ws-f"><small>${esc(t('wifiNets'))}</small>${w.networks.map(n => `<b>${esc(n.ssid)}</b><span class="ws-l">${esc(tx(n.label))}</span>`).join('')}</div>
     <div class="ws-f"><small>${esc(t('wifiPwBoth'))}</small><b class="ws-pw">${esc(w.password)}</b></div>
     <button type="button" class="btn primary ws-copy">${esc(t('copyPw'))}</button>
