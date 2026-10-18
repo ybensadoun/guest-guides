@@ -50,10 +50,26 @@ export function setLang(l) {
   try { localStorage.setItem(KEY, l); } catch (e) { /* ignore */ }
 }
 
+// Typography at render time, so text edited later is still protected (rules: docs/TYPOGRAPHY.md).
+// Every language: a number and its unit never split across lines. French: thin no-break space before ? ! ;,
+// no-break space before : and inside « », so no line starts with ? ! ; : » or ends with «.
+// German: no-break space inside z. B. and d. h.
+const NB = '\u00A0', NN = '\u202F';
+export function typo(s, l = lang) {
+  if (typeof s !== 'string' || !s) return s;
+  s = s.replace(/(\d)[ \u00A0](km|m|cm|mm|min|h|kg|g|GHz|%|€|°C|°)(?=$|[\s.,;:!?)\]»”“])/g, '$1' + NB + '$2').replace(/€ (?=\d)/g, '€' + NB);
+  if (l === 'fr') {
+    s = s.replace(/[ \u00A0\u202F]*([?!;]+)(?=$|[\s)»”.,<])/g, NN + '$1')
+      .replace(/[ \u00A0\u202F]*:(?=$|\s)/g, NB + ':')
+      .replace(/«[ \u00A0\u202F]*/g, '«' + NB).replace(/[ \u00A0\u202F]*»/g, NB + '»');
+  }
+  if (l === 'de') s = s.replace(/\b(z|d|u|o|s)\. (B|h|a|Ä|ä|g)\./g, '$1.' + NB + '$2.');
+  return s;
+}
 export const t = (k, v) => {
   let s = (I[lang] && I[lang][k]) ?? I.en[k] ?? k;
   if (v) for (const x in v) s = s.replace('{' + x + '}', v[x]);
-  return s;
+  return s === k ? s : typo(s);
 };
-export const tx = o => (o ? o[lang] || o.en || '' : '');
+export const tx = o => (o ? typo(o[lang] || o.en || '') : '');
 export const locale = () => LOCALES[lang] || 'en-GB';

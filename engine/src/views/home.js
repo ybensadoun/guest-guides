@@ -194,7 +194,7 @@ function wifiSheet() {
     <div class="ws-hd"><h3>${esc(t('qWifi'))}</h3><button type="button" class="ws-x" aria-label="${esc(t('close'))}">×</button></div>
     <div class="ws-f"><small>${esc(t('wifiNets'))}</small>${w.networks.map(n => `<b>${esc(n.ssid)}</b><span class="ws-l">${esc(tx(n.label))}</span>`).join('')}</div>
     <div class="ws-f ws-pwrow"><span><small>${esc(t('wifiPwBoth'))}</small><b class="ws-pw">${esc(w.password)}</b></span><button type="button" class="btn primary ws-copy">${esc(t('copyShort'))}</button></div>
-    <p class="ws-how">${esc(t('wifiScan'))}</p><div class="ws-qrs">${w.networks.map(n => `<figure>${n.qr}<figcaption>${esc(tx(n.label).split(/[:：]/)[0])}</figcaption></figure>`).join('')}</div>
+    <p class="ws-how">${esc(t('wifiScan'))}</p><div class="ws-qrs">${w.networks.map(n => `<figure>${n.qr}<figcaption>${esc(tx(n.label).split(/[:：]/)[0].trim())}</figcaption></figure>`).join('')}</div>
   </div>`;
   document.body.appendChild(o);
   document.body.style.overflow = 'hidden';

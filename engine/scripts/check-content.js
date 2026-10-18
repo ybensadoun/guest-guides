@@ -74,5 +74,22 @@ for (const s of read(C('sections')).sections) {
   }
 }
 
+// Typography (docs/TYPOGRAPHY.md): Spanish ¿ ¡, Catalan punt volat, Dutch IJ, German quotes, German du (not Sie).
+const formal = [];
+const lint = (l, v, w) => {
+  if (typeof v !== 'string') return;
+  if (l === 'es') for (const x of v.split(/(?<=[.?!])\s+/)) { if (x.includes('?') && !x.includes('¿')) errors.push(`${w} (es) question without ¿: ${x.slice(0, 60)}`); if (x.includes('!') && !x.includes('¡')) errors.push(`${w} (es) exclamation without ¡: ${x.slice(0, 60)}`); }
+  if (l === 'ca' && /l[.•∙ŀ⋅]l/i.test(v)) errors.push(`${w} (ca) use the punt volat l·l`);
+  if (l === 'nl' && /\bIj/.test(v)) errors.push(`${w} (nl) write IJ, not Ij`);
+  if (l === 'de' && v.includes('"')) errors.push(`${w} (de) use „…“ quotes, not "…"`);
+  if (l === 'de' && /\b(Bringen|Rufen|Spielen|Versuchen|Öffnen|Nehmen|Fragen|Kommen|Gehen|Schauen|Lassen|Stellen|Legen|Werfen|Parken|Buchen|Reservieren) Sie\b/.test(v)) formal.push(w);
+};
+const lintAll = (o, w) => { if (Array.isArray(o)) o.forEach((x, i) => lintAll(x, `${w}[${i}]`)); else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { if (['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(k) && typeof v === 'string') lint(k, v, w); else lintAll(v, `${w}.${k}`); } };
+for (const f of jsonIn(resolve(SD, 'content'))) lintAll(read(f), rel(f));
+for (const l of LANGS) for (const [k, v] of Object.entries(i18n[l])) lint(l, v, `i18n ${l}.${k}`);
+
+// German: the engine strings say du; a guide that says Sie in its own texts mixes both (warning, the host may want Sie everywhere).
+if (formal.length && LANGS.includes('de')) console.warn(`Typography warning for ${SITE}: ${formal.length} German text(s) say Sie while the engine says du, e.g. ${formal[0]}`);
+
 if (errors.length) { console.error(`Content check failed for ${SITE}:\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log(`Content check OK for ${SITE}: ${nMarkets} markets, ${LANGS.length} languages.`);
