@@ -44,12 +44,12 @@
         "nl": "Zwembad 3,5 × 7 m"
       },
       "s": {
-        "en": "Up to 1.7 m deep, not heated: about 26 to 28 °C in July and August",
-        "es": "Hasta 1,7 m, sin climatizar: unos 26 a 28 °C en julio y agosto",
-        "fr": "Jusqu'à 1,7 m, non chauffée : environ 26 à 28 °C en juillet et août",
-        "ca": "Fins a 1,7 m, no climatitzada: uns 26 a 28 °C al juliol i l'agost",
-        "de": "Bis 1,7 m tief, unbeheizt: etwa 26 bis 28 °C im Juli und August",
-        "nl": "Tot 1,7 m diep, onverwarmd: zo'n 26 tot 28 °C in juli en augustus"
+        "en": "Open all year, not heated (about 28 °C in summer), up to 1.7 m deep",
+        "es": "Abierta todo el año, sin climatizar (unos 28 °C en verano), hasta 1,7 m",
+        "fr": "Ouverte toute l'année, non chauffée (environ 28 °C l'été), jusqu'à 1,7 m",
+        "ca": "Oberta tot l'any, no climatitzada (uns 28 °C a l'estiu), fins a 1,7 m",
+        "de": "Ganzjährig offen, unbeheizt (etwa 28 °C im Sommer), bis 1,7 m tief",
+        "nl": "Het hele jaar open, onverwarmd (zo'n 28 °C in de zomer), tot 1,7 m diep"
       }
     },
     {
@@ -101,12 +101,12 @@
         "nl": "Kantoor op zolder"
       },
       "s": {
-        "en": "A quiet desk for remote work",
-        "es": "Un escritorio tranquilo para teletrabajar",
-        "fr": "Un bureau au calme pour télétravailler",
-        "ca": "Un escriptori tranquil per teletreballar",
-        "de": "Ein ruhiger Schreibtisch fürs Homeoffice",
-        "nl": "Een rustig bureau om op afstand te werken"
+        "en": "A quiet desk for remote work, with its own terrace",
+        "es": "Un escritorio tranquilo para teletrabajar, con terraza propia",
+        "fr": "Un bureau au calme pour télétravailler, avec sa terrasse",
+        "ca": "Un escriptori tranquil per teletreballar, amb terrassa pròpia",
+        "de": "Ein ruhiger Schreibtisch fürs Homeoffice, mit eigener Terrasse",
+        "nl": "Een rustig bureau om op afstand te werken, met eigen terras"
       }
     }
   ],
