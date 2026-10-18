@@ -895,3 +895,6 @@ body:not(.is-home) .hero .langsel,body:not(.is-home) .hero .back{pointer-events:
    Needs <html lang>, which main.js keeps in sync with the chosen language. */
 p,li,small,b,h2,h3,h4,.nm,.note,.ws-how,.mbody,.hsec,.tags,.lead{overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
 .hsticky .hs-t small{white-space:normal;line-height:1.25}
+/* The house bar follows the scroll (--k from 0 to 1, set in section.js): no transition, no visibility jump. */
+.hsticky{--k:0;opacity:var(--k);visibility:visible;transition:none;transform:translateY(calc((var(--k) - 1) * 12px));pointer-events:none;will-change:opacity,transform}
+.hsticky.on{pointer-events:auto;opacity:var(--k)}

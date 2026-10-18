@@ -230,10 +230,17 @@ function lightbox(srcs, start) {
 }
 
 // Slim bar on The house page: the name, the key facts and the rating stay on top while scrolling (tap: back to the photos).
+// Scroll-linked, not a switch: the bar fades and slides in gradually over the 90 px in which the facts line
+// scrolls under it, and goes back the same way. One update per frame, no CSS transition (that is what flickered).
+let hbRaf = 0;
 function houseBar() {
+  hbRaf = 0;
   const bar = document.getElementById('hsticky'), sum = document.getElementById('hsum');
   if (!bar || !sum) return;
-  const on = sum.getBoundingClientRect().bottom < 56;
+  const y = sum.getBoundingClientRect().bottom;
+  const k = Math.min(1, Math.max(0, (150 - y) / 90));
+  bar.style.setProperty('--k', k.toFixed(3));
+  const on = k > 0.5;
   if (bar.classList.contains('on') !== on) { bar.classList.toggle('on', on); bar.setAttribute('aria-hidden', String(!on)); bar.tabIndex = on ? 0 : -1; }
 }
-addEventListener('scroll', houseBar, { passive: true });
+addEventListener('scroll', () => { if (!hbRaf) hbRaf = requestAnimationFrame(houseBar); }, { passive: true });
