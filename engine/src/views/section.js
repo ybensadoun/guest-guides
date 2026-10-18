@@ -9,7 +9,7 @@ import { QUICK } from '../content.js';
 import { quickIcon } from './home.js';
 import { renderGarbage } from './garbage.js';
 import { dateRange } from '../events.js';
-import { HOUSE, MODULE_ON } from '../content.js';
+import { HOUSE, MODULE_ON, SITE } from '../content.js';
 
 const GI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const EVENT_TONE = { castells: 'var(--tone-red)', festa: 'var(--tone-orange)', carnival: 'var(--tone-green)', parade: 'var(--tone-blue)', food: 'var(--tone-wine)', fair: 'var(--tone-taxi)', film: 'var(--ink)', music: 'var(--tone-wine)', historical: 'var(--ink)', tradition: 'var(--tone-blue)' };
@@ -100,10 +100,11 @@ export function renderSection(V, id) {
     const h = sec.data;
     const HI = { pool: GUIDE_ICON.pool, flame: GUIDE_ICON.flame, desk: GUIDE_ICON.box, view: GI('<path d="M2 20l7-11 4 6 3-4 6 9z"/><circle cx="17" cy="6" r="2"/>') };
     body = `<div class="hgal" id="hgal">${h.photos.map((f, i) => `<button type="button" data-zoom="${i}"><img src="${esc(f)}" alt="" loading="${i < 2 ? 'eager' : 'lazy'}"></button>`).join('')}<span class="hcount" id="hcount">1 / ${h.photos.length}</span></div>
-      <p class="hsum"><b>${esc(tx(h.summary))}</b><span>★ ${h.rating.stars.toFixed(2)} · ${esc(t('airbnbReviews', { n: h.rating.count }))}</span></p>
+      <a class="hsticky" id="hsticky" href="#s/house" aria-hidden="true" tabindex="-1"><span class="hs-t"><b>${esc(SITE.name)} <i class="hs-r">★ ${h.rating.stars.toFixed(2)}</i></b><small>${esc((x => [x[1], x[2], x[x.length - 1]].filter(Boolean).join(' · '))(tx(h.summary).split(' · ')))}</small></span></a>
+      <p class="hsum" id="hsum"><b>${esc(tx(h.summary))}</b><span>★ ${h.rating.stars.toFixed(2)} · ${esc(t('airbnbReviews', { n: h.rating.count }))}</span></p>
       <a class="hbook" href="${esc(h.url)}" target="_blank" rel="noopener"><span>${esc(t('bookAirbnbLead'))}</span><b>${esc(t('bookAirbnb'))}</b></a>
       <div class="hhl">${h.highlights.map(x => `<div><span class="dot" style="--cc:var(--tone-blue)">${HI[x.icon] || ''}</span><b>${esc(tx(x.t))}</b><small>${esc(tx(x.s))}</small></div>`).join('')}</div>
-      <section class="hsec"><h3 class="section-h">${esc(t('aboutHouse'))}</h3>${tx(h.description).split(/\n\s*\n/).map(p => `<p>${esc(p)}</p>`).join('')}</section>
+      ${(() => { const ps = tx(h.description).split(/\n\s*\n/).filter(Boolean); return `<section class="hsec hdesc"><h3 class="section-h">${esc(t('aboutHouse'))}</h3><p>${esc(ps[0] || '')}</p>${ps.length > 1 ? `<div class="hd-more" hidden>${ps.slice(1).map(p => `<p>${esc(p)}</p>`).join('')}</div><button type="button" class="hd-tog" aria-expanded="false">${esc(t('readMore'))}</button>` : ''}</section>`; })()}
       ${h.tour ? `<section class="hsec tour"><h3 class="section-h">${esc(t('photoTour'))}</h3>${h.tour.map(r => `<h4>${esc(tx(r.room))}</h4><div class="gphotos zg">${r.photos.map((f, i) => `<button type="button" data-zoom="${i}"><img src="${esc(f)}" alt="" loading="lazy"></button>`).join('')}</div>`).join('')}</section>` : ''}
       <section class="hsec"><h3 class="section-h">${esc(t('whereSleep'))}</h3><ul class="glist">${h.beds.map(b => `<li>${esc(tx(b))}</li>`).join('')}</ul></section>
       ${h.amenities ? (() => { const all = h.amenities.flatMap(g => g.items); const key = ['Private pool', 'Air conditioning', 'Wifi', 'Dedicated workspace', 'Smart TVs', 'Fully equipped kitchen', 'Charcoal', 'Washing machine'].map(k => all.find(i => i.en.startsWith(k))).filter(Boolean);
@@ -197,6 +198,11 @@ export function renderSection(V, id) {
     <div><h2 class="title">${esc(t(sec.labelKey))}</h2>${t(sec.labelKey + 'Lead') !== sec.labelKey + 'Lead' ? `<p class="lead">${esc(t(sec.labelKey + 'Lead'))}</p>` : ''}</div>
     ${body}</div>`;
   V.querySelectorAll('.mrow').forEach(e => { if (openIds.has(e.dataset.id)) e.open = true; });
+  // The house: "Read more" opens the rest of the description; the slim bar on top comes back once the facts scroll away.
+  const tog = V.querySelector('.hd-tog');
+  if (tog) tog.addEventListener('click', () => { const m = V.querySelector('.hd-more'), open = m.hidden; m.hidden = !open; tog.setAttribute('aria-expanded', String(open)); tog.textContent = t(open ? 'showLess' : 'readMore'); });
+  const hs = V.querySelector('#hsticky');
+  if (hs) { hs.addEventListener('click', e => { e.preventDefault(); scrollTo({ top: 0, behavior: 'smooth' }); }); houseBar(); }
   V.querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => lightbox([...b.parentElement.querySelectorAll('[data-zoom] img')].map(i => i.getAttribute('src')), +b.dataset.zoom)));
   const gal = V.querySelector('#hgal');
   if (gal) gal.addEventListener('scroll', () => { const n = Math.round(gal.scrollLeft / gal.clientWidth) + 1; V.querySelector('#hcount').textContent = `${n} / ${gal.querySelectorAll('img').length}`; }, { passive: true });
@@ -222,3 +228,12 @@ function lightbox(srcs, start) {
   o.addEventListener('click', e => { if (e.target.classList.contains('lb-cell')) close(); });
   addEventListener('hashchange', close);
 }
+
+// Slim bar on The house page: the name, the key facts and the rating stay on top while scrolling (tap: back to the photos).
+function houseBar() {
+  const bar = document.getElementById('hsticky'), sum = document.getElementById('hsum');
+  if (!bar || !sum) return;
+  const on = sum.getBoundingClientRect().bottom < 56;
+  if (bar.classList.contains('on') !== on) { bar.classList.toggle('on', on); bar.setAttribute('aria-hidden', String(!on)); bar.tabIndex = on ? 0 : -1; }
+}
+addEventListener('scroll', houseBar, { passive: true });

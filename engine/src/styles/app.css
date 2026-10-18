@@ -880,3 +880,14 @@ body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) +
 body:not(.is-home) .hero{position:absolute!important;top:0;left:0;right:0;margin:0;pointer-events:none}
 body:not(.is-home) .hero .langsel,body:not(.is-home) .hero .back{pointer-events:auto}
 #mapview{padding-top:calc(env(safe-area-inset-top,0px) + 28px)}
+/* The house: slim bar with name, facts and rating once the facts have scrolled away (fades, no sliding, so no flicker). */
+.hsticky{position:fixed;top:0;left:0;right:0;z-index:29;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:calc(env(safe-area-inset-top,0px) + 62px);padding:env(safe-area-inset-top,0px) 16px 0 max(72px,calc(50% - 288px));background:var(--paper);box-shadow:0 1px 0 rgba(18,18,18,.08);color:var(--ink);text-decoration:none;opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s}
+.hsticky.on{opacity:1;visibility:visible}
+.hsticky .hs-t{display:flex;flex-direction:column;min-width:0}
+.hsticky .hs-t b{font-size:16px;line-height:1.2}
+.hsticky .hs-t small{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hsticky .hs-r{flex:none;font-size:14px;font-weight:600}
+/* The house: description shows its first paragraph, "Read more" opens the rest. */
+.hd-tog{margin-top:10px;padding:0;border:0;background:none;font:inherit;font-size:15px;font-weight:700;color:var(--blue);cursor:pointer}
+.hsticky{padding-right:max(72px,calc(50% - 288px))}
+.hsticky .hs-r{font-style:normal;font-size:14px;font-weight:600;margin-left:6px}
