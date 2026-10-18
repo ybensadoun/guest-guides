@@ -101,12 +101,12 @@
         "nl": "Kantoor op zolder"
       },
       "s": {
-        "en": "A quiet desk for remote work, with its own terrace",
-        "es": "Un escritorio tranquilo para teletrabajar, con terraza propia",
-        "fr": "Un bureau au calme pour télétravailler, avec sa terrasse",
-        "ca": "Un escriptori tranquil per teletreballar, amb terrassa pròpia",
-        "de": "Ein ruhiger Schreibtisch fürs Homeoffice, mit eigener Terrasse",
-        "nl": "Een rustig bureau om op afstand te werken, met eigen terras"
+        "en": "A quiet desk for remote work, with a small balcony",
+        "es": "Un escritorio tranquilo para teletrabajar, con un pequeño balcón",
+        "fr": "Un bureau au calme pour télétravailler, avec un petit balcon",
+        "ca": "Un escriptori tranquil per teletreballar, amb un petit balcó",
+        "de": "Ein ruhiger Schreibtisch fürs Homeoffice, mit kleinem Balkon",
+        "nl": "Een rustig bureau om op afstand te werken, met een klein balkon"
       }
     }
   ],
@@ -1036,12 +1036,12 @@
     },
     {
       "room": {
-        "en": "View from the balcony",
-        "es": "Vista desde el balcón",
-        "fr": "Vue du balcon",
-        "ca": "Vista des del balcó",
-        "de": "Blick vom Balkon",
-        "nl": "Uitzicht vanaf het balkon"
+        "en": "View from the attic balcony",
+        "es": "Vista desde el balcón del ático",
+        "fr": "Vue du balcon sous les toits",
+        "ca": "Vista des del balcó de les golfes",
+        "de": "Blick vom Dachbalkon",
+        "nl": "Uitzicht vanaf het zolderbalkon"
       },
       "photos": [
         "guide/balcony-1.jpg"
