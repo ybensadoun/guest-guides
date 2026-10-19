@@ -27,3 +27,7 @@ Build what is queued right now and stop: `node worker/guide-worker.mjs --once`
 4. Sets status `published` (or `ready`), or `failed` with a plain message the host sees.
 
 The guide is then at `https://porta-guides.netlify.app/g/<slug>`.
+
+## Put a hand-made guide into the database (Ca La Kimberly)
+`node worker/guide-worker.mjs --import ca-la-kimberly --slug ca-la-kimberly --owner-email yohann.bensadoun+clk@gmail.com`
+Uploads its images, saves its content, publishes it at `/g/ca-la-kimberly` and makes that account the owner. Run it again to refresh the database copy after a change in `sites/ca-la-kimberly` (until the live address is switched over). Imported guides cannot be rebuilt from onboarding answers: they are edited in the "My guide" editor after login.
