@@ -1,4 +1,4 @@
-import { t, tx, locale } from './i18n.js';
+import { t, tx, locale, typo } from './i18n.js';
 
 export const dayName = (d, w) => new Intl.DateTimeFormat(locale(), { weekday: w || 'long' }).format(new Date(2026, 0, 4 + d));
 export const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -105,7 +105,7 @@ export function hoursText(m) {
       const f = v => { const [mm, dd] = v.split('-').map(Number); return new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short' }).format(new Date(2026, mm - 1, dd)); };
       days = x.d.length === 7 ? `${f(x.from)} - ${f(x.to)}` : `${f(x.from)} - ${f(x.to)}: ${days}`;
     }
-    return { days: cap(days), time: x.m ? t('morning') : fmtT(x.o) + '-' + fmtT(x.c) };
+    return { days: typo(cap(days)), time: x.m ? t('morning') : fmtT(x.o) + '\u2060-\u2060' + fmtT(x.c) }; // word joiners: a time range never splits
   }).reduce((acc, h) => {
     // Same days twice (a morning and an afternoon slot): show them on one line.
     const prev = acc.find(a => a.days === h.days);

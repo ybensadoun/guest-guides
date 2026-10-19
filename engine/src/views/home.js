@@ -136,7 +136,7 @@ function sectionGrid(now, todayCount) {
     const look = SECTION_LOOK[key] || SECTION_LOOK.todo;
     // Each tile: flat colour (--tc), text colour (--ti), one Bauhaus shape (CSS, by data-k).
     // Live tiles end with a round arrow; tiles still to come carry a "Soon" sticker instead.
-    const vars = `--tc:${look.color};--ti:${look.ink ? 'var(--ink)' : '#fff'}`;
+    const vars = `--tc:${look.color};--ti:${look.ink ? 'var(--ink)' : '#fff'};--gofg:${look.ink ? '#fff' : 'var(--ink)'}`;
     const inner = `<span class="ib">${look.icon}</span>
       <span class="gt-tx"><span class="gt-t">${esc(label)}</span>${href && meta ? `<span class="gt-m">${esc(meta)}</span>` : ''}</span>${extra}${href ? `<span class="go" aria-hidden="true">${ARROW}</span>` : `<span class="soon-tag">${esc(t('soonShort'))}</span>`}`;
     return href ? `<a class="gt${live ? ' live' : ''} ${cls}" data-k="${key}" style="${vars}" href="${href}">${inner}</a>` : `<div class="gt soon ${cls}" data-k="${key}" style="${vars}" aria-label="${esc(label)}, ${esc(meta)}">${inner}</div>`;

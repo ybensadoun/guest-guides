@@ -906,3 +906,44 @@ body:not(.is-home) #view h2.title{min-height:44px;display:flex;align-items:cente
 /* Markets: a compact map of the markets listed. */
 .mkmapbox{height:170px}
 .mkmapbox #mkmap{position:absolute;inset:0}
+/* Home tiles, readability first (docs/UX-GUIDELINES.md): decorative shapes stay in the top-right corner and never sit
+   behind the title, the count or the arrow; the arrow is always top-right, white on ink or ink on white. */
+.gt .go{color:var(--gofg,#fff);top:14px;bottom:auto}
+.gt[data-k="markets"] .gt-tx,.gt[data-k="message"] .gt-tx,.gt[data-k="restaurants"] .gt-tx,.gt[data-k="todo"] .gt-tx{padding-right:4px}
+.gt[data-k="message"]::before{top:-2px;bottom:auto;right:60px;width:56px;height:28px;transform:rotate(180deg)}
+.gt[data-k="markets"]::after{top:auto;bottom:auto;top:46%;right:18px;width:34px;height:34px}
+.gt[data-k="map"] .gt-tx{padding-right:64px}
+.gt[data-k="map"] .go{top:auto;bottom:auto;align-self:center;right:14px}
+.gt[data-k="map"]::before{width:96px;height:96px;right:-38px;top:-40px}
+.gt[data-k="map"]::after{right:auto;left:18px;bottom:0;width:56px;height:8px}
+.gt[data-k="emergency"]::before{top:-18px;bottom:auto;right:-16px;transform:rotate(180deg)}
+/* Home tiles, one layout (docs/UX-GUIDELINES.md, checked by engine/scripts/ux-check.mjs): nothing ever overlaps.
+   Icon top-left, decorative shape in the top-right corner (its own zone, never under anything), title and count
+   bottom-left with a reserved column on the right for the arrow, arrow bottom-right: white on ink or ink on white. */
+.gt .go{top:auto!important;bottom:14px!important;right:14px;color:var(--gofg,#fff)}
+.gt:not(.wide) .gt-tx{padding-right:44px}
+.gt:not(.wide)::after{display:none}
+.gt[data-k="markets"]::before{width:104px;height:104px;border-radius:50%;background:var(--red);right:-40px;top:-44px;bottom:auto}
+.gt[data-k="restaurants"]::before{width:84px;height:84px;border-radius:50%;background:var(--yellow);right:-30px;top:-34px;bottom:auto}
+.gt[data-k="todo"]::before{width:0;height:0;border-left:30px solid transparent;border-right:30px solid transparent;border-bottom:40px solid var(--yellow);right:-6px;top:-4px;bottom:auto;transform:rotate(180deg)}
+.gt[data-k="message"]::before{width:64px;height:32px;border-radius:64px 64px 0 0;background:var(--ink);right:-6px;top:-2px;bottom:auto;transform:rotate(180deg)}
+.gt[data-k="emergency"]::before{width:0;height:0;border-left:34px solid transparent;border-right:34px solid transparent;border-bottom:46px solid var(--ink);right:-6px;top:-4px;bottom:auto;transform:rotate(180deg)}
+/* Wide tiles: the shape takes the far right edge, the arrow sits just left of it, the text stops before both. */
+.gt[data-k="map"] .gt-tx{padding-right:96px}
+.gt[data-k="map"] .go{bottom:auto!important;top:50%!important;right:52px;margin-top:-18px}
+.gt[data-k="map"]::before{width:80px;height:80px;right:-44px;top:50%;margin-top:-40px;bottom:auto}
+.gt[data-k="map"]::after{right:auto;left:0;bottom:0;width:56px;height:6px}
+.gt[data-k="garbage"]::before{width:96px;height:96px;right:-40px;bottom:-40px;top:auto}
+.gt[data-k="garbage"] .go{top:14px!important;bottom:auto!important}
+.gt-tonight{margin-right:64px!important}
+.gt[data-k="events"] .go{top:50%!important;bottom:auto!important;margin-top:-18px;right:52px}
+.gt[data-k="events"]{padding-right:96px!important}
+.gt[data-k="events"]::before{width:80px;height:80px;border-radius:50%;right:-44px;top:50%;margin-top:-40px;bottom:auto}
+/* The arrow gets its own spot at the bottom right, below the text, so the title keeps the full tile width
+   (no words cut to make room for it). */
+.gt:not(.wide) .gt-tx{padding-right:0}
+.gt:not(.wide) .go{position:static!important;align-self:flex-end;margin-top:10px;flex:none}
+/* A single word must never break mid-word: tile titles scale with the tile width (long phrases are shortened instead, docs/UX-GUIDELINES.md) */
+.gt{container-type:inline-size}
+.gt:not(.wide) .gt-t{font-size:clamp(19px,15.5cqi,23px);overflow-wrap:normal}
+.ggrid.mosaic > .gt:not(.wide):first-child .gt-t{font-size:clamp(22px,17cqi,30px)}

@@ -828,7 +828,7 @@
         "es": "Playa para perros de Coma-ruga",
         "fr": "Plage pour chiens de Coma-ruga",
         "ca": "Platja per a gossos de Coma-ruga",
-        "de": "Hundestrand Coma-ruga",
+        "de": "Hunde­strand Coma-ruga",
         "nl": "Hondenstrand Coma-ruga"
       },
       "type": {
@@ -850,7 +850,7 @@
         "es": "La zona de playa para perros de El Vendrell, unos 2.500 m² frente a los jardines del albergue de Coma-ruga. Los perros pueden bañarse contigo, incluso en verano cuando las otras playas no lo permiten.",
         "fr": "L'espace plage pour chiens d'El Vendrell, environ 2 500 m² devant les jardins de l'auberge de jeunesse de Coma-ruga. Les chiens peuvent se baigner avec vous, même en été quand les autres plages ne les acceptent pas.",
         "ca": "La zona de platja per a gossos del Vendrell, uns 2.500 m² davant dels jardins de l'alberg de Coma-ruga. Els gossos es poden banyar amb tu, fins i tot a l'estiu quan les altres platges no ho permeten.",
-        "de": "Der Hundestrand von El Vendrell, etwa 2.500 m² vor dem Garten der Jugendherberge in Coma-ruga. Hunde dürfen mit ins Wasser, auch im Sommer, wenn die anderen Strände sie nicht erlauben.",
+        "de": "Der Hunde­strand von El Vendrell, etwa 2.500 m² vor dem Garten der Jugendherberge in Coma-ruga. Hunde dürfen mit ins Wasser, auch im Sommer, wenn die anderen Strände sie nicht erlauben.",
         "nl": "Het hondenstrand van El Vendrell, ongeveer 2.500 m² voor de tuin van de jeugdherberg in Coma-ruga. Honden mogen mee het water in, ook in de zomer als de andere stranden ze niet toelaten."
       },
       "tags": [
@@ -1221,7 +1221,7 @@
       },
       "type": {
         "en": "Mountain and monastery",
-        "es": "Montaña y monasterio",
+        "es": "Montaña y monas­terio",
         "fr": "Montagne et monastère",
         "ca": "Muntanya i monestir",
         "de": "Berg und Kloster",
@@ -1234,7 +1234,7 @@
       "km_from_house": 85,
       "description": {
         "en": "A Benedictine monastery among giant rock pinnacles, home of the Black Madonna. Take the funicular up for the views and easy walks. The boys' choir, the Escolania, sings in the basilica on weekdays at 13:00 and on Sundays at 12:00.",
-        "es": "Un monasterio benedictino entre enormes agujas de roca, hogar de la Moreneta. Sube en funicular para las vistas y paseos fáciles. La Escolania canta en la basílica entre semana a las 13:00 y los domingos a las 12:00.",
+        "es": "Un monas­terio benedictino entre enormes agujas de roca, hogar de la Moreneta. Sube en funicular para las vistas y paseos fáciles. La Escolania canta en la basílica entre semana a las 13:00 y los domingos a las 12:00.",
         "fr": "Un monastère bénédictin au milieu d'immenses aiguilles de roche, avec la Vierge noire. Montez en funiculaire pour la vue et des balades faciles. Le chœur d'enfants, l'Escolania, chante dans la basilique en semaine à 13h et le dimanche à 12h.",
         "ca": "Un monestir benedictí entre agulles de roca gegants, casa de la Moreneta. Puja amb funicular per les vistes i passejades fàcils. L'Escolania canta a la basílica entre setmana a les 13:00 i els diumenges a les 12:00.",
         "de": "Ein Benediktinerkloster zwischen riesigen Felsnadeln, Heimat der Schwarzen Madonna. Mit der Standseilbahn hinauf für die Aussicht und leichte Wanderungen. Der Knabenchor Escolania singt werktags um 13 Uhr und sonntags um 12 Uhr in der Basilika.",
@@ -1266,7 +1266,7 @@
       "icon": "monastery",
       "name": {
         "en": "Santes Creus Monastery",
-        "es": "Monasterio de Santes Creus",
+        "es": "Monas­terio de Santes Creus",
         "fr": "Monastère de Santes Creus",
         "ca": "Monestir de Santes Creus",
         "de": "Kloster Santes Creus",
@@ -1274,10 +1274,10 @@
       },
       "type": {
         "en": "Cistercian monastery, Aiguamúrcia",
-        "es": "Monasterio cisterciense, Aiguamúrcia",
+        "es": "Monas­terio cisterciense, Aiguamúrcia",
         "fr": "Monastère cistercien, Aiguamúrcia",
         "ca": "Monestir cistercenc, Aiguamúrcia",
-        "de": "Zisterzienserkloster, Aiguamúrcia",
+        "de": "Zisterzienser­kloster, Aiguamúrcia",
         "nl": "Cisterciënzer klooster, Aiguamúrcia"
       },
       "town": "Aiguamúrcia",
@@ -1287,7 +1287,7 @@
       "km_from_house": 22,
       "description": {
         "en": "The closest of the three great Cistercian monasteries, 20 minutes away in the vineyards. A huge Gothic cloister, royal tombs and the monks' dormitory. Free for children under 16.",
-        "es": "El más cercano de los tres grandes monasterios cistercienses, a 20 minutos entre viñedos. Un gran claustro gótico, tumbas reales y el dormitorio de los monjes. Gratis para menores de 16 años.",
+        "es": "El más cercano de los tres grandes monas­terios cistercienses, a 20 minutos entre viñedos. Un gran claustro gótico, tumbas reales y el dormitorio de los monjes. Gratis para menores de 16 años.",
         "fr": "Le plus proche des trois grands monastères cisterciens, à 20 minutes au milieu des vignes. Un grand cloître gothique, des tombeaux royaux et le dortoir des moines. Gratuit pour les moins de 16 ans.",
         "ca": "El més proper dels tres grans monestirs cistercencs, a 20 minuts entre vinyes. Un gran claustre gòtic, tombes reials i el dormitori dels monjos. Gratuït per a menors de 16 anys.",
         "de": "Das nächste der drei großen Zisterzienserklöster, 20 Minuten entfernt zwischen Weinbergen. Ein großer gotischer Kreuzgang, Königsgräber und der Schlafsaal der Mönche. Für Kinder unter 16 kostenlos.",
@@ -1353,7 +1353,7 @@
       "icon": "monastery",
       "name": {
         "en": "Poblet Monastery",
-        "es": "Monasterio de Poblet",
+        "es": "Monas­terio de Poblet",
         "fr": "Monastère de Poblet",
         "ca": "Monestir de Poblet",
         "de": "Kloster Poblet",
@@ -1361,10 +1361,10 @@
       },
       "type": {
         "en": "Cistercian monastery, UNESCO",
-        "es": "Monasterio cisterciense, UNESCO",
+        "es": "Monas­terio cisterciense, UNESCO",
         "fr": "Monastère cistercien, UNESCO",
         "ca": "Monestir cistercenc, UNESCO",
-        "de": "Zisterzienserkloster, UNESCO",
+        "de": "Zisterzienser­kloster, UNESCO",
         "nl": "Cisterciënzer klooster, UNESCO"
       },
       "town": "Poblet",
@@ -1374,10 +1374,10 @@
       "km_from_house": 55,
       "description": {
         "en": "The largest Cistercian monastery in Europe, still home to a community of monks, with the tombs of the kings of Aragon. Combine it with Montblanc, 10 minutes away.",
-        "es": "El mayor monasterio cisterciense de Europa, todavía habitado por monjes, con las tumbas de los reyes de Aragón. Combínalo con Montblanc, a 10 minutos.",
+        "es": "El mayor monas­terio cisterciense de Europa, todavía habitado por monjes, con las tumbas de los reyes de Aragón. Combínalo con Montblanc, a 10 minutos.",
         "fr": "Le plus grand monastère cistercien d'Europe, toujours habité par des moines, avec les tombeaux des rois d'Aragon. À combiner avec Montblanc, à 10 minutes.",
         "ca": "El monestir cistercenc més gran d'Europa, encara habitat per monjos, amb les tombes dels reis d'Aragó. Combina'l amb Montblanc, a 10 minuts.",
-        "de": "Das größte Zisterzienserkloster Europas, noch von Mönchen bewohnt, mit den Gräbern der Könige von Aragón. Gut zu verbinden mit Montblanc, 10 Minuten entfernt.",
+        "de": "Das größte Zisterzienser­kloster Europas, noch von Mönchen bewohnt, mit den Gräbern der Könige von Aragón. Gut zu verbinden mit Montblanc, 10 Minuten entfernt.",
         "nl": "Het grootste cisterciënzer klooster van Europa, nog altijd bewoond door monniken, met de graven van de koningen van Aragón. Te combineren met Montblanc, 10 minuten verderop."
       },
       "hours": {
@@ -1552,8 +1552,8 @@
         "es": "Museo del Ferrocarril de Vilanova",
         "fr": "Musée du chemin de fer de Vilanova",
         "ca": "Museu del Ferrocarril de Vilanova",
-        "de": "Eisenbahnmuseum Vilanova",
-        "nl": "Spoorwegmuseum Vilanova"
+        "de": "Eisenbahn­museum Vilanova",
+        "nl": "Spoorweg­museum Vilanova"
       },
       "type": {
         "en": "Museum, Vilanova i la Geltrú",
@@ -1682,9 +1682,9 @@
       },
       "type": {
         "en": "The cellist's house, Sant Salvador",
-        "es": "Casa del violonchelista, Sant Salvador",
+        "es": "Casa del violon­chelista, Sant Salvador",
         "fr": "Maison du violoncelliste, Sant Salvador",
-        "ca": "Casa del violoncel·lista, Sant Salvador",
+        "ca": "Casa del violon­cel·lista, Sant Salvador",
         "de": "Haus des Cellisten, Sant Salvador",
         "nl": "Huis van de cellist, Sant Salvador"
       },
@@ -1695,9 +1695,9 @@
       "km_from_house": 14,
       "description": {
         "en": "The seaside summer house of Pau Casals, the great cellist from El Vendrell, with his garden, instruments and music. Right on the Sant Salvador promenade, close to Casinet.",
-        "es": "La casa de verano junto al mar de Pau Casals, el gran violonchelista de El Vendrell, con su jardín, instrumentos y música. En el paseo de Sant Salvador, cerca del Casinet.",
+        "es": "La casa de verano junto al mar de Pau Casals, el gran violon­chelista de El Vendrell, con su jardín, instrumentos y música. En el paseo de Sant Salvador, cerca del Casinet.",
         "fr": "La maison d'été en bord de mer de Pau Casals, le grand violoncelliste d'El Vendrell, avec son jardin, ses instruments et sa musique. Sur la promenade de Sant Salvador, près du Casinet.",
-        "ca": "La casa d'estiueig vora mar de Pau Casals, el gran violoncel·lista del Vendrell, amb el seu jardí, instruments i música. Al passeig de Sant Salvador, a prop del Casinet.",
+        "ca": "La casa d'estiueig vora mar de Pau Casals, el gran violon­cel·lista del Vendrell, amb el seu jardí, instruments i música. Al passeig de Sant Salvador, a prop del Casinet.",
         "de": "Das Sommerhaus am Meer von Pau Casals, dem großen Cellisten aus El Vendrell, mit Garten, Instrumenten und Musik. Direkt an der Promenade von Sant Salvador, nahe Casinet.",
         "nl": "Het zomerhuis aan zee van Pau Casals, de grote cellist uit El Vendrell, met zijn tuin, instrumenten en muziek. Aan de boulevard van Sant Salvador, vlak bij Casinet."
       },
@@ -1797,6 +1797,175 @@
         "count": 2045
       },
       "gmaps": "https://www.google.com/maps/place/Museu+Pau+Casals/data=!4m2!3m1!1s0x12a38c98e62384bb:0xd448bdcb4ed3b6c5"
+    },
+    {
+      "id": "masmiro",
+      "icon": "palette",
+      "name": {
+        "en": "Fundació Mas Miró",
+        "es": "Fundació Mas Miró",
+        "fr": "Fundació Mas Miró",
+        "ca": "Fundació Mas Miró",
+        "de": "Fundació Mas Miró",
+        "nl": "Fundació Mas Miró"
+      },
+      "type": {
+        "en": "Joan Miró's house and studio, Mont-roig del Camp",
+        "es": "Casa y taller de Joan Miró, Mont-roig del Camp",
+        "fr": "Maison et atelier de Joan Miró, Mont-roig del Camp",
+        "ca": "Casa i taller de Joan Miró, Mont-roig del Camp",
+        "de": "Haus und Atelier von Joan Miró, Mont-roig del Camp",
+        "nl": "Huis en atelier van Joan Miró, Mont-roig del Camp"
+      },
+      "town": "Mont-roig del Camp",
+      "place": "Finca Mas Miró",
+      "lat": 41.060681,
+      "lng": 0.993758,
+      "km_from_house": 60,
+      "description": {
+        "en": "Joan Miró's family farmhouse, where he spent his summers and painted The Farm. His studio is kept as he left it, with his sketches still on the walls. Good audio guide; about 50 minutes by car, easy to combine with Cambrils.",
+        "es": "La masía familiar de Joan Miró, donde pasaba los veranos y pintó La masía. Su taller sigue como lo dejó, con sus dibujos aún en las paredes. Buena audioguía; a unos 50 minutos en coche, fácil de combinar con Cambrils.",
+        "fr": "La ferme familiale de Joan Miró, où il passait ses étés et peignit « La Ferme ». Son atelier est resté tel qu'il l'a laissé, avec ses dessins encore sur les murs. Bon audioguide ; à environ 50 minutes en voiture, facile à combiner avec Cambrils.",
+        "ca": "El mas familiar de Joan Miró, on passava els estius i va pintar La masia. El seu taller és tal com el va deixar, amb els seus dibuixos encara a les parets. Bona audioguia; a uns 50 minuts en cotxe, fàcil de combinar amb Cambrils.",
+        "de": "Das Landgut der Familie von Joan Miró, wo er seine Sommer verbrachte und „Der Bauernhof“ malte. Sein Atelier ist so erhalten, wie er es verlassen hat, mit seinen Skizzen noch an den Wänden. Guter Audio­guide; etwa 50 Minuten mit dem Auto, gut mit Cambrils zu verbinden.",
+        "nl": "De boerderij van de familie van Joan Miró, waar hij zijn zomers doorbracht en De boerderij schilderde. Zijn atelier is zoals hij het achterliet, met zijn schetsen nog op de muren. Goede audiogids; ongeveer 50 minuten met de auto, makkelijk te combineren met Cambrils."
+      },
+      "schedule": [
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "from": "04-01",
+          "to": "06-14"
+        },
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "15:30",
+          "close": "18:00",
+          "from": "04-01",
+          "to": "06-14"
+        },
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "from": "06-15",
+          "to": "09-15"
+        },
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "17:30",
+          "close": "20:00",
+          "from": "06-15",
+          "to": "09-15"
+        },
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "from": "09-16",
+          "to": "10-31"
+        },
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
+          "open": "15:30",
+          "close": "18:00",
+          "from": "09-16",
+          "to": "10-31"
+        },
+        {
+          "days": [
+            "tue",
+            "wed",
+            "thu",
+            "fri"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "from": "11-01",
+          "to": "03-31"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "10:00",
+          "close": "14:00",
+          "from": "11-01",
+          "to": "03-31"
+        },
+        {
+          "days": [
+            "sat"
+          ],
+          "open": "15:30",
+          "close": "18:00",
+          "from": "11-01",
+          "to": "03-31"
+        },
+        {
+          "days": [
+            "sun"
+          ],
+          "open": "10:00",
+          "close": "14:00"
+        }
+      ],
+      "hours": {
+        "en": "Closed on Mondays. Afternoon hours change with the season; closed on some holidays. €10, reduced €8.",
+        "es": "Cerrado los lunes. El horario de tarde cambia según la temporada; cerrado algunos festivos. 10 €, reducida 8 €.",
+        "fr": "Fermé le lundi. Les horaires de l'après-midi changent selon la saison ; fermé certains jours fériés. 10 €, tarif réduit 8 €.",
+        "ca": "Tancat els dilluns. L'horari de tarda canvia segons la temporada; tancat alguns festius. 10 €, reduïda 8 €.",
+        "de": "Montags geschlossen. Die Nachmittagszeiten ändern sich je nach Saison, an manchen Feiertagen geschlossen. 10 €, ermäßigt 8 €.",
+        "nl": "Maandag gesloten. De middaguren wisselen per seizoen; op sommige feestdagen gesloten. € 10, reductie € 8."
+      },
+      "tags": [],
+      "phone": "977 17 91 58",
+      "url": "https://masmiro.com/",
+      "group": "sights",
+      "tone": "purple",
+      "flags": [],
+      "rating": {
+        "stars": 4.6,
+        "count": 839
+      },
+      "gmaps": "https://www.google.com/maps/place/Fundaci%C3%B3+Mas+Mir%C3%B3/data=!4m2!3m1!1s0x12a1443b7b95ca3d:0x37e77b0ab9c0fb62"
     },
     {
       "id": "altafulla",

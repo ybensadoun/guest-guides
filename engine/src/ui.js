@@ -82,6 +82,7 @@ const ITEM_ICON = {
   arch: P('<path d="M3 5h18M4 5v16h4v-6a4 4 0 0 1 8 0v6h4V5"/>'),
   town: P('<path d="M12 2.5v3M10.5 4h3"/><path d="M8.5 21V10L12 6.5l3.5 3.5V21"/><path d="M3.5 21v-6.5l5-3M20.5 21v-6.5l-5-3"/><path d="M11 21v-3.5h2V21"/><path d="M2.5 21h19"/>'),
   castle: P('<path d="M4 21V8h3v2h2.5V8h5v2H17V8h3v13z"/><path d="M10 21v-4.5a2 2 0 0 1 4 0V21"/>'),
+  palette: P('<path d="M12 22a10 10 0 1 1 10-10c0 2.5-2 3.5-4 3.5h-2a2 2 0 0 0-1.5 3.3A2 2 0 0 1 12 22z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="16.5" cy="10.5" r="1"/>'),
   monastery: P('<path d="M12 2v4M10.3 3.8h3.4"/><path d="M6 21V11l6-5 6 5v10"/><path d="M10 21v-5a2 2 0 0 1 4 0v5"/><path d="M3 21h18"/>'),
   mountain: P('<path d="M2 20.5l5.5-9 3 4.5 3.5-7 8 11.5z"/><path d="M6 14l1.5-2.5 1.2 1.8"/>'),
   wine: P('<path d="M7.5 3h9l-.6 5.5a3.9 3.9 0 0 1-7.8 0z"/><path d="M8 7h8"/><path d="M12 12.5V20M8.5 20.5h7"/>'),

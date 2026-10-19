@@ -34,7 +34,7 @@
         "es": "La feria de otoño de El Vendrell: bodegas locales, puestos de comida, artesanía, atracciones y castells de los Nens del Vendrell. La gran feria más cercana a la casa, ideal con niños.",
         "fr": "La foire d'automne d'El Vendrell : caves locales, stands de nourriture, artisanat, manèges et castells (tours humaines) des Nens del Vendrell. La grande foire la plus proche de la maison, facile avec des enfants.",
         "ca": "La fira de tardor del Vendrell: cellers locals, parades de menjar, artesania, atraccions i castells dels Nens del Vendrell. La gran fira més propera a la casa, ideal amb canalla.",
-        "de": "Die Herbstmesse von El Vendrell: lokale Weingüter, Essensstände, Kunsthandwerk, Fahrgeschäfte und Castells (Menschentürme) der Nens del Vendrell. Die nächste große Messe, gut mit Kindern.",
+        "de": "Die Herbstmesse von El Vendrell: lokale Weingüter, Essensstände, Kunsthandwerk, Fahrgeschäfte und Castells (Menschen­türme) der Nens del Vendrell. Die nächste große Messe, gut mit Kindern.",
         "nl": "De herfstmarkt van El Vendrell: lokale wijnhuizen, eetkraampjes, ambachten, kermis en castells (menselijke torens) van de Nens del Vendrell. De dichtstbijzijnde grote markt, leuk met kinderen."
       },
       "sources": [
@@ -89,7 +89,7 @@
         "es": "Castells de Santa Úrsula",
         "fr": "Castells de Santa Úrsula",
         "ca": "Diada Castellera de Santa Úrsula",
-        "de": "Menschentürme von Santa Úrsula",
+        "de": "Menschen­türme von Santa Úrsula",
         "nl": "Menselijke torens van Santa Úrsula"
       },
       "town": "Valls",
@@ -129,8 +129,8 @@
         "es": "Castells de Todos los Santos",
         "fr": "Castells de la Toussaint",
         "ca": "Diada de Tots Sants",
-        "de": "Menschentürme an Allerheiligen",
-        "nl": "Menselijke torens op Allerheiligen"
+        "de": "Menschen­türme an Aller­heiligen",
+        "nl": "Menselijke torens op Aller­heiligen"
       },
       "town": "Vilafranca del Penedès",
       "venue": "Plaça de la Vila",
@@ -210,7 +210,7 @@
         "fr": "Défilé des Rois mages",
         "ca": "Cavalcada de Reis",
         "de": "Dreikönigsumzug",
-        "nl": "Driekoningenoptocht"
+        "nl": "Driekoningen­optocht"
       },
       "town": "Tarragona",
       "venue": "Port del Serrallo",
@@ -384,7 +384,7 @@
         "es": "Procesión del Santo Entierro",
         "fr": "Procession du Vendredi saint",
         "ca": "Processó del Sant Enterrament",
-        "de": "Karfreitagsprozession",
+        "de": "Karfreitags­prozession",
         "nl": "Goede Vrijdagprocessie"
       },
       "town": "Tarragona",
@@ -524,7 +524,7 @@
         "es": "San Juan: hogueras y castells",
         "fr": "Saint-Jean : feux et castells",
         "ca": "Sant Joan: revetlla i castells",
-        "de": "Sant Joan: Feuer und Menschentürme",
+        "de": "Sant Joan: Feuer und Menschen­türme",
         "nl": "Sant Joan: vreugdevuren en menselijke torens"
       },
       "town": "Valls",
@@ -822,9 +822,9 @@
       ],
       "description": {
         "en": "About two weeks of classical music in the seaside auditorium next to the cellist Pau Casals' house and museum. Top soloists and chamber music on summer evenings, 15 minutes from the house.",
-        "es": "Unas dos semanas de música clásica en el auditorio junto al mar, al lado de la casa museo del violonchelista Pau Casals. Grandes solistas y música de cámara en noches de verano, a 15 minutos de casa.",
+        "es": "Unas dos semanas de música clásica en el auditorio junto al mar, al lado de la casa museo del violon­chelista Pau Casals. Grandes solistas y música de cámara en noches de verano, a 15 minutos de casa.",
         "fr": "Environ deux semaines de musique classique dans l'auditorium en bord de mer, à côté de la maison-musée du violoncelliste Pau Casals. Grands solistes et musique de chambre les soirs d'été, à 15 minutes de la maison.",
-        "ca": "Unes dues setmanes de música clàssica a l'auditori arran de mar, al costat de la casa museu del violoncel·lista Pau Casals. Grans solistes i música de cambra les nits d'estiu, a 15 minuts de casa.",
+        "ca": "Unes dues setmanes de música clàssica a l'auditori arran de mar, al costat de la casa museu del violon­cel·lista Pau Casals. Grans solistes i música de cambra les nits d'estiu, a 15 minuts de casa.",
         "de": "Rund zwei Wochen Klassik im Auditorium am Meer, neben dem Haus-Museum des Cellisten Pau Casals. Spitzensolisten und Kammermusik an Sommerabenden, 15 Minuten vom Haus.",
         "nl": "Zo'n twee weken klassieke muziek in het auditorium aan zee, naast het huis-museum van cellist Pau Casals. Topsolisten en kamermuziek op zomeravonden, 15 minuten van het huis."
       },
@@ -948,8 +948,8 @@
         "es": "Concurso Internacional de Fuegos Artificiales",
         "fr": "Concours international de feux d'artifice",
         "ca": "Concurs Internacional de Focs Artificials",
-        "de": "Internationaler Feuerwerkswettbewerb",
-        "nl": "Internationale vuurwerkwedstrijd"
+        "de": "Internationaler Feuerwerks­wettbewerb",
+        "nl": "Internationale vuurwerk­wedstrijd"
       },
       "town": "Tarragona",
       "venue": "Punta del Miracle (Platja del Miracle)",
@@ -1004,7 +1004,7 @@
         "es": "La fiesta de verano de Tarragona: el 18 de agosto carros tirados por caballos traen el agua del santo al casco antiguo, y el 19 a mediodía las cuatro collas de la ciudad levantan castells en la plaza de les Cols. Una gran jornada castellera en plena temporada de playa.",
         "fr": "La fête d'été de Tarragone : le 18 août, des charrettes tirées par des chevaux apportent l'eau du saint dans la vieille ville, et le 19 à midi les quatre colles de la ville montent des tours humaines place de les Cols. Une belle journée de castells en pleine saison balnéaire.",
         "ca": "La festa major petita de Tarragona: el 18 d'agost els carros i cavalls porten l'aigua del sant a la Part Alta, i el 19 al migdia les quatre colles de la ciutat aixequen castells a la plaça de les Cols. Una gran diada castellera en plena temporada de platja.",
-        "de": "Tarragonas Sommerfest: Am 18. August bringen Pferdewagen das Wasser des Heiligen in die Altstadt, am 19. mittags bauen die vier Castell-Gruppen der Stadt Menschentürme auf der Plaça de les Cols. Ein großer Castells-Tag mitten in der Badesaison.",
+        "de": "Tarragonas Sommerfest: Am 18. August bringen Pferdewagen das Wasser des Heiligen in die Altstadt, am 19. mittags bauen die vier Castell-Gruppen der Stadt Menschen­türme auf der Plaça de les Cols. Ein großer Castells-Tag mitten in der Badesaison.",
         "nl": "Het zomerfeest van Tarragona: op 18 augustus brengen paard-en-wagens het water van de heilige naar de oude stad, en op de 19e om twaalf uur bouwen de vier castell-groepen van de stad menselijke torens op de Plaça de les Cols. Een topdag voor castells midden in het strandseizoen."
       },
       "sources": [

@@ -80,11 +80,21 @@ function syncTitle() {
 }
 
 let lastView = null;
+// In-app history depth, stored in each history entry, so the back arrow does what the phone's back gesture does:
+// go to the previous screen (Markets after its map), and only fall back to Home when the guide was opened on this page.
+let navDepth = -1;
+function trackDepth() {
+  const s = history.state || {};
+  if (s.d == null) history.replaceState({ ...s, d: navDepth + 1 }, '', location.href);
+  navDepth = history.state.d;
+}
+document.getElementById('backBtn').addEventListener('click', e => { if (navDepth > 0) { e.preventDefault(); history.back(); } });
 // Coming back to Home puts you where you were on it (standard back navigation), not at the top.
 const homeScroll = { y: 0 };
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 function route() {
   if (lastView === 'home') homeScroll.y = scrollY;
+  trackDepth();
   const r = parse();
   if (r.view === 'markets' && (r.today || r.day != null)) {
     st.mk = 'days';
