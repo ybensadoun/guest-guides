@@ -34,3 +34,8 @@ sites/*/docs/places-check.*
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Guide worker: secrets and scratch work
+worker/.env.local
+worker/jobs/
+sites/w-*/

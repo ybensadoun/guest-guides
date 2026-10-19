@@ -1,0 +1,231 @@
+{
+ "_doc": "Markets around the house, from town hall pages, mercadillosemanal.com and mercatsetmanal.cat. Distances are rough road km. Hours flagged check were not confirmed.",
+ "categories": [
+  "covered",
+  "street",
+  "flea",
+  "antiques",
+  "events"
+ ],
+ "markets": [
+  {
+   "id": "bisbal",
+   "category": "street",
+   "name": {
+    "en": "La Bisbal Wednesday market",
+    "fr": "Marché du mercredi de La Bisbal"
+   },
+   "comarca": "Baix Penedès",
+   "name_local": "Mercat setmanal",
+   "town": "La Bisbal del Penedès",
+   "place": "Village centre",
+   "km_from_house": 18,
+   "lat": 41.2812,
+   "lng": 1.4873,
+   "stalls_approx": 10,
+   "schedule": [
+    {
+     "days": [
+      "wed"
+     ],
+     "open": "08:30",
+     "close": "13:30"
+    }
+   ],
+   "tags": [
+    "fruitveg",
+    "food"
+   ],
+   "flags": [
+    "closest"
+   ],
+   "description": {
+    "en": "A handful of stalls in the village centre: fruit, vegetables and a few basics. Handy for a quick top-up, not a day out.",
+    "fr": "Quelques étals au centre du village : fruits, légumes et produits de base. Pratique pour un petit réassort, pas pour une sortie."
+   }
+  },
+  {
+   "id": "santa-coloma",
+   "category": "street",
+   "name": {
+    "en": "Santa Coloma de Queralt Monday market",
+    "fr": "Marché du lundi de Santa Coloma de Queralt"
+   },
+   "comarca": "Conca de Barberà",
+   "name_local": "Mercat setmanal",
+   "town": "Santa Coloma de Queralt",
+   "place": "Plaça Major",
+   "km_from_house": 21,
+   "lat": 41.53248,
+   "lng": 1.38381,
+   "stalls_approx": 15,
+   "schedule": [],
+   "tags": [
+    "food",
+    "fruitveg",
+    "clothes"
+   ],
+   "flags": [
+    "check",
+    "holidays"
+   ],
+   "description": {
+    "en": "A small market on the main square of a walled medieval town: food stalls with fruit and vegetables, plus some clothing. Combine it with a walk through the old town.",
+    "fr": "Un petit marché sur la place principale d'une ville médiévale fortifiée : étals d'alimentation avec fruits et légumes, et quelques vêtements. À combiner avec une promenade dans la vieille ville."
+   },
+   "occasional_when": {
+    "en": "Every Monday, year round. We could not confirm the opening hours, so check before going.",
+    "fr": "Tous les lundis, toute l'année. Nous n'avons pas pu confirmer les horaires : vérifiez avant d'y aller."
+   }
+  },
+  {
+   "id": "monjos",
+   "category": "street",
+   "name": {
+    "en": "Els Monjos Sunday market",
+    "fr": "Marché du dimanche des Monjos"
+   },
+   "comarca": "Alt Penedès",
+   "name_local": "Mercat setmanal",
+   "town": "Santa Margarida i els Monjos",
+   "place": "Avinguda de Cal Salines",
+   "km_from_house": 27,
+   "lat": 41.3245,
+   "lng": 1.66626,
+   "stalls_approx": 200,
+   "schedule": [
+    {
+     "days": [
+      "sun"
+     ],
+     "open": "08:00",
+     "close": "14:00"
+    }
+   ],
+   "tags": [
+    "fruitveg",
+    "food",
+    "clothes",
+    "shoes",
+    "home",
+    "crafts",
+    "plants"
+   ],
+   "flags": [
+    "check"
+   ],
+   "description": {
+    "en": "The market for Sundays: about 200 stalls with fruit and vegetables, groceries, clothes and shoes, household goods, crafts, flowers and plants. One listing says it opens at 9:00, so check the start time.",
+    "fr": "Le marché du dimanche : environ 200 étals avec fruits et légumes, épicerie, vêtements et chaussures, articles ménagers, artisanat, fleurs et plantes. Une source indique une ouverture à 9 h 00 : vérifiez l'heure de début."
+   }
+  },
+  {
+   "id": "valls",
+   "category": "street",
+   "name": {
+    "en": "Valls market",
+    "fr": "Marché de Valls"
+   },
+   "comarca": "Alt Camp",
+   "name_local": "Mercat setmanal",
+   "town": "Valls",
+   "place": "Plaça de les Garrofes and the old town",
+   "km_from_house": 29,
+   "lat": 41.28283,
+   "lng": 1.24736,
+   "stalls_approx": 100,
+   "schedule": [
+    {
+     "days": [
+      "wed",
+      "sat"
+     ],
+     "open": "09:00",
+     "close": "14:00"
+    }
+   ],
+   "tags": [
+    "fruitveg",
+    "food",
+    "clothes"
+   ],
+   "flags": [],
+   "description": {
+    "en": "The biggest market of the Alt Camp, twice a week: about 100 stalls, with fresh fruit and vegetables on the squares of the old town and a clothing market nearby. The home of the castells, so add the human-tower museum.",
+    "fr": "Le plus grand marché de l'Alt Camp, deux fois par semaine : environ 100 étals, avec fruits et légumes frais sur les places du vieux centre et un marché de vêtements à côté. Valls est la capitale des castells : ajoutez le musée des tours humaines."
+   }
+  },
+  {
+   "id": "vilafranca",
+   "category": "street",
+   "name": {
+    "en": "Vilafranca Saturday market",
+    "fr": "Marché du samedi de Vilafranca"
+   },
+   "comarca": "Alt Penedès",
+   "name_local": "Mercat dels dissabtes",
+   "town": "Vilafranca del Penedès",
+   "place": "Streets and squares of the old centre",
+   "km_from_house": 29,
+   "lat": 41.34638,
+   "lng": 1.69815,
+   "stalls_approx": 200,
+   "schedule": [
+    {
+     "days": [
+      "sat"
+     ],
+     "open": "08:00",
+     "close": "14:00"
+    }
+   ],
+   "tags": [
+    "food",
+    "fruitveg",
+    "clothes",
+    "home"
+   ],
+   "flags": [],
+   "description": {
+    "en": "The big weekly market of the Penedès: more than 200 stalls through the historic centre. Come for the food, stay for the wine town. There is also a produce market every weekday morning on Plaça de Sant Joan.",
+    "fr": "Le grand marché hebdomadaire du Penedès : plus de 200 étals dans le centre historique. Venez pour les produits frais, restez pour la ville du vin. Il y a aussi un marché de légumes chaque matin en semaine sur la place Sant Joan."
+   }
+  },
+  {
+   "id": "alcover",
+   "category": "street",
+   "name": {
+    "en": "Alcover Tuesday market",
+    "fr": "Marché du mardi d'Alcover"
+   },
+   "comarca": "Alt Camp",
+   "name_local": "Mercat setmanal",
+   "town": "Alcover",
+   "place": "Plaça de Lluís Companys",
+   "km_from_house": 37,
+   "lat": 41.26131,
+   "lng": 1.17178,
+   "stalls_approx": 25,
+   "schedule": [
+    {
+     "days": [
+      "tue"
+     ],
+     "open": "09:00",
+     "close": "14:00"
+    }
+   ],
+   "tags": [
+    "food",
+    "clothes"
+   ],
+   "flags": [
+    "holidays"
+   ],
+   "description": {
+    "en": "A friendly morning market around the main square: food, clothing and accessories. Not held on local festival days or holiday Tuesdays.",
+    "fr": "Un marché de matinée convivial autour de la place principale : alimentation, vêtements et accessoires. Il n'a pas lieu les jours de fête locale ni les mardis fériés."
+   }
+  }
+ ]
+}
