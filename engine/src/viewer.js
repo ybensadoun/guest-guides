@@ -40,14 +40,41 @@ function withAssets(x, base) {
   return x;
 }
 
+// A copy of the last guide seen stays on the phone, so the guide opens without a connection (the service worker keeps the app and the photos).
+const CK = s => 'guide-cache:' + s;
+function saveCopy(slug, row) { try { localStorage.setItem(CK(slug), JSON.stringify(row)); } catch (e) { /* storage full or blocked */ } }
+function loadCopy(slug) { try { return JSON.parse(localStorage.getItem(CK(slug)) || 'null'); } catch (e) { return null; } }
+function dropCopy(slug) { try { localStorage.removeItem(CK(slug)); } catch (e) { /* nothing to do */ } }
+
+function goOffline(site, files, base, slug, paper) {
+  try {
+    const man = { name: site.name, short_name: String(site.name).slice(0, 14), start_url: `${location.origin}/g/${slug}`, scope: `${location.origin}/g/`, display: 'standalone', background_color: paper, theme_color: paper,
+      icons: [{ src: base + 'icons/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: base + 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }, { src: base + 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] };
+    let l = document.querySelector('link[rel="manifest"]'); if (!l) { l = document.createElement('link'); l.rel = 'manifest'; document.head.appendChild(l); }
+    l.href = URL.createObjectURL(new Blob([JSON.stringify(man)], { type: 'application/manifest+json' }));
+    let ai = document.querySelector('link[rel="apple-touch-icon"]'); if (!ai) { ai = document.createElement('link'); ai.rel = 'apple-touch-icon'; document.head.appendChild(ai); } ai.href = base + 'apple-touch-icon.png';
+  } catch (e) { /* the guide works without these */ }
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/g-sw.js', { scope: '/g/' }).then(() => navigator.serviceWorker.ready).then(reg => {
+    // Ask the worker to keep everything this guide uses: the app files, fonts, and every photo of the guide.
+    setTimeout(() => {
+      const urls = new Set(performance.getEntriesByType('resource').map(r => r.name));
+      const walk = x => { if (typeof x === 'string') { if (x.startsWith(base) && IMG.test(x.slice(base.length))) urls.add(x); } else if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') Object.values(x).forEach(walk); };
+      walk(site); walk(files);
+      const msg = { type: 'keep', urls: [...urls] };
+      (reg.active || navigator.serviceWorker.controller) && (reg.active || navigator.serviceWorker.controller).postMessage(msg);
+    }, 2500);
+  }).catch(() => { /* private mode or blocked: online only */ });
+}
+
 (async () => {
   const m = location.pathname.match(/^\/g\/([^/]+)/);
   if (!m) return say('Guide not found', 'This address is not a guide.');
   const slug = decodeURIComponent(m[1]).toLowerCase();
   say('Loading your guide…', 'One moment.');
   let row;
-  try { row = await fetchGuide(slug); }
-  catch (e) { return say('No connection', 'We could not reach the guide. Check your internet and reload the page.'); }
+  try { row = await fetchGuide(slug); if (row) saveCopy(slug, row); else dropCopy(slug); }
+  catch (e) { row = loadCopy(slug); if (!row) return say('No connection', 'We could not reach the guide. Check your internet and reload the page.'); }
   if (!row) return say('This guide is being prepared', 'Its host is still setting it up. Please check back soon.');
 
   const c = row.content, th = row.theme || {};
@@ -79,4 +106,5 @@ function withAssets(x, base) {
   }
   V().innerHTML = '';
   await import('./main.js');
+  goOffline(site, files, base, slug, (site.theme && site.theme.paper) || '#ffffff');
 })();

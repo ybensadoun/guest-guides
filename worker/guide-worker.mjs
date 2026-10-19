@@ -3,8 +3,6 @@
 // Watches the database for guides a host has queued, builds each one and writes the result back.
 //   node worker/guide-worker.mjs            keep running, build guides as they arrive
 //   node worker/guide-worker.mjs --once     build whatever is queued now, then stop
-//   node worker/guide-worker.mjs --import <site-folder> --slug <web-address> --owner-email <email>
-//        put a hand-made guide from sites/<folder> into the database (or refresh it), owned by that account
 // Settings live in worker/.env.local (never committed). See worker/README.md.
 import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { resolve, dirname, join, relative, extname } from 'node:path';
@@ -103,7 +101,7 @@ async function build(g) {
   const A = { ...(g.answers || {}) }, id = g.id, tmp = 'w-' + id.slice(0, 8), siteDir = resolve(ROOT, 'sites', tmp), job = resolve(HERE, 'jobs', id);
   if (!g.slug) throw new Error('This guide has no web address yet.');
   if (!A.lat || !A.lng) throw new Error('We do not know where the house is yet. Add its location in the first step.');
-  try { rmSync(job, { recursive: true, force: true }); rmSync(siteDir, { recursive: true, force: true }); } catch (e) {}
+  rmSync(job, { recursive: true, force: true }); rmSync(siteDir, { recursive: true, force: true });
   mkdirSync(join(job, 'src'), { recursive: true });
   const remote = (A._remote || []).filter(u => u && u.src && String(u.src).startsWith('https://a0.muscache.com/'));
   const clean = { ...A }; delete clean._remote;
@@ -131,27 +129,8 @@ async function build(g) {
   const status = AUTO_PUBLISH ? 'published' : 'ready';
   await patch(id, { content: row.content, theme: row.theme, status, message: null, finished_at: new Date().toISOString() });
   rest('/rest/v1/events', { method: 'POST', body: { user_id: g.owner, guide_id: id, kind: 'guide_built', data: { slug: g.slug, images: n, status } }, headers: { Prefer: 'return=minimal' } }).catch(() => {});
-  try { rmSync(siteDir, { recursive: true, force: true }); } catch (e) { /* leftover work folder is harmless */ }
+  rmSync(siteDir, { recursive: true, force: true });
   log(`  built ${g.slug}: ${n} images, status ${status}`);
-}
-
-
-/* ---------- Import a hand-made guide (sites/<folder>) into the database ---------- */
-async function importSite(folder, slug, email) {
-  if (!folder || !slug || !email) throw new Error('Usage: --import <site-folder> --slug <web-address> --owner-email <email>');
-  if (!existsSync(resolve(ROOT, 'sites', folder))) throw new Error('No such folder: sites/' + folder);
-  const users = await (await fetch(URL_ + '/auth/v1/admin/users?per_page=200', { headers: H })).json();
-  const owner = (users.users || []).find(u => (u.email || '').toLowerCase() === email.toLowerCase());
-  if (!owner) throw new Error('No account with that email yet. Sign up at the onboarding page first.');
-  let rows = await rest('/rest/v1/guides?select=id,owner&slug=eq.' + encodeURIComponent(slug));
-  let g = rows && rows[0];
-  if (!g) { const made = await rest('/rest/v1/guides', { method: 'POST', body: { owner: owner.id, slug, status: 'draft', origin: 'imported', answers: {} }, headers: { Prefer: 'return=representation' } }); g = made[0]; }
-  const assetBase = `${URL_}/storage/v1/object/public/guide-assets/${g.id}/`;
-  const row = JSON.parse(run('node', ['engine/scripts/guide-to-row.mjs', folder, assetBase]).stdout);
-  row.content.site.slug = slug; row.content.site.storageKey = slug;
-  const n = await upload(g.id, resolve(ROOT, 'sites', folder, 'public'));
-  await patch(g.id, { owner: owner.id, origin: 'imported', content: row.content, theme: row.theme, status: 'published', message: null, finished_at: new Date().toISOString() });
-  log(`Imported sites/${folder} as /g/${slug} for ${email}: ${n} images.`);
 }
 
 /* ---------- Loop ---------- */
@@ -165,7 +144,44 @@ async function recover() {   // a guide left "generating" by a crashed run goes 
   const old = new Date(Date.now() - 30 * 60000).toISOString();
   await rest('/rest/v1/guides?status=eq.generating&updated_at=lt.' + old, { method: 'PATCH', body: { status: 'queued', message: 'Waiting for its turn' }, headers: { Prefer: 'return=minimal' } }).catch(() => {});
 }
+/* ---------- Translation jobs from the editor ---------- */
+const LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
+const isI18 = o => !!o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length > 0 && Object.keys(o).every(k => LANGS.includes(k));
+async function runJobs() {
+  const jobs = await rest('/rest/v1/guide_jobs?select=id,guide_id,langs&status=eq.queued&order=created_at.asc&limit=5');
+  for (const j of jobs || []) {
+    const jp = b => rest('/rest/v1/guide_jobs?id=eq.' + j.id, { method: 'PATCH', body: b, headers: { Prefer: 'return=minimal' } }).catch(() => {});
+    const won = await rest('/rest/v1/guide_jobs?id=eq.' + j.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running', message: 'Translating' }, headers: { Prefer: 'return=representation' } });
+    if (!won || !won[0]) continue;
+    log('translating job', j.id.slice(0, 8), j.langs.join(','));
+    try {
+      const g = (await rest('/rest/v1/guides?select=content&id=eq.' + j.guide_id))[0];
+      const c = g.content, main = ((c.site || {}).languages || ['en'])[0] || 'en', objs = [];
+      const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (isI18(x)) objs.push(x); else Object.values(x).forEach(walk); } };
+      walk(c.files || {});
+      const todo = objs.filter(o => o[main] && j.langs.some(l => !o[l]));
+      const texts = [...new Set(todo.map(o => o[main]))];
+      if (!texts.length) { await jp({ status: 'done', message: 'Nothing to translate', finished_at: new Date().toISOString() }); continue; }
+      const tmp = resolve(ROOT, '.job-' + j.id.slice(0, 8) + '.json'); let map = {};
+      for (let i = 0; i < texts.length; i += 40) {
+        await jp({ message: `Translating ${Math.min(i + 40, texts.length)} of ${texts.length}` });
+        translate(texts.slice(i, i + 40), j.langs, main, tmp);
+        if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
+      }
+      let n = 0;
+      for (const o of todo) { const t = map[o[main]]; if (!t) continue; for (const l of j.langs) if (!o[l] && t[l]) { o[l] = t[l]; n++; } }
+      if (!n) throw new Error('No translations came back. Is the claude command set up on this computer?');
+      const cur = (await rest('/rest/v1/guides?select=content&id=eq.' + j.guide_id))[0].content;   // merge into the latest copy, not an old one
+      const objs2 = []; const walk2 = x => { if (Array.isArray(x)) x.forEach(walk2); else if (x && typeof x === 'object') { if (isI18(x)) objs2.push(x); else Object.values(x).forEach(walk2); } };
+      walk2(cur.files || {});
+      for (const o of objs2) { const t = map[o[main]]; if (t) for (const l of j.langs) if (!o[l] && t[l]) o[l] = t[l]; }
+      await rest('/rest/v1/guides?id=eq.' + j.guide_id, { method: 'PATCH', body: { content: cur }, headers: { Prefer: 'return=minimal' } });
+      await jp({ status: 'done', message: n + ' texts translated', finished_at: new Date().toISOString() });
+    } catch (e) { log('  job FAILED:', e.message); await jp({ status: 'failed', message: String(e.message).slice(0, 200), finished_at: new Date().toISOString() }); }
+  }
+}
 async function tick() {
+  await runJobs().catch(e => log('jobs:', e.message));
   await recover();
   for (let g; (g = await claim());) {
     log('building', g.slug);
@@ -177,8 +193,6 @@ async function tick() {
     }
   }
 }
-const arg = n => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] : ''; };
-if (process.argv.includes('--import')) { try { await importSite(arg('--import'), arg('--slug'), arg('--owner-email')); } catch (e) { console.error('Import failed:', e.message); process.exit(1); } process.exit(0); }
 log(`Guide worker on. Database ${URL_}. Publish on build: ${AUTO_PUBLISH}. Research: ${RESEARCH}.`);
 if (ONCE) { await tick(); log('done'); }
 else for (;;) { try { await tick(); } catch (e) { log('waiting, could not reach the database:', e.message); } await new Promise(r => setTimeout(r, POLL)); }
