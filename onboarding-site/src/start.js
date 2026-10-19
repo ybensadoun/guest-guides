@@ -306,6 +306,7 @@ document.addEventListener('keydown', e => { if (!LB) return; if (e.key === 'Esca
 document.addEventListener('change', e => { const t = e.target; if (t && t.dataset && t.dataset.room && t.closest('#lb')) setTimeout(render, 0); });
 async function resetAll(){
   window.__resetting = true; clearTimeout(saveTimer);
+  try { await acctReset(); } catch (e) {}
   try { localStorage.removeItem(KEY); } catch (e) {}
   try { for (const u of await idb.all()) await idb.del(u.id); } catch (e) {}
   try { sessionStorage.clear(); } catch (e) {}

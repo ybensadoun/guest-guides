@@ -34,3 +34,10 @@ Decisions taken: Supabase for accounts and data; one shared site where guides lo
 - Secrets: nothing secret in the public repo; keys only in Netlify and GitHub secrets.
 - Airbnb: reading listing pages may be blocked or against their terms; keep the manual paste fallback.
 - Generation quality: stays `ready` (not `published` as approved) until you review, at least for the first hosts.
+
+## Interim model (19 Oct, decided by Yohann): a local worker on his computer
+While the UX is being tested, the background work may run on Yohann's computer, as long as it is on. The host experience must still be fully self-serve: no one clicks anything for them.
+- A worker script on his computer watches the `guides` table (status `queued`, set when the host clicks Publish), generates the guide (generate-site.py, research, design), writes content and theme into the row, and sets the status to `ready`. For now `ready` is shown to the host as published, so nothing waits for approval.
+- Guides are shown from the database by the shared viewer, so no deploy step is needed.
+- The service role key lives only in a private env file on his computer, never in the repo or in chat.
+- **Later, before going public:** move the worker to the cloud (GitHub Actions or a small server) so nothing depends on his computer being on, and add the approval and cost limits above. This is a known gap, not a surprise.

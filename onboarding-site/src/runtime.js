@@ -61,10 +61,10 @@ function journey(){
 /* ---------- Saving on this device ---------- */
 let saveTimer = null;
 function setSave(state, text){ const el = $('#saveState'); if (!el) return; el.innerHTML = `<span class="sdot ${state}"></span><span>${esc(text)}</span>`; }
-function queueSave(){ setSave('busy','Saving…'); clearTimeout(saveTimer); saveTimer = setTimeout(flush, 400); }
+function queueSave(){ A._savedAt = Date.now(); setSave('busy','Saving…'); clearTimeout(saveTimer); saveTimer = setTimeout(flush, 400); }
 function flush(){
   if (window.__resetting) return;
-  try { localStorage.setItem(KEY, JSON.stringify({ sid, A })); setSave('ok','Saved on this device'); }
+  try { localStorage.setItem(KEY, JSON.stringify({ sid, A })); setSave('ok','Saved on this device'); if (window.__acctPush && A._savedAt) window.__acctPush(); }
   catch (e) { setSave('err','Could not save on this device'); }
 }
 const set = (k, val) => { A[k] = val; queueSave(); };
@@ -302,6 +302,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { cle
   if (!sid) sid = newId();
   { const d = device(); A._sessions = [...(A._sessions || []), { t: Date.now(), d: deviceLine(d) }].slice(-50); log('session', null, { d: deviceLine(d) }); flush(); }
   try { uploads = (await idb.all() || []).map(u => ({ ...u, url: u.blob ? URL.createObjectURL(u.blob) : u.url })).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')); } catch (e) { uploads = []; }
+  try { await accountBoot(); } catch (e) {}
   setSave('ok', A._seen ? 'Saved on this device' : 'Answers save on this device');
   render();
 })();
