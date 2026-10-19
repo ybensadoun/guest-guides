@@ -8,7 +8,7 @@ export const ROOT = resolve(ENGINE, '..');
 export const SITES = resolve(ROOT, 'sites');
 export const siteDir = slug => resolve(SITES, slug);
 export const listSites = () => readdirSync(SITES, { withFileTypes: true })
-  .filter(e => e.isDirectory() && existsSync(resolve(SITES, e.name, 'site.json'))).map(e => e.name);
+  .filter(e => e.isDirectory() && !e.name.startsWith('_') && existsSync(resolve(SITES, e.name, 'site.json'))).map(e => e.name);
 
 // Layout presets: bauhaus is app.css itself; the others live in src/styles/presets/<name>.css.
 export const PRESETS = ['bauhaus', 'editorial', 'soft', 'minimal'];

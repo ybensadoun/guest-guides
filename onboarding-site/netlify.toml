@@ -13,6 +13,12 @@
   [headers.values]
     X-Robots-Tag = "noindex"
 
+# Guides loaded from the database: /g/<name> opens the shared viewer (built into g-app/).
+[[redirects]]
+  from = "/g/*"
+  to = "/g-app/viewer.html"
+  status = 200
+
 # Every guide address (/villa-mar) opens the app, which shows that host's preview.
 [[redirects]]
   from = "/*"

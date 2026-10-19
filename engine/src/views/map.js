@@ -162,7 +162,7 @@ function texts() {
 async function loadLib() {
   if (ml) return ml;
   if (window.__MAPLIBRE_INLINE) return (ml = await loadInline(window.__MAPLIBRE_INLINE));
-  const base = new URL('vendor/maplibre/', document.baseURI).href;
+  const base = window.__VENDOR_BASE || new URL('vendor/maplibre/', document.baseURI).href;
   if (!document.querySelector('link[data-maplibre]')) {
     const l = document.createElement('link');
     l.rel = 'stylesheet'; l.href = base + 'maplibre-gl.css'; l.dataset.maplibre = '';

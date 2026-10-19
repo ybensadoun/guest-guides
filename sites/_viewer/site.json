@@ -1,0 +1,1 @@
+{ "slug": "_viewer", "name": "Guest guide", "languages": ["en"], "modules": {}, "theme": { "preset": "bauhaus", "fonts": [], "paper": "#FFFFFF", "manifestBackground": "#FFFFFF", "manifestTheme": "#000000" }, "logo": "logo-head.png", "_doc": "Stub for the shared viewer build (engine/vite.viewer.config.js). Real data comes from the database at runtime." }

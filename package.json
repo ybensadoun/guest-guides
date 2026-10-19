@@ -9,7 +9,8 @@
     "preview": "node engine/scripts/run.js preview",
     "preview-file": "node engine/scripts/run.js preview-file",
     "sites": "node engine/scripts/run.js sites",
-    "check-places": "NODE_USE_ENV_PROXY=1 node --no-warnings engine/scripts/check-places.js"
+    "check-places": "NODE_USE_ENV_PROXY=1 node --no-warnings engine/scripts/check-places.js",
+    "build-viewer": "vite build --config engine/vite.viewer.config.js"
   },
   "devDependencies": {
     "qrcode": "^1.5.4",

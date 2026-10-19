@@ -1,5 +1,5 @@
 // Light / dark / auto. "auto" follows the device. The choice is remembered on this device.
-import SITE from '@site/site.json';
+import { SITE } from './site-data.js';
 const TH = SITE.theme || {};
 const KEY = (SITE.storageKey || SITE.slug) + '-theme';
 // Dark mode is per site (site.json theme.darkMode): only on once the site's theme has dark colours.

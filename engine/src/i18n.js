@@ -1,11 +1,10 @@
 // UI strings live in engine/src/i18n/<lang>.json (shared by every site).
 // A site can override any string in sites/<site>/i18n/<lang>.json (house name, area, welcome line...).
 // The languages offered, and their order, come from the site's site.json.
-import SITE from '@site/site.json';
+import { SITE, SITE_I18N } from './site-data.js';
 const files = import.meta.glob('./i18n/*.json', { eager: true, import: 'default' });
-const over = import.meta.glob('@site/i18n/*.json', { eager: true, import: 'default' });
 const code = p => p.match(/(\w+)\.json$/)[1];
-const O = Object.fromEntries(Object.entries(over).map(([p, v]) => [code(p), v]));
+const O = SITE_I18N;
 const I = Object.fromEntries(Object.entries(files).map(([p, v]) => [code(p), { ...v, ...O[code(p)] }]));
 
 export const LANGS = (SITE.languages || ['en']).filter(l => I[l]);

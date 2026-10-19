@@ -1,8 +1,6 @@
 // All guest-facing content lives in sites/<site>/content/*.json and is bundled at build time,
 // so it works offline. New files are picked up automatically.
-import SITE from '@site/site.json';
-const raw = import.meta.glob('@site/content/*.json', { eager: true, import: 'default' });
-const files = Object.fromEntries(Object.entries(raw).map(([p, v]) => [p.match(/([\w-]+)\.json$/)[1], v]));
+import { SITE, FILES as files, PRIVATE } from './site-data.js';
 const get = name => files[name];
 export { SITE };
 // Modules switched off in site.json ("modules": { "events": false }) disappear everywhere: tile, page, map pins.
@@ -17,8 +15,7 @@ export const slots = sch => (sch || []).map(x => ({ d: x.days.map(d => DAY[d]), 
 export const HOUSE = get('house');
 // Private values kept out of git (guest Wi-Fi): sites/<site>/private/wifi.json, written locally,
 // or at build time from the WIFI_JSON environment variable (see engine/scripts/run.js).
-const PRIV = import.meta.glob('@site/private/*.json', { eager: true, import: 'default' });
-const PRIV_WIFI = Object.entries(PRIV).find(([p]) => /\/wifi\.json$/.test(p))?.[1];
+const PRIV_WIFI = PRIVATE.wifi;
 if (PRIV_WIFI) HOUSE.wifi = PRIV_WIFI;
 const mk = (MODULE_ON('markets') && get('markets')) || { categories: [], markets: [] };
 export const CATS = mk.categories;
