@@ -1,3 +1,4 @@
+import qrcode from 'qrcode-generator';
 import { t, tx, locale } from '../i18n.js';
 import { MARKETS, MAP_ITEMS, SECTIONS, CATS, QUICK, HOUSE, slots, SITE, MODULE_ON } from '../content.js';
 import { runsOn, statusLabel, cap, nextOpen, closedStatus } from '../schedule.js';
@@ -185,6 +186,12 @@ export function renderMore(V) {
     ${sectionGrid(new Date())}</div>`;
 }
 
+// A Wi-Fi QR code made on the spot, for guides whose network has no ready-made one (a host changed the name or password).
+function wifiQr(ssid, pw) {
+  const q = s => String(s || '').replace(/([\\;,:"])/g, '\\$1');
+  const c = qrcode(0, 'M'); c.addData(`WIFI:T:WPA;S:${q(ssid)};P:${q(pw)};;`); c.make();
+  return c.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+}
 // Wifi sheet: network name, password with a copy button, and a QR code for a second device.
 function wifiSheet() {
   const w = HOUSE.wifi;
@@ -194,7 +201,7 @@ function wifiSheet() {
     <div class="ws-hd"><h3>${esc(t('qWifi'))}</h3><button type="button" class="ws-x" aria-label="${esc(t('close'))}">×</button></div>
     <div class="ws-f"><small>${esc(t('wifiNets'))}</small>${w.networks.map(n => `<b>${esc(n.ssid)}</b><span class="ws-l">${esc(tx(n.label))}</span>`).join('')}</div>
     <div class="ws-f ws-pwrow"><span><small>${esc(t('wifiPwBoth'))}</small><b class="ws-pw">${esc(w.password)}</b></span><button type="button" class="btn primary ws-copy">${esc(t('copyShort'))}</button></div>
-    <p class="ws-how">${esc(t('wifiScan'))}</p><div class="ws-qrs">${w.networks.map(n => `<figure>${n.qr}<figcaption>${esc(tx(n.label).split(/[:：]/)[0].trim())}</figcaption></figure>`).join('')}</div>
+    <p class="ws-how">${esc(t('wifiScan'))}</p><div class="ws-qrs">${w.networks.map(n => `<figure>${n.qr || wifiQr(n.ssid, w.password)}<figcaption>${esc(tx(n.label).split(/[:：]/)[0].trim())}</figcaption></figure>`).join('')}</div>
   </div>`;
   document.body.appendChild(o);
   document.body.style.overflow = 'hidden';

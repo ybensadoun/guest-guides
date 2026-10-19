@@ -2,8 +2,12 @@
 const ED = { list: [], g: null, tab: 'basics', lang: 'en', timer: null, state: '', sub: 'todo' };
 const ED_LANGS = { en: 'English', es: 'Español', fr: 'Français', ca: 'Català', de: 'Deutsch', nl: 'Nederlands' };
 const ED_SEC = { house: 'The house', garbage: 'Garbage and recycling', message: 'House guide', emergency: 'Emergency contacts', markets: 'Markets', restaurants: 'Where to eat', todo: 'What to do', events: 'Events', quick: 'Quick contacts', map: 'Map' };
-const ED_PLACES = [['todo', 'Things to do', 'files/todo/items'], ['restaurants', 'Where to eat', 'files/restaurants/items'], ['markets', 'Markets', 'files/markets/markets'], ['quick', 'Quick contacts', 'files/quick/items'], ['events', 'Events', 'files/events/items']];
-const ED_SHORT = ['name', 'title', 'sub', 'type', 'kind', 'hours', 'place', 'label', 'name_local'], ED_STR = ['town', 'phone', 'web', 'url', 'map', 'venue'];
+const ED_PLACES = [['todo', 'Things to do', 'files/todo/items'], ['restaurants', 'Where to eat', 'files/restaurants/items'], ['markets', 'Markets', 'files/markets/markets'], ['events', 'Events', 'files/events/items']];
+const ED_SHORT = ['name', 'title', 'sub', 'type', 'kind', 'hours', 'place', 'label', 'name_local', 'occasional_when'], ED_STR = ['town', 'phone', 'web', 'url', 'map', 'gmaps', 'venue', 'address', 'comarca'], ED_NUM = ['lat', 'lng', 'km_from_house', 'stalls_approx'];
+const ED_DAYS = [['mon', 'Mo'], ['tue', 'Tu'], ['wed', 'We'], ['thu', 'Th'], ['fri', 'Fr'], ['sat', 'Sa'], ['sun', 'Su']];
+const ED_FONTS = [['jost', 'Jost'], ['inter', 'Inter'], ['cormorant-garamond', 'Cormorant Garamond'], ['dm-sans', 'DM Sans'], ['dm-serif-display', 'DM Serif Display', [400]], ['fraunces', 'Fraunces'], ['geist', 'Geist'], ['instrument-serif', 'Instrument Serif', [400]], ['nunito', 'Nunito'], ['outfit', 'Outfit'], ['space-grotesk', 'Space Grotesk'], ['bricolage-grotesque', 'Bricolage Grotesque']];
+const ED_PRESETS = [['bauhaus', 'Bauhaus: bold colour blocks'], ['editorial', 'Editorial: magazine'], ['soft', 'Soft: calm and warm'], ['minimal', 'Minimal: quiet and clean']];
+const ED_COLORS = [['--paper', 'Background', '#F3EEE3'], ['--white', 'Cards', '#FFFFFF'], ['--ink', 'Text', '#121212'], ['--muted', 'Secondary text', '#4A4A4A'], ['--red', 'Accent 1 (red)', '#D52B1E'], ['--blue', 'Accent 2 (blue)', '#1D4FA0'], ['--yellow', 'Accent 3 (yellow)', '#F5C400'], ['--orange', 'Accent 4 (orange)', '#EC6A1C'], ['--green', 'Accent 5 (green)', '#0E7C46']];
 const edEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const edIs18 = o => !!o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length > 0 && Object.keys(o).every(k => k in ED_LANGS);
 const edPath = s => s.split('/').map(k => /^\d+$/.test(k) ? +k : k);
@@ -11,12 +15,15 @@ const edGet = (o, p) => p.reduce((a, k) => a == null ? a : a[k], o);
 function edSet(o, p, val) { let a = o; for (let i = 0; i < p.length - 1; i++) { if (a[p[i]] == null) a[p[i]] = typeof p[i + 1] === 'number' ? [] : {}; a = a[p[i]]; } a[p[p.length - 1]] = val; }
 const edShown = o => { const v = o && (o[ED.lang] != null ? o[ED.lang] : o.en); return v == null ? '' : v; };
 const edLangs = () => ((ED.g.content.site || {}).languages || ['en']).filter(l => l in ED_LANGS);
+const edC = () => ED.g.content;
+const edF = () => edC().files = edC().files || {};
 
 const ED_CSS = `#ed{position:fixed;inset:0;z-index:70;background:var(--paper,#fff);color:var(--ink,#111);overflow:auto;font-family:inherit;-webkit-overflow-scrolling:touch}
 #ed .edw{max-width:760px;margin:0 auto;padding:0 16px 80px}
 #ed .edh{position:sticky;top:0;z-index:2;background:var(--paper,#fff);border-bottom:1.5px solid var(--line,#ddd);padding:12px 0 10px;margin-bottom:14px}
 #ed .edr{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
 #ed h1{font-size:22px;margin:0;line-height:1.1}
+#ed h2{font-size:16px;margin:14px 0 8px}
 #ed .edst{font-size:13px;color:var(--muted,#666)}
 #ed .edtabs,#ed .edlangs{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 #ed .edb{border:1.5px solid var(--ink,#111);background:var(--surface,#fff);color:inherit;border-radius:999px;padding:8px 14px;font:600 14px inherit;font-family:inherit;cursor:pointer;text-decoration:none;display:inline-block}
@@ -25,8 +32,7 @@ const ED_CSS = `#ed{position:fixed;inset:0;z-index:70;background:var(--paper,#ff
 #ed .edb.danger{border-color:#b3261e;color:#b3261e}
 #ed .edc{background:var(--surface,#fff);border:1.5px solid var(--line,#ddd);border-radius:14px;padding:14px;margin-bottom:12px}
 #ed label.edf{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--muted,#555)}
-#ed input[type=text],#ed input[type=time],#ed textarea{font:400 16px inherit;font-family:inherit;color:var(--ink,#111);border:1.5px solid var(--line,#ccc);border-radius:10px;padding:10px 12px;background:var(--sunk,#fafafa);width:100%;box-sizing:border-box}
-#ed input[type=text],#ed input[type=time],#ed textarea{font-weight:400}
+#ed input[type=text],#ed input[type=time],#ed input[type=number],#ed select,#ed textarea{font:400 16px inherit;font-family:inherit;font-weight:400;color:var(--ink,#111);border:1.5px solid var(--line,#ccc);border-radius:10px;padding:10px 12px;background:var(--sunk,#fafafa);width:100%;box-sizing:border-box}
 #ed textarea{min-height:64px;resize:vertical;field-sizing:content}
 #ed details{border-top:1px solid var(--line,#ddd);padding:8px 0}
 #ed details:first-of-type{border-top:0}
@@ -35,23 +41,38 @@ const ED_CSS = `#ed{position:fixed;inset:0;z-index:70;background:var(--paper,#ff
 #ed .edt input{width:22px;height:22px;flex:none}
 #ed .edl{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
 #ed .edn{font-size:13px;color:var(--muted,#666);margin:6px 0 12px}
+#ed .edgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+#ed .edsch{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+#ed .edsch input[type=time]{width:auto}
+#ed .edcol{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#ed .edcol label.edf{margin-bottom:0}
+#ed input[type=color]{width:100%;height:44px;padding:2px;border-radius:10px;border:1.5px solid var(--line,#ccc);background:none}
 .edTop{position:fixed;bottom:10px;right:92px;z-index:40;font:600 12px/1 inherit;font-family:inherit;padding:8px 12px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--ink,#111);color:var(--paper,#fff);cursor:pointer}`;
 
 function edField(label, path, obj, o = {}) {
-  const long = o.long, isI = edIs18(obj), val = isI ? edShown(obj) : (obj == null ? '' : obj);
-  const attrs = `data-p="${edEsc(path)}" data-t="${isI ? 'i18n' : 'str'}"`;
-  return `<label class="edf"><span>${edEsc(label)}</span>${long ? `<textarea ${attrs}>${edEsc(val)}</textarea>` : `<input type="${o.type || 'text'}" ${attrs} value="${edEsc(val)}">`}</label>`;
+  const isI = edIs18(obj), num = o.type === 'number', val = isI ? edShown(obj) : (obj == null ? '' : obj);
+  const attrs = `data-p="${edEsc(path)}" data-t="${isI ? 'i18n' : num ? 'num' : 'str'}"`;
+  return `<label class="edf"><span>${edEsc(label)}</span>${o.long ? `<textarea ${attrs}>${edEsc(val)}</textarea>` : `<input type="${o.type || 'text'}"${num ? ' step="any"' : ''} ${attrs} value="${edEsc(val)}">`}</label>`;
 }
+const edLabel = k => k.replace(/_/g, ' ').replace(/^./, x => x.toUpperCase());
+function edDays(path, days) { return `<span style="display:flex;gap:4px;flex-wrap:wrap">${ED_DAYS.map(([d, l]) => `<button class="edb sm${(days || []).includes(d) ? ' on' : ''}" type="button" data-daytog="${edEsc(path)}" data-d="${d}">${l}</button>`).join('')}</span>`; }
+function edSchedule(path, arr) {
+  return `<div class="edn" style="margin-bottom:4px">Opening days and hours</div>${(arr || []).map((r, k) => `<div class="edsch">${edDays(`${path}/${k}`, r.days)}<input type="time" data-p="${path}/${k}/open" data-t="str" value="${edEsc(r.open || '')}"><input type="time" data-p="${path}/${k}/close" data-t="str" value="${edEsc(r.close || '')}"><button class="edb sm danger" type="button" data-del="${path}/${k}">x</button></div>`).join('')}<button class="edb sm" type="button" data-addsch="${path}">Add opening hours</button>`;
+}
+
+/* --- Basics --- */
 function edBasics(c) {
   const s = c.site || {}, h = (c.files || {}).house || {};
   return `<div class="edc">${edField('Guide name', 'site/name', s.name)}${edField('House name (shown on the home page)', 'files/house/name', h.name)}${edField('Check-out time', 'files/house/checkout', h.checkout, { type: 'time' })}${edField('Short description (for link previews)', 'site/description', s.description, { long: true })}${edField('Listing link', 'files/house/listing', h.listing)}</div>
-    <p class="edn">The Wi-Fi network and password, photos and the design are not editable here yet.</p>`;
+    <p class="edn">Photos and languages come next.</p>`;
 }
 function edSections(c) {
   const ids = [...((((c.files || {}).sections || {}).sections) || []).map(x => x.id)]; if (!ids.includes('map')) ids.push('map');
   const m = (c.site || {}).modules || {};
   return `<div class="edc">${ids.map(id => `<label class="edt"><input type="checkbox" data-mod="${edEsc(id)}"${m[id] !== false ? ' checked' : ''}><span>${edEsc(ED_SEC[id] || id)}</span></label>`).join('')}</div><p class="edn">A section you switch off disappears from the guide, its page and the map.</p>`;
 }
+
+/* --- House guide --- */
 function edHouse(c) {
   const blocks = (((c.files || {}).message || {}).blocks) || [];
   if (!blocks.length) return '<div class="edc">This guide has no house guide yet.</div>';
@@ -60,41 +81,129 @@ function edHouse(c) {
     ${(b.items || []).map((it, j) => `<div class="edl"><label class="edf" style="flex:1;margin:0"><textarea data-p="files/message/blocks/${i}/items/${j}" data-t="i18n">${edEsc(edShown(it))}</textarea></label><button class="edb sm danger" type="button" data-del="files/message/blocks/${i}/items/${j}">Delete</button></div>`).join('')}
     <button class="edb sm" type="button" data-add="files/message/blocks/${i}/items">Add a line</button></details>`).join('')}</div>`;
 }
-function edItem(base, it, i) {
-  const keys = Object.keys(it).filter(k => (edIs18(it[k]) && !['bins'].includes(k)) || ED_STR.includes(k) && typeof it[k] === 'string');
-  const name = edShown(it.name) || edShown(it.title) || it.id || 'Item ' + (i + 1);
-  return `<details><summary>${edEsc(name)}</summary>${keys.map(k => edField(k.replace(/_/g, ' ').replace(/^./, x => x.toUpperCase()), `${base}/${i}/${k}`, it[k], { long: edIs18(it[k]) && !ED_SHORT.includes(k) })).join('')}<button class="edb sm danger" type="button" data-del="${base}/${i}">Delete this</button></details>`;
+
+/* --- Wi-Fi --- */
+function edWifi(c) {
+  const w = (c.private || {}).wifi;
+  if (!w) return '<div class="edc"><p class="edn">This guide has no Wi-Fi yet.</p><button class="edb on" type="button" data-addwifi>Add Wi-Fi</button></div>';
+  return `<div class="edc">${edField('Password', 'private/wifi/password', w.password)}<h2>Networks</h2>${(w.networks || []).map((n, i) => `<div class="edc" style="background:var(--sunk,#fafafa)">${edField('Network name', `private/wifi/networks/${i}/ssid`, n.ssid)}${edField('Note for guests (e.g. "Best inside the house")', `private/wifi/networks/${i}/label`, n.label || {})}<button class="edb sm danger" type="button" data-del="private/wifi/networks/${i}">Remove network</button></div>`).join('')}<button class="edb sm" type="button" data-addnet>Add a network</button></div>
+    <p class="edn">The QR code is made again automatically for the name and password you set.</p>`;
 }
+
+/* --- Rubbish --- */
+function edRubbish(c) {
+  const g = (c.files || {}).garbage;
+  if (!g) return '<div class="edc">This guide has no rubbish section.</div>';
+  const bins = ['street', ...Object.keys(g.bins || {})];
+  return `<div class="edc">${edField('Collection time (morning)', 'files/garbage/collectionTime', g.collectionTime || '', { type: 'time' })}</div>
+    <div class="edc">${(g.fractions || []).map((f, i) => `<details><summary>${edEsc(edShown(f.name) || f.id)}</summary>
+      ${edField('Name', `files/garbage/fractions/${i}/name`, f.name)}
+      <label class="edf"><span>Goes in</span><select data-p="files/garbage/fractions/${i}/bin" data-t="str">${bins.map(b => `<option value="${edEsc(b)}"${f.bin === b ? ' selected' : ''}>${edEsc(b === 'street' ? 'A container in the street' : edShown((g.bins || {})[b]) || b)}</option>`).join('')}</select></label>
+      <div class="edn" style="margin-bottom:4px">Collection days</div>${edDays(`files/garbage/fractions/${i}`, f.days)}
+      <div style="height:10px"></div>${edField('What goes in it', `files/garbage/fractions/${i}/examples`, f.examples || {}, { long: true })}</details>`).join('')}</div>
+    <div class="edc"><h2 style="margin-top:0">How to sort</h2>${(g.steps || []).map((it, j) => `<div class="edl"><label class="edf" style="flex:1;margin:0"><textarea data-p="files/garbage/steps/${j}" data-t="i18n">${edEsc(edShown(it))}</textarea></label><button class="edb sm danger" type="button" data-del="files/garbage/steps/${j}">Delete</button></div>`).join('')}<button class="edb sm" type="button" data-add="files/garbage/steps">Add a step</button>
+    ${g.missed ? edField('If a collection is missed', 'files/garbage/missed', g.missed, { long: true }) : ''}${g.deixalleria ? edField('Recycling centre', 'files/garbage/deixalleria', g.deixalleria, { long: true }) : ''}</div>`;
+}
+
+/* --- Generic item (contact, place, market...) --- */
+function edItem(base, it, i) {
+  const keys = Object.keys(it).filter(k => k !== 'schedule' && ((edIs18(it[k]) && !['bins'].includes(k)) || (ED_STR.includes(k) && typeof it[k] === 'string')));
+  const nums = ED_NUM.filter(k => k in it);
+  const name = edShown(it.name) || edShown(it.title) || (it.id && !String(it.id).startsWith('custom-') ? it.id : 'New item');
+  return `<details><summary>${edEsc(name)}</summary>
+    ${keys.map(k => edField(edLabel(k), `${base}/${i}/${k}`, it[k], { long: edIs18(it[k]) && !ED_SHORT.includes(k) })).join('')}
+    ${nums.length ? `<div class="edcol">${nums.map(k => edField(edLabel(k), `${base}/${i}/${k}`, it[k], { type: 'number' })).join('')}</div>` : ''}
+    ${'lat' in it ? `<label class="edf" style="margin-top:12px"><span>Paste a Google Maps link to set the position</span><input type="text" data-gm="${base}/${i}" placeholder="https://www.google.com/maps/..."></label>` : ''}
+    ${'schedule' in it || base.includes('markets') ? `<div style="margin-bottom:10px">${edSchedule(`${base}/${i}/schedule`, it.schedule)}</div>` : ''}
+    <button class="edb sm danger" type="button" data-del="${base}/${i}">Delete this</button></details>`;
+}
+function edNewItem(arr) {
+  const clone = arr && arr[0] ? JSON.parse(JSON.stringify(arr[0])) : { name: { en: '' }, description: { en: '' }, lat: 0, lng: 0 };
+  const h = (edF().house) || {};
+  const clear = o => { for (const k of Object.keys(o)) { const v = o[k]; if (['icon', 'group', 'tone', 'category', 'tags', 'flags', 'always', 'wide'].includes(k)) continue; if (edIs18(v)) o[k] = Object.fromEntries(Object.keys(v).map(l => [l, ''])); else if (typeof v === 'string') o[k] = ''; else if (Array.isArray(v)) o[k] = []; } return o; };
+  const n = clear(clone); n.id = 'custom-' + Date.now().toString(36);
+  if ('lat' in n || arr[0] && 'lat' in arr[0]) { n.lat = h.lat || 0; n.lng = h.lng || 0; n.km_from_house = 0; }
+  if ('verify' in n) delete n.verify;
+  return n;
+}
+const edKm = (a, b, c, d) => { const R = 6371, r = x => x * Math.PI / 180, dl = r(c - a), dg = r(d - b), x = Math.sin(dl / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dg / 2) ** 2; return Math.round(2 * R * Math.asin(Math.sqrt(x))); };
+
+/* --- Contacts --- */
+function edContacts(c) {
+  const em = (c.files || {}).emergency, q = (c.files || {}).quick;
+  const groups = (em && em.groups) || [];
+  const title = { urgent: 'Urgent', health: 'Health', police: 'Police and roads', town: 'Town and services' };
+  return `${groups.map((g, gi) => `<div class="edc"><h2 style="margin-top:0">${edEsc(title[g.id] || g.id)}</h2>${(g.items || []).map((it, i) => edItem(`files/emergency/groups/${gi}/items`, it, i)).join('')}<button class="edb sm" type="button" data-addit="files/emergency/groups/${gi}/items">Add a contact</button></div>`).join('')}
+    ${q ? `<div class="edc"><h2 style="margin-top:0">Quick tiles on the home page</h2>${(q.items || []).map((it, i) => edItem('files/quick/items', it, i)).join('')}<button class="edb sm" type="button" data-addit="files/quick/items">Add a quick tile</button></div>` : ''}
+    ${!groups.length && !q ? '<div class="edc">This guide has no contacts yet.</div>' : ''}`;
+}
+
+/* --- Places --- */
 function edPlaces(c) {
   const tabs = ED_PLACES.map(([id, label, path]) => { const n = (edGet(c, edPath(path)) || []).length; return n ? `<button class="edb sm${ED.sub === id ? ' on' : ''}" type="button" data-sub="${id}">${edEsc(label)} (${n})</button>` : ''; }).join('');
   const cur = ED_PLACES.find(x => x[0] === ED.sub && (edGet(c, edPath(x[2])) || []).length) || ED_PLACES.find(x => (edGet(c, edPath(x[2])) || []).length);
   if (!cur) return '<div class="edc">No places in this guide yet.</div>';
   const arr = edGet(c, edPath(cur[2]));
-  return `<div class="edtabs" style="margin:0 0 12px">${tabs}</div><div class="edc">${arr.map((it, i) => edItem(cur[2], it, i)).join('')}</div><p class="edn">Distances, coordinates and map links are not editable here yet. Adding places comes next.</p>`;
+  return `<div class="edtabs" style="margin:0 0 12px">${tabs}</div><div class="edc">${arr.map((it, i) => edItem(cur[2], it, i)).join('')}<div style="margin-top:10px"><button class="edb sm on" type="button" data-addit="${cur[2]}">Add a place</button></div></div>
+    <p class="edn">Distance from the house is worked out from the position. A new place starts at the house: set its position by pasting a Google Maps link.</p>`;
 }
+
+/* --- Design --- */
+const edCssVar = (css, name) => { const m = css.match(new RegExp(name + '\\s*:\\s*([^;}]+)')); return m ? m[1].trim() : ''; };
+const edBlockOf = css => { const m = css.match(/\/\* editor:start \*\/([\s\S]*?)\/\* editor:end \*\//); return m ? m[1] : ''; };
+function edDesign() {
+  const th = ED.g.theme = ED.g.theme || {}, css = th.css || '', blk = edBlockOf(css);
+  const val = (n, d) => { const v = edCssVar(blk, n) || edCssVar(css, n); return /^#[0-9a-fA-F]{6}$/.test(v) ? v : d; };
+  const fam = n => { const v = (edCssVar(blk, n) || edCssVar(css, n)).match(/"([^"]+)"/); return v ? v[1] : ''; };
+  const dispSel = (ED_FONTS.find(f => f[1] === fam('--display')) || [])[0] || ((th.fonts || [])[0] || '').split('/')[0] || 'jost';
+  const bodySel = (ED_FONTS.find(f => f[1] === fam('--font')) || [])[0] || ((th.fonts || []).slice(-1)[0] || '').split('/')[0] || 'jost';
+  const opts = sel => ED_FONTS.map(([id, n]) => `<option value="${id}"${id === sel ? ' selected' : ''}>${n}</option>`).join('');
+  return `<div class="edc"><h2 style="margin-top:0">Layout style</h2><label class="edf"><select data-design="preset">${ED_PRESETS.map(([id, n]) => `<option value="${id}"${(th.preset || 'bauhaus') === id ? ' selected' : ''}>${n}</option>`).join('')}</select></label></div>
+    <div class="edc"><h2 style="margin-top:0">Fonts</h2><div class="edcol"><label class="edf"><span>Titles</span><select data-design="display">${opts(dispSel)}</select></label><label class="edf"><span>Text</span><select data-design="body">${opts(bodySel)}</select></label></div></div>
+    <div class="edc"><h2 style="margin-top:0">Colours</h2><div class="edcol">${ED_COLORS.map(([v, l, d]) => `<label class="edf"><span>${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></div>
+    <p class="edn">Changes show on the guide as soon as they are saved. Open the guide in another tab and reload to see them.</p>`;
+}
+function edApplyDesign(kind, el) {
+  const th = ED.g.theme = ED.g.theme || {};
+  if (kind === 'preset') { th.preset = el.value; (ED.g.content.site = ED.g.content.site || {}).theme = { ...(ED.g.content.site.theme || {}), preset: el.value }; edQueue(); return; }
+  const css = th.css || '', blk = edBlockOf(css), cur = n => edCssVar(blk, n);
+  const decl = {}; for (const m of blk.matchAll(/(--[a-z-]+)\s*:\s*([^;]+);/g)) decl[m[1]] = m[2].trim();
+  let fonts = th.fonts || [];
+  if (kind === 'color') decl[el.dataset.var] = el.value;
+  else {
+    const f = ED_FONTS.find(x => x[0] === el.value), disp = kind === 'display';
+    decl[disp ? '--display' : '--font'] = `"${f[1]}",${/serif|fraunces|cormorant|instrument/i.test(f[0]) && !/sans/i.test(f[0]) ? 'Georgia,serif' : 'system-ui,sans-serif'}`;
+    const d = ED_FONTS.find(x => x[1] === ((decl['--display'] || '').match(/"([^"]+)"/) || [])[1]) || ED_FONTS[0], b = ED_FONTS.find(x => x[1] === ((decl['--font'] || '').match(/"([^"]+)"/) || [])[1]) || d;
+    fonts = []; for (const x of [d, b]) for (const w of (x[2] || [400, 500, 600, 700])) { const s = `${x[0]}/${w}.css`; if (!fonts.includes(s)) fonts.push(s); }
+    th.fonts = fonts; (ED.g.content.site = ED.g.content.site || {}).theme = { ...(ED.g.content.site.theme || {}), fonts };
+  }
+  const body = ':root{' + Object.entries(decl).map(([k, v]) => `${k}:${v}`).join(';') + '}';
+  const block = `/* editor:start */\n${body}\n/* editor:end */`;
+  th.css = /\/\* editor:start \*\//.test(css) ? css.replace(/\/\* editor:start \*\/[\s\S]*?\/\* editor:end \*\//, block) : css + '\n' + block;
+  edQueue();
+}
+
+/* --- Shell --- */
 function edEditorHTML() {
-  const g = ED.g, c = g.content, tabs = [['basics', 'Basics'], ['sections', 'Sections'], ['house', 'House guide'], ['places', 'Places']];
-  const body = ED.tab === 'basics' ? edBasics(c) : ED.tab === 'sections' ? edSections(c) : ED.tab === 'house' ? edHouse(c) : edPlaces(c);
-  const langs = edLangs();
+  const g = ED.g, c = g.content, tabs = [['basics', 'Basics'], ['sections', 'Sections'], ['house', 'House guide'], ['wifi', 'Wi-Fi'], ['rubbish', 'Rubbish'], ['contacts', 'Contacts'], ['places', 'Places'], ['design', 'Design']];
+  const body = { basics: edBasics, sections: edSections, house: edHouse, wifi: edWifi, rubbish: edRubbish, contacts: edContacts, places: edPlaces, design: edDesign }[ED.tab](c);
+  const langs = edLangs(), showLang = ['house', 'wifi', 'rubbish', 'contacts', 'places'].includes(ED.tab);
   return `<div class="edw"><div class="edh"><div class="edr"><h1>${edEsc((c.site || {}).name || g.slug)}</h1><span class="edst" id="edState">${edEsc(ED.state)}</span></div>
     <div class="edr" style="margin-top:8px"><span class="edst">Live at <a href="/g/${edEsc(g.slug)}" target="_blank" rel="noopener">${edEsc(location.host)}/g/${edEsc(g.slug)}</a></span><span><a class="edb sm" href="/g/${edEsc(g.slug)}" target="_blank" rel="noopener">Open guide</a> <button class="edb sm" type="button" data-edclose>Close</button></span></div>
     <div class="edtabs">${tabs.map(([id, l]) => `<button class="edb${ED.tab === id ? ' on' : ''}" type="button" data-tab="${id}">${l}</button>`).join('')}</div>
-    ${langs.length > 1 && (ED.tab === 'house' || ED.tab === 'places') ? `<div class="edlangs"><span class="edst" style="align-self:center">Language:</span>${langs.map(l => `<button class="edb sm${ED.lang === l ? ' on' : ''}" type="button" data-lang="${l}">${ED_LANGS[l]}</button>`).join('')}</div>` : ''}</div>
+    ${langs.length > 1 && showLang ? `<div class="edlangs"><span class="edst" style="align-self:center">Language:</span>${langs.map(l => `<button class="edb sm${ED.lang === l ? ' on' : ''}" type="button" data-lang="${l}">${ED_LANGS[l]}</button>`).join('')}</div>` : ''}</div>
     ${body}
-    ${ED.tab === 'house' || ED.tab === 'places' ? '<p class="edn">You edit one language at a time. When another language still had the same text as the one you change, it follows. Otherwise it stays as it was.</p>' : ''}</div>`;
+    ${showLang && langs.length > 1 ? '<p class="edn">You edit one language at a time. When another language still had the same text as the one you change, it follows. Otherwise it stays as it was.</p>' : ''}</div>`;
 }
 function edHubHTML() {
   return `<div class="edw"><div class="edh"><div class="edr"><h1>Your guides</h1><button class="edb sm" type="button" data-edclose>Close</button></div></div>
     ${ED.list.map(g => `<div class="edc"><div class="edr"><b>${edEsc((g.content.site || {}).name || g.slug)}</b><span class="edst">${edEsc(g.status)}</span></div><p class="edn">${edEsc(location.host)}/g/${edEsc(g.slug || '')}</p><button class="edb sm on" type="button" data-edit="${g.id}">Edit</button> <a class="edb sm" href="/g/${edEsc(g.slug)}" target="_blank" rel="noopener">Open</a></div>`).join('')}</div>`;
 }
-function edRender() {
-  let el = document.getElementById('ed'); if (!el) return;
-  const y = el.scrollTop; el.innerHTML = ED.g ? edEditorHTML() : edHubHTML(); el.scrollTop = y;
-}
+function edRender() { const el = document.getElementById('ed'); if (!el) return; const y = el.scrollTop; el.innerHTML = ED.g ? edEditorHTML() : edHubHTML(); el.scrollTop = y; }
 function edStatus() { const el = document.getElementById('edState'); if (el) el.textContent = ED.state; }
 async function edLoad() {
   await ensureFresh();
-  const rows = await sb('/rest/v1/guides?select=id,slug,status,origin,content&order=created_at.asc');
+  const rows = await sb('/rest/v1/guides?select=id,slug,status,origin,content,theme&order=created_at.asc');
   ED.list = (rows || []).filter(r => r.content && r.content.site && r.slug);
   return ED.list;
 }
@@ -109,22 +218,42 @@ function edClose() { const el = document.getElementById('ed'); if (el) el.hidden
 function edQueue() { ED.state = 'Saving…'; edStatus(); clearTimeout(ED.timer); ED.timer = setTimeout(edSave, 1200); }
 async function edSave() {
   const g = ED.g; if (!g) return;
-  try { await ensureFresh(); await sb('/rest/v1/guides?id=eq.' + g.id, { method: 'PATCH', body: { content: g.content } }); ED.state = 'Saved. Live now.'; }
+  try { await ensureFresh(); await sb('/rest/v1/guides?id=eq.' + g.id, { method: 'PATCH', body: { content: g.content, theme: g.theme || {} } }); ED.state = 'Saved. Live now.'; }
   catch (e) { ED.state = 'Not saved: ' + niceError(e); }
   edStatus();
 }
 function edEdit(t) {
-  const c = ED.g.content, p = edPath(t.dataset.p), v = t.value;
-  if (t.dataset.t === 'i18n') {
+  const c = edC(), p = edPath(t.dataset.p), v = t.value, kind = t.dataset.t;
+  if (kind === 'i18n') {
     let o = edGet(c, p); if (!o || typeof o !== 'object') { o = {}; edSet(c, p, o); }
     const shown = edShown(o);
     for (const l of Object.keys(o)) if (l !== ED.lang && (o[l] === shown || o[l] === '')) o[l] = v;
     o[ED.lang] = v;
-  } else edSet(c, p, v);
+  } else if (kind === 'num') edSet(c, p, v === '' ? 0 : Number(v));
+  else edSet(c, p, v);
+  if (p[0] === 'private' && p[1] === 'wifi' && p[p.length - 1] !== 'label') for (const n of (c.private.wifi.networks || [])) delete n.qr;   // the guide makes a new QR code for the new name or password
+  if (kind === 'num' && (p[p.length - 1] === 'lat' || p[p.length - 1] === 'lng')) edUpdateKm(p.slice(0, -1));
   edQueue();
 }
-document.addEventListener('input', e => { const t = e.target; if (t.closest && t.closest('#ed') && t.dataset && t.dataset.p) edEdit(t); });
-document.addEventListener('change', e => { const t = e.target; if (t.closest && t.closest('#ed') && t.dataset && t.dataset.mod) { const s = ED.g.content.site = ED.g.content.site || {}; s.modules = s.modules || {}; s.modules[t.dataset.mod] = !!t.checked; edQueue(); } });
+function edUpdateKm(ip) {
+  const it = edGet(edC(), ip), h = edF().house || {}; if (!it || !('km_from_house' in it) || !h.lat || !it.lat) return;
+  it.km_from_house = edKm(h.lat, h.lng, it.lat, it.lng);
+  const el = document.querySelector(`#ed [data-p="${ip.join('/')}/km_from_house"]`); if (el) el.value = it.km_from_house;
+}
+function edParseMaps(url) {
+  let m = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || url.match(/[?&](?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+  return m ? { lat: +m[1], lng: +m[2] } : null;
+}
+document.addEventListener('input', e => {
+  const t = e.target; if (!t.closest || !t.closest('#ed') || !t.dataset) return;
+  if (t.dataset.p) return edEdit(t);
+  if (t.dataset.gm) { const pos = edParseMaps(t.value); if (!pos) return; const ip = edPath(t.dataset.gm), it = edGet(edC(), ip); it.lat = pos.lat; it.lng = pos.lng; if ('map' in it || 'gmaps' in it) it['map' in it ? 'map' : 'gmaps'] = t.value; edUpdateKm(ip); edQueue(); edRender(); }
+});
+document.addEventListener('change', e => {
+  const t = e.target; if (!t.closest || !t.closest('#ed') || !t.dataset) return;
+  if (t.dataset.mod) { const s = edC().site = edC().site || {}; s.modules = s.modules || {}; s.modules[t.dataset.mod] = !!t.checked; edQueue(); }
+  else if (t.dataset.design) edApplyDesign(t.dataset.design, t);
+});
 document.addEventListener('click', e => {
   const t = e.target.closest && e.target.closest('button,.edTop'); if (!t) return;
   if (t.classList.contains('edTop')) return edOpen();
@@ -135,11 +264,16 @@ document.addEventListener('click', e => {
   if (d.tab) { ED.tab = d.tab; return edRender(); }
   if (d.lang) { ED.lang = d.lang; return edRender(); }
   if (d.sub) { ED.sub = d.sub; return edRender(); }
+  if (d.daytog) { const o = edGet(edC(), edPath(d.daytog)); if (o) { o.days = o.days || []; const i = o.days.indexOf(d.d); i >= 0 ? o.days.splice(i, 1) : o.days.push(d.d); edQueue(); edRender(); } return; }
+  if (d.addsch) { const p = edPath(d.addsch); let a = edGet(edC(), p); if (!Array.isArray(a)) { edSet(edC(), p, []); a = edGet(edC(), p); } a.push({ days: [], open: '09:00', close: '14:00' }); edQueue(); return edRender(); }
+  if (d.addit) { const a = edGet(edC(), edPath(d.addit)); if (Array.isArray(a)) { a.push(edNewItem(a)); edQueue(); edRender(); } return; }
+  if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: { en: '' } }] }; edQueue(); return edRender(); }
+  if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: { en: '' } }); edQueue(); return edRender(); }
   if (d.del) {
     if (t.dataset.sure !== '1') { t.dataset.sure = '1'; t.textContent = 'Sure?'; return; }
-    const p = edPath(d.del), arr = edGet(ED.g.content, p.slice(0, -1)); if (Array.isArray(arr)) { arr.splice(p[p.length - 1], 1); edQueue(); edRender(); } return;
+    const p = edPath(d.del), arr = edGet(edC(), p.slice(0, -1)); if (Array.isArray(arr)) { arr.splice(p[p.length - 1], 1); if (p[0] === 'private') for (const n of (edC().private.wifi.networks || [])) delete n.qr; edQueue(); edRender(); } return;
   }
-  if (d.add) { const arr = edGet(ED.g.content, edPath(d.add)); if (Array.isArray(arr)) { const o = {}; for (const l of edLangs()) o[l] = ''; arr.push(o); edQueue(); edRender(); } }
+  if (d.add) { const arr = edGet(edC(), edPath(d.add)); if (Array.isArray(arr)) { const o = {}; for (const l of edLangs()) o[l] = ''; arr.push(o); edQueue(); edRender(); } }
 });
 async function edInit() {
   const list = await edLoad();
