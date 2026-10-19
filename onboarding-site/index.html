@@ -1421,7 +1421,7 @@ async function resetAll(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   const st2 = document.createElement('style'); st2.textContent = '.resetTop{position:fixed;bottom:10px;left:10px;z-index:40;font:600 12px/1 inherit;font-family:inherit;padding:8px 12px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;opacity:.85;cursor:pointer}.resetTop:hover{opacity:1}'; document.head.appendChild(st2);
   const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'resetTop'; rb.textContent = 'Start over'; rb.title = 'Erase everything on this device and begin again'; document.body.appendChild(rb);
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 19 Oct 2026, 10:09 (Madrid time, after commit 68d8385)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 19 Oct 2026, 10:40 (Madrid time, after commit 1aeb434)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" step needs a Google key on our side. If it is not connected, the step is hidden instead of showing a dead page. ---------- */
@@ -1596,6 +1596,28 @@ async function acctLogout(){
   authStore(null); await wipeLocal(); location.hash = ''; location.reload();
 }
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.logoutTop')) acctLogout(); });
+
+/* ---------- Publish: queue the guide for building, then follow its status ---------- */
+async function acctQueueBuild(){
+  if (!AUTH || !GUIDE) throw new Error('Log in to publish your guide.');
+  clearTimeout(pushTimer);
+  for (let i = 0; i < 40 && pushing; i++) await new Promise(r => setTimeout(r, 150));
+  await acctPush();
+  if (A.slug && A.slug !== GUIDE.slug) throw new Error('That web address is already taken. Pick another one in the first step.');
+  await ensureFresh();
+  try { const r = await sb('/rest/v1/guides?id=eq.' + GUIDE.id, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: { status: 'queued' } }); if (r && r[0]) { GUIDE.status = r[0].status; GUIDE.message = r[0].message; } }
+  catch (e) { throw new Error(/web address/i.test(e.message) ? 'Choose a web address for your guide in the first step.' : e.message); }
+  return GUIDE.status;
+}
+async function acctStatus(){
+  if (!AUTH || !GUIDE) return null;
+  await ensureFresh();
+  const r = await sb('/rest/v1/guides?select=status,message,slug,finished_at&id=eq.' + GUIDE.id);
+  if (r && r[0]) { GUIDE.status = r[0].status; GUIDE.message = r[0].message; return r[0]; }
+  return null;
+}
+window.__acctQueueBuild = acctQueueBuild; window.__acctStatus = acctStatus;
+window.__acctGuide = () => GUIDE;
 
 async function accountBoot(){
   if (!/^\/(index\.html)?$/.test(location.pathname)) return;     // guide previews at /<name> stay as they are
@@ -1778,6 +1800,28 @@ function noteBox(mod){
     ${sent.length ? `<p class="hint">${sent.length} note${sent.length > 1 ? 's' : ''} sent from this page. Thank you!</p>` : ''}</div>`;
 }
 
+/* ---------- Building your guide ---------- */
+let buildTimer = null;
+function buildState(g){
+  const slug = (g && g.slug) || v('slug'), st = (g && g.status) || 'queued', url = location.origin + '/g/' + slug;
+  if (st === 'ready' || st === 'approved' || st === 'published') return `<h1>Your guide is ready.</h1><p>${st === 'published' ? 'It is live. Share this link with your guests.' : 'Have a look. Only you can see it until it is published.'}</p>
+      <a class="go-next" href="/g/${esc(slug)}" target="_blank" rel="noopener"><span>Open my guide</span><span class="ar">${ARROW}</span></a>
+      <p style="margin:14px 0 0;color:#F4F1EA;opacity:.75;word-break:break-all">${esc(url)}</p>`;
+  if (st === 'failed') return `<h1>This did not work.</h1><p>${esc((g && g.message) || 'Something went wrong while building your guide.')} We have been told. You can change an answer and send it again.</p>`;
+  return `<h1>${st === 'generating' ? 'Building your guide…' : 'Your guide is in the queue.'}</h1><p>${esc((g && g.message) || 'Waiting for its turn')}. This takes a few minutes. You can close this page: your guide will be here when you come back.</p>`;
+}
+function buildingHTML(){
+  return `<section class="hero"><small>${esc(v('guideName') || v('placeName') || 'Your guide')}</small><div id="bstate" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">${buildState(window.__acctGuide && window.__acctGuide())}</div></section>
+    <section class="card"><div class="foot"><div class="row"><a class="btn" href="#home">See or change my answers</a><a class="btn" href="#send">Build it again</a></div></div></section>`;
+}
+function watchBuild(){
+  clearInterval(buildTimer);
+  const tick = async () => {
+    try { const g = await window.__acctStatus(); const el = document.getElementById('bstate'); if (el && g) { el.innerHTML = buildState(g); if (['ready', 'approved', 'published', 'failed'].includes(g.status)) clearInterval(buildTimer); } } catch (e) {}
+  };
+  tick(); buildTimer = setInterval(tick, 4000);
+}
+
 /* ---------- After sending ---------- */
 function thanksHTML(){
   const when = A._sentAt ? new Date(A._sentAt).toLocaleString() : '';
@@ -1820,11 +1864,13 @@ let lastRoute = null;
 function render(){
   const r = route(), main = $('#main');
   if (!main) return;
+  clearInterval(buildTimer);
   const ae = document.activeElement, fid = ae && ae.id, sel = ae && ae.selectionStart;
   const m = visible().find(x => x.id === r);
   const path = decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g, ''));
   if (path && path !== 'index.html') { if (path === v('slug') || path === 'preview') { renderPreview(); return; } main.innerHTML = notHereHTML(path); return; }
   if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
+  else if (r === 'building' || (A._sentAt && !location.hash && window.__acctGuide && window.__acctGuide() && window.__acctGuide().status !== 'draft')) { main.innerHTML = buildingHTML(); watchBuild(); }
   else if (r === 'thanks' || (A._sentAt && !location.hash)) main.innerHTML = thanksHTML();
   else if (m) { main.innerHTML = moduleHTML(m); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
   else if (r === 'send') { main.innerHTML = sendHTML(); if (r !== lastRoute) { log('open', 'send'); queueSave(); } }
@@ -1921,6 +1967,10 @@ async function send(b){
       sent_before: A._sentAt || '', answers: JSON.stringify(clean) });
     for (const u of uploads.filter(x => !x.remote)) { tick(); await nf('file', { sid, kind: u.kind, room: u.room || '', name: u.name }, u); }
     A._sentAt = new Date().toISOString(); flush();
+    if (window.__acctQueueBuild && window.__acctGuide && window.__acctGuide()) {
+      try { st && (st.textContent = 'Starting your guide…'); await window.__acctQueueBuild(); location.hash = 'building'; render(); return; }
+      catch (e) { b.disabled = false; if (st) st.textContent = e.message || 'Could not start your guide. Try again.'; return; }
+    }
     toast('Sent! Opening your preview…'); setTimeout(() => { location.href = '/' + (v('slug') || 'preview'); }, 900);
   } catch (err) { b.disabled = false; if (st) st.textContent = 'Something did not go through. Check your connection and press Send again.'; }
 }

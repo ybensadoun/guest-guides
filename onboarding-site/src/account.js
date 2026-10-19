@@ -168,6 +168,28 @@ async function acctLogout(){
 }
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.logoutTop')) acctLogout(); });
 
+/* ---------- Publish: queue the guide for building, then follow its status ---------- */
+async function acctQueueBuild(){
+  if (!AUTH || !GUIDE) throw new Error('Log in to publish your guide.');
+  clearTimeout(pushTimer);
+  for (let i = 0; i < 40 && pushing; i++) await new Promise(r => setTimeout(r, 150));
+  await acctPush();
+  if (A.slug && A.slug !== GUIDE.slug) throw new Error('That web address is already taken. Pick another one in the first step.');
+  await ensureFresh();
+  try { const r = await sb('/rest/v1/guides?id=eq.' + GUIDE.id, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: { status: 'queued' } }); if (r && r[0]) { GUIDE.status = r[0].status; GUIDE.message = r[0].message; } }
+  catch (e) { throw new Error(/web address/i.test(e.message) ? 'Choose a web address for your guide in the first step.' : e.message); }
+  return GUIDE.status;
+}
+async function acctStatus(){
+  if (!AUTH || !GUIDE) return null;
+  await ensureFresh();
+  const r = await sb('/rest/v1/guides?select=status,message,slug,finished_at&id=eq.' + GUIDE.id);
+  if (r && r[0]) { GUIDE.status = r[0].status; GUIDE.message = r[0].message; return r[0]; }
+  return null;
+}
+window.__acctQueueBuild = acctQueueBuild; window.__acctStatus = acctStatus;
+window.__acctGuide = () => GUIDE;
+
 async function accountBoot(){
   if (!/^\/(index\.html)?$/.test(location.pathname)) return;     // guide previews at /<name> stay as they are
   authLoad();

@@ -145,6 +145,28 @@ function noteBox(mod){
     ${sent.length ? `<p class="hint">${sent.length} note${sent.length > 1 ? 's' : ''} sent from this page. Thank you!</p>` : ''}</div>`;
 }
 
+/* ---------- Building your guide ---------- */
+let buildTimer = null;
+function buildState(g){
+  const slug = (g && g.slug) || v('slug'), st = (g && g.status) || 'queued', url = location.origin + '/g/' + slug;
+  if (st === 'ready' || st === 'approved' || st === 'published') return `<h1>Your guide is ready.</h1><p>${st === 'published' ? 'It is live. Share this link with your guests.' : 'Have a look. Only you can see it until it is published.'}</p>
+      <a class="go-next" href="/g/${esc(slug)}" target="_blank" rel="noopener"><span>Open my guide</span><span class="ar">${ARROW}</span></a>
+      <p style="margin:14px 0 0;color:#F4F1EA;opacity:.75;word-break:break-all">${esc(url)}</p>`;
+  if (st === 'failed') return `<h1>This did not work.</h1><p>${esc((g && g.message) || 'Something went wrong while building your guide.')} We have been told. You can change an answer and send it again.</p>`;
+  return `<h1>${st === 'generating' ? 'Building your guide…' : 'Your guide is in the queue.'}</h1><p>${esc((g && g.message) || 'Waiting for its turn')}. This takes a few minutes. You can close this page: your guide will be here when you come back.</p>`;
+}
+function buildingHTML(){
+  return `<section class="hero"><small>${esc(v('guideName') || v('placeName') || 'Your guide')}</small><div id="bstate" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">${buildState(window.__acctGuide && window.__acctGuide())}</div></section>
+    <section class="card"><div class="foot"><div class="row"><a class="btn" href="#home">See or change my answers</a><a class="btn" href="#send">Build it again</a></div></div></section>`;
+}
+function watchBuild(){
+  clearInterval(buildTimer);
+  const tick = async () => {
+    try { const g = await window.__acctStatus(); const el = document.getElementById('bstate'); if (el && g) { el.innerHTML = buildState(g); if (['ready', 'approved', 'published', 'failed'].includes(g.status)) clearInterval(buildTimer); } } catch (e) {}
+  };
+  tick(); buildTimer = setInterval(tick, 4000);
+}
+
 /* ---------- After sending ---------- */
 function thanksHTML(){
   const when = A._sentAt ? new Date(A._sentAt).toLocaleString() : '';
@@ -187,11 +209,13 @@ let lastRoute = null;
 function render(){
   const r = route(), main = $('#main');
   if (!main) return;
+  clearInterval(buildTimer);
   const ae = document.activeElement, fid = ae && ae.id, sel = ae && ae.selectionStart;
   const m = visible().find(x => x.id === r);
   const path = decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g, ''));
   if (path && path !== 'index.html') { if (path === v('slug') || path === 'preview') { renderPreview(); return; } main.innerHTML = notHereHTML(path); return; }
   if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
+  else if (r === 'building' || (A._sentAt && !location.hash && window.__acctGuide && window.__acctGuide() && window.__acctGuide().status !== 'draft')) { main.innerHTML = buildingHTML(); watchBuild(); }
   else if (r === 'thanks' || (A._sentAt && !location.hash)) main.innerHTML = thanksHTML();
   else if (m) { main.innerHTML = moduleHTML(m); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
   else if (r === 'send') { main.innerHTML = sendHTML(); if (r !== lastRoute) { log('open', 'send'); queueSave(); } }
@@ -288,6 +312,10 @@ async function send(b){
       sent_before: A._sentAt || '', answers: JSON.stringify(clean) });
     for (const u of uploads.filter(x => !x.remote)) { tick(); await nf('file', { sid, kind: u.kind, room: u.room || '', name: u.name }, u); }
     A._sentAt = new Date().toISOString(); flush();
+    if (window.__acctQueueBuild && window.__acctGuide && window.__acctGuide()) {
+      try { st && (st.textContent = 'Starting your guide…'); await window.__acctQueueBuild(); location.hash = 'building'; render(); return; }
+      catch (e) { b.disabled = false; if (st) st.textContent = e.message || 'Could not start your guide. Try again.'; return; }
+    }
     toast('Sent! Opening your preview…'); setTimeout(() => { location.href = '/' + (v('slug') || 'preview'); }, 900);
   } catch (err) { b.disabled = false; if (st) st.textContent = 'Something did not go through. Check your connection and press Send again.'; }
 }
