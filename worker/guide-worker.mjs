@@ -3,6 +3,8 @@
 // Watches the database for guides a host has queued, builds each one and writes the result back.
 //   node worker/guide-worker.mjs            keep running, build guides as they arrive
 //   node worker/guide-worker.mjs --once     build whatever is queued now, then stop
+//   node worker/guide-worker.mjs --import <site-folder> --slug <web-address> --owner-email <email>
+//        put a hand-made guide from sites/<folder> into the database (or refresh it), owned by that account
 // Settings live in worker/.env.local (never committed). See worker/README.md.
 import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { resolve, dirname, join, relative, extname } from 'node:path';
@@ -133,6 +135,25 @@ async function build(g) {
   log(`  built ${g.slug}: ${n} images, status ${status}`);
 }
 
+
+/* ---------- Import a hand-made guide (sites/<folder>) into the database ---------- */
+async function importSite(folder, slug, email) {
+  if (!folder || !slug || !email) throw new Error('Usage: --import <site-folder> --slug <web-address> --owner-email <email>');
+  if (!existsSync(resolve(ROOT, 'sites', folder))) throw new Error('No such folder: sites/' + folder);
+  const users = await (await fetch(URL_ + '/auth/v1/admin/users?per_page=200', { headers: H })).json();
+  const owner = (users.users || []).find(u => (u.email || '').toLowerCase() === email.toLowerCase());
+  if (!owner) throw new Error('No account with that email yet. Sign up at the onboarding page first.');
+  let rows = await rest('/rest/v1/guides?select=id,owner&slug=eq.' + encodeURIComponent(slug));
+  let g = rows && rows[0];
+  if (!g) { const made = await rest('/rest/v1/guides', { method: 'POST', body: { owner: owner.id, slug, status: 'draft', origin: 'imported', answers: {} }, headers: { Prefer: 'return=representation' } }); g = made[0]; }
+  const assetBase = `${URL_}/storage/v1/object/public/guide-assets/${g.id}/`;
+  const row = JSON.parse(run('node', ['engine/scripts/guide-to-row.mjs', folder, assetBase]).stdout);
+  row.content.site.slug = slug; row.content.site.storageKey = slug;
+  const n = await upload(g.id, resolve(ROOT, 'sites', folder, 'public'));
+  await patch(g.id, { owner: owner.id, origin: 'imported', content: row.content, theme: row.theme, status: 'published', message: null, finished_at: new Date().toISOString() });
+  log(`Imported sites/${folder} as /g/${slug} for ${email}: ${n} images.`);
+}
+
 /* ---------- Loop ---------- */
 async function claim() {
   const rows = await rest('/rest/v1/guides?select=id,slug,owner,answers&status=eq.queued&order=queued_at.asc.nullslast&limit=1');
@@ -156,6 +177,8 @@ async function tick() {
     }
   }
 }
+const arg = n => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] : ''; };
+if (process.argv.includes('--import')) { try { await importSite(arg('--import'), arg('--slug'), arg('--owner-email')); } catch (e) { console.error('Import failed:', e.message); process.exit(1); } process.exit(0); }
 log(`Guide worker on. Database ${URL_}. Publish on build: ${AUTO_PUBLISH}. Research: ${RESEARCH}.`);
 if (ONCE) { await tick(); log('done'); }
 else for (;;) { try { await tick(); } catch (e) { log('waiting, could not reach the database:', e.message); } await new Promise(r => setTimeout(r, POLL)); }

@@ -129,7 +129,7 @@ async function adoptRemote(remote){
 async function acctAttach(){
   const user = AUTH.user || {};
   if (A._acct && A._acct !== user.id) await wipeLocal();     // someone else used this device before: never mix their answers in
-  const rows = await sb('/rest/v1/guides?select=id,answers,status,slug&order=created_at.asc&limit=1');
+  const rows = await sb('/rest/v1/guides?select=id,answers,status,slug,origin&order=created_at.asc&limit=1');
   const local = !!((A._seen && A._seen.length) || A.listingUrl);
   if (rows && rows[0]) {
     GUIDE = rows[0];
@@ -144,7 +144,7 @@ async function acctAttach(){
 }
 function acctQueue(){ if (!AUTH || !GUIDE) return; clearTimeout(pushTimer); pushTimer = setTimeout(acctPush, 1500); }
 async function acctPush(){
-  if (window.__resetting || !AUTH || !GUIDE) return;
+  if (window.__resetting || !AUTH || !GUIDE || GUIDE.origin === 'imported') return;
   if (pushing) { pushAgain = true; return; }
   pushing = true;
   try {
@@ -200,5 +200,6 @@ async function accountBoot(){
   while (!AUTH) { await gate(window.__everSignedIn ? 'login' : 'signup', notice); }
   try { await acctAttach(); }
   catch (e) { if (e.status === 401 || e.status === 403) { authStore(null); await accountBoot(); return; } /* offline: keep working on this device */ }
+  try { await edInit(); } catch (e) {}
   if (!document.querySelector('.logoutTop')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'logoutTop'; b.textContent = 'Log out'; document.body.appendChild(b); }
 }
