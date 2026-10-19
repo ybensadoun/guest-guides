@@ -26,6 +26,7 @@ Decisions taken: Supabase for accounts and data; one shared site where guides lo
 3. **Generation worker**: Actions plus Claude API research and design; status and the "your guide is being prepared" screen.
 4. **Edit and skins**: "Change the design", regenerate one section, undo.
 5. **Later**: Google login, CRM follow-up, custom domains, payments.
+6. **Multiple properties per host** (decided 19 Oct: for now one account = one house, to test the flow). The schema already allows several `guides` rows per owner. Later: a "My guides" list after login, onboarding scoped to the chosen guide (today it loads the first row), "Add a property", a per-account limit (cost), unique slugs per property. Build the Publish button and worker per guide, not per account, so this stays easy once the single-house flow is validated.
 
 ## Risks to handle
 - Abuse and cost: email confirmation, rate limit per account, a cap on Claude API spend per guide, a monthly budget alert.
