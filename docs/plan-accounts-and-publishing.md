@@ -42,3 +42,6 @@ While the UX is being tested, the background work may run on Yohann's computer, 
 - Guides are shown from the database by the shared viewer, so no deploy step is needed.
 - The service role key lives only in a private env file on his computer, never in the repo or in chat.
 - **Later, before going public:** move the worker to the cloud (GitHub Actions or a small server) so nothing depends on his computer being on, and add the approval and cost limits above. This is a known gap, not a surprise.
+
+## Later: research that depends on the market
+The research step (nearby places, supermarkets, markets, rubbish rules, emergency numbers, opening hours) is tuned for Spain today. For other countries the useful things differ: in Dubai, for example, a weekly market where you buy groceries may not exist, and other categories matter instead (malls, delivery apps, taxis, prayer times, local rules). Before opening to other markets, make the research prompts depend on the country of the listing: which categories to look for, what the local emergency numbers are, local customs and local rules. Until then, Spain is the supported market.
