@@ -4,7 +4,7 @@ import { SITE, FILES as files, PRIVATE } from './site-data.js';
 const get = name => files[name];
 export { SITE };
 // Modules switched off in site.json ("modules": { "events": false }) disappear everywhere: tile, page, map pins.
-export const MODULE_ON = id => (SITE.modules || {})[id] !== false;
+export const MODULE_ON = id => (SITE.modules || {})[id] !== false && !(id === 'markets' && !((files.markets || {}).markets || []).length);   // markets with nothing found vanish too, no dead-end tile
 
 const DAY = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
 export const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -18,7 +18,7 @@ export const HOUSE = get('house');
 const PRIV_WIFI = PRIVATE.wifi;
 if (PRIV_WIFI) HOUSE.wifi = PRIV_WIFI;
 const mk = (MODULE_ON('markets') && get('markets')) || { categories: [], markets: [] };
-export const CATS = mk.categories;
+export const CATS = (mk.categories || []).filter(c => (mk.markets || []).some(m => m.category === c));
 
 export const MARKETS = mk.markets.map(m => ({
   ...m,

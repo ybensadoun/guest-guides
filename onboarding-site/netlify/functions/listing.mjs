@@ -158,7 +158,7 @@ async function askClaude(src, town){
   if (!key) throw new Error('no_key');
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST', signal: AbortSignal.timeout(24000),
-    headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', ...(process.env.ANTHROPIC_WORKSPACE_ID ? { 'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID } : {}) },
     body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001', max_tokens: 3000, system: SYSTEM,
       messages: [{ role: 'user', content: prompt(src, town) }] })
   });

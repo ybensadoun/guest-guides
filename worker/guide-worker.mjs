@@ -30,7 +30,8 @@ async function rest(path, o = {}) {
   return j;
 }
 const patch = (id, body) => rest('/rest/v1/guides?id=eq.' + id, { method: 'PATCH', body, headers: { Prefer: 'return=minimal' } });
-const say = (id, message) => patch(id, { message }).catch(() => {});
+let lastSay = Promise.resolve();   // status messages go out in order, and the final result waits for them
+const say = (id, message) => { lastSay = lastSay.then(() => patch(id, { message }).catch(() => {})); };
 
 function run(cmd, args, o = {}) {
   const r = spawnSync(cmd, args, { cwd: o.cwd || ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: o.timeout || 600000, input: o.input });
@@ -64,13 +65,26 @@ ${example(kind)}`;
 function research(A, outDir, id) {
   mkdirSync(outDir, { recursive: true });
   const jobs = [
-    ['markets', 'Find the weekly and notable local markets within the radius (street markets, covered markets, fairs). Same shape as the example: {"categories":[...],"markets":[...]} with schedule days as mon..sun.'],
+    ['markets', 'Find the weekly and notable local markets within the radius (street markets, covered markets, fairs). Same shape as the example: {"categories":[...],"markets":[...]} with schedule days as mon..sun. Every market MUST have numeric lat and lng: use the exact spot if a source gives it, otherwise the centre of the town or the market square from Wikipedia or OpenStreetMap, and add "verify": true when approximate. Its "category" must be one of: covered, street, flea, antiques, events.'],
     ['todo', 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example.'],
     ['emergency', 'Find the nearest hospital with an emergency department, the national emergency number and the local health advice line. Same shape: {"groups":[...]}.'],
   ];
+  const en = JSON.parse(readFileSync(join(ROOT, 'engine/src/i18n/en.json'), 'utf8'));
+  const tagsOk = Object.keys(en).filter(k => k.startsWith('t_')).map(k => k.slice(2)), flagsOk = Object.keys(en).filter(k => k.startsWith('f_')).map(k => k.slice(2));
+  const keep = (o, k, ok) => { if (Array.isArray(o[k])) o[k] = o[k].filter(x => ok.includes(x)); };
+  const clean = (x) => { if (Array.isArray(x)) x.forEach(clean); else if (x && typeof x === 'object') { keep(x, 'tags', tagsOk); keep(x, 'flags', flagsOk); Object.values(x).forEach(clean); } return x; };
+  const hasPos = x => x && typeof x.lat === 'number' && typeof x.lng === 'number';
+  const catsOk = Object.keys(en).filter(k => k.startsWith('cat_')).map(k => k.slice(4));
+  const catFix = c => catsOk.includes(c) ? c : (/fair|festival|swap|event/.test(c || '') ? 'events' : /cover|hall|indoor/.test(c || '') ? 'covered' : /flea|second|vintage/.test(c || '') ? 'flea' : /antiq|craft/.test(c || '') ? 'antiques' : 'street');
+  const located = o => {
+    for (const k of ['markets', 'items']) if (Array.isArray(o[k])) o[k] = o[k].filter(hasPos);   // places without coordinates cannot be shown on the map
+    if (Array.isArray(o.markets)) { o.markets.forEach(m => { m.category = catFix(m.category); }); o.categories = catsOk.filter(c => o.markets.some(m => m.category === c)); }
+    return o;
+  };
+  const allowed = `Where an item has "tags" or "flags", use ONLY these values. tags: ${tagsOk.join(', ')}. flags: ${flagsOk.join(', ')}. Leave out any that do not fit.`;
   for (const [kind, rules] of jobs) {
     say(id, `Researching: ${kind}`);
-    try { writeFileSync(join(outDir, kind + '.json'), JSON.stringify(claudeJson(researchPrompt(kind, A, rules), kind), null, 1)); }
+    try { writeFileSync(join(outDir, kind + '.json'), JSON.stringify(located(clean(claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind))), null, 1)); }
     catch (e) { log(`  research ${kind} skipped:`, e.message); }
   }
 }
@@ -127,6 +141,7 @@ async function build(g) {
   row.content.site.slug = g.slug; row.content.site.storageKey = g.slug;
   const n = await upload(id, resolve(siteDir, 'public'));
   const status = AUTO_PUBLISH ? 'published' : 'ready';
+  await lastSay;
   await patch(id, { content: row.content, theme: row.theme, status, message: null, finished_at: new Date().toISOString() });
   rest('/rest/v1/events', { method: 'POST', body: { user_id: g.owner, guide_id: id, kind: 'guide_built', data: { slug: g.slug, images: n, status } }, headers: { Prefer: 'return=minimal' } }).catch(() => {});
   rmSync(siteDir, { recursive: true, force: true });
@@ -188,6 +203,7 @@ async function tick() {
     try { await build(g); }
     catch (e) {
       log('  FAILED:', e.message);
+      await lastSay;
       await patch(g.id, { status: 'failed', message: String(e.message).slice(0, 300), finished_at: new Date().toISOString() }).catch(() => {});
       try { rmSync(resolve(ROOT, 'sites', 'w-' + g.id.slice(0, 8)), { recursive: true, force: true }); } catch (e2) {}
     }

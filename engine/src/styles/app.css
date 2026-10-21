@@ -621,6 +621,7 @@ body:not(.is-home) .hero .back{position:fixed;top:calc(env(safe-area-inset-top,0
 .keyfacts{display:grid;grid-template-columns:repeat(2,1fr);background:var(--white);border-bottom:1.5px solid var(--line)}
 .keyfacts a{display:flex;flex-direction:column;gap:2px;padding:12px 16px;color:var(--ink);text-decoration:none;border-left:1.5px solid var(--line)}
 .keyfacts a:first-child{border-left:0}
+.keyfacts>:only-child{grid-column:1/-1}
 .keyfacts small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .keyfacts b{font-size:15px;font-weight:600;line-height:1.2}
 .is-home .hero .langsel{margin-top:2px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
