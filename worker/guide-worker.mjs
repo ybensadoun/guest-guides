@@ -23,8 +23,15 @@ if (!KEY) { console.error('Missing SUPABASE_SERVICE_KEY. Put it in worker/.env.l
 
 const log = (...a) => console.log(new Date().toLocaleTimeString(), ...a);
 const H = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
+// A dropped connection ("fetch failed") is retried a few times instead of failing the whole guide.
+async function fetchRetry(url, init, tries = 4) {
+  for (let i = 1; ; i++) {
+    try { return await fetch(url, init); }
+    catch (e) { if (i >= tries) throw new Error(`${e.message} (${new URL(url).pathname.split('/').slice(0, 4).join('/')}, ${tries} tries)`); await new Promise(r => setTimeout(r, 1500 * i)); }
+  }
+}
 async function rest(path, o = {}) {
-  const r = await fetch(URL_ + path, { method: o.method || 'GET', headers: { ...H, ...(o.headers || {}) }, body: o.body === undefined ? undefined : (typeof o.body === 'string' ? o.body : JSON.stringify(o.body)) });
+  const r = await fetchRetry(URL_ + path, { method: o.method || 'GET', headers: { ...H, ...(o.headers || {}) }, body: o.body === undefined ? undefined : (typeof o.body === 'string' ? o.body : JSON.stringify(o.body)) });
   const t = await r.text(); let j = null; try { j = t ? JSON.parse(t) : null; } catch (e) { j = t; }
   if (!r.ok) throw new Error(`${o.method || 'GET'} ${path.split('?')[0]} -> ${r.status} ${typeof j === 'string' ? j : JSON.stringify(j)}`.slice(0, 400));
   return j;
@@ -111,7 +118,7 @@ async function upload(guideId, localRoot) {
   for (const p of existsSync(localRoot) ? walk(localRoot) : []) {
     const ct = types[extname(p).toLowerCase()]; if (!ct) continue;            // images only: the guide's data lives in the database
     const rel = relative(localRoot, p).split('\\').join('/');
-    const r = await fetch(`${URL_}/storage/v1/object/guide-assets/${guideId}/${rel}`, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': ct, 'x-upsert': 'true' }, body: readFileSync(p) });
+    const r = await fetchRetry(`${URL_}/storage/v1/object/guide-assets/${guideId}/${rel}`, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': ct, 'x-upsert': 'true' }, body: readFileSync(p) });
     if (!r.ok) throw new Error(`Image upload failed for ${rel}: ${r.status}`);
     n++;
   }
