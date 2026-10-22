@@ -68,19 +68,20 @@ seg1=rep(seg1,"lead:'Paste your listing link and description: we fill in what we
 seg1=rep(seg1,"need:['languages'],fields:['guideName','tagline','languages','guests','up:logo']","need:['slug','languages'],fields:['guideName','slug','tagline','languages','guests','up:logo']")
 seg1=rep(seg1,"title:'Name and languages',sub:'What guests see'","title:'Name, address, languages',sub:'What guests see'")
 seg1=rep(seg1,"need:['upload:inspiration','mood','upload:cover'],fields:['styleBrief','up:inspiration','lookLikes','mood','up:cover','lookAvoid']",
- "need:['styleBrief'],fields:['styleBrief','up:inspiration','refLinks','feelWords','navStyle','homeFirst','up:cover','lookAvoid']")
+ "need:['styleBrief'],fields:['styleBrief','up:inspiration','refLinks','feelWords','mood','homeFirst','up:cover','lookAvoid']")
 seg1=rep(seg1,"lead:'Upload one to three images: an artwork you love, a photo of the place, a poster, or a screenshot of a website whose style you like. Colours, shapes and layout are built from them.',",
- "lead:'Your guide should look and work the way you like, not like ours. Show us images and apps you love and tell us how guests should find things.',")
-seg1=rep(seg1,"""  {id:'bold',name:'Bold and graphic',d:'Colour blocks, strong shapes, poster energy.',cls:'m-bold',n:5},
+ "lead:'Your images give us the colours, your words the feel, and you pick the layout.',")
+seg1=rep(seg1,"""  {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},
 ""","")
-seg1=rep(seg1,"""  {id:'auto',name:'Decide for me',d:'We match it to your images.',cls:'m-auto',n:0}
-];""","""  {id:'bold',name:'Bold and graphic',d:'Colour blocks, strong shapes, poster energy.',cls:'m-bold',n:5}
+seg1=rep(seg1,""",
+  {id:'auto',name:'Decide for me',d:'We match it to your images.',cls:'m-auto',n:0}
+];""","""
 ];""")
-seg1=rep(seg1,"const MOODS = [\n","const MOODS = [\n  {id:'auto',name:'Decide for me',d:'We match it to your images.',cls:'m-auto',n:0},\n")
+seg1=rep(seg1,"const MOODS = [\n","const MOODS = [\n  {id:'auto',name:'Decide for me',d:'We match it to your images.',cls:'m-auto',n:0},\n  {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},\n")
 seg1=rep(seg1,"  mood:{t:'mood',label:'Which feels closest?',hint:'This sets the layout, not only the colours.'},",
-"""  mood:{t:'mood',label:'Which style feels closest?',opt:true,hint:'Optional. “Decide for me” builds it from your images.'},
+"""  mood:{t:'mood',label:'Which layout should your guide have?',opt:true,hint:'Each one shows the same sections in a different way. “Decide for me” picks one from your images and words.'},
   slug:{t:'slug',label:'Web address of your guide',hint:'The first part is ours, the last part is yours. Short and easy to type works best.'},
-  refLinks:{t:'area',rows:2,label:'Apps or websites you love using',opt:true,full:true,ph:'Airbnb, Citymapper, a hotel site, a magazine…',hint:'Links or names. We look at how they feel and work.'},
+  refLinks:{t:'area',rows:2,label:'Apps or websites you love using',opt:true,full:true,ph:'Airbnb, Citymapper, a hotel site, a magazine…',hint:'Names or links. We read them for the overall feel, like the fonts and how round or sharp the corners are. Your guide keeps its own sections.'},
   feelWords:{t:'chips',label:'Words for the feel',opt:true,opts:['Cosy','Elegant','Playful','Modern','Rustic','Calm','Local and authentic','Luxurious','Family friendly','Colourful']},
   navStyle:{t:'radio',label:'How should guests find things?',opts:['Big tiles, like an app','A simple list','Photo-led, like a magazine','Map first','Search first','Not sure']},
   homeFirst:{t:'chips',label:'What should guests see first?',opt:true,hint:'Pick up to four.',opts:['Wi-Fi','Check-out time','House guide','How to get in','Places to eat','What\\u2019s on today','Beaches','Map','Your phone number','Rubbish tonight']},""")
@@ -136,14 +137,14 @@ seg1=_re.sub(r"need:\[[^\]]*\]","need:[]",seg1)
 seg1=rep(seg1,"lead:'Paste your listing and we fill in most of the steps for you. You then only check them and approve.',","lead:'Your listing is where everything starts. With the link (or its text) and the town, we write the rest.',")
 seg1=rep(seg1,"need:[],fields:['styleBrief'","need:['styleBrief'],fields:['styleBrief'")
 seg1=rep(seg1,"need:[],fields:['listingUrl'","need:['source','town'],fields:['listingUrl'")
-seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'nearby',group:'area',title:'Places nearby',sub:'Swipe the best-rated',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',
-   lead:'The best-rated places around you, one at a time. Keep the ones you would send a friend to, and add a word if you like. All optional.',need:[],fields:['swipe']},
+seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'nearby',group:'area',title:'Places nearby',sub:'Pick and add your own',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',
+   lead:'Things to do around you: keep the ones you would send a friend to, and add any we missed. All optional.',need:[],fields:['swipe','favDo','favourites']},
   {id:'taste',group:'area'""")
 seg1=seg1.replace('family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700','family=Gloock&family=Onest:wght@400;500;600;700')
 seg1=rep(seg1,"</style>\n</head>","\n"+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'theme2.css')).read()+"\n</style>\n</head>")
 views=rep(views,"  if (k === 'privacyNote')","  if (k === 'swipe') return swipeHTML();\n  if (k === 'privacyNote')")
 views=rep(views,"    ${GROUPS.map(([g, gt]) => { const ms = mods.filter(m => m.group === g); if (!ms.length) return '';","    ${draftBanner()}\n    ${GROUPS.map(([g, gt]) => { const ms = mods.filter(m => m.group === g); if (!ms.length) return '';")
-views=rep(views,"    case 'taste':","    case 'nearby': { const y = Object.values(A.swipes || {}).filter(x => x.d === 'yes').length; return y ? `${y} places recommended` : 'Not started'; }\n    case 'taste':")
+views=rep(views,"    case 'taste':","    case 'nearby': { const y = Object.values(A.swipes || {}).filter(x => x.d === 'yes').length + lines('favDo').length; return y ? `${y} places` : 'Not started'; }\n    case 'taste':")
 views=rep(views,"${done === mods.length ? 'Everything is done. Check it once more, then send it.' : `Do the steps in any order. Each one is “Done” once its needed answers are in and you press Done. You can come back any time: everything saves as you type.`}","${A._draftAt ? 'Everything here is optional apart from your listing. Review what we wrote, add what is missing, send when you like.' : 'Go in any order. Only your listing and town are needed; the rest makes your guide better. Everything saves as you type.'}")
 views=rep(views,"<span>${last ? 'Continue' : done || chk ? 'Next' : 'Start'}: ${esc(go.title)}</span>","<span>${statusOf(go).k === 'pre' ? 'Review' : last ? 'Continue' : done || chk ? 'Next' : 'Start'}: ${esc(go.title)}</span>")
 # ---- v3: loading the listing is its own first step; the place details come right after ----

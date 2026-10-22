@@ -1,0 +1,4 @@
+{
+ "_doc": "The only quick-filter groups a place can have in \"group\" (What to do, restaurants...), with the tone (colour) each one uses. Label in i18n g_<group>. Read by the engine, the content check and the worker's research.",
+ "groups": { "fun": "red", "beach": "blue", "beachbars": "orange", "sights": "purple", "nature": "green", "wine": "wine" }
+}

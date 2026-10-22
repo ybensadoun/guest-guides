@@ -53,7 +53,7 @@ const ED_CSS = `#ed{position:fixed;inset:0;z-index:70;background:var(--paper,#ff
 #ed .edph .edb{padding:2px 7px;font-size:12px}
 #ed .edfile{cursor:pointer;align-self:center}
 #ed input[type=color]{width:100%;height:44px;padding:2px;border-radius:10px;border:1.5px solid var(--line,#ccc);background:none}
-.edTop{position:fixed;bottom:10px;right:92px;z-index:40;font:600 12px/1 inherit;font-family:inherit;padding:8px 12px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--ink,#111);color:var(--paper,#fff);cursor:pointer}`;
+`;
 
 function edField(label, path, obj, o = {}) {
   const isI = edIs18(obj), num = o.type === 'number', val = isI ? edShown(obj) : (obj == null ? '' : obj);
@@ -167,6 +167,7 @@ function edWifi(c) {
 }
 
 /* --- Rubbish --- */
+const ED_BINS = [['organic', 'Organic'], ['packaging', 'Packaging'], ['paper', 'Paper'], ['glass', 'Glass'], ['rest', 'General waste']];
 function edRubbish(c) {
   const g = (c.files || {}).garbage;
   if (!g) return '<div class="edc">This guide has no rubbish section.</div>';
@@ -177,6 +178,12 @@ function edRubbish(c) {
       <label class="edf"><span>Goes in</span><select data-p="files/garbage/fractions/${i}/bin" data-t="str">${bins.map(b => `<option value="${edEsc(b)}"${f.bin === b ? ' selected' : ''}>${edEsc(b === 'street' ? 'A container in the street' : edShown((g.bins || {})[b]) || b)}</option>`).join('')}</select></label>
       <div class="edn" style="margin-bottom:4px">Collection days</div>${edDays(`files/garbage/fractions/${i}`, f.days)}
       <div style="height:10px"></div>${edField('What goes in it', `files/garbage/fractions/${i}/examples`, f.examples || {}, { long: true })}</details>`).join('')}</div>
+    <div class="edc"><h2 style="margin-top:0">Containers guests can use</h2>${(g.containers || []).map((ct, j) => `<details><summary>${edEsc(edShown(ct.where) || 'Containers ' + (j + 1))}</summary>
+      <label class="edf"><span>Where they are</span><textarea data-p="files/garbage/containers/${j}/where" data-t="i18n">${edEsc(edShown(ct.where || {}))}</textarea></label>
+      ${edField('Google Maps link (optional)', `files/garbage/containers/${j}/map`, ct.map || '')}
+      <div class="edn" style="margin-bottom:4px">What they take</div><span style="display:flex;gap:4px;flex-wrap:wrap">${ED_BINS.map(([id, l]) => `<button class="edb sm${(ct.takes || []).includes(id) ? ' on' : ''}" type="button" data-ctake="${j}" data-id="${id}">${l}</button>`).join('')}</span>
+      <div style="height:10px"></div><button class="edb sm danger" type="button" data-del="files/garbage/containers/${j}">Delete this</button></details>`).join('')}
+      <button class="edb sm" type="button" data-addcont="1">Add containers</button></div>
     <div class="edc"><h2 style="margin-top:0">How to sort</h2>${(g.steps || []).map((it, j) => `<div class="edl"><label class="edf" style="flex:1;margin:0"><textarea data-p="files/garbage/steps/${j}" data-t="i18n">${edEsc(edShown(it))}</textarea></label><button class="edb sm danger" type="button" data-del="files/garbage/steps/${j}">Delete</button></div>`).join('')}<button class="edb sm" type="button" data-add="files/garbage/steps">Add a step</button>
     ${g.missed ? edField('If a collection is missed', 'files/garbage/missed', g.missed, { long: true }) : ''}${g.deixalleria ? edField('Recycling centre', 'files/garbage/deixalleria', g.deixalleria, { long: true }) : ''}</div>`;
 }
@@ -227,8 +234,24 @@ function edContacts(c) {
   const groups = (em && em.groups) || [];
   const title = { urgent: 'Urgent', health: 'Health', police: 'Police and roads', town: 'Town and services' };
   return `${groups.map((g, gi) => `<div class="edc"><h2 style="margin-top:0">${edEsc(title[g.id] || g.id)}</h2>${(g.items || []).map((it, i) => edItem(`files/emergency/groups/${gi}/items`, it, i)).join('')}<button class="edb sm" type="button" data-addit="files/emergency/groups/${gi}/items">Add a contact</button></div>`).join('')}
-    ${q ? `<div class="edc"><h2 style="margin-top:0">Quick tiles on the home page</h2>${(q.items || []).map((it, i) => edItem('files/quick/items', it, i)).join('')}<button class="edb sm" type="button" data-addit="files/quick/items">Add a quick tile</button></div>` : ''}
-    ${!groups.length && !q ? '<div class="edc">This guide has no contacts yet.</div>' : ''}`;
+    <div class="edc">The one-tap tiles on the home page (taxi, train station, a bar you love) are in the <button class="edb sm" type="button" data-tab="home">Home tiles</button> tab.</div>
+    ${!groups.length ? '<div class="edc">This guide has no contacts yet.</div>' : ''}`;
+}
+
+/* --- Home tiles: one-tap tiles on the home page, each opening its own page with map and buttons --- */
+const ED_TILES = [['taxi', 'Add a taxi', 'Taxi', { phone: '', always: true }], ['train', 'Add a train or bus station', 'Station', { lat: 0, lng: 0, gmaps: '' }],
+  ['food', 'Add a bar or restaurant', 'Restaurant', { phone: '', lat: 0, lng: 0, gmaps: '' }], ['shop', 'Add a shop', 'Shop', { phone: '', lat: 0, lng: 0, gmaps: '' }]];
+function edHome(c) {
+  const q = (c.files || {}).quick || {}, items = q.items || [];
+  return `<div class="edc"><h2 style="margin-top:0">Home tiles</h2><p class="edn">One tap from the home page. Each tile opens a page with its map, number and your words.</p>
+    ${items.map((it, i) => edItem('files/quick/items', it, i)).join('') || '<p class="edn">No tiles yet.</p>'}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${ED_TILES.map(([icon, label]) => `<button class="edb sm" type="button" data-addtile="${icon}">${edEsc(label)}</button>`).join('')}</div></div>`;
+}
+function edAddTile(icon) {
+  const c = edC(), f = c.files = c.files || {}, q = f.quick = f.quick || { items: [] }; q.items = q.items || [];
+  const [, , kind, extra] = ED_TILES.find(t => t[0] === icon), L = x => Object.fromEntries(edLangs().map(l => [l, x]));
+  q.items.push({ id: `${icon === 'food' ? 'food' : icon}-${Date.now().toString(36)}`, icon, name: L(kind), sub: L(''), title: L(''), kind: L(kind), what: L(''), ...JSON.parse(JSON.stringify(extra)) });
+  edQueue(); edRender();
 }
 
 /* --- Places --- */
@@ -278,9 +301,9 @@ function edApplyDesign(kind, el) {
 
 /* --- Shell --- */
 function edEditorHTML() {
-  const g = ED.g, c = g.content, tabs = [['basics', 'Basics'], ['sections', 'Sections'], ['house', 'House guide'], ['housepage', 'House page'], ['wifi', 'Wi-Fi'], ['rubbish', 'Rubbish'], ['contacts', 'Contacts'], ['places', 'Places'], ['design', 'Design']];
-  const body = { basics: edBasics, sections: edSections, house: edHouse, housepage: edHousePage, wifi: edWifi, rubbish: edRubbish, contacts: edContacts, places: edPlaces, design: edDesign }[ED.tab](c);
-  const langs = edLangs(), showLang = ['house', 'housepage', 'wifi', 'rubbish', 'contacts', 'places'].includes(ED.tab);
+  const g = ED.g, c = g.content, tabs = [['basics', 'Basics'], ['sections', 'Sections'], ['home', 'Home tiles'], ['house', 'House guide'], ['housepage', 'House page'], ['wifi', 'Wi-Fi'], ['rubbish', 'Rubbish'], ['contacts', 'Contacts'], ['places', 'Places'], ['design', 'Design']];
+  const body = { basics: edBasics, sections: edSections, house: edHouse, housepage: edHousePage, wifi: edWifi, rubbish: edRubbish, contacts: edContacts, home: edHome, places: edPlaces, design: edDesign }[ED.tab](c);
+  const langs = edLangs(), showLang = ['house', 'housepage', 'wifi', 'rubbish', 'contacts', 'home', 'places'].includes(ED.tab);
   return `<div class="edw"><div class="edh"><div class="edr"><h1>${edEsc((c.site || {}).name || g.slug)}</h1><span class="edst" id="edState">${edEsc(ED.state)}</span></div>
     <div class="edr" style="margin-top:8px"><span class="edst">Live at <a href="/g/${edEsc(g.slug)}" target="_blank" rel="noopener">${edEsc(location.host)}/g/${edEsc(g.slug)}</a></span><span><a class="edb sm" href="/g/${edEsc(g.slug)}" target="_blank" rel="noopener">Open guide</a> <button class="edb sm" type="button" data-edclose>Close</button></span></div>
     <div class="edtabs">${tabs.map(([id, l]) => `<button class="edb${ED.tab === id ? ' on' : ''}" type="button" data-tab="${id}">${l}</button>`).join('')}</div>
@@ -364,6 +387,9 @@ document.addEventListener('click', e => {
   if (d.addsch) { const p = edPath(d.addsch); let a = edGet(edC(), p); if (!Array.isArray(a)) { edSet(edC(), p, []); a = edGet(edC(), p); } a.push({ days: [], open: '09:00', close: '14:00' }); edQueue(); return edRender(); }
   if (d.translate !== undefined) return edTranslate();
   if (d.phmove) { const p = edPath(d.phmove), i = p[p.length - 1], a = edGet(edC(), p.slice(0, -1)), j = i + Number(d.dir); if (Array.isArray(a) && j >= 0 && j < a.length) { [a[i], a[j]] = [a[j], a[i]]; edQueue(); edRender(); } return; }
+  if (d.addtile) return edAddTile(d.addtile);
+  if (d.addcont) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); edQueue(); edRender(); } return; }
+  if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const t = ct.takes = ct.takes || []; ct.takes = t.includes(d.id) ? t.filter(x => x !== d.id) : [...t, d.id]; edQueue(); edRender(); } return; }
   if (d.addit) { const a = edGet(edC(), edPath(d.addit)); if (Array.isArray(a)) { a.push(edNewItem(a)); edQueue(); edRender(); } return; }
   if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: { en: '' } }] }; edQueue(); return edRender(); }
   if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: { en: '' } }); edQueue(); return edRender(); }
@@ -375,6 +401,6 @@ document.addEventListener('click', e => {
 });
 async function edInit() {
   const list = await edLoad();
-  if (list.length && !document.querySelector('.edTop')) { const s = document.createElement('style'); s.textContent = ED_CSS; document.head.appendChild(s); const b = document.createElement('button'); b.type = 'button'; b.className = 'edTop'; b.textContent = 'My guide'; document.body.appendChild(b); }
+  if (list.length && !document.querySelector('.edTop')) { const s = document.createElement('style'); s.textContent = ED_CSS; document.head.appendChild(s); const b = document.createElement('button'); b.type = 'button'; b.className = 'edTop'; b.textContent = 'My guide'; acctBar().prepend(b); }
   if (list.length && GUIDE && GUIDE.origin === 'imported') edOpen(GUIDE.id);
 }

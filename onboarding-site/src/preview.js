@@ -264,7 +264,7 @@ document.addEventListener('click', e => {
 
 function rubbishLines(){
   const m = v('rubbishMode'), out = [];
-  if (/container|mix/i.test(m)) out.push('Shared containers in the street.' + (v('rubbishWhere') ? ' ' + v('rubbishWhere') : ''));
+  for (const r of containerRows()) if ((r.w || '').trim() || (r.t || []).length) out.push(`Containers${(r.t || []).length ? ' (' + r.t.map(id => (BIN_ROWS.find(b => b[0] === id) || [0, id])[1]).join(', ') + ')' : ''}: ${(r.w || '').trim() || 'see the map'}`);
   if (/house|mix/i.test(m)) for (const [id, lab] of BIN_ROWS) { const d = ((A.rubbishPlan || {})[id] || []); if (d.length) out.push(`${lab}: ${d.map(x => (DAYS7.find(y => y[0] === x) || [0, x])[1]).join(', ')}`); }
   if (v('rubbishNotes')) out.push(v('rubbishNotes'));
   return out;

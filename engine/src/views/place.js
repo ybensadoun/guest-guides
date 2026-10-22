@@ -17,7 +17,7 @@ export function renderPlace(V, id, icons) {
   if (!p) { location.replace('#home'); return; }
   if (p.trains) { renderTransport(V, p, icons); return; }
   const now = new Date();
-  const hasPt = typeof p.lat === 'number' && typeof p.lng === 'number';
+  const hasPt = typeof p.lat === 'number' && typeof p.lng === 'number' && !(p.lat === 0 && p.lng === 0);   // 0,0 = not placed yet (new tile in the editor)
   const raw = hasPt ? hav(HOUSE.lat, HOUSE.lng, p.lat, p.lng) : null;
   const km = raw != null && raw >= 0.8 ? Math.max(1, Math.round(raw * 1.3)) : null;
   const near = raw != null && raw < 0.8;
@@ -35,7 +35,7 @@ export function renderPlace(V, id, icons) {
   const hoursBlock = hours || p.hours ? `<section class="pl-sec"><h3 class="section-h">${esc(t('hoursLabel'))}</h3><div class="pl-hours">${hours}${p.hours ? `<p>${esc(tx(p.hours))}</p>` : ''}${p.price ? `<p><b>${esc(t('perPerson', { p: p.price }))}</b>${p.priceNote ? `. ${esc(tx(p.priceNote))}` : ''}</p>` : ''}</div></section>` : '';
 
   V.innerHTML = `<div class="wrap place" style="gap:16px" data-q="${esc(p.id)}">
-    <div class="pl-head"><span class="qi">${icons(p.id)}</span>
+    <div class="pl-head"><span class="qi">${icons(p)}</span>
       <div><h2 class="title">${esc(tx(p.title || p.name))}</h2><p class="lead">${esc(tx(p.kind || p.sub))}</p><p class="pl-dist">${km != null ? `<span>${km} km ${esc(t('fromHouseShort'))}</span>` : ''}${near ? `<span>${esc(t('minWalk'))}</span>` : ''}${hasPt && kmMe(p) != null ? `<span>${kmMe(p)} km ${esc(t('fromYouShort'))}</span>` : ''}</p></div></div>
     ${hasPt ? `<a class="pl-map" href="${esc(mapsUrl)}" target="_blank" rel="noopener" aria-label="${esc(t('openInMaps'))}"><div id="plmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openInMaps'))}</span></a>` : ''}
     <div class="pl-actions">
@@ -57,7 +57,7 @@ function renderTransport(V, p, icons) {
   const row = (dot, cc, title, sub, right, body, extra = '') => `<details class="mrow" style="--cc:${cc}"><summary><span class="dot">${dot}</span>
     <span class="nm">${esc(title)}${extra}${sub.map(x => `<small>${esc(x)}</small>`).join('')}</span><span class="rt">${right}<span class="chev" aria-hidden="true"></span></span></summary>
     <div class="mbody">${body}</div></details>`;
-  const taxi = row(icons(p.id), 'var(--tone-taxi)', tx(p.taxiName || p.name), [tx(p.taxiSub || '')], `<span class="st open">${esc(t('open24'))}</span>`,
+  const taxi = row(icons(p), 'var(--tone-taxi)', tx(p.taxiName || p.name), [tx(p.taxiSub || '')], `<span class="st open">${esc(t('open24'))}</span>`,
     `${p.what ? `<div class="note">${esc(tx(p.what))}</div>` : ''}
      <div class="actions">${p.phone ? `<a class="btn primary" href="${tel(p.phone)}">${PHONE}${esc(t('callNow'))} ${esc(p.phone)}</a>` : ''}
      ${(p.alt || []).map(a => `<a class="btn" href="${tel(a.phone)}">${PHONE}${esc(tx(a.name))} ${esc(a.phone)}</a>`).join('')}</div>`);
@@ -71,7 +71,7 @@ function renderTransport(V, p, icons) {
  ${s.gmaps ? `<a class="btn" href="${esc(s.gmaps)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
      <a class="btn" href="${esc(s.link)}" target="_blank" rel="noopener">${WEB}${esc(t(s.linkKey))}</a></div>`, badges(s))).join('');
   V.innerHTML = `<div class="wrap place transport" style="gap:14px" data-q="${esc(p.id)}">
-    <div class="pl-head"><span class="qi">${icons(p.id)}</span>
+    <div class="pl-head"><span class="qi">${icons(p)}</span>
       <div><h2 class="title">${esc(tx(p.title || p.name))}</h2><p class="lead">${esc(tx(p.kind || ''))}</p></div></div>
     <h3 class="section-h">${esc(t('taxiH'))}</h3>
     <div class="mlist">${taxi}</div>

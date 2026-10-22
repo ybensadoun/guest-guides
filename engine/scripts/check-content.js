@@ -4,6 +4,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { ENGINE, ROOT, siteDir, readSite } from '../site.config.js';
 const FLAGS = JSON.parse(readFileSync(resolve(ENGINE, 'src/flags.json'), 'utf8')).flags;   // the only warnings a place can carry
+const GROUPS = JSON.parse(readFileSync(resolve(ENGINE, 'src/groups.json'), 'utf8')).groups;   // the only quick-filter groups
 
 const SITE = process.argv[2] || process.env.SITE || 'ca-la-kimberly';
 const SD = siteDir(SITE);
@@ -71,6 +72,7 @@ for (const s of read(C('sections')).sections) {
       four(it.name, `${s.id} "${it.id}" name`);
       four(it.description, `${s.id} "${it.id}" description`);
       if (typeof it.lat !== 'number') errors.push(`${s.id} "${it.id}" needs lat/lng`);
+      if (it.group && !(it.group in GROUPS)) errors.push(`${s.id} "${it.id}" group "${it.group}" is not a filter group (engine/src/groups.json)`);
     }
   }
 }
@@ -85,7 +87,8 @@ const lint = (l, v, w) => {
   if (l === 'de' && v.includes('"')) errors.push(`${w} (de) use „…“ quotes, not "…"`);
   if (l === 'de' && /\b(Bringen|Rufen|Spielen|Versuchen|Öffnen|Nehmen|Fragen|Kommen|Gehen|Schauen|Lassen|Stellen|Legen|Werfen|Parken|Buchen|Reservieren) Sie\b/.test(v)) formal.push(w);
 };
-const lintAll = (o, w) => { if (Array.isArray(o)) o.forEach((x, i) => lintAll(x, `${w}[${i}]`)); else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { if (['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(k) && typeof v === 'string') lint(k, v, w); else lintAll(v, `${w}.${k}`); } };
+// An untranslated copy of the English text (v === o.en) is not linted as another language.
+const lintAll = (o, w) => { if (Array.isArray(o)) o.forEach((x, i) => lintAll(x, `${w}[${i}]`)); else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { if (['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(k) && typeof v === 'string') { if (k === 'en' || v !== o.en) lint(k, v, w); } else lintAll(v, `${w}.${k}`); } };
 for (const f of jsonIn(resolve(SD, 'content'))) lintAll(read(f), rel(f));
 for (const l of LANGS) for (const [k, v] of Object.entries(i18n[l])) lint(l, v, `i18n ${l}.${k}`);
 

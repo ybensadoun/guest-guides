@@ -261,8 +261,8 @@ elif BP:   # designed from the brief: the template keeps the layout that worked 
 else: _tc.write_text(theme_css)
 
 # ---------- photos, cover, logo, icons ----------
-# The Home cover is drawn from the theme colours by default (guests have already seen the listing photos).
-# Only a cover photo the host uploaded replaces it. The listing's cover photo is still saved as house.jpg for link previews.
+# Cover photo: the host's own upload wins; otherwise the listing's cover photo is saved below (house.jpg), and the host
+# can choose a cover drawn from the theme colours instead (answers.coverChoice = 'drawn').
 cover = (by_kind.get('cover') or [None])[0]
 own_cover = bool(cover and (im := load_upload(cover)))
 if own_cover: save_jpg(im, SITE / 'public/house.jpg', 1800)
@@ -327,10 +327,23 @@ for fn, sz in [('logo-head.png', 256), ('favicon.png', 64), ('apple-touch-icon.p
 mask = Image.new('RGBA', (512, 512), palette['paper']); mask.alpha_composite(square(logo_im, 410), (51, 51)); mask.save(SITE / 'public/icons/icon-maskable-512.png')
 
 # ---------- researched content (done outside this script: web research) ----------
+# Research is written in one language: every text goes through L() like the host's own words, so it is translated
+# (second pass with --translations) and never left empty in another language of the guide.
+def localize(x):
+    if isinstance(x, list): return [localize(v) for v in x]
+    if not isinstance(x, dict): return x
+    if x and all(k in ENGINE_LANGS for k in x) and all(isinstance(v, str) for v in x.values()):
+        out = L(x.get(args.src) or x.get('en') or next(iter(x.values())))
+        for l in LANGS:
+            if (x.get(l) or '').strip(): out[l] = x[l]
+        return out
+    return {k: localize(v) for k, v in x.items()}
 if args.research:
-    import shutil
     for f in sorted(Path(args.research).glob('*.json')):
-        if not (SITE / 'content' / f.name).exists(): shutil.copy(f, SITE / 'content' / f.name); print('research copied:', f.name)
+        dst = SITE / 'content' / f.name
+        prev = json.loads(dst.read_text()) if dst.exists() else None
+        if prev is None or prev.get('_research'):   # never overwrite a file someone wrote by hand
+            dst.write_text(json.dumps({'_research': 'copied from research by generate-site.py', **localize(json.loads(f.read_text()))}, ensure_ascii=False, indent=1)); print('research copied:', f.name)
 
 # ---------- modules ----------
 M = A.get('modules') or {}
@@ -349,9 +362,11 @@ if A.get('wifiName') and on('wifi'):
     wifi = {'password': pw, 'networks': [{'ssid': ssid, 'label': L('Wi-Fi'), 'qr': svg}]}
 
 house = {'_doc': 'lat/lng: an approximate area point, never the address.', 'name': place, 'lat': args.lat, 'lng': args.lng,
-         'cover': 'photo' if own_cover else 'themed', 'photoPos': '50% 55%', 'checkout': (A.get('checkOut') or '11:00')[:5]}
+         'photoPos': '50% 55%', 'checkout': (A.get('checkOut') or '11:00')[:5]}
 HAS_PHOTO = (SITE / 'public/house.jpg').exists()
 if HAS_PHOTO: house['photo'] = 'house.jpg'
+# Cover: the host's own photo, else the listing's cover photo (the default, shown in the Look step), else drawn from the colours.
+house['cover'] = 'photo' if own_cover or (HAS_PHOTO and A.get('coverChoice') != 'drawn') else 'themed'
 if wifi:   # the Wi-Fi password never goes in tracked files: private/wifi.json is git-ignored (the engine merges it into house.wifi)
     (SITE / 'private').mkdir(exist_ok=True)
     (SITE / 'private/wifi.json').write_text(json.dumps(wifi, ensure_ascii=False, indent=2))
@@ -426,6 +441,13 @@ def gl(obj): return {l: (obj.get(l) or obj.get('en')) for l in LANGS}
 def gl_steps(lst): return [gl(x) for x in lst]
 rmode = A.get('rubbishMode') or ''
 rplan = A.get('rubbishPlan') or {}
+# Containers the host listed: where (their words), what each takes (fraction ids), an optional Google Maps link (a point on the map when it has coordinates).
+def coords_of(url):
+    m = re.search(r'!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)', url or '') or re.search(r'@(-?\d+\.\d+),(-?\d+\.\d+)', url or '') or re.search(r'[?&](?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)', url or '')
+    return (float(m.group(1)), float(m.group(2))) if m else None
+spots = [r for r in (A.get('rubbishSpots') or []) if isinstance(r, dict) and ((r.get('w') or '').strip() or r.get('t') or (r.get('m') or '').strip())]
+if not spots and (A.get('rubbishWhere') or '').strip(): spots = [{'w': A['rubbishWhere'].strip(), 't': [], 'm': ''}]
+if spots and not rmode: rmode = 'Shared containers in the street'
 r_home = bool(re.search('house|mix', rmode, re.I)); r_cont = bool(re.search('container|mix', rmode, re.I))
 if rmode:
     fr = []
@@ -434,14 +456,25 @@ if rmode:
         binn = 'street' if not days else ('brown' if fid == 'organic' else 'grey')
         fr.append({'id': fid, 'bin': binn, 'days': days, 'name': gl(GD['names'][fid]), 'examples': gl(GD['examples'][fid])})
     steps = []
-    if r_cont and (A.get('rubbishWhere') or '').strip(): steps.append(L(A['rubbishWhere'].strip()))
     steps += gl_steps(GD['steps_containers'] if (r_cont and not r_home) else GD['steps_home'])
     if (A.get('rubbishNotes') or '').strip(): steps += [L(x) for x in lines('rubbishNotes')]
     t = (A.get('rubbishTime') or '')[:5]
+    containers, g_items = [], []
+    for n, r in enumerate(spots, 1):
+        takes = [x for x in (r.get('t') or []) if x in ('organic', 'packaging', 'paper', 'glass', 'rest')]
+        c = {'where': L((r.get('w') or '').strip()) if (r.get('w') or '').strip() else {}, 'takes': takes}
+        link = (r.get('m') or '').strip()
+        if link.startswith('http'): c['map'] = link
+        pt = coords_of(link)
+        if pt: c['lat'], c['lng'] = pt
+        containers.append(c)
+        if pt:   # on the guide map too; a glass-only point is the "glass" spot the rubbish page links to
+            g_items.append({'id': 'glass' if takes == ['glass'] else f'containers-{n}', 'name': L('Containers'), 'town': town, 'lat': pt[0], 'lng': pt[1],
+                            'km_from_house': None, 'description': c['where'], 'gmaps': link, 'icon': 'bin'})
     (SITE / 'content/garbage.json').write_text(json.dumps({
         '_doc': 'Generated from what the host said about rubbish. Not researched. Bin colours for door-to-door collection are a default: confirm with the host.',
         'collectionTime': t, 'bins': {}, 'fractions': fr, 'steps': steps,
-        'missed': gl(GD['missed_containers'] if (r_cont and not r_home) else GD['missed_home']), 'items': []}, ensure_ascii=False, indent=1))
+        'missed': gl(GD['missed_containers'] if (r_cont and not r_home) else GD['missed_home']), 'containers': containers, 'items': g_items}, ensure_ascii=False, indent=1))
 
 def place_name_from(p):
     p = p.strip(); m = re.search(r'google\.[a-z.]+/maps/place/([^/@?]+)', p)

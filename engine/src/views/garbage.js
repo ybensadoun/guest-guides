@@ -36,6 +36,16 @@ export function renderGarbage(V) {
   const steps = `<section class="gsec"><h3 class="section-h">${esc(t('gHow'))}</h3>
     <ol class="gsteps">${GARBAGE.steps.map(s => `<li>${esc(tx(s))}</li>`).join('')}</ol></section>`;
 
+  // Containers guests can use (from the host): where they are, what each takes, a map link when there is one.
+  const cont = (GARBAGE.containers || []).filter(c => tx(c.where) || (c.takes || []).length);
+  const maps = c => c.map || (c.lat != null ? `https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}` : '');
+  const containers = cont.length ? `<section class="gsec"><h3 class="section-h">${esc(t('gWhere'))}</h3>
+    <div class="list">${cont.map(c => `<article class="card">
+      ${(c.takes || []).length ? `<div class="gpills">${(c.takes || []).map(id => FRACTIONS.find(f => f.id === id)).filter(Boolean).map(pill).join('')}</div>` : ''}
+      ${tx(c.where) ? `<div class="note">${esc(tx(c.where))}</div>` : ''}
+      ${maps(c) ? `<div class="actions"><a class="btn" href="${esc(maps(c))}" target="_blank" rel="noopener">${ICON.pin}${esc(t('openMap'))}</a></div>` : ''}
+    </article>`).join('')}</div></section>` : '';
+
   // Rows: the evening you put out, then the morning it is collected.
   const order = [1, 2, 3, 4, 5, 6, 0];
   const week = `<section class="gsec"><h3 class="section-h">${esc(t('gWeek'))}</h3><p class="lead">${esc(t('gWeekLead'))}</p>
@@ -64,5 +74,5 @@ export function renderGarbage(V) {
 
   V.innerHTML = `<div class="wrap" style="gap:22px">
     <div><h2 class="title">${esc(t('garbage'))}</h2><p class="lead">${esc(t(CONTAINERS_ONLY ? 'gLeadContainers' : 'gLead'))}</p></div>
-    ${CONTAINERS_ONLY ? '' : hero}${steps}${CONTAINERS_ONLY ? '' : week}${what}${missed}</div>`;
+    ${CONTAINERS_ONLY ? '' : hero}${steps}${containers}${CONTAINERS_ONLY ? '' : week}${what}${missed}</div>`;
 }

@@ -10,6 +10,8 @@ import { quickIcon } from './home.js';
 import { renderGarbage } from './garbage.js';
 import { dateRange } from '../events.js';
 import { HOUSE, MODULE_ON, SITE, REVIEWS } from '../content.js';
+import GROUPS_FILE from '../groups.json';
+const GROUPS = GROUPS_FILE.groups;
 
 const GI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const EVENT_TONE = { castells: 'var(--tone-red)', festa: 'var(--tone-orange)', carnival: 'var(--tone-green)', parade: 'var(--tone-blue)', food: 'var(--tone-wine)', fair: 'var(--tone-taxi)', film: 'var(--ink)', music: 'var(--tone-wine)', historical: 'var(--ink)', tradition: 'var(--tone-blue)' };
@@ -158,7 +160,7 @@ export function renderSection(V, id) {
     // Same pattern as Markets: an overview map, then rows ranked by distance (from the house or from you).
     const all = SPOTS.filter(s => s.section === id);
     // Quick filters when items have a "group" (What to do: Kids & fun, Beach, Sights & towns).
-    const groups = [...new Set(all.map(s => s.group).filter(Boolean))];
+    const groups = [...new Set(all.map(s => s.group).filter(g => g in GROUPS))];   // only groups with a label (engine/src/groups.json)
     const gsel = groups.includes(st.sgroup[id]) ? st.sgroup[id] : 'all';
     // Open now first, then places opening later today, then the rest; each block by distance.
     const now0 = new Date(), nmin = now0.getHours() * 60 + now0.getMinutes();
@@ -187,13 +189,13 @@ export function renderSection(V, id) {
     const l = timed ? sorted(filtered).map((s, i) => ({ s, i, k: stateOf(s) })).sort((a, b) => a.k - b.k || a.i - b.i).map(x => x.s) : sorted(filtered);
     const ochips = timed ? `<div class="gchips ochips" role="group">${[['any', 'f_anyTime', byFeat.length], ['now', 'f_openNow', nNow], ['later', 'f_openLater', nLater]].filter(([k, , n]) => k === 'any' || n).map(([k, key, n]) => `<button class="gchip" data-openf="${k}" data-sec="${id}" aria-pressed="${k === ofsel}"${k === 'now' ? ' style="--cc:var(--green)"' : k === 'later' ? ' style="--cc:var(--blue)"' : ''}>${esc(t(key))}<span class="n">${n}</span></button>`).join('')}</div>` : '';
     const fchips = feats.length ? `<div class="gchips fchips" role="group">${feats.map(k => `<button class="gchip" data-featf="${k}" data-sec="${id}" aria-pressed="${fsel.includes(k)}">${esc(t('ff_' + k))}<span class="n">${byGroup.filter(FEATS[k]).length}</span></button>`).join('')}</div>` : '';
-    const toneOf = g => all.find(s => s.group === g)?.tone;
+    const toneOf = g => GROUPS[g] || all.find(s => s.group === g)?.tone;
     const gchips = groups.length > 1 ? `<div class="gchips" role="group">${['all', ...groups].map(g => `<button class="gchip" data-sgroup="${g}" data-sec="${id}" aria-pressed="${g === gsel}"${g !== 'all' && toneOf(g) ? ` style="--cc:var(--tone-${toneOf(g)})"` : ''}>${esc(t('g_' + g))}<span class="n">${g === 'all' ? all.length : all.filter(s => s.group === g).length}</span></button>`).join('')}</div>` : '';
     V.dataset.secf = gsel + '|' + ofsel;
     const now = new Date();
     // A Home quick tile shown on top of the page ("highlight" in sections.json), e.g. the bar next door.
     const hq = sec.highlight && QUICK.find(q => q.id === sec.highlight);
-    const hl = hq ? `<div class="qcalls"><a class="qcall wide" data-q="${hq.id}" href="#p/${hq.id}"><span class="qi">${quickIcon(hq.id)}</span><span class="qt"><b>${esc(tx(hq.name))}</b>${hq.sub ? `<small>${esc(tx(hq.sub))}</small>` : ''}</span></a></div>` : '';
+    const hl = hq ? `<div class="qcalls"><a class="qcall wide" data-q="${hq.id}" href="#p/${hq.id}"><span class="qi">${quickIcon(hq)}</span><span class="qt"><b>${esc(tx(hq.name))}</b>${hq.sub ? `<small>${esc(tx(hq.sub))}</small>` : ''}</span></a></div>` : '';
     body = all.length ? `${hl}<a class="pl-map secmap" href="#map" data-mapcat="${esc(all[0].cat)}" aria-label="${esc(t('openMap'))}"><div id="secmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openMap'))}</span></a>
       ${gchips}${ochips}${fchips}${sortRow()}
       ${l.length ? `<div class="mlist">${l.map(m => row(m, { date: now, live: true })).join('')}</div>` : `<p class="empty">${esc(t('f_noneOpen'))}</p>`}` : `<div class="empty">${esc(t('soon'))}</div>`;

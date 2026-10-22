@@ -46,7 +46,11 @@ function niceError(e){
 #acct .acmsg{margin-top:14px;font-size:14px;min-height:20px;color:var(--tomato)}
 #acct .acmsg.ok{color:var(--pine)}
 #acct .small{margin-top:22px;font-size:12.5px;color:var(--faint);line-height:1.5}
-.logoutTop{position:fixed;bottom:10px;right:10px;z-index:40;font:600 12px/1 inherit;font-family:inherit;padding:8px 12px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;opacity:.85;cursor:pointer}`;
+/* Account row under the header: in the page flow, so it never sits on the step bar. */
+#acctbar{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:-4px 0 2px}
+#acctbar:empty{display:none}
+#acctbar button{font:600 13px/1 inherit;font-family:inherit;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}
+#acctbar .edTop{background:var(--ink,#111);color:var(--paper,#fff);border-color:var(--ink,#111)}`;
   document.head.appendChild(st);
 })();
 
@@ -167,6 +171,12 @@ async function acctLogout(){
   authStore(null); await wipeLocal(); location.hash = ''; location.reload();
 }
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.logoutTop')) acctLogout(); });
+// "My guide" and "Log out" live in one row right under the page header.
+function acctBar() {
+  let b = document.getElementById('acctbar');
+  if (!b) { b = document.createElement('div'); b.id = 'acctbar'; const h = document.querySelector('header.top'); if (h) h.after(b); else document.body.prepend(b); }
+  return b;
+}
 
 /* ---------- Publish: queue the guide for building, then follow its status ---------- */
 async function acctQueueBuild(){
@@ -201,5 +211,5 @@ async function accountBoot(){
   try { await acctAttach(); }
   catch (e) { if (e.status === 401 || e.status === 403) { authStore(null); await accountBoot(); return; } /* offline: keep working on this device */ }
   try { await edInit(); } catch (e) {}
-  if (!document.querySelector('.logoutTop')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'logoutTop'; b.textContent = 'Log out'; document.body.appendChild(b); }
+  if (!document.querySelector('.logoutTop')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'logoutTop'; b.textContent = 'Log out'; acctBar().appendChild(b); }
 }

@@ -150,25 +150,29 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 .mood .box{border:2px solid var(--line);border-radius:16px;padding:9px;display:flex;flex-direction:column;gap:7px;background:var(--surface);height:100%}
 .mood input:checked~.box{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
 .mood input:focus-visible~.box{outline:3px solid var(--focus);outline-offset:2px}
-.mock{height:110px;border-radius:9px;overflow:hidden;display:grid;gap:4px;padding:6px}
+/* Layout choice: a skeleton of each guide layout (cover, house name, then the Home sections). */
+.mock{height:128px;border-radius:9px;overflow:hidden;display:grid;gap:4px;padding:7px}
+.mock i{display:block;min-height:0}
 .mood b{font-size:15px}.mood small{color:var(--muted);font-size:12.5px;line-height:1.35}
-.m-bold{background:#F3EEE3;grid-template-columns:1fr 1fr;grid-template-rows:26px 1fr 1fr}
-.m-bold i{display:block;border-radius:6px}
-.m-bold i:nth-child(1){grid-column:1/-1;background:#fff;border:2px solid #121212}
-.m-bold i:nth-child(2){background:#1D4FA0}.m-bold i:nth-child(3){background:#F5C400}.m-bold i:nth-child(4){background:#D52B1E}.m-bold i:nth-child(5){background:#121212}
-.m-edit{background:#FAF8F4;grid-template-rows:50px 8px 6px 1px 1px 1px}
-.m-edit i{display:block}
+.m-bold,.m-soft,.m-min{grid-template-columns:1fr 1fr;grid-template-rows:34px 6px 1fr 1fr}
+.m-bold i:nth-child(1),.m-soft i:nth-child(1),.m-min i:nth-child(1){grid-column:1/-1}
+.m-bold i:nth-child(2),.m-soft i:nth-child(2),.m-min i:nth-child(2){grid-column:1/-1;width:55%;border-radius:3px}
+.m-bold{background:#F3EEE3}
+.m-bold i{border-radius:6px}
+.m-bold i:nth-child(1){background:linear-gradient(135deg,#7f93a8,#c9b48a)}.m-bold i:nth-child(2){background:#121212}
+.m-bold i:nth-child(3){background:#1D4FA0}.m-bold i:nth-child(4){background:#F5C400}.m-bold i:nth-child(5){background:#D52B1E}.m-bold i:nth-child(6){background:#121212}
+.m-soft{background:#F6EEF0}
+.m-soft i{border-radius:13px}
+.m-soft i:nth-child(1){background:linear-gradient(135deg,#d9c7cf,#f3dcc8)}.m-soft i:nth-child(2){background:#8a7a80}
+.m-soft i:nth-child(3){background:#CFE3F2}.m-soft i:nth-child(4){background:#F6D5C9}.m-soft i:nth-child(5){background:#DCEFD9}.m-soft i:nth-child(6){background:#EADCF5}
+.m-edit{background:#FAF8F4;grid-template-rows:58px 8px 5px 5px 5px 5px;gap:5px}
 .m-edit i:nth-child(1){background:linear-gradient(135deg,#6d7d5c,#c9b48a)}
-.m-edit i:nth-child(2){background:#222;width:70%}
-.m-edit i:nth-child(3){background:#bbb;width:90%}
-.m-edit i:nth-child(n+4){background:#222;margin-top:6px}
-.m-soft{background:#F6EEF0;grid-template-columns:1fr 1fr;grid-template-rows:36px 1fr 1fr}
-.m-soft i{display:block;border-radius:14px}
-.m-soft i:nth-child(1){grid-column:1/-1;background:#fff}
-.m-soft i:nth-child(2){background:#CFE3F2}.m-soft i:nth-child(3){background:#F6D5C9}.m-soft i:nth-child(4){background:#DCEFD9}.m-soft i:nth-child(5){background:#EADCF5}
-.m-min{background:#fff;grid-template-columns:1fr 1fr;grid-template-rows:12px 1fr 1fr;padding:8px;gap:0}
-.m-min i{display:block;border:1px solid #ddd}
-.m-min i:nth-child(1){grid-column:1/-1;border:0;background:#111;width:45%;height:8px}
+.m-edit i:nth-child(2){background:#222;width:75%}
+.m-edit i:nth-child(n+3){background:#c4beb4}
+.m-edit i:nth-child(4){width:92%}.m-edit i:nth-child(6){width:60%}
+.m-min{background:#fff;gap:0}
+.m-min i{border:1px solid #e2e2e2}
+.m-min i:nth-child(1){background:#ededed;border:0;margin-bottom:4px}.m-min i:nth-child(2){background:#111;border:0;margin-bottom:4px}
 .m-auto{background:repeating-linear-gradient(45deg,var(--sunk),var(--sunk) 8px,var(--surface) 8px,var(--surface) 16px);place-items:center;font:700 26px var(--display);color:var(--faint)}
 /* Section picker */
 .mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
@@ -257,10 +261,10 @@ const AMEN = ['Pool','Garden','BBQ','Air conditioning','Heating or fireplace','W
 const ROOMS = ['Outside','Living room','Kitchen','Bedroom','Bathroom','Pool','Garden','Terrace','Office','Laundry','View','Other'];
 const INTERESTS = ['Beaches','Wine and food','Hiking and nature','Culture and history','Local markets','Nightlife','Festivals','Sports','Shopping','Wellness'];
 const MOODS = [
-  {id:'bold',name:'Bold and graphic',d:'Colour blocks, strong shapes, poster energy.',cls:'m-bold',n:5},
-  {id:'editorial',name:'Editorial',d:'Photo-led, elegant type, like a magazine.',cls:'m-edit',n:6},
-  {id:'soft',name:'Soft and airy',d:'Rounded cards, gentle colours.',cls:'m-soft',n:5},
-  {id:'minimal',name:'Minimal and calm',d:'Text first, thin lines, white.',cls:'m-min',n:5},
+  {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},
+  {id:'editorial',name:'Photo-led, like a magazine',d:'Big photos and elegant type.',cls:'m-edit',n:6},
+  {id:'soft',name:'Soft rounded cards',d:'Gentle colours, rounded corners.',cls:'m-soft',n:6},
+  {id:'minimal',name:'Clean and calm',d:'Text first, thin lines, lots of white.',cls:'m-min',n:6},
   {id:'auto',name:'Decide for me',d:'We match it to your images.',cls:'m-auto',n:0}
 ];
 
@@ -310,13 +314,13 @@ const MODULES = [
   {id:'arrival',group:'practical',title:'Arrival and parking',sub:'For a night arrival',icon:'car',tc:'var(--sun)',ti:'#1b1407',sh:'var(--sky)',shape:'square',sec:'houseguide',
    lead:'Written for guests who arrive in the dark. No door codes here: send those privately.',need:['arrival'],fields:['arrival','up:arrivalPhoto']},
   {id:'rubbish',group:'practical',title:'Rubbish',sub:'Bins and days',icon:'bin',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'circle',sec:'rubbish',
-   lead:'Only you know how this works at the house, so we do not look it up. Tell us how it is collected and, if bins go out at the house, which day each one is emptied.',need:[],fields:['rubbishMode','rubbishWhere','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto']},
+   lead:'Only you know how this works at the house, so we do not look it up. Tell us how it is collected and, if bins go out at the house, which day each one is emptied.',need:[],fields:['rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto']},
   {id:'contacts',group:'practical',title:'Contacts',sub:'You, backup, taxi',icon:'phone',tc:'var(--tomato)',ti:'#fff',sh:'var(--ink)',shape:'tri',
    lead:'Numbers guests can call. We add 112, the nearest hospital and pharmacy.',need:['hostPhone'],fields:['hostPhone','backupContact','taxi']},
-  {id:'taste',group:'area',title:'Your taste',sub:'Food, outings, tone',icon:'heart',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
-   lead:'Everything here is optional. It tells us what kind of places to research and how to write about them, wherever your place is.',need:[],fields:['eatStyle','eatPrice','eatVibe','dietary','doStyle','avoidTypes','tone','voiceNotes']},
-  {id:'favourites',group:'area',title:'Your places',sub:'Where you go',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',
-   lead:'Where you eat and drink is your call, so we add nothing of our own there: give us the places you send friends to, as a Google Maps link, a website or just a name, with a few words from you.',need:[],fields:['favEat','favDo','favourites','localTips','avoidPlaces']},
+  {id:'taste',group:'area',title:'Your style',sub:'Outings and tone',icon:'heart',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
+   lead:'All optional. It tells us which things to do to look for and how to write to your guests.',need:[],fields:['doStyle','avoidTypes','tone','voiceNotes']},
+  {id:'favourites',group:'area',title:'Bars and restaurants',sub:'Where you eat and drink',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',
+   lead:'Where you eat and drink is your call, so we add nothing of our own here. Add the bars and restaurants you send friends to, with a few words from you.',need:[],fields:['favEat','localTips','avoidPlaces']},
   {id:'area',group:'area',title:'Your area',sub:'Interests and distance',icon:'link',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'circle',
    lead:'We research markets, things to do and events within the distance you pick.',need:[],fields:['interests','radius']},
 ];
@@ -354,7 +358,8 @@ const Q = {
   wifiPassword:{label:'Password',hint:'Shown to guests in the guide.'},
   arrival:{t:'area',rows:5,label:'Finding the place and parking',full:true,ph:'From the roundabout take the dirt road, park under the pine tree…'},
   rubbishMode:{t:'radio',label:'How is rubbish collected where you are?',opt:true,opts:['Shared containers in the street','Bins collected at the house','A mix of both']},
-  rubbishWhere:{t:'area',rows:2,label:'Where are the containers?',opt:true,full:true,ph:'At the end of the lane, 100 m to the left of the gate. Glass is by the church.',show:()=>/container|mix/i.test(v('rubbishMode'))},
+  rubbishWhere:{t:'area',rows:2,label:'Where are the containers?',opt:true,full:true},
+  rubbishSpots:{t:'containers',label:'Containers guests can use',opt:true,full:true,hint:'Each place guests can take rubbish themselves, with what it takes. Even with collection at the house, glass often goes to a container.'},
   rubbishPlan:{t:'plan',label:'Which bin is collected, and on which days?',opt:true,full:true,hint:'Tick the day the bin is collected, not the day it goes out. Guests are told to take it out the night before. Leave a row empty if it is not collected.',show:()=>/house|mix/i.test(v('rubbishMode'))},
   rubbishTime:{t:'time',label:'Bins must be out by',opt:true,show:()=>/house|mix/i.test(v('rubbishMode'))},
   rubbishNotes:{t:'area',rows:3,label:'Anything guests must know',opt:true,full:true,ph:'Organic goes in the small brown bin under the sink. Bring cardboard flat…'},
@@ -363,8 +368,8 @@ const Q = {
   taxi:{label:'Taxi you trust',opt:true,ph:'Name and number'},
   essentials:{t:'area',rows:4,label:'Shops you use',opt:true,full:true,ph:'The supermarket you use and why\nThe best bakery, the pharmacy that opens on Sundays…'},
   extras:{t:'area',rows:3,label:'Extras you offer',full:true,ph:'Late check-out, with the price\nAirport transfer, breakfast basket…'},
-  favEat:{t:'places',label:'Where you eat and drink',opt:true,full:true,hint:'Paste a Google Maps link, a website, or just type the name. Then add your comment: what to order, when to go.'},
-  favDo:{t:'area',rows:5,label:'What you do around here',opt:true,full:true,ph:'A walk, a beach, a view, a museum, with the best time to go…'},
+  favEat:{t:'places',label:'Your bars and restaurants',add:'Add a bar or restaurant',opt:true,full:true,hint:'Paste a Google Maps link, a website, or just type the name. Then add your comment: what to order, when to go.'},
+  favDo:{t:'area',rows:5,label:'Places we missed',opt:true,full:true,ph:'A walk, a beach, a view, a museum, with the best time to go…'},
   favourites:{t:'area',rows:3,label:'Anything else you recommend',opt:true,full:true,ph:'Shops, a market, a local producer, a hidden spot…'},
   eatStyle:{t:'chips',label:'The food you recommend',opt:true,opts:['Local and traditional','Seafood','Grill and meat','Fine dining','Cheap and cheerful','Cafés and brunch','Vegetarian friendly','International','Wine and tapas bars','Street food','Bakeries and sweets']},
   eatPrice:{t:'radio',label:'Usual price level',opt:true,opts:['Budget','Mid-range','Special occasion','A mix']},
@@ -386,8 +391,8 @@ const Q = {
 };
 const UP = {
   logo:{label:'Logo or symbol',opt:true,max:1,hint:'A logo, a drawing, a photo of your dog. None? We design a simple one.'},
-  inspiration:{label:'Images for the look',max:3,what:'1 to 3 images',hint:'Artwork, a photo of the place, a poster or a website screenshot.'},
-  cover:{label:'Main photo (optional)',max:1,hint:'Guests have already seen your listing photos, so without one the top of the guide is drawn from your colours. Landscape works best.'},
+  inspiration:{label:'Images for the colours',max:3,what:'1 to 3 images',hint:'Artwork, a poster, a photo or a website screenshot. We only take their colours for your guide: the images themselves are not shown in it.'},
+  cover:{label:'Your own cover photo',opt:true,max:1,hint:'It replaces the photo above. Landscape works best.'},
   photo:{label:'Photos of the place',max:16,rooms:true,what:'Up to 16 photos'},
   manual:{label:'Manuals or labels',opt:true,max:6,doc:true,hint:'Photos of labels or instructions are fine.'},
   arrivalPhoto:{label:'Photos of the way in',opt:true,max:4,hint:'The gate, the turning, where to park.'},
@@ -400,7 +405,7 @@ let db = null, assets = null, sample = null, user = null, uid = null, isOwner = 
 let A = {}, doc = {}, uploads = [], feedback = [], hostsAll = [];
 const pending = new Map();
 const v = k => A[k] ?? '';
-const visible = () => MODULES.filter(m => (!m.sec || secOn(m.sec)) && !(m.id === 'nearby' && window.__placesOff));
+const visible = () => MODULES.filter(m => (!m.sec || secOn(m.sec)));
 const filled = k => { if (k.startsWith('upload:')) return uploads.some(u => u.kind === k.slice(7)); const x = A[k]; return Array.isArray(x) ? x.length > 0 : !!String(x ?? '').trim(); };
 const missingOf = m => m.need.filter(k => !filled(k));
 const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k] || {}).label;
@@ -472,6 +477,7 @@ function field(k){
   if (k === 'privacyNote') return `<div class="note full"><span aria-hidden="true">⌂</span><div>We never show your street address. The map uses a point near the house.</div></div>`;
   if (k === 'wifiNote') return `<div class="note full"><div>Guests see the password in the guide, so use your guest network if you have one.</div></div>`;
   if (k === 'sectionPicker') return sectionPicker();
+  if (k === 'up:cover' && typeof coverChoiceHTML === 'function') return coverChoiceHTML() + drop('cover');
   if (k.startsWith('up:')) return drop(k.slice(3));
   const q = Q[k]; if (!q) return '';
   if (q.show && !q.show()) return '';
@@ -481,7 +487,8 @@ function field(k){
   if (t === 'chips') { const cur = A[k] || []; return `<div class="f full"><span class="lab" id="l_${k}">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="chips" role="group" aria-labelledby="l_${k}">${q.opts.map(x => { const [val, lab] = Array.isArray(x) ? x : [x, x]; return `<label class="chip"><input type="checkbox" data-multi="${k}" value="${esc(val)}"${cur.includes(val)?' checked':''}><span>${esc(lab)}</span></label>`; }).join('')}</div></div>`; }
   if (t === 'radio') return `<div class="f full"><span class="lab" id="l_${k}">${head}</span><div class="chips" role="radiogroup" aria-labelledby="l_${k}">${q.opts.map(x => `<label class="chip"><input type="radio" name="${k}" data-radio="${k}" value="${esc(x)}"${v(k)===x?' checked':''}><span>${esc(x + (q.suffix||''))}</span></label>`).join('')}</div></div>`;
   if (t === 'plan') { const cur = A[k] || {}; return `<div class="f full"><span class="lab" id="l_${k}">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="plan">${BIN_ROWS.map(([id, lab]) => `<div class="plan-row"><b>${esc(lab)}</b><div class="chips" role="group" aria-label="${esc(lab)}">${DAYS7.map(([d, dl]) => `<label class="chip"><input type="checkbox" data-plan="${k}" data-bin="${id}" value="${d}"${(cur[id] || []).includes(d) ? ' checked' : ''}><span>${dl}</span></label>`).join('')}</div></div>`).join('')}</div></div>`; }
-  if (t === 'places') { const rows = placeRowsRaw(k); return `<div class="f full" id="pl_${k}"><span class="lab">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="pl">${rows.map((r, i) => `<div class="pl-row"><input data-pl="${k}" data-i="${i}" data-f="p" value="${esc(r.p)}" placeholder="Name, Google Maps link or website" aria-label="Place ${i + 1}"><textarea data-pl="${k}" data-i="${i}" data-f="c" rows="2" placeholder="Your comment: what to order, when to go…" aria-label="Comment on place ${i + 1}">${esc(r.c)}</textarea><button type="button" class="x" data-plrm="${k}" data-i="${i}" aria-label="Remove place ${i + 1}">×</button></div>`).join('')}</div><button type="button" class="btn small" data-pladd="${k}">+ Add a place</button></div>`; }
+  if (t === 'containers') return containersHTML(k, head, hint);
+  if (t === 'places') { const rows = placeRowsRaw(k); return `<div class="f full" id="pl_${k}"><span class="lab">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="pl">${rows.map((r, i) => `<div class="pl-row"><input data-pl="${k}" data-i="${i}" data-f="p" value="${esc(r.p)}" placeholder="Name, Google Maps link or website" aria-label="Place ${i + 1}"><textarea data-pl="${k}" data-i="${i}" data-f="c" rows="2" placeholder="Your comment: what to order, when to go…" aria-label="Comment on place ${i + 1}">${esc(r.c)}</textarea><button type="button" class="x" data-plrm="${k}" data-i="${i}" aria-label="Remove place ${i + 1}">×</button></div>`).join('')}</div><button type="button" class="btn small" data-pladd="${k}">+ ${esc(q.add || 'Add a place')}</button></div>`; }
   if (t === 'mood') return `<div class="f full"><span class="lab" id="l_${k}">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="moods" role="radiogroup" aria-labelledby="l_${k}">${MOODS.map(m => `<label class="mood"><input type="radio" name="mood" data-radio="mood" value="${m.id}"${v('mood')===m.id?' checked':''}><div class="box"><div class="mock ${m.cls}">${m.n?'<i></i>'.repeat(m.n):'?'}</div><b>${m.name}</b><small>${m.d}</small></div></label>`).join('')}</div></div>`;
   if (t === 'select') return `<div class="f${q.full?' full':''}"><label for="f_${k}">${head}</label><select id="f_${k}" data-k="${k}"><option value="">Choose…</option>${q.opts.map(x => `<option${v(k)===x?' selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
   const inp = t === 'area' ? `<textarea id="f_${k}" data-k="${k}" rows="${q.rows||4}" placeholder="${esc(q.ph||'')}">${esc(v(k))}</textarea>`
@@ -576,8 +583,8 @@ function summary(m){
     case 'howto': return `${lines('howTos')} how-tos · ${(A.amenities || []).length} amenities`;
     case 'stay': return `In ${v('checkIn') || '?'} · out ${v('checkOut') || '?'} · ${lines('houseRules')} rules`;
     case 'wifi': return v('wifiName') || 'Not filled';
-    case 'favourites': return `${placeRows('favEat').length + lines('favDo').length + lines('favourites').length} places${v('localTips') ? ' · local tips' : ''}`;
-    case 'taste': return [(A.eatStyle || []).slice(0, 3).join(', '), v('eatPrice'), v('tone')].filter(Boolean).join(' · ') || 'Not filled';
+    case 'favourites': return `${placeRows('favEat').length} bars and restaurants${v('localTips') ? ' · local tips' : ''}`;
+    case 'taste': return [(A.doStyle || []).slice(0, 3).join(', '), v('tone')].filter(Boolean).join(' · ') || 'Not filled';
     case 'area': return [(A.interests || []).join(', '), v('radius')].filter(Boolean).join(' · ') || 'Not filled';
     case 'kids': return (A.kidsAges || []).join(', ') || 'Not filled';
     default: { const k = m.fields.find(f => Q[f] && v(f)); return k ? v(k).split('\n')[0].slice(0, 80) : 'Not filled'; }

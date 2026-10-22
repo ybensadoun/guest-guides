@@ -73,8 +73,13 @@ function research(A, outDir, id) {
   ];
   const en = JSON.parse(readFileSync(join(ROOT, 'engine/src/i18n/en.json'), 'utf8'));
   const tagsOk = Object.keys(en).filter(k => k.startsWith('t_')).map(k => k.slice(2)), flagsOk = JSON.parse(readFileSync(join(ROOT, 'engine/src/flags.json'), 'utf8')).flags;   // warnings only, not the f_ filter labels
+  const groupsOk = JSON.parse(readFileSync(join(ROOT, 'engine/src/groups.json'), 'utf8')).groups;   // quick filters with a label
+  // A group without a label would show as "g_culture": map near words to a real group, drop the rest. Tone follows the group.
+  const fixGroup = o => { if (typeof o.group !== 'string' || !Array.isArray(o.tags) && !('km_from_house' in o)) return;
+    const g = o.group in groupsOk ? o.group : /cultur|museum|histor|heritage|town|village|castle|monument/.test(o.group) ? 'sights' : /natur|park|hike|walk|garden|mountain|outdoor/.test(o.group) ? 'nature' : /beach|coast|sea/.test(o.group) ? 'beach' : /fun|kid|family|sport|activit/.test(o.group) ? 'fun' : /wine|cava|winer/.test(o.group) ? 'wine' : null;
+    if (g) { o.group = g; o.tone = groupsOk[g]; } else delete o.group; };
   const keep = (o, k, ok) => { if (Array.isArray(o[k])) o[k] = o[k].filter(x => ok.includes(x)); };
-  const clean = (x) => { if (Array.isArray(x)) x.forEach(clean); else if (x && typeof x === 'object') { keep(x, 'tags', tagsOk); keep(x, 'flags', flagsOk); Object.values(x).forEach(clean); } return x; };
+  const clean = (x) => { if (Array.isArray(x)) x.forEach(clean); else if (x && typeof x === 'object') { keep(x, 'tags', tagsOk); keep(x, 'flags', flagsOk); fixGroup(x); Object.values(x).forEach(clean); } return x; };
   const hasPos = x => x && typeof x.lat === 'number' && typeof x.lng === 'number';
   const catsOk = Object.keys(en).filter(k => k.startsWith('cat_')).map(k => k.slice(4));
   const catFix = c => catsOk.includes(c) ? c : (/fair|festival|swap|event/.test(c || '') ? 'events' : /cover|hall|indoor/.test(c || '') ? 'covered' : /flea|second|vintage/.test(c || '') ? 'flea' : /antiq|craft/.test(c || '') ? 'antiques' : 'street');
@@ -83,7 +88,7 @@ function research(A, outDir, id) {
     if (Array.isArray(o.markets)) { o.markets.forEach(m => { m.category = catFix(m.category); }); o.categories = catsOk.filter(c => o.markets.some(m => m.category === c)); }
     return o;
   };
-  const allowed = `Where an item has "tags" or "flags", use ONLY these values. tags: ${tagsOk.join(', ')}. flags: ${flagsOk.join(', ')}. Leave out any that do not fit.`;
+  const allowed = `Where an item has "tags", "flags" or "group", use ONLY these values. tags: ${tagsOk.join(', ')}. flags: ${flagsOk.join(', ')}. group: ${Object.keys(groupsOk).join(', ')}. Leave out any that do not fit.`;
   for (const [kind, rules] of jobs) {
     say(id, `Researching: ${kind}`);
     try { writeFileSync(join(outDir, kind + '.json'), JSON.stringify(located(clean(claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind))), null, 1)); }

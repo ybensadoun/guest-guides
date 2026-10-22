@@ -139,6 +139,7 @@ async function loadPlaces(cat){
   finally { SW.loading = false; refreshSwipe(); }
 }
 function swipeHTML(){
+  if (window.__placesOff) return `<div class="note full"><div>We cannot search places near you right now. Add the ones you recommend below.</div></div>`;
   if (!v('town') && !A.lat) return `<div class="note full"><div>Add your town in <a href="#listing">Your listing</a> first, so we know where to look.</div></div>`;
   return `<div class="full sw" id="swipe">${swipeInner()}</div>`;
 }
@@ -157,7 +158,7 @@ function swipeInner(){
         <p class="sw-meta"><b>★ ${p.rating ? p.rating.toFixed(1) : '?'}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} ${p.price ? '· ' + esc(String(p.price).replace('PRICE_LEVEL_', '').toLowerCase().replace('_', ' ')) : ''}</p>
         ${p.summary ? `<p>${esc(p.summary)}</p>` : ''}<a href="${esc(p.maps)}" target="_blank" rel="noopener">See on Google Maps</a></div>
       <div class="sw-btns"><button type="button" class="sw-no" data-sw="no">Not for us</button><button type="button" class="sw-yes" data-sw="yes">${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>
-    </article>` : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> Missing a favourite? Add it in <a href="#favourites">Your places</a>.</div>`;
+    </article>` : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> Missing one? Add it below.</div>`;
   const picks = Object.values(S).filter(x => x.d === 'yes' && x.cat === SW.cat);
   return `${tabs}<p class="sw-count">${done} of ${list.length} seen · ${yes} recommended in total</p>${card}
     ${picks.length ? `<div class="sw-picks"><b>Your picks here</b>${picks.map(x => `<div class="sw-pick"><span>${esc(x.name)} <small>★ ${x.rating ? (+x.rating).toFixed(1) : ''}</small></span>
@@ -316,10 +317,49 @@ async function resetAll(){
 /* ---------- Version stamp, tiny, so you can tell which build you are looking at ---------- */
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
-  const st2 = document.createElement('style'); st2.textContent = '.resetTop{position:fixed;bottom:10px;left:10px;z-index:40;font:600 12px/1 inherit;font-family:inherit;padding:8px 12px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;opacity:.85;cursor:pointer}.resetTop:hover{opacity:1}'; document.head.appendChild(st2);
-  const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'resetTop'; rb.textContent = 'Start over'; rb.title = 'Erase everything on this device and begin again'; document.body.appendChild(rb);
+  // "Start over" is on the overview page only (#resetAll): a floating copy sat on top of the step bar.
   const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated __BUILD__'; document.body.appendChild(d);
 })();
 
-/* ---------- The "Places nearby" step needs a Google key on our side. If it is not connected, the step is hidden instead of showing a dead page. ---------- */
-fetch('/api/places?probe=1').then(r => r.json()).then(d => { if (!d.ok) { window.__placesOff = true; if (location.hash === '#nearby') location.hash = '#home'; render(); } }).catch(() => {});
+/* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
+fetch('/api/places?probe=1').then(r => r.json()).then(d => { if (!d.ok) { window.__placesOff = true; render(); } }).catch(() => {});
+
+/* ---------- Cover of the guide: the listing's own cover photo by default, or one drawn from the guide's colours ---------- */
+function coverChoiceHTML(){
+  const url = A.coverUrl, drawn = A.coverChoice === 'drawn', own = uploads.some(u => u.kind === 'cover');
+  if (!url) return `<div class="f full"><span class="lab">Cover of your guide</span><p class="hint">We use your listing’s cover photo once your listing is loaded. Without one, the cover is drawn from your colours.</p></div>`;
+  return `<div class="f full"><span class="lab">Cover of your guide</span><p class="hint">${own ? 'Your own photo below is used.' : drawn ? 'Drawn from your colours. You can go back to your listing photo.' : 'Your listing’s cover photo, as on your listing.'}</p>
+    <div class="cvc"><img src="${esc(url)}${url.includes('?') ? '' : '?im_w=720'}" alt="" class="${drawn || own ? 'off' : ''}">
+    <div class="row"><button type="button" class="btn small${!drawn ? ' on' : ''}" data-coverchoice="listing" aria-pressed="${!drawn}">Use this photo</button><button type="button" class="btn small${drawn ? ' on' : ''}" data-coverchoice="drawn" aria-pressed="${drawn}">Draw it from my colours</button></div></div></div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-coverchoice]'); if (!b) return;
+  A.coverChoice = b.dataset.coverchoice; queueSave(); render();
+});
+(function(){ const st = document.createElement('style'); st.textContent = '.cvc{display:flex;flex-direction:column;gap:10px}.cvc img{width:100%;max-width:420px;aspect-ratio:16/10;object-fit:cover;border-radius:14px;display:block}.cvc img.off{opacity:.35;filter:grayscale(1)}.cvc .row{display:flex;gap:8px;flex-wrap:wrap}.cvc .btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}'; document.head.appendChild(st); })();
+
+/* ---------- Rubbish: the containers guests can use, each with a description, an optional map link and what it takes ---------- */
+// Older answers had one free-text "Where are the containers?": it becomes the first row.
+const containerRows = () => Array.isArray(A.rubbishSpots) && A.rubbishSpots.length ? A.rubbishSpots : [{ w: v('rubbishWhere'), m: '', t: [] }];
+function containersHTML(k, head, hint){
+  const rows = containerRows();
+  return `<div class="f full" id="ct_${k}"><span class="lab">${head}</span>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}<div class="ctl">${rows.map((r, i) => `<div class="ct-row">
+    <textarea data-ct="${i}" data-f="w" rows="2" placeholder="Where: at the end of the lane, 100 m left of the gate" aria-label="Where containers ${i + 1} are">${esc(r.w || '')}</textarea>
+    <input type="url" data-ct="${i}" data-f="m" value="${esc(r.m || '')}" placeholder="Google Maps link (optional)" aria-label="Map link for containers ${i + 1}" inputmode="url">
+    <div class="chips" role="group" aria-label="What containers ${i + 1} take">${BIN_ROWS.map(([id, lab]) => `<button type="button" class="chip" data-ctt="${i}" data-id="${id}" aria-pressed="${(r.t || []).includes(id)}"><span>${esc(lab)}</span></button>`).join('')}</div>
+    ${rows.length > 1 ? `<button type="button" class="btn small" data-ctrm="${i}">Remove this place</button>` : ''}</div>`).join('')}</div>
+    <button type="button" class="btn small" data-ctadd="1">+ Add another place with containers</button></div>`;
+}
+document.addEventListener('input', e => {
+  const t = e.target; if (!t.dataset || t.dataset.ct === undefined) return;
+  const rows = containerRows().map(r => ({ ...r })); rows[+t.dataset.ct][t.dataset.f] = t.value; set('rubbishSpots', rows);
+});
+document.addEventListener('click', e => {
+  const c = e.target.closest && e.target.closest('[data-ctt],[data-ctadd],[data-ctrm]'); if (!c) return;
+  const rows = containerRows().map(r => ({ ...r, t: [...(r.t || [])] }));
+  if (c.dataset.ctadd) rows.push({ w: '', m: '', t: [] });
+  else if (c.dataset.ctrm !== undefined) rows.splice(+c.dataset.ctrm, 1);
+  else { const r = rows[+c.dataset.ctt], id = c.dataset.id; r.t = r.t.includes(id) ? r.t.filter(x => x !== id) : [...r.t, id]; }
+  set('rubbishSpots', rows.length ? rows : [{ w: '', m: '', t: [] }]); render();
+});
+(function(){ const st = document.createElement('style'); st.textContent = '.ctl{display:flex;flex-direction:column;gap:12px;margin-bottom:10px}.ct-row{display:flex;flex-direction:column;gap:8px;background:var(--sunk);border-radius:var(--r-s);padding:12px}.ct-row .btn{align-self:flex-start}.ct-row button.chip{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer}.ct-row .chip[aria-pressed=true] span{background:var(--ink);border-color:var(--ink);color:var(--paper)}.ct-row .chip:focus-visible span{outline:3px solid var(--focus);outline-offset:2px}'; document.head.appendChild(st); })();
