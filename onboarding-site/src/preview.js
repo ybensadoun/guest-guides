@@ -104,6 +104,10 @@ function pvStyle(p, preset){
 .pv h1,.pv h2,.pv h3{font-family:var(--pd);margin:0;line-height:1.05;text-wrap:balance}
 .pv-cover{position:relative;height:clamp(240px,42vh,380px);background:var(--a1) center/cover no-repeat;margin:0 -16px}
 .pv-cover::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.55))}
+.pv-art svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.pv-art .a-sky{fill:var(--a1)}.pv-art .a-sun{fill:var(--a3)}.pv-art .a-far{fill:color-mix(in srgb,var(--a1) 72%,var(--pi))}
+.pv-art .a-mid{fill:color-mix(in srgb,var(--a4) 60%,var(--pp))}.pv-art .a-near{fill:color-mix(in srgb,var(--a4) 35%,var(--pp))}
+.pv-art .a-wall{fill:#fff}.pv-art .a-roof{fill:var(--a2)}.pv-art .a-win,.pv-art .a-door{fill:color-mix(in srgb,var(--pi) 75%,var(--a1))}.pv-art .a-tree{fill:color-mix(in srgb,var(--a4) 55%,var(--pi))}
 .pv-name{position:absolute;left:20px;right:20px;bottom:18px;z-index:1;color:#fff}
 .pv-name small{display:block;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.9}
 .pv-name h1{font-size:clamp(34px,9vw,52px)}
@@ -176,11 +180,15 @@ function pvStyle(p, preset){
   return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fam}&display=swap"><style>${base}${shared}${P[preset]}</style>`;
 }
 
+// The drawn cover, same scene as the guide's (engine/src/views/home.js THEMED_COVER).
+const PV_ART = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect class="a-sky" width="400" height="160"/><circle class="a-sun" cx="246" cy="48" r="15"/><path class="a-far" d="M0 112C60 86 120 88 186 104S318 84 400 98V160H0z"/><path class="a-mid" d="M0 128C80 110 150 114 228 126S350 116 400 120V160H0z"/><path class="a-wall" d="M178 104h44v32h-44z"/><path class="a-roof" d="M173 106l27-18 27 18z"/><path class="a-win" d="M186 112h8v8h-8zM206 112h8v8h-8z"/><path class="a-door" d="M196 123h8v13h-8z"/><path class="a-tree" d="M238 136c-4 0-5-9-5-19s2-20 5-25c3 5 5 15 5 25s-1 19-5 19zM251 136c-3 0-4-6-4-13s2-14 4-18c2 4 4 11 4 18s-1 13-4 13z"/><path class="a-near" d="M0 140C100 130 220 132 300 138S380 136 400 136V160H0z"/></svg>`;
+
 async function renderPreview(){
   const p = PV.palette || (PV.palette = await paletteFromImages());
   const preset = PV.preset || (PV.preset = choosePreset(p));
   const S = ordered(guideSections()), name = v('guideName') || v('placeName') || 'Your guide';
-  const cover = (uploads.find(u => u.kind === 'cover') || {}).url || A.coverUrl || (uploads.find(u => u.kind === 'photo') || uploads.find(u => u.kind === 'inspiration') || {}).url;
+  // Same rule as the guide: the host's own cover photo, or a scene drawn from the guide's colours (never the listing photo).
+  const cover = (uploads.find(u => u.kind === 'cover') || {}).url;
   const colours = [p.acc[0], p.acc[1], p.ink, p.acc[3], p.acc[2]];
   const scr = PV.screen, sec = S.find(x => x.id === scr);
   const facts = [];
@@ -193,7 +201,7 @@ async function renderPreview(){
     if (f === 'Places to eat') facts.push(['eat', 'Eat', lines('favourites').length + ' favourites']);
   }
   const ph = id => { const r = (S.find(x => x.id === 'houseguide') || {}).rooms || []; return id === 'houseguide' && r.find(x => x.photos.length) ? r.find(x => x.photos.length).photos[0] : null; };
-  const home = `<div class="pv-cover" style="background-image:url('${cover || ''}')"><div class="pv-name"><small>Welcome to</small><h1>${esc(name)}</h1></div></div>
+  const home = `<div class="pv-cover${cover ? '' : ' pv-art'}"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}<div class="pv-name"><small>Welcome to</small><h1>${esc(name)}</h1></div></div>
     ${v('tagline') ? `<p class="pv-welcome">${esc(v('tagline'))}</p>` : ''}${v('welcome') ? `<p style="margin:0;opacity:.85">${esc(v('welcome'))}</p>` : ''}
     ${/search/i.test(v('navStyle')) ? `<input class="pv-search" id="pvSearch" placeholder="Search the guide: wifi, bins, beach…" aria-label="Search the guide">` : ''}
     ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}

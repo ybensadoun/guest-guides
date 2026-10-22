@@ -89,7 +89,7 @@ async function edPhotoInput(t) {
     for (const f of files) {
       const name = await edUpload(f, t.dataset.kind);
       if (t.dataset.phadd) { const p = edPath(t.dataset.phadd); let a = edGet(edC(), p); if (!Array.isArray(a)) { edSet(edC(), p, []); a = edGet(edC(), p); } a.push(name); }
-      else edSet(edC(), edPath(t.dataset.phset), name);
+      else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') edSet(edC(), ['files', 'house', 'cover'], 'photo'); }
     }
     edQueue(); edRender();
   } catch (e) { ED.state = 'Not uploaded: ' + (e.message || 'try again'); edStatus(); }
@@ -133,10 +133,11 @@ async function edTranslate() {
 }
 
 /* --- Basics --- */
+const edCoverPhoto = h => !!h.photo && h.cover !== 'themed';
 function edBasics(c) {
   const s = c.site || {}, h = (c.files || {}).house || {};
   return `<div class="edc">${edField('Guide name', 'site/name', s.name)}${edField('House name (shown on the home page)', 'files/house/name', h.name)}${edField('Check-out time', 'files/house/checkout', h.checkout, { type: 'time' })}${edField('Short description (for link previews)', 'site/description', s.description, { long: true })}${edField('Listing link', 'files/house/listing', h.listing)}</div>
-    <div class="edc"><h2 style="margin-top:0">Cover photo</h2>${h.photo ? `<div class="edph" style="width:160px"><img style="width:160px;height:110px" src="${edEsc(edImg(h.photo))}" alt=""></div>` : ''}<label class="edb sm edfile" style="margin-top:8px">${h.photo ? 'Change photo' : 'Add a photo'}<input type="file" accept="image/*" hidden data-phset="files/house/photo"></label></div>
+    <div class="edc"><h2 style="margin-top:0">Cover</h2><p class="edn">Guests have already seen your listing photos, so the cover is drawn from your colours unless you choose your own photo.</p><span style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="edb sm${edCoverPhoto(h) ? '' : ' on'}" type="button" data-cover="themed">Drawn from my colours</button><button class="edb sm${edCoverPhoto(h) ? ' on' : ''}" type="button" data-cover="photo"${h.photo ? '' : ' disabled'}>My photo</button></span>${h.photo ? `<div class="edph" style="width:160px;margin-top:10px"><img style="width:160px;height:110px" src="${edEsc(edImg(h.photo))}" alt=""></div>` : ''}<label class="edb sm edfile" style="margin-top:8px">${h.photo ? 'Change photo' : 'Add a photo'}<input type="file" accept="image/*" hidden data-phset="files/house/photo"></label></div>
     <div class="edc"><h2 style="margin-top:0">Logo</h2>${s.logo ? `<div class="edph"><img style="object-fit:contain;background:#fff" src="${edEsc(edImg(s.logo))}" alt=""></div>` : ''}<label class="edb sm edfile" style="margin-top:8px">${s.logo ? 'Change logo' : 'Add a logo'}<input type="file" accept="image/*" hidden data-phset="site/logo" data-kind="logo"></label></div>
     ${edLanguages()}`;
 }
@@ -356,6 +357,7 @@ document.addEventListener('click', e => {
   if (d.edclose !== undefined) return edClose();
   if (d.edit) { ED.g = ED.list.find(g => g.id === d.edit); ED.tab = 'basics'; ED.state = ''; return edRender(); }
   if (d.tab) { ED.tab = d.tab; return edRender(); }
+  if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); edQueue(); return edRender(); }
   if (d.lang) { ED.lang = d.lang; return edRender(); }
   if (d.sub) { ED.sub = d.sub; return edRender(); }
   if (d.daytog) { const o = edGet(edC(), edPath(d.daytog)); if (o) { o.days = o.days || []; const i = o.days.indexOf(d.d); i >= 0 ? o.days.splice(i, 1) : o.days.push(d.d); edQueue(); edRender(); } return; }

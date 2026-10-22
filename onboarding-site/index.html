@@ -617,7 +617,7 @@ const Q = {
 const UP = {
   logo:{label:'Logo or symbol',opt:true,max:1,hint:'A logo, a drawing, a photo of your dog. None? We design a simple one.'},
   inspiration:{label:'Images for the look',max:3,what:'1 to 3 images',hint:'Artwork, a photo of the place, a poster or a website screenshot.'},
-  cover:{label:'Main photo',max:1,hint:'The photo at the top of the guide. Landscape works best.'},
+  cover:{label:'Main photo (optional)',max:1,hint:'Guests have already seen your listing photos, so without one the top of the guide is drawn from your colours. Landscape works best.'},
   photo:{label:'Photos of the place',max:16,rooms:true,what:'Up to 16 photos'},
   manual:{label:'Manuals or labels',opt:true,max:6,doc:true,hint:'Photos of labels or instructions are fine.'},
   arrivalPhoto:{label:'Photos of the way in',opt:true,max:4,hint:'The gate, the turning, where to park.'},
@@ -943,6 +943,10 @@ function pvStyle(p, preset){
 .pv h1,.pv h2,.pv h3{font-family:var(--pd);margin:0;line-height:1.05;text-wrap:balance}
 .pv-cover{position:relative;height:clamp(240px,42vh,380px);background:var(--a1) center/cover no-repeat;margin:0 -16px}
 .pv-cover::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.55))}
+.pv-art svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.pv-art .a-sky{fill:var(--a1)}.pv-art .a-sun{fill:var(--a3)}.pv-art .a-far{fill:color-mix(in srgb,var(--a1) 72%,var(--pi))}
+.pv-art .a-mid{fill:color-mix(in srgb,var(--a4) 60%,var(--pp))}.pv-art .a-near{fill:color-mix(in srgb,var(--a4) 35%,var(--pp))}
+.pv-art .a-wall{fill:#fff}.pv-art .a-roof{fill:var(--a2)}.pv-art .a-win,.pv-art .a-door{fill:color-mix(in srgb,var(--pi) 75%,var(--a1))}.pv-art .a-tree{fill:color-mix(in srgb,var(--a4) 55%,var(--pi))}
 .pv-name{position:absolute;left:20px;right:20px;bottom:18px;z-index:1;color:#fff}
 .pv-name small{display:block;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.9}
 .pv-name h1{font-size:clamp(34px,9vw,52px)}
@@ -1015,11 +1019,15 @@ function pvStyle(p, preset){
   return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fam}&display=swap"><style>${base}${shared}${P[preset]}</style>`;
 }
 
+// The drawn cover, same scene as the guide's (engine/src/views/home.js THEMED_COVER).
+const PV_ART = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect class="a-sky" width="400" height="160"/><circle class="a-sun" cx="246" cy="48" r="15"/><path class="a-far" d="M0 112C60 86 120 88 186 104S318 84 400 98V160H0z"/><path class="a-mid" d="M0 128C80 110 150 114 228 126S350 116 400 120V160H0z"/><path class="a-wall" d="M178 104h44v32h-44z"/><path class="a-roof" d="M173 106l27-18 27 18z"/><path class="a-win" d="M186 112h8v8h-8zM206 112h8v8h-8z"/><path class="a-door" d="M196 123h8v13h-8z"/><path class="a-tree" d="M238 136c-4 0-5-9-5-19s2-20 5-25c3 5 5 15 5 25s-1 19-5 19zM251 136c-3 0-4-6-4-13s2-14 4-18c2 4 4 11 4 18s-1 13-4 13z"/><path class="a-near" d="M0 140C100 130 220 132 300 138S380 136 400 136V160H0z"/></svg>`;
+
 async function renderPreview(){
   const p = PV.palette || (PV.palette = await paletteFromImages());
   const preset = PV.preset || (PV.preset = choosePreset(p));
   const S = ordered(guideSections()), name = v('guideName') || v('placeName') || 'Your guide';
-  const cover = (uploads.find(u => u.kind === 'cover') || {}).url || A.coverUrl || (uploads.find(u => u.kind === 'photo') || uploads.find(u => u.kind === 'inspiration') || {}).url;
+  // Same rule as the guide: the host's own cover photo, or a scene drawn from the guide's colours (never the listing photo).
+  const cover = (uploads.find(u => u.kind === 'cover') || {}).url;
   const colours = [p.acc[0], p.acc[1], p.ink, p.acc[3], p.acc[2]];
   const scr = PV.screen, sec = S.find(x => x.id === scr);
   const facts = [];
@@ -1032,7 +1040,7 @@ async function renderPreview(){
     if (f === 'Places to eat') facts.push(['eat', 'Eat', lines('favourites').length + ' favourites']);
   }
   const ph = id => { const r = (S.find(x => x.id === 'houseguide') || {}).rooms || []; return id === 'houseguide' && r.find(x => x.photos.length) ? r.find(x => x.photos.length).photos[0] : null; };
-  const home = `<div class="pv-cover" style="background-image:url('${cover || ''}')"><div class="pv-name"><small>Welcome to</small><h1>${esc(name)}</h1></div></div>
+  const home = `<div class="pv-cover${cover ? '' : ' pv-art'}"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}<div class="pv-name"><small>Welcome to</small><h1>${esc(name)}</h1></div></div>
     ${v('tagline') ? `<p class="pv-welcome">${esc(v('tagline'))}</p>` : ''}${v('welcome') ? `<p style="margin:0;opacity:.85">${esc(v('welcome'))}</p>` : ''}
     ${/search/i.test(v('navStyle')) ? `<input class="pv-search" id="pvSearch" placeholder="Search the guide: wifi, bins, beach…" aria-label="Search the guide">` : ''}
     ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
@@ -1421,7 +1429,7 @@ async function resetAll(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   const st2 = document.createElement('style'); st2.textContent = '.resetTop{position:fixed;bottom:10px;left:10px;z-index:40;font:600 12px/1 inherit;font-family:inherit;padding:8px 12px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;opacity:.85;cursor:pointer}.resetTop:hover{opacity:1}'; document.head.appendChild(st2);
   const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'resetTop'; rb.textContent = 'Start over'; rb.title = 'Erase everything on this device and begin again'; document.body.appendChild(rb);
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 19 Oct 2026, 12:45 (Madrid time, after commit 6984470)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 22 Oct 2026, 09:58 (Madrid time, after commit 359e56a)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" step needs a Google key on our side. If it is not connected, the step is hidden instead of showing a dead page. ---------- */
@@ -1724,7 +1732,7 @@ async function edPhotoInput(t) {
     for (const f of files) {
       const name = await edUpload(f, t.dataset.kind);
       if (t.dataset.phadd) { const p = edPath(t.dataset.phadd); let a = edGet(edC(), p); if (!Array.isArray(a)) { edSet(edC(), p, []); a = edGet(edC(), p); } a.push(name); }
-      else edSet(edC(), edPath(t.dataset.phset), name);
+      else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') edSet(edC(), ['files', 'house', 'cover'], 'photo'); }
     }
     edQueue(); edRender();
   } catch (e) { ED.state = 'Not uploaded: ' + (e.message || 'try again'); edStatus(); }
@@ -1768,10 +1776,11 @@ async function edTranslate() {
 }
 
 /* --- Basics --- */
+const edCoverPhoto = h => !!h.photo && h.cover !== 'themed';
 function edBasics(c) {
   const s = c.site || {}, h = (c.files || {}).house || {};
   return `<div class="edc">${edField('Guide name', 'site/name', s.name)}${edField('House name (shown on the home page)', 'files/house/name', h.name)}${edField('Check-out time', 'files/house/checkout', h.checkout, { type: 'time' })}${edField('Short description (for link previews)', 'site/description', s.description, { long: true })}${edField('Listing link', 'files/house/listing', h.listing)}</div>
-    <div class="edc"><h2 style="margin-top:0">Cover photo</h2>${h.photo ? `<div class="edph" style="width:160px"><img style="width:160px;height:110px" src="${edEsc(edImg(h.photo))}" alt=""></div>` : ''}<label class="edb sm edfile" style="margin-top:8px">${h.photo ? 'Change photo' : 'Add a photo'}<input type="file" accept="image/*" hidden data-phset="files/house/photo"></label></div>
+    <div class="edc"><h2 style="margin-top:0">Cover</h2><p class="edn">Guests have already seen your listing photos, so the cover is drawn from your colours unless you choose your own photo.</p><span style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="edb sm${edCoverPhoto(h) ? '' : ' on'}" type="button" data-cover="themed">Drawn from my colours</button><button class="edb sm${edCoverPhoto(h) ? ' on' : ''}" type="button" data-cover="photo"${h.photo ? '' : ' disabled'}>My photo</button></span>${h.photo ? `<div class="edph" style="width:160px;margin-top:10px"><img style="width:160px;height:110px" src="${edEsc(edImg(h.photo))}" alt=""></div>` : ''}<label class="edb sm edfile" style="margin-top:8px">${h.photo ? 'Change photo' : 'Add a photo'}<input type="file" accept="image/*" hidden data-phset="files/house/photo"></label></div>
     <div class="edc"><h2 style="margin-top:0">Logo</h2>${s.logo ? `<div class="edph"><img style="object-fit:contain;background:#fff" src="${edEsc(edImg(s.logo))}" alt=""></div>` : ''}<label class="edb sm edfile" style="margin-top:8px">${s.logo ? 'Change logo' : 'Add a logo'}<input type="file" accept="image/*" hidden data-phset="site/logo" data-kind="logo"></label></div>
     ${edLanguages()}`;
 }
@@ -1991,6 +2000,7 @@ document.addEventListener('click', e => {
   if (d.edclose !== undefined) return edClose();
   if (d.edit) { ED.g = ED.list.find(g => g.id === d.edit); ED.tab = 'basics'; ED.state = ''; return edRender(); }
   if (d.tab) { ED.tab = d.tab; return edRender(); }
+  if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); edQueue(); return edRender(); }
   if (d.lang) { ED.lang = d.lang; return edRender(); }
   if (d.sub) { ED.sub = d.sub; return edRender(); }
   if (d.daytog) { const o = edGet(edC(), edPath(d.daytog)); if (o) { o.days = o.days || []; const i = o.days.indexOf(d.d); i >= 0 ? o.days.splice(i, 1) : o.days.push(d.d); edQueue(); edRender(); } return; }

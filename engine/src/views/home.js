@@ -89,7 +89,7 @@ export function renderHome(V) {
   // the name as a small label, then the three facts guests look for first. Each opens its House guide row.
   const top = `<section class="sthero">
      <div class="hcard">
-     <a class="hc-ph" href="${HOUSE_LINK}"><img src="${esc(HOUSE.photo)}" style="object-position:${esc(HOUSE.photoPos || '50% 60%')}" alt=" loading="eager" decoding="async" onerror="this.remove()"></a>
+     ${COVER_PHOTO ? `<a class="hc-ph" href="${HOUSE_LINK}"><img src="${esc(HOUSE.photo)}" style="object-position:${esc(HOUSE.photoPos || '50% 60%')}" alt="" loading="eager" decoding="async" onerror="this.remove()"></a>` : `<a class="hc-ph hc-art" href="${HOUSE_LINK}" aria-hidden="true" tabindex="-1">${THEMED_COVER}</a>`}
      <a class="hc-id" href="${HOUSE_LINK}"><img src="${esc(SITE.logo || 'logo-head.png')}" alt=""><span class="hc-nm"><small class="hc-w">${esc(t('welcomeTo'))}</small><b>${esc(SITE.name)}</b><small>${esc(t('seeHouse'))}</small></span><span class="go" aria-hidden="true">${ARROW}</span></a>
      <div class="keyfacts">
        ${HOUSE.wifi ? `<button type="button" class="kf-wifi" id="wifiBtn"><small>${esc(t('qWifi'))}</small><b>${esc(t('qWifiV'))}</b></button>` : ''}
@@ -106,6 +106,20 @@ export function renderHome(V) {
   const wb = V.querySelector('#wifiBtn');
   if (wb) wb.addEventListener('click', wifiSheet);
 }
+
+// The cover: guests have already booked and seen the listing photos, so by default it sets a welcome tone instead of selling.
+// A scene drawn in code from the guide's own colours (no text, so nothing to overlap in any language).
+// The host's photo replaces it when house.json has "photo" and "cover" is not "themed".
+const COVER_PHOTO = !!HOUSE.photo && HOUSE.cover !== 'themed';
+const THEMED_COVER = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <rect class="a-sky" width="400" height="160"/>
+  <circle class="a-sun" cx="246" cy="48" r="15"/>
+  <path class="a-far" d="M0 112C60 86 120 88 186 104S318 84 400 98V160H0z"/>
+  <path class="a-mid" d="M0 128C80 110 150 114 228 126S350 116 400 120V160H0z"/>
+  <g class="a-house"><path class="a-wall" d="M178 104h44v32h-44z"/><path class="a-roof" d="M173 106l27-18 27 18z"/><path class="a-win" d="M186 112h8v8h-8zM206 112h8v8h-8z"/><path class="a-door" d="M196 123h8v13h-8z"/></g>
+  <path class="a-tree" d="M238 136c-4 0-5-9-5-19s2-20 5-25c3 5 5 15 5 25s-1 19-5 19zM251 136c-3 0-4-6-4-13s2-14 4-18c2 4 4 11 4 18s-1 13-4 13z"/>
+  <path class="a-near" d="M0 140C100 130 220 132 300 138S380 136 400 136V160H0z"/>
+</svg>`;
 
 const STAY_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M8 6l2-3h4l2 3"/><circle cx="12" cy="13" r="3.5"/></svg>';
 const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="currentColor"/></svg>';
