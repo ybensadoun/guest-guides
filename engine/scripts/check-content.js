@@ -70,7 +70,7 @@ for (const s of read(C('sections')).sections) {
   if (s.kind === 'spots' && s.status === 'live') {
     for (const it of read(C(s.id)).items) {
       four(it.name, `${s.id} "${it.id}" name`);
-      four(it.description, `${s.id} "${it.id}" description`);
+      if (!it.hostPick || it.description) four(it.description, `${s.id} "${it.id}" description`);   // a host's own pick may have no comment
       if (typeof it.lat !== 'number') errors.push(`${s.id} "${it.id}" needs lat/lng`);
       if (it.group && !(it.group in GROUPS)) errors.push(`${s.id} "${it.id}" group "${it.group}" is not a filter group (engine/src/groups.json)`);
     }

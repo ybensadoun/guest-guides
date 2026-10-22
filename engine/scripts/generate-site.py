@@ -481,19 +481,41 @@ def place_name_from(p):
     if m: return re.sub(r'\s+', ' ', re.sub(r'[+_]', ' ', __import__('urllib.parse').parse.unquote(m.group(1)))).strip()
     return p
 GEO = json.loads((S / 'geocode.json').read_text()) if (S / 'geocode.json').exists() else {}
+# A short Google Maps link (maps.app.goo.gl/...) says nothing by itself: one request reads where it redirects
+# (the redirect is not followed), which gives the place's name and exact position.
+import urllib.request, urllib.error
+def resolve_short(url):
+    if not re.search(r'maps\.app\.goo\.gl|goo\.gl/maps', url): return {}
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *a, **k): return None
+    try:
+        urllib.request.build_opener(NoRedirect).open(urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}), timeout=10)
+        return {}
+    except urllib.error.HTTPError as e:
+        loc = e.headers.get('Location') or ''
+    except Exception:
+        return {}
+    out = {}
+    if re.search(r'google\.[a-z.]+/maps/place/', loc): out['name'] = place_name_from(loc)
+    m = re.search(r'!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)', loc) or re.search(r'@(-?\d+\.\d+),(-?\d+\.\d+)', loc)
+    if m:
+        out['lat'], out['lng'] = float(m.group(1)), float(m.group(2))
+        out['km'] = max(1, round(math.hypot((out['lat'] - args.lat) * 111, (out['lng'] - args.lng) * 111 * math.cos(math.radians(args.lat))) * 1.3))
+    return out
 fav = [r for r in (A.get('favEat') or []) if isinstance(r, dict) and (r.get('p') or '').strip()]
 if fav:
     items = []
     for r in fav:
-        key = r['p'].strip(); g = GEO.get(key, {})
+        key = r['p'].strip(); g = GEO.get(key) or resolve_short(key)
         nm = g.get('name') or place_name_from(key)
         isurl = key.startswith('http'); ismaps = bool(re.search(r'google\.[a-z.]+/maps|maps\.app\.goo\.gl|goo\.gl/maps', key))
         it = {'id': re.sub(r'[^a-z0-9]+', '-', nm.lower()).strip('-')[:40] or 'place', 'name': {l: nm for l in LANGS},
               'type': L(g.get('type') or "Host's pick"), 'town': g.get('town') or town, 'place': g.get('place', ''),
               'lat': g.get('lat', args.lat), 'lng': g.get('lng', args.lng), 'km_from_house': g.get('km', 0),
-              'description': L(r.get('c', '').strip()) if (r.get('c') or '').strip() else {}, 'tags': g.get('tags', []),
+              'tags': g.get('tags', []),
               'flags': ['check'] if not g.get('hours') and not g.get('schedule') else [], 'hostPick': True,
               'gmaps': key if ismaps else 'https://www.google.com/maps/search/?api=1&query=' + __import__('urllib.parse').parse.quote_plus(nm + ' ' + (g.get('town') or town))}
+        if (r.get('c') or '').strip(): it['description'] = L(r['c'].strip())   # the host's own words; no comment, no description
         if isurl and not ismaps: it['url'] = key
         for k2 in ('phone', 'hours', 'schedule', 'price', 'priceNote', 'icon', 'wiki'):
             if g.get(k2): it[k2] = L(g[k2]) if k2 in ('hours', 'priceNote') else g[k2]
