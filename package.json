@@ -10,6 +10,7 @@
     "preview-file": "node engine/scripts/run.js preview-file",
     "sites": "node engine/scripts/run.js sites",
     "check-places": "NODE_USE_ENV_PROXY=1 node --no-warnings engine/scripts/check-places.js",
+    "check-guides": "node worker/check-guides.mjs",
     "build-viewer": "vite build --config engine/vite.viewer.config.js"
   },
   "devDependencies": {

@@ -31,3 +31,9 @@ The guide is then at `https://porta-guides.netlify.app/g/<slug>`.
 ## Put a hand-made guide into the database (Ca La Kimberly)
 `node worker/guide-worker.mjs --import ca-la-kimberly --slug ca-la-kimberly --owner-email yohann.bensadoun+clk@gmail.com`
 Uploads its images, saves its content, publishes it at `/g/ca-la-kimberly` and makes that account the owner. Run it again to refresh the database copy after a change in `sites/ca-la-kimberly` (until the live address is switched over). Imported guides cannot be rebuilt from onboarding answers: they are edited in the "My guide" editor after login.
+
+## Monthly place check for published guides
+`npm run check-guides` (dry run, report only) and `npm run check-guides -- --apply` (save the fixes). Options: `--slug <slug>` for one guide, `--days 0` to re-check recent places too.
+For every place in a published host guide (markets, things to do, the host's bars and restaurants) it asks Google Places once: still open, exact Google Maps listing, opening hours. Each place keeps its Google id and a "checked" date, so a place checked in the last 25 days costs nothing. Not run on builds (cost): the monthly scheduled task runs it, and it can be run by hand after new research or host edits.
+Rules: official hours (a place with a source url and a schedule) are compared, never replaced; permanently closed places are removed; temporarily closed ones get "check" (often the off-season); a Google answer that does not share a real word with the place's name, or is not the listing the guide already links to, is left for a human. Hand-made guides (Ca La Kimberly) are skipped: use `npm run check-places -- <site>` on their folder.
+Needs GOOGLE_PLACES_KEY in Guest Guides/.env as well as the worker's key.
