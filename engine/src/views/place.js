@@ -2,7 +2,7 @@ import { t, tx } from '../i18n.js';
 import { HOUSE, QUICK_ALL, slots } from '../content.js';
 import { hoursText, statusLabel, nextOpenText, closedStatus } from '../schedule.js';
 import { stHTML } from '../ui.js';
-import { hav, kmMe } from '../geo.js';
+import { hav, kmMe, gSearch } from '../geo.js';
 import { esc, ICON, itemIcon } from '../ui.js';
 import { miniMap, overviewMap } from './map.js';
 
@@ -21,7 +21,7 @@ export function renderPlace(V, id, icons) {
   const raw = hasPt ? hav(HOUSE.lat, HOUSE.lng, p.lat, p.lng) : null;
   const km = raw != null && raw >= 0.8 ? Math.max(1, Math.round(raw * 1.3)) : null;
   const near = raw != null && raw < 0.8;
-  const mapsUrl = p.gmaps || p.map || (hasPt ? `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}` : '');
+  const mapsUrl = p.gmaps || p.map || (p.name && p.town ? gSearch(p) : hasPt ? `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}` : '');
   const dirUrl = hasPt ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}` : p.map || '';
 
   let hours = '';

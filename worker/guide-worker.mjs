@@ -62,11 +62,13 @@ ${rules}
 Answer with ONE JSON object and nothing else. It must follow the shape of this example (only its first items are shown):
 ${example(kind)}`;
 }
+// Hours and the Google Maps link, for every place (markets and things to do).
+const HOURS_RULE = 'For each place: "name_local" is its name exactly as Google Maps lists it (in the local language, e.g. "Jardí Botànic Marimurtra"), so the guide\'s Google Maps button opens its listing. Put "gmaps" only if a source gives the place\'s own Google Maps link. Opening hours: look for them on the official website first (the venue, the operator, the town hall or its tourist office), then in recent local press, and write them as "schedule" (from/to as MM-DD for seasons) with "url" set to that official page. Use the flag "check" only when no official or recent source gives the days and hours, or sources disagree. A place open to everyone at any time (beach, viewpoint, old town, path, ruin) gets "always": true and no "check".';
 function research(A, outDir, id) {
   mkdirSync(outDir, { recursive: true });
   const jobs = [
-    ['markets', 'Find the weekly and notable local markets within the radius (street markets, covered markets, fairs). Same shape as the example: {"categories":[...],"markets":[...]} with schedule days as mon..sun. Every market MUST have numeric lat and lng: use the exact spot if a source gives it, otherwise the centre of the town or the market square from Wikipedia or OpenStreetMap, and add "verify": true when approximate. Its "category" must be one of: covered, street, flea, antiques, events.'],
-    ['todo', 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example.'],
+    ['markets', 'Find the weekly and notable local markets within the radius (street markets, covered markets, fairs). Same shape as the example: {"categories":[...],"markets":[...]} with schedule days as mon..sun. Every market MUST have numeric lat and lng: use the exact spot if a source gives it, otherwise the centre of the town or the market square from Wikipedia or OpenStreetMap, and add "verify": true when approximate. Its "category" must be one of: covered, street, flea, antiques, events. ' + HOURS_RULE],
+    ['todo', 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example. ' + HOURS_RULE],
     ['emergency', 'Find the nearest hospital with an emergency department, the national emergency number and the local health advice line. Same shape: {"groups":[...]}.'],
   ];
   const en = JSON.parse(readFileSync(join(ROOT, 'engine/src/i18n/en.json'), 'utf8'));
