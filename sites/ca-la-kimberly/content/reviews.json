@@ -1,0 +1,10 @@
+{
+ "_doc": "Ratings and reviews, shown on the house page. Live from the listing, never curated by hand. rating and count: a snapshot (null = use house-page.json's rating). source: platform name. url: the listing's reviews page. quotes: the listing's latest reviews as they are, newest first, [{name, date: YYYY-MM, text, lang}], at most 3 shown. updated: YYYY-MM-DD the values were last read from the listing, or null.",
+ "mode": "live",
+ "rating": 4.91,
+ "count": 43,
+ "source": "Airbnb",
+ "url": "https://www.airbnb.com/rooms/1022457118238842125/reviews",
+ "quotes": [],
+ "updated": "2026-10-22"
+}

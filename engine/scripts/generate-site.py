@@ -392,13 +392,13 @@ blocks.append({'id': 'checkout', 'icon': 'key', 'tone': 'ink', 'title': L('Check
 
 # Ratings and reviews (optional section the host switched on). Data contract for the guide: content/reviews.json.
 # Live, not curated: the guide shows the listing's own rating and latest reviews as they are, with a link. The values here are a
-# snapshot taken at onboarding (the fallback); the engine or a scheduled refresh keeps them current. Ignored by the engine until it has the section.
+# snapshot taken at onboarding (the fallback). The engine shows it on the house page, or at the end of the house guide when there is no house page.
 if M.get('reviews') and (A.get('listingUrl') or A.get('ratingAvg')):
     def _num(x):
         try: return float(str(x).replace(',', '.'))
         except Exception: return None
     (SITE / 'content/reviews.json').write_text(json.dumps({
-        '_doc': 'Live from the listing, never curated by hand. rating and count are a snapshot from onboarding.',
+        '_doc': 'Ratings and reviews. Live from the listing, never curated by hand. rating and count: a snapshot from onboarding. quotes: the listing latest reviews as they are, [{name, date: YYYY-MM, text, lang}]. updated: YYYY-MM-DD last read, or null.',
         'mode': 'live', 'rating': _num(A.get('ratingAvg')), 'count': int(_num(A.get('ratingCount')) or 0) or None,
         'source': 'Airbnb' if 'airbnb' in (A.get('listingUrl') or '').lower() else '', 'url': A.get('listingUrl') or '', 'quotes': [], 'updated': None}, ensure_ascii=False, indent=1))
 

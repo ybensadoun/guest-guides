@@ -9,7 +9,7 @@ import { QUICK } from '../content.js';
 import { quickIcon } from './home.js';
 import { renderGarbage } from './garbage.js';
 import { dateRange } from '../events.js';
-import { HOUSE, MODULE_ON, SITE } from '../content.js';
+import { HOUSE, MODULE_ON, SITE, REVIEWS } from '../content.js';
 
 const GI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const EVENT_TONE = { castells: 'var(--tone-red)', festa: 'var(--tone-orange)', carnival: 'var(--tone-green)', parade: 'var(--tone-blue)', food: 'var(--tone-wine)', fair: 'var(--tone-taxi)', film: 'var(--ink)', music: 'var(--tone-wine)', historical: 'var(--ink)', tradition: 'var(--tone-blue)' };
@@ -63,6 +63,26 @@ export function eventRow(e, o, on, opts = {}) {
         </div></details>`;
 }
 
+// A rating the way each language writes it (4.91, 4,91).
+const starsTxt = n => n.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Ratings and reviews: the listing's own rating and its latest reviews as they are, with a link to read them all.
+// Never a selection by the host. rating/count left empty in reviews.json fall back to the house page's.
+function reviewsBlock(fallback) {
+  const r = REVIEWS;
+  if (!r) return '';
+  const stars = r.rating ?? fallback?.stars, n = r.count ?? fallback?.count, src = r.source || 'Airbnb';
+  if (!stars && !r.url) return '';
+  const when = d => new Date(d.length === 7 ? d + '-01T00:00:00' : d.slice(0, 10) + 'T00:00:00').toLocaleDateString(locale(), d.length === 7 ? { month: 'long', year: 'numeric' } : { day: 'numeric', month: 'long', year: 'numeric' });
+  const qs = (r.quotes || []).filter(q => q.text).sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 3);
+  return `<section class="hsec rev" id="hrev"><h3 class="section-h">${esc(t('reviewsH'))}</h3>
+    ${stars ? `<p class="rv-sc"><b>★ ${starsTxt(stars)}</b>${n ? `<span>${esc(t('reviewsCount', { n: n.toLocaleString(locale()), src }))}</span>` : ''}</p>` : ''}
+    ${qs.map(q => `<blockquote${q.lang ? ` lang="${esc(q.lang)}"` : ''}><p>${esc(q.text)}</p>${q.name || q.date ? `<footer>${esc([q.name, q.date && when(q.date)].filter(Boolean).join(' · '))}</footer>` : ''}</blockquote>`).join('')}
+    <small class="rv-note">${esc(t('reviewsNote', { src }))}${r.updated ? ' ' + esc(t('reviewsChecked', { d: when(r.updated) })) : ''}</small>
+    ${r.url ? `<a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">${esc(t('reviewsAll', { src }))}</a>` : ''}
+  </section>`;
+}
+
 export function renderSection(V, id) {
   const prevF = V.dataset.secf;
   const sec = SECTIONS.find(s => s.id === id);
@@ -98,10 +118,11 @@ export function renderSection(V, id) {
   else if (sec.kind === 'house') {
     // The house, like on Airbnb: photos, the key facts, description and beds, always linking back to the listing.
     const h = sec.data;
+    const rate = { stars: REVIEWS?.rating ?? h.rating?.stars, count: REVIEWS?.count ?? h.rating?.count };
     const HI = { pool: GUIDE_ICON.pool, flame: GUIDE_ICON.flame, desk: GUIDE_ICON.box, view: GI('<path d="M2 20l7-11 4 6 3-4 6 9z"/><circle cx="17" cy="6" r="2"/>') };
     body = `<div class="hgal" id="hgal">${h.photos.map((f, i) => `<button type="button" data-zoom="${i}"><img src="${esc(f)}" alt="" loading="${i < 2 ? 'eager' : 'lazy'}"></button>`).join('')}<span class="hcount" id="hcount">1 / ${h.photos.length}</span></div>
-      <a class="hsticky" id="hsticky" href="#s/house" aria-hidden="true" tabindex="-1"><span class="hs-t"><b>${esc(SITE.name)} <i class="hs-r">★ ${h.rating.stars.toFixed(2)}</i></b><small>${esc((x => [x[1], x[2], x[x.length - 1]].filter(Boolean).join(' · '))(tx(h.summary).split(' · ')))}</small></span></a>
-      <p class="hsum" id="hsum"><b>${esc(tx(h.summary))}</b><span>★ ${h.rating.stars.toFixed(2)} · ${esc(t('airbnbReviews', { n: h.rating.count }))}</span></p>
+      <a class="hsticky" id="hsticky" href="#s/house" aria-hidden="true" tabindex="-1"><span class="hs-t"><b>${esc(SITE.name)} ${rate.stars ? `<i class="hs-r">★ ${starsTxt(rate.stars)}</i>` : ''}</b><small>${esc((x => [x[1], x[2], x[x.length - 1]].filter(Boolean).join(' · '))(tx(h.summary).split(' · ')))}</small></span></a>
+      <p class="hsum" id="hsum"><b>${esc(tx(h.summary))}</b>${rate.stars ? (x => REVIEWS ? `<button type="button" class="hsum-r" data-rev>${x}</button>` : `<span>${x}</span>`)(`★ ${starsTxt(rate.stars)}${rate.count ? ' · ' + esc(t('airbnbReviews', { n: rate.count })) : ''}`) : ''}</p>
       <a class="hbook" href="${esc(h.url)}" target="_blank" rel="noopener"><span>${esc(t('bookAirbnbLead'))}</span><b>${esc(t('bookAirbnb'))}</b></a>
       <div class="hhl">${h.highlights.map(x => `<div><span class="dot" style="--cc:var(--tone-blue)">${HI[x.icon] || ''}</span><b>${esc(tx(x.t))}</b><small>${esc(tx(x.s))}</small></div>`).join('')}</div>
       ${(() => { const ps = tx(h.description).split(/\n\s*\n/).filter(Boolean); return `<section class="hsec hdesc"><h3 class="section-h">${esc(t('aboutHouse'))}</h3><p>${esc(ps[0] || '')}</p>${ps.length > 1 ? `<div class="hd-more" hidden>${ps.slice(1).map(p => `<p>${esc(p)}</p>`).join('')}</div><button type="button" class="hd-tog" aria-expanded="false">${esc(t('readMore'))}</button>` : ''}</section>`; })()}
@@ -109,6 +130,7 @@ export function renderSection(V, id) {
       <section class="hsec"><h3 class="section-h">${esc(t('whereSleep'))}</h3><ul class="glist">${h.beds.map(b => `<li>${esc(tx(b))}</li>`).join('')}</ul></section>
       ${h.amenities ? (() => { const all = h.amenities.flatMap(g => g.items); const key = ['Private pool', 'Air conditioning', 'Wifi', 'Dedicated workspace', 'Smart TVs', 'Fully equipped kitchen', 'Charcoal', 'Washing machine'].map(k => all.find(i => i.en.startsWith(k))).filter(Boolean);
         return `<section class="hsec amen"><h3 class="section-h">${esc(t('amenH'))}</h3><ul class="amkey">${key.map(i => `<li>${esc(tx(i))}</li>`).join('')}</ul><details class="amall"><summary>${esc(t('amenAll', { n: all.length }))}</summary>${h.amenities.map(g => `<h4>${esc(tx(g.t))}</h4><ul>${g.items.map(i => `<li>${esc(tx(i))}</li>`).join('')}</ul>`).join('')}</details></section>`; })() : ''}
+      ${reviewsBlock(rate)}
       <div class="actions"><a class="btn primary" href="${esc(h.url)}" target="_blank" rel="noopener">${esc(t('bookAirbnb'))}</a><a class="btn" href="${esc(h.photosUrl)}" target="_blank" rel="noopener">${esc(t('allPhotosAirbnb'))}</a></div>`;
   }
   else if (sec.kind === 'events') {
@@ -189,7 +211,7 @@ export function renderSection(V, id) {
         ${b.body ? tx(b.body).split(/\n\s*\n/).map(p => `<p class="note">${esc(p)}</p>`).join('') : ''}
         ${b.items ? `<ul class="glist">${b.items.map(i => `<li>${esc(tx(i))}</li>`).join('')}</ul>` : ''}
         ${b.links ? `<div class="actions">${b.links.map(link).join('')}</div>` : ''}
-      </div></details>`).join('')}</div>`;
+      </div></details>`).join('')}</div>${id === 'message' && !MODULE_ON('house') ? reviewsBlock() : ''}`;
   }
   const openIds = new Set([...V.querySelectorAll('.mrow[open]')].map(e => e.dataset.id));
   const oldMap = V.dataset.sec === id ? V.querySelector('#secmap') : null;
@@ -201,6 +223,9 @@ export function renderSection(V, id) {
   // The house: "Read more" opens the rest of the description; the slim bar on top comes back once the facts scroll away.
   const tog = V.querySelector('.hd-tog');
   if (tog) tog.addEventListener('click', () => { const m = V.querySelector('.hd-more'), open = m.hidden; m.hidden = !open; tog.setAttribute('aria-expanded', String(open)); tog.textContent = t(open ? 'showLess' : 'readMore'); });
+  // The rating under the house's facts jumps to the reviews further down.
+  const rb = V.querySelector('[data-rev]');
+  if (rb) rb.addEventListener('click', () => V.querySelector('#hrev')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   const hs = V.querySelector('#hsticky');
   if (hs) { hs.addEventListener('click', e => { e.preventDefault(); scrollTo({ top: 0, behavior: 'smooth' }); }); houseBar(); }
   V.querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => lightbox([...b.parentElement.querySelectorAll('[data-zoom] img')].map(i => i.getAttribute('src')), +b.dataset.zoom)));

@@ -460,3 +460,7 @@ Method: every market, restaurant and business activity checked on Google Maps (l
 - todo/posesion (La Posesión escape room): it is in L'Hospitalet de Llobregat (Fear Factory, Carretera de Collblanc 205), not Sant Sadurní.
 Fixed: Mercadet de Sant Quadrat closes 14:00 (Mercats de Tarragona); La Pobla market is on Passeig de l'Estació (Google).
 Weakest still kept (listing exists, old reviews): Constantí (latest review about 3 years), Torredembarra (town hall page, review 5 years), Vila-rodona and Alcover (listing, no reviews). Re-check these first next month.
+
+## 22 Oct 2026 · Ratings and reviews
+- content/reviews.json: ★ 4.91, 43 reviews, read on airbnb.com/rooms/1022457118238842125/reviews on 2026-10-22 (same as house-page.json). Shown as "Guest reviews" on The house page, with a link to all reviews on Airbnb.
+- No review texts (quotes) yet: Airbnb loads them separately, copying them by script is against its terms, and they carry guests' names. Refresh rating and count in the monthly check.

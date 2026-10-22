@@ -649,7 +649,8 @@ body:not(.is-home) .hero .back{position:fixed;top:calc(env(safe-area-inset-top,0
 .hcount{position:sticky;right:12px;margin-left:-74px;align-self:flex-end;margin-bottom:12px;flex:none;width:62px;text-align:center;background:rgba(18,18,18,.6);color:#fff;font-size:13px;font-weight:600;padding:4px 0;border-radius:999px}
 .hsum{margin:0;display:flex;flex-direction:column;gap:4px}
 .hsum b{font-size:17px}
-.hsum span{color:var(--muted);font-size:15px}
+.hsum span,.hsum .hsum-r{color:var(--muted);font-size:15px}
+.hsum .hsum-r{align-self:flex-start;padding:0;border:0;background:none;font:inherit;text-align:left;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .hhl{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .hhl > div{background:var(--white);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:4px}
 .hhl .dot{width:38px;height:38px;margin-bottom:4px}
@@ -658,6 +659,15 @@ body:not(.is-home) .hero .back{position:fixed;top:calc(env(safe-area-inset-top,0
 .hsec{background:var(--white);border-radius:var(--r);padding:16px 18px}
 .hsec p{margin:10px 0 0;font-size:16px;line-height:1.5}
 .hsec .glist{margin-top:10px}
+/* Ratings and reviews (reviews.json): score, the listing's own latest reviews, then a link to all of them. */
+.rev .rv-sc{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
+.rev .rv-sc b{font-size:26px;line-height:1.1}
+.rev .rv-sc span{color:var(--muted);font-size:15px}
+.rev blockquote{margin:14px 0 0;padding:0 0 14px;border-bottom:1px solid var(--line)}
+.rev blockquote p{margin:0;font-size:15px}
+.rev blockquote footer{margin-top:6px;color:var(--muted);font-size:13px;font-weight:600}
+.rev .rv-note{display:block;margin-top:12px;color:var(--muted);font-size:13px;line-height:1.4}
+.rev .btn{margin-top:12px;width:100%;justify-content:center;text-align:center}
 @media (min-width:752px){.hgal{margin:0;border-radius:var(--r)}}
 .qst{display:block;font-size:13px;font-weight:700;margin-top:3px}
 .qst.open{color:var(--green)}.qst.later{color:var(--blue)}.qst.closed{color:var(--red)}

@@ -23,7 +23,8 @@
     "todo": true,
     "events": true,
     "quick": true,
-    "map": true
+    "map": true,
+    "reviews": true
   },
   "theme": {
     "preset": "bauhaus",

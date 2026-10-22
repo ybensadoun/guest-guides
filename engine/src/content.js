@@ -63,6 +63,9 @@ export const byId = id => MAP_ITEMS.find(m => m.id === id);
 
 export const GARBAGE = get('garbage');
 
+// Ratings and reviews (content/reviews.json, only when the host switched it on). Live, never curated by hand.
+export const REVIEWS = (MODULE_ON('reviews') && get('reviews')) || null;
+
 // One-tap call buttons on Home (pizza, taxi, the shop next door). Items without a phone are hidden.
 export const QUICK_ALL = (QUICK_ON && get('quick')?.items) || [];
 export const QUICK = QUICK_ALL;

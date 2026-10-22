@@ -29,4 +29,5 @@ Our own Airbnb house at Can Gordei, La Bisbal del Penedès: whole house for up t
 ## Ongoing
 - Monthly "Ca La Kimberly accuracy check" (scheduled task in Cowork, 1st of the month) edits this folder: pull before working.
 - The database copy at porta-guides `/g/ca-la-kimberly` is refreshed with the worker import command (`../../worker/README.md`) after changes, until the live address switches.
+- Guest reviews on The house page come from `content/reviews.json` (rating, count, date read). Refresh them from the listing in the monthly check; never pick or edit quotes.
 - Last added (19 Oct 2026): Fundació Mas Miró (Sights), Pitch & Putt Golf El Vendrell practice range (18 Oct).
