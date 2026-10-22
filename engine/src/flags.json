@@ -1,0 +1,4 @@
+{
+ "_doc": "The only warnings a place can carry in \"flags\" (shown with a ! sign; text in i18n f_<flag>). Other f_ strings are filter labels, never flags. Read by the engine, the content check and the worker's research.",
+ "flags": ["check", "book", "older", "holidays", "closest", "octmay", "tiny"]
+}

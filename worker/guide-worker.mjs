@@ -70,7 +70,7 @@ function research(A, outDir, id) {
     ['emergency', 'Find the nearest hospital with an emergency department, the national emergency number and the local health advice line. Same shape: {"groups":[...]}.'],
   ];
   const en = JSON.parse(readFileSync(join(ROOT, 'engine/src/i18n/en.json'), 'utf8'));
-  const tagsOk = Object.keys(en).filter(k => k.startsWith('t_')).map(k => k.slice(2)), flagsOk = Object.keys(en).filter(k => k.startsWith('f_')).map(k => k.slice(2));
+  const tagsOk = Object.keys(en).filter(k => k.startsWith('t_')).map(k => k.slice(2)), flagsOk = JSON.parse(readFileSync(join(ROOT, 'engine/src/flags.json'), 'utf8')).flags;   // warnings only, not the f_ filter labels
   const keep = (o, k, ok) => { if (Array.isArray(o[k])) o[k] = o[k].filter(x => ok.includes(x)); };
   const clean = (x) => { if (Array.isArray(x)) x.forEach(clean); else if (x && typeof x === 'object') { keep(x, 'tags', tagsOk); keep(x, 'flags', flagsOk); Object.values(x).forEach(clean); } return x; };
   const hasPos = x => x && typeof x.lat === 'number' && typeof x.lng === 'number';

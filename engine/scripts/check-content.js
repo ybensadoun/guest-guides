@@ -3,6 +3,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { ENGINE, ROOT, siteDir, readSite } from '../site.config.js';
+const FLAGS = JSON.parse(readFileSync(resolve(ENGINE, 'src/flags.json'), 'utf8')).flags;   // the only warnings a place can carry
 
 const SITE = process.argv[2] || process.env.SITE || 'ca-la-kimberly';
 const SD = siteDir(SITE);
@@ -56,7 +57,7 @@ if (on('markets') && existsSync(C('markets'))) {
       if (!/^\d\d:\d\d$/.test(s.open) || !/^\d\d:\d\d$/.test(s.close)) errors.push(`${w} bad time`);
     }
     for (const tg of m.tags || []) if (!base['t_' + tg]) errors.push(`${w} tag "${tg}" has no t_${tg} string`);
-    for (const fl of m.flags || []) if (!base['f_' + fl]) errors.push(`${w} flag "${fl}" has no f_${fl} string`);
+    for (const fl of m.flags || []) if (!FLAGS.includes(fl)) errors.push(`${w} flag "${fl}" is not a warning (engine/src/flags.json)`); else if (!base['f_' + fl]) errors.push(`${w} flag "${fl}" has no f_${fl} string`);
   }
   nMarkets = mk.markets.length;
 }

@@ -6,6 +6,10 @@ import { offSeason, hoursText, statusLabel, nextOpenText, runsOn, closedStatus }
 const nwT = x => esc(x).replace(/(\d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?)/g, '<span class="nw">$1</span>');
 export const stHTML = s => s ? `<span class="st ${s.cls}">${nwT(s.text)}${s.sub ? `<small>${nwT(s.sub)}</small>` : ''}</span>` : '';
 import { kmMe, gDir, gSearch } from './geo.js';
+import FLAGS_FILE from './flags.json';
+// Warnings only: anything else in "flags" (a filter label, a typo) is never shown.
+const FLAGS = FLAGS_FILE.flags;
+const warnings = m => (m.flags || []).filter(f => FLAGS.includes(f));
 
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -131,7 +135,7 @@ export function card(m, opts = {}) {
    ${when}
    ${m.tags && m.tags.length ? `<div class="tags">${m.tags.map(g => `<span class="tag">${esc(t('t_' + g))}</span>`).join('')}</div>` : ''}
    ${m.description ? `<div class="note">${esc(tx(m.description))}</div>` : ''}
-   ${(m.flags || []).map(f => `<div class="flag">${esc(t('f_' + f))}</div>`).join('')}
+   ${warnings(m).map(f => `<div class="flag">${esc(t('f_' + f))}</div>`).join('')}
    <div class="actions">
      <a class="btn primary" href="${gDir(m)}" target="_blank" rel="noopener">${ICON.dir}${esc(t('directions'))}</a>
      ${opts.inMap
@@ -145,7 +149,7 @@ export function card(m, opts = {}) {
 
 // All product tags as small text chips under the name.
 const tagStrip = m => {
-  const tg = m.tags || [], sm = m.setMenus || [], fl = (m.flags || []).filter(f => f === 'book' || f === 'check' || f === 'older');
+  const tg = m.tags || [], sm = m.setMenus || [], fl = warnings(m).filter(f => f === 'book' || f === 'check' || f === 'older');
   if (!tg.length && !sm.length && !m.topPick && !m.hostPick && !fl.length) return '';
   return `<span class="tstrip">${m.topPick ? `<i class="top">${esc(t('topPick'))}</i>` : ''}${m.hostPick ? `<i class="top">${esc(t('hostPick'))}</i>` : ''}${fl.map(f => `<i class="note">${esc(t('f_' + f))}</i>`).join('')}${sm.map(s => `<i class="setm">${esc(t('sm_' + s.kind, { p: s.price }))}</i>`).join('')}${tg.map(g => `<i>${esc(t('t_' + g))}</i>`).join('')}</span>`;
 };
@@ -192,7 +196,7 @@ export function row(m, opts = {}) {
      ${m.s.length ? when : ''}${m.hours ? `<p class="hnote">${esc(tx(m.hours))}</p>` : ''}
      ${m.description ? `<div class="note">${esc(tx(m.description))}</div>` : ''}
      ${m.priceNote ? `<p class="hnote pnote">${esc(tx(m.priceNote))}</p>` : ''}
-     ${(m.flags || []).filter(f => !['book', 'check', 'older'].includes(f)).map(f => `<div class="flag">${esc(t('f_' + f))}</div>`).join('')}
+     ${warnings(m).filter(f => !['book', 'check', 'older'].includes(f)).map(f => `<div class="flag">${esc(t('f_' + f))}</div>`).join('')}
      <div class="actions">
        <a class="btn primary" href="${gDir(m)}" target="_blank" rel="noopener">${ICON.dir}${esc(t('directions'))}</a>
        <a class="btn" href="${gSearch(m)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>
