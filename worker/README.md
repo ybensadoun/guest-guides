@@ -28,9 +28,11 @@ Build what is queued right now and stop: `node worker/guide-worker.mjs --once`
 
 The guide is then at `https://porta-guides.netlify.app/g/<slug>`.
 
-## Put a hand-made guide into the database (Ca La Kimberly)
-`node worker/guide-worker.mjs --import ca-la-kimberly --slug ca-la-kimberly --owner-email yohann.bensadoun+clk@gmail.com`
-Uploads its images, saves its content, publishes it at `/g/ca-la-kimberly` and makes that account the owner. Run it again to refresh the database copy after a change in `sites/ca-la-kimberly` (until the live address is switched over). Imported guides cannot be rebuilt from onboarding answers: they are edited in the "My guide" editor after login.
+## A guide's folder and its database row: pull and push
+The database is the live guide (decided 23 Oct 2026, docs/plan-ca-la-kimberly-on-product.md). To work on a guide as files:
+- `npm run guide:pull -- <site>`: the live guide into `sites/<site>` (content, i18n, private Wi-Fi, site.json, theme.css). Only changed files are rewritten, in their own key order and indentation.
+- `npm run guide:push -- <site>`: content check, then images (public/, only new or changed) and the guide to its row. Refused if the guide changed in the database (editor, monthly check) since the last pull: pull first, or `--force`. A new guide needs `--owner-email <email>`.
+A guide keeps its own storage key (Ca La Kimberly: clk), so guests' saved settings survive. The sync state is in `sites/<site>/private/.synced.json` (git-ignored).
 
 ## Monthly place check for published guides
 `npm run check-guides` (dry run, report only) and `npm run check-guides -- --apply` (save the fixes). Options: `--slug <slug>` for one guide, `--days 0` to re-check recent places too.

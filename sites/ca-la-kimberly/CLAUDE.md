@@ -7,6 +7,7 @@ Our own Airbnb house at Can Gordei, La Bisbal del Penedès: whole house for up t
 - https://ca-la-kimberly.netlify.app, built by Netlify from GitHub (guest-guides, main, base `sites/ca-la-kimberly`). The Wi-Fi comes from the Netlify variable WIFI_JSON (local copy in `private/wifi.json`, git-ignored).
 - Build and check from `Guest Guides`: `npm run build -- ca-la-kimberly`, `node engine/scripts/ux-check.mjs ca-la-kimberly`, `npm run preview-file -- ca-la-kimberly` (file in `preview/`, git-ignored, for Yohann to open). Engine changes: `npm run build` for every site.
 - Commit when checked; push only when Yohann says so (or he clicks Push origin).
+- The guide is also in the database (`/g/ca-la-kimberly`), and is moving onto the product: the database becomes the source (docs/plan-ca-la-kimberly-on-product.md). Until the switch, after any content change run `npm run guide:pull -- ca-la-kimberly` before editing and `npm run guide:push -- ca-la-kimberly` after checking, so both stay identical.
 
 ## Files
 - `site.json`: modules, languages, theme. `content/*.json`: house, house page (rooms, photos, tour), markets, restaurants, todo, events, garbage, emergency, quick tiles, message. Each has a `_doc` with its schema.
@@ -27,7 +28,7 @@ Our own Airbnb house at Can Gordei, La Bisbal del Penedès: whole house for up t
 - Description opens on the first paragraph with "Read more".
 
 ## Ongoing
-- Monthly "Ca La Kimberly accuracy check" (scheduled task in Cowork, 1st of the month) edits this folder: pull before working.
+- Monthly "Monthly check of every live guide" (scheduled task in the Claude desktop app, 1st of the month) may edit this guide: pull before working. Ca La Kimberly is moving onto the product (database as the source, same viewer and editor as host guides): see `Guest Guides/docs/plan-ca-la-kimberly-on-product.md`.
 - The database copy at porta-guides `/g/ca-la-kimberly` is refreshed with the worker import command (`../../worker/README.md`) after changes, until the live address switches.
 - Guest reviews on The house page come from `content/reviews.json` (rating, count, date read). Refresh them from the listing in the monthly check; never pick or edit quotes.
 - Last added (19 Oct 2026): Fundació Mas Miró (Sights), Pitch & Putt Golf El Vendrell practice range (18 Oct).

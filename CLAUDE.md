@@ -28,7 +28,7 @@ A local build without `sites/<site>/private/wifi.json` simply has no Wi-Fi sheet
 
 ## Where the product is (Oct 2026)
 - Decided 19 Oct (`docs/plan-accounts-and-publishing.md`): Supabase (EU) for accounts, data and photos; one shared viewer at `porta-guides.netlify.app/g/<slug>` that loads guides from the database; generation by the worker; host reviews before approval.
-- Done: sign up / log in / autosave, Publish button that queues the guide, progress screen, worker on the Mac, guide editor after login (photos, logo, Wi-Fi with QR, rubbish days, contacts, places and hours, design, languages, translate job), offline mode for the shared viewer, import command for hand-made guides (Ca La Kimberly is at `/g/ca-la-kimberly` as a copy; re-import after guide changes until the live address switches).
+- Done: sign up / log in / autosave, Publish button that queues the guide, progress screen, worker on the Mac, guide editor after login (photos, logo, Wi-Fi with QR, rubbish days, contacts, places and hours, design, languages, translate job), offline mode for the shared viewer, `npm run guide:pull` / `guide:push` between a guide's folder and its database row (Ca La Kimberly is in the database, kept in step since 23 Oct; moving fully onto the product: docs/plan-ca-la-kimberly-on-product.md), monthly place check `npm run check-guides` (scheduled task).
 - One account = one house for now; the schema allows more (later phase).
 - Next items and feedback from tests: `../BACKLOG.md` ("Added 21 Oct": themed cover by default, prefilled amenities, preset looks, per-step progress messages, short slug, clear "preview is not the final guide", image-driven theme).
 
