@@ -10,7 +10,7 @@ const ED_FONTS = [['jost', 'Jost'], ['inter', 'Inter'], ['cormorant-garamond', '
 // Same layouts and skeletons as "The look" in the onboarding (MOODS), named by the guide's own presets.
 const ED_PRESETS = [['bauhaus', 'Big colour tiles', 'Like an app: bold blocks, strong shapes.', 'm-bold'], ['editorial', 'Photo-led, like a magazine', 'Big photos and elegant type.', 'm-edit'], ['soft', 'Soft rounded cards', 'Gentle colours, rounded corners.', 'm-soft'], ['minimal', 'Clean and calm', 'Text first, thin lines, lots of white.', 'm-min']];
 const ED_COLORS = [['--paper', 'Background', '#F3EEE3'], ['--white', 'Cards', '#FFFFFF'], ['--ink', 'Text', '#121212'], ['--muted', 'Secondary text', '#4A4A4A'], ['--red', 'Accent 1 (red)', '#D52B1E'], ['--blue', 'Accent 2 (blue)', '#1D4FA0'], ['--yellow', 'Accent 3 (yellow)', '#F5C400'], ['--orange', 'Accent 4 (orange)', '#EC6A1C'], ['--green', 'Accent 5 (green)', '#0E7C46']];
-const ED_SEC = { house: ['The house page', 'Photos, rooms and what the house offers.'], garbage: ['Rubbish and recycling', 'Which bin goes out tonight.'], message: ['House guide', 'How everything works, room by room.'], emergency: ['Emergency contacts', '112, health, police, town services.'], quick: ['Home tiles', 'One tap for a taxi, the station, a favourite.'], markets: ['Markets', 'Weekly markets, with what is on today.'], restaurants: ['Bars and restaurants', 'The places you send friends to.'], todo: ['Things to do', 'Beaches, walks and sights nearby.'], events: ['Events', 'Festivals and fairs during the stay.'], reviews: ['Ratings and reviews', 'Your listing rating and reviews.'], map: ['Map', 'Every place in the guide on one map.'] };
+const ED_SEC = { transport: ['Getting around', 'Taxis, train stations and bus stops.'], house: ['The house page', 'Photos, rooms and what the house offers.'], garbage: ['Rubbish and recycling', 'Which bin goes out tonight.'], message: ['House guide', 'How everything works, room by room.'], emergency: ['Emergency contacts', '112, health, police, town services.'], quick: ['Home tiles', 'One tap for a taxi, the station, a favourite.'], markets: ['Markets', 'Weekly markets, with what is on today.'], restaurants: ['Bars and restaurants', 'The places you send friends to.'], todo: ['Things to do', 'Beaches, walks and sights nearby.'], events: ['Events', 'Festivals and fairs during the stay.'], reviews: ['Ratings and reviews', 'Your listing rating and reviews.'], map: ['Map', 'Every place in the guide on one map.'] };
 
 const edIs18 = o => !!o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length > 0 && Object.keys(o).every(k => k in ED_LANGS);
 const edPath = s => s.split('/').map(k => /^\d+$/.test(k) ? +k : k);
@@ -62,8 +62,11 @@ const CSTEPS = [
   { id: 'contacts', group: 'practical', sec: 'emergency', when: c => !!(c.files || {}).emergency, title: 'Contacts', sub: 'Emergency and services', icon: 'phone', tc: 'var(--tomato)', ti: '#fff', sh: 'var(--ink)', shape: 'tri', lang: true,
     lead: 'Numbers and places guests may need: emergencies, health, police, town services.',
     paths: ['content/files/emergency'], body: c => cmContacts(c) },
-  { id: 'tiles', group: 'practical', sec: 'quick', title: 'Home tiles', sub: c => cmCount(cmLen('files/quick/items'), 'tile', 'tiles'), icon: 'car', tc: 'var(--sun)', ti: '#1b1407', sh: 'var(--sky)', shape: 'square', lang: true,
-    lead: 'One tap from the home page: a taxi, the train station, a bar you love. Each tile opens a page with its map and your words.',
+  { id: 'transport', group: 'practical', sec: 'transport', title: 'Getting around', sub: c => cmTrSub(c), icon: 'train', tc: 'var(--pine)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
+    lead: 'Taxis, train stations and bus stops, on their own page in the guide. Show it as a tile on the home page too if you like.',
+    paths: ['content/files/transport'], body: c => cmTransport(c) },
+  { id: 'tiles', group: 'practical', sec: 'quick', title: 'Home tiles', sub: c => cmCount(cmLen('files/quick/items'), 'tile', 'tiles'), icon: 'star', tc: 'var(--sun)', ti: '#1b1407', sh: 'var(--sky)', shape: 'square', lang: true,
+    lead: 'One tap from the home page: the bar next door, a shop you love. Each tile opens a page with its map and your words.',
     paths: ['content/files/quick'], body: c => cmHomeTiles(c) },
   { id: 'todo', group: 'area', sec: 'todo', title: 'Things to do', sub: c => cmCount(cmLen('files/todo/items'), 'place', 'places'), icon: 'compass', tc: 'var(--pine)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
     lead: 'Beaches, walks and sights. Open a place to change its words, links, position and opening hours.',
@@ -159,7 +162,7 @@ function edNewItem(arr) {
   return n;
 }
 const edKm = (a, b, c, d) => { const R = 6371, r = x => x * Math.PI / 180, dl = r(c - a), dg = r(d - b), x = Math.sin(dl / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dg / 2) ** 2; return Math.round(2 * R * Math.asin(Math.sqrt(x))); };
-function edUpdateKm(ip) { const it = edGet(edC(), ip), h = edF().house || {}; if (it && 'km_from_house' in it && h.lat && it.lat) it.km_from_house = edKm(h.lat, h.lng, it.lat, it.lng); }
+function edUpdateKm(ip) { const it = edGet(edC(), ip), h = edF().house || {}; if (!it || !h.lat || !it.lat) return; if ('km_from_house' in it) it.km_from_house = edKm(h.lat, h.lng, it.lat, it.lng); if ('km' in it) it.km = edKm(h.lat, h.lng, it.lat, it.lng); }
 function edParseMaps(url) {
   const m = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || url.match(/[?&](?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
   return m ? { lat: +m[1], lng: +m[2] } : null;
@@ -197,7 +200,8 @@ function cmLook(c) {
 }
 function cmSections(c) {
   const ids = [...((((c.files || {}).sections || {}).sections) || []).map(x => x.id)];
-  if (!ids.includes('quick')) ids.push('quick');   // Home tiles: the step appears once switched on, and its first tile makes the file
+  if (!ids.includes('quick')) ids.push('quick');
+  if (!ids.includes('transport')) ids.splice(Math.max(0, ids.indexOf('emergency') + 1) || ids.length, 0, 'transport');   // Getting around: switched on, its step appears   // Home tiles: the step appears once switched on, and its first tile makes the file
   if ((c.files || {}).reviews && !ids.includes('reviews')) ids.push('reviews');
   if (!ids.includes('map')) ids.push('map');
   const m = (c.site || {}).modules || {};
@@ -252,12 +256,13 @@ function cmContacts(c) {
   return groups.map((g, gi) => `<h3 class="cm-h">${esc(title[g.id] || g.id)}</h3><div class="cm-list">${(g.items || []).map((it, i) => cItem(`files/emergency/groups/${gi}/items`, it, i, 'contact')).join('')}</div>
     <button class="btn small cm-add" type="button" data-addit="files/emergency/groups/${gi}/items">+ Add a contact</button>`).join('') || '<div class="note"><div>This guide has no contacts yet.</div></div>';
 }
-const ED_TILES = [['taxi', 'Add a taxi', 'Taxi', { phone: '', always: true }], ['train', 'Add a train or bus station', 'Station', { lat: 0, lng: 0, gmaps: '' }],
-  ['food', 'Add a bar or restaurant', 'Restaurant', { phone: '', lat: 0, lng: 0, gmaps: '' }], ['shop', 'Add a shop', 'Shop', { phone: '', lat: 0, lng: 0, gmaps: '' }]];
+// Taxis, stations and bus stops are in Getting around; a bar or restaurant from your list can also be pinned from Bars and restaurants.
+const ED_TILES = [['food', 'Add a bar or restaurant', 'Restaurant', { phone: '', lat: 0, lng: 0, gmaps: '' }], ['shop', 'Add a shop', 'Shop', { phone: '', lat: 0, lng: 0, gmaps: '' }]];
 function cmHomeTiles(c) {
   const items = ((c.files || {}).quick || {}).items || [];
   return `<div class="cm-list">${items.map((it, i) => cItem('files/quick/items', it, i, 'tile')).join('') || '<p class="hint">No tiles yet.</p>'}</div>
-    <div class="cm-row">${ED_TILES.map(([icon, label]) => `<button class="btn small" type="button" data-addtile="${icon}">+ ${esc(label)}</button>`).join('')}</div>`;
+    <div class="cm-row">${ED_TILES.map(([icon, label]) => `<button class="btn small" type="button" data-addtile="${icon}">+ ${esc(label)}</button>`).join('')}</div>
+    <p class="hint">Taxis, train stations and bus stops go in <a href="#transport">Getting around</a>, which can have its own tile here.</p>`;
 }
 function edAddTile(icon) {
   const f = edF(), q = f.quick = f.quick || { items: [] }; q.items = q.items || [];
@@ -271,6 +276,68 @@ function cmPlaces(path, what) {
     <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
     <p class="hint">A new ${esc(what)} starts at the house: move its pin with a Google Maps link. The distance from the house follows the pin.</p>`;
+}
+
+/* --- Getting around: taxis, then stations and stops, on their own page (content/transport.json, section kind "transport") ---
+   Its "tile" puts a one-tap tile on Home (the engine adds it after the Home tiles). Positions come from a Google Maps link. */
+I.train = svg('<rect x="5.5" y="3" width="13" height="13" rx="3"/><path d="M5.5 10h13"/><circle cx="9" cy="13" r=".9" fill="currentColor"/><circle cx="15" cy="13" r=".9" fill="currentColor"/><path d="M8.5 16l-2 4.5M15.5 16l2 4.5M7.5 19h9"/>');
+I.star = svg('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>');
+const GA = { en: 'Getting around', es: 'Cómo moverse', fr: 'Se déplacer', ca: "Com moure's", de: 'Unterwegs', nl: 'Vervoer' };
+const L6 = x => Object.fromEntries(edLangs().map(l => [l, typeof x === 'object' ? (x[l] || x.en || '') : x]));
+function cmTrSub(c) {
+  const T = (c.files || {}).transport || {}, n = (T.taxis || []).length, m = (T.stations || []).length;
+  return n || m ? [n ? cmCount(n, 'taxi', 'taxis') : '', m ? cmCount(m, 'station or stop', 'stations and stops') : ''].filter(Boolean).join(', ') : 'Taxis, trains, buses';
+}
+// The file, its section row and its switch, made the first time something is added (a guide built without one).
+function cmTrEnsure() {
+  const f = edF(); f.transport = f.transport || { taxis: [], stations: [], tile: null };
+  const ss = (f.sections = f.sections || { sections: [] }).sections = f.sections.sections || [];
+  if (!ss.some(x => x.id === 'transport')) { const at = ss.findIndex(x => x.id === 'emergency'); ss.splice(at < 0 ? ss.length : at + 1, 0, { id: 'transport', kind: 'transport', group: 'house', status: 'live', labelKey: 'gettingAround' }); }
+  const site = edC().site = edC().site || {}; site.modules = { ...(site.modules || {}), transport: true };
+  return f.transport;
+}
+const cmMode = s => s.mode === 'bus' ? 'bus stop' : 'station';
+function cTaxi(p, x) {
+  return cCard(p, edShown(x.name) || 'New taxi', [x.phone, x.always ? 'open 24 h' : ''].filter(Boolean).join(' · '), `<div class="grid">${cf('Name', p + '/name', x.name, { i18n: true, half: true })}${cf('Phone', p + '/phone', x.phone || '', { type: 'tel', half: true })}
+    ${cf('Line under the name', p + '/sub', x.sub, { i18n: true, ph: 'Home pickup in about 30 min' })}${cf('What guests need to know', p + '/what', x.what, { i18n: true, long: true })}</div>
+    <div class="chips"><button class="chip" type="button" data-cbool="${p}/always" aria-pressed="${!!x.always}"><span>Open 24 h</span></button></div>
+    <div class="f full"><span class="lab">Other numbers</span>${(x.alt || []).map((a, j) => `<div class="cm-dayrow"><div class="grid" style="flex:1">${cf('Name', `${p}/alt/${j}/name`, a.name, { i18n: true, half: true })}${cf('Phone', `${p}/alt/${j}/phone`, a.phone || '', { type: 'tel', half: true })}</div><button class="cm-x" type="button" data-cdel="${p}/alt/${j}" data-now="1" aria-label="Remove this number">×</button></div>`).join('')}
+      <button class="btn small cm-add" type="button" data-addalt="${p}/alt">+ Add another number</button></div>
+    <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this taxi</button></div>`);
+}
+function cStation(p, s) {
+  const placed = typeof s.lat === 'number' && !(s.lat === 0 && s.lng === 0);
+  return cCard(p, edShown(s.name) || 'New ' + cmMode(s), [s.mode === 'bus' ? 'Bus' : 'Train', s.min ? s.min + ' min by car' : '', placed ? '' : 'no pin yet'].filter(Boolean).join(' · '), `<div class="grid">
+    <div class="f"><label for="${cmId(p + '/mode')}">Kind</label><select id="${cmId(p + '/mode')}" data-p="${p}/mode" data-t="str"><option value="train"${s.mode !== 'bus' ? ' selected' : ''}>Train station</option><option value="bus"${s.mode === 'bus' ? ' selected' : ''}>Bus stop</option></select></div>
+    ${cf('Name', p + '/name', s.name, { i18n: true, half: true })}${cf('Minutes by car from the house', p + '/min', s.min, { type: 'number', half: true })}${cf('In a few words', p + '/tag', s.tag, { i18n: true, half: true, ph: 'Reliable, slow' })}
+    ${cf('What guests need to know', p + '/what', s.what, { i18n: true, long: true })}${cf('Timetable link', p + '/link', s.link || '', { type: 'url', half: true })}${cf('Google Maps link', p + '/gmaps', s.gmaps || '', { type: 'url', half: true })}
+    <div class="f full"><label for="${cmId(p + '/gm')}">Move the pin: paste a Google Maps link</label><p class="hint">${placed ? `Now at ${(+s.lat).toFixed(4)}, ${(+s.lng).toFixed(4)}${s.km ? `, ${s.km} km from the house` : ''}.` : 'It shows in the guide once its pin is set.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div></div>
+    <div class="f full"><span class="lab">Lines</span><p class="hint">Short names in the line's colour, like R4.</p>${(s.badges || []).map((b, j) => `<div class="cm-dayrow"><input type="text" data-p="${p}/badges/${j}/t" data-t="str" value="${esc(b.t || '')}" aria-label="Line name" placeholder="R4"><input type="color" class="cm-lc" data-p="${p}/badges/${j}/c" data-t="str" value="${esc(/^#[0-9a-f]{6}$/i.test(b.c || '') ? b.c : '#1D4FA0')}" aria-label="Line colour"><button class="cm-x" type="button" data-cdel="${p}/badges/${j}" data-now="1" aria-label="Remove this line">×</button></div>`).join('')}
+      <button class="btn small cm-add" type="button" data-addbadge="${p}/badges">+ Add a line</button></div>
+    <div class="f full"><span class="lab">Journey times</span>${(s.to || []).map((d, j) => `<div class="cm-sub"><div class="grid">${cf('To', `${p}/to/${j}/dest`, d.dest, { i18n: true, half: true, ph: 'Barcelona' })}${cf('Time', `${p}/to/${j}/time`, d.time || '', { half: true, ph: '1 h 30' })}${cf('Note', `${p}/to/${j}/note`, d.note, { i18n: true, ph: '1 change' })}</div><div><button class="btn small danger" type="button" data-cdel="${p}/to/${j}" data-now="1">Remove this destination</button></div></div>`).join('')}
+      <button class="btn small cm-add" type="button" data-addto="${p}/to">+ Add a destination</button></div>
+    <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${cmMode(s)}</button></div>`);
+}
+function cmTransport(c) {
+  const T = (c.files || {}).transport, P = 'files/transport';
+  const adds = `<div class="cm-row"><button class="btn small" type="button" data-tradd="taxi">+ Add a taxi</button><button class="btn small" type="button" data-tradd="train">+ Add a train station</button><button class="btn small" type="button" data-tradd="bus">+ Add a bus stop</button></div>`;
+  if (!T) return `<div class="note"><div>No taxis or stations yet. Add the ones you would tell a friend about.</div></div>${adds}`;
+  return `<div class="f full"><span class="lab">On the home page</span><p class="hint">Getting around always has its own page. As a tile it also sits with your other Home tiles, one tap away.</p>
+      <div class="chips"><button class="chip" type="button" data-trtile aria-pressed="${!!T.tile}"><span>Show as a tile on the home page</span></button></div></div>
+    ${T.tile ? `<div class="grid">${cf('Tile title', P + '/tile/name', T.tile.name, { i18n: true, half: true, ph: 'Taxi & train' })}${cf('Line under it', P + '/tile/sub', T.tile.sub, { i18n: true, half: true, ph: 'Taxi in 30 min, 3 stations' })}</div>` : ''}
+    <div class="grid">${cf('Line under the page title', P + '/lead', T.lead, { i18n: true, ph: 'Three ways to get around without a car.' })}</div>
+    <h3 class="cm-h">Taxis</h3><div class="cm-list">${(T.taxis || []).map((x, i) => cTaxi(`${P}/taxis/${i}`, x)).join('') || '<p class="hint">No taxi yet.</p>'}</div>
+    <h3 class="cm-h">Stations and stops</h3><div class="cm-list">${(T.stations || []).map((x, i) => cStation(`${P}/stations/${i}`, x)).join('') || '<p class="hint">No station or stop yet.</p>'}</div>${adds}`;
+}
+function cmTrAdd(kind) {
+  const T = cmTrEnsure(), id = kind + '-' + Date.now().toString(36);
+  if (kind === 'taxi') { (T.taxis = T.taxis || []).push({ id, name: L6(''), sub: L6(''), phone: '', what: L6('') }); CM.open.add('files/transport/taxis/' + (T.taxis.length - 1)); }
+  else { (T.stations = T.stations || []).push({ id, mode: kind, name: L6(''), lat: 0, lng: 0, km: 0, min: 0, tag: L6(''), what: L6(''), link: '', badges: [], to: [] }); CM.open.add('files/transport/stations/' + (T.stations.length - 1)); }
+}
+function cmTrTile() {
+  const T = cmTrEnsure();
+  if (T.tile) { CM.trTile = T.tile; T.tile = null; return; }   // remembered, so switching it back on keeps its words
+  T.tile = CM.trTile || { name: L6(GA), sub: L6(((T.taxis || [])[0] || {}).sub || '') };
 }
 
 /* --- Find more: the guide builder searches the web near the house; the host keeps or skips each suggestion ---
@@ -543,6 +610,7 @@ function edEdit(t) {
   } else if (kind === 'num') edSet(c, p, val === '' ? 0 : Number(val));
   else edSet(c, p, val);
   if (p[0] === 'private' && p[1] === 'wifi') cmWifiQr();
+  if (p[p.length - 1] === 'c' && p[p.length - 3] === 'badges' && /^#[0-9a-f]{6}$/i.test(val)) { const n = parseInt(val.slice(1), 16), lum = (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; edGet(c, p.slice(0, -1)).ink = lum > 0.62; }
   cmQueue();
 }
 // The QR code is made when the guide is built. A new name or password drops it (the guide then draws one itself);
@@ -608,6 +676,12 @@ document.addEventListener('click', e => {
   if (d.phmove) { const p = edPath(d.phmove), i = p[p.length - 1], a = edGet(edC(), p.slice(0, -1)), j = i + Number(d.dir); if (Array.isArray(a) && j >= 0 && j < a.length) { [a[i], a[j]] = [a[j], a[i]]; done(); } return; }
   if (d.addtile) { edAddTile(d.addtile); return done(); }
   if (d.cpin) { cmPin(d.cpin); return done(); }
+  if (d.tradd) { cmTrAdd(d.tradd); return done(); }
+  if (d.trtile !== undefined) { cmTrTile(); return done(); }
+  if (d.cbool) { const q = edPath(d.cbool), o = edGet(edC(), q.slice(0, -1)); if (o) { o[q[q.length - 1]] = !o[q[q.length - 1]]; done(); } return; }
+  if (d.addalt) { arr(d.addalt).push({ name: L6(''), phone: '' }); return done(); }
+  if (d.addbadge) { arr(d.addbadge).push({ t: '', c: '#1D4FA0' }); return done(); }
+  if (d.addto) { arr(d.addto).push({ dest: L6(''), time: '', note: L6('') }); return done(); }
   if (d.cfind) return cmFindStart(d.cfind);
   if (d.cfadd) return cmFindAdd(t.closest('[data-fpath]').dataset.fpath, d.cfadd);
   if (d.cfskip) { const f = CM.find[FIND_OF[t.closest('[data-fpath]').dataset.fpath][0]]; findMark(f.id, [d.cfskip]); return cmFindRefresh(); }
@@ -668,6 +742,8 @@ function cmInit() {
 .cm-sch .chips{gap:6px}
 .cm-sch .chip span{padding:6px 11px;font-size:14px}
 .cm-dayrow select{width:auto;flex:1;min-width:0}
+.cm-dayrow input[type=text]{flex:1;min-width:0}
+.cm-dayrow input.cm-lc{width:56px;height:46px;flex:none;padding:2px;border-radius:var(--r-s);border:1.5px solid var(--line);background:none;cursor:pointer}
 .cm-times{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}
 .cm-times input{min-width:0;padding-inline:8px}
 .cm-dates{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}

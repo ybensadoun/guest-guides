@@ -425,13 +425,18 @@ def info(fid, title_key_text, paras, icon='car', tone='blue'):
     (SITE / f'content/{fid}.json').write_text(json.dumps({'blocks': [
         {'id': fid, 'icon': icon, 'tone': tone, 'title': L(title_key_text), 'items': [L(p) for p in paras]}]}, ensure_ascii=False, indent=1))
 
-# Quick calls: the host and the taxi they trust.
+# Home tiles start empty (the host pins places in the editor). The taxi they trust goes to Getting around (section
+# "transport", content/transport.json) with a one-tap tile on Home; stations and bus stops are added in the editor.
 quick = []
 def phone_of(s): m = re.search(r'\+?\d[\d\s]{6,}\d', s or ''); return m.group(0).strip() if m else None
+taxis = []
 if A.get('taxi') and phone_of(A['taxi']):
     nm = re.sub(r'[,:]?\s*\+?\d[\d\s]{6,}\d.*$', '', A['taxi']).strip() or 'Taxi'
-    quick.append({'id': 'taxi', 'name': L('Taxi'), 'sub': L(nm), 'title': L(nm), 'kind': L('Taxi'), 'what': L('The taxi we use and trust.'), 'phone': phone_of(A['taxi']), 'always': True})
+    taxis.append({'id': 'taxi', 'name': L(nm), 'phone': phone_of(A['taxi']), 'what': L('The taxi we use and trust.')})
 (SITE / 'content/quick.json').write_text(json.dumps({'items': quick}, ensure_ascii=False, indent=1))
+if taxis:
+    (SITE / 'content/transport.json').write_text(json.dumps({'_doc': 'Getting around: taxis and stations or stops, on their own page; tile = a one-tap tile on Home. Written by generate-site.py from the host\'s taxi answer.',
+        'taxis': taxis, 'stations': [], 'tile': {'name': L('Taxi'), 'sub': taxis[0]['name']}}, ensure_ascii=False, indent=1))
 
 
 # ---------- host-supplied content: how rubbish works, and the places the host recommends ----------
@@ -527,7 +532,7 @@ def has_items(f):
     p = SITE / f'content/{f}.json'
     if not p.exists(): return False
     d = json.loads(p.read_text())
-    return bool(d.get('items') or d.get('blocks') or d.get('groups') or d.get('markets') or d.get('fractions'))
+    return bool(d.get('items') or d.get('blocks') or d.get('groups') or d.get('markets') or d.get('fractions') or d.get('taxis') or d.get('stations'))
 # Same sections as the live Ca La Kimberly guide (sites/ca-la-kimberly/content/sections.json): house guide, garbage, emergency, markets,
 # restaurants (the host's own list), things to do, events, plus the quick tiles and the map. Arrival and parking live inside the house guide.
 # Optional extra sections for other hosts (arrival, extras, essentials, kids, day trips) come later: add them back here and in onboarding SECTIONS.
@@ -535,6 +540,7 @@ SEC = [
     ('garbage', 'house', 'garbage', 'garbage', {'color': 'glass', 'mapLabelKey': 'glassChip'}, 'rubbish'),
     ('message', 'house', 'info', 'houseGuide', {}, 'houseguide'),
     ('emergency', 'house', 'contacts', 'emergency', {}, 'emergency'),
+    ('transport', 'house', 'transport', 'gettingAround', {}, 'quick'),
     ('markets', 'area', 'markets', 'markets', {}, 'markets'),
     ('restaurants', 'area', 'spots', 'barsRestaurants', {'color': 'restaurants'}, 'eat'),
     ('todo', 'area', 'spots', 'whatToDo', {'color': 'todo'}, 'todo'),
@@ -545,6 +551,7 @@ for sid, grp, kind, label, extra, mod in SEC:
     want = on(mod, mod in ('houseguide', 'emergency', 'todo', 'rubbish', 'markets'))   # rubbish needs the host's answer, markets need researched content: both checked below
     if sid == 'garbage': want = want and bool(rmode)   # only the host can tell us: no answer, no section
     if sid == 'restaurants': want = want and bool(fav)
+    if sid == 'transport': want = want and bool(taxis)
     modules[sid] = bool(want)
     if not want: continue
     live = kind == 'markets' and (SITE / 'content/markets.json').exists() or has_items(sid)

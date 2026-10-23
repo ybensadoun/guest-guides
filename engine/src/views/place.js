@@ -1,5 +1,5 @@
 import { t, tx } from '../i18n.js';
-import { HOUSE, QUICK_ALL, slots } from '../content.js';
+import { HOUSE, QUICK_ALL, TRANSPORT, slots } from '../content.js';
 import { hoursText, statusLabel, nextOpenText, closedStatus } from '../schedule.js';
 import { stHTML } from '../ui.js';
 import { hav, kmMe, gSearch } from '../geo.js';
@@ -14,8 +14,8 @@ const tel = n => 'tel:' + n.replace(/\s+/g, '');
 
 export function renderPlace(V, id, icons) {
   const p = QUICK_ALL.find(x => x.id === id);
-  if (!p) { location.replace('#home'); return; }
-  if (p.trains) { renderTransport(V, p, icons); return; }
+  if (!p) { location.replace(id === 'taxi' && TRANSPORT ? '#s/transport' : '#home'); return; }   // the old taxi tile now lives in Getting around
+  if (p.trains) { renderTransport(V, transportOf(p), icons); return; }
   const now = new Date();
   const hasPt = typeof p.lat === 'number' && typeof p.lng === 'number' && !(p.lat === 0 && p.lng === 0);   // 0,0 = not placed yet (new tile in the editor)
   const raw = hasPt ? hav(HOUSE.lat, HOUSE.lng, p.lat, p.lng) : null;
@@ -51,33 +51,38 @@ export function renderPlace(V, id, icons) {
   if (hasPt) miniMap(V.querySelector('#plmap'), p.lng, p.lat);
 }
 
-// Taxi & train (#p/taxi): every option visible on the first screen as a row (what, how long, the verdict);
-// tap a row for the details, the call button or directions. The stations map comes last.
-function renderTransport(V, p, icons) {
+// Getting around: every option visible on the first screen as a row (what, how long, the verdict); tap a row for the
+// details, the call button or directions. Taxis first, then stations and stops by kind, the stations map last.
+// From the Getting around section (content/transport.json) or, in older guides, a Home tile with "trains" (transportOf).
+export const transportOf = p => ({ id: p.id, title: p.title || p.name, lead: p.kind,
+  taxis: [{ name: p.taxiName || p.name, sub: p.taxiSub, phone: p.phone, what: p.what, alt: p.alt, always: p.always }], stations: p.trains || [] });
+const MODES = [['train', 'byTrain', 'var(--tone-blue)', 'blue'], ['bus', 'byBus', 'var(--tone-green)', 'green']];
+export function renderTransport(V, g, icons) {
   const row = (dot, cc, title, sub, right, body, extra = '') => `<details class="mrow" style="--cc:${cc}"><summary><span class="dot">${dot}</span>
     <span class="nm">${esc(title)}${extra}${sub.map(x => `<small>${esc(x)}</small>`).join('')}</span><span class="rt">${right}<span class="chev" aria-hidden="true"></span></span></summary>
     <div class="mbody">${body}</div></details>`;
-  const taxi = row(icons(p), 'var(--tone-taxi)', tx(p.taxiName || p.name), [tx(p.taxiSub || '')], `<span class="st open">${esc(t('open24'))}</span>`,
-    `${p.what ? `<div class="note">${esc(tx(p.what))}</div>` : ''}
-     <div class="actions">${p.phone ? `<a class="btn primary" href="${tel(p.phone)}">${PHONE}${esc(t('callNow'))} ${esc(p.phone)}</a>` : ''}
-     ${(p.alt || []).map(a => `<a class="btn" href="${tel(a.phone)}">${PHONE}${esc(tx(a.name))} ${esc(a.phone)}</a>`).join('')}</div>`);
+  const taxis = (g.taxis || []).map(x => row(icons({ id: 'taxi' }), 'var(--tone-taxi)', tx(x.name), [tx(x.sub || '')].filter(Boolean), x.always ? `<span class="st open">${esc(t('open24'))}</span>` : '',
+    `${x.what ? `<div class="note">${esc(tx(x.what))}</div>` : ''}
+     <div class="actions">${x.phone ? `<a class="btn primary" href="${tel(x.phone)}">${PHONE}${esc(t('callNow'))} ${esc(x.phone)}</a>` : ''}
+     ${(x.alt || []).map(a => `<a class="btn" href="${tel(a.phone)}">${PHONE}${esc(tx(a.name))} ${esc(a.phone)}</a>`).join('')}</div>`)).join('');
   // Line badges in the line colours (Rodalies lines; long-distance trains in one colour), then journey times.
   const badges = s => `<span class="lbadges">${(s.badges || []).map(b => `<i class="lbadge${b.ink ? ' ink' : ''}" style="--lc:${b.c}">${esc(b.t)}</i>`).join('')}</span>`;
-  const dests = s => (s.to || []).length ? `<table class="dests"><tbody>${s.to.map(d => `<tr><th>${esc(tx(d.dest))}</th><td>${esc(d.time)}</td><td>${d.note ? esc(tx(d.note)) : ''}</td></tr>`).join('')}</tbody></table>` : '';
-  const trains = p.trains.map(s => row(itemIcon({ icon: 'train' }), 'var(--tone-blue)', tx(s.name),
-    [`${tx(s.tag)} · ${t('minByCar', { n: s.min })}`], '',
-    `${dests(s)}<div class="note">${esc(tx(s.what))}</div>
+  // Two columns, so destinations keep their width on a phone: the note ("1 change") sits under its destination.
+  const dests = s => (s.to || []).length ? `<table class="dests"><tbody>${s.to.map(d => `<tr><th>${esc(tx(d.dest))}${tx(d.note) ? `<small>${esc(tx(d.note))}</small>` : ''}</th><td>${esc(d.time)}</td></tr>`).join('')}</tbody></table>` : '';
+  const stops = (g.stations || []).filter(s => typeof s.lat === 'number' && !(s.lat === 0 && s.lng === 0));
+  const modeOf = s => MODES.find(m => m[0] === (s.mode || 'train')) || MODES[0];
+  const station = s => { const [mode, , cc] = modeOf(s);
+    return row(itemIcon({ icon: mode }), cc, tx(s.name), [[s.tag && tx(s.tag), s.min ? t('minByCar', { n: s.min }) : ''].filter(Boolean).join(' · ')].filter(Boolean), '',
+    `${dests(s)}${s.what ? `<div class="note">${esc(tx(s.what))}</div>` : ''}
      <div class="actions"><a class="btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" rel="noopener">${ICON.dir}${esc(t('directions'))}</a>
  ${s.gmaps ? `<a class="btn" href="${esc(s.gmaps)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
-     <a class="btn" href="${esc(s.link)}" target="_blank" rel="noopener">${WEB}${esc(t(s.linkKey))}</a></div>`, badges(s))).join('');
-  V.innerHTML = `<div class="wrap place transport" style="gap:14px" data-q="${esc(p.id)}">
-    <div class="pl-head"><span class="qi">${icons(p)}</span>
-      <div><h2 class="title">${esc(tx(p.title || p.name))}</h2><p class="lead">${esc(tx(p.kind || ''))}</p></div></div>
-    <h3 class="section-h">${esc(t('taxiH'))}</h3>
-    <div class="mlist">${taxi}</div>
-    <h3 class="section-h">${esc(t('byTrain'))}</h3>
-    <div class="pl-map secmap"><div id="trmap"></div></div>
-    <div class="mlist">${trains}</div>
+     ${s.link ? `<a class="btn" href="${esc(s.link)}" target="_blank" rel="noopener">${WEB}${esc(t(s.linkKey || 'timetable'))}</a>` : ''}</div>`, badges(s)); };
+  const groups = MODES.map(([mode, label]) => [label, stops.filter(s => modeOf(s)[0] === mode)]).filter(([, l]) => l.length);
+  V.innerHTML = `<div class="wrap place transport" style="gap:14px" data-q="${esc(g.id)}">
+    <div class="pl-head"><span class="qi">${icons({ icon: g.tileIcon || ((g.taxis || []).length || !stops.length ? 'taxi' : modeOf(stops[0])[0]) })}</span>
+      <div><h2 class="title">${esc(typeof g.title === 'string' ? g.title : tx(g.title))}</h2>${g.lead ? `<p class="lead">${esc(tx(g.lead))}</p>` : ''}</div></div>
+    ${taxis ? `<h3 class="section-h">${esc(t('taxiH'))}</h3><div class="mlist">${taxis}</div>` : ''}
+    ${groups.map(([label, l], i) => `<h3 class="section-h">${esc(t(label))}</h3>${i === 0 ? '<div class="pl-map secmap"><div id="trmap"></div></div>' : ''}<div class="mlist">${l.map(station).join('')}</div>`).join('')}
   </div>`;
-  overviewMap(V.querySelector('#trmap'), p.trains.map(s => ({ lat: s.lat, lng: s.lng, icon: 'train', tone: 'blue', cat: 'todo' })));
+  if (stops.length) overviewMap(V.querySelector('#trmap'), stops.map(s => ({ lat: s.lat, lng: s.lng, icon: modeOf(s)[0], tone: modeOf(s)[3], cat: 'todo' })));
 }

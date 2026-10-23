@@ -54,6 +54,7 @@ export const SECTION_LOOK = {
   'todo': { icon: CAT_ICON.todo, color: 'var(--k-green)' },
   'events': { icon: P('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M12 13l1 2 2 .3-1.5 1.4.4 2.3-1.9-1-1.9 1 .4-2.3L9 15.3l2-.3z"/>'), color: 'var(--k-blue)' },
   'map': { icon: NAV_ICON.map, color: 'var(--white)', ink: true },
+  'transport': { icon: P('<rect x="5.5" y="3" width="13" height="13" rx="3"/><path d="M5.5 10h13"/><circle cx="9" cy="13" r=".9" fill="currentColor"/><circle cx="15" cy="13" r=".9" fill="currentColor"/><path d="M8.5 16l-2 4.5M15.5 16l2 4.5M7.5 19h9"/>'), color: 'var(--k-green)' },
   // Modules added for new sites (kinds: info for arrival and extras, spots for the others).
   'arrival': { icon: P('<path d="M4 17h16v-5l-2.5-5h-11L4 12z"/><path d="M4 12h16"/><circle cx="8" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/>'), color: 'var(--k-blue)' },
   'essentials': { icon: P('<path d="M5 8h14l-1.5 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>'), color: 'var(--k-green)' },
@@ -90,6 +91,7 @@ const ITEM_ICON = {
   monastery: P('<path d="M12 2v4M10.3 3.8h3.4"/><path d="M6 21V11l6-5 6 5v10"/><path d="M10 21v-5a2 2 0 0 1 4 0v5"/><path d="M3 21h18"/>'),
   mountain: P('<path d="M2 20.5l5.5-9 3 4.5 3.5-7 8 11.5z"/><path d="M6 14l1.5-2.5 1.2 1.8"/>'),
   wine: P('<path d="M7.5 3h9l-.6 5.5a3.9 3.9 0 0 1-7.8 0z"/><path d="M8 7h8"/><path d="M12 12.5V20M8.5 20.5h7"/>'),
+  bus: P('<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3M16 18v3"/><circle cx="8" cy="14.5" r=".9" fill="currentColor"/><circle cx="16" cy="14.5" r=".9" fill="currentColor"/>'),
   train: P('<rect x="5.5" y="3" width="13" height="13" rx="3"/><path d="M5.5 10h13"/><circle cx="9" cy="13" r=".9" fill="currentColor"/><circle cx="15" cy="13" r=".9" fill="currentColor"/><path d="M8.5 16l-2 4.5M15.5 16l2 4.5M7.5 19h9"/>'),
   music: P('<path d="M9 18V5.5l11-2.5v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
   themepark: P('<circle cx="12" cy="10" r="7"/><circle cx="12" cy="10" r="1.3"/><path d="M12 3v5.7M12 11.3V17M5 10h5.7M13.3 10H19"/><path d="M8 21l4-4 4 4M6.5 21h11"/>'),

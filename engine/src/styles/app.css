@@ -361,7 +361,7 @@ a.gt:active{transform:scale(.98)}
 .qcall{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px;border-radius:16px;background:#fff;border:2px solid #121212;color:#121212;text-decoration:none;-webkit-tap-highlight-color:transparent;min-width:0}
 .qcall:active{transform:scale(.97)}
 .qcall .qi{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;margin-bottom:8px;color:#fff;background:#D52B1E}
-.qcall[data-q="taxi"] .qi{background:#F5C400;color:#121212}
+.qcall[data-q="taxi"] .qi,.qcall[data-q="transport"] .qi{background:#F5C400;color:#121212}
 .qcall[data-q="shop"] .qi{background:#0E7C46}
 .qcall .qi .ci{width:24px;height:24px}
 .qcall b{font-family:var(--display);font-weight:700;font-size:17px;line-height:1.1}
@@ -425,7 +425,7 @@ a.gt:active{transform:scale(.98)}
 /* Place page (#p/<id>): map, buttons, description, hours */
 .pl-head{display:flex;gap:14px;align-items:center}
 .pl-head .qi{flex:none;display:grid;place-items:center;width:56px;height:56px;border-radius:14px;color:#fff;background:#D52B1E}
-.place[data-q="taxi"] .pl-head .qi{background:#F5C400;color:#121212}
+.place[data-q="taxi"] .pl-head .qi,.place[data-q="transport"] .pl-head .qi{background:#F5C400;color:#121212}
 .place[data-q="shop"] .pl-head .qi{background:#0E7C46}
 .pl-head .qi .ci{width:30px;height:30px}
 .pl-head .lead{margin-top:4px}
@@ -484,7 +484,8 @@ a.gt:active{transform:scale(.98)}
 .dests{border-collapse:collapse;width:100%;font-size:16px}
 .dests th{text-align:left;font-weight:600;padding:5px 8px 5px 0}
 .dests td{padding:5px 8px 5px 0;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
-.dests td:last-child{font-weight:400;color:var(--muted);white-space:normal}
+.dests td{text-align:right;vertical-align:top;padding-right:0}
+.dests th small{display:block;font-size:14px;font-weight:400;color:var(--muted)}
 .dests tr+tr{border-top:1.5px solid var(--line)}
 :root{--tone-wine:#8E1B4A;--tone-wine-s:#F3DDE6}
 .dk.rating{color:#7A5200}
@@ -950,6 +951,7 @@ body:not(.is-home) #view h2.title{min-height:44px;display:flex;align-items:cente
 .gt[data-k="todo"]::before{width:0;height:0;border-left:30px solid transparent;border-right:30px solid transparent;border-bottom:40px solid var(--yellow);right:-6px;top:-4px;bottom:auto;transform:rotate(180deg)}
 .gt[data-k="message"]::before{width:64px;height:32px;border-radius:64px 64px 0 0;background:var(--ink);right:-6px;top:-2px;bottom:auto;transform:rotate(180deg)}
 .gt[data-k="emergency"]::before{width:0;height:0;border-left:34px solid transparent;border-right:34px solid transparent;border-bottom:46px solid var(--ink);right:-6px;top:-4px;bottom:auto;transform:rotate(180deg)}
+.gt[data-k="transport"]::before{width:44px;height:44px;background:var(--yellow);right:-10px;top:-10px;bottom:auto;transform:rotate(14deg)}
 /* Wide tiles: the shape takes the far right edge, the arrow sits just left of it, the text stops before both. */
 .gt[data-k="map"] .gt-tx{padding-right:96px}
 .gt[data-k="map"] .go{bottom:auto!important;top:50%!important;right:52px;margin-top:-18px}

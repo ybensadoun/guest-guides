@@ -14,7 +14,7 @@ let bad = 0;
 for (const w of [360, 390, 430]) for (const l of langs) {
   const pg = await b.newPage({ viewport: { width: w, height: 900 } });
   let res = [];
-  for (const route of ['', '#markets/today', '#s/restaurants', '#s/todo', '#s/house', '#s/events']) {
+  for (const route of ['', '#markets/today', '#s/restaurants', '#s/todo', '#s/house', '#s/events', '#s/transport']) {
   await pg.goto(`${URLBASE || 'http://localhost:5299/'}?lang=${l}${route}`); await pg.waitForTimeout(800);
   res.push(...(await pg.evaluate(() => {
     const out = [], hit = (a, b) => a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1;

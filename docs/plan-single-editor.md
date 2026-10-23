@@ -26,12 +26,16 @@ Yohann, 23 Oct: "there should be a single editing", the pretty step-by-step one.
 | | Wi-Fi | networks, password (QR made by the guide) |
 | Practical | Rubbish | collection time, each fraction (bin, days, examples), containers, how to sort |
 | | Contacts | emergency groups and their contacts |
-| | Home tiles | taxi, station, a bar you love, a shop |
+| | Getting around | taxis (other numbers, 24 h), train stations and bus stops (pin from a Google Maps link, minutes by car, lines in their colours, journey times), and whether it also shows as a Home tile |
+| | Home tiles | a bar you love, a shop (taxis and stations are in Getting around) |
 | Around you | Things to do, Bars and restaurants, Markets, Events | each place: texts, links, position, opening hours |
 
 ## Find more and Home tiles (added 23 Oct)
 - **Find more** on Things to do, Markets and Events: a `find-*` job (worker/README.md). The editor shows the suggestions one card at a time ("Add to my guide", "Not for us", "Skip the rest"); kept ones go into the draft, and the section is switched on and made live if the guide had none (a guide built without events). Suggestions wait in the job for 14 days; which ones were looked at is remembered in the browser.
 - **Show on the home page** on a bar or restaurant: a Home tile copied from it (`from` = the restaurant's id), reworded in Home tiles. No separate "delivery service" tile: a pinned restaurant with a comment covers it (Yohann, 23 Oct).
+
+## Getting around (added 23 Oct, Yohann)
+A section of its own (kind `transport`, `content/transport.json`, "At the house"), with the page Ca La Kimberly's "Taxi & train" tile used to open. Its `tile` adds a one-tap tile at the end of the Home tiles; the section tile then stays off the Home grid, so nothing shows twice. New guides get it from the onboarding's taxi answer. `engine/scripts/move-transport.mjs <site>` moves an old taxi-and-train Home tile into it (done for Ca La Kimberly after the engine went live).
 
 ## Later (BACKLOG)
 "Load my listing again" (house page, photos, reviews), a reviews step, adding a new part to the house guide.

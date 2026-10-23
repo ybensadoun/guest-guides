@@ -68,4 +68,9 @@ export const REVIEWS = (MODULE_ON('reviews') && get('reviews')) || null;
 
 // One-tap call buttons on Home (pizza, taxi, the shop next door). Items without a phone are hidden.
 export const QUICK_ALL = (QUICK_ON && get('quick')?.items) || [];
-export const QUICK = QUICK_ALL;
+// Getting around (section kind "transport", content/transport.json): taxis, then stations and stops, on their own page.
+// Its "tile" puts a one-tap tile at the end of the Home tiles (the section tile then stays off the Home grid).
+const TR_SEC = SECTIONS.find(s => s.kind === 'transport' && s.status === 'live');
+export const TRANSPORT = TR_SEC && TR_SEC.data ? TR_SEC.data : null;
+const TR_ICON = T => (T.taxis || []).length ? 'taxi' : ((T.stations || [])[0] || {}).mode === 'bus' ? 'bus' : 'train';
+export const QUICK = TRANSPORT && TRANSPORT.tile ? [...QUICK_ALL, { id: TR_SEC.id, href: '#s/' + TR_SEC.id, icon: TR_ICON(TRANSPORT), name: TRANSPORT.tile.name, sub: TRANSPORT.tile.sub, wide: TRANSPORT.tile.wide }] : QUICK_ALL;

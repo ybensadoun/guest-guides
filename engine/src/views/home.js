@@ -1,6 +1,6 @@
 import qrcode from 'qrcode-generator';
 import { t, tx, locale } from '../i18n.js';
-import { MARKETS, MAP_ITEMS, SECTIONS, CATS, QUICK, HOUSE, slots, SITE, MODULE_ON } from '../content.js';
+import { MARKETS, MAP_ITEMS, SECTIONS, CATS, QUICK, HOUSE, slots, SITE, MODULE_ON, TRANSPORT } from '../content.js';
 import { runsOn, statusLabel, cap, nextOpen, closedStatus } from '../schedule.js';
 import { esc, title, catIcon, SECTION_LOOK, stHTML, distHTML } from '../ui.js';
 import { sorted } from './markets.js';
@@ -129,6 +129,7 @@ const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 // Quick calls: the three numbers guests actually need day to day. One tap dials.
 // Quick tile icons, picked by the tile's "icon" (taxi, train, food, shop, pizza), else its id or the id's first part ("taxi-2").
 const QI = {
+  bus: '<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3M16 18v3"/><circle cx="8" cy="14.5" r=".8" fill="currentColor"/><circle cx="16" cy="14.5" r=".8" fill="currentColor"/>',
   train: '<rect x="5" y="3" width="14" height="13" rx="3"/><path d="M5 10h14M9 20l-2 2M15 20l2 2M8 16l-1 4h10l-1-4"/><circle cx="9" cy="13" r=".8" fill="currentColor"/><circle cx="15" cy="13" r=".8" fill="currentColor"/>',
   food: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-1.7 1-3 3.2-3 6v3h3v9"/>',
   pizza: '<path d="M12 21L3.5 6.5a14 14 0 0 1 17 0z"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="14" cy="13" r="1.2" fill="currentColor"/><circle cx="12" cy="17" r="1" fill="currentColor"/>',
@@ -138,7 +139,7 @@ const QI = {
 const qsvg = d => `<svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const qKey = q => [q.icon, q.id, String(q.id || '').split('-')[0]].find(k => k && QI[k]) || 'shop';
 export const quickIcon = q => qsvg(QI[typeof q === 'string' ? qKey({ id: q }) : qKey(q)]);
-const quickRow = () => QUICK.length ? `<div class="qcalls">${QUICK.map(q => `<a class="qcall${q.wide ? ' wide' : ''}" data-q="${q.id}" href="#p/${q.id}">
+const quickRow = () => QUICK.length ? `<div class="qcalls">${QUICK.map(q => `<a class="qcall${q.wide ? ' wide' : ''}" data-q="${q.id}" href="${q.href || '#p/' + q.id}">
   <span class="qi">${quickIcon(q)}</span><span class="qt"><b>${esc(tx(q.name))}</b>${q.sub ? `<small>${esc(tx(q.sub))}</small>` : ''}${qStatus(q)}</span></a>`).join('')}</div>` : '';
 // Live status on the quick tiles that have opening hours (the bar next door, the pizzeria).
 function qStatus(q) {
@@ -186,7 +187,8 @@ function sectionGrid(now, todayCount) {
   const live = x => x.status === 'live';
   // Order follows content/sections.json.
   const group = g => SECTIONS.filter(x => x.group === g);
-  const house = group('house').filter(x => x.kind !== 'house'), area = group('area');
+  // Getting around shown as a Home tile (its "tile") is not repeated as a section tile.
+  const house = group('house').filter(x => x.kind !== 'house' && !(x.kind === 'transport' && TRANSPORT && TRANSPORT.tile)), area = group('area');
   // Garbage wide on top, then the other house tiles side by side.
   // Around the house: the first tile (markets) is tall, the others stack next to it. Map last, wide.
   const wideHouse = house.filter(x => x.kind === 'garbage' && live(x));
