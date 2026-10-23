@@ -29,5 +29,9 @@ Yohann, 23 Oct: "there should be a single editing", the pretty step-by-step one.
 | | Home tiles | taxi, station, a bar you love, a shop |
 | Around you | Things to do, Bars and restaurants, Markets, Events | each place: texts, links, position, opening hours |
 
+## Find more and Home tiles (added 23 Oct)
+- **Find more** on Things to do, Markets and Events: a `find-*` job (worker/README.md). The editor shows the suggestions one card at a time ("Add to my guide", "Not for us", "Skip the rest"); kept ones go into the draft, and the section is switched on and made live if the guide had none (a guide built without events). Suggestions wait in the job for 14 days; which ones were looked at is remembered in the browser.
+- **Show on the home page** on a bar or restaurant: a Home tile copied from it (`from` = the restaurant's id), reworded in Home tiles. No separate "delivery service" tile: a pinned restaurant with a comment covers it (Yohann, 23 Oct).
+
 ## Later (BACKLOG)
-Explicit actions per step instead of full rebuilds: "Find places again" (things to do, markets, events), "Load my listing again" (house page, photos, reviews), a reviews step.
+"Load my listing again" (house page, photos, reviews), a reviews step, adding a new part to the house guide.

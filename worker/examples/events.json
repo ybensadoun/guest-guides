@@ -1,0 +1,65 @@
+{
+ "_doc": "Example for research (worker/guide-worker.mjs, Find more on Events). Shape of content/events.json, English only: the worker translates.",
+ "items": [
+  {
+   "id": "santa-teresa",
+   "type": "fair",
+   "name": {
+    "en": "Santa Teresa Fair"
+   },
+   "town": "El Vendrell",
+   "venue": "Centre",
+   "lat": 41.2196,
+   "lng": 1.535,
+   "url": "https://www.elvendrell.net",
+   "dates": [
+    {
+     "start": "2026-10-09",
+     "end": "2026-10-12",
+     "status": "confirmed"
+    },
+    {
+     "start": "2027-10-09",
+     "end": "2027-10-12",
+     "status": "expected"
+    }
+   ],
+   "description": {
+    "en": "El Vendrell's autumn fair: local wineries, food stalls, crafts, funfair rides and a castells (human towers) performance by the Nens del Vendrell. The closest big fair to the house, easy with kids."
+   },
+   "sources": [
+    "https://laciutat.cat/laciutatdelpenedesgarraf/vendrell-celebra-fira-santa-teresa-9-12-octubre-protagonisme-local-gastronomia-territori_902026_102.html"
+   ]
+  },
+  {
+   "id": "sitges-film",
+   "type": "film",
+   "name": {
+    "en": "Sitges Film Festival"
+   },
+   "town": "Sitges",
+   "venue": "Auditori Melià Sitges",
+   "lat": 41.229,
+   "lng": 1.794,
+   "url": "https://sitgesfilmfestival.com",
+   "dates": [
+    {
+     "start": "2026-10-08",
+     "end": "2026-10-18",
+     "status": "confirmed"
+    },
+    {
+     "start": "2027-10-07",
+     "end": "2027-10-17",
+     "status": "expected"
+    }
+   ],
+   "description": {
+    "en": "The world's leading fantasy and horror film festival, with premieres, stars and the famous Zombie Walk. Even without tickets, the seaside atmosphere is worth it."
+   },
+   "sources": [
+    "https://www.visitsitges.com/en/agenda/sitges-film-festival-2026-festival-de-cine-sitges-2026/"
+   ]
+  }
+ ]
+}

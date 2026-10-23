@@ -65,16 +65,16 @@ const CSTEPS = [
   { id: 'tiles', group: 'practical', sec: 'quick', title: 'Home tiles', sub: c => cmCount(cmLen('files/quick/items'), 'tile', 'tiles'), icon: 'car', tc: 'var(--sun)', ti: '#1b1407', sh: 'var(--sky)', shape: 'square', lang: true,
     lead: 'One tap from the home page: a taxi, the train station, a bar you love. Each tile opens a page with its map and your words.',
     paths: ['content/files/quick'], body: c => cmHomeTiles(c) },
-  { id: 'todo', group: 'area', sec: 'todo', when: c => !!(c.files || {}).todo, title: 'Things to do', sub: c => cmCount(cmLen('files/todo/items'), 'place', 'places'), icon: 'compass', tc: 'var(--pine)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
+  { id: 'todo', group: 'area', sec: 'todo', title: 'Things to do', sub: c => cmCount(cmLen('files/todo/items'), 'place', 'places'), icon: 'compass', tc: 'var(--pine)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
     lead: 'Beaches, walks and sights. Open a place to change its words, links, position and opening hours.',
     paths: ['content/files/todo'], body: () => cmPlaces('files/todo/items', 'place') },
   { id: 'restaurants', group: 'area', sec: 'restaurants', when: c => !!(c.files || {}).restaurants, title: 'Bars and restaurants', sub: c => cmCount(cmLen('files/restaurants/items'), 'place', 'places'), icon: 'heart', tc: 'var(--tomato)', ti: '#fff', sh: 'var(--sun)', shape: 'half', lang: true,
     lead: 'The places you send friends to, with a few words from you: what to order, when to go.',
     paths: ['content/files/restaurants'], body: () => cmPlaces('files/restaurants/items', 'place') },
-  { id: 'markets', group: 'area', sec: 'markets', when: c => !!(c.files || {}).markets, title: 'Markets', sub: c => cmCount(cmLen('files/markets/markets'), 'market', 'markets'), icon: 'bag', tc: 'var(--clay)', ti: '#fff', sh: 'var(--pine)', shape: 'circle', lang: true,
+  { id: 'markets', group: 'area', sec: 'markets', title: 'Markets', sub: c => cmCount(cmLen('files/markets/markets'), 'market', 'markets'), icon: 'bag', tc: 'var(--clay)', ti: '#fff', sh: 'var(--pine)', shape: 'circle', lang: true,
     lead: 'Weekly markets nearby. The guide shows which ones are on today from the days and hours here.',
     paths: ['content/files/markets'], body: () => cmPlaces('files/markets/markets', 'market') },
-  { id: 'events', group: 'area', sec: 'events', when: c => !!(c.files || {}).events, title: 'Events', sub: c => cmCount(cmLen('files/events/items'), 'event', 'events'), icon: 'kite', tc: 'var(--plum)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
+  { id: 'events', group: 'area', sec: 'events', title: 'Events', sub: c => cmCount(cmLen('files/events/items'), 'event', 'events'), icon: 'kite', tc: 'var(--plum)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
     lead: 'Festivals and fairs. Guests see the ones during their stay, from the dates here.',
     paths: ['content/files/events'], body: () => cmPlaces('files/events/items', 'event') }
 ];
@@ -114,7 +114,7 @@ function cCard(p, title, meta, inner) {
 }
 
 /* --- One place, contact or tile: its texts, links, position, hours or dates --- */
-const C_SKIP = new Set(['id', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx']);
+const C_SKIP = new Set(['id', 'from', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx']);
 const C_STR = ['town', 'place', 'phone', 'web', 'url', 'map', 'gmaps', 'venue', 'address', 'comarca', 'price'];
 const C_LONG = ['description', 'what', 'examples', 'priceNote', 'hours', 'occasional_when'];
 const C_LBL = { name: 'Name', name_local: 'Name in the local language', title: 'Title on its page', sub: 'Line under the name', type: 'Type', kind: 'Kind', what: 'What guests need to know', description: 'Description', hours: 'Opening hours, in words', occasional_when: 'When it runs', town: 'Town', place: 'Where exactly', venue: 'Where exactly', address: 'Address', comarca: 'County', phone: 'Phone', url: 'Official website', web: 'Website', gmaps: 'Google Maps link', map: 'Map link', price: 'Price (€)', priceNote: 'About the price', taxiName: 'Taxi name', taxiSub: 'Line under the taxi' };
@@ -131,7 +131,23 @@ function cItem(base, it, i, what) {
   return cCard(p, cName(it), meta, `<div class="grid">${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], { long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' })).join('')}
     ${'stalls_approx' in it ? cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx, { type: 'number', half: true }) : ''}${pos}
     ${'schedule' in it || base.includes('markets') ? cSchedule(`${p}/schedule`, it.schedule) : ''}${'dates' in it || base.includes('events') ? cDates(`${p}/dates`, it.dates) : ''}</div>
-    ${what === 'contact' ? '' : check}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`);
+    ${what === 'contact' ? '' : check}${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`);
+}
+// A restaurant pinned to the home page becomes a Home tile (one tap, its own page), a copy of the restaurant that the
+// host can reword in Home tiles: "from" remembers which restaurant it came from.
+const cPinned = it => ((((edC().files || {}).quick || {}).items) || []).some(q => q.from && q.from === it.id);
+function cPin(p, it) {
+  return `<div class="f"><span class="hint">A tile on the home page, one tap away, like the bar next door. You can change its words in Home tiles.</span><div class="chips"><button class="chip" type="button" data-cpin="${p}" aria-pressed="${cPinned(it)}"><span>Show on the home page</span></button></div></div>`;
+}
+function cmPin(p) {
+  const it = edGet(edC(), edPath(p)); if (!it) return;
+  const f = edF(), q = f.quick = f.quick || { items: [] }; q.items = q.items || [];
+  const i = q.items.findIndex(x => x.from === it.id);
+  if (i >= 0) { q.items.splice(i, 1); return; }
+  const pick = k => it[k] != null ? { [k]: cmClone(it[k]) } : {};
+  q.items.push({ id: 'food-' + it.id, icon: 'food', from: it.id, name: cmClone(it.name), sub: cmClone(it.type || {}), title: cmClone(it.name), kind: cmClone(it.type || {}), what: cmClone(it.description || {}),
+    ...pick('phone'), ...pick('lat'), ...pick('lng'), ...pick('gmaps'), ...pick('schedule'), ...pick('hours'), ...pick('price'), ...pick('priceNote') });
+  const s = edC().site = edC().site || {}; s.modules = { ...(s.modules || {}), quick: true };
 }
 function edNewItem(arr) {
   const clone = arr && arr[0] ? cmClone(arr[0]) : { name: { en: '' }, description: { en: '' }, lat: 0, lng: 0 };
@@ -251,10 +267,101 @@ function edAddTile(icon) {
 }
 function cmPlaces(path, what) {
   const arr = edGet(edC(), edPath(path)) || [];
-  return `${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
+  return `${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
     <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
     <p class="hint">A new ${esc(what)} starts at the house: move its pin with a Google Maps link. The distance from the house follows the pin.</p>`;
+}
+
+/* --- Find more: the guide builder searches the web near the house; the host keeps or skips each suggestion ---
+   The search runs as a job (worker/guide-worker.mjs, findJob): a few minutes, then the suggestions wait in the job's
+   result for 14 days. Kept ones go into the draft like any change. Which ones were looked at is remembered in this browser. */
+const FIND_OF = { 'files/todo/items': ['find-todo', 'things to do'], 'files/markets/markets': ['find-markets', 'markets'], 'files/events/items': ['find-events', 'events'] };
+const FIND_SECTION = { todo: { kind: 'spots', color: 'todo', labelKey: 'whatToDo' }, markets: { kind: 'markets', labelKey: 'markets' }, events: { kind: 'events', color: 'events', labelKey: 'events' } };
+CM.find = {};
+const findSeen = id => { try { return new Set(JSON.parse(localStorage.getItem('cmfind:' + id) || '[]')); } catch (e) { return new Set(); } };
+const findMark = (id, ids) => { try { const s = findSeen(id); ids.forEach(x => s.add(x)); localStorage.setItem('cmfind:' + id, JSON.stringify([...s])); } catch (e) { /* storage blocked: the card simply moves on */ } CM.findSkip = new Set([...(CM.findSkip || []), ...ids]); };
+function cmFindItems(kind, path) {
+  const f = CM.find[kind]; if (!f || f.status !== 'done') return [];
+  const have = new Set((edGet(edC(), edPath(path)) || []).map(x => x.id)), seen = findSeen(f.id);
+  return (f.items || []).filter(it => !have.has(it.id) && !seen.has(it.id) && !(CM.findSkip || new Set()).has(it.id));
+}
+function cmFindHTML(path) {
+  const kind = FIND_OF[path][0];
+  if (!CM.find[kind]) cmFindLoad(kind);
+  return `<div class="cm-find" id="cmFind" data-fpath="${path}">${cmFindInner(path)}</div>`;
+}
+const cmDays = sch => (sch || []).map(r => `${(r.days || []).map(d => (ED_DAYS.find(x => x[0] === d) || [0, d])[1]).join(' ')} ${r.open || ''}${r.close ? '-' + r.close : ''}`).join(', ');
+function cmFindCard(it, i, n) {
+  const today = new Date().toISOString().slice(0, 10);
+  const sub = [edIs18(it.type) ? edShown(it.type) : '', it.town, it.km_from_house != null ? it.km_from_house + ' km from the house' : ''].filter(Boolean).join(' · ');
+  const when = (it.dates || []).filter(d => (d.end || d.start) >= today).map(d => `${d.start}${d.end && d.end !== d.start ? ' to ' + d.end : ''}, ${d.status === 'confirmed' ? 'confirmed' : 'expected'}`).join('; ');
+  const hours = it.always ? 'Open any time' : cmDays(it.schedule);
+  return `<article class="cm-fcard"><small>Suggestion ${i} of ${n}</small><h3>${esc(edShown(it.name))}</h3>${sub ? `<p class="cm-fsub">${esc(sub)}</p>` : ''}
+    <p>${esc(edShown(it.description))}</p>
+    ${when ? `<p class="hint"><b>Dates:</b> ${esc(when)}</p>` : ''}${hours ? `<p class="hint"><b>Hours:</b> ${esc(hours)}</p>` : ''}${it._google ? `<p class="hint">${esc(it._google)}</p>` : ''}
+    <p class="cm-flinks">${it.gmaps ? `<a href="${esc(it.gmaps)}" target="_blank" rel="noopener">See it on Google Maps</a>` : ''}${it.url ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">Official page</a>` : ''}</p>
+    <div class="cm-fbtns"><button class="btn small" type="button" data-cfskip="${esc(it.id)}">Not for us</button><button class="btn small primary" type="button" data-cfadd="${esc(it.id)}">Add to my guide</button></div>
+    <button class="cm-fstop" type="button" data-cfstop>Skip the rest</button></article>`;
+}
+function cmFindInner(path) {
+  const [kind, what] = FIND_OF[path], f = CM.find[kind] || {};
+  if (f.status === 'loading') return '<p class="hint">…</p>';
+  if (f.status === 'queued' || f.status === 'running') return `<div class="cm-fhead"><span class="spin dark" aria-hidden="true"></span><b>${esc(f.message || 'Waiting for the guide builder…')}</b></div><p class="hint">This takes a few minutes. You can keep editing, or come back later: the suggestions wait here.</p>`;
+  const left = cmFindItems(kind, path), all = (f.items || []).length;
+  if (left.length) return cmFindCard(left[0], all - left.length + 1, all);
+  const note = f.status === 'failed' ? `<p class="hint err">The search did not work: ${esc(f.message || 'try again later')}</p>` : f.status === 'done' ? `<p class="hint">${all ? 'You have looked at every suggestion from the last search.' : 'The last search found nothing new nearby.'}</p>` : '';
+  return `<div class="cm-fhead"><b>Looking for more ${esc(what)}?</b></div><p class="hint">We search the web around the house for ${esc(what)} that are not in your guide yet, check each one on Google and translate it. It takes a few minutes, then you keep or skip each one.</p>${note}<div><button class="btn small sun" type="button" data-cfind="${path}">Find more ${esc(what)}</button></div>`;
+}
+function cmFindRefresh() { const el = document.getElementById('cmFind'); if (el) el.innerHTML = cmFindInner(el.dataset.fpath); }
+async function cmFindLoad(kind) {
+  CM.find[kind] = { status: 'loading' };
+  try {
+    await ensureFresh();
+    const since = new Date(Date.now() - 14 * 864e5).toISOString();
+    const r = await sb(`/rest/v1/guide_jobs?select=id,status,message,result&guide_id=eq.${CM.g.id}&kind=eq.${kind}&created_at=gt.${encodeURIComponent(since)}&order=created_at.desc&limit=1`), j = r && r[0];
+    CM.find[kind] = j ? { id: j.id, status: j.status, message: j.message, items: (j.result || {}).items || [] } : { status: 'none' };
+    if (j && (j.status === 'queued' || j.status === 'running')) cmFindPoll(kind);
+  } catch (e) { CM.find[kind] = { status: 'none' }; }
+  cmFindRefresh();
+}
+async function cmFindStart(path) {
+  const kind = FIND_OF[path][0];
+  CM.find[kind] = { status: 'queued', message: 'Saving your changes…' }; cmFindRefresh();
+  try {
+    await cmSave(); await ensureFresh();
+    const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind, langs: edLangs() } });
+    const id = j && j[0] && j[0].id; if (!id) throw new Error('Could not start');
+    CM.find[kind] = { id, status: 'queued', message: 'Waiting for the guide builder…' }; cmFindRefresh(); cmFindPoll(kind);
+  } catch (e) { CM.find[kind] = { status: 'failed', message: niceError(e) }; cmFindRefresh(); }
+}
+async function cmFindPoll(kind) {
+  const f = CM.find[kind]; if (!f || f.polling) return; f.polling = true;
+  for (let i = 0; i < 360 && CM.find[kind] === f; i++) {
+    await new Promise(r => setTimeout(r, 5000));
+    try {
+      await ensureFresh();
+      const r = await sb('/rest/v1/guide_jobs?select=status,message,result&id=eq.' + f.id), st = r && r[0]; if (!st) continue;
+      f.status = st.status; f.message = st.message;
+      if (st.status === 'done') { f.items = (st.result || {}).items || []; if (f.items.length) toast(`${f.items.length} suggestions ready`); }
+      cmFindRefresh();
+      if (st.status === 'done' || st.status === 'failed') break;
+    } catch (e) { /* offline for a moment: try again */ }
+  }
+  f.polling = false;
+}
+function cmFindAdd(path, sid) {
+  const kind = FIND_OF[path][0], f = CM.find[kind], it = f && (f.items || []).find(x => x.id === sid); if (!it) return;
+  const n = cmClone(it); delete n._google;
+  let a = edGet(edC(), edPath(path)); if (!Array.isArray(a)) { edSet(edC(), edPath(path), []); a = edGet(edC(), edPath(path)); }
+  a.push(n);
+  const sec = path.split('/')[1], fl = edF()[sec];
+  if (sec === 'markets' && n.category) { fl.categories = fl.categories || []; if (!fl.categories.includes(n.category)) fl.categories.push(n.category); }
+  // The section must exist and be live in the guide for the new place to show (a guide built without events had none).
+  const ss = (edF().sections = edF().sections || { sections: [] }).sections = edF().sections.sections || [];
+  const row = ss.find(x => x.id === sec); if (!row) ss.push({ id: sec, ...FIND_SECTION[sec], group: 'area', status: 'live' }); else if (row.status !== 'live') row.status = 'live';
+  const site = edC().site = edC().site || {}; site.modules = { ...(site.modules || {}), [sec]: true };
+  findMark(f.id, [sid]); cmQueue(); render(); toast(`Added: ${edShown(n.name)}. Preview, then publish.`);
 }
 
 /* --- Pages: overview, one step, publish --- */
@@ -500,6 +607,11 @@ document.addEventListener('click', e => {
   if (d.translate !== undefined) return cmTranslate();
   if (d.phmove) { const p = edPath(d.phmove), i = p[p.length - 1], a = edGet(edC(), p.slice(0, -1)), j = i + Number(d.dir); if (Array.isArray(a) && j >= 0 && j < a.length) { [a[i], a[j]] = [a[j], a[i]]; done(); } return; }
   if (d.addtile) { edAddTile(d.addtile); return done(); }
+  if (d.cpin) { cmPin(d.cpin); return done(); }
+  if (d.cfind) return cmFindStart(d.cfind);
+  if (d.cfadd) return cmFindAdd(t.closest('[data-fpath]').dataset.fpath, d.cfadd);
+  if (d.cfskip) { const f = CM.find[FIND_OF[t.closest('[data-fpath]').dataset.fpath][0]]; findMark(f.id, [d.cfskip]); return cmFindRefresh(); }
+  if (d.cfstop !== undefined) { const path = t.closest('[data-fpath]').dataset.fpath, kind = FIND_OF[path][0]; findMark(CM.find[kind].id, cmFindItems(kind, path).map(x => x.id)); return cmFindRefresh(); }
   if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
   if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
   if (d.addit) { const a = arr(d.addit); a.push(edNewItem(a)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
@@ -583,6 +695,17 @@ function cmInit() {
 .hero .cm-url{font-size:14px;opacity:.85;overflow-wrap:anywhere}
 .cm-act{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .hero .btn.cm-ghost{background:transparent;color:inherit;border-color:rgba(255,255,255,.55)}
-.foot .btn svg{width:16px;height:16px}`;
+.foot .btn svg{width:16px;height:16px}
+.cm-find{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:var(--r-s);background:var(--sunk);box-shadow:inset 3px 0 0 var(--sun)}
+.cm-fhead{display:flex;gap:10px;align-items:center}
+.cm-fhead b{font-size:16px}
+.cm-fcard{display:flex;flex-direction:column;gap:8px}
+.cm-fcard small{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.cm-fcard h3{font-size:24px}
+.cm-fcard p{margin:0}
+.cm-fsub{color:var(--muted);font-size:14px}
+.cm-flinks{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;font-weight:600}
+.cm-fbtns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:4px}
+.cm-fstop{align-self:center;border:0;background:none;font:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer;padding:6px}`;
   document.head.appendChild(st);
 })();

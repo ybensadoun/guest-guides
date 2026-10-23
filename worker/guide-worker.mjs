@@ -8,6 +8,7 @@ import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, statSy
 import { resolve, dirname, join, relative, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { makeGoogle, hav, nameOf, sameName, sameMarket, schedule } from './places.mjs';   // Google check for Find more suggestions
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
 const env = { ...process.env };
@@ -15,6 +16,9 @@ const envFile = resolve(HERE, '.env.local');
 if (existsSync(envFile)) for (const l of readFileSync(envFile, 'utf8').split('\n')) { const m = l.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/); if (m && !(m[1] in env)) env[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); }
 const URL_ = (env.SUPABASE_URL || 'https://dmoxszfwulolqkgxtxcp.supabase.co').replace(/\/$/, '');
 const KEY = env.SUPABASE_SERVICE_KEY;
+// Google Places key (Guest Guides/.env, git-ignored): Find more checks each suggested place on Google. Without it, suggestions are not checked.
+const rootEnv = resolve(ROOT, '.env');
+if (existsSync(rootEnv)) for (const l of readFileSync(rootEnv, 'utf8').split('\n')) { const m = l.match(/^\s*(GOOGLE_PLACES_KEY)\s*=\s*(.*?)\s*$/); if (m && !(m[1] in env)) env[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); }
 const AUTO_PUBLISH = env.AUTO_PUBLISH !== '0';          // test phase: a built guide goes live at once. Set AUTO_PUBLISH=0 to review first.
 const RESEARCH = env.RESEARCH || 'skip';                 // skip | cli  (cli = research and translation with the `claude` command)
 const POLL = Math.max(3, +env.POLL_SECONDS || 10) * 1000;
@@ -70,14 +74,9 @@ Answer with ONE JSON object and nothing else. It must follow the shape of this e
 ${example(kind)}`;
 }
 // Hours and the Google Maps link, for every place (markets and things to do).
-const HOURS_RULE = 'For each place: "name_local" is its name exactly as Google Maps lists it (in the local language, e.g. "Jardí Botànic Marimurtra"), so the guide\'s Google Maps button opens its listing. Put "gmaps" only if a source gives the place\'s own Google Maps link. Opening hours: look for them on the official website first (the venue, the operator, the town hall or its tourist office), then in recent local press, and write them as "schedule" (from/to as MM-DD for seasons) with "url" set to that official page. Use the flag "check" only when no official or recent source gives the days and hours, or sources disagree. A place open to everyone at any time (beach, viewpoint, old town, path, ruin) gets "always": true and no "check".';
-function research(A, outDir, id) {
-  mkdirSync(outDir, { recursive: true });
-  const jobs = [
-    ['markets', 'Find the weekly and notable local markets within the radius (street markets, covered markets, fairs). Same shape as the example: {"categories":[...],"markets":[...]} with schedule days as mon..sun. Every market MUST have numeric lat and lng: use the exact spot if a source gives it, otherwise the centre of the town or the market square from Wikipedia or OpenStreetMap, and add "verify": true when approximate. Its "category" must be one of: covered, street, flea, antiques, events. ' + HOURS_RULE],
-    ['todo', 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example. ' + HOURS_RULE],
-    ['emergency', 'Find the nearest hospital with an emergency department, the national emergency number and the local health advice line. Same shape: {"groups":[...]}.'],
-  ];
+const HOURS_RULE = 'For each place: "name_local" is its name exactly as Google Maps lists it (in the local language, e.g. "Jardí Botànic Marimurtra"), so the guide\'s Google Maps button opens its listing. Put "gmaps" only if a source gives the place\'s own Google Maps link. Opening hours: look for them on the official website first (the venue, the operator, the town hall or its tourist office), then in recent local press, and write them as "schedule", a list of rows shaped exactly {"days":["tue","wed"],"open":"10:00","close":"14:00"} (days as mon..sun, times HH:MM, plus "from" and "to" as MM-DD for a season), with "url" set to that official page. Opening that is not weekly (the third Sunday of the month, guided tours) goes in "hours" as words, not in "schedule". Use the flag "check" only when no official or recent source gives the days and hours, or sources disagree. A place open to everyone at any time (beach, viewpoint, old town, path, ruin) gets "always": true and no "check".';
+// What research may write: tags, flags and groups the guide knows, places with a position, market categories it has a label for.
+function researchTools() {
   const en = JSON.parse(readFileSync(join(ROOT, 'engine/src/i18n/en.json'), 'utf8'));
   const tagsOk = Object.keys(en).filter(k => k.startsWith('t_')).map(k => k.slice(2)), flagsOk = JSON.parse(readFileSync(join(ROOT, 'engine/src/flags.json'), 'utf8')).flags;   // warnings only, not the f_ filter labels
   const groupsOk = JSON.parse(readFileSync(join(ROOT, 'engine/src/groups.json'), 'utf8')).groups;   // quick filters with a label
@@ -96,15 +95,58 @@ function research(A, outDir, id) {
     return o;
   };
   const allowed = `Where an item has "tags", "flags" or "group", use ONLY these values. tags: ${tagsOk.join(', ')}. flags: ${flagsOk.join(', ')}. group: ${Object.keys(groupsOk).join(', ')}. Leave out any that do not fit.`;
+  return { clean, located, allowed, normSchedule };
+}
+// Opening hours the guide can read: rows of days (mon..sun), open and close (HH:MM), and an optional season (from/to MM-DD).
+// Research sometimes writes "Tue-Sun" or "10:00-17:30" or "third Sunday of the month": the first two are converted,
+// anything else leaves the schedule as words in "hours" and asks guests to check.
+const WEEK = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const dayOf = w => WEEK.find(d => String(w).toLowerCase().startsWith(d)) || ({ thursday: 'thu', tuesday: 'tue' })[String(w).toLowerCase()];
+function daysList(x) {
+  if (Array.isArray(x)) { const d = x.map(dayOf); return d.every(Boolean) ? WEEK.filter(w => d.includes(w)) : null; }
+  const s = String(x || '').toLowerCase().trim();
+  if (/^(daily|every ?day|all week|mon(day)?\s*[-–to]+\s*sun(day)?)$/.test(s)) return [...WEEK];
+  const out = new Set();
+  for (const part of s.split(/\s*(?:,|&|\band\b)\s*/)) {
+    const m = part.match(/^([a-z]+)\s*(?:-|–|to)\s*([a-z]+)$/);
+    if (m) { const a = WEEK.indexOf(dayOf(m[1])), b = WEEK.indexOf(dayOf(m[2])); if (a < 0 || b < 0) return null; for (let i = a; ; i = (i + 1) % 7) { out.add(WEEK[i]); if (i === b) break; } }
+    else if (dayOf(part)) out.add(dayOf(part)); else return null;
+  }
+  return out.size ? WEEK.filter(w => out.has(w)) : null;
+}
+function normSchedule(it) {
+  if (!Array.isArray(it.schedule)) { if (it.schedule != null) delete it.schedule; return it; }
+  const ok = [], words = [];
+  for (const r of it.schedule) {
+    const days = daysList(r.days), t = String(r.hours || '').match(/(\d{1,2}[:.]\d{2})\s*(?:-|–|to)\s*(\d{1,2}[:.]\d{2})/);
+    const hm = x => x && x.replace('.', ':').padStart(5, '0');
+    const open = hm(r.open || (t && t[1])), close = hm(r.close || (t && t[2]));
+    if (days && /^\d\d:\d\d$/.test(open || '') && /^\d\d:\d\d$/.test(close || '')) ok.push({ days, open, close, ...(/^\d\d-\d\d$/.test(r.from || '') && /^\d\d-\d\d$/.test(r.to || '') ? { from: r.from, to: r.to } : {}) });
+    else words.push([r.days, r.hours || [r.open, r.close].filter(Boolean).join('-'), r.note].filter(x => x && typeof x === 'string').join(', '));
+  }
+  if (ok.length) it.schedule = ok; else delete it.schedule;
+  if (words.length) { if (!it.hours) it.hours = { en: words.join('; ') }; it.flags = [...new Set([...(it.flags || []), 'check'])]; }
+  return it;
+}
+const MARKETS_RULE = 'Find the weekly and notable local markets within the radius (street markets, covered markets, fairs). Same shape as the example: {"categories":[...],"markets":[...]} with schedule days as mon..sun. Every market MUST have numeric lat and lng: use the exact spot if a source gives it, otherwise the centre of the town or the market square from Wikipedia or OpenStreetMap, and add "verify": true when approximate. Its "category" must be one of: covered, street, flea, antiques, events. ' + HOURS_RULE;
+const TODO_RULE = 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example. ' + HOURS_RULE;
+function research(A, outDir, id) {
+  mkdirSync(outDir, { recursive: true });
+  const { clean, located, allowed, normSchedule } = researchTools();
+  const jobs = [
+    ['markets', MARKETS_RULE],
+    ['todo', TODO_RULE],
+    ['emergency', 'Find the nearest hospital with an emergency department, the national emergency number and the local health advice line. Same shape: {"groups":[...]}.'],
+  ];
   for (const [kind, rules] of jobs) {
     say(id, `Researching: ${kind}`);
-    try { writeFileSync(join(outDir, kind + '.json'), JSON.stringify(located(clean(claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind))), null, 1)); }
+    try { const o = located(clean(claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); }
     catch (e) { log(`  research ${kind} skipped:`, e.message); }
   }
 }
 function translate(texts, langs, srcLang, file) {
   if (!texts.length || !langs.length) return;
-  const prompt = `Translate these texts from ${srcLang} into ${langs.join(', ')}. Keep names, numbers and times. No em-dashes. For French use real non-breaking spaces before ? ! ; : and inside guillemets. Answer with ONE JSON object and nothing else: {"<exact source text>": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(texts)}`;
+  const prompt = `Translate these texts from ${srcLang} into ${langs.join(', ')}. Keep names, numbers and times. No em-dashes. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else: {"<exact source text>": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(texts)}`;
   const r = run('claude', ['-p', prompt], { timeout: 600000, allowFail: true });
   const out = (r.stdout || ''), a = out.indexOf('{'), b = out.lastIndexOf('}');
   if (a >= 0 && b > a) { try { writeFileSync(file, JSON.stringify(JSON.parse(out.slice(a, b + 1)), null, 1)); } catch (e) {} }
@@ -179,39 +221,117 @@ async function recover() {   // a guide left "generating" by a crashed run goes 
    for the editor that is still open (it fills them into its own copy, so nothing it saved meanwhile is lost). */
 const LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
 const isI18 = o => !!o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length > 0 && Object.keys(o).every(k => LANGS.includes(k));
+async function translateJob(j, jp) {
+  const g = (await rest('/rest/v1/guides?select=content,draft&id=eq.' + j.guide_id))[0];
+  const c = g.draft && g.draft.content ? g.draft.content : g.content, main = ((c.site || {}).languages || ['en'])[0] || 'en', objs = [];
+  const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (isI18(x)) objs.push(x); else Object.values(x).forEach(walk); } };
+  walk(c.files || {});
+  const todo = objs.filter(o => o[main] && j.langs.some(l => !o[l]));
+  const texts = [...new Set(todo.map(o => o[main]))];
+  if (!texts.length) return jp({ status: 'done', message: 'Nothing to translate', finished_at: new Date().toISOString() });
+  const tmp = resolve(ROOT, '.job-' + j.id.slice(0, 8) + '.json'); let map = {};
+  for (let i = 0; i < texts.length; i += 40) {
+    await jp({ message: `Translating ${Math.min(i + 40, texts.length)} of ${texts.length}` });
+    translate(texts.slice(i, i + 40), j.langs, main, tmp);
+    if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
+  }
+  let n = 0;
+  for (const o of todo) { const t = map[o[main]]; if (!t) continue; for (const l of j.langs) if (!o[l] && t[l]) { o[l] = t[l]; n++; } }
+  if (!n) throw new Error('No translations came back. Is the claude command set up on this computer?');
+  const now = (await rest('/rest/v1/guides?select=content,theme,draft&id=eq.' + j.guide_id))[0];   // merge into the latest copy, not an old one
+  const draft = now.draft && now.draft.content ? now.draft : { content: now.content, theme: now.theme };
+  const objs2 = []; const walk2 = x => { if (Array.isArray(x)) x.forEach(walk2); else if (x && typeof x === 'object') { if (isI18(x)) objs2.push(x); else Object.values(x).forEach(walk2); } };
+  walk2(draft.content.files || {});
+  for (const o of objs2) { const t = map[o[main]]; if (t) for (const l of j.langs) if (!o[l] && t[l]) o[l] = t[l]; }
+  await rest('/rest/v1/guides?id=eq.' + j.guide_id, { method: 'PATCH', body: { draft: { ...draft, savedAt: new Date().toISOString() } }, headers: { Prefer: 'return=minimal' } });
+  const result = Object.fromEntries(Object.entries(map).map(([k, t]) => [k, Object.fromEntries(j.langs.filter(l => t[l]).map(l => [l, t[l]]))]));
+  await jp({ status: 'done', message: n + ' texts translated', result, finished_at: new Date().toISOString() });
+}
+
+/* ---------- Find more: web research for new things to do, markets or events, returned as suggestions ----------
+   From the editor's "Find more" button. Claude searches the web around the house (same rules as a build's research,
+   plus the curation rule), each place is checked on Google (gone: dropped; its listing, id and hours added), texts are
+   translated into the guide's languages, and the result goes back in the job. Nothing is added to the guide here:
+   the host keeps or skips each suggestion in the editor, and what they keep goes into their draft. */
+const FIND = {
+  'find-todo': { file: 'todo', key: 'items', what: 'things to do', rule: 'Find 6 to 10 more things to do within the radius: sights, nature, fun, culture, wine. Same shape as the example: {"items":[...]} with lat, lng, an icon and group as in the example. ' + HOURS_RULE },
+  'find-markets': { file: 'markets', key: 'markets', what: 'markets', rule: MARKETS_RULE + ' Find up to 8 that are not in the guide yet.' },
+  'find-events': { file: 'events', key: 'items', what: 'events', rule: 'Find 6 to 10 local events within the radius in the next 12 months: festivals, fairs, traditions, music, food. Same shape as the example: {"items":[...]}. "type" is one of: castells, festa, carnival, parade, food, fair, film, music, historical, tradition. Every event MUST have numeric lat and lng (the venue, or the centre of its town), a "url" (its official page) and "sources" (the pages you used). "dates": start and end as YYYY-MM-DD; "status" is "confirmed" only when an official source gives that year\'s dates, otherwise "expected" (worked out from earlier years). Leave out events whose dates have all passed.' }
+};
+const CURATION = 'Pick like a local host would: places and events a guest would not easily find by searching Google themselves (local favourites, hidden gems, things for kids or dogs, the best of each kind nearby). No chains, no supermarkets or groceries, no golf courses. Each one must still exist or still run, confirmed by a source from the last two years. Each "description" says in one or two sentences why it is worth it and when to go.';
+const FIND_PER_DAY = 8;   // each search costs Claude time on this computer and a few Google requests
+const GOOGLE = env.GOOGLE_PLACES_KEY ? makeGoogle(env.GOOGLE_PLACES_KEY) : null;
+const slugOf = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'place';
+async function findJob(j, jp) {
+  const F = FIND[j.kind], since = new Date(Date.now() - 864e5).toISOString();
+  const recent = await rest(`/rest/v1/guide_jobs?select=id&guide_id=eq.${j.guide_id}&kind=like.find-*&id=neq.${j.id}&created_at=gt.${encodeURIComponent(since)}`);
+  if ((recent || []).length >= FIND_PER_DAY) throw new Error('You have searched a lot today. Try again tomorrow.');
+  const g = (await rest('/rest/v1/guides?select=content,draft,answers&id=eq.' + j.guide_id))[0];
+  const c = g.draft && g.draft.content ? g.draft.content : g.content, files = c.files || {}, site = c.site || {}, h = files.house || {}, A0 = g.answers || {};
+  if (typeof h.lat !== 'number') throw new Error('The guide does not know where the house is.');
+  const have = (files[F.file] || {})[F.key] || [];
+  const A = { placeName: site.name, town: A0.town || '', region: A0.region || '', lat: h.lat, lng: h.lng, radius: (site.area || {}).radiusKm || 30, interests: A0.interests, feelWords: A0.feelWords, tone: A0.tone };
+  const { clean, located, allowed, normSchedule } = researchTools();
+  const known = have.map(x => x.name_local || nameOf(x.name)).filter(Boolean);
+  await jp({ message: `Searching the web for ${F.what}` });
+  const out = located(clean(claudeJson(researchPrompt(F.file, A, `${F.rule} ${CURATION} Already in the guide, so never suggest them again: ${known.join('; ') || 'nothing yet'}. ${allowed}`), F.file)));
+  const label = it => ({ displayName: { text: it.name_local || nameOf(it.name) } });
+  (out[F.key] || []).forEach(normSchedule);
+  let items = (out[F.key] || []).filter(it => !have.some(x => sameName(x, label(it)) && (typeof x.lat !== 'number' || hav(x.lat, x.lng, it.lat, it.lng) < 1.5)));
+  const ids = new Set(have.map(x => x.id)), today = new Date().toISOString().slice(0, 10);
+  for (const it of items) {
+    let id = slugOf(it.name_local || nameOf(it.name)); while (ids.has(id)) id += '-2'; ids.add(id); it.id = id;
+    it.km_from_house = Math.round(hav(h.lat, h.lng, it.lat, it.lng) * 10) / 10;
+  }
+  if (GOOGLE && F.file !== 'events') {
+    const kept = [];
+    for (const [i, it] of items.entries()) {
+      await jp({ message: `Checking on Google: ${i + 1} of ${items.length}` });
+      let p = null; try { p = await GOOGLE(it); } catch (e) { /* keep it, unchecked */ }
+      await new Promise(r => setTimeout(r, 300));
+      const far = p && p.location ? hav(it.lat, it.lng, p.location.latitude, p.location.longitude) : 99;
+      const ours = p && far <= 2 && (sameName(it, p) || (F.file === 'markets' && sameMarket(it, p, far)));
+      it.checked = today;
+      if (!ours) { it._google = 'Not found on Google: the web source is the only proof'; kept.push(it); continue; }
+      if (p.businessStatus === 'CLOSED_PERMANENTLY') continue;   // gone: never suggested
+      it.gid = p.id; if (!it.gmaps || /\/maps\/search\//.test(it.gmaps)) it.gmaps = p.googleMapsUri;
+      it._google = 'On Google';
+      if (p.businessStatus === 'CLOSED_TEMPORARILY') { it.flags = [...new Set([...(it.flags || []), 'check'])]; it._google = 'Temporarily closed on Google (off-season?)'; }
+      const gs = schedule(p.regularOpeningHours?.periods);
+      if (!(it.schedule && it.schedule.length) && !it.always && F.file !== 'markets') {
+        if (gs === 'always') it.always = true;
+        else if (Array.isArray(gs)) { it.schedule = gs; it.hoursSource = 'google'; if (it._google === 'On Google') it.flags = (it.flags || []).filter(f => f !== 'check'); }
+      }
+      kept.push(it);
+    }
+    items = kept;
+  }
+  const langs = (site.languages || ['en']).filter(l => l !== 'en' && LANGS.includes(l)), objs = [];
+  const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (isI18(x)) objs.push(x); else Object.values(x).forEach(walk); } };
+  walk(items);
+  const texts = [...new Set(objs.map(o => o.en).filter(Boolean))];
+  if (langs.length && texts.length) {
+    const tmp = resolve(ROOT, '.job-' + j.id.slice(0, 8) + '.json'), map = {};
+    for (let i = 0; i < texts.length; i += 40) {
+      await jp({ message: `Translating ${items.length} ${F.what}` });
+      translate(texts.slice(i, i + 40), langs, 'en', tmp);
+      if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
+    }
+    for (const o of objs) { const t = map[o.en]; if (t) for (const l of langs) if (!o[l] && t[l]) o[l] = t[l]; }
+  }
+  log(`  found ${items.length} ${F.what}`);
+  await jp({ status: 'done', message: items.length ? `${items.length} ${F.what} found` : 'Nothing new found', result: { kind: j.kind, items, categories: out.categories || [] }, finished_at: new Date().toISOString() });
+}
+
 async function runJobs() {
-  const jobs = await rest('/rest/v1/guide_jobs?select=id,guide_id,langs&status=eq.queued&order=created_at.asc&limit=5');
+  const jobs = await rest('/rest/v1/guide_jobs?select=id,guide_id,kind,langs&status=eq.queued&order=created_at.asc&limit=5');
   for (const j of jobs || []) {
     const jp = b => rest('/rest/v1/guide_jobs?id=eq.' + j.id, { method: 'PATCH', body: b, headers: { Prefer: 'return=minimal' } }).catch(() => {});
-    const won = await rest('/rest/v1/guide_jobs?id=eq.' + j.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running', message: 'Translating' }, headers: { Prefer: 'return=representation' } });
+    const won = await rest('/rest/v1/guide_jobs?id=eq.' + j.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running', message: j.kind === 'translate' ? 'Translating' : 'Starting the search' }, headers: { Prefer: 'return=representation' } });
     if (!won || !won[0]) continue;
-    log('translating job', j.id.slice(0, 8), j.langs.join(','));
-    try {
-      const g = (await rest('/rest/v1/guides?select=content,draft&id=eq.' + j.guide_id))[0];
-      const c = g.draft && g.draft.content ? g.draft.content : g.content, main = ((c.site || {}).languages || ['en'])[0] || 'en', objs = [];
-      const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (isI18(x)) objs.push(x); else Object.values(x).forEach(walk); } };
-      walk(c.files || {});
-      const todo = objs.filter(o => o[main] && j.langs.some(l => !o[l]));
-      const texts = [...new Set(todo.map(o => o[main]))];
-      if (!texts.length) { await jp({ status: 'done', message: 'Nothing to translate', finished_at: new Date().toISOString() }); continue; }
-      const tmp = resolve(ROOT, '.job-' + j.id.slice(0, 8) + '.json'); let map = {};
-      for (let i = 0; i < texts.length; i += 40) {
-        await jp({ message: `Translating ${Math.min(i + 40, texts.length)} of ${texts.length}` });
-        translate(texts.slice(i, i + 40), j.langs, main, tmp);
-        if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
-      }
-      let n = 0;
-      for (const o of todo) { const t = map[o[main]]; if (!t) continue; for (const l of j.langs) if (!o[l] && t[l]) { o[l] = t[l]; n++; } }
-      if (!n) throw new Error('No translations came back. Is the claude command set up on this computer?');
-      const now = (await rest('/rest/v1/guides?select=content,theme,draft&id=eq.' + j.guide_id))[0];   // merge into the latest copy, not an old one
-      const draft = now.draft && now.draft.content ? now.draft : { content: now.content, theme: now.theme };
-      const objs2 = []; const walk2 = x => { if (Array.isArray(x)) x.forEach(walk2); else if (x && typeof x === 'object') { if (isI18(x)) objs2.push(x); else Object.values(x).forEach(walk2); } };
-      walk2(draft.content.files || {});
-      for (const o of objs2) { const t = map[o[main]]; if (t) for (const l of j.langs) if (!o[l] && t[l]) o[l] = t[l]; }
-      await rest('/rest/v1/guides?id=eq.' + j.guide_id, { method: 'PATCH', body: { draft: { ...draft, savedAt: new Date().toISOString() } }, headers: { Prefer: 'return=minimal' } });
-      const result = Object.fromEntries(Object.entries(map).map(([k, t]) => [k, Object.fromEntries(j.langs.filter(l => t[l]).map(l => [l, t[l]]))]));
-      await jp({ status: 'done', message: n + ' texts translated', result, finished_at: new Date().toISOString() });
-    } catch (e) { log('  job FAILED:', e.message); await jp({ status: 'failed', message: String(e.message).slice(0, 200), finished_at: new Date().toISOString() }); }
+    log(j.kind === 'translate' ? 'translating' : 'searching', 'job', j.id.slice(0, 8), j.kind === 'translate' ? (j.langs || []).join(',') : j.kind);
+    try { if (j.kind === 'translate') await translateJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
+    catch (e) { log('  job FAILED:', e.message); await jp({ status: 'failed', message: String(e.message).slice(0, 200), finished_at: new Date().toISOString() }); }
   }
 }
 async function tick() {

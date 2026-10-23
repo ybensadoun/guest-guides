@@ -28,6 +28,11 @@ Build what is queued right now and stop: `node worker/guide-worker.mjs --once`
 
 The guide is then at `https://porta-guides.netlify.app/g/<slug>`.
 
+## Jobs from the editor (`guide_jobs`)
+Checked before each round of builds, one at a time:
+- `translate`: fills the missing languages of the draft (or makes a draft from the live guide); the texts also go back in the job's `result` for the editor that is open.
+- `find-todo`, `find-markets`, `find-events` ("Find more" on those steps): Claude searches the web around the house with the build's research rules plus the curation rule, leaves out what the guide has, checks each place on Google (`worker/places.mjs`, same rules as the monthly check: permanently closed ones are dropped, listing link, Google id and hours added; events are not checked), translates into the guide's languages and returns the suggestions in `result`. Nothing goes into the guide here: the host keeps or skips each one in the editor. At most 8 searches per guide a day. Needs `GOOGLE_PLACES_KEY` in `Guest Guides/.env` for the Google check (without it the suggestions are unchecked).
+
 ## A guide's folder and its database row: pull and push
 The database is the live guide (decided 23 Oct 2026, docs/plan-ca-la-kimberly-on-product.md). To work on a guide as files:
 - `npm run guide:pull -- <site>`: the live guide into `sites/<site>` (content, i18n, private Wi-Fi, site.json, theme.css). Only changed files are rewritten, in their own key order and indentation.
