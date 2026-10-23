@@ -34,6 +34,9 @@ Yohann, 23 Oct: "there should be a single editing", the pretty step-by-step one.
 - **Find more** on Things to do, Markets and Events: a `find-*` job (worker/README.md). The editor shows the suggestions one card at a time ("Add to my guide", "Not for us", "Skip the rest"); kept ones go into the draft, and the section is switched on and made live if the guide had none (a guide built without events). Suggestions wait in the job for 14 days; which ones were looked at is remembered in the browser.
 - **Show on the home page** on a bar or restaurant: a Home tile copied from it (`from` = the restaurant's id), reworded in Home tiles. No separate "delivery service" tile: a pinned restaurant with a comment covers it (Yohann, 23 Oct).
 
+## Automatic events (added 23 Oct, Yohann)
+"Keep events up to date" at the top of the Events step: every month (monthly task, `npm run refresh-events`) and right away when switched on or on "Search now", the worker searches the next three months and adds events straight into the guide, with "expected" dates until confirmed. Topics to skip and to look for, in any language. The host's own events are never changed; a deleted automatic event never comes back. The settings save at once in the live guide and the draft (`set_events_auto`), since they are not something guests see. Ca La Kimberly is switched on as the test case.
+
 ## Getting around (added 23 Oct, Yohann)
 A section of its own (kind `transport`, `content/transport.json`, "At the house"), with the page Ca La Kimberly's "Taxi & train" tile used to open. Its `tile` adds a one-tap tile at the end of the Home tiles; the section tile then stays off the Home grid, so nothing shows twice. New guides get it from the onboarding's taxi answer. `engine/scripts/move-transport.mjs <site>` moves an old taxi-and-train Home tile into it (done for Ca La Kimberly after the engine went live).
 

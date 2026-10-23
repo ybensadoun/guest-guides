@@ -11,6 +11,7 @@
     "sites": "node engine/scripts/run.js sites",
     "check-places": "NODE_USE_ENV_PROXY=1 node --no-warnings engine/scripts/check-places.js",
     "check-guides": "node worker/check-guides.mjs",
+    "refresh-events": "node worker/guide-worker.mjs --refresh-events",
     "guide:push": "node worker/guide-sync.mjs push",
     "guide:pull": "node worker/guide-sync.mjs pull",
     "build-viewer": "vite build --config engine/vite.viewer.config.js",

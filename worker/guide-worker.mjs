@@ -256,7 +256,7 @@ async function translateJob(j, jp) {
 const FIND = {
   'find-todo': { file: 'todo', key: 'items', what: 'things to do', rule: 'Find 6 to 10 more things to do within the radius: sights, nature, fun, culture, wine. Same shape as the example: {"items":[...]} with lat, lng, an icon and group as in the example. ' + HOURS_RULE },
   'find-markets': { file: 'markets', key: 'markets', what: 'markets', rule: MARKETS_RULE + ' Find up to 8 that are not in the guide yet.' },
-  'find-events': { file: 'events', key: 'items', what: 'events', rule: 'Find 6 to 10 local events within the radius in the next 12 months: festivals, fairs, traditions, music, food. Same shape as the example: {"items":[...]}. "type" is one of: castells, festa, carnival, parade, food, fair, film, music, historical, tradition. Every event MUST have numeric lat and lng (the venue, or the centre of its town), a "url" (its official page) and "sources" (the pages you used). "dates": start and end as YYYY-MM-DD; "status" is "confirmed" only when an official source gives that year\'s dates, otherwise "expected" (worked out from earlier years). Leave out events whose dates have all passed.' }
+  'find-events': { file: 'events', key: 'items', what: 'events', rule: 'Find 6 to 10 local events within the radius with a date in the next three months: festivals, fairs, traditions, music, food. Same shape as the example: {"items":[...]}. "type" is one of: castells, festa, carnival, parade, food, fair, film, music, historical, tradition. Every event MUST have numeric lat and lng (the venue, or the centre of its town), a "url" (its official page) and "sources" (the pages you used). "dates": start and end as YYYY-MM-DD; "status" is "confirmed" only when an official source gives that year\'s dates, otherwise "expected" (worked out from earlier years). Leave out events whose dates have all passed.' }
 };
 const CURATION = 'Pick like a local host would: places and events a guest would not easily find by searching Google themselves (local favourites, hidden gems, things for kids or dogs, the best of each kind nearby). No chains, no supermarkets or groceries, no golf courses. Each one must still exist or still run, confirmed by a source from the last two years. Each "description" says in one or two sentences why it is worth it and when to go.';
 const FIND_PER_DAY = 8;   // each search costs Claude time on this computer and a few Google requests
@@ -274,7 +274,7 @@ async function findJob(j, jp) {
   const { clean, located, allowed, normSchedule } = researchTools();
   const known = have.map(x => x.name_local || nameOf(x.name)).filter(Boolean);
   await jp({ message: `Searching the web for ${F.what}` });
-  const out = located(clean(claudeJson(researchPrompt(F.file, A, `${F.rule} ${CURATION} Already in the guide, so never suggest them again: ${known.join('; ') || 'nothing yet'}. ${allowed}`), F.file)));
+  const out = located(clean(claudeJson(researchPrompt(F.file, A, `${F.rule}${j.kind === 'find-events' ? ' ' + windowRule() : ''} ${CURATION} Already in the guide, so never suggest them again: ${known.join('; ') || 'nothing yet'}. ${allowed}`), F.file)));
   const label = it => ({ displayName: { text: it.name_local || nameOf(it.name) } });
   (out[F.key] || []).forEach(normSchedule);
   let items = (out[F.key] || []).filter(it => !have.some(x => sameName(x, label(it)) && (typeof x.lat !== 'number' || hav(x.lat, x.lng, it.lat, it.lng) < 1.5)));
@@ -323,6 +323,111 @@ async function findJob(j, jp) {
   await jp({ status: 'done', message: items.length ? `${items.length} ${F.what} found` : 'Nothing new found', result: { kind: j.kind, items, categories: out.categories || [] }, finished_at: new Date().toISOString() });
 }
 
+/* ---------- Automatic events: kept up to date every month, without the host ----------
+   A guide whose events file has "auto": {"on": true, "skip": [...], "want": [...], "removed": [...]} gets its events for the
+   next three months searched each month (npm run refresh-events, in the monthly task) and right away when the host switches
+   it on or presses "Search now" (job auto-events). New events go straight into the live guide, and into the host's draft
+   if there is one, marked "auto": true. Events the host added are never changed. An automatic event whose dates have all
+   passed is dropped; one the host deleted is listed in "removed" and never added again. Topics to skip and to look for can
+   be in any language: Claude reads them as topics, and the skip topics are also checked, in English, on what it found. */
+const EV_DAYS = 92;
+const dayStr = d => d.toISOString().slice(0, 10);
+const windowRule = (now = new Date()) => `Today is ${dayStr(now)}: only events with a date between ${dayStr(now)} and ${dayStr(new Date(now.getTime() + EV_DAYS * 864e5))}.`;
+const enText = it => [it.name, it.description, it.type, it.venue, it.town].map(x => x && typeof x === 'object' ? x.en || '' : x || '').join(' ').toLowerCase();
+// "bullfighting" also catches "bullfights": each word of a topic matches a word that starts like it.
+const hits = (text, topic) => String(topic).toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 2).every(w => new RegExp('\\b' + w.slice(0, Math.max(4, w.length - 3))).test(text));
+function englishTopics(topics, tmpName) {
+  if (!topics.length) return [];
+  const tmp = resolve(ROOT, '.job-' + tmpName + '.json');
+  translate(topics, ['en'], 'the language they are written in (it may already be English)', tmp);
+  let map = {}; if (existsSync(tmp)) { try { map = JSON.parse(readFileSync(tmp, 'utf8')); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
+  return topics.map(t => ((map[t] || {}).en || t).toLowerCase());
+}
+// Adds what was found to one copy of the events file (the live guide, or the draft) and says what changed.
+function mergeEvents(file, found, today) {
+  const auto = file.auto || {}, items = file.items = file.items || [], out = { added: [], updated: [], dropped: [] };
+  const label = it => ({ displayName: { text: it.name_local || nameOf(it.name) } }), near = (a, b) => typeof a.lat !== 'number' || typeof b.lat !== 'number' || hav(a.lat, a.lng, b.lat, b.lng) < 3;
+  const removed = (auto.removed || []).map(r => typeof r === 'string' ? { name: r } : r);
+  const end = dayStr(new Date(Date.parse(today) + EV_DAYS * 864e5));
+  for (const f of found) {
+    const same = items.find(x => sameName(x, label(f)) && near(x, f));
+    if (same) {
+      if (!same.auto) continue;   // the host's own event: never touched
+      const dates = [...(same.dates || []).filter(d => (d.end || d.start) < today || d.start > end), ...(f.dates || [])].sort((a, b) => a.start.localeCompare(b.start));
+      const was = JSON.stringify(same.dates);
+      same.dates = dates.filter((d, i) => !dates.slice(0, i).some(e => e.start === d.start));
+      for (const k of ['url', 'sources', 'venue']) if (f[k] && !same[k]) same[k] = f[k];
+      if (JSON.stringify(same.dates) !== was) out.updated.push(nameOf(same.name));
+      continue;
+    }
+    if (removed.some(r => sameName({ name: { en: r.name } }, label(f)))) continue;   // deleted by the host once
+    const ids = new Set(items.map(x => x.id)); let id = f.id; while (ids.has(id)) id += '-2';
+    items.push({ ...f, id, auto: true }); out.added.push(nameOf(f.name));
+    out.details = [...(out.details || []), `${nameOf(f.name)} (${f.town || '?'}): ${(f.dates || []).map(d => `${d.start}${d.end && d.end !== d.start ? ' to ' + d.end : ''} ${d.status}`).join(', ')}. Source: ${[f.url, ...(f.sources || [])].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(' ')}`];
+  }
+  for (let i = items.length - 1; i >= 0; i--) { const x = items[i]; if (x.auto && !(x.dates || []).some(d => (d.end || d.start) >= today)) { items.splice(i, 1); out.dropped.push(nameOf(x.name)); } }
+  return out;
+}
+// The guide must have a live Events section for them to show (a guide built without events had none, or one "coming soon").
+function eventsLive(content) {
+  const f = content.files, ss = (f.sections = f.sections || { sections: [] }).sections = f.sections.sections || [];
+  const row = ss.find(x => x.id === 'events');
+  if (!row) ss.push({ id: 'events', kind: 'events', color: 'events', group: 'area', status: 'live', labelKey: 'events' }); else row.status = 'live';
+  content.site = content.site || {}; content.site.modules = { ...(content.site.modules || {}), events: true };
+}
+async function refreshEvents(g, { apply = true, say = () => {} } = {}) {
+  const c = g.content, ev = (c.files || {}).events, auto = ev && ev.auto;
+  if (!auto || !auto.on) return null;
+  const h = (c.files || {}).house || {}, site = c.site || {}, A0 = g.answers || {}, today = dayStr(new Date());
+  if (typeof h.lat !== 'number') throw new Error('The guide does not know where the house is.');
+  const skip = (auto.skip || []).filter(Boolean), want = (auto.want || []).filter(Boolean);
+  const A = { placeName: site.name, town: A0.town || '', region: A0.region || '', lat: h.lat, lng: h.lng, radius: (site.area || {}).radiusKm || 30, interests: [...(A0.interests || []), ...want], feelWords: A0.feelWords, tone: A0.tone };
+  const { clean, located, allowed } = researchTools();
+  const known = (ev.items || []).map(x => x.name_local || nameOf(x.name)).filter(Boolean);
+  say('Searching the web for events');
+  const rule = FIND['find-events'].rule + ' ' + windowRule() + ' Include events already in the guide when you find their dates in this window, so the guide can update them: ' + (known.join('; ') || 'none yet') + '.'
+    + (want.length ? ` The host would also like events about: ${want.join('; ')} (topics, maybe written in another language).` : '')
+    + (skip.length ? ` Never include events about: ${skip.join('; ')} (topics, maybe written in another language: leave them out whatever the language of the source).` : '');
+  const out = located(clean(claudeJson(researchPrompt('events', A, `${rule} ${CURATION} ${allowed}`), 'events')));
+  const skipEn = englishTopics(skip, g.id.slice(0, 8) + '-skip');
+  let found = (out.items || []).filter(f => (f.dates || []).some(d => (d.end || d.start) >= today) && !skipEn.some(t => hits(enText(f), t)));
+  found = found.filter((f, i) => !found.slice(0, i).some(o => sameName(o, { displayName: { text: f.name_local || nameOf(f.name) } }) && hav(o.lat, o.lng, f.lat, f.lng) < 3));   // the same event found twice
+  for (const f of found) { f.id = slugOf(f.name_local || nameOf(f.name)); f.km_from_house = Math.round(hav(h.lat, h.lng, f.lat, f.lng) * 10) / 10; }
+  const langs = (site.languages || ['en']).filter(l => l !== 'en' && LANGS.includes(l)), objs = [];
+  const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (isI18(x)) objs.push(x); else Object.values(x).forEach(walk); } };
+  walk(found);
+  const texts = [...new Set(objs.map(o => o.en).filter(Boolean))];
+  if (langs.length && texts.length) {
+    say(`Translating ${found.length} events`);
+    const tmp = resolve(ROOT, '.job-' + g.id.slice(0, 8) + '-ev.json'), map = {};
+    for (let i = 0; i < texts.length; i += 40) { translate(texts.slice(i, i + 40), langs, 'en', tmp); if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} } }
+    for (const o of objs) { const t = map[o.en]; if (t) for (const l of langs) if (!o[l] && t[l]) o[l] = t[l]; }
+  }
+  const now = (await rest(`/rest/v1/guides?select=updated_at,content,draft&id=eq.${g.id}`))[0];   // merge into the latest copies
+  const live = now.content, draft = now.draft && now.draft.content ? now.draft : null;
+  const res = mergeEvents(live.files.events = live.files.events || { items: [] }, JSON.parse(JSON.stringify(found)), today);
+  live.files.events.auto = { ...(live.files.events.auto || auto), last: today, lastAdded: res.added.length };
+  if (live.files.events.items.length) eventsLive(live);
+  if (draft) { const df = draft.content.files = draft.content.files || {}; df.events = df.events || { items: [] }; mergeEvents(df.events, JSON.parse(JSON.stringify(found)), today); df.events.auto = { ...(df.events.auto || auto), last: today, lastAdded: res.added.length }; if (df.events.items.length) eventsLive(draft.content); }
+  if (apply) {
+    const body = { content: live, ...(draft ? { draft: { ...draft, savedAt: new Date().toISOString() } } : {}) };
+    const saved = await rest(`/rest/v1/guides?id=eq.${g.id}&updated_at=eq.${encodeURIComponent(now.updated_at)}`, { method: 'PATCH', body, headers: { Prefer: 'return=representation' } });
+    if (!saved || !saved.length) throw new Error('The guide changed meanwhile: run it again.');
+  }
+  return { ...res, found: found.length };
+}
+const evLine = r => [r.added.length ? `added ${r.added.join(', ')}` : '', r.updated.length ? `new dates for ${r.updated.join(', ')}` : '', r.dropped.length ? `past, removed: ${r.dropped.join(', ')}` : ''].filter(Boolean).join('; ') || 'nothing new';
+async function autoEventsJob(j, jp) {
+  const g = (await rest('/rest/v1/guides?select=id,content,answers&id=eq.' + j.guide_id))[0];
+  const since = new Date(Date.now() - 864e5).toISOString();
+  const recent = await rest(`/rest/v1/guide_jobs?select=id&guide_id=eq.${j.guide_id}&kind=in.(find-todo,find-markets,find-events,auto-events)&id=neq.${j.id}&created_at=gt.${encodeURIComponent(since)}`);
+  if ((recent || []).length >= FIND_PER_DAY) throw new Error('You have searched a lot today. Try again tomorrow.');
+  const r = await refreshEvents(g, { say: m => jp({ message: m }) });
+  if (!r) throw new Error('Automatic events are switched off for this guide.');
+  log('  events:', evLine(r));
+  await jp({ status: 'done', message: r.added.length ? `${r.added.length} events added` : 'Nothing new this time', result: r, finished_at: new Date().toISOString() });
+}
+
 async function runJobs() {
   const jobs = await rest('/rest/v1/guide_jobs?select=id,guide_id,kind,langs&status=eq.queued&order=created_at.asc&limit=5');
   for (const j of jobs || []) {
@@ -330,7 +435,7 @@ async function runJobs() {
     const won = await rest('/rest/v1/guide_jobs?id=eq.' + j.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running', message: j.kind === 'translate' ? 'Translating' : 'Starting the search' }, headers: { Prefer: 'return=representation' } });
     if (!won || !won[0]) continue;
     log(j.kind === 'translate' ? 'translating' : 'searching', 'job', j.id.slice(0, 8), j.kind === 'translate' ? (j.langs || []).join(',') : j.kind);
-    try { if (j.kind === 'translate') await translateJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
+    try { if (j.kind === 'translate') await translateJob(j, jp); else if (j.kind === 'auto-events') await autoEventsJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
     catch (e) { log('  job FAILED:', e.message); await jp({ status: 'failed', message: String(e.message).slice(0, 200), finished_at: new Date().toISOString() }); }
   }
 }
@@ -347,6 +452,18 @@ async function tick() {
       try { rmSync(resolve(ROOT, 'sites', 'w-' + g.id.slice(0, 8)), { recursive: true, force: true }); } catch (e2) {}
     }
   }
+}
+// npm run refresh-events [-- --slug <slug>] [--apply]: the monthly run of automatic events (scheduled task). Without --apply it
+// searches and reports what it would change, writing nothing.
+if (process.argv.includes('--refresh-events')) {
+  const slug = (process.argv[process.argv.indexOf('--slug') + 1] || '').replace(/^--.*/, ''), apply = process.argv.includes('--apply');
+  const rows = await rest(`/rest/v1/guides?select=id,slug,content,answers&${slug ? 'slug=eq.' + encodeURIComponent(slug) : 'status=eq.published'}`);
+  for (const g of rows || []) {
+    if (!(g.content && g.content.files && g.content.files.events && (g.content.files.events.auto || {}).on)) { if (slug) console.log(`${g.slug}: automatic events are off.`); continue; }
+    try { const r = await refreshEvents(g, { apply }); console.log(`${g.slug}: ${r.found} found in the next three months; ${evLine(r)}${apply ? '' : ' (dry run: nothing written, add --apply)'}`); for (const l of r.details || []) console.log('  + ' + l); }
+    catch (e) { console.log(`${g.slug}: did not work: ${e.message}`); }
+  }
+  process.exit(0);
 }
 log(`Guide worker on. Database ${URL_}. Publish on build: ${AUTO_PUBLISH}. Research: ${RESEARCH}.`);
 if (ONCE) { await tick(); log('done'); }

@@ -1307,6 +1307,89 @@
         "https://www.tarragona.cat/cultura/arts-esceniques/musica/festival-dixieland-tarragona",
         "https://www.tarragonaturisme.cat/en/events/tarragona-dixieland-festival"
       ]
+    },
+    {
+      "id": "three-kings-parade",
+      "lat": 41.2196,
+      "lng": 1.535,
+      "url": "https://www.elvendrell.net",
+      "auto": true,
+      "name": {
+        "ca": "Cavalcada de Reis",
+        "de": "Dreikönigs­umzug",
+        "en": "Three Kings Parade",
+        "es": "Cabalgata de Reyes",
+        "fr": "Défilé des Rois mages",
+        "nl": "Drie­koningen­optocht"
+      },
+      "town": "El Vendrell",
+      "type": "parade",
+      "dates": [
+        {
+          "end": "2027-01-05",
+          "start": "2027-01-05",
+          "status": "expected"
+        }
+      ],
+      "venue": "Coma-ruga and town centre",
+      "sources": [
+        "https://surtdecasa.cat/penedes/agenda/2025/cavalcada-de-reis-al-vendrell/239455",
+        "https://www.diarimes.com/ca/camp-tarragona/260105/nit-reis-torna-omplir-avui-els-carrers-camp-tarragona_204112.html"
+      ],
+      "description": {
+        "ca": "El 5 de gener a la tarda els Reis d'Orient arriben a la platja de Coma-ruga i després desfilen pel Vendrell llançant caramels. La nit més esperada de l'any per als infants, gratuïta.",
+        "de": "Am 5. Januar kommen die Heiligen Drei Könige nach­mittags am Strand von Coma-ruga an und ziehen dann am Abend Bonbons werfend durch El Vendrell. Die größte Nacht des Jahres für Kinder, kostenlos.",
+        "en": "On the evening of 5 January the Three Kings arrive on the beach at Coma-ruga in the afternoon, then parade through El Vendrell throwing sweets. The biggest night of the year for kids, free.",
+        "es": "El 5 de enero por la tarde los Reyes Magos llegan a la playa de Coma-ruga y después recorren El Vendrell lanzando caramelos. La noche más esperada del año para los niños, gratis.",
+        "fr": "Le 5 janvier, les Rois mages arrivent l’après-midi sur la plage de Coma-ruga, puis défilent le soir dans El Vendrell en lançant des bonbons. La plus grande soirée de l’année pour les enfants, gratuit.",
+        "nl": "Op 5 januari komen de Drie Koningen 's middags aan op het strand van Coma-ruga en trekken daarna 's avonds door El Vendrell, terwijl ze snoep strooien. De grootste avond van het jaar voor kinderen, gratis."
+      },
+      "km_from_house": 7.1
+    },
+    {
+      "id": "tres-tombs-of-valls",
+      "lat": 41.2864,
+      "lng": 1.2497,
+      "url": "https://www.valls.cat",
+      "auto": true,
+      "name": {
+        "ca": "Tres Tombs de Valls",
+        "de": "Tres Tombs in Valls",
+        "en": "Tres Tombs of Valls",
+        "es": "Tres Tombs de Valls",
+        "fr": "Tres Tombs de Valls",
+        "nl": "Tres Tombs van Valls"
+      },
+      "town": "Valls",
+      "type": "tradition",
+      "dates": [
+        {
+          "end": "2027-01-10",
+          "start": "2027-01-08",
+          "status": "expected",
+          "verify": true
+        }
+      ],
+      "venue": "Old town",
+      "sources": [
+        "https://femturisme.cat/es/agenda/tres-tombs-de-sant-antoni-en-valls"
+      ],
+      "description": {
+        "ca": "Una cercavila de cavalls i carruatges per Sant Antoni, patró dels animals, declarada festa tradicional d'interès nacional. La passada principal és diumenge al matí, amb carros antics de pagès exposats a la Plaça del Blat.",
+        "de": "Ein Umzug mit Pferden und Kutschen für Sant Antoni, den Schutz­patron der Tiere, als tradi­tionelles Fest von natio­nalem Interesse aus­gezeichnet. Der Haupt­umzug ist am Sonntag­morgen, auf der Plaça del Blat stehen alte Bauern­karren.",
+        "en": "A horse and carriage parade for Sant Antoni, patron of animals, declared a traditional festival of national interest. The main parade is on Sunday morning, with old farm carts on show in Plaça del Blat.",
+        "es": "Un desfile de caballos y carruajes por Sant Antoni, patrón de los animales, declarado fiesta tradicional de interés nacional. El desfile principal es el domingo por la mañana, con antiguos carros de labranza expuestos en la Plaça del Blat.",
+        "fr": "Un défilé de chevaux et d’attelages pour Sant Antoni, patron des animaux, déclaré fête traditionnelle d’intérêt national. Le grand défilé a lieu le dimanche matin, avec d’anciennes charrettes agricoles exposées sur la Plaça del Blat.",
+        "nl": "Een optocht van paarden en koetsen voor Sant Antoni, bescherm­heilige van de dieren, erkend als tradi­tioneel feest van nationaal belang. De hoofd­optocht is op zondag­ochtend, met oude boeren­karren te zien op de Plaça del Blat."
+      },
+      "km_from_house": 19.2
     }
-  ]
+  ],
+  "auto": {
+    "on": true,
+    "last": "2026-10-23",
+    "skip": [],
+    "want": [],
+    "lastAdded": 2
+  }
 }

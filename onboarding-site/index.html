@@ -1438,7 +1438,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is on the overview page only (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 23 Oct 2026, 18:14 (Madrid time, after commit 4fad119)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 23 Oct 2026, 19:04 (Madrid time, after commit b7d161c)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -1830,7 +1830,7 @@ function cItem(base, it, i, what) {
   const p = `${base}/${i}`, ord = k => { const n = C_ORDER.indexOf(k); return n < 0 ? 99 : n; };
   const keys = Object.keys(it).filter(k => !C_SKIP.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'))).sort((a, b) => ord(a) - ord(b));
   const km = it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
-  const meta = [typeof it.town === 'string' ? it.town : '', km, (it.flags || []).includes('check') ? 'check before going' : ''].filter(Boolean).join(' · ');
+  const meta = [typeof it.town === 'string' ? it.town : '', km, (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
   const pos = typeof it.lat === 'number' ? `<div class="f full"><label for="${cmId(p + '/gm')}">Move the pin: paste a Google Maps link</label><p class="hint">${it.lat ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
   const check = Array.isArray(it.flags) || what !== 'contact' ? `<div class="f"><span class="hint">Tells guests to check the hours or the dates before they go.</span><div class="chips"><button class="chip" type="button" data-cflag="${p}" data-f="check" aria-pressed="${(it.flags || []).includes('check')}"><span>Check before going</span></button></div></div>` : '';
   return cCard(p, cName(it), meta, `<div class="grid">${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], { long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' })).join('')}
@@ -1974,7 +1974,7 @@ function edAddTile(icon) {
 }
 function cmPlaces(path, what) {
   const arr = edGet(edC(), edPath(path)) || [];
-  return `${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
+  return `${path === 'files/events/items' ? cmAutoEvHTML() : ''}${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
     <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
     <p class="hint">A new ${esc(what)} starts at the house: move its pin with a Google Maps link. The distance from the house follows the pin.</p>`;
@@ -2132,6 +2132,64 @@ function cmFindAdd(path, sid) {
   const site = edC().site = edC().site || {}; site.modules = { ...(site.modules || {}), [sec]: true };
   findMark(f.id, [sid]); cmQueue(); render(); toast(`Added: ${edShown(n.name)}. Preview, then publish.`);
 }
+
+/* --- Automatic events (files/events/auto): the worker searches the next three months every month and adds what it finds
+   straight into the guide (worker/guide-worker.mjs, refreshEvents). The settings save at once, in the live guide and the
+   draft alike (set_events_auto), since they steer the search and are not something guests see. --- */
+const evAuto = () => (((edC().files || {}).events || {}).auto) || {};
+function cmAutoEvHTML() {
+  const a = evAuto(), on = !!a.on;
+  const topics = (k, ph) => `<div class="chips">${(a[k] || []).map((x, i) => `<span class="chip cm-topic"><span>${esc(x)}<button type="button" data-evdel="${k}" data-i="${i}" aria-label="Remove ${esc(x)}">×</button></span></span>`).join('')}</div>
+    <div class="cm-dayrow"><input type="text" id="c_ev_${k}" data-evin="${k}" placeholder="${esc(ph)}" aria-label="${k === 'skip' ? 'A topic to skip' : 'A topic to look for'}" enterkeyhint="done"><button class="btn small" type="button" data-evadd="${k}">Add</button></div>`;
+  return `<div class="cm-find cm-auto"><div class="cm-fhead"><b>Automatic events</b></div>
+    <p class="hint">Every month we look for events in the next three months around the house and add them to your guide straight away, with “expected” dates until they are confirmed. Events you add yourself are never changed, and an automatic one you delete never comes back.</p>
+    <div class="chips"><button class="chip" type="button" data-evauto aria-pressed="${on}"><span>Keep events up to date</span></button></div>
+    ${on ? `<div class="f full"><span class="lab">Topics to skip</span><p class="hint">In any language. We never add events about these.</p>${topics('skip', 'bullfighting, nightclubs…')}</div>
+      <div class="f full"><span class="lab">Things to look for</span><p class="hint">On top of the usual festivals, fairs, traditions, music and food.</p>${topics('want', 'jazz, wine, kids…')}</div>
+      <div class="cm-row"><span class="hint" id="cmEvState">${esc(cmEvStateText())}</span><button class="btn small" type="button" data-evrun>Search now</button></div>` : ''}
+    <p class="hint">These settings apply at once: they are not part of the changes you publish.</p></div>`;
+}
+const cmEvStateText = () => { const a = evAuto(), j = CM.evJob; if (j && (j.status === 'queued' || j.status === 'running')) return j.message || 'Waiting for the guide builder…'; if (j && j.status === 'failed') return 'The search did not work: ' + (j.message || 'try again later'); return a.last ? `Last search: ${a.last}${a.lastAdded != null ? `, ${a.lastAdded} added` : ''}.` : 'First search not run yet.'; };
+async function cmEvAutoSet(patch) {
+  const a = { ...evAuto(), ...patch };
+  for (const c of [CM.g.content, CM.live.content]) { const f = c.files = c.files || {}; f.events = f.events || { items: [] }; f.events.auto = cmClone(a); }   // both copies: not a change to publish
+  render();
+  try { await ensureFresh(); await sb('/rest/v1/rpc/set_events_auto', { method: 'POST', body: { p_guide: CM.g.id, p_auto: a } }); setSave('ok', cmSaveText()); }
+  catch (e) { setSave('err', 'Not saved: ' + niceError(e)); }
+}
+function cmEvTopic(k) {
+  const el = document.getElementById('c_ev_' + k), add = String(el && el.value || '').split(/[,;\n]/).map(x => x.trim()).filter(Boolean);
+  if (!add.length) return;
+  const cur = evAuto()[k] || [];
+  cmEvAutoSet({ [k]: [...cur, ...add.filter(x => !cur.some(c => c.toLowerCase() === x.toLowerCase()))] });
+  setTimeout(() => { const i = document.getElementById('c_ev_' + k); if (i) i.focus(); }, 0);
+}
+// "Search now", and the first search when the switch goes on: the worker adds what it finds to both copies; this one reloads them.
+async function cmEvRun() {
+  CM.evJob = { status: 'queued', message: 'Saving your changes…' }; cmEvRefresh();
+  try {
+    await cmSave(); await ensureFresh();
+    const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'auto-events', langs: edLangs() } });
+    const id = j && j[0] && j[0].id; if (!id) throw new Error('Could not start');
+    const job = CM.evJob = { id, status: 'queued', message: 'Waiting for the guide builder…' }; cmEvRefresh();
+    for (let i = 0; i < 360 && CM.evJob === job; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      try {
+        await ensureFresh();
+        const r = await sb('/rest/v1/guide_jobs?select=status,message&id=eq.' + id), st = r && r[0]; if (!st) continue;
+        job.status = st.status; job.message = st.message;
+        if (st.status === 'done') {
+          const g = (await sb('/rest/v1/guides?select=content,draft&id=eq.' + CM.g.id))[0], work = g.draft && g.draft.content ? g.draft.content : g.content;
+          for (const [mine, theirs] of [[CM.live.content, g.content], [CM.g.content, work]]) { mine.files.events = cmClone(theirs.files.events); mine.files.sections = cmClone(theirs.files.sections); mine.site.modules = cmClone(theirs.site.modules); }   // separate copies: the working one is edited
+          CM.evJob = null; toast(st.message || 'Events updated'); render(); return;
+        }
+        cmEvRefresh(); if (st.status === 'failed') return;
+      } catch (e) { /* offline for a moment: try again */ }
+    }
+  } catch (e) { CM.evJob = { status: 'failed', message: niceError(e) }; cmEvRefresh(); }
+}
+function cmEvRefresh() { const el = document.getElementById('cmEvState'); if (el) el.textContent = cmEvStateText(); }
+document.addEventListener('keydown', e => { const t = e.target; if (CM.on && e.key === 'Enter' && t.dataset && t.dataset.evin) { e.preventDefault(); cmEvTopic(t.dataset.evin); } });
 
 /* --- Pages: overview, one step, publish --- */
 function cmTile(m) {
@@ -2378,6 +2436,10 @@ document.addEventListener('click', e => {
   if (d.phmove) { const p = edPath(d.phmove), i = p[p.length - 1], a = edGet(edC(), p.slice(0, -1)), j = i + Number(d.dir); if (Array.isArray(a) && j >= 0 && j < a.length) { [a[i], a[j]] = [a[j], a[i]]; done(); } return; }
   if (d.addtile) { edAddTile(d.addtile); return done(); }
   if (d.cpin) { cmPin(d.cpin); return done(); }
+  if (d.evauto !== undefined) { const on = !evAuto().on; cmEvAutoSet({ on, skip: evAuto().skip || [], want: evAuto().want || [] }).then(() => { if (on && !evAuto().last) cmEvRun(); }); return; }
+  if (d.evadd) return cmEvTopic(d.evadd);
+  if (d.evdel) { const k = d.evdel, cur = [...(evAuto()[k] || [])]; cur.splice(+d.i, 1); return cmEvAutoSet({ [k]: cur }); }
+  if (d.evrun !== undefined) return cmEvRun();
   if (d.tradd) { cmTrAdd(d.tradd); return done(); }
   if (d.trtile !== undefined) { cmTrTile(); return done(); }
   if (d.cbool) { const q = edPath(d.cbool), o = edGet(edC(), q.slice(0, -1)); if (o) { o[q[q.length - 1]] = !o[q[q.length - 1]]; done(); } return; }
@@ -2397,6 +2459,8 @@ document.addEventListener('click', e => {
   if (d.cdel) {
     if (!d.now && d.sure !== '1') { const was = t.textContent; d.sure = '1'; t.textContent = 'Sure? Tap again'; setTimeout(() => { if (t.isConnected) { delete t.dataset.sure; t.textContent = was; } }, 4000); return; }
     const p = edPath(d.cdel), a = edGet(edC(), p.slice(0, -1));
+    const ev = d.cdel.startsWith('files/events/items/') && p.length === 4 && a && a[p[3]];
+    if (ev && ev.auto) cmEvAutoSet({ removed: [...(evAuto().removed || []), { name: (ev.name || {}).en || edShown(ev.name), at: new Date().toISOString().slice(0, 10) }] });
     if (Array.isArray(a)) { a.splice(p[p.length - 1], 1); for (const k of [...CM.open]) if (k.startsWith(d.cdel)) CM.open.delete(k); if (p[0] === 'private') cmWifiQr(); done(); }
   }
 });
@@ -2484,6 +2548,8 @@ function cmInit() {
 .cm-fsub{color:var(--muted);font-size:14px}
 .cm-flinks{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;font-weight:600}
 .cm-fbtns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:4px}
+.cm-topic span{gap:4px;padding-right:6px}
+.cm-topic button{border:0;background:none;font:inherit;font-size:17px;line-height:1;padding:0 4px;cursor:pointer;color:inherit}
 .cm-fstop{align-self:center;border:0;background:none;font:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer;padding:6px}`;
   document.head.appendChild(st);
 })();

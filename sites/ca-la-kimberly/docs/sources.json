@@ -954,6 +954,25 @@
     "dead": [],
     "checked": null,
     "result": null
+   },
+   "three-kings-parade": {
+    "sources": [
+     "https://www.elvendrell.net",
+     "https://surtdecasa.cat/penedes/agenda/2025/cavalcada-de-reis-al-vendrell/239455",
+     "https://www.diarimes.com/ca/camp-tarragona/260105/nit-reis-torna-omplir-avui-els-carrers-camp-tarragona_204112.html"
+    ],
+    "dead": [],
+    "checked": "2026-10-23",
+    "result": "added by the automatic events search (expected dates)"
+   },
+   "tres-tombs-of-valls": {
+    "sources": [
+     "https://www.valls.cat",
+     "https://femturisme.cat/es/agenda/tres-tombs-de-sant-antoni-en-valls"
+    ],
+    "dead": [],
+    "checked": "2026-10-23",
+    "result": "added by the automatic events search (expected dates)"
    }
   },
   "emergency.json": {
