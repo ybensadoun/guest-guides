@@ -49,8 +49,7 @@ function niceError(e){
 /* Account row under the header: in the page flow, so it never sits on the step bar. */
 #acctbar{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:-4px 0 2px}
 #acctbar:empty{display:none}
-#acctbar button{font:600 13px/1 inherit;font-family:inherit;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}
-#acctbar .edTop{background:var(--ink,#111);color:var(--paper,#fff);border-color:var(--ink,#111)}`;
+#acctbar button{font:600 13px/1 inherit;font-family:inherit;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}`;
   document.head.appendChild(st);
 })();
 
@@ -133,7 +132,7 @@ async function adoptRemote(remote){
 async function acctAttach(){
   const user = AUTH.user || {};
   if (A._acct && A._acct !== user.id) await wipeLocal();     // someone else used this device before: never mix their answers in
-  const rows = await sb('/rest/v1/guides?select=id,answers,status,slug,origin&order=created_at.asc&limit=1');
+  const rows = await sb('/rest/v1/guides?select=id,answers,status,slug,origin,content,theme,draft&order=created_at.asc&limit=1');
   const local = !!((A._seen && A._seen.length) || A.listingUrl);
   if (rows && rows[0]) {
     GUIDE = rows[0];
@@ -146,9 +145,10 @@ async function acctAttach(){
   A._acct = user.id; flush();
   if (local) acctQueue();
 }
-function acctQueue(){ if (!AUTH || !GUIDE) return; clearTimeout(pushTimer); pushTimer = setTimeout(acctPush, 1500); }
+// Once the guide exists (CM.on), the steps edit the guide itself and the answers are not saved any more.
+function acctQueue(){ if (!AUTH || !GUIDE || CM.on) return; clearTimeout(pushTimer); pushTimer = setTimeout(acctPush, 1500); }
 async function acctPush(){
-  if (window.__resetting || !AUTH || !GUIDE || GUIDE.origin === 'imported') return;
+  if (window.__resetting || !AUTH || !GUIDE || GUIDE.origin === 'imported' || CM.on) return;
   if (pushing) { pushAgain = true; return; }
   pushing = true;
   try {
@@ -171,7 +171,7 @@ async function acctLogout(){
   authStore(null); await wipeLocal(); location.hash = ''; location.reload();
 }
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.logoutTop')) acctLogout(); });
-// "My guide" and "Log out" live in one row right under the page header.
+// "Log out" lives in a row right under the page header.
 function acctBar() {
   let b = document.getElementById('acctbar');
   if (!b) { b = document.createElement('div'); b.id = 'acctbar'; const h = document.querySelector('header.top'); if (h) h.after(b); else document.body.prepend(b); }
@@ -210,6 +210,6 @@ async function accountBoot(){
   while (!AUTH) { await gate(window.__everSignedIn ? 'login' : 'signup', notice); }
   try { await acctAttach(); }
   catch (e) { if (e.status === 401 || e.status === 403) { authStore(null); await accountBoot(); return; } /* offline: keep working on this device */ }
-  try { await edInit(); } catch (e) {}
+  try { cmInit(); } catch (e) {}
   if (!document.querySelector('.logoutTop')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'logoutTop'; b.textContent = 'Log out'; acctBar().appendChild(b); }
 }

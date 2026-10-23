@@ -19,13 +19,19 @@ function say(title, text) {
   if (v) v.innerHTML = `<div style="padding:40px 20px;max-width:520px;margin:0 auto;text-align:center"><h2 style="margin:0 0 10px">${title}</h2><p style="margin:0;opacity:.75;line-height:1.5">${text}</p></div>`;
 }
 
+// ?preview: the host's unpublished changes (guides.draft, saved by the editor), only for the host logged in on this site.
+const PREVIEW = new URLSearchParams(location.search).has('preview');
 async function fetchGuide(slug) {
   let tok = null;
   try { tok = (JSON.parse(localStorage.getItem('porta-auth-v1') || 'null') || {}).access_token; } catch (e) { /* storage blocked */ }
-  if (tok) {   // the host looking at their own guide, drafts included
+  if (tok) {   // the host looking at their own guide: a guide not published yet, or with ?preview the changes not published yet
     try {
-      const r = await fetch(`${DB.url}/rest/v1/guides?slug=eq.${encodeURIComponent(slug)}&select=content,theme,status`, { headers: { apikey: DB.key, Authorization: 'Bearer ' + tok } });
-      if (r.ok) { const j = await r.json(); if (j[0] && j[0].content && j[0].content.site) return j[0]; }
+      const r = await fetch(`${DB.url}/rest/v1/guides?slug=eq.${encodeURIComponent(slug)}&select=content,theme,status${PREVIEW ? ',draft' : ''}`, { headers: { apikey: DB.key, Authorization: 'Bearer ' + tok } });
+      if (r.ok) {
+        const j = await r.json(), g = j[0];
+        if (g && PREVIEW && g.draft && g.draft.content) return { content: g.draft.content, theme: g.draft.theme || g.theme, status: g.status, preview: 'draft' };
+        if (g && g.content && g.content.site) return PREVIEW ? { ...g, preview: 'live' } : g;
+      }
     } catch (e) { /* fall through to the public copy */ }
   }
   const r = await fetch(`${DB.url}/rest/v1/rpc/get_published_guide`, { method: 'POST', headers: { apikey: DB.key, Authorization: 'Bearer ' + DB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_slug: slug }) });
@@ -76,7 +82,7 @@ function goOffline(site, files, base, slug, paper) {
   const slug = decodeURIComponent(m[1]).toLowerCase();
   say('Loading your guide…', 'One moment.');
   let row;
-  try { row = await fetchGuide(slug); if (row) saveCopy(slug, row); else dropCopy(slug); }
+  try { row = await fetchGuide(slug); if (row && row.preview) { /* a preview is never the copy kept for offline use */ } else if (row) saveCopy(slug, row); else dropCopy(slug); }
   catch (e) { row = loadCopy(slug); if (!row) return say('No connection', 'We could not reach the guide. Check your internet and reload the page.'); }
   if (!row) return say('This guide is being prepared', 'Its host is still setting it up. Please check back soon.');
 
@@ -102,12 +108,15 @@ function goOffline(site, files, base, slug, paper) {
   if (PRESET_CSS[preset]) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = PRESET_CSS[preset]; document.head.appendChild(l); }
   if (th.css) { const s = document.createElement('style'); s.id = 'guideTheme'; s.textContent = th.css; document.head.appendChild(s); }
 
-  if (row.status && row.status !== 'published') {
-    const b = document.createElement('div'); b.textContent = 'Draft: only you can see this';
-    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:300;text-align:center;font:600 12px/1 system-ui,sans-serif;padding:6px;background:#F2B33D;color:#1b1407';
-    document.body.appendChild(b);
-  }
   V().innerHTML = '';
   await import('./main.js');
+  // Only the host sees this: a small label floating at the bottom (the top edge holds the back and language buttons).
+  // The page gets room at its end, so nothing stays under the label.
+  if (row.preview || (row.status && row.status !== 'published')) {
+    const b = document.createElement('div');
+    b.textContent = row.preview === 'draft' ? 'Preview: your changes, not live yet' : row.preview === 'live' ? 'Preview: no changes waiting' : 'Draft: only you can see this';
+    b.style.cssText = `position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:45;max-width:calc(100% - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 13px/1 system-ui,sans-serif;padding:9px 14px;border-radius:999px;background:#F2B33D;color:#1b1407;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none`;
+    document.body.appendChild(b); document.body.style.paddingBottom = `calc(${getComputedStyle(document.body).paddingBottom} + 48px)`;
+  }
   goOffline(site, files, base, slug, (site.theme && site.theme.paper) || '#ffffff');
 })();

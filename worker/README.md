@@ -31,7 +31,7 @@ The guide is then at `https://porta-guides.netlify.app/g/<slug>`.
 ## A guide's folder and its database row: pull and push
 The database is the live guide (decided 23 Oct 2026, docs/plan-ca-la-kimberly-on-product.md). To work on a guide as files:
 - `npm run guide:pull -- <site>`: the live guide into `sites/<site>` (content, i18n, private Wi-Fi, site.json, theme.css). Only changed files are rewritten, in their own key order and indentation.
-- `npm run guide:push -- <site>`: content check, then images (public/, only new or changed) and the guide to its row. Refused if the guide changed in the database (editor, monthly check) since the last pull: pull first, or `--force`. A new guide needs `--owner-email <email>`.
+- `npm run guide:push -- <site>`: content check, then images (public/, only new or changed) and the guide to its row. Refused if the guide changed in the database (editor, monthly check) since the last pull: pull first, or `--force`. Refused while the editor has changes not published yet (`guides.draft`): publish or undo them in the editor, or `--drop-draft`. A new guide needs `--owner-email <email>`. `guide:pull` says when such changes exist (it pulls the live guide, without them).
 A guide keeps its own storage key (Ca La Kimberly: clk), so guests' saved settings survive. The sync state is in `sites/<site>/private/.synced.json` (git-ignored).
 
 ## Monthly place check for published guides

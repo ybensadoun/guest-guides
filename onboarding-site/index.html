@@ -718,6 +718,7 @@ const STATUS_ICON = { pre: '<i class="pre" aria-hidden="true"></i>', done: CHECK
 const stepsOrder = () => [...visible().map(m => m.id), 'send'];
 const titleOf = id => id === 'send' ? 'Review and send' : (MODULES.find(m => m.id === id) || {}).title;
 function stepListHTML(cur){
+  if (CM.on) return cmStepList(cur);   // once the guide exists, the steps edit the guide (editor.js)
   const mods = visible();
   const item = (m) => { const s = statusOf(m); return `<a class="si s-${s.k}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${STATUS_ICON[s.k]}</span><span class="st">${esc(m.title)}</span><span class="sl">${esc(s.k === 'done' ? 'Done' : s.k === 'chk' || s.k === 'pre' ? s.label : '')}</span></a>`; };
   const miss = sendMissing().length;
@@ -727,6 +728,7 @@ function stepListHTML(cur){
 }
 function railHTML(cur){ return `<aside class="rail" aria-label="All steps"><nav>${stepListHTML(cur)}</nav></aside>`; }
 function navbarHTML(cur){
+  if (CM.on) return cmNavbar(cur);
   const order = stepsOrder(), i = order.indexOf(cur), prev = order[i - 1], next = order[i + 1];
   const m = MODULES.find(x => x.id === cur);
   let main = '';
@@ -1436,7 +1438,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is on the overview page only (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 22 Oct 2026, 14:14 (Madrid time, after commit c37988e)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 23 Oct 2026, 12:11 (Madrid time, after commit 7006872)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -1533,8 +1535,7 @@ function niceError(e){
 /* Account row under the header: in the page flow, so it never sits on the step bar. */
 #acctbar{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:-4px 0 2px}
 #acctbar:empty{display:none}
-#acctbar button{font:600 13px/1 inherit;font-family:inherit;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}
-#acctbar .edTop{background:var(--ink,#111);color:var(--paper,#fff);border-color:var(--ink,#111)}`;
+#acctbar button{font:600 13px/1 inherit;font-family:inherit;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}`;
   document.head.appendChild(st);
 })();
 
@@ -1617,7 +1618,7 @@ async function adoptRemote(remote){
 async function acctAttach(){
   const user = AUTH.user || {};
   if (A._acct && A._acct !== user.id) await wipeLocal();     // someone else used this device before: never mix their answers in
-  const rows = await sb('/rest/v1/guides?select=id,answers,status,slug,origin&order=created_at.asc&limit=1');
+  const rows = await sb('/rest/v1/guides?select=id,answers,status,slug,origin,content,theme,draft&order=created_at.asc&limit=1');
   const local = !!((A._seen && A._seen.length) || A.listingUrl);
   if (rows && rows[0]) {
     GUIDE = rows[0];
@@ -1630,9 +1631,10 @@ async function acctAttach(){
   A._acct = user.id; flush();
   if (local) acctQueue();
 }
-function acctQueue(){ if (!AUTH || !GUIDE) return; clearTimeout(pushTimer); pushTimer = setTimeout(acctPush, 1500); }
+// Once the guide exists (CM.on), the steps edit the guide itself and the answers are not saved any more.
+function acctQueue(){ if (!AUTH || !GUIDE || CM.on) return; clearTimeout(pushTimer); pushTimer = setTimeout(acctPush, 1500); }
 async function acctPush(){
-  if (window.__resetting || !AUTH || !GUIDE || GUIDE.origin === 'imported') return;
+  if (window.__resetting || !AUTH || !GUIDE || GUIDE.origin === 'imported' || CM.on) return;
   if (pushing) { pushAgain = true; return; }
   pushing = true;
   try {
@@ -1655,7 +1657,7 @@ async function acctLogout(){
   authStore(null); await wipeLocal(); location.hash = ''; location.reload();
 }
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.logoutTop')) acctLogout(); });
-// "My guide" and "Log out" live in one row right under the page header.
+// "Log out" lives in a row right under the page header.
 function acctBar() {
   let b = document.getElementById('acctbar');
   if (!b) { b = document.createElement('div'); b.id = 'acctbar'; const h = document.querySelector('header.top'); if (h) h.after(b); else document.body.prepend(b); }
@@ -1694,83 +1696,380 @@ async function accountBoot(){
   while (!AUTH) { await gate(window.__everSignedIn ? 'login' : 'signup', notice); }
   try { await acctAttach(); }
   catch (e) { if (e.status === 401 || e.status === 403) { authStore(null); await accountBoot(); return; } /* offline: keep working on this device */ }
-  try { await edInit(); } catch (e) {}
+  try { cmInit(); } catch (e) {}
   if (!document.querySelector('.logoutTop')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'logoutTop'; b.textContent = 'Log out'; acctBar().appendChild(b); }
 }
 
-/* ---------- Guide editor: change the content of a published guide directly ---------- */
-const ED = { list: [], g: null, tab: 'basics', lang: 'en', timer: null, state: '', sub: 'todo' };
+/* ---------- Once the guide exists: the same steps edit the guide itself ----------
+   A guide built from the answers, or imported like Ca La Kimberly, opens in the same pages as the onboarding
+   (groups, tiles, rail, bottom bar), but each step shows and changes the guide's own content and look.
+   Changes save as a draft (guides.draft) that guests never see: Preview shows it to the host, "Publish changes"
+   makes it live. Plan and rules: docs/plan-single-editor.md */
+const CM = { on: false, g: null, live: null, lang: 'en', timer: null, marks: null, saving: null, again: false, open: new Set() };
 const ED_LANGS = { en: 'English', es: 'Español', fr: 'Français', ca: 'Català', de: 'Deutsch', nl: 'Nederlands' };
-const ED_SEC = { house: 'The house', garbage: 'Garbage and recycling', message: 'House guide', emergency: 'Emergency contacts', markets: 'Markets', restaurants: 'Where to eat', todo: 'What to do', events: 'Events', quick: 'Quick contacts', map: 'Map' };
-const ED_PLACES = [['todo', 'Things to do', 'files/todo/items'], ['restaurants', 'Where to eat', 'files/restaurants/items'], ['markets', 'Markets', 'files/markets/markets'], ['events', 'Events', 'files/events/items']];
-const ED_SHORT = ['name', 'title', 'sub', 'type', 'kind', 'hours', 'place', 'label', 'name_local', 'occasional_when'], ED_STR = ['town', 'phone', 'web', 'url', 'map', 'gmaps', 'venue', 'address', 'comarca'], ED_NUM = ['lat', 'lng', 'km_from_house', 'stalls_approx'];
 const ED_DAYS = [['mon', 'Mo'], ['tue', 'Tu'], ['wed', 'We'], ['thu', 'Th'], ['fri', 'Fr'], ['sat', 'Sa'], ['sun', 'Su']];
 const ED_FONTS = [['jost', 'Jost'], ['inter', 'Inter'], ['cormorant-garamond', 'Cormorant Garamond'], ['dm-sans', 'DM Sans'], ['dm-serif-display', 'DM Serif Display', [400]], ['fraunces', 'Fraunces'], ['geist', 'Geist'], ['instrument-serif', 'Instrument Serif', [400]], ['nunito', 'Nunito'], ['outfit', 'Outfit'], ['space-grotesk', 'Space Grotesk'], ['bricolage-grotesque', 'Bricolage Grotesque']];
-const ED_PRESETS = [['bauhaus', 'Bauhaus: bold colour blocks'], ['editorial', 'Editorial: magazine'], ['soft', 'Soft: calm and warm'], ['minimal', 'Minimal: quiet and clean']];
+// Same layouts and skeletons as "The look" in the onboarding (MOODS), named by the guide's own presets.
+const ED_PRESETS = [['bauhaus', 'Big colour tiles', 'Like an app: bold blocks, strong shapes.', 'm-bold'], ['editorial', 'Photo-led, like a magazine', 'Big photos and elegant type.', 'm-edit'], ['soft', 'Soft rounded cards', 'Gentle colours, rounded corners.', 'm-soft'], ['minimal', 'Clean and calm', 'Text first, thin lines, lots of white.', 'm-min']];
 const ED_COLORS = [['--paper', 'Background', '#F3EEE3'], ['--white', 'Cards', '#FFFFFF'], ['--ink', 'Text', '#121212'], ['--muted', 'Secondary text', '#4A4A4A'], ['--red', 'Accent 1 (red)', '#D52B1E'], ['--blue', 'Accent 2 (blue)', '#1D4FA0'], ['--yellow', 'Accent 3 (yellow)', '#F5C400'], ['--orange', 'Accent 4 (orange)', '#EC6A1C'], ['--green', 'Accent 5 (green)', '#0E7C46']];
-const edEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ED_SEC = { house: ['The house page', 'Photos, rooms and what the house offers.'], garbage: ['Rubbish and recycling', 'Which bin goes out tonight.'], message: ['House guide', 'How everything works, room by room.'], emergency: ['Emergency contacts', '112, health, police, town services.'], quick: ['Home tiles', 'One tap for a taxi, the station, a favourite.'], markets: ['Markets', 'Weekly markets, with what is on today.'], restaurants: ['Bars and restaurants', 'The places you send friends to.'], todo: ['Things to do', 'Beaches, walks and sights nearby.'], events: ['Events', 'Festivals and fairs during the stay.'], reviews: ['Ratings and reviews', 'Your listing rating and reviews.'], map: ['Map', 'Every place in the guide on one map.'] };
+
 const edIs18 = o => !!o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length > 0 && Object.keys(o).every(k => k in ED_LANGS);
 const edPath = s => s.split('/').map(k => /^\d+$/.test(k) ? +k : k);
 const edGet = (o, p) => p.reduce((a, k) => a == null ? a : a[k], o);
 function edSet(o, p, val) { let a = o; for (let i = 0; i < p.length - 1; i++) { if (a[p[i]] == null) a[p[i]] = typeof p[i + 1] === 'number' ? [] : {}; a = a[p[i]]; } a[p[p.length - 1]] = val; }
-const edShown = o => { const v = o && (o[ED.lang] != null ? o[ED.lang] : o.en); return v == null ? '' : v; };
-const edLangs = () => ((ED.g.content.site || {}).languages || ['en']).filter(l => l in ED_LANGS);
-const edC = () => ED.g.content;
+const edShown = o => { const x = o && (o[CM.lang] != null ? o[CM.lang] : o.en); return x == null ? '' : x; };
+const edC = () => CM.g.content;
 const edF = () => edC().files = edC().files || {};
+const edLangs = () => ((edC().site || {}).languages || ['en']).filter(l => l in ED_LANGS);
+const edImg = n => /^https?:/.test(n) ? n : (edC().assetBase || '') + n;
+const cmClone = x => x === undefined ? undefined : JSON.parse(JSON.stringify(x));
+const cmCanon = x => Array.isArray(x) ? x.map(cmCanon) : x && typeof x === 'object' ? Object.fromEntries(Object.keys(x).sort().map(k => [k, cmCanon(x[k])])) : x;
+const cmSame = (a, b) => JSON.stringify(cmCanon(a)) === JSON.stringify(cmCanon(b));
+const cmW = () => ({ content: CM.g.content, theme: CM.g.theme });
+const cmChanged = m => m.paths.some(p => { const q = edPath(p); return !cmSame(edGet(cmW(), q), edGet(CM.live, q)); });
+const cmDirty = () => !cmSame(cmW(), CM.live);
+const cmLive = () => CM.g.status === 'published';
+const cmOnSec = id => ((edC().site || {}).modules || {})[id] !== false;
+const cmLiveUrl = () => { const n = (edC().site || {}).netlify; return n && n.project ? `https://${n.project}.netlify.app` : `${location.origin}/g/${CM.g.slug}`; };
+const cmPreviewUrl = () => `${location.origin}/g/${encodeURIComponent(CM.g.slug)}?preview`;
+const cmId = p => 'c_' + p.replace(/[^a-zA-Z0-9]+/g, '_');
+const cmCount = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const aAn = w => (/^[aeiou]/i.test(w) ? 'an ' : 'a ') + w;
+const cmLen = p => (edGet(edC(), edPath(p)) || []).length;
 
-const ED_CSS = `#ed{position:fixed;inset:0;z-index:70;background:var(--paper,#fff);color:var(--ink,#111);overflow:auto;font-family:inherit;-webkit-overflow-scrolling:touch}
-#ed .edw{max-width:760px;margin:0 auto;padding:0 16px 80px}
-#ed .edh{position:sticky;top:0;z-index:2;background:var(--paper,#fff);border-bottom:1.5px solid var(--line,#ddd);padding:12px 0 10px;margin-bottom:14px}
-#ed .edr{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
-#ed h1{font-size:22px;margin:0;line-height:1.1}
-#ed h2{font-size:16px;margin:14px 0 8px}
-#ed .edst{font-size:13px;color:var(--muted,#666)}
-#ed .edtabs,#ed .edlangs{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-#ed .edb{border:1.5px solid var(--ink,#111);background:var(--surface,#fff);color:inherit;border-radius:999px;padding:8px 14px;font:600 14px inherit;font-family:inherit;cursor:pointer;text-decoration:none;display:inline-block}
-#ed .edb.on{background:var(--ink,#111);color:var(--paper,#fff)}
-#ed .edb.sm{padding:5px 10px;font-size:12.5px}
-#ed .edb.danger{border-color:#b3261e;color:#b3261e}
-#ed .edc{background:var(--surface,#fff);border:1.5px solid var(--line,#ddd);border-radius:14px;padding:14px;margin-bottom:12px}
-#ed label.edf{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--muted,#555)}
-#ed input[type=text],#ed input[type=time],#ed input[type=number],#ed select,#ed textarea{font:400 16px inherit;font-family:inherit;font-weight:400;color:var(--ink,#111);border:1.5px solid var(--line,#ccc);border-radius:10px;padding:10px 12px;background:var(--sunk,#fafafa);width:100%;box-sizing:border-box}
-#ed textarea{min-height:64px;resize:vertical;field-sizing:content}
-#ed details{border-top:1px solid var(--line,#ddd);padding:8px 0}
-#ed details:first-of-type{border-top:0}
-#ed summary{cursor:pointer;font-weight:700;padding:6px 0}
-#ed .edt{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:15px}
-#ed .edt input{width:22px;height:22px;flex:none}
-#ed .edl{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
-#ed .edn{font-size:13px;color:var(--muted,#666);margin:6px 0 12px}
-#ed .edgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
-#ed .edsch{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
-#ed .edsch input[type=time]{width:auto}
-#ed .edcol{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-#ed .edcol label.edf{margin-bottom:0}
-#ed .edphotos{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
-#ed .edph{width:96px}
-#ed .edph img{width:96px;height:72px;object-fit:cover;border-radius:8px;display:block;background:#ddd}
-#ed .edph span{display:flex;gap:3px;margin-top:3px}
-#ed .edph .edb{padding:2px 7px;font-size:12px}
-#ed .edfile{cursor:pointer;align-self:center}
-#ed input[type=color]{width:100%;height:44px;padding:2px;border-radius:10px;border:1.5px solid var(--line,#ccc);background:none}
-`;
+/* --- The steps once the guide exists: same groups, colours and shapes as the onboarding steps --- */
+const CSTEPS = [
+  { id: 'guide', group: 'basics', title: 'Name and languages', sub: 'What guests see', icon: 'tag', tc: 'var(--sun)', ti: '#1b1407', sh: 'var(--tomato)', shape: 'half', lang: true,
+    lead: 'The name on the guide and on guests’ phones, the text under a shared link, your logo and the languages.',
+    paths: ['content/site/name', 'content/site/description', 'content/site/shareDescription', 'content/site/logo', 'content/site/languages', 'content/files/house/name', 'content/files/house/listing'], body: c => cmGuide(c) },
+  { id: 'look', group: 'basics', title: 'The look', sub: 'Layout, fonts, colours', icon: 'eye', tc: 'var(--tomato)', sh: 'var(--ink)', shape: 'tri',
+    lead: 'Pick the layout, then fine-tune the fonts and colours. Preview shows the result before guests see it.',
+    paths: ['theme', 'content/site/theme', 'content/files/house/cover', 'content/files/house/photo'], body: c => cmLook(c) },
+  { id: 'sections', group: 'basics', title: 'Guide sections', sub: 'What goes in', icon: 'grid', tc: 'var(--ink)', ti: '#fff', sh: 'var(--sky)', shape: 'square',
+    lead: 'A section you switch off disappears from the guide, its page and the map. Its step here goes too, until you switch it back on.',
+    paths: ['content/site/modules'], body: c => cmSections(c) },
+  { id: 'housepage', group: 'house', sec: 'house', when: c => !!(c.files || {})['house-page'], title: 'The house page', sub: 'Photos, rooms, amenities', icon: 'cam', tc: 'var(--sky)', ti: '#fff', sh: 'var(--sun)', shape: 'quarter', lang: true,
+    lead: 'What guests see about the house itself: the summary, highlights, beds, amenities and photos by room.',
+    paths: ['content/files/house-page'], body: c => cmHousePage(c) },
+  { id: 'howto', group: 'house', sec: 'message', when: c => !!(c.files || {}).message, title: 'House guide', sub: c => cmCount((((c.files || {}).message || {}).blocks || []).length, 'part', 'parts'), icon: 'tool', tc: 'var(--clay)', ti: '#fff', sh: 'var(--ink)', shape: 'bar', lang: true,
+    lead: 'How everything works, one part per room or topic. Open a part to change its lines and photos.',
+    paths: ['content/files/message', 'content/files/house/checkout'], body: c => cmHouseGuide(c) },
+  { id: 'wifi', group: 'house', title: 'Wi-Fi', sub: 'Name and password', icon: 'wifi', tc: 'var(--pine)', ti: '#fff', sh: 'var(--tomato)', shape: 'half', lang: true,
+    lead: 'Guests join with one tap: the guide makes the QR code from the name and password.',
+    paths: ['content/private/wifi'], body: c => cmWifi(c) },
+  { id: 'rubbish', group: 'practical', sec: 'garbage', when: c => !!(c.files || {}).garbage, title: 'Rubbish', sub: 'Bins and days', icon: 'bin', tc: 'var(--sky)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
+    lead: 'Which bin goes out on which evening, the containers guests can use, and how to sort.',
+    paths: ['content/files/garbage'], body: c => cmRubbish(c) },
+  { id: 'contacts', group: 'practical', sec: 'emergency', when: c => !!(c.files || {}).emergency, title: 'Contacts', sub: 'Emergency and services', icon: 'phone', tc: 'var(--tomato)', ti: '#fff', sh: 'var(--ink)', shape: 'tri', lang: true,
+    lead: 'Numbers and places guests may need: emergencies, health, police, town services.',
+    paths: ['content/files/emergency'], body: c => cmContacts(c) },
+  { id: 'tiles', group: 'practical', sec: 'quick', title: 'Home tiles', sub: c => cmCount(cmLen('files/quick/items'), 'tile', 'tiles'), icon: 'car', tc: 'var(--sun)', ti: '#1b1407', sh: 'var(--sky)', shape: 'square', lang: true,
+    lead: 'One tap from the home page: a taxi, the train station, a bar you love. Each tile opens a page with its map and your words.',
+    paths: ['content/files/quick'], body: c => cmHomeTiles(c) },
+  { id: 'todo', group: 'area', sec: 'todo', when: c => !!(c.files || {}).todo, title: 'Things to do', sub: c => cmCount(cmLen('files/todo/items'), 'place', 'places'), icon: 'compass', tc: 'var(--pine)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
+    lead: 'Beaches, walks and sights. Open a place to change its words, links, position and opening hours.',
+    paths: ['content/files/todo'], body: () => cmPlaces('files/todo/items', 'place') },
+  { id: 'restaurants', group: 'area', sec: 'restaurants', when: c => !!(c.files || {}).restaurants, title: 'Bars and restaurants', sub: c => cmCount(cmLen('files/restaurants/items'), 'place', 'places'), icon: 'heart', tc: 'var(--tomato)', ti: '#fff', sh: 'var(--sun)', shape: 'half', lang: true,
+    lead: 'The places you send friends to, with a few words from you: what to order, when to go.',
+    paths: ['content/files/restaurants'], body: () => cmPlaces('files/restaurants/items', 'place') },
+  { id: 'markets', group: 'area', sec: 'markets', when: c => !!(c.files || {}).markets, title: 'Markets', sub: c => cmCount(cmLen('files/markets/markets'), 'market', 'markets'), icon: 'bag', tc: 'var(--clay)', ti: '#fff', sh: 'var(--pine)', shape: 'circle', lang: true,
+    lead: 'Weekly markets nearby. The guide shows which ones are on today from the days and hours here.',
+    paths: ['content/files/markets'], body: () => cmPlaces('files/markets/markets', 'market') },
+  { id: 'events', group: 'area', sec: 'events', when: c => !!(c.files || {}).events, title: 'Events', sub: c => cmCount(cmLen('files/events/items'), 'event', 'events'), icon: 'kite', tc: 'var(--plum)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
+    lead: 'Festivals and fairs. Guests see the ones during their stay, from the dates here.',
+    paths: ['content/files/events'], body: () => cmPlaces('files/events/items', 'event') }
+];
+const cmSteps = () => CSTEPS.filter(m => (!m.sec || cmOnSec(m.sec)) && (!m.when || m.when(edC())));
+const cmSub = m => typeof m.sub === 'function' ? m.sub(edC()) : m.sub;
 
-function edField(label, path, obj, o = {}) {
-  const isI = edIs18(obj), num = o.type === 'number', val = isI ? edShown(obj) : (obj == null ? '' : obj);
-  const attrs = `data-p="${edEsc(path)}" data-t="${isI ? 'i18n' : num ? 'num' : 'str'}"`;
-  return `<label class="edf"><span>${edEsc(label)}</span>${o.long ? `<textarea ${attrs}>${edEsc(val)}</textarea>` : `<input type="${o.type || 'text'}"${num ? ' step="any"' : ''} ${attrs} value="${edEsc(val)}">`}</label>`;
+/* --- Fields, in the onboarding's own markup (.f, .chips, .btn) --- */
+function cf(label, path, obj, o = {}) {
+  const isI = edIs18(obj) || (o.i18n && (obj == null || (typeof obj === 'object' && !Array.isArray(obj)))), num = o.type === 'number';
+  const val = isI ? edShown(obj || {}) : (obj == null ? '' : obj), id = cmId(path);
+  const a = `id="${id}" data-p="${esc(path)}" data-t="${isI ? 'i18n' : num ? 'num' : 'str'}"${o.ph ? ` placeholder="${esc(o.ph)}"` : ''}`;
+  const inp = o.long ? `<textarea ${a} rows="${o.rows || 3}">${esc(val)}</textarea>` : `<input type="${o.type || 'text'}"${num ? ' step="any" inputmode="decimal"' : ''}${o.type === 'url' ? ' inputmode="url"' : ''} ${a} value="${esc(val)}">`;
+  return `<div class="f${o.half ? '' : ' full'}"><label for="${id}">${esc(label)}</label>${o.hint ? `<p class="hint">${esc(o.hint)}</p>` : ''}${inp}</div>`;
 }
-const edLabel = k => k.replace(/_/g, ' ').replace(/^./, x => x.toUpperCase());
-function edDays(path, days) { return `<span style="display:flex;gap:4px;flex-wrap:wrap">${ED_DAYS.map(([d, l]) => `<button class="edb sm${(days || []).includes(d) ? ' on' : ''}" type="button" data-daytog="${edEsc(path)}" data-d="${d}">${l}</button>`).join('')}</span>`; }
-function edSchedule(path, arr) {
-  return `<div class="edn" style="margin-bottom:4px">Opening days and hours</div>${(arr || []).map((r, k) => `<div class="edsch">${edDays(`${path}/${k}`, r.days)}<input type="time" data-p="${path}/${k}/open" data-t="str" value="${edEsc(r.open || '')}"><input type="time" data-p="${path}/${k}/close" data-t="str" value="${edEsc(r.close || '')}"><button class="edb sm danger" type="button" data-del="${path}/${k}">x</button></div>`).join('')}<button class="edb sm" type="button" data-addsch="${path}">Add opening hours</button>`;
+const cDays = (path, days) => ED_DAYS.map(([d, l]) => `<button class="chip" type="button" data-daytog="${esc(path)}" data-d="${d}" aria-pressed="${(days || []).includes(d)}"><span>${l}</span></button>`).join('');
+function cSchedule(path, arr) {
+  return `<div class="f full"><span class="lab">Opening days and hours</span><div class="cm-sch">${(arr || []).map((r, k) => `<div class="cm-sr"><div class="cm-dayrow"><div class="chips" role="group" aria-label="Days">${cDays(`${path}/${k}`, r.days)}</div><button class="cm-x" type="button" data-cdel="${path}/${k}" data-now="1" aria-label="Remove these hours">×</button></div>
+    <div class="cm-times"><input type="time" aria-label="Opens" data-p="${path}/${k}/open" data-t="str" value="${esc(r.open || '')}"><span>to</span><input type="time" aria-label="Closes" data-p="${path}/${k}/close" data-t="str" value="${esc(r.close || '')}"></div>
+    ${r.from || r.to ? `<p class="hint">Only from ${esc(r.from || '?')} to ${esc(r.to || '?')} (month-day).</p>` : ''}</div>`).join('')}
+    <button class="btn small" type="button" data-addsch="${path}">+ Add opening hours</button></div></div>`;
+}
+function cDates(path, arr) {
+  return `<div class="f full"><span class="lab">Dates</span><div class="cm-sch">${(arr || []).map((r, k) => `<div class="cm-sr"><div class="cm-dates"><label><span class="hint">Starts</span><input type="date" data-p="${path}/${k}/start" data-t="str" value="${esc(r.start || '')}"></label><label><span class="hint">Ends</span><input type="date" data-p="${path}/${k}/end" data-t="str" value="${esc(r.end || '')}"></label></div>
+    <div class="cm-dayrow"><select aria-label="Confirmed or expected" data-p="${path}/${k}/status" data-t="str"><option value="expected"${r.status !== 'confirmed' ? ' selected' : ''}>Expected</option><option value="confirmed"${r.status === 'confirmed' ? ' selected' : ''}>Confirmed</option></select><button class="cm-x" type="button" data-cdel="${path}/${k}" data-now="1" aria-label="Remove these dates">×</button></div></div>`).join('')}
+    <button class="btn small" type="button" data-adddate="${path}">+ Add dates</button></div></div>`;
+}
+function cLines(path, arr, add) {
+  return `<div class="cm-lines">${(arr || []).map((it, j) => `<div class="cm-line"><textarea id="${cmId(path + '/' + j)}" data-p="${path}/${j}" data-t="i18n" rows="2" aria-label="Line ${j + 1}">${esc(edShown(it))}</textarea><button class="cm-x" type="button" data-cdel="${path}/${j}" data-now="1" aria-label="Delete line ${j + 1}">×</button></div>`).join('')}</div>
+    <button class="btn small cm-add" type="button" data-add="${path}">+ ${esc(add)}</button>`;
+}
+function cPhotos(path, arr) {
+  return `${(arr || []).length ? `<div class="thumbs">${arr.map((n, i) => `<div class="thumb"><img src="${esc(edImg(n))}" alt="" loading="lazy"><div class="cm-phb"><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="-1" aria-label="Move earlier">‹</button><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="1" aria-label="Move later">›</button></div><button class="x" type="button" data-cdel="${path}/${i}" data-now="1" aria-label="Remove photo ${i + 1}">×</button></div>`).join('')}</div>` : ''}
+    <label class="btn small cm-file"><input class="sr" type="file" accept="image/*" multiple data-phadd="${path}">+ Add photos</label>`;
+}
+function cCard(p, title, meta, inner) {
+  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary><span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}</span><i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
 }
 
-/* --- Photos --- */
-const edImg = n => (edC().assetBase || '') + n;
-function edPhotos(path, arr) {
-  return `<div class="edphotos">${(arr || []).map((n, i) => `<div class="edph"><img src="${edEsc(edImg(n))}" alt="" loading="lazy"><span><button class="edb" type="button" data-phmove="${path}/${i}" data-dir="-1" aria-label="Move earlier">&lsaquo;</button><button class="edb" type="button" data-phmove="${path}/${i}" data-dir="1" aria-label="Move later">&rsaquo;</button><button class="edb danger" type="button" data-now="1" data-del="${path}/${i}" aria-label="Remove">x</button></span></div>`).join('')}<label class="edb sm edfile">Add photos<input type="file" accept="image/*" multiple hidden data-phadd="${path}"></label></div>`;
+/* --- One place, contact or tile: its texts, links, position, hours or dates --- */
+const C_SKIP = new Set(['id', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx']);
+const C_STR = ['town', 'place', 'phone', 'web', 'url', 'map', 'gmaps', 'venue', 'address', 'comarca', 'price'];
+const C_LONG = ['description', 'what', 'examples', 'priceNote', 'hours', 'occasional_when'];
+const C_LBL = { name: 'Name', name_local: 'Name in the local language', title: 'Title on its page', sub: 'Line under the name', type: 'Type', kind: 'Kind', what: 'What guests need to know', description: 'Description', hours: 'Opening hours, in words', occasional_when: 'When it runs', town: 'Town', place: 'Where exactly', venue: 'Where exactly', address: 'Address', comarca: 'County', phone: 'Phone', url: 'Official website', web: 'Website', gmaps: 'Google Maps link', map: 'Map link', price: 'Price (€)', priceNote: 'About the price', taxiName: 'Taxi name', taxiSub: 'Line under the taxi' };
+const C_ORDER = ['name', 'name_local', 'title', 'sub', 'type', 'kind', 'what', 'description', 'hours', 'occasional_when', 'town', 'place', 'venue', 'address', 'comarca', 'phone', 'url', 'web', 'gmaps', 'map', 'price', 'priceNote'];
+const cLabel = k => C_LBL[k] || k.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/^./, x => x.toUpperCase());
+const cName = it => edShown(it.name) || edShown(it.title) || edShown(it.where) || (it.id && !String(it.id).startsWith('custom-') ? it.id : 'New');
+function cItem(base, it, i, what) {
+  const p = `${base}/${i}`, ord = k => { const n = C_ORDER.indexOf(k); return n < 0 ? 99 : n; };
+  const keys = Object.keys(it).filter(k => !C_SKIP.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'))).sort((a, b) => ord(a) - ord(b));
+  const km = it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
+  const meta = [typeof it.town === 'string' ? it.town : '', km, (it.flags || []).includes('check') ? 'check before going' : ''].filter(Boolean).join(' · ');
+  const pos = typeof it.lat === 'number' ? `<div class="f full"><label for="${cmId(p + '/gm')}">Move the pin: paste a Google Maps link</label><p class="hint">${it.lat ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
+  const check = Array.isArray(it.flags) || what !== 'contact' ? `<div class="f"><span class="hint">Tells guests to check the hours or the dates before they go.</span><div class="chips"><button class="chip" type="button" data-cflag="${p}" data-f="check" aria-pressed="${(it.flags || []).includes('check')}"><span>Check before going</span></button></div></div>` : '';
+  return cCard(p, cName(it), meta, `<div class="grid">${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], { long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' })).join('')}
+    ${'stalls_approx' in it ? cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx, { type: 'number', half: true }) : ''}${pos}
+    ${'schedule' in it || base.includes('markets') ? cSchedule(`${p}/schedule`, it.schedule) : ''}${'dates' in it || base.includes('events') ? cDates(`${p}/dates`, it.dates) : ''}</div>
+    ${what === 'contact' ? '' : check}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`);
 }
+function edNewItem(arr) {
+  const clone = arr && arr[0] ? cmClone(arr[0]) : { name: { en: '' }, description: { en: '' }, lat: 0, lng: 0 };
+  const h = edF().house || {};
+  const clear = o => { for (const k of Object.keys(o)) { const x = o[k]; if (['icon', 'group', 'tone', 'category', 'type', 'tags', 'wide'].includes(k) && !edIs18(x)) continue; if (edIs18(x)) o[k] = Object.fromEntries(Object.keys(x).map(l => [l, ''])); else if (typeof x === 'string') o[k] = ''; else if (Array.isArray(x)) o[k] = []; else if (typeof x === 'number' && k !== 'lat' && k !== 'lng') o[k] = 0; } return o; };
+  const n = clear(clone); n.id = 'custom-' + Date.now().toString(36);
+  if ('lat' in n) { n.lat = h.lat || 0; n.lng = h.lng || 0; n.km_from_house = 0; }
+  for (const k of ['verify', 'always', 'gid', 'checked', 'hoursSource', 'rating', 'topPick', 'wiki', 'sources', 'setMenus']) delete n[k];
+  return n;
+}
+const edKm = (a, b, c, d) => { const R = 6371, r = x => x * Math.PI / 180, dl = r(c - a), dg = r(d - b), x = Math.sin(dl / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dg / 2) ** 2; return Math.round(2 * R * Math.asin(Math.sqrt(x))); };
+function edUpdateKm(ip) { const it = edGet(edC(), ip), h = edF().house || {}; if (it && 'km_from_house' in it && h.lat && it.lat) it.km_from_house = edKm(h.lat, h.lng, it.lat, it.lng); }
+function edParseMaps(url) {
+  const m = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || url.match(/[?&](?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+  return m ? { lat: +m[1], lng: +m[2] } : null;
+}
+
+/* --- Step bodies --- */
+function cmGuide(c) {
+  const s = c.site || {}, h = (c.files || {}).house || {}, langs = edLangs();
+  return `<div class="grid">${cf('Guide name', 'site/name', s.name, { hint: 'The title of the guide, and the app name on guests’ phones.' })}${cf('House name on the cover', 'files/house/name', h.name)}
+    ${cf('Text under the link when you share it', s.shareDescription != null ? 'site/shareDescription' : 'site/description', s.shareDescription != null ? s.shareDescription : s.description, { long: true, rows: 2 })}
+    ${'listing' in h || !(c.files || {})['house-page'] ? cf('Your listing link', 'files/house/listing', h.listing || '', { type: 'url' }) : ''}</div>
+    <div class="f full"><span class="lab">Logo</span><div class="cm-row cm-logo">${s.logo ? `<img src="${esc(edImg(s.logo))}" alt="Your logo">` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="site/logo" data-kind="logo">${s.logo ? 'Change the logo' : 'Add a logo'}</label></div></div>
+    <div class="f full"><span class="lab">Languages</span><p class="hint">The guide opens in the guest’s phone language when it can. The first one is the main language.</p>
+    <div class="chips">${Object.entries(ED_LANGS).map(([k, n]) => { const on = langs.includes(k), miss = on ? edMissing(k) : 0; return `<label class="chip"><input type="checkbox" data-clang="${k}"${on ? ' checked' : ''}${k === langs[0] ? ' disabled' : ''}><span>${n}${k === langs[0] ? ' (main)' : ''}${miss ? ` · ${miss} to translate` : ''}</span></label>`; }).join('')}</div>
+    <div class="cm-row"><button class="btn small" type="button" data-translate>Translate missing texts</button><span class="hint" id="edJob"></span></div>
+    <p class="hint">Usually takes a few minutes. Until a text is translated, guests see it in the main language. The translations arrive as changes you preview and publish.</p></div>`;
+}
+const edCssVar = (css, name) => { const m = css.match(new RegExp(name + '\\s*:\\s*([^;}]+)')); return m ? m[1].trim() : ''; };
+const edBlockOf = css => { const m = css.match(/\/\* editor:start \*\/([\s\S]*?)\/\* editor:end \*\//); return m ? m[1] : ''; };
+const edCoverPhoto = h => !!h.photo && h.cover !== 'themed';
+function cmLook(c) {
+  const th = CM.g.theme, css = th.css || '', blk = edBlockOf(css), h = (c.files || {}).house || {};
+  const val = (n, d) => { const x = edCssVar(blk, n) || edCssVar(css, n); return /^#[0-9a-fA-F]{6}$/.test(x) ? x : d; };
+  const fam = n => { const x = (edCssVar(blk, n) || edCssVar(css, n)).match(/"([^"]+)"/); return x ? x[1] : ''; };
+  const dispSel = (ED_FONTS.find(f => f[1] === fam('--display')) || [])[0] || ((th.fonts || [])[0] || '').split('/')[0] || 'jost';
+  const bodySel = (ED_FONTS.find(f => f[1] === fam('--font')) || [])[0] || ((th.fonts || []).slice(-1)[0] || '').split('/')[0] || 'jost';
+  const opts = sel => ED_FONTS.map(([id, n]) => `<option value="${id}"${id === sel ? ' selected' : ''}>${n}</option>`).join('');
+  const preset = th.preset || ((c.site || {}).theme || {}).preset || 'bauhaus';
+  return `<div class="f full"><span class="lab" id="l_cpreset">Layout</span><p class="hint">Each one shows the same sections in a different way.</p><div class="moods" role="radiogroup" aria-labelledby="l_cpreset">${ED_PRESETS.map(([id, n, d, cls]) => `<label class="mood"><input type="radio" name="cpreset" data-design="preset" value="${id}"${preset === id ? ' checked' : ''}><div class="box"><div class="mock ${cls}">${'<i></i>'.repeat(6)}</div><b>${n}</b><small>${d}</small></div></label>`).join('')}</div></div>
+    <div class="grid"><div class="f"><label for="c_font_d">Font for titles</label><select id="c_font_d" data-design="display">${opts(dispSel)}</select></div><div class="f"><label for="c_font_b">Font for text</label><select id="c_font_b" data-design="body">${opts(bodySel)}</select></div></div>
+    <div class="f full"><span class="lab">Colours</span><div class="cm-colors">${ED_COLORS.map(([v, l, d]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></div>
+    <div class="f full"><span class="lab">Cover</span><p class="hint">Guests have already seen your listing photos, so the cover is drawn from your colours unless you choose a photo of your own.</p>
+    <div class="chips"><button class="chip" type="button" data-cover="themed" aria-pressed="${!edCoverPhoto(h)}"><span>Drawn from my colours</span></button><button class="chip" type="button" data-cover="photo" aria-pressed="${edCoverPhoto(h)}"${h.photo ? '' : ' disabled'}><span>My photo</span></button></div>
+    <div class="cm-cover">${h.photo ? `<img src="${esc(edImg(h.photo))}" alt="Your cover photo"${edCoverPhoto(h) ? '' : ' class="off"'}>` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="files/house/photo">${h.photo ? 'Change the photo' : 'Add a photo'}</label></div></div>`;
+}
+function cmSections(c) {
+  const ids = [...((((c.files || {}).sections || {}).sections) || []).map(x => x.id)];
+  if (!ids.includes('quick')) ids.push('quick');   // Home tiles: the step appears once switched on, and its first tile makes the file
+  if ((c.files || {}).reviews && !ids.includes('reviews')) ids.push('reviews');
+  if (!ids.includes('map')) ids.push('map');
+  const m = (c.site || {}).modules || {};
+  return `<div class="mods">${ids.map(id => { const [n, d] = ED_SEC[id] || [id, '']; return `<label class="mod"><input type="checkbox" data-cmod="${esc(id)}"${m[id] !== false ? ' checked' : ''}><div class="box"><span class="tick" aria-hidden="true">✓</span><div><b>${esc(n)}</b><small>${esc(d)}</small></div></div></label>`; }).join('')}</div>`;
+}
+function cmHousePage(c) {
+  const hp = c.files['house-page'], P = 'files/house-page';
+  return `<div class="grid">${cf('Summary', P + '/summary', hp.summary, { i18n: true })}${cf('Description', P + '/description', hp.description, { long: true, rows: 6, i18n: true })}
+    ${cf('Rating (stars)', P + '/rating/stars', (hp.rating || {}).stars, { type: 'number', half: true })}${cf('Number of reviews', P + '/rating/count', (hp.rating || {}).count, { type: 'number', half: true })}
+    ${cf('Listing link', P + '/url', hp.url, { type: 'url' })}${cf('Listing photos link', P + '/photosUrl', hp.photosUrl, { type: 'url' })}</div>
+    <h3 class="cm-h">Highlights</h3><div class="cm-list">${(hp.highlights || []).map((h, i) => cCard(`${P}/highlights/${i}`, edShown(h.t) || 'New highlight', edShown(h.s), `<div class="grid">${cf('Highlight', `${P}/highlights/${i}/t`, h.t, { i18n: true })}${cf('Detail', `${P}/highlights/${i}/s`, h.s, { i18n: true, long: true, rows: 2 })}</div><div><button class="btn small danger" type="button" data-cdel="${P}/highlights/${i}">Delete this highlight</button></div>`)).join('')}</div>
+    <button class="btn small cm-add" type="button" data-addit="${P}/highlights">+ Add a highlight</button>
+    ${hp.beds ? `<h3 class="cm-h">Beds</h3>${cLines(P + '/beds', hp.beds, 'Add a bed')}` : ''}
+    <h3 class="cm-h">Amenities</h3><div class="cm-list">${(hp.amenities || []).map((g, i) => cCard(`${P}/amenities/${i}`, edShown(g.t), cmCount((g.items || []).length, 'item', 'items'), `<div class="grid">${cf('Group title', `${P}/amenities/${i}/t`, g.t, { i18n: true })}</div>${cLines(`${P}/amenities/${i}/items`, g.items, 'Add an item')}`)).join('')}</div>
+    <h3 class="cm-h">Photos</h3>${cPhotos(P + '/photos', hp.photos)}
+    ${(hp.tour || []).length ? `<h3 class="cm-h">Photos by room</h3><div class="cm-list">${hp.tour.map((r, i) => cCard(`${P}/tour/${i}`, edShown(r.room), cmCount((r.photos || []).length, 'photo', 'photos'), `<div class="grid">${cf('Room name', `${P}/tour/${i}/room`, r.room, { i18n: true })}</div>${cPhotos(`${P}/tour/${i}/photos`, r.photos)}`)).join('')}</div>` : ''}`;
+}
+function cmHouseGuide(c) {
+  const h = (c.files || {}).house || {}, blocks = ((c.files || {}).message || {}).blocks || [];
+  return `<div class="grid">${cf('Check-out time', 'files/house/checkout', h.checkout || '', { type: 'time', half: true })}</div>
+    <h3 class="cm-h">Parts of the house guide</h3><div class="cm-list">${blocks.map((b, i) => { const P = `files/message/blocks/${i}`;
+      return cCard(P, edShown(b.title) || b.id, `${cmCount((b.items || []).length, 'line', 'lines')} · ${cmCount((b.photos || []).length, 'photo', 'photos')}`,
+        `<div class="grid">${cf('Title', P + '/title', b.title, { i18n: true })}${b.sub ? cf('Line under the title', P + '/sub', b.sub) : ''}</div>
+        <div class="f full"><span class="lab">Photos</span>${cPhotos(P + '/photos', b.photos)}</div><div class="f full"><span class="lab">What guests need to know</span>${cLines(P + '/items', b.items, 'Add a line')}</div>`); }).join('')}</div>`;
+}
+function cmWifi(c) {
+  const w = (c.private || {}).wifi;
+  if (!w) return `<div class="note"><div>This guide has no Wi-Fi card yet.</div></div><div><button class="btn primary" type="button" data-addwifi>Add Wi-Fi</button></div>`;
+  return `<div class="grid">${cf('Password', 'private/wifi/password', w.password, { hint: 'Guests see it in the guide, so use your guest network if you have one.' })}</div>
+    <h3 class="cm-h">Networks</h3>${(w.networks || []).map((n, i) => `<div class="cm-sub"><div class="grid">${cf('Network name', `private/wifi/networks/${i}/ssid`, n.ssid, { half: true })}${cf('Note for guests', `private/wifi/networks/${i}/label`, n.label, { i18n: true, half: true, ph: 'Best inside the house' })}</div>
+      <div><button class="btn small danger" type="button" data-cdel="private/wifi/networks/${i}">Remove this network</button></div></div>`).join('')}
+    <button class="btn small cm-add" type="button" data-addnet>+ Add a network</button>`;
+}
+const ED_BINS = [['organic', 'Organic'], ['packaging', 'Packaging'], ['paper', 'Paper'], ['glass', 'Glass'], ['rest', 'General waste']];
+function cmRubbish(c) {
+  const g = c.files.garbage, G = 'files/garbage', bins = ['street', ...Object.keys(g.bins || {}).filter(b => b !== 'street')];
+  return `<div class="grid">${cf('Bins out by (time on collection morning)', G + '/collectionTime', g.collectionTime || '', { type: 'time', half: true, hint: 'Guests are told to put each bin out the evening before.' })}</div>
+    ${(g.fractions || []).length ? `<h3 class="cm-h">What goes where</h3><div class="cm-list">${g.fractions.map((f, i) => { const P = `${G}/fractions/${i}`;
+      return cCard(P, edShown(f.name) || f.id, (f.days || []).length ? (f.days || []).map(d => (ED_DAYS.find(x => x[0] === d) || [0, d])[1]).join(' ') : 'No collection day', `<div class="grid">${cf('Name', P + '/name', f.name, { i18n: true, half: true })}
+        <div class="f"><label for="${cmId(P + '/bin')}">Goes in</label><select id="${cmId(P + '/bin')}" data-p="${P}/bin" data-t="str">${bins.map(b => `<option value="${esc(b)}"${f.bin === b ? ' selected' : ''}>${esc(b === 'street' ? 'A container in the street' : edShown((g.bins || {})[b]) || b)}</option>`).join('')}</select></div>
+        <div class="f full"><span class="lab">Collection days</span><div class="chips">${cDays(P, f.days)}</div></div>${cf('What goes in it', P + '/examples', f.examples, { i18n: true, long: true, rows: 2 })}</div>`); }).join('')}</div>` : ''}
+    <h3 class="cm-h">Containers guests can use</h3><div class="cm-list">${(g.containers || []).map((ct, j) => { const P = `${G}/containers/${j}`;
+      return cCard(P, edShown(ct.where) || 'Containers ' + (j + 1), (ct.takes || []).map(id => (ED_BINS.find(b => b[0] === id) || [0, id])[1]).join(', '), `<div class="grid">${cf('Where they are', P + '/where', ct.where, { i18n: true, long: true, rows: 2 })}${cf('Google Maps link', P + '/map', ct.map || '', { type: 'url' })}
+        <div class="f full"><span class="lab">What they take</span><div class="chips">${ED_BINS.map(([id, l]) => `<button class="chip" type="button" data-ctake="${j}" data-id="${id}" aria-pressed="${(ct.takes || []).includes(id)}"><span>${l}</span></button>`).join('')}</div></div></div>
+        <div><button class="btn small danger" type="button" data-cdel="${P}">Delete these containers</button></div>`); }).join('')}</div>
+    <button class="btn small cm-add" type="button" data-addcont>+ Add containers</button>
+    ${(g.steps || []).length ? `<h3 class="cm-h">How to sort</h3>${cLines(G + '/steps', g.steps, 'Add a step')}` : ''}
+    ${g.missed || g.deixalleria ? `<div class="grid">${g.missed ? cf('If a collection is missed', G + '/missed', g.missed, { long: true }) : ''}${g.deixalleria ? cf('Recycling centre', G + '/deixalleria', g.deixalleria, { long: true }) : ''}</div>` : ''}`;
+}
+function cmContacts(c) {
+  const groups = ((c.files || {}).emergency || {}).groups || [], title = { urgent: 'Urgent', health: 'Health', police: 'Police and roads', town: 'Town and services' };
+  return groups.map((g, gi) => `<h3 class="cm-h">${esc(title[g.id] || g.id)}</h3><div class="cm-list">${(g.items || []).map((it, i) => cItem(`files/emergency/groups/${gi}/items`, it, i, 'contact')).join('')}</div>
+    <button class="btn small cm-add" type="button" data-addit="files/emergency/groups/${gi}/items">+ Add a contact</button>`).join('') || '<div class="note"><div>This guide has no contacts yet.</div></div>';
+}
+const ED_TILES = [['taxi', 'Add a taxi', 'Taxi', { phone: '', always: true }], ['train', 'Add a train or bus station', 'Station', { lat: 0, lng: 0, gmaps: '' }],
+  ['food', 'Add a bar or restaurant', 'Restaurant', { phone: '', lat: 0, lng: 0, gmaps: '' }], ['shop', 'Add a shop', 'Shop', { phone: '', lat: 0, lng: 0, gmaps: '' }]];
+function cmHomeTiles(c) {
+  const items = ((c.files || {}).quick || {}).items || [];
+  return `<div class="cm-list">${items.map((it, i) => cItem('files/quick/items', it, i, 'tile')).join('') || '<p class="hint">No tiles yet.</p>'}</div>
+    <div class="cm-row">${ED_TILES.map(([icon, label]) => `<button class="btn small" type="button" data-addtile="${icon}">+ ${esc(label)}</button>`).join('')}</div>`;
+}
+function edAddTile(icon) {
+  const f = edF(), q = f.quick = f.quick || { items: [] }; q.items = q.items || [];
+  const [, , kind, extra] = ED_TILES.find(t => t[0] === icon), L = x => Object.fromEntries(edLangs().map(l => [l, x]));
+  q.items.push({ id: `${icon}-${Date.now().toString(36)}`, icon, name: L(kind), sub: L(''), title: L(''), kind: L(kind), what: L(''), ...cmClone(extra) });
+  CM.open.add('files/quick/items/' + (q.items.length - 1));
+}
+function cmPlaces(path, what) {
+  const arr = edGet(edC(), edPath(path)) || [];
+  return `${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
+    <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
+    <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
+    <p class="hint">A new ${esc(what)} starts at the house: move its pin with a Google Maps link. The distance from the house follows the pin.</p>`;
+}
+
+/* --- Pages: overview, one step, publish --- */
+function cmTile(m) {
+  const ch = cmChanged(m);
+  return `<a class="tile" href="#${m.id}" data-shape="${m.shape}" style="${tileVars(m)}">${ch ? '<span class="pill chk">Changed</span>' : ''}<span class="ic">${I[m.icon] || ''}</span><b>${esc(m.title)}</b><small>${esc(cmSub(m))}</small></a>`;
+}
+function cmHomeHTML() {
+  const name = (edC().site || {}).name || CM.g.slug, ch = cmSteps().filter(cmChanged), dirty = cmDirty(), url = cmLiveUrl();
+  return `<section class="hero"><small>${cmLive() ? 'Your guide is live' : 'Your guide is ready'}</small><h1>${esc(name)}</h1>
+      <p>${dirty ? `${ch.length ? cmCount(ch.length, 'step', 'steps') + ' changed' : 'Changes'}, not live yet. Guests see the published guide until you publish.` : cmLive() ? 'Open a step to change it. Your changes stay a draft until you publish them.' : 'Have a look, change what you like, then publish it for your guests.'}</p>
+      ${cmLive() ? `<p class="cm-url">Guests open <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url.replace(/^https?:\/\//, ''))}</a></p>` : ''}
+      <div class="cm-act">${dirty || !cmLive() ? `<a class="go-next" href="#publish"><span>${cmLive() ? 'Review and publish' : 'Publish my guide'}</span><span class="ar">${ARROW}</span></a>` : ''}<a class="btn small cm-ghost" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${dirty ? 'Preview my changes' : 'Open my guide'}</a></div></section>
+    ${GROUPS.map(([g, gt]) => { const ms = cmSteps().filter(m => m.group === g); if (!ms.length) return ''; const n = ms.filter(cmChanged).length;
+      return `<div class="gh"><h2>${gt}</h2><span>${n ? `${n} changed` : ''}</span></div><div class="tiles">${ms.map(cmTile).join('')}</div>`; }).join('')}
+    <div class="tiles"><a class="tile send${dirty || !cmLive() ? '' : ' locked'}" href="#publish"><span class="ic">${I.send}</span><span class="tx"><b>${cmLive() ? 'Publish changes' : 'Publish my guide'}</b><small>${dirty ? 'Changes waiting' : cmLive() ? 'Everything is live' : 'Ready when you are'}</small></span><span class="go">${ARROW}</span></a></div>`;
+}
+const cmPillText = ch => ch ? 'Changed' : cmLive() ? 'Live' : 'Not published yet';
+const cmFootText = () => cmDirty() ? 'Saved as a draft. Guests see it once you publish.' : 'Changes save as you type, as a draft only you see until you publish.';
+function cmLangBar(langs) {
+  return `<div class="cm-lang"><label for="c_lang">You are editing in</label><select id="c_lang" data-cmlang>${langs.map(l => `<option value="${l}"${CM.lang === l ? ' selected' : ''}>${ED_LANGS[l]}</option>`).join('')}</select></div>
+    <p class="hint cm-langhint">A text you change here changes in the other languages too while they still had the same words. Translated texts stay as they are.</p>`;
+}
+function cmStepHTML(m) {
+  const ch = cmChanged(m), langs = edLangs();
+  return `<div class="split">${railHTML(m.id)}<div class="col">
+    <section class="mhead" style="${tileVars(m)}"><div class="row1"><span class="pill ${ch ? 'chk' : 'done'}" id="cmPill">${esc(cmPillText(ch))}</span></div><h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
+    <section class="card">${m.lang && langs.length > 1 ? cmLangBar(langs) : ''}<div class="edz">${m.body(edC())}</div>
+      <div class="foot"><p class="todo" id="cmFoot">${esc(cmFootText())}</p><div class="row"><a class="btn small" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${I.eye}Preview</a><a class="btn small primary" href="#publish" id="cmGoPub"${cmDirty() ? '' : ' hidden'}>Review and publish</a></div></div></section></div></div>`;
+}
+function cmPublishHTML() {
+  const ch = cmSteps().filter(cmChanged), dirty = cmDirty(), url = cmLiveUrl();
+  return `<div class="split">${railHTML('publish')}<div class="col">
+    <section class="mhead" style="--tc:var(--ink);--ti:var(--paper);--sh:var(--sun)"><h1>${cmLive() ? 'Publish changes' : 'Publish your guide'}</h1>
+      <p>${dirty ? 'Look at your changes in the preview, then publish: guests see them straight away.' : cmLive() ? 'Nothing is waiting: guests see the guide as it is here.' : 'Your guide is ready. Publish it to share it with your guests.'}</p></section>
+    <section class="card">
+      ${ch.length ? `<div class="sum">${ch.map(m => `<a href="#${m.id}" style="--tc:${m.tc}"><span class="sw"></span><span><b>${esc(m.title)}</b><p>${esc(cmSub(m))}</p></span><span class="pill chk" style="position:static">Changed</span></a>`).join('')}</div>` : dirty ? '<p class="hint">Translations and other small changes are waiting.</p>' : ''}
+      <p class="hint">Guests open <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url.replace(/^https?:\/\//, ''))}</a></p>
+      <div class="foot"><div class="row"><a class="btn" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${I.eye}Preview</a>${dirty || !cmLive() ? `<button class="btn primary" type="button" data-cpublish>${I.send}${cmLive() ? 'Publish changes' : 'Publish my guide'}</button>` : ''}</div>
+        ${dirty ? `<div class="cm-row"><button class="btn small" type="button" data-cdiscard>Undo all changes</button><p class="hint">Goes back to the guide guests see now.</p></div>` : ''}</div></section></div></div>`;
+}
+const cmIsPage = r => r === 'publish' || cmSteps().some(m => m.id === r);
+function cmPageHTML(r) { const m = cmSteps().find(x => x.id === r); return m ? cmStepHTML(m) : r === 'publish' ? cmPublishHTML() : cmHomeHTML(); }
+// Rail and bottom bar (nav.js asks for these while CM.on)
+function cmStepList(cur) {
+  const item = m => { const ch = cmChanged(m); return `<a class="si s-${ch ? 'chk' : 'new'}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${ch ? STATUS_ICON.chk : I[m.icon] || ''}</span><span class="st">${esc(m.title)}</span><span class="sl">${ch ? 'Changed' : ''}</span></a>`; };
+  const dirty = cmDirty();
+  return `<a class="si home" href="#home"${cur === 'home' ? ' aria-current="step"' : ''}><span class="sic">${I.grid}</span><span class="st">Overview</span></a>
+    ${GROUPS.map(([g, gt]) => { const ms = cmSteps().filter(m => m.group === g); return ms.length ? `<p class="sg">${gt}</p>${ms.map(item).join('')}` : ''; }).join('')}
+    <p class="sg">Finish</p><a class="si s-${dirty ? 'chk' : 'done'} send" href="#publish"${cur === 'publish' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Publish changes</span><span class="sl">${dirty ? 'Waiting' : cmLive() ? 'Live' : ''}</span></a>`;
+}
+function cmNavbar(cur) {
+  const order = [...cmSteps().map(m => m.id), 'publish'], i = order.indexOf(cur), prev = order[i - 1], next = order[i + 1];
+  const t = id => id === 'publish' ? 'Publish changes' : (cmSteps().find(m => m.id === id) || {}).title;
+  return `<div class="nbin">
+    ${prev ? `<a class="nb ghost" href="#${prev}" aria-label="Back to ${esc(t(prev))}">${BACK}<span class="hide-s">${esc(t(prev))}</span></a>` : `<a class="nb ghost" href="#home" aria-label="Overview">${BACK}<span class="hide-s">Overview</span></a>`}
+    <button class="nb count" type="button" id="openSteps" aria-haspopup="dialog"><b>${i + 1}</b> of ${order.length}<i class="chev" aria-hidden="true"></i></button>
+    ${next ? `<a class="nb primary" href="#${next}"><span>Next</span>${ARROW}</a>` : cmDirty() || !cmLive() ? `<button class="nb primary" type="button" data-cpublish><span>Publish</span>${CHECK}</button>` : '<span></span>'}</div>`;
+}
+// While typing: only the "Changed" marks move, the page stays as it is.
+function cmMarks() {
+  clearTimeout(CM.marks);
+  CM.marks = setTimeout(() => {
+    refreshNav();
+    const m = cmSteps().find(x => x.id === route()), p = document.getElementById('cmPill');
+    if (m && p) { const ch = cmChanged(m); p.className = 'pill ' + (ch ? 'chk' : 'done'); p.textContent = cmPillText(ch); }
+    const f = document.getElementById('cmFoot'); if (f) f.textContent = cmFootText();
+    const g = document.getElementById('cmGoPub'); if (g) g.hidden = !cmDirty();
+  }, 250);
+}
+
+/* --- Saving the draft, publishing, undoing --- */
+const cmSaveText = () => cmDirty() ? 'Draft saved, not live yet' : cmLive() ? 'Everything is live' : 'Saved';
+function cmQueue() { setSave('busy', 'Saving…'); clearTimeout(CM.timer); CM.timer = setTimeout(cmSave, 900); cmMarks(); }
+async function cmSave() {
+  clearTimeout(CM.timer); CM.timer = null;
+  if (CM.saving) { CM.again = true; return CM.saving; }
+  CM.saving = (async () => {
+    const dirty = cmDirty();
+    try { await ensureFresh(); await sb('/rest/v1/guides?id=eq.' + CM.g.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: { draft: dirty ? { content: CM.g.content, theme: CM.g.theme, savedAt: new Date().toISOString() } : null } }); setSave('ok', cmSaveText()); }
+    catch (e) { setSave('err', 'Not saved: ' + niceError(e)); }
+  })();
+  try { await CM.saving; } finally { CM.saving = null; }
+  if (CM.again) { CM.again = false; return cmSave(); }
+}
+async function cmPublish(btn) {
+  if (btn) btn.disabled = true;
+  try {
+    clearTimeout(CM.timer); while (CM.saving) await CM.saving;
+    await ensureFresh();
+    const body = { content: CM.g.content, theme: CM.g.theme, draft: null }; if (!cmLive()) body.status = 'published';
+    const r = await sb('/rest/v1/guides?id=eq.' + CM.g.id + '&select=status', { method: 'PATCH', headers: { Prefer: 'return=representation' }, body });
+    if (r && r[0]) CM.g.status = r[0].status;
+    CM.live = { content: cmClone(CM.g.content), theme: cmClone(CM.g.theme) };
+    setSave('ok', cmSaveText()); toast(cmLive() ? 'Published. Guests see it now.' : 'Saved, but not published. Try again.');
+    location.hash = '#home'; render();
+  } catch (e) { toast('Not published: ' + niceError(e)); if (btn) btn.disabled = false; }
+}
+async function cmDiscard(btn) {
+  if (btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = 'Sure? Tap again to undo everything'; return; }
+  clearTimeout(CM.timer); while (CM.saving) await CM.saving;
+  CM.g.content = cmClone(CM.live.content); CM.g.theme = cmClone(CM.live.theme); CM.open.clear();
+  await cmSave(); toast('Back to the guide guests see'); render();
+}
+// Preview opens the draft in the guide itself. A save still waiting goes first (the tab opens at once, so it is never blocked).
+function cmPreview(e, a) {
+  if (!CM.timer && !CM.saving) return;
+  e.preventDefault();
+  const w = window.open('', '_blank');
+  cmSave().then(() => { if (w) w.location.href = a.href; else location.href = a.href; });
+}
+
+/* --- Photos and logo: straight to the guide's storage, used by the draft until published --- */
 async function edUpload(file, kind) {
   const bmp = await createImageBitmap(file), max = kind === 'logo' ? 512 : 1600, k = Math.min(1, max / Math.max(bmp.width, bmp.height));
   const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(bmp.width * k)); cv.height = Math.max(1, Math.round(bmp.height * k));
@@ -1778,332 +2077,217 @@ async function edUpload(file, kind) {
   const png = kind === 'logo', blob = await new Promise(r => cv.toBlob(r, png ? 'image/png' : 'image/jpeg', 0.85));
   const name = (png ? 'logo-' : 'guide/u-') + Date.now().toString(36) + Math.random().toString(36).slice(2, 5) + (png ? '.png' : '.jpg');
   await ensureFresh();
-  const r = await fetch(`${SB.url}/storage/v1/object/guide-assets/${ED.g.id}/${name}`, { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + AUTH.access_token, 'Content-Type': blob.type, 'x-upsert': 'true' }, body: blob });
+  const r = await fetch(`${SB.url}/storage/v1/object/guide-assets/${CM.g.id}/${name}`, { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + AUTH.access_token, 'Content-Type': blob.type, 'x-upsert': 'true' }, body: blob });
   if (!r.ok) throw new Error('The photo could not be uploaded');
   return name;
 }
 async function edPhotoInput(t) {
   const files = [...t.files]; if (!files.length) return;
-  ED.state = 'Uploading…'; edStatus();
+  setSave('busy', files.length > 1 ? `Uploading ${files.length} photos…` : 'Uploading…');
   try {
     for (const f of files) {
       const name = await edUpload(f, t.dataset.kind);
       if (t.dataset.phadd) { const p = edPath(t.dataset.phadd); let a = edGet(edC(), p); if (!Array.isArray(a)) { edSet(edC(), p, []); a = edGet(edC(), p); } a.push(name); }
       else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') edSet(edC(), ['files', 'house', 'cover'], 'photo'); }
     }
-    edQueue(); edRender();
-  } catch (e) { ED.state = 'Not uploaded: ' + (e.message || 'try again'); edStatus(); }
+    cmQueue(); render();
+  } catch (e) { setSave('err', 'Not uploaded: ' + (e.message || 'try again')); }
 }
 
-/* --- Languages --- */
+/* --- Translations: the guide builder translates the draft; the texts also come back here, into this open copy --- */
 function edMissing(l) {
   let n = 0;
-  const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (edIs18(x)) { if (!x[l] && Object.values(x).some(v => v)) n++; } else Object.values(x).forEach(walk); } };
+  const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (edIs18(x)) { if (!x[l] && Object.values(x).some(Boolean)) n++; } else Object.values(x).forEach(walk); } };
   walk(edC().files || {}); return n;
 }
-function edLanguages() {
-  const langs = edLangs();
-  return `<div class="edc"><h2 style="margin-top:0">Languages</h2>${Object.entries(ED_LANGS).map(([k, n]) => { const m = langs.includes(k) ? edMissing(k) : 0; return `<label class="edt"><input type="checkbox" data-langtog="${k}"${langs.includes(k) ? ' checked' : ''}${k === langs[0] ? ' disabled' : ''}><span>${n}${k === langs[0] ? ' (main)' : ''}</span>${m ? `<span class="edst">${m} texts not translated</span>` : ''}</label>`; }).join('')}
-    <button class="edb sm on" type="button" data-translate>Translate missing texts</button> <span class="edst" id="edJob"></span>
-    <p class="edn">Translation runs on the computer that builds your guides, so it needs to be on. Until a text is translated, guests see it in the main language.</p></div>`;
-}
 const edJobText = s => { const el = document.getElementById('edJob'); if (el) el.textContent = s; };
-async function edTranslate() {
+function cmApplyTranslations(map) {
+  const main = edLangs()[0]; let n = 0;
+  const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (edIs18(x)) { const t = map[x[main]]; if (t) for (const [l, s] of Object.entries(t)) if (!x[l] && s) { x[l] = s; n++; } } else Object.values(x).forEach(walk); } };
+  walk(edC().files || {}); return n;
+}
+async function cmTranslate() {
   const langs = edLangs().filter(l => edMissing(l) > 0);
   if (!langs.length) return edJobText('Everything is already translated.');
   try {
-    edJobText('Saving…'); clearTimeout(ED.timer); await edSave();
-    const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: ED.g.id, kind: 'translate', langs } });
+    edJobText('Saving…'); await cmSave();
+    const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'translate', langs } });
     const id = j && j[0] && j[0].id; if (!id) throw new Error('Could not start');
     edJobText('Waiting for the guide builder…');
     for (let i = 0; i < 450; i++) {
       await new Promise(r => setTimeout(r, 4000));
       await ensureFresh();
-      const r = await sb('/rest/v1/guide_jobs?select=status,message&id=eq.' + id), st = r && r[0];
+      const r = await sb('/rest/v1/guide_jobs?select=status,message,result&id=eq.' + id), st = r && r[0];
       if (!st) continue;
       if (st.status === 'running') edJobText(st.message || 'Translating…');
       if (st.status === 'failed') return edJobText('Did not work: ' + (st.message || 'try again later'));
-      if (st.status === 'done') {
-        const g = await sb('/rest/v1/guides?select=content&id=eq.' + ED.g.id); if (g && g[0]) { ED.g.content = g[0].content; ED.list.forEach(x => { if (x.id === ED.g.id) x.content = g[0].content; }); }
-        ED.state = 'Translated.'; edRender(); return;
-      }
+      if (st.status === 'done') { const n = cmApplyTranslations(st.result || {}); if (n) cmQueue(); render(); edJobText(n ? `${n} texts translated. Preview, then publish.` : (st.message || 'Done.')); return; }
     }
     edJobText('Still waiting. Check again in a while.');
   } catch (e) { edJobText('Did not work: ' + niceError(e)); }
 }
 
-/* --- Basics --- */
-const edCoverPhoto = h => !!h.photo && h.cover !== 'themed';
-function edBasics(c) {
-  const s = c.site || {}, h = (c.files || {}).house || {};
-  return `<div class="edc">${edField('Guide name', 'site/name', s.name)}${edField('House name (shown on the home page)', 'files/house/name', h.name)}${edField('Check-out time', 'files/house/checkout', h.checkout, { type: 'time' })}${edField('Short description (for link previews)', 'site/description', s.description, { long: true })}${edField('Listing link', 'files/house/listing', h.listing)}</div>
-    <div class="edc"><h2 style="margin-top:0">Cover</h2><p class="edn">Guests have already seen your listing photos, so the cover is drawn from your colours unless you choose your own photo.</p><span style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="edb sm${edCoverPhoto(h) ? '' : ' on'}" type="button" data-cover="themed">Drawn from my colours</button><button class="edb sm${edCoverPhoto(h) ? ' on' : ''}" type="button" data-cover="photo"${h.photo ? '' : ' disabled'}>My photo</button></span>${h.photo ? `<div class="edph" style="width:160px;margin-top:10px"><img style="width:160px;height:110px" src="${edEsc(edImg(h.photo))}" alt=""></div>` : ''}<label class="edb sm edfile" style="margin-top:8px">${h.photo ? 'Change photo' : 'Add a photo'}<input type="file" accept="image/*" hidden data-phset="files/house/photo"></label></div>
-    <div class="edc"><h2 style="margin-top:0">Logo</h2>${s.logo ? `<div class="edph"><img style="object-fit:contain;background:#fff" src="${edEsc(edImg(s.logo))}" alt=""></div>` : ''}<label class="edb sm edfile" style="margin-top:8px">${s.logo ? 'Change logo' : 'Add a logo'}<input type="file" accept="image/*" hidden data-phset="site/logo" data-kind="logo"></label></div>
-    ${edLanguages()}`;
+/* --- Typing, ticking, adding, removing --- */
+function edEdit(t) {
+  const c = edC(), p = edPath(t.dataset.p), val = t.value, kind = t.dataset.t;
+  if (kind === 'i18n') {
+    let o = edGet(c, p); if (!o || typeof o !== 'object') { o = {}; edSet(c, p, o); }
+    const shown = edShown(o);
+    for (const l of Object.keys(o)) if (l !== CM.lang && (o[l] === shown || o[l] === '')) o[l] = val;
+    o[CM.lang] = val;
+  } else if (kind === 'num') edSet(c, p, val === '' ? 0 : Number(val));
+  else edSet(c, p, val);
+  if (p[0] === 'private' && p[1] === 'wifi') cmWifiQr();
+  cmQueue();
 }
-function edSections(c) {
-  const ids = [...((((c.files || {}).sections || {}).sections) || []).map(x => x.id)]; if (!ids.includes('map')) ids.push('map');
-  const m = (c.site || {}).modules || {};
-  return `<div class="edc">${ids.map(id => `<label class="edt"><input type="checkbox" data-mod="${edEsc(id)}"${m[id] !== false ? ' checked' : ''}><span>${edEsc(ED_SEC[id] || id)}</span></label>`).join('')}</div><p class="edn">A section you switch off disappears from the guide, its page and the map.</p>`;
-}
-
-/* --- House guide --- */
-function edHouse(c) {
-  const blocks = (((c.files || {}).message || {}).blocks) || [];
-  if (!blocks.length) return '<div class="edc">This guide has no house guide yet.</div>';
-  return `<div class="edc">${blocks.map((b, i) => `<details><summary>${edEsc(edShown(b.title) || b.id)}</summary>
-    ${edField('Title', `files/message/blocks/${i}/title`, b.title)}
-    <div class="edn" style="margin-bottom:0">Photos</div>${edPhotos(`files/message/blocks/${i}/photos`, b.photos)}
-    ${(b.items || []).map((it, j) => `<div class="edl"><label class="edf" style="flex:1;margin:0"><textarea data-p="files/message/blocks/${i}/items/${j}" data-t="i18n">${edEsc(edShown(it))}</textarea></label><button class="edb sm danger" type="button" data-del="files/message/blocks/${i}/items/${j}">Delete</button></div>`).join('')}
-    <button class="edb sm" type="button" data-add="files/message/blocks/${i}/items">Add a line</button></details>`).join('')}</div>`;
-}
-
-/* --- Wi-Fi --- */
-function edWifi(c) {
-  const w = (c.private || {}).wifi;
-  if (!w) return '<div class="edc"><p class="edn">This guide has no Wi-Fi yet.</p><button class="edb on" type="button" data-addwifi>Add Wi-Fi</button></div>';
-  return `<div class="edc">${edField('Password', 'private/wifi/password', w.password)}<h2>Networks</h2>${(w.networks || []).map((n, i) => `<div class="edc" style="background:var(--sunk,#fafafa)">${edField('Network name', `private/wifi/networks/${i}/ssid`, n.ssid)}${edField('Note for guests (e.g. "Best inside the house")', `private/wifi/networks/${i}/label`, n.label || {})}<button class="edb sm danger" type="button" data-del="private/wifi/networks/${i}">Remove network</button></div>`).join('')}<button class="edb sm" type="button" data-addnet>Add a network</button></div>
-    <p class="edn">The QR code is made again automatically for the name and password you set.</p>`;
-}
-
-/* --- Rubbish --- */
-const ED_BINS = [['organic', 'Organic'], ['packaging', 'Packaging'], ['paper', 'Paper'], ['glass', 'Glass'], ['rest', 'General waste']];
-function edRubbish(c) {
-  const g = (c.files || {}).garbage;
-  if (!g) return '<div class="edc">This guide has no rubbish section.</div>';
-  const bins = ['street', ...Object.keys(g.bins || {})];
-  return `<div class="edc">${edField('Collection time (morning)', 'files/garbage/collectionTime', g.collectionTime || '', { type: 'time' })}</div>
-    <div class="edc">${(g.fractions || []).map((f, i) => `<details><summary>${edEsc(edShown(f.name) || f.id)}</summary>
-      ${edField('Name', `files/garbage/fractions/${i}/name`, f.name)}
-      <label class="edf"><span>Goes in</span><select data-p="files/garbage/fractions/${i}/bin" data-t="str">${bins.map(b => `<option value="${edEsc(b)}"${f.bin === b ? ' selected' : ''}>${edEsc(b === 'street' ? 'A container in the street' : edShown((g.bins || {})[b]) || b)}</option>`).join('')}</select></label>
-      <div class="edn" style="margin-bottom:4px">Collection days</div>${edDays(`files/garbage/fractions/${i}`, f.days)}
-      <div style="height:10px"></div>${edField('What goes in it', `files/garbage/fractions/${i}/examples`, f.examples || {}, { long: true })}</details>`).join('')}</div>
-    <div class="edc"><h2 style="margin-top:0">Containers guests can use</h2>${(g.containers || []).map((ct, j) => `<details><summary>${edEsc(edShown(ct.where) || 'Containers ' + (j + 1))}</summary>
-      <label class="edf"><span>Where they are</span><textarea data-p="files/garbage/containers/${j}/where" data-t="i18n">${edEsc(edShown(ct.where || {}))}</textarea></label>
-      ${edField('Google Maps link (optional)', `files/garbage/containers/${j}/map`, ct.map || '')}
-      <div class="edn" style="margin-bottom:4px">What they take</div><span style="display:flex;gap:4px;flex-wrap:wrap">${ED_BINS.map(([id, l]) => `<button class="edb sm${(ct.takes || []).includes(id) ? ' on' : ''}" type="button" data-ctake="${j}" data-id="${id}">${l}</button>`).join('')}</span>
-      <div style="height:10px"></div><button class="edb sm danger" type="button" data-del="files/garbage/containers/${j}">Delete this</button></details>`).join('')}
-      <button class="edb sm" type="button" data-addcont="1">Add containers</button></div>
-    <div class="edc"><h2 style="margin-top:0">How to sort</h2>${(g.steps || []).map((it, j) => `<div class="edl"><label class="edf" style="flex:1;margin:0"><textarea data-p="files/garbage/steps/${j}" data-t="i18n">${edEsc(edShown(it))}</textarea></label><button class="edb sm danger" type="button" data-del="files/garbage/steps/${j}">Delete</button></div>`).join('')}<button class="edb sm" type="button" data-add="files/garbage/steps">Add a step</button>
-    ${g.missed ? edField('If a collection is missed', 'files/garbage/missed', g.missed, { long: true }) : ''}${g.deixalleria ? edField('Recycling centre', 'files/garbage/deixalleria', g.deixalleria, { long: true }) : ''}</div>`;
-}
-
-/* --- Generic item (contact, place, market...) --- */
-function edItem(base, it, i) {
-  const keys = Object.keys(it).filter(k => k !== 'schedule' && ((edIs18(it[k]) && !['bins'].includes(k)) || (ED_STR.includes(k) && typeof it[k] === 'string')));
-  const nums = ED_NUM.filter(k => k in it);
-  const name = edShown(it.name) || edShown(it.title) || (it.id && !String(it.id).startsWith('custom-') ? it.id : 'New item');
-  return `<details><summary>${edEsc(name)}</summary>
-    ${keys.map(k => edField(edLabel(k), `${base}/${i}/${k}`, it[k], { long: edIs18(it[k]) && !ED_SHORT.includes(k) })).join('')}
-    ${nums.length ? `<div class="edcol">${nums.map(k => edField(edLabel(k), `${base}/${i}/${k}`, it[k], { type: 'number' })).join('')}</div>` : ''}
-    ${'lat' in it ? `<label class="edf" style="margin-top:12px"><span>Paste a Google Maps link to set the position</span><input type="text" data-gm="${base}/${i}" placeholder="https://www.google.com/maps/..."></label>` : ''}
-    ${'schedule' in it || base.includes('markets') ? `<div style="margin-bottom:10px">${edSchedule(`${base}/${i}/schedule`, it.schedule)}</div>` : ''}
-    <button class="edb sm danger" type="button" data-del="${base}/${i}">Delete this</button></details>`;
-}
-function edNewItem(arr) {
-  const clone = arr && arr[0] ? JSON.parse(JSON.stringify(arr[0])) : { name: { en: '' }, description: { en: '' }, lat: 0, lng: 0 };
-  const h = (edF().house) || {};
-  const clear = o => { for (const k of Object.keys(o)) { const v = o[k]; if (['icon', 'group', 'tone', 'category', 'tags', 'flags', 'wide'].includes(k)) continue; if (edIs18(v)) o[k] = Object.fromEntries(Object.keys(v).map(l => [l, ''])); else if (typeof v === 'string') o[k] = ''; else if (Array.isArray(v)) o[k] = []; } return o; };
-  const n = clear(clone); n.id = 'custom-' + Date.now().toString(36);
-  if ('lat' in n || arr[0] && 'lat' in arr[0]) { n.lat = h.lat || 0; n.lng = h.lng || 0; n.km_from_house = 0; }
-  delete n.verify; delete n.always;
-  return n;
-}
-const edKm = (a, b, c, d) => { const R = 6371, r = x => x * Math.PI / 180, dl = r(c - a), dg = r(d - b), x = Math.sin(dl / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dg / 2) ** 2; return Math.round(2 * R * Math.asin(Math.sqrt(x))); };
-
-/* --- House page --- */
-function edLines(title, path, arr) {
-  return `<h2 style="margin-top:0">${title}</h2>${(arr || []).map((it, j) => `<div class="edl"><label class="edf" style="flex:1;margin:0"><textarea data-p="${path}/${j}" data-t="i18n">${edEsc(edShown(it))}</textarea></label><button class="edb sm danger" type="button" data-del="${path}/${j}">Delete</button></div>`).join('')}<button class="edb sm" type="button" data-add="${path}">Add a line</button>`;
-}
-function edHousePage(c) {
-  const hp = (c.files || {})['house-page'], P = 'files/house-page';
-  if (!hp) return '<div class="edc">This guide has no house page.</div>';
-  return `<div class="edc">${edField('Summary', P + '/summary', hp.summary)}${edField('Description', P + '/description', hp.description, { long: true })}
-    <div class="edcol">${edField('Rating (stars)', P + '/rating/stars', (hp.rating || {}).stars, { type: 'number' })}${edField('Number of reviews', P + '/rating/count', (hp.rating || {}).count, { type: 'number' })}</div><div style="height:12px"></div>
-    ${edField('Listing link', P + '/url', hp.url)}${edField('Listing photos link', P + '/photosUrl', hp.photosUrl)}</div>
-    <div class="edc"><h2 style="margin-top:0">Highlights</h2>${(hp.highlights || []).map((h, i) => `<div class="edl"><label class="edf" style="flex:1;margin:0"><textarea data-p="${P}/highlights/${i}/t" data-t="i18n">${edEsc(edShown(h.t))}</textarea></label><button class="edb sm danger" type="button" data-del="${P}/highlights/${i}">Delete</button></div>`).join('')}<button class="edb sm" type="button" data-addit="${P}/highlights">Add a highlight</button></div>
-    ${hp.beds ? `<div class="edc">${edLines('Beds', P + '/beds', hp.beds)}</div>` : ''}
-    <div class="edc"><h2 style="margin-top:0">Amenities</h2>${(hp.amenities || []).map((g, i) => `<details><summary>${edEsc(edShown(g.t))}</summary>${edField('Group title', `${P}/amenities/${i}/t`, g.t)}${edLines('Items', `${P}/amenities/${i}/items`, g.items)}</details>`).join('')}</div>
-    <div class="edc"><h2 style="margin-top:0">Photos</h2>${edPhotos(P + '/photos', hp.photos)}</div>
-    ${(hp.tour || []).length ? `<div class="edc"><h2 style="margin-top:0">Tour by room</h2>${hp.tour.map((r, i) => `<details><summary>${edEsc(edShown(r.room))}</summary>${edField('Room name', `${P}/tour/${i}/room`, r.room)}${edPhotos(`${P}/tour/${i}/photos`, r.photos)}</details>`).join('')}</div>` : ''}`;
-}
-
-/* --- Contacts --- */
-function edContacts(c) {
-  const em = (c.files || {}).emergency, q = (c.files || {}).quick;
-  const groups = (em && em.groups) || [];
-  const title = { urgent: 'Urgent', health: 'Health', police: 'Police and roads', town: 'Town and services' };
-  return `${groups.map((g, gi) => `<div class="edc"><h2 style="margin-top:0">${edEsc(title[g.id] || g.id)}</h2>${(g.items || []).map((it, i) => edItem(`files/emergency/groups/${gi}/items`, it, i)).join('')}<button class="edb sm" type="button" data-addit="files/emergency/groups/${gi}/items">Add a contact</button></div>`).join('')}
-    <div class="edc">The one-tap tiles on the home page (taxi, train station, a bar you love) are in the <button class="edb sm" type="button" data-tab="home">Home tiles</button> tab.</div>
-    ${!groups.length ? '<div class="edc">This guide has no contacts yet.</div>' : ''}`;
-}
-
-/* --- Home tiles: one-tap tiles on the home page, each opening its own page with map and buttons --- */
-const ED_TILES = [['taxi', 'Add a taxi', 'Taxi', { phone: '', always: true }], ['train', 'Add a train or bus station', 'Station', { lat: 0, lng: 0, gmaps: '' }],
-  ['food', 'Add a bar or restaurant', 'Restaurant', { phone: '', lat: 0, lng: 0, gmaps: '' }], ['shop', 'Add a shop', 'Shop', { phone: '', lat: 0, lng: 0, gmaps: '' }]];
-function edHome(c) {
-  const q = (c.files || {}).quick || {}, items = q.items || [];
-  return `<div class="edc"><h2 style="margin-top:0">Home tiles</h2><p class="edn">One tap from the home page. Each tile opens a page with its map, number and your words.</p>
-    ${items.map((it, i) => edItem('files/quick/items', it, i)).join('') || '<p class="edn">No tiles yet.</p>'}
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${ED_TILES.map(([icon, label]) => `<button class="edb sm" type="button" data-addtile="${icon}">${edEsc(label)}</button>`).join('')}</div></div>`;
-}
-function edAddTile(icon) {
-  const c = edC(), f = c.files = c.files || {}, q = f.quick = f.quick || { items: [] }; q.items = q.items || [];
-  const [, , kind, extra] = ED_TILES.find(t => t[0] === icon), L = x => Object.fromEntries(edLangs().map(l => [l, x]));
-  q.items.push({ id: `${icon === 'food' ? 'food' : icon}-${Date.now().toString(36)}`, icon, name: L(kind), sub: L(''), title: L(''), kind: L(kind), what: L(''), ...JSON.parse(JSON.stringify(extra)) });
-  edQueue(); edRender();
-}
-
-/* --- Places --- */
-function edPlaces(c) {
-  const tabs = ED_PLACES.map(([id, label, path]) => { const n = (edGet(c, edPath(path)) || []).length; return n ? `<button class="edb sm${ED.sub === id ? ' on' : ''}" type="button" data-sub="${id}">${edEsc(label)} (${n})</button>` : ''; }).join('');
-  const cur = ED_PLACES.find(x => x[0] === ED.sub && (edGet(c, edPath(x[2])) || []).length) || ED_PLACES.find(x => (edGet(c, edPath(x[2])) || []).length);
-  if (!cur) return '<div class="edc">No places in this guide yet.</div>';
-  const arr = edGet(c, edPath(cur[2]));
-  return `<div class="edtabs" style="margin:0 0 12px">${tabs}</div><div class="edc">${arr.map((it, i) => edItem(cur[2], it, i)).join('')}<div style="margin-top:10px"><button class="edb sm on" type="button" data-addit="${cur[2]}">Add a place</button></div></div>
-    <p class="edn">Distance from the house is worked out from the position. A new place starts at the house: set its position by pasting a Google Maps link.</p>`;
-}
-
-/* --- Design --- */
-const edCssVar = (css, name) => { const m = css.match(new RegExp(name + '\\s*:\\s*([^;}]+)')); return m ? m[1].trim() : ''; };
-const edBlockOf = css => { const m = css.match(/\/\* editor:start \*\/([\s\S]*?)\/\* editor:end \*\//); return m ? m[1] : ''; };
-function edDesign() {
-  const th = ED.g.theme = ED.g.theme || {}, css = th.css || '', blk = edBlockOf(css);
-  const val = (n, d) => { const v = edCssVar(blk, n) || edCssVar(css, n); return /^#[0-9a-fA-F]{6}$/.test(v) ? v : d; };
-  const fam = n => { const v = (edCssVar(blk, n) || edCssVar(css, n)).match(/"([^"]+)"/); return v ? v[1] : ''; };
-  const dispSel = (ED_FONTS.find(f => f[1] === fam('--display')) || [])[0] || ((th.fonts || [])[0] || '').split('/')[0] || 'jost';
-  const bodySel = (ED_FONTS.find(f => f[1] === fam('--font')) || [])[0] || ((th.fonts || []).slice(-1)[0] || '').split('/')[0] || 'jost';
-  const opts = sel => ED_FONTS.map(([id, n]) => `<option value="${id}"${id === sel ? ' selected' : ''}>${n}</option>`).join('');
-  return `<div class="edc"><h2 style="margin-top:0">Layout style</h2><label class="edf"><select data-design="preset">${ED_PRESETS.map(([id, n]) => `<option value="${id}"${(th.preset || 'bauhaus') === id ? ' selected' : ''}>${n}</option>`).join('')}</select></label></div>
-    <div class="edc"><h2 style="margin-top:0">Fonts</h2><div class="edcol"><label class="edf"><span>Titles</span><select data-design="display">${opts(dispSel)}</select></label><label class="edf"><span>Text</span><select data-design="body">${opts(bodySel)}</select></label></div></div>
-    <div class="edc"><h2 style="margin-top:0">Colours</h2><div class="edcol">${ED_COLORS.map(([v, l, d]) => `<label class="edf"><span>${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></div>
-    <p class="edn">Changes show on the guide as soon as they are saved. Open the guide in another tab and reload to see them.</p>`;
+// The QR code is made when the guide is built. A new name or password drops it (the guide then draws one itself);
+// typing the published ones back brings it back, so nothing shows as changed.
+function cmWifiQr() {
+  const w = (edC().private || {}).wifi, lw = ((CM.live.content.private || {}).wifi) || {};
+  if (w) (w.networks || []).forEach((n, i) => { const l = (lw.networks || [])[i]; if (l && l.qr && l.ssid === n.ssid && lw.password === w.password) n.qr = l.qr; else delete n.qr; });
 }
 function edApplyDesign(kind, el) {
-  const th = ED.g.theme = ED.g.theme || {};
-  if (kind === 'preset') { th.preset = el.value; (ED.g.content.site = ED.g.content.site || {}).theme = { ...(ED.g.content.site.theme || {}), preset: el.value }; edQueue(); return; }
-  const css = th.css || '', blk = edBlockOf(css), cur = n => edCssVar(blk, n);
-  const decl = {}; for (const m of blk.matchAll(/(--[a-z-]+)\s*:\s*([^;}]+)/g)) decl[m[1]] = m[2].trim();
-  let fonts = th.fonts || [];
+  const th = CM.g.theme = CM.g.theme || {}, site = edC().site = edC().site || {};
+  if (kind === 'preset') { th.preset = el.value; site.theme = { ...(site.theme || {}), preset: el.value }; return cmQueue(); }
+  const css = th.css || '', blk = edBlockOf(css), decl = {};
+  for (const m of blk.matchAll(/(--[a-z-]+)\s*:\s*([^;}]+)/g)) decl[m[1]] = m[2].trim();
   if (kind === 'color') decl[el.dataset.var] = el.value;
   else {
     const f = ED_FONTS.find(x => x[0] === el.value), disp = kind === 'display';
     decl[disp ? '--display' : '--font'] = `"${f[1]}",${/serif|fraunces|cormorant|instrument/i.test(f[0]) && !/sans/i.test(f[0]) ? 'Georgia,serif' : 'system-ui,sans-serif'}`;
     const d = ED_FONTS.find(x => x[1] === ((decl['--display'] || '').match(/"([^"]+)"/) || [])[1]) || ED_FONTS[0], b = ED_FONTS.find(x => x[1] === ((decl['--font'] || '').match(/"([^"]+)"/) || [])[1]) || d;
-    fonts = []; for (const x of [d, b]) for (const w of (x[2] || [400, 500, 600, 700])) { const s = `${x[0]}/${w}.css`; if (!fonts.includes(s)) fonts.push(s); }
-    th.fonts = fonts; (ED.g.content.site = ED.g.content.site || {}).theme = { ...(ED.g.content.site.theme || {}), fonts };
+    const fonts = []; for (const x of [d, b]) for (const w of (x[2] || [400, 500, 600, 700])) { const s = `${x[0]}/${w}.css`; if (!fonts.includes(s)) fonts.push(s); }
+    th.fonts = fonts; site.theme = { ...(site.theme || {}), fonts };
   }
-  const body = ':root{' + Object.entries(decl).map(([k, v]) => `${k}:${v}`).join(';') + '}';
-  const block = `/* editor:start */\n${body}\n/* editor:end */`;
+  const block = `/* editor:start */\n:root{${Object.entries(decl).map(([k, x]) => `${k}:${x}`).join(';')}}\n/* editor:end */`;
   th.css = /\/\* editor:start \*\//.test(css) ? css.replace(/\/\* editor:start \*\/[\s\S]*?\/\* editor:end \*\//, block) : css + '\n' + block;
-  edQueue();
+  cmQueue();
 }
-
-/* --- Shell --- */
-function edEditorHTML() {
-  const g = ED.g, c = g.content, tabs = [['basics', 'Basics'], ['sections', 'Sections'], ['home', 'Home tiles'], ['house', 'House guide'], ['housepage', 'House page'], ['wifi', 'Wi-Fi'], ['rubbish', 'Rubbish'], ['contacts', 'Contacts'], ['places', 'Places'], ['design', 'Design']];
-  const body = { basics: edBasics, sections: edSections, house: edHouse, housepage: edHousePage, wifi: edWifi, rubbish: edRubbish, contacts: edContacts, home: edHome, places: edPlaces, design: edDesign }[ED.tab](c);
-  const langs = edLangs(), showLang = ['house', 'housepage', 'wifi', 'rubbish', 'contacts', 'home', 'places'].includes(ED.tab);
-  return `<div class="edw"><div class="edh"><div class="edr"><h1>${edEsc((c.site || {}).name || g.slug)}</h1><span class="edst" id="edState">${edEsc(ED.state)}</span></div>
-    <div class="edr" style="margin-top:8px"><span class="edst">Live at <a href="/g/${edEsc(g.slug)}" target="_blank" rel="noopener">${edEsc(location.host)}/g/${edEsc(g.slug)}</a></span><span><a class="edb sm" href="/g/${edEsc(g.slug)}" target="_blank" rel="noopener">Open guide</a> <button class="edb sm" type="button" data-edclose>Close</button></span></div>
-    <div class="edtabs">${tabs.map(([id, l]) => `<button class="edb${ED.tab === id ? ' on' : ''}" type="button" data-tab="${id}">${l}</button>`).join('')}</div>
-    ${langs.length > 1 && showLang ? `<div class="edlangs"><span class="edst" style="align-self:center">Language:</span>${langs.map(l => `<button class="edb sm${ED.lang === l ? ' on' : ''}" type="button" data-lang="${l}">${ED_LANGS[l]}</button>`).join('')}</div>` : ''}</div>
-    ${body}
-    ${showLang && langs.length > 1 ? '<p class="edn">You edit one language at a time. When another language still had the same text as the one you change, it follows. Otherwise it stays as it was.</p>' : ''}</div>`;
-}
-function edHubHTML() {
-  return `<div class="edw"><div class="edh"><div class="edr"><h1>Your guides</h1><button class="edb sm" type="button" data-edclose>Close</button></div></div>
-    ${ED.list.map(g => `<div class="edc"><div class="edr"><b>${edEsc((g.content.site || {}).name || g.slug)}</b><span class="edst">${edEsc(g.status)}</span></div><p class="edn">${edEsc(location.host)}/g/${edEsc(g.slug || '')}</p><button class="edb sm on" type="button" data-edit="${g.id}">Edit</button> <a class="edb sm" href="/g/${edEsc(g.slug)}" target="_blank" rel="noopener">Open</a></div>`).join('')}</div>`;
-}
-function edRender() { const el = document.getElementById('ed'); if (!el) return; const y = el.scrollTop; el.innerHTML = ED.g ? edEditorHTML() : edHubHTML(); el.scrollTop = y; }
-function edStatus() { const el = document.getElementById('edState'); if (el) el.textContent = ED.state; }
-async function edLoad() {
-  await ensureFresh();
-  const rows = await sb('/rest/v1/guides?select=id,slug,status,origin,content,theme&order=created_at.asc');
-  ED.list = (rows || []).filter(r => r.content && r.content.site && r.slug);
-  return ED.list;
-}
-function edOpen(id) {
-  if (!document.getElementById('ed')) { const s = document.createElement('style'); s.textContent = ED_CSS; document.head.appendChild(s); const d = document.createElement('div'); d.id = 'ed'; document.body.appendChild(d); }
-  document.getElementById('ed').hidden = false; document.body.style.overflow = 'hidden';
-  ED.g = id ? ED.list.find(g => g.id === id) : (ED.list.length === 1 ? ED.list[0] : null);
-  if (ED.g) { ED.tab = 'basics'; ED.lang = edLangs().includes('en') ? 'en' : edLangs()[0]; ED.state = ''; }
-  edRender();
-}
-function edClose() { const el = document.getElementById('ed'); if (el) el.hidden = true; document.body.style.overflow = ''; }
-function edQueue() { ED.state = 'Saving…'; edStatus(); clearTimeout(ED.timer); ED.timer = setTimeout(edSave, 1200); }
-async function edSave() {
-  const g = ED.g; if (!g) return;
-  try { await ensureFresh(); await sb('/rest/v1/guides?id=eq.' + g.id, { method: 'PATCH', body: { content: g.content, theme: g.theme || {} } }); ED.state = 'Saved. Live now.'; }
-  catch (e) { ED.state = 'Not saved: ' + niceError(e); }
-  edStatus();
-}
-function edEdit(t) {
-  const c = edC(), p = edPath(t.dataset.p), v = t.value, kind = t.dataset.t;
-  if (kind === 'i18n') {
-    let o = edGet(c, p); if (!o || typeof o !== 'object') { o = {}; edSet(c, p, o); }
-    const shown = edShown(o);
-    for (const l of Object.keys(o)) if (l !== ED.lang && (o[l] === shown || o[l] === '')) o[l] = v;
-    o[ED.lang] = v;
-  } else if (kind === 'num') edSet(c, p, v === '' ? 0 : Number(v));
-  else edSet(c, p, v);
-  if (p[0] === 'private' && p[1] === 'wifi' && p[p.length - 1] !== 'label') for (const n of (c.private.wifi.networks || [])) delete n.qr;   // the guide makes a new QR code for the new name or password
-  if (kind === 'num' && (p[p.length - 1] === 'lat' || p[p.length - 1] === 'lng')) edUpdateKm(p.slice(0, -1));
-  edQueue();
-}
-function edUpdateKm(ip) {
-  const it = edGet(edC(), ip), h = edF().house || {}; if (!it || !('km_from_house' in it) || !h.lat || !it.lat) return;
-  it.km_from_house = edKm(h.lat, h.lng, it.lat, it.lng);
-  const el = document.querySelector(`#ed [data-p="${ip.join('/')}/km_from_house"]`); if (el) el.value = it.km_from_house;
-}
-function edParseMaps(url) {
-  let m = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || url.match(/[?&](?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
-  return m ? { lat: +m[1], lng: +m[2] } : null;
-}
+const inEd = t => CM.on && t.closest && t.closest('.edz');
 document.addEventListener('input', e => {
-  const t = e.target; if (!t.closest || !t.closest('#ed') || !t.dataset) return;
+  const t = e.target; if (!inEd(t)) return;
   if (t.dataset.p) return edEdit(t);
-  if (t.dataset.gm) { const pos = edParseMaps(t.value); if (!pos) return; const ip = edPath(t.dataset.gm), it = edGet(edC(), ip); it.lat = pos.lat; it.lng = pos.lng; if ('map' in it || 'gmaps' in it) it['map' in it ? 'map' : 'gmaps'] = t.value; edUpdateKm(ip); edQueue(); edRender(); }
+  if (t.dataset.cfilter !== undefined) { const q = t.value.toLowerCase().trim(); t.closest('.edz').querySelectorAll('details.cmi').forEach(d => { d.hidden = !!q && !d.querySelector('summary').textContent.toLowerCase().includes(q); }); }
 });
 document.addEventListener('change', e => {
-  const t = e.target; if (!t.closest || !t.closest('#ed') || !t.dataset) return;
-  if (t.dataset.mod) { const s = edC().site = edC().site || {}; s.modules = s.modules || {}; s.modules[t.dataset.mod] = !!t.checked; edQueue(); }
+  const t = e.target; if (!CM.on || !t.dataset) return;
+  if (t.dataset.cmlang !== undefined) { CM.lang = t.value; return render(); }
+  if (!inEd(t)) return;
+  if (t.dataset.gm) {   // a pasted Google Maps link: the pin moves when it holds a position, and the link becomes the place's map button
+    const ip = edPath(t.dataset.gm), it = edGet(edC(), ip), pos = edParseMaps(t.value), url = t.value.trim();
+    if (pos) { it.lat = pos.lat; it.lng = pos.lng; edUpdateKm(ip); }
+    if (/^https?:\/\//.test(url)) it['map' in it && !('gmaps' in it) ? 'map' : 'gmaps'] = url;
+    if (pos || /^https?:\/\//.test(url)) { cmQueue(); render(); if (!pos) toast('Link saved. To move the pin, paste the long link from the browser bar.'); }
+  }
+  else if (t.dataset.cmod) { const s = edC().site = edC().site || {}; s.modules = { ...(s.modules || {}), [t.dataset.cmod]: !!t.checked }; cmQueue(); render(); }
   else if (t.dataset.design) edApplyDesign(t.dataset.design, t);
   else if (t.dataset.phadd !== undefined || t.dataset.phset !== undefined) edPhotoInput(t);
-  else if (t.dataset.langtog) { const s = edC().site = edC().site || {}; s.languages = s.languages || ['en']; const l = t.dataset.langtog, i = s.languages.indexOf(l); if (t.checked && i < 0) s.languages.push(l); else if (!t.checked && i > 0) s.languages.splice(i, 1); edQueue(); edRender(); }
+  else if (t.dataset.clang) { const s = edC().site = edC().site || {}; s.languages = [...(s.languages || ['en'])]; const l = t.dataset.clang, i = s.languages.indexOf(l); if (t.checked && i < 0) s.languages.push(l); else if (!t.checked && i > 0) s.languages.splice(i, 1); cmQueue(); render(); }
 });
+document.addEventListener('toggle', e => { const d = e.target; if (CM.on && d.matches && d.matches('details.cmi')) d.open ? CM.open.add(d.dataset.open) : CM.open.delete(d.dataset.open); }, true);
 document.addEventListener('click', e => {
-  const t = e.target.closest && e.target.closest('button,.edTop'); if (!t) return;
-  if (t.classList.contains('edTop')) return edOpen();
-  if (!t.closest('#ed')) return;
-  const d = t.dataset;
-  if (d.edclose !== undefined) return edClose();
-  if (d.edit) { ED.g = ED.list.find(g => g.id === d.edit); ED.tab = 'basics'; ED.state = ''; return edRender(); }
-  if (d.tab) { ED.tab = d.tab; return edRender(); }
-  if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); edQueue(); return edRender(); }
-  if (d.lang) { ED.lang = d.lang; return edRender(); }
-  if (d.sub) { ED.sub = d.sub; return edRender(); }
-  if (d.daytog) { const o = edGet(edC(), edPath(d.daytog)); if (o) { o.days = o.days || []; const i = o.days.indexOf(d.d); i >= 0 ? o.days.splice(i, 1) : o.days.push(d.d); edQueue(); edRender(); } return; }
-  if (d.addsch) { const p = edPath(d.addsch); let a = edGet(edC(), p); if (!Array.isArray(a)) { edSet(edC(), p, []); a = edGet(edC(), p); } a.push({ days: [], open: '09:00', close: '14:00' }); edQueue(); return edRender(); }
-  if (d.translate !== undefined) return edTranslate();
-  if (d.phmove) { const p = edPath(d.phmove), i = p[p.length - 1], a = edGet(edC(), p.slice(0, -1)), j = i + Number(d.dir); if (Array.isArray(a) && j >= 0 && j < a.length) { [a[i], a[j]] = [a[j], a[i]]; edQueue(); edRender(); } return; }
-  if (d.addtile) return edAddTile(d.addtile);
-  if (d.addcont) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); edQueue(); edRender(); } return; }
-  if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const t = ct.takes = ct.takes || []; ct.takes = t.includes(d.id) ? t.filter(x => x !== d.id) : [...t, d.id]; edQueue(); edRender(); } return; }
-  if (d.addit) { const a = edGet(edC(), edPath(d.addit)); if (Array.isArray(a)) { a.push(edNewItem(a)); edQueue(); edRender(); } return; }
-  if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: { en: '' } }] }; edQueue(); return edRender(); }
-  if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: { en: '' } }); edQueue(); return edRender(); }
-  if (d.del) {
-    if (t.dataset.sure !== '1' && !t.dataset.now) { t.dataset.sure = '1'; t.textContent = 'Sure?'; return; }
-    const p = edPath(d.del), arr = edGet(edC(), p.slice(0, -1)); if (Array.isArray(arr)) { arr.splice(p[p.length - 1], 1); if (p[0] === 'private') for (const n of (edC().private.wifi.networks || [])) delete n.qr; edQueue(); edRender(); } return;
+  if (!CM.on) return;
+  const t = e.target.closest && e.target.closest('button,a[data-cpreview]'); if (!t) return;
+  const d = t.dataset, arr = p => { let a = edGet(edC(), edPath(p)); if (!Array.isArray(a)) { edSet(edC(), edPath(p), []); a = edGet(edC(), edPath(p)); } return a; };
+  const done = () => { cmQueue(); render(); };
+  if (d.cpreview !== undefined) return cmPreview(e, t);
+  if (d.cpublish !== undefined) return cmPublish(t);
+  if (d.cdiscard !== undefined) return cmDiscard(t);
+  if (!t.closest('.edz')) return;
+  if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); return done(); }
+  if (d.daytog) { const o = edGet(edC(), edPath(d.daytog)); if (o) { const s = new Set(o.days || []); s.has(d.d) ? s.delete(d.d) : s.add(d.d); o.days = ED_DAYS.map(x => x[0]).filter(x => s.has(x)); done(); } return; }
+  if (d.cflag) { const it = edGet(edC(), edPath(d.cflag)); if (it) { const s = new Set(it.flags || []); s.has(d.f) ? s.delete(d.f) : s.add(d.f); it.flags = [...s]; done(); } return; }
+  if (d.addsch) { arr(d.addsch).push({ days: [], open: '09:00', close: '14:00' }); return done(); }
+  if (d.adddate) { arr(d.adddate).push({ start: '', end: '', status: 'expected' }); return done(); }
+  if (d.translate !== undefined) return cmTranslate();
+  if (d.phmove) { const p = edPath(d.phmove), i = p[p.length - 1], a = edGet(edC(), p.slice(0, -1)), j = i + Number(d.dir); if (Array.isArray(a) && j >= 0 && j < a.length) { [a[i], a[j]] = [a[j], a[i]]; done(); } return; }
+  if (d.addtile) { edAddTile(d.addtile); return done(); }
+  if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
+  if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
+  if (d.addit) { const a = arr(d.addit); a.push(edNewItem(a)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
+  if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }] }; return done(); }
+  if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }); return done(); }
+  if (d.add) { const o = {}; for (const l of edLangs()) o[l] = ''; arr(d.add).push(o); done(); setTimeout(() => { const x = document.getElementById(cmId(d.add + '/' + (arr(d.add).length - 1))); if (x) x.focus(); }, 0); return; }
+  if (d.cdel) {
+    if (!d.now && d.sure !== '1') { const was = t.textContent; d.sure = '1'; t.textContent = 'Sure? Tap again'; setTimeout(() => { if (t.isConnected) { delete t.dataset.sure; t.textContent = was; } }, 4000); return; }
+    const p = edPath(d.cdel), a = edGet(edC(), p.slice(0, -1));
+    if (Array.isArray(a)) { a.splice(p[p.length - 1], 1); for (const k of [...CM.open]) if (k.startsWith(d.cdel)) CM.open.delete(k); if (p[0] === 'private') cmWifiQr(); done(); }
   }
-  if (d.add) { const arr = edGet(edC(), edPath(d.add)); if (Array.isArray(arr)) { const o = {}; for (const l of edLangs()) o[l] = ''; arr.push(o); edQueue(); edRender(); } }
 });
-async function edInit() {
-  const list = await edLoad();
-  if (list.length && !document.querySelector('.edTop')) { const s = document.createElement('style'); s.textContent = ED_CSS; document.head.appendChild(s); const b = document.createElement('button'); b.type = 'button'; b.className = 'edTop'; b.textContent = 'My guide'; acctBar().prepend(b); }
-  if (list.length && GUIDE && GUIDE.origin === 'imported') edOpen(GUIDE.id);
+
+/* --- Start: a guide that exists opens here instead of the questions --- */
+function cmInit() {
+  const g = GUIDE;
+  if (!g || !g.content || !g.content.site || !(g.origin === 'imported' || ['ready', 'approved', 'published'].includes(g.status))) return;
+  const d = g.draft && g.draft.content ? g.draft : null;
+  CM.live = { content: g.content, theme: g.theme || {} };
+  CM.g = { id: g.id, slug: g.slug, status: g.status, origin: g.origin, content: cmClone(d ? d.content : g.content), theme: cmClone(d ? d.theme || {} : g.theme || {}) };
+  CM.lang = edLangs().includes('en') ? 'en' : edLangs()[0];
+  CM.on = true;
 }
+(function () {
+  const st = document.createElement('style');
+  st.textContent = `.edz{display:flex;flex-direction:column;gap:18px;min-width:0}
+.edz .lab{font-weight:700;font-size:15px}
+.cm-h{font-size:22px;margin-top:8px}
+.cm-list{display:flex;flex-direction:column;gap:8px}
+.cmi{background:var(--sunk);border-radius:var(--r-s);border:1.5px solid var(--line)}
+.cmi[open]{background:var(--surface);border-color:var(--ink)}
+.cmi>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;min-height:54px}
+.cmi>summary::-webkit-details-marker{display:none}
+.cmi>summary span{display:flex;flex-direction:column;min-width:0}
+.cmi>summary b{overflow-wrap:break-word}
+.cmi>summary small{color:var(--muted);font-size:13px}
+.cmi>summary .chev{flex:none;width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 4px 4px}
+.cmi[open]>summary .chev{transform:rotate(-135deg);margin:4px 4px 0}
+.cmb{display:flex;flex-direction:column;gap:16px;padding:4px 14px 16px}
+@media (max-width:420px){.cmb{padding:4px 10px 14px}.cm-sch{padding:10px!important}}
+.cm-lines{display:flex;flex-direction:column;gap:8px}
+.cm-line{display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:8px;align-items:start}
+.cm-line textarea{min-height:56px}
+.cm-x{width:40px;height:40px;flex:none;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-size:20px;line-height:1;color:var(--ink)}
+.cm-add,.cm-file{align-self:flex-start}
+.cm-file{cursor:pointer;position:relative}
+.edz button.chip{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer}
+.edz button.chip:disabled{opacity:.45;cursor:not-allowed}
+.edz button.chip[aria-pressed=true] span{background:var(--night,var(--ink));border-color:var(--night,var(--ink));color:#fff}
+.edz button.chip:focus-visible span{outline:3px solid var(--focus);outline-offset:2px}
+.cm-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cm-row input,.cm-row select{width:auto;flex:1 1 130px;min-width:0}
+.cm-dayrow{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.cm-sch .chips{gap:6px}
+.cm-sch .chip span{padding:6px 11px;font-size:14px}
+.cm-dayrow select{width:auto;flex:1;min-width:0}
+.cm-times{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}
+.cm-times input{min-width:0;padding-inline:8px}
+.cm-dates{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.cm-dates label{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cm-dates input{min-width:0}
+.edz input[type=date]{width:100%;background:var(--sunk);border:1.5px solid var(--line);border-radius:var(--r-s);padding:11px 12px;font-size:16px}
+.edz input[type=date]:focus{border-color:var(--ink);outline:none;background:var(--surface)}
+.cm-sch{display:flex;flex-direction:column;gap:12px;padding:12px;border-radius:var(--r-s);background:var(--sunk)}
+.cm-sr{display:flex;flex-direction:column;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.cm-sch .btn{align-self:flex-start}
+.cm-sub{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:var(--r-s);background:var(--sunk)}
+.btn.danger{border-color:var(--danger);color:var(--danger)}
+.thumb .cm-phb{display:flex;gap:4px;padding:4px}
+.thumb .cm-phb .btn{flex:1;padding:0;min-height:32px;font-size:18px}
+.cm-colors{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.cm-colors input[type=color]{width:100%;height:44px;padding:2px;border-radius:var(--r-s);border:1.5px solid var(--line);background:none;cursor:pointer}
+.cm-lang{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cm-lang label{font-weight:700;font-size:15px}
+.cm-lang select{width:auto;flex:1 1 160px;max-width:260px}
+.cm-langhint{margin-top:-14px;padding-bottom:18px;border-bottom:1.5px solid var(--line)}
+.cm-cover{display:flex;flex-direction:column;gap:10px}
+.cm-cover img{width:100%;max-width:420px;aspect-ratio:16/10;object-fit:cover;border-radius:14px;display:block}
+.cm-cover img.off{opacity:.35;filter:grayscale(1)}
+.cm-logo img{width:88px;height:88px;object-fit:contain;background:#fff;border-radius:14px;border:1px solid var(--line)}
+.hero .cm-url{font-size:14px;opacity:.85;overflow-wrap:anywhere}
+.cm-act{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hero .btn.cm-ghost{background:transparent;color:inherit;border-color:rgba(255,255,255,.55)}
+.foot .btn svg{width:16px;height:16px}`;
+  document.head.appendChild(st);
+})();
 
 function summary(m){
   const n = k => uploads.filter(u => u.kind === k && !u.round).length;
@@ -2192,7 +2376,7 @@ function setSave(state, text){ const el = $('#saveState'); if (!el) return; el.i
 function queueSave(){ A._savedAt = Date.now(); setSave('busy','Saving…'); clearTimeout(saveTimer); saveTimer = setTimeout(flush, 400); }
 function flush(){
   if (window.__resetting) return;
-  try { localStorage.setItem(KEY, JSON.stringify({ sid, A })); setSave('ok','Saved on this device'); if (window.__acctPush && A._savedAt) window.__acctPush(); }
+  try { localStorage.setItem(KEY, JSON.stringify({ sid, A })); if (!CM.on) setSave('ok','Saved on this device'); if (window.__acctPush && A._savedAt) window.__acctPush(); }
   catch (e) { setSave('err','Could not save on this device'); }
 }
 const set = (k, val) => { A[k] = val; queueSave(); };
@@ -2341,8 +2525,10 @@ function render(){
   const ae = document.activeElement, fid = ae && ae.id, sel = ae && ae.selectionStart;
   const m = visible().find(x => x.id === r);
   const path = decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g, ''));
+  if (path && path !== 'index.html' && CM.on) { location.replace('/g/' + encodeURIComponent(CM.g.slug)); return; }
   if (path && path !== 'index.html') { if (path === v('slug') || path === 'preview') { renderPreview(); return; } main.innerHTML = notHereHTML(path); return; }
-  if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
+  if (CM.on) main.innerHTML = cmPageHTML(r);   // the guide exists: the steps edit it (editor.js)
+  else if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
   else if (r === 'building' || (A._sentAt && !location.hash && window.__acctGuide && window.__acctGuide() && window.__acctGuide().status !== 'draft')) { main.innerHTML = buildingHTML(); watchBuild(); }
   else if (r === 'thanks' || (A._sentAt && !location.hash)) main.innerHTML = thanksHTML();
   else if (m) { main.innerHTML = moduleHTML(m); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
@@ -2350,7 +2536,7 @@ function render(){
   else if ((r === 'home' || r === 'start') && (r === 'start' || (!A._draftAt && !A._skipStart && !visible().some(m => statusOf(m).k !== 'new')))) { main.innerHTML = startHTML(); if (r !== lastRoute) { log('open', 'start'); queueSave(); } }
   else { main.innerHTML = homeHTML(); if (r !== lastRoute) { log('open', 'home'); queueSave(); } }
   let nb = document.getElementById('navbar'); if (!nb) { nb = document.createElement('div'); nb.id = 'navbar'; nb.hidden = true; document.body.appendChild(nb); }
-  const stepView = r === 'send' || !!m;
+  const stepView = CM.on ? cmIsPage(r) : r === 'send' || !!m;
   nb.hidden = !stepView || new URLSearchParams(location.search).has('feedback') || (r === 'thanks');
   if (!nb.hidden) nb.innerHTML = navbarHTML(r);
   if (r !== lastRoute) { window.scrollTo(0, 0); lastRoute = r; }
@@ -2459,7 +2645,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { cle
   { const d = device(); A._sessions = [...(A._sessions || []), { t: Date.now(), d: deviceLine(d) }].slice(-50); log('session', null, { d: deviceLine(d) }); flush(); }
   try { uploads = (await idb.all() || []).map(u => ({ ...u, url: u.blob ? URL.createObjectURL(u.blob) : u.url })).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')); } catch (e) { uploads = []; }
   try { await accountBoot(); } catch (e) {}
-  setSave('ok', A._seen ? 'Saved on this device' : 'Answers save on this device');
+  setSave('ok', CM.on ? cmSaveText() : A._seen ? 'Saved on this device' : 'Answers save on this device');
   render();
 })();
 

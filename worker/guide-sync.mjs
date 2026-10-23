@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // A guide's folder (sites/<site>) and its row in the database, kept in step. The database is the live guide.
-//   npm run guide:push -- <site> [--slug <web-address>] [--owner-email <email>] [--force]
+//   npm run guide:push -- <site> [--slug <web-address>] [--owner-email <email>] [--force] [--drop-draft]
 //       content check, then images (public/) to storage and content, i18n, Wi-Fi and theme to the guide's row.
 //       Refused when the guide changed in the database (editor, monthly check) since the last pull: pull first, or --force.
+//       Refused while the editor has unpublished changes (guides.draft): publish or undo them there, or --drop-draft.
 //       A guide that is not in the database yet needs --owner-email (an account that exists).
 //   npm run guide:pull -- <site> [--slug <web-address>]
 //       the live guide into the folder: content/, i18n/, private/ (git-ignored), site.json and theme.css.
@@ -51,7 +52,8 @@ function writeJson(file, data) {   // rewrite only when the data changed, keepin
   mkdirSync(dirname(file), { recursive: true }); writeFileSync(file, JSON.stringify(data, null, 2) + '\n'); return true;
 }
 
-const row = (await rest(`/rest/v1/guides?select=id,slug,status,origin,updated_at,content,theme&slug=eq.${encodeURIComponent(slug)}`))[0];
+const row = (await rest(`/rest/v1/guides?select=id,slug,status,origin,updated_at,content,theme,draft&slug=eq.${encodeURIComponent(slug)}`))[0];
+const DRAFT = !!(row && row.draft && row.draft.content);   // unpublished changes from the editor
 
 if (cmd === 'pull') {
   if (!row || !row.content) { console.error(`No guide /g/${slug} in the database.`); process.exit(1); }
@@ -66,11 +68,16 @@ if (cmd === 'pull') {
   const prev = stamp();   // keep the list of images already uploaded, so the next push sends only new or changed ones
   saveStamp({ slug, id: row.id, updated_at: row.updated_at, pulled: new Date().toISOString(), ...(prev.id === row.id && prev.sizes ? { sizes: prev.sizes } : {}) });
   console.log(changed.length ? `Pulled /g/${slug}: ${changed.join(', ')}` : `Pulled /g/${slug}: the folder already matched.`);
+  if (DRAFT) console.log(`Note: the editor also has changes not published yet (saved ${row.draft.savedAt || '?'}). This is the live guide, without them.`);
   process.exit(0);
 }
 
 // push
 const st = stamp();
+if (DRAFT && !process.argv.includes('--drop-draft')) {
+  console.error(`Refused: /g/${slug} has changes in the editor that are not published yet (saved ${row.draft.savedAt || '?'}). Publish or undo them in the editor first, or add --drop-draft to throw them away.`);
+  process.exit(1);
+}
 if (row && !FORCE && st.updated_at !== row.updated_at) {
   console.error(`Refused: /g/${slug} changed in the database since this folder was last pulled or pushed (${row.updated_at}). Run "npm run guide:pull -- ${site}" first, or add --force to overwrite.`);
   process.exit(1);
@@ -106,6 +113,6 @@ for (const p of walk(join(SD, 'public'))) {
   if (!r.ok) { console.error(`Image upload failed for ${rel}: ${r.status}`); process.exit(1); }
   up++;
 }
-const saved = await rest(`/rest/v1/guides?id=eq.${g.id}`, { method: 'PATCH', body: { content: next.content, theme: next.theme, status: 'published', message: null, finished_at: new Date().toISOString() }, headers: { Prefer: 'return=representation' } });
+const saved = await rest(`/rest/v1/guides?id=eq.${g.id}`, { method: 'PATCH', body: { content: next.content, theme: next.theme, draft: null, status: 'published', message: null, finished_at: new Date().toISOString() }, headers: { Prefer: 'return=representation' } });
 saveStamp({ slug, id: g.id, updated_at: saved[0].updated_at, pushed: new Date().toISOString(), sizes });
 console.log(`Pushed sites/${site} to /g/${slug}: ${Object.keys(next.content.files).length} content files, ${up} images uploaded.`);

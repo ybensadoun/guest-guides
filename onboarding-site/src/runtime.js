@@ -64,7 +64,7 @@ function setSave(state, text){ const el = $('#saveState'); if (!el) return; el.i
 function queueSave(){ A._savedAt = Date.now(); setSave('busy','Saving…'); clearTimeout(saveTimer); saveTimer = setTimeout(flush, 400); }
 function flush(){
   if (window.__resetting) return;
-  try { localStorage.setItem(KEY, JSON.stringify({ sid, A })); setSave('ok','Saved on this device'); if (window.__acctPush && A._savedAt) window.__acctPush(); }
+  try { localStorage.setItem(KEY, JSON.stringify({ sid, A })); if (!CM.on) setSave('ok','Saved on this device'); if (window.__acctPush && A._savedAt) window.__acctPush(); }
   catch (e) { setSave('err','Could not save on this device'); }
 }
 const set = (k, val) => { A[k] = val; queueSave(); };
@@ -213,8 +213,10 @@ function render(){
   const ae = document.activeElement, fid = ae && ae.id, sel = ae && ae.selectionStart;
   const m = visible().find(x => x.id === r);
   const path = decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g, ''));
+  if (path && path !== 'index.html' && CM.on) { location.replace('/g/' + encodeURIComponent(CM.g.slug)); return; }
   if (path && path !== 'index.html') { if (path === v('slug') || path === 'preview') { renderPreview(); return; } main.innerHTML = notHereHTML(path); return; }
-  if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
+  if (CM.on) main.innerHTML = cmPageHTML(r);   // the guide exists: the steps edit it (editor.js)
+  else if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
   else if (r === 'building' || (A._sentAt && !location.hash && window.__acctGuide && window.__acctGuide() && window.__acctGuide().status !== 'draft')) { main.innerHTML = buildingHTML(); watchBuild(); }
   else if (r === 'thanks' || (A._sentAt && !location.hash)) main.innerHTML = thanksHTML();
   else if (m) { main.innerHTML = moduleHTML(m); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
@@ -222,7 +224,7 @@ function render(){
   else if ((r === 'home' || r === 'start') && (r === 'start' || (!A._draftAt && !A._skipStart && !visible().some(m => statusOf(m).k !== 'new')))) { main.innerHTML = startHTML(); if (r !== lastRoute) { log('open', 'start'); queueSave(); } }
   else { main.innerHTML = homeHTML(); if (r !== lastRoute) { log('open', 'home'); queueSave(); } }
   let nb = document.getElementById('navbar'); if (!nb) { nb = document.createElement('div'); nb.id = 'navbar'; nb.hidden = true; document.body.appendChild(nb); }
-  const stepView = r === 'send' || !!m;
+  const stepView = CM.on ? cmIsPage(r) : r === 'send' || !!m;
   nb.hidden = !stepView || new URLSearchParams(location.search).has('feedback') || (r === 'thanks');
   if (!nb.hidden) nb.innerHTML = navbarHTML(r);
   if (r !== lastRoute) { window.scrollTo(0, 0); lastRoute = r; }
@@ -331,6 +333,6 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { cle
   { const d = device(); A._sessions = [...(A._sessions || []), { t: Date.now(), d: deviceLine(d) }].slice(-50); log('session', null, { d: deviceLine(d) }); flush(); }
   try { uploads = (await idb.all() || []).map(u => ({ ...u, url: u.blob ? URL.createObjectURL(u.blob) : u.url })).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')); } catch (e) { uploads = []; }
   try { await accountBoot(); } catch (e) {}
-  setSave('ok', A._seen ? 'Saved on this device' : 'Answers save on this device');
+  setSave('ok', CM.on ? cmSaveText() : A._seen ? 'Saved on this device' : 'Answers save on this device');
   render();
 })();

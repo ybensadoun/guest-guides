@@ -127,13 +127,35 @@ async function checkPlace(it, kind, handmade) {
   return { line: `${what}: ${n}` };
 }
 
-const rows = await (await fetch(`${URL_}/rest/v1/guides?select=id,slug,status,origin,updated_at,content&${SLUG ? 'slug=eq.' + encodeURIComponent(SLUG) : 'status=eq.published'}`, { headers: H })).json();
+// A guide with unpublished editor changes (guides.draft): what the check changed on a place is changed on the same place
+// in the draft too, so publishing the draft later does not undo it. Only those fields: hours the host fixed in the draft
+// stay theirs. Places the host added in the draft are checked once published.
+const CHECK_KEYS = ['checked', 'gid', 'gmaps', 'flags', 'schedule', 'hoursSource', 'always'];
+const LISTS = F => [['markets', F?.markets?.markets], ['todo', F?.todo?.items], ['restaurants', F?.restaurants?.items]];
+const keyOf = it => it.id || nameOf(it.name);
+const snap = it => JSON.stringify(CHECK_KEYS.map(k => it[k] ?? null));
+const snapshot = F => Object.fromEntries(LISTS(F).map(([kind, l]) => [kind, new Map((l || []).map(it => [keyOf(it), JSON.parse(snap(it))]))]));
+function intoDraft(draftFiles, liveFiles, before) {
+  const live = Object.fromEntries(LISTS(liveFiles).map(([k, l]) => [k, l || []]));
+  for (const [kind, list] of LISTS(draftFiles)) {
+    if (!Array.isArray(list)) continue;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const d = list[i], was = before[kind].get(keyOf(d)), l = live[kind].find(x => keyOf(x) === keyOf(d));
+      if (!was) continue;                                    // added in the draft: not checked yet
+      if (!l) { list.splice(i, 1); continue; }               // removed by the check (permanently closed)
+      CHECK_KEYS.forEach((k, j) => { if (JSON.stringify(l[k] ?? null) === JSON.stringify(was[j])) return; if (k in l) d[k] = l[k]; else delete d[k]; });
+    }
+  }
+}
+
+const rows = await (await fetch(`${URL_}/rest/v1/guides?select=id,slug,status,origin,updated_at,content,draft&${SLUG ? 'slug=eq.' + encodeURIComponent(SLUG) : 'status=eq.published'}`, { headers: H })).json();
 let calls = 0;
 for (const g of rows) {
   if (!g.content || !g.content.files) continue;
   const handmade = g.origin === 'imported';
   const F = g.content.files, report = [], humans = [];
-  for (const [kind, list] of [['markets', F.markets?.markets], ['todo', F.todo?.items], ['restaurants', F.restaurants?.items]]) {
+  const before = snapshot(F);
+  for (const [kind, list] of LISTS(F)) {
     if (!Array.isArray(list)) continue;
     for (const it of [...list]) {
       try {
@@ -148,8 +170,11 @@ for (const g of rows) {
   console.log(`\n## ${g.slug} (${g.status}${handmade ? ', hand-made: report only, links added' : ''}): ${report.length} checked${humans.length ? `, ${humans.length} for a human` : ''}`);
   for (const l of report) console.log('- ' + l);
   if (APPLY && report.length) {
-    const r = await fetch(`${URL_}/rest/v1/guides?id=eq.${g.id}&updated_at=eq.${encodeURIComponent(g.updated_at)}`, { method: 'PATCH', headers: { ...H, Prefer: 'return=minimal' }, body: JSON.stringify({ content: g.content }) });
-    console.log(r.ok ? '  saved.' : `  NOT saved (${r.status}): the guide changed meanwhile, run again.`);
+    const body = { content: g.content };
+    if (g.draft && g.draft.content) { intoDraft(g.draft.content.files, F, before); body.draft = g.draft; }
+    const r = await fetch(`${URL_}/rest/v1/guides?id=eq.${g.id}&updated_at=eq.${encodeURIComponent(g.updated_at)}`, { method: 'PATCH', headers: { ...H, Prefer: 'return=representation' }, body: JSON.stringify(body) });
+    const saved = r.ok ? await r.json() : [];   // no row back: the guide changed meanwhile (the date did not match)
+    console.log(saved.length ? `  saved${body.draft ? ' (and into the unpublished changes)' : ''}.` : `  NOT saved (${r.status}): the guide changed meanwhile, run again.`);
   }
 }
 console.log(`\n${calls} Google requests${APPLY ? '' : ' (dry run: nothing written, add --apply)'}.`);

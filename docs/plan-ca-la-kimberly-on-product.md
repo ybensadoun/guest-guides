@@ -21,4 +21,5 @@ Content in 6 languages; hand-checked places and their sources (`docs/sources.jso
 - Phase 1: pushed to the database; /g/ca-la-kimberly matched the live site word for word on every page in de and fr, same screenshots, same UX check result. Link previews for /g/<slug> (edge function).
 - Phase 2: the monthly check covers Ca La Kimberly in "report only" mode (links, Google ids and dates only; hours never replaced, nothing removed). First run: 85 places, links for 60, 32 lines for a human (see CHANGES.md).
 - Phase 3: `npm run build-guide -- ca-la-kimberly` builds the viewer for this one guide (root path, its own icons and link preview, service worker sw.js that replaces the old one and drops its caches). Tested: same text as the live site on every page; a phone with the old guide moves to the new one, keeps its language and works offline.
+- Same editor as every host guide (decided later that day): logging in at porta-guides with the Ca La Kimberly account opens the step-by-step editor on the guide itself, with drafts and Publish changes. See docs/plan-single-editor.md.
 - Still to do: phase 4 (onboarding test as a host, gaps into BACKLOG.md).

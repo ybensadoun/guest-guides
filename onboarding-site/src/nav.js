@@ -6,6 +6,7 @@ const STATUS_ICON = { pre: '<i class="pre" aria-hidden="true"></i>', done: CHECK
 const stepsOrder = () => [...visible().map(m => m.id), 'send'];
 const titleOf = id => id === 'send' ? 'Review and send' : (MODULES.find(m => m.id === id) || {}).title;
 function stepListHTML(cur){
+  if (CM.on) return cmStepList(cur);   // once the guide exists, the steps edit the guide (editor.js)
   const mods = visible();
   const item = (m) => { const s = statusOf(m); return `<a class="si s-${s.k}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${STATUS_ICON[s.k]}</span><span class="st">${esc(m.title)}</span><span class="sl">${esc(s.k === 'done' ? 'Done' : s.k === 'chk' || s.k === 'pre' ? s.label : '')}</span></a>`; };
   const miss = sendMissing().length;
@@ -15,6 +16,7 @@ function stepListHTML(cur){
 }
 function railHTML(cur){ return `<aside class="rail" aria-label="All steps"><nav>${stepListHTML(cur)}</nav></aside>`; }
 function navbarHTML(cur){
+  if (CM.on) return cmNavbar(cur);
   const order = stepsOrder(), i = order.indexOf(cur), prev = order[i - 1], next = order[i + 1];
   const m = MODULES.find(x => x.id === cur);
   let main = '';

@@ -156,7 +156,7 @@ async function build(g) {
   const n = await upload(id, resolve(siteDir, 'public'));
   const status = AUTO_PUBLISH ? 'published' : 'ready';
   await lastSay;
-  await patch(id, { content: row.content, theme: row.theme, status, message: null, finished_at: new Date().toISOString() });
+  await patch(id, { content: row.content, theme: row.theme, draft: null, status, message: null, finished_at: new Date().toISOString() });   // a new build replaces any unpublished editor changes
   rest('/rest/v1/events', { method: 'POST', body: { user_id: g.owner, guide_id: id, kind: 'guide_built', data: { slug: g.slug, images: n, status } }, headers: { Prefer: 'return=minimal' } }).catch(() => {});
   rmSync(siteDir, { recursive: true, force: true });
   log(`  built ${g.slug}: ${n} images, status ${status}`);
@@ -173,7 +173,10 @@ async function recover() {   // a guide left "generating" by a crashed run goes 
   const old = new Date(Date.now() - 30 * 60000).toISOString();
   await rest('/rest/v1/guides?status=eq.generating&updated_at=lt.' + old, { method: 'PATCH', body: { status: 'queued', message: 'Waiting for its turn' }, headers: { Prefer: 'return=minimal' } }).catch(() => {});
 }
-/* ---------- Translation jobs from the editor ---------- */
+/* ---------- Translation jobs from the editor ----------
+   The editor saves its changes as a draft (guides.draft) first, so the job translates the draft, or makes one from the
+   live guide: new translations are previewed and published like any change. The texts also go back in the job's result,
+   for the editor that is still open (it fills them into its own copy, so nothing it saved meanwhile is lost). */
 const LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
 const isI18 = o => !!o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length > 0 && Object.keys(o).every(k => LANGS.includes(k));
 async function runJobs() {
@@ -184,8 +187,8 @@ async function runJobs() {
     if (!won || !won[0]) continue;
     log('translating job', j.id.slice(0, 8), j.langs.join(','));
     try {
-      const g = (await rest('/rest/v1/guides?select=content&id=eq.' + j.guide_id))[0];
-      const c = g.content, main = ((c.site || {}).languages || ['en'])[0] || 'en', objs = [];
+      const g = (await rest('/rest/v1/guides?select=content,draft&id=eq.' + j.guide_id))[0];
+      const c = g.draft && g.draft.content ? g.draft.content : g.content, main = ((c.site || {}).languages || ['en'])[0] || 'en', objs = [];
       const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (isI18(x)) objs.push(x); else Object.values(x).forEach(walk); } };
       walk(c.files || {});
       const todo = objs.filter(o => o[main] && j.langs.some(l => !o[l]));
@@ -200,12 +203,14 @@ async function runJobs() {
       let n = 0;
       for (const o of todo) { const t = map[o[main]]; if (!t) continue; for (const l of j.langs) if (!o[l] && t[l]) { o[l] = t[l]; n++; } }
       if (!n) throw new Error('No translations came back. Is the claude command set up on this computer?');
-      const cur = (await rest('/rest/v1/guides?select=content&id=eq.' + j.guide_id))[0].content;   // merge into the latest copy, not an old one
+      const now = (await rest('/rest/v1/guides?select=content,theme,draft&id=eq.' + j.guide_id))[0];   // merge into the latest copy, not an old one
+      const draft = now.draft && now.draft.content ? now.draft : { content: now.content, theme: now.theme };
       const objs2 = []; const walk2 = x => { if (Array.isArray(x)) x.forEach(walk2); else if (x && typeof x === 'object') { if (isI18(x)) objs2.push(x); else Object.values(x).forEach(walk2); } };
-      walk2(cur.files || {});
+      walk2(draft.content.files || {});
       for (const o of objs2) { const t = map[o[main]]; if (t) for (const l of j.langs) if (!o[l] && t[l]) o[l] = t[l]; }
-      await rest('/rest/v1/guides?id=eq.' + j.guide_id, { method: 'PATCH', body: { content: cur }, headers: { Prefer: 'return=minimal' } });
-      await jp({ status: 'done', message: n + ' texts translated', finished_at: new Date().toISOString() });
+      await rest('/rest/v1/guides?id=eq.' + j.guide_id, { method: 'PATCH', body: { draft: { ...draft, savedAt: new Date().toISOString() } }, headers: { Prefer: 'return=minimal' } });
+      const result = Object.fromEntries(Object.entries(map).map(([k, t]) => [k, Object.fromEntries(j.langs.filter(l => t[l]).map(l => [l, t[l]]))]));
+      await jp({ status: 'done', message: n + ' texts translated', result, finished_at: new Date().toISOString() });
     } catch (e) { log('  job FAILED:', e.message); await jp({ status: 'failed', message: String(e.message).slice(0, 200), finished_at: new Date().toISOString() }); }
   }
 }
