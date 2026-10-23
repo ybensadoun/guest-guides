@@ -33,6 +33,13 @@
       "status": "live"
     },
     {
+      "id": "transport",
+      "kind": "transport",
+      "group": "house",
+      "status": "live",
+      "labelKey": "gettingAround"
+    },
+    {
       "id": "markets",
       "group": "area",
       "kind": "markets",
