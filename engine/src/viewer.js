@@ -6,6 +6,9 @@ import soft from './styles/presets/soft.css?url';
 import editorial from './styles/presets/editorial.css?url';
 import minimal from './styles/presets/minimal.css?url';
 
+// A guide's own address (ca-la-kimberly.netlify.app) is the same viewer built for one guide, served from the root:
+// GUIDE_SLUG=<slug> at build time (engine/vite.viewer.config.js). Otherwise the guide comes from the path /g/<slug>.
+const FIXED = import.meta.env.VITE_GUIDE_SLUG || '';
 const DB = { url: 'https://dmoxszfwulolqkgxtxcp.supabase.co', key: 'sb_publishable_4esKE09oxNusDwlEPNdeWg_sUroV5Kr' };   // public values
 const PRESET_CSS = { soft, editorial, minimal };
 const V = () => document.getElementById('view');
@@ -48,14 +51,14 @@ function dropCopy(slug) { try { localStorage.removeItem(CK(slug)); } catch (e) {
 
 function goOffline(site, files, base, slug, paper) {
   try {
-    const man = { name: site.name, short_name: String(site.name).slice(0, 14), start_url: `${location.origin}/g/${slug}`, scope: `${location.origin}/g/`, display: 'standalone', background_color: paper, theme_color: paper,
+    const man = { name: site.name, short_name: String(site.name).slice(0, 14), start_url: FIXED ? `${location.origin}/` : `${location.origin}/g/${slug}`, scope: FIXED ? `${location.origin}/` : `${location.origin}/g/`, display: 'standalone', background_color: paper, theme_color: paper,
       icons: [{ src: base + 'icons/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: base + 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }, { src: base + 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] };
     let l = document.querySelector('link[rel="manifest"]'); if (!l) { l = document.createElement('link'); l.rel = 'manifest'; document.head.appendChild(l); }
     l.href = URL.createObjectURL(new Blob([JSON.stringify(man)], { type: 'application/manifest+json' }));
     let ai = document.querySelector('link[rel="apple-touch-icon"]'); if (!ai) { ai = document.createElement('link'); ai.rel = 'apple-touch-icon'; document.head.appendChild(ai); } ai.href = base + 'apple-touch-icon.png';
   } catch (e) { /* the guide works without these */ }
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('/g-sw.js', { scope: '/g/' }).then(() => navigator.serviceWorker.ready).then(reg => {
+  navigator.serviceWorker.register(FIXED ? '/sw.js' : '/g-sw.js', { scope: FIXED ? '/' : '/g/' }).then(() => navigator.serviceWorker.ready).then(reg => {
     // Ask the worker to keep everything this guide uses: the app files, fonts, and every photo of the guide.
     setTimeout(() => {
       const urls = new Set(performance.getEntriesByType('resource').map(r => r.name));
@@ -68,7 +71,7 @@ function goOffline(site, files, base, slug, paper) {
 }
 
 (async () => {
-  const m = location.pathname.match(/^\/g\/([^/]+)/);
+  const m = FIXED ? [null, FIXED] : location.pathname.match(/^\/g\/([^/]+)/);
   if (!m) return say('Guide not found', 'This address is not a guide.');
   const slug = decodeURIComponent(m[1]).toLowerCase();
   say('Loading your guide…', 'One moment.');
@@ -81,7 +84,7 @@ function goOffline(site, files, base, slug, paper) {
   const base = c.assetBase || '';
   const site = withAssets(c.site, base), files = withAssets(c.files || {}, base);
   window.__GUIDE__ = { site, files, private: c.private || {}, i18n: c.i18n || {} };
-  window.__VENDOR_BASE = '/g-app/vendor/maplibre/';
+  window.__VENDOR_BASE = import.meta.env.BASE_URL + 'vendor/maplibre/';
 
   document.title = site.name;
   const setMeta = (sel, v) => { const e = document.querySelector(sel); if (e) e.setAttribute('content', v); };

@@ -4,10 +4,10 @@ Read first: `../../../CLAUDE.md` (shared rules), `../../CLAUDE.md` (engine and c
 Our own Airbnb house at Can Gordei, La Bisbal del Penedès: whole house for up to 8, pool, garden, barbecue. Guests are families and groups, many from abroad, on their phones. Site #1 of the engine.
 
 ## Live and publishing
-- https://ca-la-kimberly.netlify.app, built by Netlify from GitHub (guest-guides, main, base `sites/ca-la-kimberly`). The Wi-Fi comes from the Netlify variable WIFI_JSON (local copy in `private/wifi.json`, git-ignored).
+- https://ca-la-kimberly.netlify.app is the shared viewer built for this guide (`npm run build-guide -- ca-la-kimberly`, Netlify from GitHub, base `sites/ca-la-kimberly`). Since 23 Oct 2026 the **live content is the database** (`/g/ca-la-kimberly`), like every host guide: a content change is live as soon as it is pushed to the database, with no deploy. The Wi-Fi is in the database too (local copy in `private/wifi.json`, git-ignored).
 - Build and check from `Guest Guides`: `npm run build -- ca-la-kimberly`, `node engine/scripts/ux-check.mjs ca-la-kimberly`, `npm run preview-file -- ca-la-kimberly` (file in `preview/`, git-ignored, for Yohann to open). Engine changes: `npm run build` for every site.
 - Commit when checked; push only when Yohann says so (or he clicks Push origin).
-- The guide is also in the database (`/g/ca-la-kimberly`), and is moving onto the product: the database becomes the source (docs/plan-ca-la-kimberly-on-product.md). Until the switch, after any content change run `npm run guide:pull -- ca-la-kimberly` before editing and `npm run guide:push -- ca-la-kimberly` after checking, so both stay identical.
+- Editing content: `npm run guide:pull -- ca-la-kimberly` first (the editor and the monthly check also change the database), edit `content/`, run the check and the UX check, then `npm run guide:push -- ca-la-kimberly` (that is the publish step) and commit the files as history. Push to GitHub only for engine or brand-file changes, or to keep the history. Plan and background: `Guest Guides/docs/plan-ca-la-kimberly-on-product.md`.
 
 ## Files
 - `site.json`: modules, languages, theme. `content/*.json`: house, house page (rooms, photos, tour), markets, restaurants, todo, events, garbage, emergency, quick tiles, message. Each has a `_doc` with its schema.

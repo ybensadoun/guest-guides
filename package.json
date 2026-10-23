@@ -13,7 +13,8 @@
     "check-guides": "node worker/check-guides.mjs",
     "guide:push": "node worker/guide-sync.mjs push",
     "guide:pull": "node worker/guide-sync.mjs pull",
-    "build-viewer": "vite build --config engine/vite.viewer.config.js"
+    "build-viewer": "vite build --config engine/vite.viewer.config.js",
+    "build-guide": "node engine/scripts/build-guide.mjs"
   },
   "devDependencies": {
     "qrcode": "^1.5.4",

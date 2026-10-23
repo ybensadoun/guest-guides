@@ -7,11 +7,13 @@
 //   node worker/check-guides.mjs --apply          write the fixes to the guides
 //   node worker/check-guides.mjs --slug <slug>    one guide only (published or not)
 //   node worker/check-guides.mjs --days 0         re-check every place, even recent ones
+//   node worker/check-guides.mjs --retry          look again only at places with no Google listing yet
 // Keys: SUPABASE_SERVICE_KEY in worker/.env.local, GOOGLE_PLACES_KEY in Guest Guides/.env (both git-ignored).
 // Rules: official hours (a place with "url" and a schedule) are never replaced by Google's, only compared. A permanently
 // closed place is removed, a temporarily closed one gets "check" (often just the off-season), a place Google cannot
-// find stays and is listed for a human. Ca La Kimberly's real guide is the static site: imported guides are skipped
-// (check it with npm run check-places -- ca-la-kimberly).
+// find stays and is listed for a human. Hand-made guides (origin "imported", e.g. Ca La Kimberly) are checked too but
+// only gain links, Google ids and dates: their hours are never replaced and nothing is removed or flagged by the
+// script, a human acts on the report (and records sources in the site's docs/sources.json).
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,7 +26,7 @@ const URL_ = (env.SUPABASE_URL || 'https://dmoxszfwulolqkgxtxcp.supabase.co').re
 const SB = env.SUPABASE_SERVICE_KEY, GK = env.GOOGLE_PLACES_KEY;
 if (!SB || !GK) { console.error('Missing SUPABASE_SERVICE_KEY (worker/.env.local) or GOOGLE_PLACES_KEY (Guest Guides/.env).'); process.exit(1); }
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
-const APPLY = process.argv.includes('--apply'), SLUG = arg('--slug'), DAYS = +arg('--days', 25);
+const APPLY = process.argv.includes('--apply'), SLUG = arg('--slug'), DAYS = +arg('--days', 25), RETRY = process.argv.includes('--retry');   // --retry: look again at places that have no Google listing yet, even if checked recently
 const TODAY = new Date().toISOString().slice(0, 10);
 const H = { apikey: SB, Authorization: 'Bearer ' + SB, 'Content-Type': 'application/json' };
 
@@ -36,6 +38,15 @@ const daysOf = sch => [...new Set((sch || []).flatMap(s => s.days || []))].sort(
 // Google's answer must share a real word with our name (not the town, not "market" alone), or be the listing we already link to.
 const STOP = new Set('de del dels la les el els los las le du des a i y et and the of d l s sa es en al market mercat mercado marche setmanal semanal weekly'.split(' '));
 const words = (s, town) => new Set(String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter(w => w.length > 2 && !STOP.has(w) && !String(town || '').toLowerCase().split(/\W+/).includes(w)));
+// Weekly markets are often listed as "Mercat setmanal de <town>": a market listing within 600 m counts, unless the two
+// names name different weekdays (the Tuesday market is not the Saturday one).
+const WD = /dilluns|dimarts|dimecres|dijous|divendres|dissabte|diumenge|lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday/gi;
+const wdays = s => new Set((String(s || '').toLowerCase().match(WD) || []).map(w => w.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/s$/, '')));
+const sameMarket = (it, p, far) => { if (far > 0.6 || !/mercat|mercado|market|fira|feria/i.test(p.displayName?.text || '')) return false;
+  const b = wdays(p.displayName?.text); if (!b.size) return true;
+  const SCH = { mon: 'dilluns', tue: 'dimarts', wed: 'dimecres', thu: 'dijous', fri: 'divendres', sat: 'dissabte', sun: 'diumenge' };
+  const a = wdays([it.name_local, ...Object.values(it.name || {}), ...daysOf(it.schedule).map(d => SCH[d])].join(' '));   // the guide's own days count too
+  return [...a].some(d => b.has(d)) || [...b].some(d => ({ lunes: 'dilluns', martes: 'dimarts', miercoles: 'dimecres', jueves: 'dijous', viernes: 'divendres', sabado: 'dissabte', domingo: 'diumenge' })[d] && a.has(({ lunes: 'dilluns', martes: 'dimarts', miercoles: 'dimecres', jueves: 'dijous', viernes: 'divendres', sabado: 'dissabte', domingo: 'diumenge' })[d])); };
 const sameName = (it, p) => { const a = new Set([...words(it.name_local, it.town), ...words(nameOf(it.name), it.town), ...Object.values(it.name || {}).flatMap(x => [...words(x, it.town)])]); return [...words(p.displayName?.text, it.town)].some(w => a.has(w)); };
 const cidOf = u => { const m = String(u || '').match(/!1s0x[0-9a-f]+:0x([0-9a-f]+)/i); if (m) return BigInt('0x' + m[1]).toString(); const c = String(u || '').match(/[?&]cid=(\d+)/); return c ? c[1] : null; };
 const md = d => (d.getMonth() + 1) * 100 + d.getDate(), mdn = s => +s.replace('-', '');
@@ -79,30 +90,31 @@ async function google(it) {
 }
 
 // One place: returns a line for the report, and changes it in place (the guide is only written with --apply).
-async function checkPlace(it, kind) {
+async function checkPlace(it, kind, handmade) {
   const n = nameOf(it.name);
-  if (ago(it.checked) < DAYS) return { skip: true };   // checked recently (found or not): no request
+  if (ago(it.checked) < DAYS && !(RETRY && !it.gid)) return { skip: true };   // checked recently (found or not): no request
   const p = await google(it);
   await new Promise(r => setTimeout(r, 300));
   const far = p && typeof it.lat === 'number' && p.location ? hav(it.lat, it.lng, p.location.latitude, p.location.longitude) : 0;
   it.checked = TODAY;   // even when nothing matches: the next look is next month, not the next run
   if (!p || far > 2) return { line: `not found near its pin: ${n}${p ? ` (nearest: ${p.displayName?.text}, ${far.toFixed(1)} km)` : ''}`, human: true };
   const ours = cidOf(it.gmaps), theirs = cidOf(p.googleMapsUri);
-  if (ours && theirs && ours !== theirs && !it.gid) return { line: `Google's answer (${p.displayName?.text}) is not the listing the guide links to, kept as is: ${n}`, human: true };
-  if (!ours && !it.gid && !sameName(it, p)) return { line: `no listing with this name near its pin (nearest: ${p.displayName?.text}), kept as is: ${n}`, human: true };
+  if (ours && theirs && ours !== theirs && !it.gid) return handmade ? { line: `kept the guide's own listing (Google's first answer: ${p.displayName?.text}): ${n}` } : { line: `Google's answer (${p.displayName?.text}) is not the listing the guide links to, kept as is: ${n}`, human: true };
+  if (!ours && !it.gid && !sameName(it, p) && !(kind === 'markets' && sameMarket(it, p, far))) return { line: `no listing with this name near its pin (nearest: ${p.displayName?.text}), kept as is: ${n}`, human: true };
   it.gid = p.id;
   if (!it.gmaps || /\/maps\/search\//.test(it.gmaps)) it.gmaps = p.googleMapsUri;
-  if (p.businessStatus === 'CLOSED_PERMANENTLY') return { line: `permanently closed, removed: ${n}`, remove: true, human: true };
+  if (p.businessStatus === 'CLOSED_PERMANENTLY') return handmade ? { line: `permanently closed on Google, check and remove by hand: ${n}`, human: true } : { line: `permanently closed, removed: ${n}`, remove: true, human: true };
   const flags = new Set(it.flags || []);
-  if (p.businessStatus === 'CLOSED_TEMPORARILY') { flags.add('check'); it.flags = [...flags]; return { line: `temporarily closed on Google (off-season?), marked check: ${n}`, human: true }; }
+  if (p.businessStatus === 'CLOSED_TEMPORARILY') { if (handmade) return { line: `temporarily closed on Google (off-season?), check by hand: ${n}`, human: true }; flags.add('check'); it.flags = [...flags]; return { line: `temporarily closed on Google (off-season?), marked check: ${n}`, human: true }; }
   const g = schedule(p.regularOpeningHours?.periods);
-  const official = it.url && it.schedule && it.schedule.length && it.hoursSource !== 'google';
+  const official = it.schedule && it.schedule.length && (handmade || (it.url && it.hoursSource !== 'google'));
   let what = 'open';
   if (official) {
     const a = daysOf(it.schedule.filter(s => inSeason(s))).join(','), b = Array.isArray(g) ? daysOf(g).join(',') : '';
-    if (b && a === b) flags.delete('check');
+    if (b && a === b && !handmade) flags.delete('check');
     what = !b ? 'open, official hours kept' : a === b ? 'open, official hours match Google' : `open, official days ${a || 'none this season'} but Google says ${b} (kept official)`;
-  } else if (it.always) { flags.delete('check'); what = 'open, always open (kept)'; }   // open-air places stay "always open" even when Google lists gate hours
+  } else if (handmade) what = it.always ? 'open, always open (kept)' : Array.isArray(g) ? 'open, Google lists hours but the guide has none (add them by hand if right)' : 'open';
+  else if (it.always) { flags.delete('check'); what = 'open, always open (kept)'; }   // open-air places stay "always open" even when Google lists gate hours
   else if (g === 'always' && !it.schedule?.length) { it.always = true; flags.delete('check'); what = 'open, always open'; }
   else if (kind === 'markets' && !it.schedule?.length) what = 'open (yearly event: Google hours not used)';
   else if (Array.isArray(g)) {
@@ -119,13 +131,13 @@ const rows = await (await fetch(`${URL_}/rest/v1/guides?select=id,slug,status,or
 let calls = 0;
 for (const g of rows) {
   if (!g.content || !g.content.files) continue;
-  if (g.origin === 'imported') { console.log(`\n## ${g.slug}: skipped (hand-made guide, check its site folder with npm run check-places)`); continue; }
+  const handmade = g.origin === 'imported';
   const F = g.content.files, report = [], humans = [];
   for (const [kind, list] of [['markets', F.markets?.markets], ['todo', F.todo?.items], ['restaurants', F.restaurants?.items]]) {
     if (!Array.isArray(list)) continue;
     for (const it of [...list]) {
       try {
-        const r = await checkPlace(it, kind);
+        const r = await checkPlace(it, kind, handmade);
         if (r.skip) continue;
         calls++;
         report.push(`${kind}: ${r.line}`); if (r.human) humans.push(r.line);
@@ -133,7 +145,7 @@ for (const g of rows) {
       } catch (e) { report.push(`${kind}: error for ${nameOf(it.name)}: ${e.message}`); humans.push(`error: ${nameOf(it.name)}`); }
     }
   }
-  console.log(`\n## ${g.slug} (${g.status}): ${report.length} checked${humans.length ? `, ${humans.length} for a human` : ''}`);
+  console.log(`\n## ${g.slug} (${g.status}${handmade ? ', hand-made: report only, links added' : ''}): ${report.length} checked${humans.length ? `, ${humans.length} for a human` : ''}`);
   for (const l of report) console.log('- ' + l);
   if (APPLY && report.length) {
     const r = await fetch(`${URL_}/rest/v1/guides?id=eq.${g.id}&updated_at=eq.${encodeURIComponent(g.updated_at)}`, { method: 'PATCH', headers: { ...H, Prefer: 'return=minimal' }, body: JSON.stringify({ content: g.content }) });

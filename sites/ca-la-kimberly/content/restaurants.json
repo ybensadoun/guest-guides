@@ -79,7 +79,9 @@
         "de": "Eine Pizza pro Person, eine geteilte Vorspeise und eine Flasche Hauswein für zwei: etwa 20-25 € pro Person. Pizzen um 10-13 €, Pasta etwas mehr.",
         "nl": "Een pizza per persoon, een gedeeld voorgerecht en een fles huiswijn voor twee: ongeveer € 20-25 p.p. Pizza's rond € 10-13, pasta iets meer."
       },
-      "topPick": true
+      "topPick": true,
+      "gid": "ChIJfyIcfyOLoxIRgt_L7XKAWAU",
+      "checked": "2026-10-23"
     },
     {
       "id": "obrador",
@@ -172,7 +174,9 @@
         "de": "Kaffee und Croissant oder Palmier: etwa 5 €. Mittags ein Lobster Roll oder Roastbeef-Sandwich mit Getränk: etwa 12-15 €. Torten auf Bestellung.",
         "nl": "Koffie met een croissant of palmier: ongeveer € 5. Een lobster roll of rosbiefbroodje met drankje als lunch: ongeveer € 12-15. Taarten op bestelling."
       },
-      "topPick": true
+      "topPick": true,
+      "gid": "ChIJeWTXRCOLoxIR0lptZmZE39s",
+      "checked": "2026-10-23"
     },
     {
       "id": "casinet",
@@ -261,7 +265,9 @@
           "price": "12"
         }
       ],
-      "topPick": true
+      "topPick": true,
+      "gid": "ChIJs9aA6puMoxIR-RFxHeoUfRc",
+      "checked": "2026-10-23"
     },
     {
       "id": "ulldellebre",
@@ -352,7 +358,9 @@
           "kind": "weekend",
           "price": "29"
         }
-      ]
+      ],
+      "gid": "ChIJyZm2L4YKpBIRbvgl0Fk3xHA",
+      "checked": "2026-10-23"
     },
     {
       "id": "esencia",
@@ -425,7 +433,9 @@
         "ca": "Un àpat acurat amb una o dues copes de vi: uns 35-55 € per persona. Pregunteu pel menú de migdia entre setmana, sol ser la millor opció.",
         "de": "Ein feines Essen mit ein, zwei Gläsern Wein: etwa 35-55 € pro Person. Fragt nach dem Mittagsmenü unter der Woche, meist das beste Angebot.",
         "nl": "Een verfijnde maaltijd met een of twee glazen wijn: ongeveer € 35-55 p.p. Vraag naar het lunchmenu doordeweeks, vaak de beste prijs."
-      }
+      },
+      "gid": "ChIJKaHHjVj1oxIR3DdUynjB4Ns",
+      "checked": "2026-10-23"
     },
     {
       "id": "ancora",
@@ -492,7 +502,9 @@
         "ca": "Entrants per compartir, un peix o marisc i una ampolla de vi per a dos: uns 30-40 € per persona. El peix sencer va a pes (uns 40 € el quilo).",
         "de": "Vorspeisen zum Teilen, Fisch oder Meeresfrüchte und eine Flasche Wein für zwei: etwa 30-40 € pro Person. Ganzer Fisch nach Gewicht (etwa 40 € pro Kilo).",
         "nl": "Gedeelde voorgerechten, vis of zeevruchten en een fles wijn voor twee: ongeveer € 30-40 p.p. Hele vis gaat per gewicht (ongeveer € 40 per kilo)."
-      }
+      },
+      "gid": "ChIJ5S5GctLioxIR_2EhZCVjNKU",
+      "checked": "2026-10-23"
     },
     {
       "id": "pernil",
@@ -573,7 +585,9 @@
         "ca": "Una taula d'ibèric, uns quants montaditos o ous estrellats i una copa de vi o una cervesa: uns 20-30 € per persona.",
         "de": "Ein Brett Ibérico-Schinken, ein paar Montaditos oder Huevos rotos und ein Glas Wein oder ein Bier: etwa 20-30 € pro Person.",
         "nl": "Een plank ibérico-ham, een paar montaditos of huevos rotos en een glas wijn of een biertje: ongeveer € 20-30 p.p."
-      }
+      },
+      "gid": "ChIJp90Lw0CLoxIRccTVLkmWk_I",
+      "checked": "2026-10-23"
     },
     {
       "id": "marga",
@@ -646,7 +660,9 @@
         "ca": "Els arrossos costen uns 21-26 € per persona i els entrants uns 16 € per compartir. Amb vi: uns 35-50 € per persona.",
         "de": "Reisgerichte etwa 21-26 € pro Person, Vorspeisen etwa 16 € zum Teilen. Mit Wein: etwa 35-50 € pro Person.",
         "nl": "Rijstgerechten ongeveer € 21-26 p.p., voorgerechten ongeveer € 16 om te delen. Met wijn: ongeveer € 35-50 p.p."
-      }
+      },
+      "gid": "ChIJL8jyHaGMoxIR2N6GUkGE1MM",
+      "checked": "2026-10-23"
     },
     {
       "id": "rest101",
@@ -725,7 +741,8 @@
           "kind": "menuDia",
           "price": "12-15"
         }
-      ]
+      ],
+      "checked": "2026-10-23"
     },
     {
       "id": "llepol",
@@ -817,7 +834,9 @@
           "kind": "tasting",
           "price": "44"
         }
-      ]
+      ],
+      "gid": "ChIJoSJ5EtIHpBIRUoUrIUOfPiA",
+      "checked": "2026-10-23"
     },
     {
       "id": "quijote",
@@ -875,7 +894,9 @@
         "ca": "Paella o peix amb beguda: uns 20-30 € per persona. És una estimació, no publiquen preus.",
         "de": "Paella oder Fisch mit Getränk: etwa 20-30 € pro Person. Eine Schätzung, Preise sind nicht veröffentlicht.",
         "nl": "Paella of vis met een drankje: ongeveer € 20-30 per persoon. Een schatting, prijzen worden niet gepubliceerd."
-      }
+      },
+      "gid": "ChIJC8rmS5_zoxIR78FsMmZNn2Y",
+      "checked": "2026-10-23"
     },
     {
       "id": "brisa",
@@ -951,7 +972,9 @@
         "ca": "Pizza o aletes amb beguda: uns 15-25 € per persona. És una estimació, no publiquen preus.",
         "de": "Pizza oder Chicken Wings mit Getränk: etwa 15-25 € pro Person. Eine Schätzung, Preise sind nicht veröffentlicht.",
         "nl": "Pizza of kippenvleugels met een drankje: ongeveer € 15-25 per persoon. Een schatting, prijzen worden niet gepubliceerd."
-      }
+      },
+      "gid": "ChIJtSDf2b-NoxIRbAzhqp78Cik",
+      "checked": "2026-10-23"
     }
   ]
 }
