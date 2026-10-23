@@ -6,7 +6,7 @@ import { siteDir, readSite } from '../site.config.js';
 const [slug, assetBase = ''] = process.argv.slice(2);
 const SD = siteDir(slug), site = readSite(slug);
 const json = f => JSON.parse(readFileSync(f, 'utf8'));
-const dir = d => existsSync(resolve(SD, d)) ? readdirSync(resolve(SD, d)).filter(f => f.endsWith('.json')) : [];
+const dir = d => existsSync(resolve(SD, d)) ? readdirSync(resolve(SD, d)).filter(f => f.endsWith('.json') && !f.startsWith('.')) : [];   // dot-files are local bookkeeping (private/.synced.json)
 const files = Object.fromEntries(dir('content').map(f => [f.replace(/\.json$/, ''), json(resolve(SD, 'content', f))]));
 const i18n = Object.fromEntries(dir('i18n').map(f => [f.replace(/\.json$/, ''), json(resolve(SD, 'i18n', f))]));
 const priv = Object.fromEntries(dir('private').map(f => [f.replace(/\.json$/, ''), json(resolve(SD, 'private', f))]));

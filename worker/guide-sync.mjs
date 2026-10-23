@@ -58,12 +58,13 @@ if (cmd === 'pull') {
   const c = row.content, changed = [];
   for (const [name, data] of Object.entries(c.files || {})) if (writeJson(join(SD, 'content', name + '.json'), data)) changed.push('content/' + name);
   for (const [l, data] of Object.entries(c.i18n || {})) if (writeJson(join(SD, 'i18n', l + '.json'), data)) changed.push('i18n/' + l);
-  for (const [name, data] of Object.entries(c.private || {})) if (writeJson(join(SD, 'private', name + '.json'), data)) changed.push('private/' + name);
+  for (const [name, data] of Object.entries(c.private || {})) if (!name.startsWith('.') && writeJson(join(SD, 'private', name + '.json'), data)) changed.push('private/' + name);
   const local = JSON.parse(readFileSync(join(SD, 'site.json'), 'utf8'));
   const nextSite = { ...local, ...c.site }; if (local.onboarding === undefined) delete nextSite.onboarding; else nextSite.onboarding = local.onboarding;
   if (writeJson(join(SD, 'site.json'), nextSite)) changed.push('site.json');
   if (row.theme && row.theme.css && row.theme.css !== (existsSync(join(SD, 'theme.css')) ? readFileSync(join(SD, 'theme.css'), 'utf8') : '')) { writeFileSync(join(SD, 'theme.css'), row.theme.css); changed.push('theme.css'); }
-  saveStamp({ slug, id: row.id, updated_at: row.updated_at, pulled: new Date().toISOString() });
+  const prev = stamp();   // keep the list of images already uploaded, so the next push sends only new or changed ones
+  saveStamp({ slug, id: row.id, updated_at: row.updated_at, pulled: new Date().toISOString(), ...(prev.id === row.id && prev.sizes ? { sizes: prev.sizes } : {}) });
   console.log(changed.length ? `Pulled /g/${slug}: ${changed.join(', ')}` : `Pulled /g/${slug}: the folder already matched.`);
   process.exit(0);
 }
