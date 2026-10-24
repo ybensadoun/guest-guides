@@ -275,7 +275,7 @@ function edAddTile(icon) {
 }
 function cmPlaces(path, what) {
   const arr = edGet(edC(), edPath(path)) || [];
-  return `${path === 'files/events/items' ? cmAutoEvHTML() : ''}${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
+  return `${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
     <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
     <p class="hint">A new ${esc(what)} starts at the house: move its pin with a Google Maps link. The distance from the house follows the pin.</p>`;
@@ -435,6 +435,7 @@ function cmFindCard(it, i, n) {
 }
 const CM_TAKES = 'A search usually takes 3 to 6 minutes. You can keep editing, or come back later: the results wait here.';
 function cmFindInner(path) {
+  if (path === 'files/events/items') return cmEventsInner();   // events: one search, automatic or with cards (below)
   const [kind, what] = FIND_OF[path], f = CM.find[kind] || {};
   if (f.status === 'loading') return '<p class="hint">…</p>';
   if (f.status === 'queued' || f.status === 'running') return `<div class="cm-fhead"><b>Looking for more ${esc(what)}</b></div>${progBar(kind, 'Search for ' + what)}<p class="hint">${esc(CM_TAKES)}</p>`;
@@ -498,21 +499,37 @@ function cmFindAdd(path, sid) {
    straight into the guide (worker/guide-worker.mjs, refreshEvents). The settings save at once, in the live guide and the
    draft alike (set_events_auto), since they steer the search and are not something guests see. --- */
 const evAuto = () => (((edC().files || {}).events || {}).auto) || {};
-function cmAutoEvHTML() {
-  const a = evAuto(), on = !!a.on;
+// Events have one search. Its switch decides where the results go: on, straight into the guide (now with "Search now",
+// and every month); off, as cards to keep or skip (the same cards as Find more). The topics count either way.
+const EV_PATH = 'files/events/items';
+const cmEvFind = () => (CM.find || {})['find-events'] || {};
+const cmEvBusy = () => (!!CM.evJob && (CM.evJob.status === 'queued' || CM.evJob.status === 'running')) || cmEvFind().status === 'queued' || cmEvFind().status === 'running';
+function cmEventsInner() {
+  const a = evAuto(), on = !!a.on, f = cmEvFind(), busy = cmEvBusy();
+  const left = on ? [] : cmFindItems('find-events', EV_PATH), all = on ? 0 : cmFindPool('find-events', EV_PATH).length;
   const topics = (k, ph) => `<div class="chips">${(a[k] || []).map((x, i) => `<span class="chip cm-topic"><span>${esc(x)}<button type="button" data-evdel="${k}" data-i="${i}" aria-label="Remove ${esc(x)}">×</button></span></span>`).join('')}</div>
     <div class="cm-dayrow"><input type="text" id="c_ev_${k}" data-evin="${k}" placeholder="${esc(ph)}" aria-label="${k === 'skip' ? 'A topic to skip' : 'A topic to look for'}" enterkeyhint="done"><button class="btn small" type="button" data-evadd="${k}">Add</button></div>`;
   if (!CM.evLoaded) setTimeout(cmEvLoad, 0);
-  return `<div class="cm-find cm-auto"><div class="cm-fhead"><b>Automatic events</b></div>
-    <p class="hint">Every month we look for events in the next three months around the house and add them to your guide straight away, with “expected” dates until they are confirmed. Events you add yourself are never changed, and an automatic one you delete never comes back.</p>
-    ${cSwitch('data-evauto', 'Keep events up to date', on)}
-    ${on ? `<div class="f full"><span class="lab">Topics to skip</span><p class="hint">In any language. We never add events about these.</p>${topics('skip', 'bullfighting, nightclubs…')}</div>
-      <div class="f full"><span class="lab">Things to look for</span><p class="hint">In any language. Each one gets its own search, on top of the area's usual festivals, fairs and traditions. Up to three.</p>${topics('want', 'jazz, wine, kids…')}</div>
-      ${cmEvBusy() ? progBar('auto', 'Search for events') : ''}
-      <div class="cm-row"><span class="hint" id="cmEvState">${esc(cmEvStateText())}</span><button class="btn small" type="button" id="cmEvRun" data-evrun${cmEvBusy() ? ' disabled' : ''}>Search now</button></div>` : ''}
-    <p class="hint">These settings apply at once: they are not part of the changes you publish.</p></div>`;
+  return `<div class="cm-fhead"><b>Finding events</b></div>
+    <p class="hint">We look for events in the next three months around the house: the area's own traditions, festivals and fairs, plus the topics below.</p>
+    ${cSwitch('data-evauto', 'Keep events up to date', on, on ? 'On: we search every month and new events go straight into your guide, with “expected” dates until confirmed. Events you add yourself are never changed; one you delete never comes back.' : 'Off: you search when you like, and keep or skip each event we find.')}
+    <div class="f full"><span class="lab">Topics to skip</span><p class="hint">In any language. We never add events about these.</p>${topics('skip', 'bullfighting, nightclubs…')}</div>
+    <div class="f full"><span class="lab">Things to look for</span><p class="hint">In any language. Each one gets its own search, on top of the area's usual festivals, fairs and traditions. Up to three.</p>${topics('want', 'jazz, wine, kids…')}</div>
+    ${busy ? progBar(CM.evJob && (CM.evJob.status === 'queued' || CM.evJob.status === 'running') ? 'auto' : 'find-events', 'Search for events') : ''}
+    ${!busy && left.length ? cmFindCard(left[0], all - left.length + 1, all) : ''}
+    <div class="cm-row"><span class="hint" id="cmEvState">${esc(cmEvStateText())}</span><button class="btn small${on ? '' : ' sun'}" type="button" id="cmEvRun" data-evrun${busy ? ' disabled' : ''}>Search now</button></div>
+    <p class="hint">These settings apply at once: they are not part of the changes you publish.</p>`;
 }
-const cmEvStateText = () => { const a = evAuto(), j = CM.evJob; if (j && (j.status === 'queued' || j.status === 'running')) return CM_TAKES; if (j && j.status === 'failed') return 'The search did not work: ' + (j.message || 'try again later'); return a.last ? `Last search: ${a.last}${a.lastAdded != null ? `, ${a.lastAdded} added` : ''}.` : 'First search not run yet.'; };
+const cmEvStateText = () => {
+  const a = evAuto(), j = CM.evJob, f = cmEvFind();
+  if (cmEvBusy()) return CM_TAKES;
+  if (j && j.status === 'failed') return 'The search did not work: ' + (j.message || 'try again later');
+  if (a.on) return a.last ? `Last search: ${a.last}${a.lastAdded != null ? `, ${a.lastAdded} added` : ''}.` : 'First search not run yet.';
+  if (f.status === 'failed') return 'The search did not work: ' + (f.message || 'try again later');
+  if (f.status === 'done') return (f.items || []).length ? (cmFindItems('find-events', EV_PATH).length ? '' : 'You have looked at every event from the last search.') : 'The last search found nothing new nearby.';
+  return '';
+};
+function cmEvRefresh() { const el = document.getElementById('cmEvState'); if (el) el.textContent = cmEvStateText(); const b = document.getElementById('cmEvRun'); if (b) b.disabled = cmEvBusy(); }
 async function cmEvAutoSet(patch) {
   const a = { ...evAuto(), ...patch };
   for (const c of [CM.g.content, CM.live.content]) { const f = c.files = c.files || {}; f.events = f.events || { items: [] }; f.events.auto = cmClone(a); }   // both copies: not a change to publish
@@ -563,8 +580,6 @@ async function cmEvPoll(job) {
     } catch (e) { /* offline for a moment: try again */ }
   }
 }
-const cmEvBusy = () => !!CM.evJob && (CM.evJob.status === 'queued' || CM.evJob.status === 'running');
-function cmEvRefresh() { const el = document.getElementById('cmEvState'); if (el) el.textContent = cmEvStateText(); const b = document.getElementById('cmEvRun'); if (b) b.disabled = cmEvBusy(); }
 document.addEventListener('keydown', e => { const t = e.target; if (CM.on && e.key === 'Enter' && t.dataset && t.dataset.evin) { e.preventDefault(); cmEvTopic(t.dataset.evin); } });
 
 /* --- Pages: overview, one step, publish --- */
@@ -817,7 +832,7 @@ document.addEventListener('click', e => {
   if (d.evauto !== undefined) { const on = !evAuto().on; cmEvAutoSet({ on, skip: evAuto().skip || [], want: evAuto().want || [] }).then(() => { if (on && !evAuto().last) cmEvRun(); }); return; }
   if (d.evadd) return cmEvTopic(d.evadd);
   if (d.evdel) { const k = d.evdel, cur = [...(evAuto()[k] || [])]; cur.splice(+d.i, 1); return cmEvAutoSet({ [k]: cur }); }
-  if (d.evrun !== undefined) return cmEvBusy() ? undefined : cmEvRun();
+  if (d.evrun !== undefined) return cmEvBusy() ? undefined : evAuto().on ? cmEvRun() : cmFindStart(EV_PATH);
   if (d.tradd) { cmTrAdd(d.tradd); return done(); }
   if (d.trtile !== undefined) { cmTrTile(); return done(); }
   if (d.cbool) { const q = edPath(d.cbool), o = edGet(edC(), q.slice(0, -1)); if (o) { o[q[q.length - 1]] = !o[q[q.length - 1]]; done(); } return; }
