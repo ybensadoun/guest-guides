@@ -102,8 +102,11 @@ function researchTools() {
   const hasPos = x => x && typeof x.lat === 'number' && typeof x.lng === 'number';
   const catsOk = Object.keys(en).filter(k => k.startsWith('cat_')).map(k => k.slice(4));
   const catFix = c => catsOk.includes(c) ? c : (/fair|festival|swap|event/.test(c || '') ? 'events' : /cover|hall|indoor/.test(c || '') ? 'covered' : /flea|second|vintage/.test(c || '') ? 'flea' : /antiq|craft/.test(c || '') ? 'antiques' : 'street');
+  // An event's start and end times: HH:MM, or left out ("6.30" and "18h00" are fixed, anything else dropped).
+  const hhmm = x => { const m = /^(\d{1,2})[:.h](\d{2})$/.exec(String(x ?? '').trim()); return m && +m[1] < 24 && +m[2] < 60 ? m[1].padStart(2, '0') + ':' + m[2] : null; };
   const located = o => {
     for (const k of ['markets', 'items']) if (Array.isArray(o[k])) o[k] = o[k].filter(hasPos);   // places without coordinates cannot be shown on the map
+    for (const it of o.items || []) for (const d of it.dates || []) for (const k of ['time', 'until']) if (k in d) { const v = hhmm(d[k]); if (v) d[k] = v; else delete d[k]; }
     if (Array.isArray(o.markets)) { o.markets.forEach(m => { m.category = catFix(m.category); }); o.categories = catsOk.filter(c => o.markets.some(m => m.category === c)); }
     return o;
   };
@@ -267,7 +270,7 @@ async function translateJob(j, jp) {
    translated into the guide's languages, and the result goes back in the job. Nothing is added to the guide here:
    the host keeps or skips each suggestion in the editor, and what they keep goes into their draft. */
 // What every events search returns, and how it looks for them wherever the guide is: the area's own traditions first.
-const EVENT_SHAPE = 'Same shape as the example: {"items":[...]}. "type" is one of: castells, festa, carnival, parade, food, fair, film, music, historical, tradition. Every event MUST have numeric lat and lng (the venue, or the centre of its town), a "url" (its official page) and "sources" (the pages you used). "name" says which event it is without the town (the guide shows the town under it). "dates": start and end as YYYY-MM-DD; "status" is "confirmed" only when an official source gives that year\'s dates, otherwise "expected" (worked out from earlier years). Leave out events whose dates have all passed.';
+const EVENT_SHAPE = 'Same shape as the example: {"items":[...]}. "type" is one of: castells, festa, carnival, parade, food, fair, film, music, historical, tradition. Every event MUST have numeric lat and lng (the venue, or the centre of its town), a "url" (its official page) and "sources" (the pages you used). "name" says which event it is without the town (the guide shows the town under it). "dates": start and end as YYYY-MM-DD; "status" is "confirmed" only when an official source gives that year\'s dates, otherwise "expected" (worked out from earlier years). Add "time" (when it starts, HH:MM, 24 h) when a source gives it, and "until" (when it ends on its last day) when a source gives that too; otherwise leave them out, never guess. Leave out events whose dates have all passed.';
 const LOCAL_EVENTS = 'First work out which kinds of local events this area is known for and where their dates are published, then search there, town by town within the radius: for example castells (human towers) in Catalonia and the colles\' own schedules, Semana Santa processions, ferias, romerías and flamenco in Andalusia, Moros y Cristianos and fallas in the Valencia region, fiestas patronales everywhere; the coordinating body or federation of that tradition, the regional and county tourism agendas, the town halls\' agendas and the local press. Some agenda websites block automated reading: when a page cannot be read, find the same dates on the organisers\' own sites, the town halls\' pages or the local press.';
 const FIND = {
   'find-todo': { file: 'todo', key: 'items', what: 'things to do', rule: 'Find 6 to 10 more things to do within the radius: sights, nature, fun, culture, wine. Same shape as the example: {"items":[...]} with lat, lng, an icon and group as in the example. ' + HOURS_RULE },
@@ -386,7 +389,7 @@ function mergeEvents(file, found, today) {
     if (same) {
       if (!same.auto) continue;   // the host's own event: never touched
       const dates = [...(same.dates || []).filter(d => (d.end || d.start) < today || d.start > end), ...(f.dates || [])].sort((a, b) => a.start.localeCompare(b.start));
-      const key = ds => JSON.stringify((ds || []).map(d => [d.start, d.end, d.status]));   // the database may store a date's keys in another order
+      const key = ds => JSON.stringify((ds || []).map(d => [d.start, d.end, d.status, d.time, d.until]));   // the database may store a date's keys in another order
       const was = key(same.dates);
       same.dates = dates.filter((d, i) => !dates.slice(0, i).some(e => e.start === d.start));
       for (const k of ['url', 'sources', 'venue']) if (f[k] && !same[k]) same[k] = f[k];

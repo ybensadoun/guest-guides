@@ -9,7 +9,7 @@ import { QUICK } from '../content.js';
 import { quickIcon } from './home.js';
 import { renderGarbage } from './garbage.js';
 import { renderTransport } from './place.js';
-import { dateRange } from '../events.js';
+import { dateRange, upcoming, when } from '../events.js';
 import { HOUSE, MODULE_ON, SITE, REVIEWS } from '../content.js';
 import GROUPS_FILE from '../groups.json';
 const GROUPS = GROUPS_FILE.groups;
@@ -51,11 +51,11 @@ const PHONE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 // Generic page for future sections: "spots" (restaurants, places...) or "info" (house rules...).
 // One event as an expandable row (Local events page and Home "What's on"): what happens, then Maps and website.
 // opts.dot replaces the type icon (Home uses a date badge), opts.right replaces the status on the right.
-export function eventRow(e, o, on, opts = {}) {
+export function eventRow(e, o, st, opts = {}) {
   return `<details class="mrow" data-id="${esc(e.id)}" style="--cc:${EVENT_TONE[e.type] || 'var(--tone-blue)'}"><summary>
         <span class="dot${opts.dot ? ' dbadge-wrap' : ''}">${opts.dot || EVENT_ICON[e.type] || EVENT_ICON.festa}</span>
         <span class="nm">${esc(tx(e.name))}<small>${esc(e.town)} · ${esc(dateRange(o))}</small></span>
-        <span class="rt">${opts.right ?? (on ? `<span class="st open">${esc(t('onNow'))}</span>` : o.status === 'expected' ? `<span class="st plain">${esc(t('expected'))}</span>` : '')}<span class="chev" aria-hidden="true"></span></span></summary>
+        <span class="rt">${opts.right ?? (st && (st.on || st.at || st.today) ? `<span class="st ${st.on ? 'open' : 'plain'}">${esc(when(st))}</span>` : o.status === 'expected' ? `<span class="st plain">${esc(t('expected'))}</span>` : '')}<span class="chev" aria-hidden="true"></span></span></summary>
         <div class="mbody">
           <div class="note">${esc(tx(e.description))}</div>
           ${o.status === 'expected' ? `<p class="hnote">${esc(t('expectedNote'))}</p>` : ''}
@@ -138,24 +138,14 @@ export function renderSection(V, id) {
       <div class="actions"><a class="btn primary" href="${esc(h.url)}" target="_blank" rel="noopener">${esc(t('bookAirbnb'))}</a><a class="btn" href="${esc(h.photosUrl)}" target="_blank" rel="noopener">${esc(t('allPhotosAirbnb'))}</a></div>`;
   }
   else if (sec.kind === 'events') {
-    // Local events: next date of each, soonest first, grouped by month. Past dates drop off by themselves.
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const D = s => new Date(s + 'T00:00:00');
+    // Local events: next date of each, soonest first, grouped by month. Past dates (and today's finished ones) drop off.
     const fmt = (d, o) => d.toLocaleDateString(locale(), o);
-    const range = o => {
-      const a = D(o.start), b = D(o.end);
-      if (o.start === o.end) return fmt(a, { weekday: 'short', day: 'numeric', month: 'short' });
-      return a.getMonth() === b.getMonth() ? `${a.getDate()}-${fmt(b, { day: 'numeric', month: 'short' })}` : `${fmt(a, { day: 'numeric', month: 'short' })} - ${fmt(b, { day: 'numeric', month: 'short' })}`;
-    };
-    const list = (sec.data?.items || []).map(e => ({ e, o: e.dates.find(o => D(o.end) >= today) })).filter(x => x.o)
-      .sort((x, y) => x.o.start.localeCompare(y.o.start));
     let month = '';
-    body = `<div class="mlist events">${list.map(({ e, o }) => {
-      const on = D(o.start) <= today;
-      const m = fmt(D(o.start), { month: 'long', year: 'numeric' });
+    body = `<div class="mlist events">${upcoming(sec.data?.items).map(x => {
+      const m = fmt(new Date(x.o.start + 'T00:00:00'), { month: 'long', year: 'numeric' });
       const head = m !== month ? `<h3 class="evm">${esc(m.charAt(0).toUpperCase() + m.slice(1))}</h3>` : '';
       month = m;
-      return head + eventRow(e, o, on);
+      return head + eventRow(x.e, x.o, x);
     }).join('')}</div>`;
   }
   else if (sec.kind === 'spots') {

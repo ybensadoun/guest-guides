@@ -40,8 +40,9 @@ export function renderHome(V) {
      ${stHTML(statusLabel(m, now))}</a>`;
   const evSec = SECTIONS.find(x => x.kind === 'events');
   const evs = upcoming(evSec?.data?.items, now).filter(x => x.on || x.days <= 42);
-  // Events expand in place with the same details as on the Local events page.
-  const erow = x => { const b = dayBadge(x.o); return eventRow(x.e, x.o, x.on, { dot: `<span class="dbadge"><b>${b.d}</b><small>${esc(b.m)}</small></span>`, right: `<span class="st ${x.on ? 'open' : 'plain'}">${esc(when(x))}</span>` }); };
+  // Events expand in place with the same details as on the Local events page. Under Today, a later start shows only its
+  // time and an event of today without a time shows no status (we do not know whether it is on yet).
+  const erow = x => { const b = dayBadge(x.o); return eventRow(x.e, x.o, x, { dot: `<span class="dbadge"><b>${b.d}</b><small>${esc(b.m)}</small></span>`, right: x.today ? '' : `<span class="st ${x.on ? 'open' : 'plain'}">${esc(x.at || when(x))}</span>` }); };
   // One row per day for the next two days: "Tue 6 Oct · 9 markets", red like the market icons.
   const msum = (list, href, d) => `<details class="mrow dayrow"><summary><span class="dbadge dday"><small>${esc(fmtWd(d))}</small><b>${d.getDate()}</b></span>
      <span class="nm">${esc(shortDay(d))}<small>${esc(t('nMarkets', { n: list.length }))} · ${esc([...new Set(list.map(m => m.town))].slice(0, 3).join(', '))}${list.length > 3 ? '…' : ''}</small></span>
@@ -59,13 +60,15 @@ export function renderHome(V) {
   const live = m => { const l = statusLabel(m, now); return l && l.cls === 'open' ? 0 : runsOn(m, now).some(x => !x.m && tmin(x.o) > nmin) ? 1 : 2; };
   const todaysS = todays.map((m, i) => ({ m, i, k: live(m) })).sort((a, b) => a.k - b.k || a.i - b.i).map(x => x.m);
   const nOpen = todays.filter(m => live(m) === 0).length;
-  const todayLive = todays.some(m => live(m) < 2) || evs.some(x => x.on);
-  const todayRows = [...todaysS.slice(0, 3).map(mrow), ...(todays.length > 3 ? [`<a class="wo-more" href="#markets/today">${esc(t('moreMarkets', { n: todays.length - 3 }))}</a>`] : []), ...evs.filter(x => x.on).map(erow)];
+  // Today's events: on now, or starting later today (shown with their start time); finished ones are already gone from evs.
+  const evToday = evs.filter(x => x.on || x.days === 0);
+  const todayLive = todays.some(m => live(m) < 2) || evToday.length > 0;
+  const todayRows = [...todaysS.slice(0, 3).map(mrow), ...(todays.length > 3 ? [`<a class="wo-more" href="#markets/today">${esc(t('moreMarkets', { n: todays.length - 3 }))}</a>`] : []), ...evToday.map(erow)];
   // Next 2 days: the markets of each day as one row, plus events starting then.
-  const soonRows = [1, 2].flatMap(n => { const l = todaysMarkets(plus(n)); return [...(l.length ? [msum(l, '#markets/day/' + n, plus(n))] : []), ...evs.filter(x => !x.on && x.days === n).map(erow)]; });
+  const soonRows = [1, 2].flatMap(n => { const l = todaysMarkets(plus(n)); return [...(l.length ? [msum(l, '#markets/day/' + n, plus(n))] : []), ...evs.filter(x => x.days === n).map(erow)]; });
   // Coming up (from day 3, 6 weeks): events only, plus the monthly antiques markets, which are worth planning for.
   const monthly = MARKETS.filter(m => m.s.some(x => x.nth)).map(m => { const nx = nextOpen(m, plus(3)); return nx && { m, d: nx.date, days: Math.round((nx.date - plus(0).setHours(0, 0, 0, 0)) / 864e5) }; }).filter(x => x && x.days <= 42);
-  const later = [...evs.filter(x => !x.on && x.days > 2).map(x => ({ k: x.o.start, html: erow(x) })),
+  const later = [...evs.filter(x => x.days > 2).map(x => ({ k: x.o.start, html: erow(x) })),
     ...monthly.slice(0, 2).map(x => { const iso = x.d.toLocaleDateString('sv'); const b = dayBadge({ start: iso }); return { k: iso, html: `<a href="#map/m/${encodeURIComponent(x.m.id)}"><span class="dbadge dbm"><b>${b.d}</b><small>${esc(b.m)}</small></span>
      <span class="nm">${esc(title(x.m))}<small>${esc(t('cat_' + x.m.cat))} · ${esc(x.m.town)}</small></span><span class="st plain">${esc(t('inDays', { n: x.days }))}</span></a>` }; })]
     .sort((p, q) => p.k.localeCompare(q.k)).slice(0, 5);
@@ -77,7 +80,7 @@ export function renderHome(V) {
   if (soonRows.length) {
     let soon = soonRows.join('');
     if (!todayLive) soon = soon.replace('<details class="mrow dayrow">', '<details class="mrow dayrow" open>');
-    const nM = [1, 2].reduce((a, n) => a + todaysMarkets(plus(n)).length, 0), nE = evs.filter(x => !x.on && x.days <= 2).length;
+    const nM = [1, 2].reduce((a, n) => a + todaysMarkets(plus(n)).length, 0), nE = evs.filter(x => x.days >= 1 && x.days <= 2).length;
     agenda += wsec(t('next2days'), null, [nM ? t('nMarkets', { n: nM }) : '', nE ? t(nE === 1 ? 'nEvent1' : 'nEvents', { n: nE }) : ''].filter(Boolean).join(' · '), !todayLive, `<div class="mini">${soon}</div>`);
   }
   if (later.length) agenda += dayH(t('comingUp')) + `<div class="mini">${later.map(x => x.html).join('')}</div>`;

@@ -1,5 +1,5 @@
 {
-  "_doc": "Local events. Item shape: id, type (castells/festa/carnival/parade/food/fair/film/music/historical/tradition), name{6}, town, venue, lat, lng, url, dates[{start,end (YYYY-MM-DD), status: confirmed|expected}], description{6}, sources[]. Past dates hide themselves; add next year's dates in the monthly check.",
+  "_doc": "Local events. Item shape: id, type (castells/festa/carnival/parade/food/fair/film/music/historical/tradition), name{6}, town, venue, lat, lng, url, dates[{start,end (YYYY-MM-DD), time and until (optional HH:MM: when it starts, when it ends on the last day), status: confirmed|expected}], description{6}, sources[]. Past dates hide themselves; add next year's dates in the monthly check.",
   "items": [
     {
       "id": "santa-teresa",
@@ -101,7 +101,8 @@
         {
           "start": "2026-10-25",
           "end": "2026-10-25",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "12:15"
         },
         {
           "start": "2027-10-24",
@@ -141,7 +142,8 @@
         {
           "start": "2026-11-01",
           "end": "2026-11-01",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "12:00"
         },
         {
           "start": "2027-11-01",
@@ -1478,7 +1480,8 @@
         {
           "end": "2026-10-24",
           "start": "2026-10-24",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "17:00"
         }
       ],
       "venue": "Plaça del Mercadal",
@@ -1516,7 +1519,8 @@
         {
           "end": "2026-10-24",
           "start": "2026-10-24",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "17:00"
         }
       ],
       "venue": "Plaça Bisbe Bonet",
@@ -1554,7 +1558,8 @@
         {
           "end": "2026-10-24",
           "start": "2026-10-24",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "17:00"
         }
       ],
       "venue": "Plaça de l'Església",
@@ -1592,7 +1597,8 @@
         {
           "end": "2026-10-24",
           "start": "2026-10-24",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "17:30"
         }
       ],
       "venue": "Plaça de la Vila",
@@ -1630,7 +1636,8 @@
         {
           "end": "2026-10-24",
           "start": "2026-10-24",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "18:00"
         }
       ],
       "venue": "Plaça de l'Ajuntament",
@@ -1668,7 +1675,8 @@
         {
           "end": "2026-10-24",
           "start": "2026-10-24",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "18:00"
         }
       ],
       "venue": "Carrer de les Quatre Fonts",
@@ -1706,7 +1714,8 @@
         {
           "end": "2026-10-25",
           "start": "2026-10-25",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "12:00"
         }
       ],
       "venue": "Plaça de la Vila",
@@ -1744,7 +1753,8 @@
         {
           "end": "2026-10-31",
           "start": "2026-10-31",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "12:00"
         }
       ],
       "venue": "Cap de la Vila",
@@ -1782,7 +1792,8 @@
         {
           "end": "2026-10-31",
           "start": "2026-10-31",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "17:00"
         }
       ],
       "venue": "Plaça dels Països Catalans",
@@ -1820,7 +1831,8 @@
         {
           "end": "2026-11-08",
           "start": "2026-11-08",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "12:30"
         }
       ],
       "venue": "Plaça del Pou",
@@ -1858,7 +1870,8 @@
         {
           "end": "2026-11-08",
           "start": "2026-11-08",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "13:00"
         }
       ],
       "venue": "Plaça dels Arbres",
@@ -1896,7 +1909,8 @@
         {
           "end": "2026-12-13",
           "start": "2026-12-13",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "12:00"
         }
       ],
       "venue": "Església de Sant Pere",
@@ -1934,7 +1948,8 @@
         {
           "end": "2026-10-24",
           "start": "2026-10-24",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "17:00"
         }
       ],
       "venue": "Plaça del Rei",
@@ -1972,7 +1987,8 @@
         {
           "end": "2026-10-24",
           "start": "2026-10-24",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "18:00"
         }
       ],
       "venue": "Plaça de la Vila",
@@ -2048,7 +2064,8 @@
         {
           "end": "2026-12-13",
           "start": "2026-12-13",
-          "status": "confirmed"
+          "status": "confirmed",
+          "time": "13:00"
         }
       ],
       "venue": "Plaça de l'Església",

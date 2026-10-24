@@ -103,6 +103,7 @@ function cSchedule(path, arr) {
 }
 function cDates(path, arr) {
   return `<div class="f full"><span class="lab">Dates</span><div class="cm-sch">${(arr || []).map((r, k) => `<div class="cm-sr"><div class="cm-dates"><label><span class="hint">Starts</span><input type="date" data-p="${path}/${k}/start" data-t="str" value="${esc(r.start || '')}"></label><label><span class="hint">Ends</span><input type="date" data-p="${path}/${k}/end" data-t="str" value="${esc(r.end || '')}"></label></div>
+    <span class="hint">Start and end time, if you know them</span><div class="cm-times"><input type="time" aria-label="Starts at" data-p="${path}/${k}/time" data-t="str" value="${esc(r.time || '')}"><span>to</span><input type="time" aria-label="Ends at" data-p="${path}/${k}/until" data-t="str" value="${esc(r.until || '')}"></div>
     <div class="cm-dayrow"><select aria-label="Confirmed or expected" data-p="${path}/${k}/status" data-t="str"><option value="expected"${r.status !== 'confirmed' ? ' selected' : ''}>Expected</option><option value="confirmed"${r.status === 'confirmed' ? ' selected' : ''}>Confirmed</option></select><button class="cm-x" type="button" data-cdel="${path}/${k}" data-now="1" aria-label="Remove these dates">×</button></div></div>`).join('')}
     <button class="btn small" type="button" data-adddate="${path}">+ Add dates</button></div></div>`;
 }

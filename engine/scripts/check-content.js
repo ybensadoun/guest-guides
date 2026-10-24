@@ -75,6 +75,14 @@ for (const s of read(C('sections')).sections) {
       if (it.group && !(it.group in GROUPS)) errors.push(`${s.id} "${it.id}" group "${it.group}" is not a filter group (engine/src/groups.json)`);
     }
   }
+  // Event dates: YYYY-MM-DD, the end not before the start; "time" (start) and "until" (end on the last day) are optional HH:MM.
+  if (s.kind === 'events' && s.status === 'live') {
+    for (const e of read(C(s.file || s.id)).items || []) for (const d of e.dates || []) {
+      const w = `${s.id} "${e.id}" date ${d.start}`;
+      if (!/^\d{4}-\d\d-\d\d$/.test(d.start) || !/^\d{4}-\d\d-\d\d$/.test(d.end) || d.end < d.start) errors.push(`${w}: start and end must be YYYY-MM-DD, end not before start`);
+      for (const k of ['time', 'until']) if (d[k] && !/^([01]\d|2[0-3]):[0-5]\d$/.test(d[k])) errors.push(`${w}: ${k} "${d[k]}" must be HH:MM`);
+    }
+  }
 }
 
 // Typography (docs/TYPOGRAPHY.md): Spanish ¿ ¡, Catalan punt volat, Dutch IJ, German quotes, German du (not Sie).
