@@ -992,6 +992,134 @@
     "dead": [],
     "checked": "2026-10-24",
     "result": "added by the automatic events search (expected dates)"
+   },
+   "castells-2026-10-24-reus": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=10"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-10-24-tarragona-2": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=10"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-10-24-vila-seca": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=10"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-10-24-vilanova-i-la-geltrú": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=10"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-10-24-igualada": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=10"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-10-24-el-vendrell": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=10"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-10-25-gelida": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=10"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-10-31-sitges": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=10"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-10-31-sant-joan-de-mediona": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=11"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-11-08-altafulla": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=11"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-11-08-vila-rodona": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=11"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-12-13-gelida": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=12"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-10-24-tarragona": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=10"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-10-24-vilafranca-del-pened": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=10"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-11-25-vilafranca-del-pened": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=11"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
+   },
+   "castells-2026-12-13-la-bisbal-del-penedè": {
+    "sources": [
+     "https://castellscat.cat/en/schedule?a=2026&m=12"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "castells schedule of the Coordinadora de Colles Castelleres (castellscat.cat), read in a browser on 24 Oct 2026; within 40 km"
    }
   },
   "emergency.json": {

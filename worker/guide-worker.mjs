@@ -266,10 +266,13 @@ async function translateJob(j, jp) {
    plus the curation rule), each place is checked on Google (gone: dropped; its listing, id and hours added), texts are
    translated into the guide's languages, and the result goes back in the job. Nothing is added to the guide here:
    the host keeps or skips each suggestion in the editor, and what they keep goes into their draft. */
+// What every events search returns, and how it looks for them wherever the guide is: the area's own traditions first.
+const EVENT_SHAPE = 'Same shape as the example: {"items":[...]}. "type" is one of: castells, festa, carnival, parade, food, fair, film, music, historical, tradition. Every event MUST have numeric lat and lng (the venue, or the centre of its town), a "url" (its official page) and "sources" (the pages you used). "name" says which event it is without the town (the guide shows the town under it). "dates": start and end as YYYY-MM-DD; "status" is "confirmed" only when an official source gives that year\'s dates, otherwise "expected" (worked out from earlier years). Leave out events whose dates have all passed.';
+const LOCAL_EVENTS = 'First work out which kinds of local events this area is known for and where their dates are published, then search there, town by town within the radius: for example castells (human towers) in Catalonia and the colles\' own schedules, Semana Santa processions, ferias, romerías and flamenco in Andalusia, Moros y Cristianos and fallas in the Valencia region, fiestas patronales everywhere; the coordinating body or federation of that tradition, the regional and county tourism agendas, the town halls\' agendas and the local press. Some agenda websites block automated reading: when a page cannot be read, find the same dates on the organisers\' own sites, the town halls\' pages or the local press.';
 const FIND = {
   'find-todo': { file: 'todo', key: 'items', what: 'things to do', rule: 'Find 6 to 10 more things to do within the radius: sights, nature, fun, culture, wine. Same shape as the example: {"items":[...]} with lat, lng, an icon and group as in the example. ' + HOURS_RULE },
   'find-markets': { file: 'markets', key: 'markets', what: 'markets', rule: MARKETS_RULE + ' Find up to 8 that are not in the guide yet.' },
-  'find-events': { file: 'events', key: 'items', what: 'events', rule: 'Find 6 to 10 local events within the radius with a date in the next three months: festivals, fairs, traditions, music, food. Same shape as the example: {"items":[...]}. "type" is one of: castells, festa, carnival, parade, food, fair, film, music, historical, tradition. Every event MUST have numeric lat and lng (the venue, or the centre of its town), a "url" (its official page) and "sources" (the pages you used). "dates": start and end as YYYY-MM-DD; "status" is "confirmed" only when an official source gives that year\'s dates, otherwise "expected" (worked out from earlier years). Leave out events whose dates have all passed.' }
+  'find-events': { file: 'events', key: 'items', what: 'events', rule: 'Find 6 to 12 local events within the radius with a date in the next three months: festivals, fairs, traditions, music, food. ' + EVENT_SHAPE }
 };
 const CURATION = 'Pick like a local host would: places and events a guest would not easily find by searching Google themselves (local favourites, hidden gems, things for kids or dogs, the best of each kind nearby). No chains, no supermarkets or groceries, no golf courses. Each one must still exist or still run, confirmed by a source from the last two years. Each "description" says in one or two sentences why it is worth it and when to go.';
 const FIND_PER_DAY = 8;   // each search costs Claude time on this computer and a few Google requests
@@ -287,10 +290,13 @@ async function findJob(j, jp) {
   const { clean, located, allowed, normSchedule } = researchTools();
   const known = have.map(x => x.name_local || nameOf(x.name)).filter(Boolean);
   await jp({ message: `Searching the web for ${F.what}` });
-  const out = located(clean(await claudeJson(researchPrompt(F.file, A, `${F.rule}${j.kind === 'find-events' ? ' ' + windowRule() : ''} ${CURATION} Already in the guide, so never suggest them again: ${known.join('; ') || 'nothing yet'}. ${allowed}`), F.file)));
+  const auto = ((files.events || {}).auto) || {};
+  const out = j.kind === 'find-events'   // events: the area's own traditions, plus one focused search per topic the host wants
+    ? { items: await searchEvents(A, { exclude: known, want: auto.want || [], skip: auto.skip || [] }) }
+    : located(clean(await claudeJson(researchPrompt(F.file, A, `${F.rule} ${CURATION} Already in the guide, so never suggest them again: ${known.join('; ') || 'nothing yet'}. ${allowed}`), F.file)));
   const label = it => ({ displayName: { text: it.name_local || nameOf(it.name) } });
   (out[F.key] || []).forEach(normSchedule);
-  let items = (out[F.key] || []).filter(it => !have.some(x => sameName(x, label(it)) && (typeof x.lat !== 'number' || hav(x.lat, x.lng, it.lat, it.lng) < 1.5)));
+  let items = (out[F.key] || []).filter(it => !have.some(x => F.file === 'events' ? sameEvent(x, it) : sameName(x, label(it)) && (typeof x.lat !== 'number' || hav(x.lat, x.lng, it.lat, it.lng) < 1.5)));
   const ids = new Set(have.map(x => x.id)), today = new Date().toISOString().slice(0, 10);
   for (const it of items) {
     let id = slugOf(it.name_local || nameOf(it.name)); while (ids.has(id)) id += '-2'; ids.add(id); it.id = id;
@@ -356,24 +362,38 @@ async function englishTopics(topics, tmpName) {
   let map = {}; if (existsSync(tmp)) { try { map = JSON.parse(readFileSync(tmp, 'utf8')); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
   return topics.map(t => ((map[t] || {}).en || t).toLowerCase());
 }
+// Two events are the same when their names share a word that says which one it is, in any language, and they are
+// close by. Words every event of a kind has ("human towers", "diada", "festival", "fair", "Sant") and the town's name
+// do not count: otherwise a new diada in Vilafranca looked like the town's All Saints' human towers.
+const EV_STOP = new Set(('the and of in at on for with a an to de del dels la les el els los las le du des et en al von der die das im het een van op '
+  + 'human towers tower castells castell castellers castellera colla colles diada diades festival fest festa festes fiesta fiestas fete fetes feest feesten fair fira fires feria ferias foire markt market mercat mercado marche '
+  + 'major mayor main big gran grande summer estiu verano ete sommer zomer winter hivern invierno hiver christmas nadal navidad noel weihnachten kerst '
+  + 'day dia dag tag jour jornada night nit noche nuit nacht nacht celebration festivities procession parade cavalcada cabalgata sant santa san saint sankt sint '
+  // the same words in the guide's other languages: human towers, pillars, fair, festival...
+  + 'torres torre tours tour chateaux chateau humains humaines humanas humanos humana humano menschenturme menschenturmen menschenturm menselijke torens toren '
+  + 'pilar pilars pilares pilier piliers saule saulen zuil zuilen festividad feestdag feste messe jahrmarkt kermis beurs concurso concours concurs wettbewerb wedstrijd '
+  + 'zu bei im am beim au aux em na dans pour para per voor met mit auf').split(' '));
+const evWords = it => { const town = String(it.town || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/);
+  return new Set([it.name_local, ...Object.values(it.name || {})].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f\u00ad]/g, '').split(/[^a-z0-9]+/).filter(w => w.length > 2 && !EV_STOP.has(w) && !town.includes(w))); };
+const sameEvent = (a, b) => { if (typeof a.lat === 'number' && typeof b.lat === 'number' && hav(a.lat, a.lng, b.lat, b.lng) > 3) return false; const w = evWords(a); return [...evWords(b)].some(x => w.has(x)); };
 // Adds what was found to one copy of the events file (the live guide, or the draft) and says what changed.
 function mergeEvents(file, found, today) {
   const auto = file.auto || {}, items = file.items = file.items || [], out = { added: [], updated: [], dropped: [] };
-  const label = it => ({ displayName: { text: it.name_local || nameOf(it.name) } }), near = (a, b) => typeof a.lat !== 'number' || typeof b.lat !== 'number' || hav(a.lat, a.lng, b.lat, b.lng) < 3;
   const removed = (auto.removed || []).map(r => typeof r === 'string' ? { name: r } : r);
   const end = dayStr(new Date(Date.parse(today) + EV_DAYS * 864e5));
   for (const f of found) {
-    const same = items.find(x => sameName(x, label(f)) && near(x, f));
+    const same = items.find(x => sameEvent(x, f));
     if (same) {
       if (!same.auto) continue;   // the host's own event: never touched
       const dates = [...(same.dates || []).filter(d => (d.end || d.start) < today || d.start > end), ...(f.dates || [])].sort((a, b) => a.start.localeCompare(b.start));
-      const was = JSON.stringify(same.dates);
+      const key = ds => JSON.stringify((ds || []).map(d => [d.start, d.end, d.status]));   // the database may store a date's keys in another order
+      const was = key(same.dates);
       same.dates = dates.filter((d, i) => !dates.slice(0, i).some(e => e.start === d.start));
       for (const k of ['url', 'sources', 'venue']) if (f[k] && !same[k]) same[k] = f[k];
-      if (JSON.stringify(same.dates) !== was) out.updated.push(nameOf(same.name));
+      if (key(same.dates) !== was) out.updated.push(nameOf(same.name));
       continue;
     }
-    if (removed.some(r => sameName({ name: { en: r.name } }, label(f)))) continue;   // deleted by the host once
+    if (removed.some(r => sameEvent({ name: { en: r.name } }, f))) continue;   // deleted by the host once
     const ids = new Set(items.map(x => x.id)); let id = f.id; while (ids.has(id)) id += '-2';
     items.push({ ...f, id, auto: true }); out.added.push(nameOf(f.name));
     out.details = [...(out.details || []), `${nameOf(f.name)} (${f.town || '?'}): ${(f.dates || []).map(d => `${d.start}${d.end && d.end !== d.start ? ' to ' + d.end : ''} ${d.status}`).join(', ')}. Source: ${[f.url, ...(f.sources || [])].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(' ')}`];
@@ -388,6 +408,25 @@ function eventsLive(content) {
   if (!row) ss.push({ id: 'events', kind: 'events', color: 'events', group: 'area', status: 'live', labelKey: 'events' }); else row.status = 'live';
   content.site = content.site || {}; content.site.modules = { ...(content.site.modules || {}), events: true };
 }
+// One general search (the area's own traditions) and, side by side, one focused search per topic the host wants
+// (up to three): a topic like "Castellers" gets every diada in the window, not a share of ten events. Same event found
+// twice: kept once.
+async function searchEvents(A, { exclude = [], update = [], want = [], skip = [] } = {}) {
+  const { clean, located, allowed } = researchTools();
+  const win = windowRule();
+  const skipRule = skip.length ? ` Never include events about: ${skip.join('; ')} (topics, maybe written in another language: leave them out whatever the language of the source).` : '';
+  const known = exclude.length ? ` Already in the guide, so never suggest them again: ${exclude.join('; ')}.` : update.length ? ` Include events already in the guide when you find their dates in this window, so the guide can update them: ${update.join('; ')}.` : '';
+  const passes = [
+    `${FIND['find-events'].rule} ${win} ${LOCAL_EVENTS}${want.length ? ` The host would also like events about: ${want.join('; ')} (topics, maybe written in another language).` : ''}${known}${skipRule}`,
+    ...want.slice(0, 3).map(w => `The host specifically wants events about "${w}". It is a topic, maybe written in another language: say it in the local language(s) yourself and search with those words too. Find every event about it within the radius with a date in this window, up to 20, town by town, starting with the closest towns: the schedules of the groups or bodies that organise it, the town halls' agendas, the local press. ${win} ${EVENT_SHAPE} ${LOCAL_EVENTS.split('. ').slice(-1)[0]}${known}${skipRule}`)
+  ];
+  let failed = null;
+  const outs = await Promise.all(passes.map(r => claudeJson(researchPrompt('events', A, `${r} ${CURATION} ${allowed}`), 'events').then(o => located(clean(o)).items || []).catch(e => { failed = e; log('  an events search did not work:', e.message); return []; })));
+  if (failed && outs.every(o => !o.length)) throw failed;
+  const all = [];
+  for (const it of outs.flat()) if (!all.some(o => sameEvent(o, it))) all.push(it);
+  return all;
+}
 async function refreshEvents(g, { apply = true, say = () => {} } = {}) {
   const c = g.content, ev = (c.files || {}).events, auto = ev && ev.auto;
   if (!auto || !auto.on) return null;
@@ -395,16 +434,12 @@ async function refreshEvents(g, { apply = true, say = () => {} } = {}) {
   if (typeof h.lat !== 'number') throw new Error('The guide does not know where the house is.');
   const skip = (auto.skip || []).filter(Boolean), want = (auto.want || []).filter(Boolean);
   const A = { placeName: site.name, town: A0.town || '', region: A0.region || '', lat: h.lat, lng: h.lng, radius: (site.area || {}).radiusKm || 30, interests: [...(A0.interests || []), ...want], feelWords: A0.feelWords, tone: A0.tone };
-  const { clean, located, allowed } = researchTools();
   const known = (ev.items || []).map(x => x.name_local || nameOf(x.name)).filter(Boolean);
-  say('Searching the web for events');
-  const rule = FIND['find-events'].rule + ' ' + windowRule() + ' Include events already in the guide when you find their dates in this window, so the guide can update them: ' + (known.join('; ') || 'none yet') + '.'
-    + (want.length ? ` The host would also like events about: ${want.join('; ')} (topics, maybe written in another language).` : '')
-    + (skip.length ? ` Never include events about: ${skip.join('; ')} (topics, maybe written in another language: leave them out whatever the language of the source).` : '');
-  const out = located(clean(await claudeJson(researchPrompt('events', A, `${rule} ${CURATION} ${allowed}`), 'events')));
+  say(want.length ? `Searching the web for events, and for ${want.join(', ')}` : 'Searching the web for events');
+  const out = { items: await searchEvents(A, { update: known, want, skip }) };
   const skipEn = await englishTopics(skip, g.id.slice(0, 8) + '-skip');
   let found = (out.items || []).filter(f => (f.dates || []).some(d => (d.end || d.start) >= today) && !skipEn.some(t => hits(enText(f), t)));
-  found = found.filter((f, i) => !found.slice(0, i).some(o => sameName(o, { displayName: { text: f.name_local || nameOf(f.name) } }) && hav(o.lat, o.lng, f.lat, f.lng) < 3));   // the same event found twice
+  found = found.filter((f, i) => !found.slice(0, i).some(o => sameEvent(o, f)));   // the same event found twice
   for (const f of found) { f.id = slugOf(f.name_local || nameOf(f.name)); f.km_from_house = Math.round(hav(h.lat, h.lng, f.lat, f.lng) * 10) / 10; }
   const langs = (site.languages || ['en']).filter(l => l !== 'en' && LANGS.includes(l)), objs = [];
   const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (isI18(x)) objs.push(x); else Object.values(x).forEach(walk); } };

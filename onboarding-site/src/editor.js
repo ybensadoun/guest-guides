@@ -355,7 +355,9 @@ const findMark = (id, ids) => { try { const s = findSeen(id); ids.forEach(x => s
 const CM_STOP = new Set(('the and of de del dels la les el els los las le du des et with near from von der die das het een van '
   + 'fair fira feria foire markt market mercat mercado marche festival festa fiesta fete fest feest museum museu museo musee castle castell castillo chateau burg kasteel '
   + 'church esglesia iglesia eglise kirche kerk beach platja playa plage strand park parc parque garden jardi jardin garten tuin tower torre tour turm toren '
-  + 'house casa maison haus huis walk route ruta cami camino path sentier weg wandeling village poble pueblo dorf dorp town ciutat ciudad ville stadt stad old vella vieja vieille altstadt oude').split(' '));
+  + 'house casa maison haus huis walk route ruta cami camino path sentier weg wandeling village poble pueblo dorf dorp town ciutat ciudad ville stadt stad old vella vieja vieille altstadt oude '
+  + 'human towers tower castells castell castellers castellera colla colles diada diades torres tours chateaux humains humaines humanas humanos menschenturme menschenturm menselijke torens toren pilar pilars pilares '
+  + 'day dia dag tag jour night nit noche nuit nacht sant santa san saint sankt sint major mayor summer winter christmas nadal navidad').split(' '));
 const cmWords = it => { const town = String(it.town || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); return new Set([it.name_local, ...Object.values(it.name || {})].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f\u00ad]/g, '').split(/[^a-z0-9]+/).filter(w => w.length > 2 && !CM_STOP.has(w) && !town.split(/[^a-z0-9]+/).includes(w))); };
 const cmNear = (a, b) => typeof a.lat !== 'number' || typeof b.lat !== 'number' || edKm(a.lat, a.lng, b.lat, b.lng) <= 2;
 const cmSamePlace = (a, b) => { const w = cmWords(a); return cmNear(a, b) && [...cmWords(b)].some(x => w.has(x)); };
@@ -467,7 +469,7 @@ function cmAutoEvHTML() {
     <p class="hint">Every month we look for events in the next three months around the house and add them to your guide straight away, with “expected” dates until they are confirmed. Events you add yourself are never changed, and an automatic one you delete never comes back.</p>
     ${cSwitch('data-evauto', 'Keep events up to date', on)}
     ${on ? `<div class="f full"><span class="lab">Topics to skip</span><p class="hint">In any language. We never add events about these.</p>${topics('skip', 'bullfighting, nightclubs…')}</div>
-      <div class="f full"><span class="lab">Things to look for</span><p class="hint">On top of the usual festivals, fairs, traditions, music and food.</p>${topics('want', 'jazz, wine, kids…')}</div>
+      <div class="f full"><span class="lab">Things to look for</span><p class="hint">In any language. Each one gets its own search, on top of the area's usual festivals, fairs and traditions. Up to three.</p>${topics('want', 'jazz, wine, kids…')}</div>
       <div class="cm-row"><span class="hint" id="cmEvState">${esc(cmEvStateText())}</span><button class="btn small" type="button" id="cmEvRun" data-evrun${cmEvBusy() ? ' disabled' : ''}>Search now</button></div>` : ''}
     <p class="hint">These settings apply at once: they are not part of the changes you publish.</p></div>`;
 }
