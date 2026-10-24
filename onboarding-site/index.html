@@ -1438,7 +1438,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is on the overview page only (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 24 Oct 2026, 09:25 (Madrid time, after commit 9250398)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 24 Oct 2026, 14:11 (Madrid time, after commit ac18117)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -1881,7 +1881,8 @@ function cmGuide(c) {
     <div class="f full"><span class="lab">Logo</span><div class="cm-row cm-logo">${s.logo ? `<img src="${esc(edImg(s.logo))}" alt="Your logo">` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="site/logo" data-kind="logo">${s.logo ? 'Change the logo' : 'Add a logo'}</label></div></div>
     <div class="f full"><span class="lab">Languages</span><p class="hint">The guide opens in the guest’s phone language when it can. The first one is the main language.</p>
     <div class="chips">${Object.entries(ED_LANGS).map(([k, n]) => { const on = langs.includes(k), miss = on ? edMissing(k) : 0; return `<label class="chip"><input type="checkbox" data-clang="${k}"${on ? ' checked' : ''}${k === langs[0] ? ' disabled' : ''}><span>${n}${k === langs[0] ? ' (main)' : ''}${miss ? ` · ${miss} to translate` : ''}</span></label>`; }).join('')}</div>
-    <div class="cm-row"><button class="btn small" type="button" data-translate>Translate missing texts</button><span class="hint" id="edJob"></span></div>
+    <div class="cm-row"><button class="btn small" type="button" data-translate${CM.trJob && (CM.trJob.status === 'queued' || CM.trJob.status === 'running') ? ' disabled' : ''}>Translate missing texts</button><span class="hint" id="edJob">${esc(CM.trDone || '')}</span></div>
+    ${CM.trJob && (CM.trJob.status === 'queued' || CM.trJob.status === 'running') ? progBar('tr', 'Translation') : ''}
     <p class="hint">Usually takes a few minutes. Until a text is translated, guests see it in the main language. The translations arrive as changes you preview and publish.</p></div>`;
 }
 const edCssVar = (css, name) => { const m = css.match(new RegExp(name + '\\s*:\\s*([^;}]+)')); return m ? m[1].trim() : ''; };
@@ -2043,6 +2044,49 @@ function cmTrTile() {
   T.tile = CM.trTile || { name: L6(GA), sub: L6(((T.taxis || [])[0] || {}).sub || '') };
 }
 
+/* --- Progress bars for everything that takes a while: searches, translations, a guide being built ---
+   The worker says which step it is on (the job's message). Inside a step the bar moves with time, slowing down as it
+   nears the step's end, so it never stops and never runs past the step; a count ("3 of 8") moves it by item. One ticker
+   updates every bar on the page each second. Steps: [pattern, from %, to %, usual seconds (per item for a count)]. */
+const PROG_STEPS = {
+  places: [[/Searching the web/, 4, 70, 210], [/Checking on Google: (\d+) of (\d+)/, 70, 85, 2], [/Translating/, 85, 98, 60]],
+  events: [[/Searching the web/, 4, 85, 240], [/Translating/, 85, 98, 60]],
+  translate: [[/Translating (\d+) of (\d+)/, 5, 97, 45]],
+  build: [[/Reading your answers/, 3, 8, 20], [/Researching: markets/, 8, 30, 180], [/Researching: todo/, 30, 52, 180], [/Researching: emergency/, 52, 62, 90], [/Building the guide/, 62, 78, 40], [/Translating/, 78, 92, 90], [/Saving the guide/, 92, 99, 30]]
+};
+const progEase = (t, tau) => 1 - Math.exp(-Math.max(0, t) / tau);
+// A job's place on the bar and the time left, from its step and how long it has been in it.
+function progOf(j, kind) {
+  if (!j) return null;
+  const steps = PROG_STEPS[kind] || PROG_STEPS.events, now = Date.now();
+  if (j.status === 'queued' || !j.message || /^Starting|^Waiting/.test(j.message)) {
+    const wait = now - (j.since || now);
+    return { pct: Math.max(j.shown || 0, 2), text: wait > 120000 ? 'Still waiting to start. Our service may be busy or paused: it starts by itself as soon as it can.' : 'Waiting to start…', left: null };
+  }
+  const k = steps.findIndex(x => x[0].test(j.message));
+  let pct = j.shown || 4, left = null;
+  if (k >= 0) {
+    const [re, from, to, secs] = steps[k], t = (now - (j.phaseAt || j.since || now)) / 1000, m = j.message.match(re), later = steps.slice(k + 1).reduce((a, x) => a + x[3], 0);
+    if (m && m[2]) { const i = Math.max(1, +m[1]), n = Math.max(i, +m[2]), per = secs; pct = from + (to - from) * ((i - 1 + progEase(t, per)) / n); left = (n - i + 1) * per - t + later; }
+    else { pct = from + (to - from) * progEase(t, secs / 2); left = secs - t + later; }
+  }
+  pct = Math.min(99, Math.max(j.shown || 0, pct)); j.shown = pct;   // never goes back
+  const words = ({ 'Researching: markets': 'Looking for markets', 'Researching: todo': 'Looking for things to do', 'Researching: emergency': 'Finding emergency numbers', 'Translating': 'Translating into your languages' })[j.message] || j.message.replace(/ · .*$/, '').replace(/^Starting again$/, 'Starting');
+  return { pct, text: words + (left == null ? '' : left > 75 ? ` · about ${Math.ceil(left / 60)} min left` : ' · less than a minute left'), left };
+}
+// The bar itself; its key says which job it follows (see progJob).
+const progBar = (key, label, dark) => { const p = progOf(progJob(key), progKind(key)) || { pct: 2, text: '' };
+  return `<div class="cm-progw${dark ? ' dark' : ''}" data-prog="${key}"><div class="cm-prog" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p.pct)}"><i style="width:${p.pct.toFixed(1)}%"></i></div><p class="hint cm-progt">${esc(p.text)}</p></div>`; };
+const progJob = key => key === 'auto' ? CM.evJob : key === 'tr' ? CM.trJob : key === 'build' ? window.__buildJob : (CM.find || {})[key];
+const progKind = key => key === 'tr' ? 'translate' : key === 'build' ? 'build' : key === 'find-todo' || key === 'find-markets' ? 'places' : 'events';
+// A job's new state from the database: a new step restarts the clock of that step.
+function progSet(j, st) { if (st.message !== j.message || st.status !== j.status) j.phaseAt = Date.now(); j.status = st.status; j.message = st.message; }
+setInterval(() => document.querySelectorAll('[data-prog]').forEach(el => {
+  const p = progOf(progJob(el.dataset.prog), progKind(el.dataset.prog)); if (!p) return;
+  const bar = el.querySelector('.cm-prog'), i = el.querySelector('.cm-prog i'), t = el.querySelector('.cm-progt');
+  i.style.width = p.pct.toFixed(1) + '%'; bar.setAttribute('aria-valuenow', Math.round(p.pct)); if (t.textContent !== p.text) t.textContent = p.text;
+}), 1000);
+
 /* --- Find more: the guide builder searches the web near the house; the host keeps or skips each suggestion ---
    The search runs as a job (worker/guide-worker.mjs, findJob): a few minutes, then the suggestions wait in the job's
    result for 14 days. Kept ones go into the draft like any change. Which ones were looked at is remembered in this browser. */
@@ -2091,17 +2135,11 @@ function cmFindCard(it, i, n) {
     <div class="cm-fbtns"><button class="btn small" type="button" data-cfskip="${esc(it.id)}">Not for us</button><button class="btn small primary" type="button" data-cfadd="${esc(it.id)}">Add to my guide</button></div>
     <button class="cm-fstop" type="button" data-cfstop>Skip the rest</button></article>`;
 }
-// A job's state in words: waiting to start (and a hint when it waits long), or what it is doing and for how long.
-const cmAgo = since => { const m = Math.floor((Date.now() - (since || Date.now())) / 60000); return m < 1 ? 'just started' : `${m} min so far`; };
-function cmJobText(j) {
-  if (j.status === 'queued') return Date.now() - (j.since || Date.now()) > 120000 ? 'Still waiting to start. Our search service may be busy or paused: it starts by itself as soon as it can.' : 'Waiting to start…';
-  return `${j.message && j.message !== 'Starting again' ? j.message : 'Searching'} · ${cmAgo(j.since)}`;
-}
 const CM_TAKES = 'A search usually takes 3 to 6 minutes. You can keep editing, or come back later: the results wait here.';
 function cmFindInner(path) {
   const [kind, what] = FIND_OF[path], f = CM.find[kind] || {};
   if (f.status === 'loading') return '<p class="hint">…</p>';
-  if (f.status === 'queued' || f.status === 'running') return `<div class="cm-fhead"><span class="spin dark" aria-hidden="true"></span><b>${esc(cmJobText(f))}</b></div><p class="hint">${esc(CM_TAKES)}</p>`;
+  if (f.status === 'queued' || f.status === 'running') return `<div class="cm-fhead"><b>Looking for more ${esc(what)}</b></div>${progBar(kind, 'Search for ' + what)}<p class="hint">${esc(CM_TAKES)}</p>`;
   const left = cmFindItems(kind, path), all = cmFindPool(kind, path).length;
   if (left.length) return cmFindCard(left[0], all - left.length + 1, all);
   const note = f.status === 'failed' ? `<p class="hint err">The search did not work: ${esc(f.message || 'try again later')}</p>` : f.status === 'done' ? `<p class="hint">${all ? 'You have looked at every suggestion from the last search.' : 'The last search found nothing new nearby.'}</p>` : '';
@@ -2136,9 +2174,9 @@ async function cmFindPoll(kind) {
     try {
       await ensureFresh();
       const r = await sb('/rest/v1/guide_jobs?select=status,message,result&id=eq.' + f.id), st = r && r[0]; if (!st) continue;
-      f.status = st.status; f.message = st.message;
+      const was = f.status; progSet(f, st);
       if (st.status === 'done') { f.items = (st.result || {}).items || []; if (f.items.length) toast(`${f.items.length} suggestions ready`); }
-      cmFindRefresh();
+      if (st.status !== was || st.status === 'done' || st.status === 'failed') cmFindRefresh();   // the bar follows by itself
       if (st.status === 'done' || st.status === 'failed') break;
     } catch (e) { /* offline for a moment: try again */ }
   }
@@ -2172,10 +2210,11 @@ function cmAutoEvHTML() {
     ${cSwitch('data-evauto', 'Keep events up to date', on)}
     ${on ? `<div class="f full"><span class="lab">Topics to skip</span><p class="hint">In any language. We never add events about these.</p>${topics('skip', 'bullfighting, nightclubs…')}</div>
       <div class="f full"><span class="lab">Things to look for</span><p class="hint">In any language. Each one gets its own search, on top of the area's usual festivals, fairs and traditions. Up to three.</p>${topics('want', 'jazz, wine, kids…')}</div>
+      ${cmEvBusy() ? progBar('auto', 'Search for events') : ''}
       <div class="cm-row"><span class="hint" id="cmEvState">${esc(cmEvStateText())}</span><button class="btn small" type="button" id="cmEvRun" data-evrun${cmEvBusy() ? ' disabled' : ''}>Search now</button></div>` : ''}
     <p class="hint">These settings apply at once: they are not part of the changes you publish.</p></div>`;
 }
-const cmEvStateText = () => { const a = evAuto(), j = CM.evJob; if (j && (j.status === 'queued' || j.status === 'running')) return cmJobText(j); if (j && j.status === 'failed') return 'The search did not work: ' + (j.message || 'try again later'); return a.last ? `Last search: ${a.last}${a.lastAdded != null ? `, ${a.lastAdded} added` : ''}.` : 'First search not run yet.'; };
+const cmEvStateText = () => { const a = evAuto(), j = CM.evJob; if (j && (j.status === 'queued' || j.status === 'running')) return CM_TAKES; if (j && j.status === 'failed') return 'The search did not work: ' + (j.message || 'try again later'); return a.last ? `Last search: ${a.last}${a.lastAdded != null ? `, ${a.lastAdded} added` : ''}.` : 'First search not run yet.'; };
 async function cmEvAutoSet(patch) {
   const a = { ...evAuto(), ...patch };
   for (const c of [CM.g.content, CM.live.content]) { const f = c.files = c.files || {}; f.events = f.events || { items: [] }; f.events.auto = cmClone(a); }   // both copies: not a change to publish
@@ -2192,12 +2231,12 @@ function cmEvTopic(k) {
 }
 // "Search now", and the first search when the switch goes on: the worker adds what it finds to both copies; this one reloads them.
 async function cmEvRun() {
-  CM.evJob = { status: 'queued', since: Date.now() }; cmEvRefresh();
+  CM.evJob = { status: 'queued', since: Date.now() }; render();
   try {
     await cmSave(); await ensureFresh();
     const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'auto-events', langs: edLangs() } });
     const id = j && j[0] && j[0].id; if (!id) throw new Error('Could not start');
-    CM.evJob = { id, status: 'queued', since: Date.now() }; cmEvRefresh(); cmEvPoll(CM.evJob);
+    CM.evJob = { id, status: 'queued', since: Date.now() }; render(); cmEvPoll(CM.evJob);
   } catch (e) { CM.evJob = { status: 'failed', message: niceError(e) }; cmEvRefresh(); }
 }
 // A search started earlier (another tab, before a reload) is followed again when the Events step opens.
@@ -2207,7 +2246,7 @@ async function cmEvLoad() {
     await ensureFresh();
     const since = new Date(Date.now() - 2 * 36e5).toISOString();
     const r = await sb(`/rest/v1/guide_jobs?select=id,status,message,created_at&guide_id=eq.${CM.g.id}&kind=eq.auto-events&status=in.(queued,running)&created_at=gt.${encodeURIComponent(since)}&order=created_at.desc&limit=1`), j = r && r[0];
-    if (j && !CM.evJob) { CM.evJob = { id: j.id, status: j.status, message: j.message, since: Date.parse(j.created_at) }; cmEvRefresh(); cmEvPoll(CM.evJob); }
+    if (j && !CM.evJob) { CM.evJob = { id: j.id, status: j.status, message: j.message, since: Date.parse(j.created_at) }; render(); cmEvPoll(CM.evJob); }
   } catch (e) { /* no connection: the state shows the last search */ }
 }
 async function cmEvPoll(job) {
@@ -2216,13 +2255,13 @@ async function cmEvPoll(job) {
     try {
       await ensureFresh();
       const r = await sb('/rest/v1/guide_jobs?select=status,message&id=eq.' + job.id), st = r && r[0]; if (!st) continue;
-      job.status = st.status; job.message = st.message;
+      progSet(job, st);
       if (st.status === 'done') {
         const g = (await sb('/rest/v1/guides?select=content,draft&id=eq.' + CM.g.id))[0], work = g.draft && g.draft.content ? g.draft.content : g.content;
         for (const [mine, theirs] of [[CM.live.content, g.content], [CM.g.content, work]]) { mine.files.events = cmClone(theirs.files.events); mine.files.sections = cmClone(theirs.files.sections); mine.site.modules = cmClone(theirs.site.modules); }   // separate copies: the working one is edited
         CM.evJob = null; toast(st.message || 'Events updated'); render(); return;
       }
-      cmEvRefresh(); if (st.status === 'failed') return;
+      if (st.status === 'failed') { render(); return; } cmEvRefresh();
     } catch (e) { /* offline for a moment: try again */ }
   }
 }
@@ -2371,7 +2410,6 @@ function edMissing(l) {
   const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (edIs18(x)) { if (!x[l] && Object.values(x).some(Boolean)) n++; } else Object.values(x).forEach(walk); } };
   walk(edC().files || {}); return n;
 }
-const edJobText = s => { const el = document.getElementById('edJob'); if (el) el.textContent = s; };
 function cmApplyTranslations(map) {
   const main = edLangs()[0]; let n = 0;
   const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (edIs18(x)) { const t = map[x[main]]; if (t) for (const [l, s] of Object.entries(t)) if (!x[l] && s) { x[l] = s; n++; } } else Object.values(x).forEach(walk); } };
@@ -2379,23 +2417,26 @@ function cmApplyTranslations(map) {
 }
 async function cmTranslate() {
   const langs = edLangs().filter(l => edMissing(l) > 0);
-  if (!langs.length) return edJobText('Everything is already translated.');
+  const end = msg => { CM.trJob = null; CM.trDone = msg; render(); };
+  if (!langs.length) return end('Everything is already translated.');
+  if (CM.trJob) return;
+  CM.trDone = ''; CM.trJob = { status: 'queued', since: Date.now() }; render();
   try {
-    edJobText('Saving…'); await cmSave();
+    await cmSave();
     const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'translate', langs } });
     const id = j && j[0] && j[0].id; if (!id) throw new Error('Could not start');
-    edJobText('Waiting to start…');
+    const job = CM.trJob;
     for (let i = 0; i < 450; i++) {
       await new Promise(r => setTimeout(r, 4000));
       await ensureFresh();
       const r = await sb('/rest/v1/guide_jobs?select=status,message,result&id=eq.' + id), st = r && r[0];
       if (!st) continue;
-      if (st.status === 'running') edJobText(st.message || 'Translating…');
-      if (st.status === 'failed') return edJobText('Did not work: ' + (st.message || 'try again later'));
-      if (st.status === 'done') { const n = cmApplyTranslations(st.result || {}); if (n) cmQueue(); render(); edJobText(n ? `${n} texts translated. Preview, then publish.` : (st.message || 'Done.')); return; }
+      progSet(job, st);
+      if (st.status === 'failed') return end('Did not work: ' + (st.message || 'try again later'));
+      if (st.status === 'done') { const n = cmApplyTranslations(st.result || {}); if (n) cmQueue(); return end(n ? `${cmCount(n, 'text', 'texts')} translated. Preview, then publish.` : (st.message || 'Done.')); }
     }
-    edJobText('Still waiting. Check again in a while.');
-  } catch (e) { edJobText('Did not work: ' + niceError(e)); }
+    end('Still waiting. Check again in a while.');
+  } catch (e) { end('Did not work: ' + niceError(e)); }
 }
 
 /* --- Typing, ticking, adding, removing --- */
@@ -2587,6 +2628,14 @@ function cmInit() {
 .cm-fsub{color:var(--muted);font-size:14px}
 .cm-flinks{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;font-weight:600}
 .cm-fbtns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:4px}
+.cm-progw{display:flex;flex-direction:column;gap:6px;width:100%;max-width:520px}
+.cm-prog{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.cm-prog i{display:block;height:100%;width:0;border-radius:99px;background:var(--sun);transition:width 1s linear}
+.cm-progw.dark .cm-prog{background:rgba(255,255,255,.2)}
+.cm-progw.dark .cm-progt{color:inherit;opacity:.85}
+/* The building screen: on a phone the lit doorway sits bottom right of the dark card, so the bar and the words stop before it. */
+@media (max-width:620px){#bstate > .cm-progw,#bstate > p{max-width:calc(100% - 76px)}}
+@media (prefers-reduced-motion:reduce){.cm-prog i{transition:none}}
 .cm-swrow{display:flex;flex-direction:column;gap:6px}
 .cm-switch{display:flex;align-items:center;gap:12px;width:100%;max-width:480px;min-height:52px;padding:10px 14px;border-radius:var(--r-s);border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}
 .cm-switch:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
@@ -2779,7 +2828,10 @@ function buildState(g){
       <a class="go-next" href="/g/${esc(slug)}" target="_blank" rel="noopener"><span>Open my guide</span><span class="ar">${ARROW}</span></a>
       <p style="margin:14px 0 0;color:#F4F1EA;opacity:.75;word-break:break-all">${esc(url)}</p>`;
   if (st === 'failed') return `<h1>This did not work.</h1><p>${esc((g && g.message) || 'Something went wrong while building your guide.')} We have been told. You can change an answer and send it again.</p>`;
-  return `<h1>${st === 'generating' ? 'Building your guide…' : 'Your guide is in the queue.'}</h1><p>${esc((g && g.message) || 'Waiting for its turn')}. This takes a few minutes. You can close this page: your guide will be here when you come back.</p>`;
+  // The worker's step and the time left, on a bar (editor.js, progBar): set by watchBuild from the guide's status.
+  const j = window.__buildJob = window.__buildJob || { since: Date.now() };
+  progSet(j, { status: st === 'generating' ? 'running' : 'queued', message: (g && g.message) || 'Waiting for its turn' });
+  return `<h1>${st === 'generating' ? 'Building your guide…' : 'Your guide is in the queue.'}</h1>${progBar('build', 'Building your guide', true)}<p>This takes a few minutes. You can close this page: your guide will be here when you come back.</p>`;
 }
 function buildingHTML(){
   return `<section class="hero"><small>${esc(v('guideName') || v('placeName') || 'Your guide')}</small><div id="bstate" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">${buildState(window.__acctGuide && window.__acctGuide())}</div></section>

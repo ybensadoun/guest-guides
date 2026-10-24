@@ -153,7 +153,10 @@ function buildState(g){
       <a class="go-next" href="/g/${esc(slug)}" target="_blank" rel="noopener"><span>Open my guide</span><span class="ar">${ARROW}</span></a>
       <p style="margin:14px 0 0;color:#F4F1EA;opacity:.75;word-break:break-all">${esc(url)}</p>`;
   if (st === 'failed') return `<h1>This did not work.</h1><p>${esc((g && g.message) || 'Something went wrong while building your guide.')} We have been told. You can change an answer and send it again.</p>`;
-  return `<h1>${st === 'generating' ? 'Building your guide…' : 'Your guide is in the queue.'}</h1><p>${esc((g && g.message) || 'Waiting for its turn')}. This takes a few minutes. You can close this page: your guide will be here when you come back.</p>`;
+  // The worker's step and the time left, on a bar (editor.js, progBar): set by watchBuild from the guide's status.
+  const j = window.__buildJob = window.__buildJob || { since: Date.now() };
+  progSet(j, { status: st === 'generating' ? 'running' : 'queued', message: (g && g.message) || 'Waiting for its turn' });
+  return `<h1>${st === 'generating' ? 'Building your guide…' : 'Your guide is in the queue.'}</h1>${progBar('build', 'Building your guide', true)}<p>This takes a few minutes. You can close this page: your guide will be here when you come back.</p>`;
 }
 function buildingHTML(){
   return `<section class="hero"><small>${esc(v('guideName') || v('placeName') || 'Your guide')}</small><div id="bstate" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">${buildState(window.__acctGuide && window.__acctGuide())}</div></section>
