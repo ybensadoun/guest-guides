@@ -349,10 +349,25 @@ const FIND_SECTION = { todo: { kind: 'spots', color: 'todo', labelKey: 'whatToDo
 CM.find = {};
 const findSeen = id => { try { return new Set(JSON.parse(localStorage.getItem('cmfind:' + id) || '[]')); } catch (e) { return new Set(); } };
 const findMark = (id, ids) => { try { const s = findSeen(id); ids.forEach(x => s.add(x)); localStorage.setItem('cmfind:' + id, JSON.stringify([...s])); } catch (e) { /* storage blocked: the card simply moves on */ } CM.findSkip = new Set([...(CM.findSkip || []), ...ids]); };
-function cmFindItems(kind, path) {
+// Already in the guide, maybe under another name ("Living Nativity of Canyelles" added by the automatic search as
+// "Pessebre vivent de Canyelles"): a shared real word in any language (not the town), and close by.
+// Small words and words for a kind of place ("museum", "castle", "beach"...) say nothing about which one it is.
+const CM_STOP = new Set(('the and of de del dels la les el els los las le du des et with near from von der die das het een van '
+  + 'fair fira feria foire markt market mercat mercado marche festival festa fiesta fete fest feest museum museu museo musee castle castell castillo chateau burg kasteel '
+  + 'church esglesia iglesia eglise kirche kerk beach platja playa plage strand park parc parque garden jardi jardin garten tuin tower torre tour turm toren '
+  + 'house casa maison haus huis walk route ruta cami camino path sentier weg wandeling village poble pueblo dorf dorp town ciutat ciudad ville stadt stad old vella vieja vieille altstadt oude').split(' '));
+const cmWords = it => { const town = String(it.town || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); return new Set([it.name_local, ...Object.values(it.name || {})].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f\u00ad]/g, '').split(/[^a-z0-9]+/).filter(w => w.length > 2 && !CM_STOP.has(w) && !town.split(/[^a-z0-9]+/).includes(w))); };
+const cmNear = (a, b) => typeof a.lat !== 'number' || typeof b.lat !== 'number' || edKm(a.lat, a.lng, b.lat, b.lng) <= 2;
+const cmSamePlace = (a, b) => { const w = cmWords(a); return cmNear(a, b) && [...cmWords(b)].some(x => w.has(x)); };
+// The suggestions worth showing (not in the guide), and those still to look at.
+function cmFindPool(kind, path) {
   const f = CM.find[kind]; if (!f || f.status !== 'done') return [];
-  const have = new Set((edGet(edC(), edPath(path)) || []).map(x => x.id)), seen = findSeen(f.id);
-  return (f.items || []).filter(it => !have.has(it.id) && !seen.has(it.id) && !(CM.findSkip || new Set()).has(it.id));
+  const list = edGet(edC(), edPath(path)) || [], have = new Set(list.map(x => x.id)), seen = findSeen(f.id), skip = CM.findSkip || new Set();
+  return (f.items || []).filter(it => (seen.has(it.id) || skip.has(it.id) || !have.has(it.id)) && !list.some(x => x.id !== it.id && cmSamePlace(x, it) && !seen.has(it.id)));
+}
+function cmFindItems(kind, path) {
+  const f = CM.find[kind], list = edGet(edC(), edPath(path)) || [], seen = f && f.id ? findSeen(f.id) : new Set();
+  return cmFindPool(kind, path).filter(it => !seen.has(it.id) && !(CM.findSkip || new Set()).has(it.id) && !list.some(x => x.id === it.id));
 }
 function cmFindHTML(path) {
   const kind = FIND_OF[path][0];
@@ -383,7 +398,7 @@ function cmFindInner(path) {
   const [kind, what] = FIND_OF[path], f = CM.find[kind] || {};
   if (f.status === 'loading') return '<p class="hint">…</p>';
   if (f.status === 'queued' || f.status === 'running') return `<div class="cm-fhead"><span class="spin dark" aria-hidden="true"></span><b>${esc(cmJobText(f))}</b></div><p class="hint">${esc(CM_TAKES)}</p>`;
-  const left = cmFindItems(kind, path), all = (f.items || []).length;
+  const left = cmFindItems(kind, path), all = cmFindPool(kind, path).length;
   if (left.length) return cmFindCard(left[0], all - left.length + 1, all);
   const note = f.status === 'failed' ? `<p class="hint err">The search did not work: ${esc(f.message || 'try again later')}</p>` : f.status === 'done' ? `<p class="hint">${all ? 'You have looked at every suggestion from the last search.' : 'The last search found nothing new nearby.'}</p>` : '';
   return `<div class="cm-fhead"><b>Looking for more ${esc(what)}?</b></div><p class="hint">We search the web around the house for ${esc(what)} that are not in your guide yet, check each one on Google and translate it. It takes a few minutes, then you keep or skip each one.</p>${note}<div><button class="btn small sun" type="button" data-cfind="${path}">Find more ${esc(what)}</button></div>`;

@@ -973,6 +973,25 @@
     "dead": [],
     "checked": "2026-10-23",
     "result": "added by the automatic events search (expected dates)"
+   },
+   "canyelles-living-nativity": {
+    "sources": [
+     "https://www.pessebresvivents.cat/pessebres/?canyelles",
+     "https://femturisme.cat/agenda/pessebre-vivent-de-canyelles",
+     "https://www.escapadaambnens.com/festival/461/pessebre-vivent-de-canyelles-una-tradicio-familiar-per-viure-el-nadal-al-garraf/"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "added by the automatic events search (expected dates)"
+   },
+   "sant-jaume-dels-domenys-living-nativity": {
+    "sources": [
+     "https://www.pessebresvivents.cat/",
+     "https://femturisme.cat/agenda/pessebre-vivent-de-sant-jaume-dels-domenys"
+    ],
+    "dead": [],
+    "checked": "2026-10-24",
+    "result": "added by the automatic events search (expected dates)"
    }
   },
   "emergency.json": {

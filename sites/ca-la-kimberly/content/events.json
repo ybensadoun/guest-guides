@@ -1366,8 +1366,7 @@
         {
           "end": "2027-01-10",
           "start": "2027-01-08",
-          "status": "expected",
-          "verify": true
+          "status": "expected"
         }
       ],
       "venue": "Old town",
@@ -1383,13 +1382,90 @@
         "nl": "Een optocht van paarden en koetsen voor Sant Antoni, bescherm­heilige van de dieren, erkend als tradi­tioneel feest van nationaal belang. De hoofd­optocht is op zondag­ochtend, met oude boeren­karren te zien op de Plaça del Blat."
       },
       "km_from_house": 19.2
+    },
+    {
+      "id": "canyelles-living-nativity",
+      "lat": 41.287,
+      "lng": 1.722,
+      "url": "https://www.pessebresvivents.cat/pessebres/?canyelles",
+      "auto": true,
+      "name": {
+        "ca": "Pessebre vivent de Canyelles",
+        "de": "Lebende Krippe in Canyelles",
+        "en": "Canyelles Living Nativity",
+        "es": "Pesebre viviente de Canyelles",
+        "fr": "Crèche vivante de Canyelles",
+        "nl": "Levende kerststal in Canyelles"
+      },
+      "town": "Canyelles",
+      "type": "tradition",
+      "dates": [
+        {
+          "end": "2026-12-20",
+          "start": "2026-12-19",
+          "status": "confirmed"
+        }
+      ],
+      "venue": "Old town",
+      "sources": [
+        "https://femturisme.cat/agenda/pessebre-vivent-de-canyelles",
+        "https://www.escapadaambnens.com/festival/461/pessebre-vivent-de-canyelles-una-tradicio-familiar-per-viure-el-nadal-al-garraf/"
+      ],
+      "description": {
+        "ca": "Més de 200 veïns representen una desena d’escenes pels carrers del poble vell, del mercat i els romans fins a Herodes i el Naixement. El recorregut dura uns 45 minuts i és preciós amb canalla. Reserva les entrades amb antelació, perquè els grups entren cada 15 minuts.",
+        "de": "Über 200 Dorf­bewohner spielen etwa zehn Szenen in den Gassen des alten Dorfkerns, vom Markt und den Römern bis zu Herodes und Christi Geburt. Der Rundgang dauert etwa 45 Minuten und ist mit Kindern wunder­schön. Buche die Tickets vorab, denn alle 15 Minuten startet eine Gruppe.",
+        "en": "More than 200 villagers act out about ten scenes along the lanes of the old village, from the market and the Romans to Herod and the Nativity. The walk takes about 45 minutes and is lovely with kids. Book tickets ahead, because groups go in every 15 minutes.",
+        "es": "Más de 200 vecinos representan unas diez escenas por las calles del pueblo antiguo, del mercado y los romanos a Herodes y el Nacimiento. El recorrido dura unos 45 minutos y es precioso con niños. Reserva las entradas con antelación, porque los grupos entran cada 15 minutos.",
+        "fr": "Plus de 200 habitants jouent une dizaine de scènes dans les ruelles du vieux village, du marché et des Romains jusqu’à Hérode et la Nativité. La visite dure environ 45 minutes et plaît beaucoup aux enfants. Réservez vos billets à l’avance, car les groupes entrent toutes les 15 minutes.",
+        "nl": "Meer dan 200 dorpe­lingen spelen zo’n tien scènes langs de straatjes van het oude dorp, van de markt en de Romeinen tot Herodes en de geboorte van Jezus. De wandeling duurt ongeveer 45 minuten en is heerlijk met kinderen. Reser­veer je kaartjes vooraf, want er gaat elke 15 minuten een groep naar binnen."
+      },
+      "km_from_house": 20.5
+    },
+    {
+      "id": "sant-jaume-dels-domenys-living-nativity",
+      "lat": 41.2985,
+      "lng": 1.561,
+      "url": "https://www.pessebresvivents.cat/",
+      "auto": true,
+      "name": {
+        "ca": "Pessebre vivent de Sant Jaume dels Domenys",
+        "de": "Lebende Krippe in Sant Jaume dels Domenys",
+        "en": "Sant Jaume dels Domenys Living Nativity",
+        "es": "Pesebre viviente de Sant Jaume dels Domenys",
+        "fr": "Crèche vivante de Sant Jaume dels Domenys",
+        "nl": "Levende kerststal in Sant Jaume dels Domenys"
+      },
+      "town": "Sant Jaume dels Domenys",
+      "type": "tradition",
+      "dates": [
+        {
+          "end": "2026-12-20",
+          "start": "2026-12-19",
+          "status": "expected"
+        }
+      ],
+      "verify": true,
+      "sources": [
+        "https://femturisme.cat/agenda/pessebre-vivent-de-sant-jaume-dels-domenys"
+      ],
+      "description": {
+        "ca": "Un pessebre vivent de poble a pocs minuts amb cotxe de la casa: la gent del poble representa les escenes de la història de Nadal pels carrers antics. Petit i familiar, el cap de setmana abans de Nadal.",
+        "de": "Eine lebende Dorf­krippe, nur eine kurze Autofahrt vom Haus entfernt: Leute aus dem Ort spielen die Szenen der Weihnachts­ge­schichte in den alten Gassen. Klein und familien­freundlich, am Wochen­ende vor Weih­nachten.",
+        "en": "A village living nativity a short drive from the house: local people play the scenes of the Christmas story in the old streets. Small and family-friendly, on the weekend before Christmas.",
+        "es": "Un pesebre viviente de pueblo a pocos minutos en coche de la casa: los vecinos representan las escenas de la historia de Navidad por las calles antiguas. Pequeño y familiar, el fin de semana antes de Navidad.",
+        "fr": "Une crèche vivante de village à quelques minutes en voiture de la maison : les habitants jouent les scènes de l’histoire de Noël dans les vieilles rues. Petite et familiale, le week-end avant Noël.",
+        "nl": "Een levende kerststal in een dorp op een kort ritje van het huis: mensen uit het dorp spelen de scènes van het kerst­verhaal in de oude straatjes. Klein en gezins­vriendelijk, in het weekend voor Kerstmis."
+      },
+      "km_from_house": 7.8
     }
   ],
   "auto": {
     "on": true,
-    "last": "2026-10-23",
+    "last": "2026-10-24",
     "skip": [],
-    "want": [],
+    "want": [
+      "Castellers"
+    ],
     "lastAdded": 2
   }
 }
