@@ -1438,7 +1438,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is on the overview page only (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 23 Oct 2026, 19:04 (Madrid time, after commit b7d161c)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 24 Oct 2026, 08:41 (Madrid time, after commit 0a2d13b)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -1794,6 +1794,8 @@ function cf(label, path, obj, o = {}) {
   const inp = o.long ? `<textarea ${a} rows="${o.rows || 3}">${esc(val)}</textarea>` : `<input type="${o.type || 'text'}"${num ? ' step="any" inputmode="decimal"' : ''}${o.type === 'url' ? ' inputmode="url"' : ''} ${a} value="${esc(val)}">`;
   return `<div class="f${o.half ? '' : ' full'}"><label for="${id}">${esc(label)}</label>${o.hint ? `<p class="hint">${esc(o.hint)}</p>` : ''}${inp}</div>`;
 }
+// An on/off setting: a switch with its state written next to it, so it is clear whether it is on.
+const cSwitch = (attrs, label, on, hint = '') => `<div class="cm-swrow"><button type="button" class="cm-switch" role="switch" aria-checked="${!!on}" ${attrs}><span class="cm-sw-track" aria-hidden="true"><span class="cm-sw-knob"></span></span><span class="cm-sw-label">${esc(label)}</span><span class="cm-sw-state" aria-hidden="true">${on ? 'On' : 'Off'}</span></button>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}</div>`;
 const cDays = (path, days) => ED_DAYS.map(([d, l]) => `<button class="chip" type="button" data-daytog="${esc(path)}" data-d="${d}" aria-pressed="${(days || []).includes(d)}"><span>${l}</span></button>`).join('');
 function cSchedule(path, arr) {
   return `<div class="f full"><span class="lab">Opening days and hours</span><div class="cm-sch">${(arr || []).map((r, k) => `<div class="cm-sr"><div class="cm-dayrow"><div class="chips" role="group" aria-label="Days">${cDays(`${path}/${k}`, r.days)}</div><button class="cm-x" type="button" data-cdel="${path}/${k}" data-now="1" aria-label="Remove these hours">×</button></div>
@@ -1832,7 +1834,7 @@ function cItem(base, it, i, what) {
   const km = it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
   const meta = [typeof it.town === 'string' ? it.town : '', km, (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
   const pos = typeof it.lat === 'number' ? `<div class="f full"><label for="${cmId(p + '/gm')}">Move the pin: paste a Google Maps link</label><p class="hint">${it.lat ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
-  const check = Array.isArray(it.flags) || what !== 'contact' ? `<div class="f"><span class="hint">Tells guests to check the hours or the dates before they go.</span><div class="chips"><button class="chip" type="button" data-cflag="${p}" data-f="check" aria-pressed="${(it.flags || []).includes('check')}"><span>Check before going</span></button></div></div>` : '';
+  const check = Array.isArray(it.flags) || what !== 'contact' ? cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.') : '';
   return cCard(p, cName(it), meta, `<div class="grid">${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], { long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' })).join('')}
     ${'stalls_approx' in it ? cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx, { type: 'number', half: true }) : ''}${pos}
     ${'schedule' in it || base.includes('markets') ? cSchedule(`${p}/schedule`, it.schedule) : ''}${'dates' in it || base.includes('events') ? cDates(`${p}/dates`, it.dates) : ''}</div>
@@ -1842,7 +1844,7 @@ function cItem(base, it, i, what) {
 // host can reword in Home tiles: "from" remembers which restaurant it came from.
 const cPinned = it => ((((edC().files || {}).quick || {}).items) || []).some(q => q.from && q.from === it.id);
 function cPin(p, it) {
-  return `<div class="f"><span class="hint">A tile on the home page, one tap away, like the bar next door. You can change its words in Home tiles.</span><div class="chips"><button class="chip" type="button" data-cpin="${p}" aria-pressed="${cPinned(it)}"><span>Show on the home page</span></button></div></div>`;
+  return cSwitch(`data-cpin="${p}"`, 'Show on the home page', cPinned(it), 'A tile on the home page, one tap away, like the bar next door. You can change its words in Home tiles.');
 }
 function cmPin(p) {
   const it = edGet(edC(), edPath(p)); if (!it) return;
@@ -2002,7 +2004,7 @@ const cmMode = s => s.mode === 'bus' ? 'bus stop' : 'station';
 function cTaxi(p, x) {
   return cCard(p, edShown(x.name) || 'New taxi', [x.phone, x.always ? 'open 24 h' : ''].filter(Boolean).join(' · '), `<div class="grid">${cf('Name', p + '/name', x.name, { i18n: true, half: true })}${cf('Phone', p + '/phone', x.phone || '', { type: 'tel', half: true })}
     ${cf('Line under the name', p + '/sub', x.sub, { i18n: true, ph: 'Home pickup in about 30 min' })}${cf('What guests need to know', p + '/what', x.what, { i18n: true, long: true })}</div>
-    <div class="chips"><button class="chip" type="button" data-cbool="${p}/always" aria-pressed="${!!x.always}"><span>Open 24 h</span></button></div>
+    ${cSwitch(`data-cbool="${p}/always"`, 'Open 24 h', !!x.always)}
     <div class="f full"><span class="lab">Other numbers</span>${(x.alt || []).map((a, j) => `<div class="cm-dayrow"><div class="grid" style="flex:1">${cf('Name', `${p}/alt/${j}/name`, a.name, { i18n: true, half: true })}${cf('Phone', `${p}/alt/${j}/phone`, a.phone || '', { type: 'tel', half: true })}</div><button class="cm-x" type="button" data-cdel="${p}/alt/${j}" data-now="1" aria-label="Remove this number">×</button></div>`).join('')}
       <button class="btn small cm-add" type="button" data-addalt="${p}/alt">+ Add another number</button></div>
     <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this taxi</button></div>`);
@@ -2024,8 +2026,7 @@ function cmTransport(c) {
   const T = (c.files || {}).transport, P = 'files/transport';
   const adds = `<div class="cm-row"><button class="btn small" type="button" data-tradd="taxi">+ Add a taxi</button><button class="btn small" type="button" data-tradd="train">+ Add a train station</button><button class="btn small" type="button" data-tradd="bus">+ Add a bus stop</button></div>`;
   if (!T) return `<div class="note"><div>No taxis or stations yet. Add the ones you would tell a friend about.</div></div>${adds}`;
-  return `<div class="f full"><span class="lab">On the home page</span><p class="hint">Getting around always has its own page. As a tile it also sits with your other Home tiles, one tap away.</p>
-      <div class="chips"><button class="chip" type="button" data-trtile aria-pressed="${!!T.tile}"><span>Show as a tile on the home page</span></button></div></div>
+  return `${cSwitch('data-trtile', 'Show as a tile on the home page', !!T.tile, 'Getting around always has its own page. As a tile it also sits with your other Home tiles, one tap away.')}
     ${T.tile ? `<div class="grid">${cf('Tile title', P + '/tile/name', T.tile.name, { i18n: true, half: true, ph: 'Taxi & train' })}${cf('Line under it', P + '/tile/sub', T.tile.sub, { i18n: true, half: true, ph: 'Taxi in 30 min, 3 stations' })}</div>` : ''}
     <div class="grid">${cf('Line under the page title', P + '/lead', T.lead, { i18n: true, ph: 'Three ways to get around without a car.' })}</div>
     <h3 class="cm-h">Taxis</h3><div class="cm-list">${(T.taxis || []).map((x, i) => cTaxi(`${P}/taxis/${i}`, x)).join('') || '<p class="hint">No taxi yet.</p>'}</div>
@@ -2073,10 +2074,17 @@ function cmFindCard(it, i, n) {
     <div class="cm-fbtns"><button class="btn small" type="button" data-cfskip="${esc(it.id)}">Not for us</button><button class="btn small primary" type="button" data-cfadd="${esc(it.id)}">Add to my guide</button></div>
     <button class="cm-fstop" type="button" data-cfstop>Skip the rest</button></article>`;
 }
+// A job's state in words: waiting to start (and a hint when it waits long), or what it is doing and for how long.
+const cmAgo = since => { const m = Math.floor((Date.now() - (since || Date.now())) / 60000); return m < 1 ? 'just started' : `${m} min so far`; };
+function cmJobText(j) {
+  if (j.status === 'queued') return Date.now() - (j.since || Date.now()) > 120000 ? 'Still waiting to start. Our search service may be busy or paused: it starts by itself as soon as it can.' : 'Waiting to start…';
+  return `${j.message && j.message !== 'Starting again' ? j.message : 'Searching'} · ${cmAgo(j.since)}`;
+}
+const CM_TAKES = 'A search usually takes 3 to 6 minutes. You can keep editing, or come back later: the results wait here.';
 function cmFindInner(path) {
   const [kind, what] = FIND_OF[path], f = CM.find[kind] || {};
   if (f.status === 'loading') return '<p class="hint">…</p>';
-  if (f.status === 'queued' || f.status === 'running') return `<div class="cm-fhead"><span class="spin dark" aria-hidden="true"></span><b>${esc(f.message || 'Waiting for the guide builder…')}</b></div><p class="hint">This takes a few minutes. You can keep editing, or come back later: the suggestions wait here.</p>`;
+  if (f.status === 'queued' || f.status === 'running') return `<div class="cm-fhead"><span class="spin dark" aria-hidden="true"></span><b>${esc(cmJobText(f))}</b></div><p class="hint">${esc(CM_TAKES)}</p>`;
   const left = cmFindItems(kind, path), all = (f.items || []).length;
   if (left.length) return cmFindCard(left[0], all - left.length + 1, all);
   const note = f.status === 'failed' ? `<p class="hint err">The search did not work: ${esc(f.message || 'try again later')}</p>` : f.status === 'done' ? `<p class="hint">${all ? 'You have looked at every suggestion from the last search.' : 'The last search found nothing new nearby.'}</p>` : '';
@@ -2088,20 +2096,20 @@ async function cmFindLoad(kind) {
   try {
     await ensureFresh();
     const since = new Date(Date.now() - 14 * 864e5).toISOString();
-    const r = await sb(`/rest/v1/guide_jobs?select=id,status,message,result&guide_id=eq.${CM.g.id}&kind=eq.${kind}&created_at=gt.${encodeURIComponent(since)}&order=created_at.desc&limit=1`), j = r && r[0];
-    CM.find[kind] = j ? { id: j.id, status: j.status, message: j.message, items: (j.result || {}).items || [] } : { status: 'none' };
+    const r = await sb(`/rest/v1/guide_jobs?select=id,status,message,result,created_at&guide_id=eq.${CM.g.id}&kind=eq.${kind}&created_at=gt.${encodeURIComponent(since)}&order=created_at.desc&limit=1`), j = r && r[0];
+    CM.find[kind] = j ? { id: j.id, status: j.status, message: j.message, items: (j.result || {}).items || [], since: Date.parse(j.created_at) } : { status: 'none' };
     if (j && (j.status === 'queued' || j.status === 'running')) cmFindPoll(kind);
   } catch (e) { CM.find[kind] = { status: 'none' }; }
   cmFindRefresh();
 }
 async function cmFindStart(path) {
   const kind = FIND_OF[path][0];
-  CM.find[kind] = { status: 'queued', message: 'Saving your changes…' }; cmFindRefresh();
+  CM.find[kind] = { status: 'queued', since: Date.now() }; cmFindRefresh();
   try {
     await cmSave(); await ensureFresh();
     const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind, langs: edLangs() } });
     const id = j && j[0] && j[0].id; if (!id) throw new Error('Could not start');
-    CM.find[kind] = { id, status: 'queued', message: 'Waiting for the guide builder…' }; cmFindRefresh(); cmFindPoll(kind);
+    CM.find[kind] = { id, status: 'queued', since: Date.now() }; cmFindRefresh(); cmFindPoll(kind);
   } catch (e) { CM.find[kind] = { status: 'failed', message: niceError(e) }; cmFindRefresh(); }
 }
 async function cmFindPoll(kind) {
@@ -2141,15 +2149,16 @@ function cmAutoEvHTML() {
   const a = evAuto(), on = !!a.on;
   const topics = (k, ph) => `<div class="chips">${(a[k] || []).map((x, i) => `<span class="chip cm-topic"><span>${esc(x)}<button type="button" data-evdel="${k}" data-i="${i}" aria-label="Remove ${esc(x)}">×</button></span></span>`).join('')}</div>
     <div class="cm-dayrow"><input type="text" id="c_ev_${k}" data-evin="${k}" placeholder="${esc(ph)}" aria-label="${k === 'skip' ? 'A topic to skip' : 'A topic to look for'}" enterkeyhint="done"><button class="btn small" type="button" data-evadd="${k}">Add</button></div>`;
+  if (!CM.evLoaded) setTimeout(cmEvLoad, 0);
   return `<div class="cm-find cm-auto"><div class="cm-fhead"><b>Automatic events</b></div>
     <p class="hint">Every month we look for events in the next three months around the house and add them to your guide straight away, with “expected” dates until they are confirmed. Events you add yourself are never changed, and an automatic one you delete never comes back.</p>
-    <div class="chips"><button class="chip" type="button" data-evauto aria-pressed="${on}"><span>Keep events up to date</span></button></div>
+    ${cSwitch('data-evauto', 'Keep events up to date', on)}
     ${on ? `<div class="f full"><span class="lab">Topics to skip</span><p class="hint">In any language. We never add events about these.</p>${topics('skip', 'bullfighting, nightclubs…')}</div>
       <div class="f full"><span class="lab">Things to look for</span><p class="hint">On top of the usual festivals, fairs, traditions, music and food.</p>${topics('want', 'jazz, wine, kids…')}</div>
-      <div class="cm-row"><span class="hint" id="cmEvState">${esc(cmEvStateText())}</span><button class="btn small" type="button" data-evrun>Search now</button></div>` : ''}
+      <div class="cm-row"><span class="hint" id="cmEvState">${esc(cmEvStateText())}</span><button class="btn small" type="button" id="cmEvRun" data-evrun${cmEvBusy() ? ' disabled' : ''}>Search now</button></div>` : ''}
     <p class="hint">These settings apply at once: they are not part of the changes you publish.</p></div>`;
 }
-const cmEvStateText = () => { const a = evAuto(), j = CM.evJob; if (j && (j.status === 'queued' || j.status === 'running')) return j.message || 'Waiting for the guide builder…'; if (j && j.status === 'failed') return 'The search did not work: ' + (j.message || 'try again later'); return a.last ? `Last search: ${a.last}${a.lastAdded != null ? `, ${a.lastAdded} added` : ''}.` : 'First search not run yet.'; };
+const cmEvStateText = () => { const a = evAuto(), j = CM.evJob; if (j && (j.status === 'queued' || j.status === 'running')) return cmJobText(j); if (j && j.status === 'failed') return 'The search did not work: ' + (j.message || 'try again later'); return a.last ? `Last search: ${a.last}${a.lastAdded != null ? `, ${a.lastAdded} added` : ''}.` : 'First search not run yet.'; };
 async function cmEvAutoSet(patch) {
   const a = { ...evAuto(), ...patch };
   for (const c of [CM.g.content, CM.live.content]) { const f = c.files = c.files || {}; f.events = f.events || { items: [] }; f.events.auto = cmClone(a); }   // both copies: not a change to publish
@@ -2166,29 +2175,42 @@ function cmEvTopic(k) {
 }
 // "Search now", and the first search when the switch goes on: the worker adds what it finds to both copies; this one reloads them.
 async function cmEvRun() {
-  CM.evJob = { status: 'queued', message: 'Saving your changes…' }; cmEvRefresh();
+  CM.evJob = { status: 'queued', since: Date.now() }; cmEvRefresh();
   try {
     await cmSave(); await ensureFresh();
     const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'auto-events', langs: edLangs() } });
     const id = j && j[0] && j[0].id; if (!id) throw new Error('Could not start');
-    const job = CM.evJob = { id, status: 'queued', message: 'Waiting for the guide builder…' }; cmEvRefresh();
-    for (let i = 0; i < 360 && CM.evJob === job; i++) {
-      await new Promise(r => setTimeout(r, 5000));
-      try {
-        await ensureFresh();
-        const r = await sb('/rest/v1/guide_jobs?select=status,message&id=eq.' + id), st = r && r[0]; if (!st) continue;
-        job.status = st.status; job.message = st.message;
-        if (st.status === 'done') {
-          const g = (await sb('/rest/v1/guides?select=content,draft&id=eq.' + CM.g.id))[0], work = g.draft && g.draft.content ? g.draft.content : g.content;
-          for (const [mine, theirs] of [[CM.live.content, g.content], [CM.g.content, work]]) { mine.files.events = cmClone(theirs.files.events); mine.files.sections = cmClone(theirs.files.sections); mine.site.modules = cmClone(theirs.site.modules); }   // separate copies: the working one is edited
-          CM.evJob = null; toast(st.message || 'Events updated'); render(); return;
-        }
-        cmEvRefresh(); if (st.status === 'failed') return;
-      } catch (e) { /* offline for a moment: try again */ }
-    }
+    CM.evJob = { id, status: 'queued', since: Date.now() }; cmEvRefresh(); cmEvPoll(CM.evJob);
   } catch (e) { CM.evJob = { status: 'failed', message: niceError(e) }; cmEvRefresh(); }
 }
-function cmEvRefresh() { const el = document.getElementById('cmEvState'); if (el) el.textContent = cmEvStateText(); }
+// A search started earlier (another tab, before a reload) is followed again when the Events step opens.
+async function cmEvLoad() {
+  CM.evJob = CM.evJob || null; CM.evLoaded = true;
+  try {
+    await ensureFresh();
+    const since = new Date(Date.now() - 2 * 36e5).toISOString();
+    const r = await sb(`/rest/v1/guide_jobs?select=id,status,message,created_at&guide_id=eq.${CM.g.id}&kind=eq.auto-events&status=in.(queued,running)&created_at=gt.${encodeURIComponent(since)}&order=created_at.desc&limit=1`), j = r && r[0];
+    if (j && !CM.evJob) { CM.evJob = { id: j.id, status: j.status, message: j.message, since: Date.parse(j.created_at) }; cmEvRefresh(); cmEvPoll(CM.evJob); }
+  } catch (e) { /* no connection: the state shows the last search */ }
+}
+async function cmEvPoll(job) {
+  for (let i = 0; i < 360 && CM.evJob === job; i++) {
+    await new Promise(r => setTimeout(r, 5000));
+    try {
+      await ensureFresh();
+      const r = await sb('/rest/v1/guide_jobs?select=status,message&id=eq.' + job.id), st = r && r[0]; if (!st) continue;
+      job.status = st.status; job.message = st.message;
+      if (st.status === 'done') {
+        const g = (await sb('/rest/v1/guides?select=content,draft&id=eq.' + CM.g.id))[0], work = g.draft && g.draft.content ? g.draft.content : g.content;
+        for (const [mine, theirs] of [[CM.live.content, g.content], [CM.g.content, work]]) { mine.files.events = cmClone(theirs.files.events); mine.files.sections = cmClone(theirs.files.sections); mine.site.modules = cmClone(theirs.site.modules); }   // separate copies: the working one is edited
+        CM.evJob = null; toast(st.message || 'Events updated'); render(); return;
+      }
+      cmEvRefresh(); if (st.status === 'failed') return;
+    } catch (e) { /* offline for a moment: try again */ }
+  }
+}
+const cmEvBusy = () => !!CM.evJob && (CM.evJob.status === 'queued' || CM.evJob.status === 'running');
+function cmEvRefresh() { const el = document.getElementById('cmEvState'); if (el) el.textContent = cmEvStateText(); const b = document.getElementById('cmEvRun'); if (b) b.disabled = cmEvBusy(); }
 document.addEventListener('keydown', e => { const t = e.target; if (CM.on && e.key === 'Enter' && t.dataset && t.dataset.evin) { e.preventDefault(); cmEvTopic(t.dataset.evin); } });
 
 /* --- Pages: overview, one step, publish --- */
@@ -2345,7 +2367,7 @@ async function cmTranslate() {
     edJobText('Saving…'); await cmSave();
     const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'translate', langs } });
     const id = j && j[0] && j[0].id; if (!id) throw new Error('Could not start');
-    edJobText('Waiting for the guide builder…');
+    edJobText('Waiting to start…');
     for (let i = 0; i < 450; i++) {
       await new Promise(r => setTimeout(r, 4000));
       await ensureFresh();
@@ -2439,7 +2461,7 @@ document.addEventListener('click', e => {
   if (d.evauto !== undefined) { const on = !evAuto().on; cmEvAutoSet({ on, skip: evAuto().skip || [], want: evAuto().want || [] }).then(() => { if (on && !evAuto().last) cmEvRun(); }); return; }
   if (d.evadd) return cmEvTopic(d.evadd);
   if (d.evdel) { const k = d.evdel, cur = [...(evAuto()[k] || [])]; cur.splice(+d.i, 1); return cmEvAutoSet({ [k]: cur }); }
-  if (d.evrun !== undefined) return cmEvRun();
+  if (d.evrun !== undefined) return cmEvBusy() ? undefined : cmEvRun();
   if (d.tradd) { cmTrAdd(d.tradd); return done(); }
   if (d.trtile !== undefined) { cmTrTile(); return done(); }
   if (d.cbool) { const q = edPath(d.cbool), o = edGet(edC(), q.slice(0, -1)); if (o) { o[q[q.length - 1]] = !o[q[q.length - 1]]; done(); } return; }
@@ -2548,6 +2570,16 @@ function cmInit() {
 .cm-fsub{color:var(--muted);font-size:14px}
 .cm-flinks{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;font-weight:600}
 .cm-fbtns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:4px}
+.cm-swrow{display:flex;flex-direction:column;gap:6px}
+.cm-switch{display:flex;align-items:center;gap:12px;width:100%;max-width:480px;min-height:52px;padding:10px 14px;border-radius:var(--r-s);border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.cm-switch:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.cm-sw-track{flex:none;position:relative;width:46px;height:28px;border-radius:999px;background:var(--line)}
+.cm-sw-knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.cm-switch[aria-checked=true] .cm-sw-track{background:var(--ok)}
+.cm-switch[aria-checked=true] .cm-sw-knob{left:21px}
+.cm-sw-label{flex:1;min-width:0}
+.cm-sw-state{flex:none;font-size:13px;font-weight:700;color:var(--muted)}
+.cm-switch[aria-checked=true] .cm-sw-state{color:var(--ok)}
 .cm-topic span{gap:4px;padding-right:6px}
 .cm-topic button{border:0;background:none;font:inherit;font-size:17px;line-height:1;padding:0 4px;cursor:pointer;color:inherit}
 .cm-fstop{align-self:center;border:0;background:none;font:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer;padding:6px}`;

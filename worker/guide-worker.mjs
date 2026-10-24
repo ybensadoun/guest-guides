@@ -7,7 +7,7 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { resolve, dirname, join, relative, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
+import { spawnSync, spawn } from 'node:child_process';
 import { makeGoogle, hav, nameOf, sameName, sameMarket, schedule } from './places.mjs';   // Google check for Find more suggestions
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
@@ -51,9 +51,22 @@ function run(cmd, args, o = {}) {
   return r;
 }
 
+// Claude runs (research, translation) go through this one: the worker stays free meanwhile, so several searches
+// from the editor run side by side instead of one after another.
+function runAsync(cmd, args, o = {}) {
+  return new Promise((res, rej) => {
+    const ch = spawn(cmd, args, { cwd: o.cwd || ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '', err = '';
+    ch.stdout.on('data', d => { out += d; }); ch.stderr.on('data', d => { err += d; });
+    const t = setTimeout(() => ch.kill('SIGTERM'), o.timeout || 600000);
+    ch.on('error', e => { clearTimeout(t); rej(new Error(`${cmd} failed: ${e.message}`)); });
+    ch.on('close', code => { clearTimeout(t); res({ status: code, stdout: out, stderr: err }); });
+  });
+}
+
 /* ---------- Claude research and translation (optional) ---------- */
-function claudeJson(prompt, what) {
-  const r = run('claude', ['-p', prompt, '--allowedTools', 'WebSearch,WebFetch', '--max-turns', '40'], { timeout: 900000, allowFail: true });
+async function claudeJson(prompt, what) {
+  const r = await runAsync('claude', ['-p', prompt, '--allowedTools', 'WebSearch,WebFetch', '--max-turns', '40'], { timeout: 900000 });
   const out = (r.stdout || '').trim();
   const a = out.indexOf('{'), b = out.lastIndexOf('}');
   if (a < 0 || b < a) throw new Error(`Claude returned no JSON for ${what}`);
@@ -130,7 +143,7 @@ function normSchedule(it) {
 }
 const MARKETS_RULE = 'Find the weekly and notable local markets within the radius (street markets, covered markets, fairs). Same shape as the example: {"categories":[...],"markets":[...]} with schedule days as mon..sun. Every market MUST have numeric lat and lng: use the exact spot if a source gives it, otherwise the centre of the town or the market square from Wikipedia or OpenStreetMap, and add "verify": true when approximate. Its "category" must be one of: covered, street, flea, antiques, events. ' + HOURS_RULE;
 const TODO_RULE = 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example. ' + HOURS_RULE;
-function research(A, outDir, id) {
+async function research(A, outDir, id) {
   mkdirSync(outDir, { recursive: true });
   const { clean, located, allowed, normSchedule } = researchTools();
   const jobs = [
@@ -140,14 +153,14 @@ function research(A, outDir, id) {
   ];
   for (const [kind, rules] of jobs) {
     say(id, `Researching: ${kind}`);
-    try { const o = located(clean(claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); }
+    try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); }
     catch (e) { log(`  research ${kind} skipped:`, e.message); }
   }
 }
-function translate(texts, langs, srcLang, file) {
+async function translate(texts, langs, srcLang, file) {
   if (!texts.length || !langs.length) return;
   const prompt = `Translate these texts from ${srcLang} into ${langs.join(', ')}. Keep names, numbers and times. No em-dashes. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else: {"<exact source text>": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(texts)}`;
-  const r = run('claude', ['-p', prompt], { timeout: 600000, allowFail: true });
+  const r = await runAsync('claude', ['-p', prompt], { timeout: 600000 });
   const out = (r.stdout || ''), a = out.indexOf('{'), b = out.lastIndexOf('}');
   if (a >= 0 && b > a) { try { writeFileSync(file, JSON.stringify(JSON.parse(out.slice(a, b + 1)), null, 1)); } catch (e) {} }
 }
@@ -181,13 +194,13 @@ async function build(g) {
   const gen = ['engine/scripts/generate-site.py', join(job, 'src'), '--slug', tmp, '--lat', String(A.lat), '--lng', String(A.lng), '--src', srcLang];
 
   let researchDir = null;
-  if (RESEARCH === 'cli') { researchDir = join(job, 'research'); research(A, researchDir, id); gen.push('--research', researchDir); }
+  if (RESEARCH === 'cli') { researchDir = join(job, 'research'); await research(A, researchDir, id); gen.push('--research', researchDir); }
   say(id, 'Building the guide');
   let out = run('python3', gen).stdout;
   if (RESEARCH === 'cli') {
     const need = existsSync(join(siteDir, 'docs/untranslated.json')) ? JSON.parse(readFileSync(join(siteDir, 'docs/untranslated.json'), 'utf8')) : [];
     const langs = (A.languages || []).filter(l => l !== srcLang && ['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(l));
-    if (need.length && langs.length) { say(id, 'Translating'); const tf = join(job, 'translations.json'); translate(need, langs, srcLang, tf); if (existsSync(tf)) out = run('python3', [...gen, '--translations', tf]).stdout; }
+    if (need.length && langs.length) { say(id, 'Translating'); const tf = join(job, 'translations.json'); await translate(need, langs, srcLang, tf); if (existsSync(tf)) out = run('python3', [...gen, '--translations', tf]).stdout; }
   }
   const checked = run('node', ['engine/scripts/run.js', 'check', tmp], { allowFail: true });
   if (checked.status !== 0) throw new Error('The guide did not pass its checks: ' + ((checked.stdout || '') + (checked.stderr || '')).trim().split('\n').slice(-3).join(' | '));
@@ -232,7 +245,7 @@ async function translateJob(j, jp) {
   const tmp = resolve(ROOT, '.job-' + j.id.slice(0, 8) + '.json'); let map = {};
   for (let i = 0; i < texts.length; i += 40) {
     await jp({ message: `Translating ${Math.min(i + 40, texts.length)} of ${texts.length}` });
-    translate(texts.slice(i, i + 40), j.langs, main, tmp);
+    await translate(texts.slice(i, i + 40), j.langs, main, tmp);
     if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
   }
   let n = 0;
@@ -274,7 +287,7 @@ async function findJob(j, jp) {
   const { clean, located, allowed, normSchedule } = researchTools();
   const known = have.map(x => x.name_local || nameOf(x.name)).filter(Boolean);
   await jp({ message: `Searching the web for ${F.what}` });
-  const out = located(clean(claudeJson(researchPrompt(F.file, A, `${F.rule}${j.kind === 'find-events' ? ' ' + windowRule() : ''} ${CURATION} Already in the guide, so never suggest them again: ${known.join('; ') || 'nothing yet'}. ${allowed}`), F.file)));
+  const out = located(clean(await claudeJson(researchPrompt(F.file, A, `${F.rule}${j.kind === 'find-events' ? ' ' + windowRule() : ''} ${CURATION} Already in the guide, so never suggest them again: ${known.join('; ') || 'nothing yet'}. ${allowed}`), F.file)));
   const label = it => ({ displayName: { text: it.name_local || nameOf(it.name) } });
   (out[F.key] || []).forEach(normSchedule);
   let items = (out[F.key] || []).filter(it => !have.some(x => sameName(x, label(it)) && (typeof x.lat !== 'number' || hav(x.lat, x.lng, it.lat, it.lng) < 1.5)));
@@ -314,7 +327,7 @@ async function findJob(j, jp) {
     const tmp = resolve(ROOT, '.job-' + j.id.slice(0, 8) + '.json'), map = {};
     for (let i = 0; i < texts.length; i += 40) {
       await jp({ message: `Translating ${items.length} ${F.what}` });
-      translate(texts.slice(i, i + 40), langs, 'en', tmp);
+      await translate(texts.slice(i, i + 40), langs, 'en', tmp);
       if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
     }
     for (const o of objs) { const t = map[o.en]; if (t) for (const l of langs) if (!o[l] && t[l]) o[l] = t[l]; }
@@ -336,10 +349,10 @@ const windowRule = (now = new Date()) => `Today is ${dayStr(now)}: only events w
 const enText = it => [it.name, it.description, it.type, it.venue, it.town].map(x => x && typeof x === 'object' ? x.en || '' : x || '').join(' ').toLowerCase();
 // "bullfighting" also catches "bullfights": each word of a topic matches a word that starts like it.
 const hits = (text, topic) => String(topic).toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 2).every(w => new RegExp('\\b' + w.slice(0, Math.max(4, w.length - 3))).test(text));
-function englishTopics(topics, tmpName) {
+async function englishTopics(topics, tmpName) {
   if (!topics.length) return [];
   const tmp = resolve(ROOT, '.job-' + tmpName + '.json');
-  translate(topics, ['en'], 'the language they are written in (it may already be English)', tmp);
+  await translate(topics, ['en'], 'the language they are written in (it may already be English)', tmp);
   let map = {}; if (existsSync(tmp)) { try { map = JSON.parse(readFileSync(tmp, 'utf8')); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
   return topics.map(t => ((map[t] || {}).en || t).toLowerCase());
 }
@@ -388,8 +401,8 @@ async function refreshEvents(g, { apply = true, say = () => {} } = {}) {
   const rule = FIND['find-events'].rule + ' ' + windowRule() + ' Include events already in the guide when you find their dates in this window, so the guide can update them: ' + (known.join('; ') || 'none yet') + '.'
     + (want.length ? ` The host would also like events about: ${want.join('; ')} (topics, maybe written in another language).` : '')
     + (skip.length ? ` Never include events about: ${skip.join('; ')} (topics, maybe written in another language: leave them out whatever the language of the source).` : '');
-  const out = located(clean(claudeJson(researchPrompt('events', A, `${rule} ${CURATION} ${allowed}`), 'events')));
-  const skipEn = englishTopics(skip, g.id.slice(0, 8) + '-skip');
+  const out = located(clean(await claudeJson(researchPrompt('events', A, `${rule} ${CURATION} ${allowed}`), 'events')));
+  const skipEn = await englishTopics(skip, g.id.slice(0, 8) + '-skip');
   let found = (out.items || []).filter(f => (f.dates || []).some(d => (d.end || d.start) >= today) && !skipEn.some(t => hits(enText(f), t)));
   found = found.filter((f, i) => !found.slice(0, i).some(o => sameName(o, { displayName: { text: f.name_local || nameOf(f.name) } }) && hav(o.lat, o.lng, f.lat, f.lng) < 3));   // the same event found twice
   for (const f of found) { f.id = slugOf(f.name_local || nameOf(f.name)); f.km_from_house = Math.round(hav(h.lat, h.lng, f.lat, f.lng) * 10) / 10; }
@@ -400,19 +413,25 @@ async function refreshEvents(g, { apply = true, say = () => {} } = {}) {
   if (langs.length && texts.length) {
     say(`Translating ${found.length} events`);
     const tmp = resolve(ROOT, '.job-' + g.id.slice(0, 8) + '-ev.json'), map = {};
-    for (let i = 0; i < texts.length; i += 40) { translate(texts.slice(i, i + 40), langs, 'en', tmp); if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} } }
+    for (let i = 0; i < texts.length; i += 40) { await translate(texts.slice(i, i + 40), langs, 'en', tmp); if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} } }
     for (const o of objs) { const t = map[o.en]; if (t) for (const l of langs) if (!o[l] && t[l]) o[l] = t[l]; }
   }
-  const now = (await rest(`/rest/v1/guides?select=updated_at,content,draft&id=eq.${g.id}`))[0];   // merge into the latest copies
-  const live = now.content, draft = now.draft && now.draft.content ? now.draft : null;
-  const res = mergeEvents(live.files.events = live.files.events || { items: [] }, JSON.parse(JSON.stringify(found)), today);
-  live.files.events.auto = { ...(live.files.events.auto || auto), last: today, lastAdded: res.added.length };
-  if (live.files.events.items.length) eventsLive(live);
-  if (draft) { const df = draft.content.files = draft.content.files || {}; df.events = df.events || { items: [] }; mergeEvents(df.events, JSON.parse(JSON.stringify(found)), today); df.events.auto = { ...(df.events.auto || auto), last: today, lastAdded: res.added.length }; if (df.events.items.length) eventsLive(draft.content); }
-  if (apply) {
+  // Merge into the newest copies and save only if nobody saved meanwhile (the host editing their draft, the monthly check):
+  // otherwise read again and merge again, a few times.
+  let res = null;
+  for (let tries = 1; ; tries++) {
+    const now = (await rest(`/rest/v1/guides?select=updated_at,content,draft&id=eq.${g.id}`))[0];
+    const live = now.content, draft = now.draft && now.draft.content ? now.draft : null;
+    res = mergeEvents(live.files.events = live.files.events || { items: [] }, JSON.parse(JSON.stringify(found)), today);
+    live.files.events.auto = { ...(live.files.events.auto || auto), last: today, lastAdded: res.added.length };
+    if (live.files.events.items.length) eventsLive(live);
+    if (draft) { const df = draft.content.files = draft.content.files || {}; df.events = df.events || { items: [] }; mergeEvents(df.events, JSON.parse(JSON.stringify(found)), today); df.events.auto = { ...(df.events.auto || auto), last: today, lastAdded: res.added.length }; if (df.events.items.length) eventsLive(draft.content); }
+    if (!apply) break;
     const body = { content: live, ...(draft ? { draft: { ...draft, savedAt: new Date().toISOString() } } : {}) };
     const saved = await rest(`/rest/v1/guides?id=eq.${g.id}&updated_at=eq.${encodeURIComponent(now.updated_at)}`, { method: 'PATCH', body, headers: { Prefer: 'return=representation' } });
-    if (!saved || !saved.length) throw new Error('The guide changed meanwhile: run it again.');
+    if (saved && saved.length) break;
+    if (tries >= 5) throw new Error('The guide kept changing while we saved: try again in a moment.');
+    await new Promise(r => setTimeout(r, 1500 * tries));
   }
   return { ...res, found: found.length };
 }
@@ -428,15 +447,25 @@ async function autoEventsJob(j, jp) {
   await jp({ status: 'done', message: r.added.length ? `${r.added.length} events added` : 'Nothing new this time', result: r, finished_at: new Date().toISOString() });
 }
 
+// Up to three jobs run side by side (each one mostly waits for Claude). Two jobs that write the same guide (translate,
+// automatic events) never run together; searches for suggestions write nothing to the guide, so they never wait.
+const RUNNING = new Map(), MAX_JOBS = 3, WRITES = k => k === 'translate' || k === 'auto-events';
 async function runJobs() {
-  const jobs = await rest('/rest/v1/guide_jobs?select=id,guide_id,kind,langs&status=eq.queued&order=created_at.asc&limit=5');
+  if (RUNNING.size >= MAX_JOBS) return;
+  const jobs = await rest('/rest/v1/guide_jobs?select=id,guide_id,kind,langs&status=eq.queued&order=created_at.asc&limit=10');
   for (const j of jobs || []) {
+    if (RUNNING.size >= MAX_JOBS) break;
+    if (WRITES(j.kind) && [...RUNNING.values()].some(r => r.guide === j.guide_id && WRITES(r.kind))) continue;
     const jp = b => rest('/rest/v1/guide_jobs?id=eq.' + j.id, { method: 'PATCH', body: b, headers: { Prefer: 'return=minimal' } }).catch(() => {});
     const won = await rest('/rest/v1/guide_jobs?id=eq.' + j.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running', message: j.kind === 'translate' ? 'Translating' : 'Starting the search' }, headers: { Prefer: 'return=representation' } });
     if (!won || !won[0]) continue;
     log(j.kind === 'translate' ? 'translating' : 'searching', 'job', j.id.slice(0, 8), j.kind === 'translate' ? (j.langs || []).join(',') : j.kind);
-    try { if (j.kind === 'translate') await translateJob(j, jp); else if (j.kind === 'auto-events') await autoEventsJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
-    catch (e) { log('  job FAILED:', e.message); await jp({ status: 'failed', message: String(e.message).slice(0, 200), finished_at: new Date().toISOString() }); }
+    const work = (async () => {
+      try { if (j.kind === 'translate') await translateJob(j, jp); else if (j.kind === 'auto-events') await autoEventsJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
+      catch (e) { log('  job FAILED:', e.message); await jp({ status: 'failed', message: String(e.message).slice(0, 200), finished_at: new Date().toISOString() }); }
+    })();
+    RUNNING.set(j.id, { guide: j.guide_id, kind: j.kind, work });
+    work.finally(() => RUNNING.delete(j.id));
   }
 }
 async function tick() {
@@ -466,5 +495,11 @@ if (process.argv.includes('--refresh-events')) {
   process.exit(0);
 }
 log(`Guide worker on. Database ${URL_}. Publish on build: ${AUTO_PUBLISH}. Research: ${RESEARCH}.`);
-if (ONCE) { await tick(); log('done'); }
-else for (;;) { try { await tick(); } catch (e) { log('waiting, could not reach the database:', e.message); } await new Promise(r => setTimeout(r, POLL)); }
+// Jobs still "running" belong to a worker that was stopped (only one runs at a time): they start again from the beginning.
+{ const back = await rest('/rest/v1/guide_jobs?status=eq.running', { method: 'PATCH', body: { status: 'queued', message: 'Starting again' }, headers: { Prefer: 'return=representation' } }).catch(() => []);
+  if ((back || []).length) log(`${back.length} job(s) interrupted by the last stop: queued again.`); }
+if (ONCE) { await tick(); while (RUNNING.size) { await Promise.all([...RUNNING.values()].map(r => r.work)); await tick(); } log('done'); }
+else {
+  setInterval(() => runJobs().catch(e => log('jobs:', e.message)), POLL);   // jobs from the editor start even while a guide is being built
+  for (;;) { try { await tick(); } catch (e) { log('waiting, could not reach the database:', e.message); } await new Promise(r => setTimeout(r, POLL)); }
+}

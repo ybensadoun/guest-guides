@@ -29,7 +29,7 @@ Build what is queued right now and stop: `node worker/guide-worker.mjs --once`
 The guide is then at `https://porta-guides.netlify.app/g/<slug>`.
 
 ## Jobs from the editor (`guide_jobs`)
-Checked before each round of builds, one at a time:
+Up to three run side by side (each mostly waits for Claude), even while a guide is being built; two jobs that write the same guide (translate, auto-events) never run together. A search takes about 3 to 6 minutes. Run one worker at a time: when it starts, jobs left "running" by the previous one go back in the queue and start again.
 - `translate`: fills the missing languages of the draft (or makes a draft from the live guide); the texts also go back in the job's `result` for the editor that is open.
 - `find-todo`, `find-markets`, `find-events` ("Find more" on those steps): Claude searches the web around the house with the build's research rules plus the curation rule, leaves out what the guide has, checks each place on Google (`worker/places.mjs`, same rules as the monthly check: permanently closed ones are dropped, listing link, Google id and hours added; events are not checked), translates into the guide's languages and returns the suggestions in `result`. Nothing goes into the guide here: the host keeps or skips each one in the editor. At most 8 searches per guide a day. Needs `GOOGLE_PLACES_KEY` in `Guest Guides/.env` for the Google check (without it the suggestions are unchecked). "Find more" on Events looks at the next three months.
 - `auto-events` (the host switches on "Keep events up to date", or presses "Search now"): the same search as the monthly run below, for one guide, written straight into the guide.
