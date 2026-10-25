@@ -16,7 +16,7 @@ Optional lines in `worker/.env.local`:
 ## Run
 From the repo folder:
 `caffeinate -i node worker/guide-worker.mjs`
-`caffeinate` keeps the Mac awake while it runs. Leave the window open. `Ctrl+C` stops it. A guide left half-built by a crash goes back in the queue after 30 minutes.
+`caffeinate` keeps the Mac awake while it runs. Leave the window open. `Ctrl+C` stops it. Run only one worker at a time. A guide or editor job left half-built when the worker stopped goes back in the queue as soon as it starts again (and after 30 minutes if a build stalls while the worker runs).
 
 Build what is queued right now and stop: `node worker/guide-worker.mjs --once`
 

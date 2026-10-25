@@ -533,9 +533,12 @@ if (process.argv.includes('--refresh-events')) {
   process.exit(0);
 }
 log(`Guide worker on. Database ${URL_}. Publish on build: ${AUTO_PUBLISH}. Research: ${RESEARCH}.`);
-// Jobs still "running" belong to a worker that was stopped (only one runs at a time): they start again from the beginning.
+// Jobs still "running" and guides still "generating" belong to a worker that was stopped (only one runs at a time):
+// they start again from the beginning, at once (recover() alone would wait 30 minutes).
 { const back = await rest('/rest/v1/guide_jobs?status=eq.running', { method: 'PATCH', body: { status: 'queued', message: 'Starting again' }, headers: { Prefer: 'return=representation' } }).catch(() => []);
-  if ((back || []).length) log(`${back.length} job(s) interrupted by the last stop: queued again.`); }
+  if ((back || []).length) log(`${back.length} job(s) interrupted by the last stop: queued again.`);
+  const built = await rest('/rest/v1/guides?status=eq.generating&select=slug', { method: 'PATCH', body: { status: 'queued', message: 'Starting again' }, headers: { Prefer: 'return=representation' } }).catch(() => []);
+  if ((built || []).length) log(`${built.map(g => g.slug).join(', ')}: build interrupted by the last stop, queued again.`); }
 if (ONCE) { await tick(); while (RUNNING.size) { await Promise.all([...RUNNING.values()].map(r => r.work)); await tick(); } log('done'); }
 else {
   setInterval(() => runJobs().catch(e => log('jobs:', e.message)), POLL);   // jobs from the editor start even while a guide is being built
