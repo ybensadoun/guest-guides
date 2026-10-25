@@ -52,8 +52,8 @@ if (on('markets') && existsSync(C('markets'))) {
     four(m.name, `${w} name`);
     four(m.description, `${w} description`);
     if (typeof m.lat !== 'number' || typeof m.lng !== 'number') errors.push(`${w} needs lat/lng`);
-    if (!m.schedule.length) four(m.occasional_when, `${w} occasional_when`);
-    for (const s of m.schedule) {
+    if (!(m.schedule || []).length) four(m.occasional_when, `${w} occasional_when (no weekly schedule)`);
+    for (const s of m.schedule || []) {
       if (!s.days.every(d => DAYS.includes(d))) errors.push(`${w} bad day in ${s.days}`);
       if (!/^\d\d:\d\d$/.test(s.open) || !/^\d\d:\d\d$/.test(s.close)) errors.push(`${w} bad time`);
     }

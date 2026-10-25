@@ -338,12 +338,22 @@ def localize(x):
             if (x.get(l) or '').strip(): out[l] = x[l]
         return out
     return {k: localize(v) for k, v in x.items()}
+# A researched market without fixed weekly hours (monthly, seasonal, unconfirmed) keeps an empty schedule and says when it
+# runs in words: occasional_when, or its hours text when that is all the research gave.
+def fix_markets(d):
+    for m in d.get('markets') or []:
+        if not m.get('schedule'): m['schedule'] = []
+        if not m['schedule'] and not m.get('occasional_when') and m.get('hours'):
+            h = m.pop('hours'); m['occasional_when'] = h if isinstance(h, dict) else {'en': str(h)}
+    return d
 if args.research:
     for f in sorted(Path(args.research).glob('*.json')):
         dst = SITE / 'content' / f.name
         prev = json.loads(dst.read_text()) if dst.exists() else None
         if prev is None or prev.get('_research'):   # never overwrite a file someone wrote by hand
-            dst.write_text(json.dumps({'_research': 'copied from research by generate-site.py', **localize(json.loads(f.read_text()))}, ensure_ascii=False, indent=1)); print('research copied:', f.name)
+            d = json.loads(f.read_text())
+            if f.name == 'markets.json': d = fix_markets(d)
+            dst.write_text(json.dumps({'_research': 'copied from research by generate-site.py', **localize(d)}, ensure_ascii=False, indent=1)); print('research copied:', f.name)
 
 # ---------- modules ----------
 M = A.get('modules') or {}
