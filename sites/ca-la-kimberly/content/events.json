@@ -1,5 +1,5 @@
 {
-  "_doc": "Local events. Item shape: id, type (castells/festa/carnival/parade/food/fair/film/music/historical/tradition), name{6}, town, venue, lat, lng, url, dates[{start,end (YYYY-MM-DD), time and until (optional HH:MM: when it starts, when it ends on the last day), status: confirmed|expected}], description{6}, sources[]. Past dates hide themselves; add next year's dates in the monthly check.",
+  "_doc": "Local events. Item shape: id, type (castells/festa/carnival/parade/food/fair/film/music/historical/tradition), name{6}, town, venue, lat, lng, url, dates[{start,end (YYYY-MM-DD), time and until (optional HH:MM: when it starts, when it ends on the last day), status: confirmed|expected}], scale (automatic events: local, town, regional or major), description{6}, sources[]. Past dates hide themselves; add next year's dates in the monthly check.",
   "items": [
     {
       "id": "santa-teresa",
@@ -1346,7 +1346,8 @@
         "fr": "Le 5 janvier, les Rois mages arrivent l’après-midi sur la plage de Coma-ruga, puis défilent le soir dans El Vendrell en lançant des bonbons. La plus grande soirée de l’année pour les enfants, gratuit.",
         "nl": "Op 5 januari komen de Drie Koningen 's middags aan op het strand van Coma-ruga en trekken daarna 's avonds door El Vendrell, terwijl ze snoep strooien. De grootste avond van het jaar voor kinderen, gratis."
       },
-      "km_from_house": 7.1
+      "km_from_house": 7.1,
+      "scale": "town"
     },
     {
       "id": "tres-tombs-of-valls",
@@ -1383,7 +1384,8 @@
         "fr": "Un défilé de chevaux et d’attelages pour Sant Antoni, patron des animaux, déclaré fête traditionnelle d’intérêt national. Le grand défilé a lieu le dimanche matin, avec d’anciennes charrettes agricoles exposées sur la Plaça del Blat.",
         "nl": "Een optocht van paarden en koetsen voor Sant Antoni, bescherm­heilige van de dieren, erkend als tradi­tioneel feest van nationaal belang. De hoofd­optocht is op zondag­ochtend, met oude boeren­karren te zien op de Plaça del Blat."
       },
-      "km_from_house": 19.2
+      "km_from_house": 19.2,
+      "scale": "regional"
     },
     {
       "id": "canyelles-living-nativity",
@@ -1421,7 +1423,8 @@
         "fr": "Plus de 200 habitants jouent une dizaine de scènes dans les ruelles du vieux village, du marché et des Romains jusqu’à Hérode et la Nativité. La visite dure environ 45 minutes et plaît beaucoup aux enfants. Réservez vos billets à l’avance, car les groupes entrent toutes les 15 minutes.",
         "nl": "Meer dan 200 dorpe­lingen spelen zo’n tien scènes langs de straatjes van het oude dorp, van de markt en de Romeinen tot Herodes en de geboorte van Jezus. De wandeling duurt ongeveer 45 minuten en is heerlijk met kinderen. Reser­veer je kaartjes vooraf, want er gaat elke 15 minuten een groep naar binnen."
       },
-      "km_from_house": 20.5
+      "km_from_house": 20.5,
+      "scale": "regional"
     },
     {
       "id": "sant-jaume-dels-domenys-living-nativity",
@@ -1458,591 +1461,9 @@
         "fr": "Une crèche vivante de village à quelques minutes en voiture de la maison : les habitants jouent les scènes de l’histoire de Noël dans les vieilles rues. Petite et familiale, le week-end avant Noël.",
         "nl": "Een levende kerststal in een dorp op een kort ritje van het huis: mensen uit het dorp spelen de scènes van het kerst­verhaal in de oude straatjes. Klein en gezins­vriendelijk, in het weekend voor Kerstmis."
       },
-      "km_from_house": 7.8
-    },
-    {
-      "id": "castells-2026-10-24-reus",
-      "lat": 41.15483,
-      "lng": 1.10863,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=10",
-      "auto": true,
-      "name": {
-        "ca": "Diada dels Xiquets de Reus",
-        "de": "Menschen­türme der Xiquets de Reus",
-        "en": "Xiquets de Reus human towers",
-        "es": "Castells de los Xiquets de Reus",
-        "fr": "Castells des Xiquets de Reus",
-        "nl": "Menselijke torens van de Xiquets de Reus"
-      },
-      "town": "Reus",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-10-24",
-          "start": "2026-10-24",
-          "status": "confirmed",
-          "time": "17:00"
-        }
-      ],
-      "venue": "Plaça del Mercadal",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=10"
-      ],
-      "name_local": "Diada dels Xiquets de Reus",
-      "description": {
-        "ca": "Castellers d'Altafulla, Castellers de Terrassa, Xiquets de Cambrils i Xiquets de Reus fan castells a la Plaça del Mercadal a partir de les 17:00. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Cas­tel­lers d'Altafulla, Cas­tel­lers de Terrassa, Xiquets de Cambrils und Xiquets de Reus bauen ab 17:00 Men­schen­tür­me auf der Plaça del Mercadal. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Castellers d'Altafulla, Castellers de Terrassa, Xiquets de Cambrils and Xiquets de Reus build human towers in Plaça del Mercadal from 17:00. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Castellers d'Altafulla, Castellers de Terrassa, Xiquets de Cambrils y Xiquets de Reus levantan castells en la Plaça del Mercadal a partir de las 17:00. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Castellers d'Altafulla, Castellers de Terrassa, Xiquets de Cambrils et Xiquets de Reus montent des tours humaines sur la Plaça del Mercadal dès 17:00. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Cas­tel­lers d'Altafulla, Cas­tel­lers de Terrassa, Xiquets de Cambrils en Xiquets de Reus bouwen vanaf 17:00 men­se­lij­ke torens op de Plaça del Mercadal. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 33.3
-    },
-    {
-      "id": "castells-2026-10-24-tarragona-2",
-      "lat": 41.10917,
-      "lng": 1.23995,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=10",
-      "auto": true,
-      "name": {
-        "ca": "Diada Blava",
-        "de": "Menschen­türme der Diada Blava",
-        "en": "Blue Diada human towers",
-        "es": "Castells de la Diada Blava",
-        "fr": "Castells de la Diada Blava",
-        "nl": "Menselijke torens van de Diada Blava"
-      },
-      "town": "Tarragona",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-10-24",
-          "start": "2026-10-24",
-          "status": "confirmed",
-          "time": "17:00"
-        }
-      ],
-      "venue": "Plaça Bisbe Bonet",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=10"
-      ],
-      "name_local": "Diada Blava a Tarragona",
-      "description": {
-        "ca": "Colla Castellera de l'Esquerra de l'Eixample, Tirallongues de Manresa i Xiquets del Serrallo fan castells a la Plaça Bisbe Bonet a partir de les 17:00. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Colla Cas­tel­le­ra de l'Esquerra de l'Eixample, Ti­ral­lon­gues de Manresa und Xiquets del Serrallo bauen ab 17:00 Men­schen­tür­me auf der Plaça Bisbe Bonet. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Colla Castellera de l'Esquerra de l'Eixample, Tirallongues de Manresa and Xiquets del Serrallo build human towers in Plaça Bisbe Bonet from 17:00. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Colla Castellera de l'Esquerra de l'Eixample, Tirallongues de Manresa y Xiquets del Serrallo levantan castells en la Plaça Bisbe Bonet a partir de las 17:00. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Colla Castellera de l'Esquerra de l'Eixample, Tirallongues de Manresa et Xiquets del Serrallo montent des tours humaines sur la Plaça Bisbe Bonet dès 17:00. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Colla Cas­tel­le­ra de l'Esquerra de l'Eixample, Ti­ral­lon­gues de Manresa en Xiquets del Serrallo bouwen vanaf 17:00 men­se­lij­ke torens op de Plaça Bisbe Bonet. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 26.5
-    },
-    {
-      "id": "castells-2026-10-24-vila-seca",
-      "lat": 41.11135,
-      "lng": 1.14511,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=10",
-      "auto": true,
-      "name": {
-        "ca": "Diada dels Xiquets de Vila-seca",
-        "de": "Menschen­türme der Xiquets de Vila-seca",
-        "en": "Xiquets de Vila-seca human towers",
-        "es": "Castells de los Xiquets de Vila-seca",
-        "fr": "Castells des Xiquets de Vila-seca",
-        "nl": "Menselijke torens van de Xiquets de Vila-seca"
-      },
-      "town": "Vila-seca",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-10-24",
-          "start": "2026-10-24",
-          "status": "confirmed",
-          "time": "17:00"
-        }
-      ],
-      "venue": "Plaça de l'Església",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=10"
-      ],
-      "name_local": "Diada dels Xiquets de Vila-seca",
-      "description": {
-        "ca": "Castellers de Tortosa, Nois de la Torre i Xiquets de Vila-seca fan castells a la Plaça de l'Església a partir de les 17:00. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Cas­tel­lers de Tortosa, Nois de la Torre und Xiquets de Vila-seca bauen ab 17:00 Men­schen­tür­me auf der Plaça de l'Església. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Castellers de Tortosa, Nois de la Torre and Xiquets de Vila-seca build human towers in Plaça de l'Església from 17:00. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Castellers de Tortosa, Nois de la Torre y Xiquets de Vila-seca levantan castells en la Plaça de l'Església a partir de las 17:00. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Castellers de Tortosa, Nois de la Torre et Xiquets de Vila-seca montent des tours humaines sur la Plaça de l'Església dès 17:00. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Cas­tel­lers de Tortosa, Nois de la Torre en Xiquets de Vila-seca bouwen vanaf 17:00 men­se­lij­ke torens op de Plaça de l'Església. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 32.8
-    },
-    {
-      "id": "castells-2026-10-24-vilanova-i-la-geltrú",
-      "lat": 41.2242,
-      "lng": 1.72609,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=10",
-      "auto": true,
-      "name": {
-        "ca": "55a Diada dels Bordegassos de Vilanova",
-        "de": "Menschen­türme der Bordegassos de Vilanova",
-        "en": "Bordegassos de Vilanova human towers",
-        "es": "Castells de los Bordegassos de Vilanova",
-        "fr": "Castells des Bordegassos de Vilanova",
-        "nl": "Menselijke torens van de Bordegassos de Vilanova"
-      },
-      "town": "Vilanova i la Geltrú",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-10-24",
-          "start": "2026-10-24",
-          "status": "confirmed",
-          "time": "17:30"
-        }
-      ],
-      "venue": "Plaça de la Vila",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=10"
-      ],
-      "name_local": "55a Diada dels Bordegassos de Vilanova",
-      "description": {
-        "ca": "Bordegassos de Vilanova, Castellers de la Vila de Gràcia i Castellers de Sant Cugat fan castells a la Plaça de la Vila a partir de les 17:30. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Bor­de­gas­sos de Vilanova, Cas­tel­lers de la Vila de Gràcia und Cas­tel­lers de Sant Cugat bauen ab 17:30 Men­schen­tür­me auf der Plaça de la Vila. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Bordegassos de Vilanova, Castellers de la Vila de Gràcia and Castellers de Sant Cugat build human towers in Plaça de la Vila from 17:30. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Bordegassos de Vilanova, Castellers de la Vila de Gràcia y Castellers de Sant Cugat levantan castells en la Plaça de la Vila a partir de las 17:30. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Bordegassos de Vilanova, Castellers de la Vila de Gràcia et Castellers de Sant Cugat montent des tours humaines sur la Plaça de la Vila dès 17:30. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Bor­de­gas­sos de Vilanova, Cas­tel­lers de la Vila de Gràcia en Cas­tel­lers de Sant Cugat bouwen vanaf 17:30 men­se­lij­ke torens op de Plaça de la Vila. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 21.3
-    },
-    {
-      "id": "castells-2026-10-24-igualada",
-      "lat": 41.57876,
-      "lng": 1.6172,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=10",
-      "auto": true,
-      "name": {
-        "ca": "Diada dels Moixi­ganguers d'Igualada",
-        "de": "Menschen­türme der Moixi­ganguers d'Igualada",
-        "en": "Moixi­ganguers d'Igualada human towers",
-        "es": "Castells de los Moixi­ganguers d'Igualada",
-        "fr": "Castells des Moixi­ganguers d'Igualada",
-        "nl": "Menselijke torens van de Moixi­ganguers d'Igualada"
-      },
-      "town": "Igualada",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-10-24",
-          "start": "2026-10-24",
-          "status": "confirmed",
-          "time": "18:00"
-        }
-      ],
-      "venue": "Plaça de l'Ajuntament",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=10"
-      ],
-      "name_local": "XXXII Diada dels Moixiganguers d'Igualada",
-      "description": {
-        "ca": "Castellers de Lleida, Castellers de Vilafranca i Moixiganguers d'Igualada fan castells a la Plaça de l'Ajuntament a partir de les 18:00. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Cas­tel­lers de Lleida, Cas­tel­lers de Vi­la­fran­ca und Moi­xi­gan­guers d'Igualada bauen ab 18:00 Men­schen­tür­me auf der Plaça de l'Ajun­ta­ment. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Castellers de Lleida, Castellers de Vilafranca and Moixiganguers d'Igualada build human towers in Plaça de l'Ajuntament from 18:00. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Castellers de Lleida, Castellers de Vilafranca y Moixiganguers d'Igualada levantan castells en la Plaça de l'Ajuntament a partir de las 18:00. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Castellers de Lleida, Castellers de Vilafranca et Moixiganguers d'Igualada montent des tours humaines sur la Plaça de l'Ajuntament dès 18:00. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Cas­tel­lers de Lleida, Cas­tel­lers de Vi­la­fran­ca en Moi­xi­gan­guers d'Igualada bouwen vanaf 18:00 men­se­lij­ke torens op de Plaça de l'Ajun­ta­ment. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 36.6
-    },
-    {
-      "id": "castells-2026-10-24-el-vendrell",
-      "lat": 41.2198,
-      "lng": 1.53358,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=10",
-      "auto": true,
-      "name": {
-        "ca": "Diada de Sant Zacaries",
-        "de": "Menschen­türme von Sant Zacaries",
-        "en": "Sant Zacaries human towers",
-        "es": "Castells de Sant Zacaries",
-        "fr": "Castells de Sant Zacaries",
-        "nl": "Menselijke torens van Sant Zacaries"
-      },
-      "town": "El Vendrell",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-10-24",
-          "start": "2026-10-24",
-          "status": "confirmed",
-          "time": "18:00"
-        }
-      ],
-      "venue": "Carrer de les Quatre Fonts",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=10"
-      ],
-      "name_local": "Diada de Sant Zacaries a El Vendrell",
-      "description": {
-        "ca": "Els Nens del Vendrell fan castells al Carrer de les Quatre Fonts a partir de les 18:00. La colla de la vila, a deu minuts en cotxe de la casa. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Die Nens del Vendrell bauen ab 18:00 Men­schen­tür­me im Carrer de les Quatre Fonts. Die Colla des Ortes, zehn Au­to­mi­nu­ten vom Haus. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Nens del Vendrell build human towers in Carrer de les Quatre Fonts from 18:00. The town's own colla, a ten-minute drive from the house. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Los Nens del Vendrell levantan castells en el Carrer de les Quatre Fonts a partir de las 18:00. La colla del propio pueblo, a diez minutos en coche de la casa. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Les Nens del Vendrell montent des tours humaines dans le Carrer de les Quatre Fonts dès 18:00. La colla de la ville, à dix minutes en voiture de la maison. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Nens del Vendrell bouwen vanaf 18:00 men­se­lij­ke torens in de Carrer de les Quatre Fonts. De eigen colla van het stadje, tien minuten rijden van het huis. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 7
-    },
-    {
-      "id": "castells-2026-10-25-gelida",
-      "lat": 41.44072,
-      "lng": 1.86352,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=10",
-      "auto": true,
-      "name": {
-        "ca": "Diada dels Vailets de Gelida",
-        "de": "Menschen­türme der Vailets de Gelida",
-        "en": "Vailets de Gelida human towers",
-        "es": "Castells de los Vailets de Gelida",
-        "fr": "Castells des Vailets de Gelida",
-        "nl": "Menselijke torens van de Vailets de Gelida"
-      },
-      "town": "Gelida",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-10-25",
-          "start": "2026-10-25",
-          "status": "confirmed",
-          "time": "12:00"
-        }
-      ],
-      "venue": "Plaça de la Vila",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=10"
-      ],
-      "name_local": "XV Diada dels Vailets de Gelida",
-      "description": {
-        "ca": "Castellers de Cerdanyola, Colla Castellera de Cerdanya, Salats de Súria i Vailets de Gelida fan castells a la Plaça de la Vila a partir de les 12:00. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Cas­tel­lers de Cer­da­nyo­la, Colla Cas­tel­le­ra de Cerdanya, Salats de Súria und Vailets de Gelida bauen ab 12:00 Men­schen­tür­me auf der Plaça de la Vila. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Castellers de Cerdanyola, Colla Castellera de Cerdanya, Salats de Súria and Vailets de Gelida build human towers in Plaça de la Vila from 12:00. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Castellers de Cerdanyola, Colla Castellera de Cerdanya, Salats de Súria y Vailets de Gelida levantan castells en la Plaça de la Vila a partir de las 12:00. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Castellers de Cerdanyola, Colla Castellera de Cerdanya, Salats de Súria et Vailets de Gelida montent des tours humaines sur la Plaça de la Vila dès 12:00. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Cas­tel­lers de Cer­da­nyo­la, Colla Cas­tel­le­ra de Cerdanya, Salats de Súria en Vailets de Gelida bouwen vanaf 12:00 men­se­lij­ke torens op de Plaça de la Vila. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 37.6
-    },
-    {
-      "id": "castells-2026-10-31-sitges",
-      "lat": 41.23671,
-      "lng": 1.80969,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=10",
-      "auto": true,
-      "name": {
-        "ca": "Diada de la Colla Jove de Sitges",
-        "de": "Menschen­türme der Colla Jove de Sitges",
-        "en": "Colla Jove de Sitges human towers",
-        "es": "Castells de la Colla Jove de Sitges",
-        "fr": "Castells de la Colla Jove de Sitges",
-        "nl": "Menselijke torens van de Colla Jove de Sitges"
-      },
-      "town": "Sitges",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-10-31",
-          "start": "2026-10-31",
-          "status": "confirmed",
-          "time": "12:00"
-        }
-      ],
-      "venue": "Cap de la Vila",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=10"
-      ],
-      "name_local": "XXXIV Diada de la Colla Jove de Castellers de Sitges",
-      "description": {
-        "ca": "Castellers de Sarrià, Colla Jove de Castellers de Sitges i Minyons de l'Arboç fan castells al Cap de la Vila a partir de les 12:00. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Cas­tel­lers de Sarrià, Colla Jove de Cas­tel­lers de Sitges und Minyons de l'Arboç bauen ab 12:00 Men­schen­tür­me am Cap de la Vila. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Castellers de Sarrià, Colla Jove de Castellers de Sitges and Minyons de l'Arboç build human towers in Cap de la Vila from 12:00. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Castellers de Sarrià, Colla Jove de Castellers de Sitges y Minyons de l'Arboç levantan castells en el Cap de la Vila a partir de las 12:00. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Castellers de Sarrià, Colla Jove de Castellers de Sitges et Minyons de l'Arboç montent des tours humaines au Cap de la Vila dès 12:00. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Cas­tel­lers de Sarrià, Colla Jove de Cas­tel­lers de Sitges en Minyons de l'Arboç bouwen vanaf 12:00 men­se­lij­ke torens op de Cap de la Vila. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 27.9
-    },
-    {
-      "id": "castells-2026-10-31-sant-joan-de-mediona",
-      "lat": 41.4772,
-      "lng": 1.61265,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=11",
-      "auto": true,
-      "name": {
-        "ca": "Diada de les Cendres",
-        "de": "Menschen­türme der Cendres",
-        "en": "Cendres human towers",
-        "es": "Castells de les Cendres",
-        "fr": "Castells des Cendres",
-        "nl": "Menselijke torens van de Cendres"
-      },
-      "town": "Sant Joan de Mediona",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-10-31",
-          "start": "2026-10-31",
-          "status": "confirmed",
-          "time": "17:00"
-        }
-      ],
-      "venue": "Plaça dels Països Catalans",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=11"
-      ],
-      "name_local": "Diada de les Cendres a Sant Joan de Mediona",
-      "description": {
-        "ca": "Castellers de Mediona i Castellers del Foix de Cubelles fan castells a la Plaça dels Països Catalans a partir de les 17:00. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Cas­tel­lers de Mediona und Cas­tel­lers del Foix de Cubelles bauen ab 17:00 Men­schen­tür­me auf der Plaça dels Països Catalans. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Castellers de Mediona and Castellers del Foix de Cubelles build human towers in Plaça dels Països Catalans from 17:00. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Castellers de Mediona y Castellers del Foix de Cubelles levantan castells en la Plaça dels Països Catalans a partir de las 17:00. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Castellers de Mediona et Castellers del Foix de Cubelles montent des tours humaines sur la Plaça dels Països Catalans dès 17:00. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Cas­tel­lers de Mediona en Cas­tel­lers del Foix de Cubelles bouwen vanaf 17:00 men­se­lij­ke torens op de Plaça dels Països Catalans. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 26
-    },
-    {
-      "id": "castells-2026-11-08-altafulla",
-      "lat": 41.14225,
-      "lng": 1.37672,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=11",
-      "auto": true,
-      "name": {
-        "ca": "Diada de Sant Martí",
-        "de": "Menschen­türme von Sant Martí",
-        "en": "Sant Martí human towers",
-        "es": "Castells de Sant Martí",
-        "fr": "Castells de Sant Martí",
-        "nl": "Menselijke torens van Sant Martí"
-      },
-      "town": "Altafulla",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-11-08",
-          "start": "2026-11-08",
-          "status": "confirmed",
-          "time": "12:30"
-        }
-      ],
-      "venue": "Plaça del Pou",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=11"
-      ],
-      "name_local": "Diada de Sant Martí a Altafulla",
-      "description": {
-        "ca": "Castellers d'Altafulla i Xiquets de Tarragona fan castells a la Plaça del Pou a partir de les 12:30. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Cas­tel­lers d'Altafulla und Xiquets de Tarragona bauen ab 12:30 Men­schen­tür­me auf der Plaça del Pou. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Castellers d'Altafulla and Xiquets de Tarragona build human towers in Plaça del Pou from 12:30. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Castellers d'Altafulla y Xiquets de Tarragona levantan castells en la Plaça del Pou a partir de las 12:30. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Castellers d'Altafulla et Xiquets de Tarragona montent des tours humaines sur la Plaça del Pou dès 12:30. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Cas­tel­lers d'Altafulla en Xiquets de Tarragona bouwen vanaf 12:30 men­se­lij­ke torens op de Plaça del Pou. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 16.2
-    },
-    {
-      "id": "castells-2026-11-08-vila-rodona",
-      "lat": 41.31063,
-      "lng": 1.35829,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=11",
-      "auto": true,
-      "name": {
-        "ca": "Castells a la Fira de Vila-rodona",
-        "de": "Menschen­türme auf dem Markt von Vila-rodona",
-        "en": "Human towers at the Vila-rodona fair",
-        "es": "Castells en la Fira de Vila-rodona",
-        "fr": "Castells à la foire de Vila-rodona",
-        "nl": "Menselijke torens op de markt van Vila-rodona"
-      },
-      "town": "Vila-rodona",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-11-08",
-          "start": "2026-11-08",
-          "status": "confirmed",
-          "time": "13:00"
-        }
-      ],
-      "venue": "Plaça dels Arbres",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=11"
-      ],
-      "name_local": "Fira de Vila-rodona",
-      "description": {
-        "ca": "Colla Joves Xiquets de Valls i Colla Vella dels Xiquets de Valls fan castells a la Plaça dels Arbres a partir de les 13:00. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Colla Joves Xiquets de Valls und Colla Vella dels Xiquets de Valls bauen ab 13:00 Men­schen­tür­me auf der Plaça dels Arbres. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Colla Joves Xiquets de Valls and Colla Vella dels Xiquets de Valls build human towers in Plaça dels Arbres from 13:00. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Colla Joves Xiquets de Valls y Colla Vella dels Xiquets de Valls levantan castells en la Plaça dels Arbres a partir de las 13:00. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Colla Joves Xiquets de Valls et Colla Vella dels Xiquets de Valls montent des tours humaines sur la Plaça dels Arbres dès 13:00. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Colla Joves Xiquets de Valls en Colla Vella dels Xiquets de Valls bouwen vanaf 13:00 men­se­lij­ke torens op de Plaça dels Arbres. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 11.1
-    },
-    {
-      "id": "castells-2026-12-13-gelida",
-      "lat": 41.4401,
-      "lng": 1.86493,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=12",
-      "auto": true,
-      "name": {
-        "ca": "Pilars d'ofrena a Santa Llúcia",
-        "de": "Menschen­türme für Santa Llúcia",
-        "en": "Offering towers to Santa Llúcia",
-        "es": "Pilares de ofrenda a Santa Llúcia",
-        "fr": "Piliers d’offrande à Santa Llúcia",
-        "nl": "Menselijke torens voor Santa Llúcia"
-      },
-      "town": "Gelida",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-12-13",
-          "start": "2026-12-13",
-          "status": "confirmed",
-          "time": "12:00"
-        }
-      ],
-      "venue": "Església de Sant Pere",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=12"
-      ],
-      "name_local": "Pilars d'ofrena a la Verge de Santa Llúcia de Gelida",
-      "description": {
-        "ca": "Els Vailets de Gelida aixequen petits castells d'ofrena al costat de l'església de Sant Pere a partir de les 12:00. Un moment tranquil i molt local.",
-        "de": "Die Vailets de Gelida bauen ab 12:00 kleine Men­schen­tür­me als Gabe an der Kirche Sant Pere. Ein ruhiger Moment unter Ein­hei­mi­schen.",
-        "en": "Vailets de Gelida raise small offering towers by the church of Sant Pere from 12:00. A quiet, local moment.",
-        "es": "Los Vailets de Gelida levantan pequeños castells de ofrenda junto a la iglesia de Sant Pere a partir de las 12:00. Un momento tranquilo y muy local.",
-        "fr": "Les Vailets de Gelida montent de petites tours d'offrande près de l'église de Sant Pere dès 12:00. Un moment calme et très local.",
-        "nl": "Vailets de Gelida bouwen vanaf 12:00 kleine of­fer­to­rens bij de kerk van Sant Pere. Een rustig, lokaal moment."
-      },
-      "km_from_house": 37.6
-    },
-    {
-      "id": "castells-2026-10-24-tarragona",
-      "lat": 41.11679,
-      "lng": 1.25828,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=10",
-      "auto": true,
-      "name": {
-        "ca": "Diada dels Xiquets de Tarragona",
-        "de": "Menschen­türme der Xiquets de Tarragona",
-        "en": "Xiquets de Tarragona human towers",
-        "es": "Castells de los Xiquets de Tarragona",
-        "fr": "Castells des Xiquets de Tarragona",
-        "nl": "Menselijke torens van de Xiquets de Tarragona"
-      },
-      "town": "Tarragona",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-10-24",
-          "start": "2026-10-24",
-          "status": "confirmed",
-          "time": "17:00"
-        }
-      ],
-      "venue": "Plaça del Rei",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=10"
-      ],
-      "name_local": "Diada dels Xiquets de Tarragona",
-      "description": {
-        "ca": "Els Xiquets de Tarragona fan castells a la Plaça del Rei a partir de les 17:00. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Die Xiquets de Tarragona bauen ab 17:00 Men­schen­tür­me auf der Plaça del Rei. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Xiquets de Tarragona build human towers in Plaça del Rei from 17:00. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Los Xiquets de Tarragona levantan castells en la Plaça del Rei a partir de las 17:00. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Les Xiquets de Tarragona montent des tours humaines sur la Plaça del Rei dès 17:00. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Xiquets de Tarragona bouwen vanaf 17:00 men­se­lij­ke torens op de Plaça del Rei. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 24.8
-    },
-    {
-      "id": "castells-2026-10-24-vilafranca-del-pened",
-      "lat": 41.34644,
-      "lng": 1.69801,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=10",
-      "auto": true,
-      "name": {
-        "ca": "Diada del Roser",
-        "de": "Menschen­türme zum Roser",
-        "en": "Roser human towers",
-        "es": "Castells del Roser",
-        "fr": "Castells du Roser",
-        "nl": "Menselijke torens van de Roser"
-      },
-      "town": "Vilafranca del Penedès",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-10-24",
-          "start": "2026-10-24",
-          "status": "confirmed",
-          "time": "18:00"
-        }
-      ],
-      "venue": "Plaça de la Vila",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=10"
-      ],
-      "name_local": "Diada del Roser a Vilafranca del Penedès",
-      "description": {
-        "ca": "Castellers de Barcelona, Xicots de Vilafranca i Xics de Granollers fan castells a la Plaça de la Vila a partir de les 18:00. Arriba 15 minuts abans per tenir un bon lloc i veure com es preparen les colles.",
-        "de": "Cas­tel­lers de Barcelona, Xicots de Vi­la­fran­ca und Xics de Gra­nol­lers bauen ab 18:00 Men­schen­tür­me auf der Plaça de la Vila. Komm 15 Minuten früher, für einen guten Platz und um zu sehen, wie sich die Colles vor­be­rei­ten.",
-        "en": "Castellers de Barcelona, Xicots de Vilafranca and Xics de Granollers build human towers in Plaça de la Vila from 18:00. Arrive 15 minutes early for a good spot and to see the colles prepare.",
-        "es": "Castellers de Barcelona, Xicots de Vilafranca y Xics de Granollers levantan castells en la Plaça de la Vila a partir de las 18:00. Llega 15 minutos antes para coger buen sitio y ver cómo se preparan las colles.",
-        "fr": "Castellers de Barcelona, Xicots de Vilafranca et Xics de Granollers montent des tours humaines sur la Plaça de la Vila dès 18:00. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
-        "nl": "Cas­tel­lers de Barcelona, Xicots de Vi­la­fran­ca en Xics de Gra­nol­lers bouwen vanaf 18:00 men­se­lij­ke torens op de Plaça de la Vila. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
-      },
-      "km_from_house": 20.4
-    },
-    {
-      "id": "castells-2026-11-25-vilafranca-del-pened",
-      "lat": 41.34644,
-      "lng": 1.69801,
-      "url": "https://castellscat.cat/en/schedule?a=2026&m=11",
-      "auto": true,
-      "name": {
-        "ca": "Pilar 25N contra la violència de gènere",
-        "de": "Ein Menschen­turm gegen Gewalt an Frauen",
-        "en": "A human tower against gender violence",
-        "es": "Un pilar contra la violencia de género",
-        "fr": "Un pilier contre les violences faites aux femmes",
-        "nl": "Een menselijke toren tegen gender­geweld"
-      },
-      "town": "Vilafranca del Penedès",
-      "type": "castells",
-      "dates": [
-        {
-          "end": "2026-11-25",
-          "start": "2026-11-25",
-          "status": "confirmed"
-        }
-      ],
-      "venue": "Plaça de la Vila",
-      "sources": [
-        "https://castellscat.cat/en/schedule?a=2026&m=11"
-      ],
-      "name_local": "Pilar 25N contra la violència de gènere a Vilafranca del Penedès",
-      "description": {
-        "ca": "Els Xicots de Vilafranca aixequen un sol castell contra la violència masclista, a la Plaça de la Vila, a la tarda. Breu, emotiu i gratuït.",
-        "de": "Die Xicots de Vi­la­fran­ca bauen am Nach­mit­tag auf der Plaça de la Vila einen einzigen Men­schen­turm gegen Gewalt an Frauen. Kurz, bewegend und kostenlos.",
-        "en": "Xicots de Vilafranca raise a single human tower against gender violence, in Plaça de la Vila, in the afternoon. Short, moving and free.",
-        "es": "Los Xicots de Vilafranca levantan un único castell contra la violencia machista, en la Plaça de la Vila, por la tarde. Breve, emotivo y gratuito.",
-        "fr": "Les Xicots de Vilafranca montent une seule tour humaine contre les violences sexistes, sur la Plaça de la Vila, l'après-midi. Court, émouvant et gratuit.",
-        "nl": "Xicots de Vi­la­fran­ca bouwen 's middags op de Plaça de la Vila één men­se­lij­ke toren tegen gen­der­ge­weld. Kort, ont­roe­rend en gratis."
-      },
-      "km_from_house": 20.4
+      "km_from_house": 7.8,
+      "scale": "local",
+      "venue": "Bosc de Can Pau"
     },
     {
       "id": "castells-2026-12-13-la-bisbal-del-penedè",
@@ -2081,16 +1502,61 @@
         "fr": "La Colla Castellera La Bisbal del Penedès monte des tours humaines sur la Plaça de l'Església dès 13:00. La colla du village, qui monte ses tours pour le marathon caritatif de TV3. Arrivez 15 minutes en avance pour avoir une bonne place et voir les colles se préparer.",
         "nl": "Colla Cas­tel­le­ra La Bisbal del Penedès bouwt vanaf 13:00 men­se­lij­ke torens op de Plaça de l'Església. De eigen colla van het dorp, voor de be­ne­fiet­ma­ra­thon van TV3. Kom 15 minuten eerder voor een goede plek en om te zien hoe de colles zich voor­be­rei­den."
       },
-      "km_from_house": 1.8
+      "km_from_house": 1.8,
+      "scale": "local"
+    },
+    {
+      "id": "vila-rodona-fair-with-castells-by-both-v",
+      "lat": 41.3105,
+      "lng": 1.3593,
+      "url": "https://revistacastells.cat/2026/04/2026-les-100-diades-marcades-en-vermell/",
+      "auto": true,
+      "name": {
+        "ca": "Fira de Vila-rodona, amb castells de les dues colles de Valls",
+        "de": "Markt in Vila-rodona mit Castells beider Colles aus Valls",
+        "en": "Vila-rodona Fair, with castells by both Valls colles",
+        "es": "Feria de Vila-rodona, con castells de las dos colles de Valls",
+        "fr": "Foire de Vila-rodona, avec les castells des deux colles de Valls",
+        "nl": "Markt van Vila-rodona, met castells van beide colles uit Valls"
+      },
+      "town": "Vila-rodona",
+      "type": "fair",
+      "dates": [
+        {
+          "end": "2026-11-08",
+          "start": "2026-11-08",
+          "status": "expected"
+        }
+      ],
+      "venue": "Plaça dels Arbres",
+      "sources": [
+        "https://revistacastells.cat/2026/04/2026-les-100-diades-marcades-en-vermell/",
+        "https://www.diaridetarragona.com/camp/169403/les-visites-al-campanar-la-principal-novetat-de-la-fira-agropecuaria-d-enguany-dm12877253.html"
+      ],
+      "description": {
+        "ca": "Una fira agrícola documentada des del 1446. El diumenge, les dues colles rivals de Valls, la Colla Vella i la Colla Joves, aixequen castells una al costat de l'altra en una petita plaça de poble, així que els veus de prop sense les multituds de la gran ciutat.",
+        "de": "Ein Bauern­markt, belegt seit 1446. Am Sonntag bauen die beiden ri­va­li­sie­ren­den Colles aus Valls, Colla Vella und Colla Joves, ihre Castells neben­einander auf einem kleinen Dorfplatz. So siehst du alles aus der Nähe, ohne Groß­stadt­gedränge.",
+        "en": "A farm fair recorded since 1446. On the Sunday the two rival Valls colles, Colla Vella and Colla Joves, build castells side by side in a small village square, so you get a close view without the big-city crowds.",
+        "es": "Una feria agrícola documentada desde 1446. El domingo, las dos colles rivales de Valls, la Colla Vella y la Colla Joves, levantan castells una al lado de la otra en una pequeña plaza de pueblo, así que los ves de cerca sin las multitudes de la gran ciudad.",
+        "fr": "Une foire agricole attestée depuis 1446. Le dimanche, les deux colles rivales de Valls, la Colla Vella et la Colla Joves, montent leurs castells côte à côte sur une petite place de village : vous les voyez de près, sans la foule des grandes villes.",
+        "nl": "Een boeren­markt die al sinds 1446 bestaat. Op zondag bouwen de twee ri­va­li­se­ren­de colles uit Valls, Colla Vella en Colla Joves, naast elkaar castells op een klein dorps­plein, zodat je alles van dichtbij ziet zonder de drukte van de grote stad."
+      },
+      "km_from_house": 11.1,
+      "tags": [
+        "free",
+        "kids"
+      ],
+      "scale": "regional",
+      "verify": true
     }
   ],
   "auto": {
     "on": true,
-    "last": "2026-10-24",
+    "last": "2026-10-27",
     "skip": [],
     "want": [
       "Castellers"
     ],
-    "lastAdded": 2
+    "lastAdded": 1
   }
 }

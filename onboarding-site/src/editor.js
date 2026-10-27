@@ -504,6 +504,9 @@ const evAuto = () => (((edC().files || {}).events || {}).auto) || {};
 // and every month); off, as cards to keep or skip (the same cards as Find more). The topics count either way.
 const EV_PATH = 'files/events/items';
 const cmEvFind = () => (CM.find || {})['find-events'] || {};
+// How far events reach (the worker's EV_REACH): by car, small events within 10 km and the main ones up to the guide's
+// radius; in a city, small ones within 2 km and the main ones within 8 km.
+const cmEvReach = () => { const city = evAuto().reach === 'city'; return { city, far: city ? 8 : ((edC().site || {}).area || {}).radiusKm || 30 }; };
 const cmEvBusy = () => (!!CM.evJob && (CM.evJob.status === 'queued' || CM.evJob.status === 'running')) || cmEvFind().status === 'queued' || cmEvFind().status === 'running';
 function cmEventsInner() {
   const a = evAuto(), on = !!a.on, f = cmEvFind(), busy = cmEvBusy();
@@ -513,6 +516,8 @@ function cmEventsInner() {
   if (!CM.evLoaded) setTimeout(cmEvLoad, 0);
   return `<div class="cm-fhead"><b>Finding events</b></div>
     <p class="hint">We look for events in the next three months around the house: the area's own traditions, festivals and fairs, plus the topics below.</p>
+    <div class="f full"><span class="lab" id="l_evreach">How guests get around</span><div class="chips" role="group" aria-labelledby="l_evreach"><button class="chip" type="button" data-evreach="car" aria-pressed="${!cmEvReach().city}"><span>By car</span></button><button class="chip" type="button" data-evreach="city" aria-pressed="${cmEvReach().city}"><span>In a city</span></button></div>
+      <p class="hint">${cmEvReach().city ? 'On foot, by bike or metro: small local events within 2 km of the house, only the main ones further away, up to 8 km.' : `Small local events within 10 km of the house, only the main ones further away, up to ${cmEvReach().far} km.`}</p></div>
     ${cSwitch('data-evauto', 'Keep events up to date', on, on ? 'On: we search every month and new events go straight into your guide, with “expected” dates until confirmed. Events you add yourself are never changed; one you delete never comes back.' : 'Off: you search when you like, and keep or skip each event we find.')}
     <div class="f full"><span class="lab">Topics to skip</span><p class="hint">In any language. We never add events about these.</p>${topics('skip', 'bullfighting, nightclubs…')}</div>
     <div class="f full"><span class="lab">Things to look for</span><p class="hint">In any language. Each one gets its own search, on top of the area's usual festivals, fairs and traditions. Up to three.</p>${topics('want', 'jazz, wine, kids…')}</div>
@@ -830,6 +835,7 @@ document.addEventListener('click', e => {
   if (d.phmove) { const p = edPath(d.phmove), i = p[p.length - 1], a = edGet(edC(), p.slice(0, -1)), j = i + Number(d.dir); if (Array.isArray(a) && j >= 0 && j < a.length) { [a[i], a[j]] = [a[j], a[i]]; done(); } return; }
   if (d.addtile) { edAddTile(d.addtile); return done(); }
   if (d.cpin) { cmPin(d.cpin); return done(); }
+  if (d.evreach !== undefined) { if ((evAuto().reach === 'city') !== (d.evreach === 'city')) cmEvAutoSet({ reach: d.evreach === 'city' ? 'city' : 'car' }); return; }
   if (d.evauto !== undefined) { const on = !evAuto().on; cmEvAutoSet({ on, skip: evAuto().skip || [], want: evAuto().want || [] }).then(() => { if (on && !evAuto().last) cmEvRun(); }); return; }
   if (d.evadd) return cmEvTopic(d.evadd);
   if (d.evdel) { const k = d.evdel, cur = [...(evAuto()[k] || [])]; cur.splice(+d.i, 1); return cmEvAutoSet({ [k]: cur }); }
