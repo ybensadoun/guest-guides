@@ -659,16 +659,6 @@ function cmTile(m) {
   const ch = cmChanged(m);
   return `<a class="tile" href="#${m.id}" data-shape="${m.shape}" style="${tileVars(m)}">${ch ? '<span class="pill chk">Changed</span>' : ''}<span class="ic">${I[m.icon] || ''}</span><b>${esc(m.title)}</b><small>${esc(cmSub(m))}</small></a>`;
 }
-function cmHomeHTML() {
-  const name = (edC().site || {}).name || CM.g.slug, ch = cmSteps().filter(cmChanged), dirty = cmDirty(), url = cmLiveUrl();
-  return `<section class="hero"><small>${cmLive() ? 'Your guide is live' : 'Your guide is ready'}</small><h1>${esc(name)}</h1>
-      <p>${dirty ? `${ch.length ? cmCount(ch.length, 'step', 'steps') + ' changed' : 'Changes'}, not live yet. Guests see the published guide until you publish.` : cmLive() ? 'Open a step to change it. Your changes stay a draft until you publish them.' : 'Have a look, change what you like, then publish it for your guests.'}</p>
-      ${cmLive() ? `<p class="cm-url">Guests open <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url.replace(/^https?:\/\//, ''))}</a></p>` : ''}
-      <div class="cm-act">${dirty || !cmLive() ? `<a class="go-next" href="#publish"><span>${cmLive() ? 'Review and publish' : 'Publish my guide'}</span><span class="ar">${ARROW}</span></a>` : ''}<a class="btn small cm-ghost" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${dirty ? 'Preview my changes' : 'Open my guide'}</a></div></section>
-    ${GROUPS.map(([g, gt]) => { const ms = cmSteps().filter(m => m.group === g); if (!ms.length) return ''; const n = ms.filter(cmChanged).length;
-      return `<div class="gh"><h2>${gt}</h2><span>${n ? `${n} changed` : ''}</span></div><div class="tiles">${ms.map(cmTile).join('')}</div>`; }).join('')}
-    <div class="tiles"><a class="tile send${dirty || !cmLive() ? '' : ' locked'}" href="#publish"><span class="ic">${I.send}</span><span class="tx"><b>${cmLive() ? 'Publish changes' : 'Publish my guide'}</b><small>${dirty ? 'Changes waiting' : cmLive() ? 'Everything is live' : 'Ready when you are'}</small></span><span class="go">${ARROW}</span></a></div>`;
-}
 const cmPillText = ch => ch ? 'Changed' : cmLive() ? 'Live' : 'Not published yet';
 const cmFootText = () => cmDirty() ? 'Saved as a draft. Guests see it once you publish.' : 'Changes save as you type, as a draft only you see until you publish.';
 function cmLangBar(langs) {
@@ -695,12 +685,17 @@ function cmPublishHTML() {
     ${cmLive() ? `<section class="card"><div class="cm-row"><button class="btn small" type="button" data-cunpublish>Unpublish</button><p class="hint">Takes the guide offline: guests can no longer open it. Nothing is deleted, and you can publish it again any time.</p></div></section>` : ''}</div></div>`;
 }
 const cmIsPage = r => r === 'publish' || cmSteps().some(m => m.id === r);
-function cmPageHTML(r) { const m = cmSteps().find(x => x.id === r); return m ? cmStepHTML(m) : r === 'publish' ? cmPublishHTML() : cmHomeHTML(); }
+function cmPageHTML(r) { const m = cmSteps().find(x => x.id === r); return m ? cmStepHTML(m) : cmPublishHTML(); }
+// No overview page: the editor opens on the step the host was on last time in this guide (remembered on this device), else the first.
+const CM_LAST = 'porta-editor-step-v1';
+function cmStart() { let id = ''; try { id = (JSON.parse(localStorage.getItem(CM_LAST) || '{}') || {})[CM.g.id] || ''; } catch (e) {} return cmIsPage(id) ? id : (cmSteps()[0] || { id: 'publish' }).id; }
+function cmRemember(r) { try { const o = JSON.parse(localStorage.getItem(CM_LAST) || '{}') || {}; if (o[CM.g.id] !== r) { o[CM.g.id] = r; localStorage.setItem(CM_LAST, JSON.stringify(o)); } } catch (e) {} }
 // Rail and bottom bar (nav.js asks for these while CM.on)
 function cmStepList(cur) {
   const item = m => { const ch = cmChanged(m); return `<a class="si s-${ch ? 'chk' : 'new'}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${ch ? STATUS_ICON.chk : I[m.icon] || ''}</span><span class="st">${esc(m.title)}</span><span class="sl">${ch ? 'Changed' : ''}</span></a>`; };
   const dirty = cmDirty();
-  return `<a class="si home" href="#home"${cur === 'home' ? ' aria-current="step"' : ''}><span class="sic">${I.grid}</span><span class="st">Overview</span></a>
+  const url = cmLiveUrl();
+  return `<div class="si-guide"><b>${esc((edC().site || {}).name || CM.g.slug)}</b><small>${cmLive() ? `Live: <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url.replace(/^https?:\/\//, ''))}</a>` : 'Not published yet'}</small></div>
     ${GROUPS.map(([g, gt]) => { const ms = cmSteps().filter(m => m.group === g); return ms.length ? `<p class="sg">${gt}</p>${ms.map(item).join('')}` : ''; }).join('')}
     <p class="sg">Finish</p><a class="si s-${dirty ? 'chk' : 'done'} send" href="#publish"${cur === 'publish' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Publish changes</span><span class="sl">${dirty ? 'Waiting' : cmLive() ? 'Live' : ''}</span></a>`;
 }
@@ -708,7 +703,7 @@ function cmNavbar(cur) {
   const order = [...cmSteps().map(m => m.id), 'publish'], i = order.indexOf(cur), prev = order[i - 1], next = order[i + 1];
   const t = id => id === 'publish' ? 'Publish changes' : (cmSteps().find(m => m.id === id) || {}).title;
   return `<div class="nbin">
-    ${prev ? `<a class="nb ghost" href="#${prev}" aria-label="Back to ${esc(t(prev))}">${BACK}<span class="hide-s">${esc(t(prev))}</span></a>` : `<a class="nb ghost" href="#home" aria-label="Overview">${BACK}<span class="hide-s">Overview</span></a>`}
+    ${prev ? `<a class="nb ghost" href="#${prev}" aria-label="Back to ${esc(t(prev))}">${BACK}<span class="hide-s">${esc(t(prev))}</span></a>` : '<span></span>'}
     <button class="nb count" type="button" id="openSteps" aria-haspopup="dialog"><b>${i + 1}</b> of ${order.length}<i class="chev" aria-hidden="true"></i></button>
     ${next ? `<a class="nb primary" href="#${next}"><span>Next</span>${ARROW}</a>` : cmDirty() || !cmLive() ? `<button class="nb primary" type="button" data-cpublish><span>Publish</span>${CHECK}</button>` : '<span></span>'}</div>`;
 }
@@ -749,7 +744,7 @@ async function cmPublish(btn) {
     CM.live = { content: cmClone(CM.g.content), theme: cmClone(CM.g.theme) }; GUIDE.content = CM.live.content;
     if (window.__acctHouses) window.__acctHouses();
     setSave('ok', cmSaveText()); toast(cmLive() ? 'Published. Guests see it now.' : 'Saved, but not published. Try again.');
-    location.hash = '#home'; render();
+    render();
   } catch (e) { toast('Not published: ' + niceError(e)); if (btn) btn.disabled = false; }
 }
 // Unpublish: the guide goes offline (status "ready": built, not public); its content and any draft stay as they are.
@@ -761,7 +756,7 @@ async function cmUnpublish(btn) {
     const r = await sb('/rest/v1/guides?id=eq.' + CM.g.id + '&select=status', { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: { status: 'ready' } });
     if (r && r[0]) CM.g.status = GUIDE.status = r[0].status;
     if (window.__acctHouses) window.__acctHouses();
-    setSave('ok', cmSaveText()); toast(cmLive() ? 'Still published. Try again.' : 'Unpublished: guests can no longer open it.'); location.hash = '#home'; render();
+    setSave('ok', cmSaveText()); toast(cmLive() ? 'Still published. Try again.' : 'Unpublished: guests can no longer open it.'); render();
   } catch (e) { toast('Not unpublished: ' + niceError(e)); btn.disabled = false; }
 }
 async function cmDiscard(btn) {
@@ -1123,9 +1118,10 @@ function cmInit() {
 .cm-more .lab{display:block;margin:12px 0 8px}
 .cm-fontlist{display:flex;flex-wrap:wrap;gap:8px}
 .cm-fontlist .chip span{font-size:16px;font-weight:500}
-.hero .cm-url{font-size:14px;opacity:.85;overflow-wrap:anywhere}
-.cm-act{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.hero .btn.cm-ghost{background:transparent;color:inherit;border-color:rgba(255,255,255,.55)}
+.si-guide{display:flex;flex-direction:column;gap:2px;padding:6px 10px 10px;margin-bottom:4px;border-bottom:1.5px solid var(--line)}
+.si-guide b{font-size:16px;line-height:1.25;overflow-wrap:anywhere}
+.si-guide small{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.si-guide a{color:inherit}
 .foot .btn svg{width:16px;height:16px}
 .cm-find{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:var(--r-s);background:var(--sunk);box-shadow:inset 3px 0 0 var(--sun)}
 .cm-fhead{display:flex;gap:10px;align-items:center}

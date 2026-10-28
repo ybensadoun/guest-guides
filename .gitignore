@@ -39,3 +39,6 @@ __pycache__/
 worker/.env.local
 worker/jobs/
 sites/w-*/
+
+# Editor checks: screenshots (onboarding-site/test/editor-check.mjs)
+onboarding-site/test/shots/

@@ -121,7 +121,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .sw-pick input{grid-column:1/-1;grid-row:2;font-size:14px!important;padding:8px 10px!important}
 .sw-pick .x{grid-column:2;grid-row:1;border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)}
 
-@media (max-width:620px){.mhead::before{width:52px!important;height:84px!important;right:14px!important}.mhead p{padding-right:44px}}
+@media (max-width:620px){.mhead::before{width:52px!important;height:84px!important;right:14px!important}.mhead p{padding-right:58px}}   /* text stops 10 px before the shape */
 
 /* Host lists */
 .pl{display:flex;flex-direction:column;gap:12px;margin-bottom:10px}

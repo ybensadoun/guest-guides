@@ -1,4 +1,4 @@
-# Plan: a fast guide builder with a wow moment in the first minute (proposal, 28 Oct 2026)
+# Plan: a fast guide builder with a wow moment in the first minute (proposal, 28 Oct 2026; step 1 done for the editor)
 
 Yohann's brief: ask as few questions as possible; the host pastes their Airbnb link, sets the look, plays a swipe game with the venues, and everything else is made in the background. No landing page that adds nothing: straight into the editor. Steps that are already good to go (only an optional check) must look different from the few where the host really has to answer. A wow moment almost at once.
 
@@ -42,7 +42,7 @@ So 4 small things need the host (Wi-Fi, arrival, rubbish, their phone) plus 2 ch
 Why this order rather than the look first: the look is easier to choose on a guide that already exists, and the wow comes before any question. Asking for the account last removes the first wall.
 
 ## How to get there, in small steps (each one shippable)
-1. **No overview pages.** Opening the builder or the editor goes to the next step to do (or the first one); the step list stays in the rail on wide screens and the "All steps" sheet on phones; the editor's Publish, Preview and Unpublish stay on the Publish step and in the bottom bar.
+1. **No overview pages.** Done for the editor on 28 Oct 2026 (the page Yohann pointed at; checked by `onboarding-site/test/editor-check.mjs`); the builder's own Overview, before a guide exists, goes with steps 2 and 3. Opening the builder or the editor goes to the next step to do (or the first one); the step list stays in the rail on wide screens and the "All steps" sheet on phones; the editor's Publish, Preview and Unpublish stay on the Publish step and in the bottom bar.
 2. **Two kinds of step.** The rail and the steps show "Needs you" and "Ready: check if you like"; steps filled from the listing are done without pressing Done.
 3. **The phone preview from the first minute**, next to every step (from the answers, before any build), and the wow screen after the link.
 4. **The look on one screen** with the live phone.
