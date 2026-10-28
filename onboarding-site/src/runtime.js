@@ -157,7 +157,7 @@ function draftBanner(){
   return `<section class="draft">
     <div><small>Your guide is written</small><h2>${ready} step${ready === 1 ? ' is' : 's are'} ready from your listing${left ? `, and ${left === 1 ? 'one needs' : left + ' need'} you` : ''}.</h2>
     ${ask.length ? `<details><summary>${ask.length === 1 ? 'One thing' : ask.length + ' things'} your listing does not say</summary><ul>${ask.map(q => `<li>${esc(q)}</li>`).join('')}</ul></details>` : ''}</div>
-    <div class="draft-act"><button class="btn primary" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"', 'stroke-width="2.2" width="17" height="17"')}See your guide</button></div>
+    <div class="draft-act"><a class="btn primary" href="#yours">${I.eye.replace('stroke-width="2.2"', 'stroke-width="2.2" width="17" height="17"')}See your guide</a></div>
   </section>`;
 }
 
@@ -247,7 +247,8 @@ function render(){
   else if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
   else if (r === 'building' || (A._sentAt && !location.hash && window.__acctGuide && window.__acctGuide() && window.__acctGuide().status !== 'draft')) { main.innerHTML = buildingHTML(); watchBuild(); }
   else if (r === 'thanks' || (A._sentAt && !location.hash)) main.innerHTML = thanksHTML();
-  else if (m) { main.innerHTML = moduleHTML(m); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
+  else if (r === 'yours') { main.innerHTML = yoursHTML(); phoneRender(); if (r !== lastRoute) log('open', 'yours'); }   // the wow: the guide in a phone
+  else if (m) { main.innerHTML = moduleHTML(m); PHONE.screen = STEP_SCREEN[m.id] || 'home'; PHONE.build = false; phoneRender(); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
   else if (r === 'send') { main.innerHTML = sendHTML(); if (r !== lastRoute) { log('open', 'send'); queueSave(); } }
   else if ((r === 'home' || r === 'start') && (r === 'start' || (!A._draftAt && !A._skipStart && !visible().some(m => statusOf(m).k !== 'new')))) { main.innerHTML = startHTML(); if (r !== lastRoute) { log('open', 'start'); queueSave(); } }
   else { history.replaceState(null, '', '#' + obNext()); return render(); }   // no overview page: straight to the next step

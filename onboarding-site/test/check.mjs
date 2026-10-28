@@ -25,11 +25,17 @@ E.draft = null; if (E.content.private) E.content.private = {};
 const a = { ...B0.answers, _done: { listing: true }, _seen: [], _savedAt: Date.now(), _acct: B0.owner };
 for (const k of ['_sentAt', '_last', 'wifiName', 'wifiPassword', 'wifiNote', 'rubbishMode', 'hostPhone', 'arrival', 'swipes', 'favDo', 'favourites']) delete a[k];
 const B = { id: B0.id, owner: B0.owner, answers: a, status: 'draft', slug: B0.slug, origin: null, content: null, theme: null, draft: null };
+const N = { id: B0.id, owner: B0.owner, answers: { _savedAt: Date.now(), _acct: B0.owner }, status: 'draft', slug: null, origin: null, content: null, theme: null, draft: null };
+const photos = (B0.answers._remote || []).map(u => u.src).filter(Boolean).slice(0, 12), A0 = B0.answers;
+const PAGE = { ok: true, stage: 'page', site: 'airbnb', source: 'page', title: 'Home in ' + (A0.town || 'town'), pageTitle: (A0.placeName || 'Test house') + ' - Houses for Rent - Airbnb', cover: photos[0], photos, photoRooms: photos.map(() => null), photoCaps: photos.map(() => ''), rating: { avg: 4.9, count: 31 }, lat: A0.lat, lng: A0.lng, src: { text: 'listing text', title: 'x', photos } };
+const WRITE = { ok: true, source: 'page', site: 'airbnb', draft: { placeName: A0.placeName, town: A0.town, region: A0.region, propertyType: A0.propertyType, bedrooms: A0.bedrooms, checkIn: A0.checkIn || '16:00', checkOut: A0.checkOut || '11:00', houseRules: A0.houseRules, amenities: A0.amenities, tagline: A0.tagline, welcome: A0.welcome, toConfirm: ['Your Wi-Fi'] }, photos, cover: photos[0], lat: A0.lat, lng: A0.lng, report: { assistant: 'ok' } };
+const listing = (route, body) => setTimeout(() => json(route, body.stage === 'page' ? PAGE : WRITE), body.stage === 'page' ? 400 : 1500);
+const inPhone = (p, fn) => p.evaluate(fn => { const d = document.getElementById('phoneFrame') && document.getElementById('phoneFrame').contentDocument; return d ? new Function('d', 'return (' + fn + ')(d)')(d) : null; }, fn.toString());
 mkdirSync(SHOTS, { recursive: true });
 const results = [], ok = (name, pass, more = '') => results.push(`${pass ? 'PASS' : 'FAIL'}  ${name}${more ? '  (' + more + ')' : ''}`);
 const json = (route, body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 
-async function open(browser, G, w, h, stored = {}) {
+async function open(browser, G, w, h, stored = {}, listing = null) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h } });
   await ctx.addInitScript(([g, stored]) => {
     if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', '1');
@@ -38,6 +44,7 @@ async function open(browser, G, w, h, stored = {}) {
   }, [G, stored]);
   await ctx.route('**/*', route => {
     const req = route.request(), u = new URL(req.url());
+    if (u.host === 'editor.test' && u.pathname === '/api/listing' && listing) return listing(route, JSON.parse(req.postData() || '{}'));
     if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
     if (u.origin !== SB) return route.continue();   // fonts, public pictures
     if (u.pathname.startsWith('/auth/v1/user')) return json(route, { id: G.owner, email: 'test@example.org' });
@@ -63,7 +70,7 @@ const barOverlaps = p => p.$$eval('#navbar .nbin > *', els => { const b = els.ma
 const barText = p => p.$eval('#navbar', el => el.innerText.replace(/\s+/g, ' ').trim()).catch(() => '');
 const everyPage = async (p, tag) => { const pages = [...new Set(await p.$$eval('.rail a.si', as => as.map(x => x.getAttribute('href'))))], bad = [];
   for (const h of pages) { await go(p, h); const c = await underShape(p); if (c.length) bad.push(`${h}: header ${c.join(', ')}`); if (await barOverlaps(p)) bad.push(`${h}: bottom bar`); }
-  ok(`${tag}: nothing overlaps on any of the ${pages.length} pages at 360 px`, !bad.length, bad.join('; ')); };
+  ok(`${tag}: nothing overlaps on any of the ${pages.length} pages`, !bad.length, bad.join('; ')); };
 
 const browser = await chromium.launch();
 try {
@@ -93,6 +100,50 @@ try {
     await everyPage(p, 'builder');
     ok('builder: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // ---- The wow: a new host pastes their link ----
+  { const { ctx, p, errors } = await open(browser, N, 360, 780, {}, listing);
+    await p.goto('http://editor.test/'); await p.waitForSelector('#st_url', { timeout: 15000 });
+    await p.fill('#st_url', 'https://www.airbnb.com/rooms/12345678'); await p.click('#startGo');
+    await p.waitForTimeout(150);
+    ok('wow: the link opens "This is your guide" at once', (await p.evaluate(() => location.hash)) === '#yours' && !!(await p.$('#phoneFrame')), await p.evaluate(() => location.hash));
+    await p.waitForFunction(() => /Writing/.test((document.getElementById('yoursTx') || {}).textContent || ''), null, { timeout: 5000 }).catch(() => {});
+    const early = await inPhone(p, d => ({ cover: !!(d.querySelector('.pv-cover') || {}).style && /url\(/.test(d.querySelector('.pv-cover').style.backgroundImage), name: (d.querySelector('.pv-name h1') || {}).textContent }));
+    ok('wow: a few seconds in, the phone shows the house photo and name (before Claude)', early && early.cover && early.name === (A0.placeName || 'Test house'), JSON.stringify(early));
+    ok('wow: "Make it yours" waits while Claude writes', !!(await p.$('#yoursTx [aria-disabled="true"]')));
+    await p.screenshot({ path: join(SHOTS, 'wow-writing-360.png') });
+    await p.waitForFunction(() => /Your guide is written/.test((document.getElementById('yoursTx') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+    await p.waitForTimeout(2600);   // the tiles pop in one after another
+    const tiles = await inPhone(p, d => d.querySelectorAll('.pv-sec').length);
+    ok('wow: Claude done, the guide is written and its sections are in the phone', /Your guide is written/.test(await p.textContent('#yoursTx')) && tiles >= 3, `${tiles} sections`);
+    ok('wow: 360 px, no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0);
+    const cta = await p.$eval('#yoursTx a.btn.primary', e => { const r = e.getBoundingClientRect(); return r.bottom <= innerHeight && r.top >= 0; }).catch(() => false);
+    ok('wow: on a phone, Make it yours is on screen without scrolling', cta);
+    await p.screenshot({ path: join(SHOTS, 'wow-done-360.png') });
+    await inPhone(p, d => { const b = d.querySelector('.pv-sec'); b && b.click(); return 1; }); await p.waitForTimeout(400);
+    ok('wow: tapping a tile opens that screen in the phone', !!(await inPhone(p, d => d.querySelector('.pv-page'))));
+    await p.click('#yoursTx a.btn.primary'); await p.waitForTimeout(400);
+    ok('wow: "Make it yours" opens The look', (await p.evaluate(() => location.hash)) === '#look', await p.evaluate(() => location.hash));
+    ok('wow: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  { const { ctx, p, errors } = await open(browser, N, 1280, 860, {}, listing);
+    await p.goto('http://editor.test/'); await p.waitForSelector('#st_url', { timeout: 15000 });
+    await p.fill('#st_url', 'https://www.airbnb.com/rooms/12345678'); await p.click('#startGo');
+    await p.waitForFunction(() => /Your guide is written/.test((document.getElementById('yoursTx') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+    await p.waitForTimeout(2600); await p.screenshot({ path: join(SHOTS, 'wow-desktop.png') });
+    await go(p, '#wifi'); await p.waitForTimeout(300);
+    ok('desktop: the phone sits next to the step', await p.$eval('.side-phone', e => getComputedStyle(e).display !== 'none').catch(() => false));
+    await p.fill('[data-k="wifiName"]', 'Casa Test Wifi'); await p.fill('[data-k="wifiPassword"]', 'pass-1234'); await p.waitForTimeout(900);
+    const shown = await inPhone(p, d => d.body.textContent);
+    ok('desktop: typing the Wi-Fi updates the phone', /Casa Test Wifi/.test(shown || ''), (shown || '').slice(0, 60));
+    await p.screenshot({ path: join(SHOTS, 'step-with-phone-desktop.png') });
+    ok('desktop wow: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  { const slug = B.answers.slug || 'my-house';   // "Preview my guide" saves the answers on the device first, then opens /<address>
+    const { ctx, p, errors } = await open(browser, B, 360, 780, { 'porta-onboarding-v1': JSON.stringify({ sid: 'test', A: { ...B.answers, slug } }) });
+    await p.goto('http://editor.test/' + slug); await p.waitForSelector('.pv-shell', { timeout: 15000 }).catch(() => {});
+    ok('full-page preview (Preview my guide) still opens', !!(await p.$('.pv-shell .pv-in')) && !/Get in touch with Yohann/.test(await p.textContent('body')));
+    ok('full-page preview: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // ---- The editor ----
   { const { ctx, p, errors } = await open(browser, E, 360, 780);
     await p.goto('http://editor.test/'); await ready(p);
@@ -118,6 +169,7 @@ try {
     await p.goto('http://editor.test/'); await ready(p);
     ok(`${tag}, desktop: the rail starts with the guide`, !!(await p.$('.rail .si-guide')));
     await p.screenshot({ path: join(SHOTS, `${tag}-desktop.png`) });
+    await everyPage(p, `${tag}, desktop`);
     ok(`${tag}, desktop: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close();
   }

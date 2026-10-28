@@ -63,23 +63,70 @@ function startHTML(){
       <button class="st-skip" type="button" id="skipStart">Or fill it in step by step</button>
     </form></section>`;
 }
+// The link, then the wow (docs/plan-fast-builder.md, step 3): "This is your guide" opens at once, the phone shows the
+// house as soon as its listing page is read (a few seconds), and fills in when Claude has written the rest.
+const listingAsk = body => fetch('/api/listing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
 async function createDraft(fromStep){
   const url = v('listingUrl').trim(), text = v('listingText').trim(), town = v('town').trim();
   const lp = linkProblem(url);
   if (lp) { START.msg = lp; START.need = 'link'; render(); return; }
   if (!url && text.length < 200) { START.msg = 'Paste your listing link, or the text of your listing.'; START.need = url ? 'text' : 'link'; render(); return; }
-  START.busy = true; START.msg = ''; START.step = 0; LOAD.t0 = Date.now(); LOAD.est = 60; render(); log('draft_start', 'start');
-  const tick = setInterval(loadTick, 1000); setTimeout(loadTick, 50);
+  START.busy = true; START.msg = ''; START.step = 0; LOAD.t0 = Date.now(); LOAD.est = 60; log('draft_start', 'start');
+  WOW.stage = 'reading'; WOW.name = ''; PHONE.screen = 'home'; PHONE.build = true; location.hash = '#yours'; render();
+  const back = (need, msg) => { START.need = need; START.msg = msg; WOW.stage = ''; location.hash = fromStep ? '#listing' : '#start'; };
   try {
-    const r = await fetch('/api/listing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url, text, town }) });
-    const d = await r.json();
-    if (!d.ok) { START.need = d.need || 'text'; START.msg = d.message; log('draft_fail', d.need || 'error'); return; }
+    let d = await listingAsk({ url, text, town, stage: 'page' });
+    if (!d.ok) { log('draft_fail', d.need || 'error'); return back(d.need || 'text', d.message); }
+    if (d.stage === 'page') {   // the page is read: show the house, then let Claude write the rest from what was read
+      applyEarly(d); WOW.stage = 'writing'; yoursRefresh(); phoneRender();
+      d = await listingAsk({ url, text, town, stage: 'write', src: d.src });
+      if (!d.ok) { log('draft_fail', d.need || 'error'); return back(d.need || 'retry', d.message); }
+    }
     applyDraft(d); log('draft_ok', d.source); classifyPhotos();
     A._done = { ...(A._done || {}), listing: true }; START.need = ''; START.msg = '';
-    location.hash = fromStep ? '#place' : '#home'; toast('Your first version is ready');
-  } catch (e) { START.need = 'retry'; START.msg = 'We could not reach the assistant. Check your connection and press the button again.'; }
-  finally { clearInterval(tick); START.busy = false; queueSave(); render(); }
+    WOW.stage = 'done'; PHONE.build = true; yoursRefresh(); phoneRender();
+  } catch (e) { back('retry', 'We could not reach the assistant. Check your connection and press the button again.'); }
+  finally { START.busy = false; queueSave(); if (WOW.stage !== 'done' || route() !== 'yours') render(); }
 }
+// What the listing page says, before Claude: its name (for the phone only, Claude writes the real one), its photos,
+// cover, rating and position.
+function applyEarly(d){
+  // The listing's own title (before " - Houses for rent..."), cut at a "|" when long: the host recognises it at once.
+  let nm = String(d.pageTitle || '').split(/\s[-–]\s/)[0].trim();
+  while (nm.length > 40 && nm.includes(' | ')) nm = nm.slice(0, nm.lastIndexOf(' | ')).trim();
+  WOW.name = nm || String(d.title || '').split('·')[0].trim();
+  if (d.cover) A.coverUrl = d.cover;
+  if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
+  addListingPhotos(d);
+}
+function addListingPhotos(d){
+  if (!Array.isArray(d.photos)) return;
+  A.listingPhotos = d.photos;
+  // The listing's own photos become the first photos of the house guide, each with the room we could tell from its caption.
+  const have = uploads.filter(u => u.kind === 'photo');
+  if (have.some(u => u.remote)) return;
+  const room = r => ROOMS.includes(r) ? r : '';
+  d.photos.slice(0, Math.max(0, 16 - have.length)).forEach((src, i) => {
+    const cap = (d.photoCaps || [])[i] || '';
+    const rec = { id: newId(), kind: 'photo', remote: true, src, name: cap || 'Listing photo ' + (i + 1), room: room((d.photoRooms || [])[i]), roomLabel: (cap && cap.length <= 30) ? cap : '', url: src + '?im_w=720', createdAt: new Date(Date.now() + i).toISOString() };
+    uploads.push(rec); saveUpload(rec);
+  });
+}
+// The wow page.
+function yoursHTML(){
+  return `<section class="yours"><div class="yours-tx" id="yoursTx">${yoursText()}</div><div class="yours-ph">${phoneHTML()}</div></section>`;
+}
+function yoursText(){
+  const st = WOW.stage || (A._draftAt ? 'done' : ''), name = v('guideName') || v('placeName') || WOW.name;
+  const ready = readyMods().filter(m => statusOf(m).k === 'done').length, left = flowMods().filter(m => statusOf(m).k !== 'done').length;
+  const say = { reading: 'Opening your listing…', writing: 'Writing your house guide, the rules and the times…' };
+  if (!st) return `<small>Your guest guide</small><h1>Not started yet</h1><p>Paste your listing link first.</p><div class="row"><a class="btn primary" href="#start">Paste my link ${ARROW}</a></div>`;
+  return `<small>Your guest guide</small><h1>${esc(name || 'Your guide')}</h1>
+    <p class="yours-st" role="status" aria-live="polite">${st === 'done' ? CHECK : '<span class="spin dark" aria-hidden="true"></span>'}<span>${st === 'done' ? 'Your guide is written.' : esc(say[st])}</span></p>
+    <p>${st === 'done' ? `${ready} step${ready === 1 ? ' is' : 's are'} ready from your listing${left ? `, and ${left === 1 ? 'one needs' : left + ' need'} you` : ''}. Tap around in the phone: this is what your guests get.` : 'Your photos and the details of your listing are going into it right now.'}</p>
+    <div class="row">${st === 'done' ? `<a class="btn primary" href="#look">Make it yours ${ARROW}</a>` : `<span class="btn primary" aria-disabled="true">Make it yours ${ARROW}</span>`}</div>`;
+}
+const yoursRefresh = () => { const el = document.getElementById('yoursTx'); if (el) el.innerHTML = yoursText(); };
 function applyDraft(d){
   const D = d.draft || {}, pre = { ...(A._pre || {}) };
   for (const [k, mod] of Object.entries(DRAFT_MAP)) {
@@ -105,19 +152,7 @@ function applyDraft(d){
   if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
   if (d.cover) A.coverUrl = d.cover;
   if (d.report) A._report = d.report;
-  if (Array.isArray(d.photos)) {
-    A.listingPhotos = d.photos;
-    // The listing's own photos become the first photos of the house guide, each with the room we could tell from its caption.
-    const have = uploads.filter(u => u.kind === 'photo');
-    if (!have.some(u => u.remote)) {
-      const room = r => ROOMS.includes(r) ? r : '';
-      d.photos.slice(0, Math.max(0, 16 - have.length)).forEach((src, i) => {
-        const cap = (d.photoCaps || [])[i] || '';
-        const rec = { id: newId(), kind: 'photo', remote: true, src, name: cap || 'Listing photo ' + (i + 1), room: room((d.photoRooms || [])[i]), roomLabel: (cap && cap.length <= 30) ? cap : '', url: src + '?im_w=720', createdAt: new Date(Date.now() + i).toISOString() };
-        uploads.push(rec); saveUpload(rec);
-      });
-    }
-  }
+  addListingPhotos(d);
   if (!A._slugTouched && (v('guideName') || v('placeName'))) A.slug = cleanSlug(v('guideName') || v('placeName'));
   A._draftAt = new Date().toISOString(); A._draftSource = d.source;
 }

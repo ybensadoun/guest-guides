@@ -174,7 +174,13 @@ export default async (req) => {
   let body; try { body = await req.json(); } catch (e) { return json({ ok: false, message: 'Bad request' }, 400); }
   const url = String(body.url || '').trim(), text = String(body.text || '').trim(), town = String(body.town || '').trim();
   let src = null, site = null;
-  if (url) {
+  // Two stages, so the builder shows the guide while Claude writes it (docs/plan-fast-builder.md, step 3): "page" answers
+  // at once with what the listing page itself says, plus what was read; "write" gets that back and only asks Claude, so the
+  // page is read once. Without a stage, both in one answer, as before.
+  const stage = body.stage === 'page' || body.stage === 'write' ? body.stage : '';
+  const given = stage === 'write' && body.src && typeof body.src === 'object' && typeof body.src.text === 'string' && JSON.stringify(body.src).length < 600000 ? body.src : null;
+  if (given) { src = given; site = (LINK_RX.find(x => x.rx.test(url)) || {}).site || null; }
+  else if (url) {
     site = (LINK_RX.find(x => x.rx.test(url)) || {}).site;
     if (!site && !text) return json({ ok: false, need: 'link', message: 'That does not look like a listing page. Open your listing on Airbnb (or Booking, Vrbo) and copy the address from the browser: it looks like airbnb.com/rooms/12345678.' });
     if (site) {
@@ -192,8 +198,11 @@ export default async (req) => {
       : 'Paste the text of your listing: everything from the title down to the house rules.' });
   }
   if (!src) src = { via: 'text', sleeping: [], tourRooms: 0, rating: null, title: '', description: '', text, photos: [], pics: [], counts: '', lat: null, lng: null };
-  else if (text) src.text = text + '\n\n' + src.text;
+  else if (text && !given) src.text = text + '\n\n' + src.text;
   src.url = url;
+  if (stage === 'page') return json({ ok: true, stage, site, source: src.title ? 'page' : 'text', title: src.title || '', pageTitle: src.pageTitle || '',
+    cover: src.image || (src.photos || [])[0] || null, photos: src.photos || [], photoRooms: (src.pics || []).map(x => x.room || null), photoCaps: (src.pics || []).map(x => x.caption),
+    rating: src.rating || null, sleeping: src.sleeping || [], lat: src.lat, lng: src.lng, src });
   {
     let draft, assistant = 'ok', code = '';
     try { draft = await askClaude(src, town); } catch (e) { assistant = 'failed'; code = String((e && e.message) || e).slice(0, 220); draft = fallbackDraft(src); console.error('askClaude failed:', code); }

@@ -11,7 +11,7 @@ function stepListHTML(cur){
   const item = (m) => { const s = statusOf(m); return `<a class="si s-${s.k}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${STATUS_ICON[s.k]}</span><span class="st">${esc(m.title)}</span><span class="sl">${esc(s.k === 'new' && !needsYou(m) && s.label === 'Start' ? '' : s.label)}</span></a>`; };
   const miss = sendMissing().length;
   const flow = flowMods(), left = flow.filter(m => statusOf(m).k !== 'done').length;
-  return `<div class="si-guide"><b>${esc(v('guideName') || v('placeName') || 'Your guide')}</b><small>${A._draftAt ? 'Filled in from your listing' : 'Your listing is not loaded yet'}</small></div>
+  return `<div class="si-guide"><b>${esc(v('guideName') || v('placeName') || 'Your guide')}</b><small>${A._draftAt ? '<a href="#yours">See your guide</a>' : 'Your listing is not loaded yet'}</small></div>
     <p class="sg">Needs you${left ? ` · ${left} left` : ''}</p>${flow.map(item).join('')}
     <p class="sg">Ready: check if you like</p>${mods.filter(m => !needsYou(m)).map(item).join('')}
     <p class="sg">Finish</p><a class="si s-${miss ? 'new' : 'done'} send" href="#send"${cur === 'send' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Review and send</span><span class="sl">${miss ? miss + ' left' : 'Ready'}</span></a>`;
@@ -52,7 +52,7 @@ function openSteps(){
 }
 function moduleHTML(m){
   const s = statusOf(m), miss = missingOf(m);
-  return `<div class="split">${railHTML(m.id)}<div class="col">
+  return `<div class="split has-phone">${railHTML(m.id)}<div class="col">
     <section class="mhead" style="${tileVars(m)}">
       <div class="row1"><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
       <h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
@@ -64,7 +64,8 @@ function moduleHTML(m){
           : s.k === 'done' ? 'Done. You can still change anything.' : m.id === 'look' ? 'Already set for you. Change what you like, then press Done.' : 'Only you know this. Answer it now or later: your guide works without it.'}</p>
         ${(A._done || {})[m.id] && needsYou(m) ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
       </div></section>
-    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
+    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div>
+    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside></div>`;
 }
 function sendHTML(){
   const mods = visible(), miss = sendMissing();

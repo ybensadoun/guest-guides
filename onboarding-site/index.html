@@ -413,7 +413,8 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .sw-pick input{grid-column:1/-1;grid-row:2;font-size:14px!important;padding:8px 10px!important}
 .sw-pick .x{grid-column:2;grid-row:1;border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)}
 
-@media (max-width:620px){.mhead::before{width:52px!important;height:84px!important;right:14px!important}.mhead p,.mhead h1{padding-right:58px}}   /* text stops 10 px before the shape */
+@media (max-width:620px){.mhead::before{width:52px!important;height:84px!important;right:14px!important}.mhead p,.mhead h1{padding-right:58px}.mhead .row1{padding-right:58px}}   /* text stops 10 px before the shape */
+@media (min-width:621px){.mhead .row1{padding-right:104px}}   /* the badge too: the shape is 90 px wide, 24 px in */
 
 /* Host lists */
 .pl{display:flex;flex-direction:column;gap:12px;margin-bottom:10px}
@@ -424,6 +425,32 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .plan-row{display:flex;flex-direction:column;gap:6px;padding:12px;background:var(--sunk);border-radius:var(--r-s)}
 
 .frm.sug{background:color-mix(in srgb,var(--sun) 30%,transparent);color:#7a5200}
+
+/* The phone: the guide, live, built from the answers (preview.js phoneRender) */
+.phone{width:300px;max-width:100%;aspect-ratio:300/620;border-radius:44px;background:#121417;padding:11px;position:relative;box-shadow:0 30px 60px -26px rgba(20,24,30,.5),inset 0 0 0 2px #2b2f35}
+.phone::before{content:"";position:absolute;top:19px;left:50%;width:72px;height:20px;margin-left:-36px;border-radius:12px;background:#121417;z-index:2}
+.phone iframe{display:block;width:100%;height:100%;border:0;border-radius:34px;background:#fff}
+.side-phone{display:none}
+@media (min-width:1240px){
+  .wrap:has(.split.has-phone){max-width:1440px}
+  .split.has-phone{grid-template-columns:240px minmax(0,1fr) 290px}
+  .side-phone{display:flex;flex-direction:column;align-items:center;gap:10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 14px)}
+  .side-phone .phone{width:280px}
+  .side-phone p{margin:0;font-size:13px;color:var(--muted);text-align:center}
+}
+/* The wow page (#yours): the guide builds itself in the phone right after the link */
+.yours{display:grid;gap:24px;justify-items:center;align-items:center;padding:8px 0 48px}
+.yours-tx{display:flex;flex-direction:column;gap:12px;max-width:520px;text-align:center;align-items:center}
+.yours-tx small{font-size:12.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.yours-tx h1{font-size:clamp(34px,7vw,56px);line-height:1.05;margin:0;overflow-wrap:anywhere}
+.yours-tx p{margin:0}
+.yours-st{display:flex;align-items:center;gap:10px;font-weight:600}
+.yours-st svg{width:20px;height:20px;flex:none;color:var(--ok)}
+.yours-ph .phone{width:min(300px,76vw)}
+@media (max-width:899px){.yours-ph{order:-1}.yours{padding-bottom:96px}   /* on a phone the wow comes first: the guide, then the words; */
+  .yours-tx .row{position:fixed;left:0;right:0;bottom:0;z-index:30;justify-content:center;background:var(--surface);border-top:1.5px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}}   /* Make it yours stays at hand */
+.btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
+@media (min-width:900px){.yours{grid-template-columns:minmax(0,1fr) auto;justify-items:start;gap:64px}.yours-tx{text-align:left;align-items:flex-start}}
 
 </style>
 </head>
@@ -702,7 +729,7 @@ function stepListHTML(cur){
   const item = (m) => { const s = statusOf(m); return `<a class="si s-${s.k}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${STATUS_ICON[s.k]}</span><span class="st">${esc(m.title)}</span><span class="sl">${esc(s.k === 'new' && !needsYou(m) && s.label === 'Start' ? '' : s.label)}</span></a>`; };
   const miss = sendMissing().length;
   const flow = flowMods(), left = flow.filter(m => statusOf(m).k !== 'done').length;
-  return `<div class="si-guide"><b>${esc(v('guideName') || v('placeName') || 'Your guide')}</b><small>${A._draftAt ? 'Filled in from your listing' : 'Your listing is not loaded yet'}</small></div>
+  return `<div class="si-guide"><b>${esc(v('guideName') || v('placeName') || 'Your guide')}</b><small>${A._draftAt ? '<a href="#yours">See your guide</a>' : 'Your listing is not loaded yet'}</small></div>
     <p class="sg">Needs you${left ? ` · ${left} left` : ''}</p>${flow.map(item).join('')}
     <p class="sg">Ready: check if you like</p>${mods.filter(m => !needsYou(m)).map(item).join('')}
     <p class="sg">Finish</p><a class="si s-${miss ? 'new' : 'done'} send" href="#send"${cur === 'send' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Review and send</span><span class="sl">${miss ? miss + ' left' : 'Ready'}</span></a>`;
@@ -743,7 +770,7 @@ function openSteps(){
 }
 function moduleHTML(m){
   const s = statusOf(m), miss = missingOf(m);
-  return `<div class="split">${railHTML(m.id)}<div class="col">
+  return `<div class="split has-phone">${railHTML(m.id)}<div class="col">
     <section class="mhead" style="${tileVars(m)}">
       <div class="row1"><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
       <h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
@@ -755,7 +782,8 @@ function moduleHTML(m){
           : s.k === 'done' ? 'Done. You can still change anything.' : m.id === 'look' ? 'Already set for you. Change what you like, then press Done.' : 'Only you know this. Answer it now or later: your guide works without it.'}</p>
         ${(A._done || {})[m.id] && needsYou(m) ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
       </div></section>
-    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
+    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div>
+    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside></div>`;
 }
 function sendHTML(){
   const mods = visible(), miss = sendMissing();
@@ -1029,14 +1057,18 @@ function pvStyle(p, preset){
 // The drawn cover, same scene as the guide's (engine/src/views/home.js THEMED_COVER).
 const PV_ART = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect class="a-sky" width="400" height="160"/><circle class="a-sun" cx="246" cy="48" r="15"/><path class="a-far" d="M0 112C60 86 120 88 186 104S318 84 400 98V160H0z"/><path class="a-mid" d="M0 128C80 110 150 114 228 126S350 116 400 120V160H0z"/><path class="a-wall" d="M178 104h44v32h-44z"/><path class="a-roof" d="M173 106l27-18 27 18z"/><path class="a-win" d="M186 112h8v8h-8zM206 112h8v8h-8z"/><path class="a-door" d="M196 123h8v13h-8z"/><path class="a-tree" d="M238 136c-4 0-5-9-5-19s2-20 5-25c3 5 5 15 5 25s-1 19-5 19zM251 136c-3 0-4-6-4-13s2-14 4-18c2 4 4 11 4 18s-1 13-4 13z"/><path class="a-near" d="M0 140C100 130 220 132 300 138S380 136 400 136V160H0z"/></svg>`;
 
-async function renderPreview(){
+// One screen of the guide as guests will see it, built from the answers: the cover, the name, the sections. Used by the
+// phone in the builder (the wow, and next to the steps) and by the full-page preview.
+async function pvParts(screen){
   const p = PV.palette || (PV.palette = await paletteFromImages());
   const preset = PV.preset || (PV.preset = choosePreset(p));
-  const S = ordered(guideSections()), name = v('guideName') || v('placeName') || 'Your guide';
-  // Same rule as the guide: the host's own cover photo, or a scene drawn from the guide's colours (never the listing photo).
-  const cover = (uploads.find(u => u.kind === 'cover') || {}).url;
+  const S = ordered(guideSections()), name = v('guideName') || v('placeName') || WOW.name || 'Your guide';
+  // Same rule as the guide (engine/scripts/generate-site.py): the host's own cover, else the listing photo they chose,
+  // unless they asked for a cover drawn from the colours.
+  const own = (uploads.find(u => u.kind === 'cover') || {}).url, listing = A.coverChoice !== 'drawn' && A.coverUrl ? String(A.coverUrl).split('?')[0] + '?im_w=720' : '';
+  const cover = own || listing;
   const colours = [p.acc[0], p.acc[1], p.ink, p.acc[3], p.acc[2]];
-  const scr = PV.screen, sec = S.find(x => x.id === scr);
+  const scr = screen, sec = S.find(x => x.id === scr);
   const facts = [];
   for (const f of (A.homeFirst && A.homeFirst.length ? A.homeFirst : ['Wi-Fi', 'Check-out time'])) {
     if (f === 'Wi-Fi' && v('wifiName')) facts.push(['wifi', 'Wi-Fi', 'Tap to connect']);
@@ -1053,16 +1085,49 @@ async function renderPreview(){
     ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
     <h2 class="pv-h">${/map/i.test(v('navStyle')) ? 'Around you' : 'Your guide'}</h2>
     <div class="pv-secs" id="pvSecs">${S.map((x, i) => { const pic = false; return `<button type="button" class="pv-sec${['bold', 'soft', 'mediterranean', 'rural'].includes(preset) && (i === S.length - 1 && S.length % 2 === 1) ? ' wide' : ''}${pic ? ' has-photo' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span>${pic ? `<img class="ph" src="${pic}" alt="">` : ''}</button>`; }).join('')}</div>`;
-  const page = sec ? pageHTML(sec) : '';
-  document.body.innerHTML = `${pvStyle(p, preset)}
-    <div class="pv-bar" style="background:#fff3d6;color:#5a3a00;font-weight:600">This is a generic preview, not the final look and feel. Get in touch with Yohann to activate the final look.</div>
-    <div class="pv-bar">Preview of ${esc(name)} · ${esc(BASE)}/${esc(v('slug'))} · <a href="/#home">Back to my answers</a></div>
-    <div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
-      <div class="pv-in">${sec ? page : home}</div></div>
+  return { name, style: pvStyle(p, preset), body: `<div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
+      <div class="pv-in">${sec ? pageHTML(sec) : home}</div></div>` };
+}
+async function renderPreview(){
+  const { name, style, body } = await pvParts(PV.screen);
+  document.body.innerHTML = `${style}
+    <div class="pv-bar">Preview of ${esc(name)} · ${esc(BASE)}/${esc(v('slug'))} · <a href="/#look">Back to my answers</a></div>
+    ${body}
     <button class="pv-fb" type="button" id="pvFb">${I.heart}Feedback</button><div class="toast" id="toast" hidden></div>`;
   const q = document.getElementById('pvSearch');
   if (q) q.addEventListener('input', () => { const t = q.value.toLowerCase().trim(); document.querySelectorAll('#pvSecs .pv-sec').forEach(b => { b.hidden = t && !b.dataset.q.includes(t); }); });
 }
+
+/* ---------- The phone: the guide, live, inside the builder (docs/plan-fast-builder.md, step 3) ----------
+   Drawn in its own frame, so the guide's styles never touch the builder's. Tapping a tile opens that screen in the phone.
+   PHONE.build: the parts arrive one after another (the wow, right after the link). */
+const PHONE = { screen: 'home', build: false, timer: null };
+const WOW = { stage: '', name: '' };   // the wow page: reading (the listing page), writing (Claude), done
+// The guide screen each step changes, shown next to it.
+const STEP_SCREEN = { wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'houseguide', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', area: 'todo', taste: 'todo' };
+const phoneHTML = () => `<div class="phone"><iframe id="phoneFrame" title="Your guide, as guests will see it"></iframe></div>`;
+const PHONE_CSS = `<style>.pv{min-height:100vh;padding-bottom:28px}.pv-in{padding:0 14px}.pv-cover{margin:0 -14px;height:236px}.pv-name h1{font-size:34px}.pv-top{padding:8px 14px}
+.pv-build .pv-cover,.pv-build .pv-name,.pv-build .pv-welcome,.pv-build .pv-fact,.pv-build .pv-h,.pv-build .pv-sec{animation:pvIn .55s cubic-bezier(.2,.7,.2,1) both}
+.pv-build .pv-name{animation-delay:.25s}.pv-build .pv-welcome{animation-delay:.4s}.pv-build .pv-fact{animation-delay:.5s}.pv-build .pv-h{animation-delay:.6s}
+${Array.from({ length: 14 }, (_, i) => `.pv-build .pv-sec:nth-child(${i + 1}){animation-delay:${(0.7 + i * 0.12).toFixed(2)}s}`).join('')}
+@keyframes pvIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.pv-build *{animation:none!important}}</style>`;
+async function phoneRender(){
+  const f = document.getElementById('phoneFrame'); if (!f) return;
+  // The step's own screen once it exists (Wi-Fi as soon as it has a name), the guide's home until then.
+  const scr = ordered(guideSections()).some(x => x.id === PHONE.screen) ? PHONE.screen : 'home';
+  const { style, body } = await pvParts(scr);
+  const doc = f.contentDocument; if (!doc) return;
+  if (!doc.getElementById('pvBody')) {
+    doc.open(); doc.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="pvStyle"></div><div id="pvBody"></div></body></html>`); doc.close();
+    doc.addEventListener('click', e => { const b = e.target.closest('[data-pv]'); if (b) { PHONE.screen = b.dataset.pv; PHONE.build = false; phoneRender().then(() => { try { f.contentWindow.scrollTo(0, 0); } catch (er) {} }); return; } if (e.target.closest('a')) e.preventDefault(); });
+  }
+  const st = doc.getElementById('pvStyle'), html = style + PHONE_CSS; if (st.innerHTML !== html) st.innerHTML = html;
+  const bd = doc.getElementById('pvBody'); bd.className = PHONE.build ? 'pv-build' : ''; bd.innerHTML = body;
+}
+// Typing in a step updates the phone a moment later, without moving it.
+const phoneSoon = () => { if (!document.getElementById('phoneFrame')) return; clearTimeout(PHONE.timer); PHONE.timer = setTimeout(() => { PHONE.build = false; phoneRender(); }, 350); };
+document.addEventListener('input', phoneSoon); document.addEventListener('change', phoneSoon);
 function pageHTML(x){
   const research = x.research ? `<div class="pv-research"><b>In your full guide</b>${esc(x.research)}</div>` : '';
   const list = items => items.length ? `<div class="pv-list">${items.map(t => { const [a, ...b] = t.split(/:\s|,\s| - /); return `<div class="pv-row"><b>${esc(a)}</b>${b.length ? esc(b.join(', ')) : ''}</div>`; }).join('')}</div>` : '';
@@ -1181,23 +1246,70 @@ function startHTML(){
       <button class="st-skip" type="button" id="skipStart">Or fill it in step by step</button>
     </form></section>`;
 }
+// The link, then the wow (docs/plan-fast-builder.md, step 3): "This is your guide" opens at once, the phone shows the
+// house as soon as its listing page is read (a few seconds), and fills in when Claude has written the rest.
+const listingAsk = body => fetch('/api/listing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
 async function createDraft(fromStep){
   const url = v('listingUrl').trim(), text = v('listingText').trim(), town = v('town').trim();
   const lp = linkProblem(url);
   if (lp) { START.msg = lp; START.need = 'link'; render(); return; }
   if (!url && text.length < 200) { START.msg = 'Paste your listing link, or the text of your listing.'; START.need = url ? 'text' : 'link'; render(); return; }
-  START.busy = true; START.msg = ''; START.step = 0; LOAD.t0 = Date.now(); LOAD.est = 60; render(); log('draft_start', 'start');
-  const tick = setInterval(loadTick, 1000); setTimeout(loadTick, 50);
+  START.busy = true; START.msg = ''; START.step = 0; LOAD.t0 = Date.now(); LOAD.est = 60; log('draft_start', 'start');
+  WOW.stage = 'reading'; WOW.name = ''; PHONE.screen = 'home'; PHONE.build = true; location.hash = '#yours'; render();
+  const back = (need, msg) => { START.need = need; START.msg = msg; WOW.stage = ''; location.hash = fromStep ? '#listing' : '#start'; };
   try {
-    const r = await fetch('/api/listing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url, text, town }) });
-    const d = await r.json();
-    if (!d.ok) { START.need = d.need || 'text'; START.msg = d.message; log('draft_fail', d.need || 'error'); return; }
+    let d = await listingAsk({ url, text, town, stage: 'page' });
+    if (!d.ok) { log('draft_fail', d.need || 'error'); return back(d.need || 'text', d.message); }
+    if (d.stage === 'page') {   // the page is read: show the house, then let Claude write the rest from what was read
+      applyEarly(d); WOW.stage = 'writing'; yoursRefresh(); phoneRender();
+      d = await listingAsk({ url, text, town, stage: 'write', src: d.src });
+      if (!d.ok) { log('draft_fail', d.need || 'error'); return back(d.need || 'retry', d.message); }
+    }
     applyDraft(d); log('draft_ok', d.source); classifyPhotos();
     A._done = { ...(A._done || {}), listing: true }; START.need = ''; START.msg = '';
-    location.hash = fromStep ? '#place' : '#home'; toast('Your first version is ready');
-  } catch (e) { START.need = 'retry'; START.msg = 'We could not reach the assistant. Check your connection and press the button again.'; }
-  finally { clearInterval(tick); START.busy = false; queueSave(); render(); }
+    WOW.stage = 'done'; PHONE.build = true; yoursRefresh(); phoneRender();
+  } catch (e) { back('retry', 'We could not reach the assistant. Check your connection and press the button again.'); }
+  finally { START.busy = false; queueSave(); if (WOW.stage !== 'done' || route() !== 'yours') render(); }
 }
+// What the listing page says, before Claude: its name (for the phone only, Claude writes the real one), its photos,
+// cover, rating and position.
+function applyEarly(d){
+  // The listing's own title (before " - Houses for rent..."), cut at a "|" when long: the host recognises it at once.
+  let nm = String(d.pageTitle || '').split(/\s[-–]\s/)[0].trim();
+  while (nm.length > 40 && nm.includes(' | ')) nm = nm.slice(0, nm.lastIndexOf(' | ')).trim();
+  WOW.name = nm || String(d.title || '').split('·')[0].trim();
+  if (d.cover) A.coverUrl = d.cover;
+  if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
+  addListingPhotos(d);
+}
+function addListingPhotos(d){
+  if (!Array.isArray(d.photos)) return;
+  A.listingPhotos = d.photos;
+  // The listing's own photos become the first photos of the house guide, each with the room we could tell from its caption.
+  const have = uploads.filter(u => u.kind === 'photo');
+  if (have.some(u => u.remote)) return;
+  const room = r => ROOMS.includes(r) ? r : '';
+  d.photos.slice(0, Math.max(0, 16 - have.length)).forEach((src, i) => {
+    const cap = (d.photoCaps || [])[i] || '';
+    const rec = { id: newId(), kind: 'photo', remote: true, src, name: cap || 'Listing photo ' + (i + 1), room: room((d.photoRooms || [])[i]), roomLabel: (cap && cap.length <= 30) ? cap : '', url: src + '?im_w=720', createdAt: new Date(Date.now() + i).toISOString() };
+    uploads.push(rec); saveUpload(rec);
+  });
+}
+// The wow page.
+function yoursHTML(){
+  return `<section class="yours"><div class="yours-tx" id="yoursTx">${yoursText()}</div><div class="yours-ph">${phoneHTML()}</div></section>`;
+}
+function yoursText(){
+  const st = WOW.stage || (A._draftAt ? 'done' : ''), name = v('guideName') || v('placeName') || WOW.name;
+  const ready = readyMods().filter(m => statusOf(m).k === 'done').length, left = flowMods().filter(m => statusOf(m).k !== 'done').length;
+  const say = { reading: 'Opening your listing…', writing: 'Writing your house guide, the rules and the times…' };
+  if (!st) return `<small>Your guest guide</small><h1>Not started yet</h1><p>Paste your listing link first.</p><div class="row"><a class="btn primary" href="#start">Paste my link ${ARROW}</a></div>`;
+  return `<small>Your guest guide</small><h1>${esc(name || 'Your guide')}</h1>
+    <p class="yours-st" role="status" aria-live="polite">${st === 'done' ? CHECK : '<span class="spin dark" aria-hidden="true"></span>'}<span>${st === 'done' ? 'Your guide is written.' : esc(say[st])}</span></p>
+    <p>${st === 'done' ? `${ready} step${ready === 1 ? ' is' : 's are'} ready from your listing${left ? `, and ${left === 1 ? 'one needs' : left + ' need'} you` : ''}. Tap around in the phone: this is what your guests get.` : 'Your photos and the details of your listing are going into it right now.'}</p>
+    <div class="row">${st === 'done' ? `<a class="btn primary" href="#look">Make it yours ${ARROW}</a>` : `<span class="btn primary" aria-disabled="true">Make it yours ${ARROW}</span>`}</div>`;
+}
+const yoursRefresh = () => { const el = document.getElementById('yoursTx'); if (el) el.innerHTML = yoursText(); };
 function applyDraft(d){
   const D = d.draft || {}, pre = { ...(A._pre || {}) };
   for (const [k, mod] of Object.entries(DRAFT_MAP)) {
@@ -1223,19 +1335,7 @@ function applyDraft(d){
   if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
   if (d.cover) A.coverUrl = d.cover;
   if (d.report) A._report = d.report;
-  if (Array.isArray(d.photos)) {
-    A.listingPhotos = d.photos;
-    // The listing's own photos become the first photos of the house guide, each with the room we could tell from its caption.
-    const have = uploads.filter(u => u.kind === 'photo');
-    if (!have.some(u => u.remote)) {
-      const room = r => ROOMS.includes(r) ? r : '';
-      d.photos.slice(0, Math.max(0, 16 - have.length)).forEach((src, i) => {
-        const cap = (d.photoCaps || [])[i] || '';
-        const rec = { id: newId(), kind: 'photo', remote: true, src, name: cap || 'Listing photo ' + (i + 1), room: room((d.photoRooms || [])[i]), roomLabel: (cap && cap.length <= 30) ? cap : '', url: src + '?im_w=720', createdAt: new Date(Date.now() + i).toISOString() };
-        uploads.push(rec); saveUpload(rec);
-      });
-    }
-  }
+  addListingPhotos(d);
   if (!A._slugTouched && (v('guideName') || v('placeName'))) A.slug = cleanSlug(v('guideName') || v('placeName'));
   A._draftAt = new Date().toISOString(); A._draftSource = d.source;
 }
@@ -1438,7 +1538,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 00:12 (Madrid time, after commit 933782b)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 00:46 (Madrid time, after commit b7b36f8)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -3156,7 +3256,7 @@ function draftBanner(){
   return `<section class="draft">
     <div><small>Your guide is written</small><h2>${ready} step${ready === 1 ? ' is' : 's are'} ready from your listing${left ? `, and ${left === 1 ? 'one needs' : left + ' need'} you` : ''}.</h2>
     ${ask.length ? `<details><summary>${ask.length === 1 ? 'One thing' : ask.length + ' things'} your listing does not say</summary><ul>${ask.map(q => `<li>${esc(q)}</li>`).join('')}</ul></details>` : ''}</div>
-    <div class="draft-act"><button class="btn primary" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"', 'stroke-width="2.2" width="17" height="17"')}See your guide</button></div>
+    <div class="draft-act"><a class="btn primary" href="#yours">${I.eye.replace('stroke-width="2.2"', 'stroke-width="2.2" width="17" height="17"')}See your guide</a></div>
   </section>`;
 }
 
@@ -3246,7 +3346,8 @@ function render(){
   else if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
   else if (r === 'building' || (A._sentAt && !location.hash && window.__acctGuide && window.__acctGuide() && window.__acctGuide().status !== 'draft')) { main.innerHTML = buildingHTML(); watchBuild(); }
   else if (r === 'thanks' || (A._sentAt && !location.hash)) main.innerHTML = thanksHTML();
-  else if (m) { main.innerHTML = moduleHTML(m); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
+  else if (r === 'yours') { main.innerHTML = yoursHTML(); phoneRender(); if (r !== lastRoute) log('open', 'yours'); }   // the wow: the guide in a phone
+  else if (m) { main.innerHTML = moduleHTML(m); PHONE.screen = STEP_SCREEN[m.id] || 'home'; PHONE.build = false; phoneRender(); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
   else if (r === 'send') { main.innerHTML = sendHTML(); if (r !== lastRoute) { log('open', 'send'); queueSave(); } }
   else if ((r === 'home' || r === 'start') && (r === 'start' || (!A._draftAt && !A._skipStart && !visible().some(m => statusOf(m).k !== 'new')))) { main.innerHTML = startHTML(); if (r !== lastRoute) { log('open', 'start'); queueSave(); } }
   else { history.replaceState(null, '', '#' + obNext()); return render(); }   // no overview page: straight to the next step

@@ -193,14 +193,18 @@ function pvStyle(p, preset){
 // The drawn cover, same scene as the guide's (engine/src/views/home.js THEMED_COVER).
 const PV_ART = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect class="a-sky" width="400" height="160"/><circle class="a-sun" cx="246" cy="48" r="15"/><path class="a-far" d="M0 112C60 86 120 88 186 104S318 84 400 98V160H0z"/><path class="a-mid" d="M0 128C80 110 150 114 228 126S350 116 400 120V160H0z"/><path class="a-wall" d="M178 104h44v32h-44z"/><path class="a-roof" d="M173 106l27-18 27 18z"/><path class="a-win" d="M186 112h8v8h-8zM206 112h8v8h-8z"/><path class="a-door" d="M196 123h8v13h-8z"/><path class="a-tree" d="M238 136c-4 0-5-9-5-19s2-20 5-25c3 5 5 15 5 25s-1 19-5 19zM251 136c-3 0-4-6-4-13s2-14 4-18c2 4 4 11 4 18s-1 13-4 13z"/><path class="a-near" d="M0 140C100 130 220 132 300 138S380 136 400 136V160H0z"/></svg>`;
 
-async function renderPreview(){
+// One screen of the guide as guests will see it, built from the answers: the cover, the name, the sections. Used by the
+// phone in the builder (the wow, and next to the steps) and by the full-page preview.
+async function pvParts(screen){
   const p = PV.palette || (PV.palette = await paletteFromImages());
   const preset = PV.preset || (PV.preset = choosePreset(p));
-  const S = ordered(guideSections()), name = v('guideName') || v('placeName') || 'Your guide';
-  // Same rule as the guide: the host's own cover photo, or a scene drawn from the guide's colours (never the listing photo).
-  const cover = (uploads.find(u => u.kind === 'cover') || {}).url;
+  const S = ordered(guideSections()), name = v('guideName') || v('placeName') || WOW.name || 'Your guide';
+  // Same rule as the guide (engine/scripts/generate-site.py): the host's own cover, else the listing photo they chose,
+  // unless they asked for a cover drawn from the colours.
+  const own = (uploads.find(u => u.kind === 'cover') || {}).url, listing = A.coverChoice !== 'drawn' && A.coverUrl ? String(A.coverUrl).split('?')[0] + '?im_w=720' : '';
+  const cover = own || listing;
   const colours = [p.acc[0], p.acc[1], p.ink, p.acc[3], p.acc[2]];
-  const scr = PV.screen, sec = S.find(x => x.id === scr);
+  const scr = screen, sec = S.find(x => x.id === scr);
   const facts = [];
   for (const f of (A.homeFirst && A.homeFirst.length ? A.homeFirst : ['Wi-Fi', 'Check-out time'])) {
     if (f === 'Wi-Fi' && v('wifiName')) facts.push(['wifi', 'Wi-Fi', 'Tap to connect']);
@@ -217,16 +221,49 @@ async function renderPreview(){
     ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
     <h2 class="pv-h">${/map/i.test(v('navStyle')) ? 'Around you' : 'Your guide'}</h2>
     <div class="pv-secs" id="pvSecs">${S.map((x, i) => { const pic = false; return `<button type="button" class="pv-sec${['bold', 'soft', 'mediterranean', 'rural'].includes(preset) && (i === S.length - 1 && S.length % 2 === 1) ? ' wide' : ''}${pic ? ' has-photo' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span>${pic ? `<img class="ph" src="${pic}" alt="">` : ''}</button>`; }).join('')}</div>`;
-  const page = sec ? pageHTML(sec) : '';
-  document.body.innerHTML = `${pvStyle(p, preset)}
-    <div class="pv-bar" style="background:#fff3d6;color:#5a3a00;font-weight:600">This is a generic preview, not the final look and feel. Get in touch with Yohann to activate the final look.</div>
-    <div class="pv-bar">Preview of ${esc(name)} · ${esc(BASE)}/${esc(v('slug'))} · <a href="/#home">Back to my answers</a></div>
-    <div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
-      <div class="pv-in">${sec ? page : home}</div></div>
+  return { name, style: pvStyle(p, preset), body: `<div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
+      <div class="pv-in">${sec ? pageHTML(sec) : home}</div></div>` };
+}
+async function renderPreview(){
+  const { name, style, body } = await pvParts(PV.screen);
+  document.body.innerHTML = `${style}
+    <div class="pv-bar">Preview of ${esc(name)} · ${esc(BASE)}/${esc(v('slug'))} · <a href="/#look">Back to my answers</a></div>
+    ${body}
     <button class="pv-fb" type="button" id="pvFb">${I.heart}Feedback</button><div class="toast" id="toast" hidden></div>`;
   const q = document.getElementById('pvSearch');
   if (q) q.addEventListener('input', () => { const t = q.value.toLowerCase().trim(); document.querySelectorAll('#pvSecs .pv-sec').forEach(b => { b.hidden = t && !b.dataset.q.includes(t); }); });
 }
+
+/* ---------- The phone: the guide, live, inside the builder (docs/plan-fast-builder.md, step 3) ----------
+   Drawn in its own frame, so the guide's styles never touch the builder's. Tapping a tile opens that screen in the phone.
+   PHONE.build: the parts arrive one after another (the wow, right after the link). */
+const PHONE = { screen: 'home', build: false, timer: null };
+const WOW = { stage: '', name: '' };   // the wow page: reading (the listing page), writing (Claude), done
+// The guide screen each step changes, shown next to it.
+const STEP_SCREEN = { wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'houseguide', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', area: 'todo', taste: 'todo' };
+const phoneHTML = () => `<div class="phone"><iframe id="phoneFrame" title="Your guide, as guests will see it"></iframe></div>`;
+const PHONE_CSS = `<style>.pv{min-height:100vh;padding-bottom:28px}.pv-in{padding:0 14px}.pv-cover{margin:0 -14px;height:236px}.pv-name h1{font-size:34px}.pv-top{padding:8px 14px}
+.pv-build .pv-cover,.pv-build .pv-name,.pv-build .pv-welcome,.pv-build .pv-fact,.pv-build .pv-h,.pv-build .pv-sec{animation:pvIn .55s cubic-bezier(.2,.7,.2,1) both}
+.pv-build .pv-name{animation-delay:.25s}.pv-build .pv-welcome{animation-delay:.4s}.pv-build .pv-fact{animation-delay:.5s}.pv-build .pv-h{animation-delay:.6s}
+${Array.from({ length: 14 }, (_, i) => `.pv-build .pv-sec:nth-child(${i + 1}){animation-delay:${(0.7 + i * 0.12).toFixed(2)}s}`).join('')}
+@keyframes pvIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.pv-build *{animation:none!important}}</style>`;
+async function phoneRender(){
+  const f = document.getElementById('phoneFrame'); if (!f) return;
+  // The step's own screen once it exists (Wi-Fi as soon as it has a name), the guide's home until then.
+  const scr = ordered(guideSections()).some(x => x.id === PHONE.screen) ? PHONE.screen : 'home';
+  const { style, body } = await pvParts(scr);
+  const doc = f.contentDocument; if (!doc) return;
+  if (!doc.getElementById('pvBody')) {
+    doc.open(); doc.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="pvStyle"></div><div id="pvBody"></div></body></html>`); doc.close();
+    doc.addEventListener('click', e => { const b = e.target.closest('[data-pv]'); if (b) { PHONE.screen = b.dataset.pv; PHONE.build = false; phoneRender().then(() => { try { f.contentWindow.scrollTo(0, 0); } catch (er) {} }); return; } if (e.target.closest('a')) e.preventDefault(); });
+  }
+  const st = doc.getElementById('pvStyle'), html = style + PHONE_CSS; if (st.innerHTML !== html) st.innerHTML = html;
+  const bd = doc.getElementById('pvBody'); bd.className = PHONE.build ? 'pv-build' : ''; bd.innerHTML = body;
+}
+// Typing in a step updates the phone a moment later, without moving it.
+const phoneSoon = () => { if (!document.getElementById('phoneFrame')) return; clearTimeout(PHONE.timer); PHONE.timer = setTimeout(() => { PHONE.build = false; phoneRender(); }, 350); };
+document.addEventListener('input', phoneSoon); document.addEventListener('change', phoneSoon);
 function pageHTML(x){
   const research = x.research ? `<div class="pv-research"><b>In your full guide</b>${esc(x.research)}</div>` : '';
   const list = items => items.length ? `<div class="pv-list">${items.map(t => { const [a, ...b] = t.split(/:\s|,\s| - /); return `<div class="pv-row"><b>${esc(a)}</b>${b.length ? esc(b.join(', ')) : ''}</div>`; }).join('')}</div>` : '';
