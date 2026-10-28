@@ -192,6 +192,7 @@ html=seg1+'\n'+views+'\n'+runtime+'\n})();\n</script>\n'+forms+'</body>\n</html>
 import subprocess,datetime
 try: _h=subprocess.run(['git','rev-parse','--short','HEAD'],capture_output=True,text=True,cwd=__import__('os').path.dirname(__file__)).stdout.strip()
 except Exception: _h=''
-_stamp=(datetime.datetime.utcnow()+datetime.timedelta(hours=2)).strftime('%d %b %Y, %H:%M')+' (Madrid time'+(', after commit '+_h if _h else '')+')'
+from zoneinfo import ZoneInfo
+_stamp=datetime.datetime.now(ZoneInfo('Europe/Madrid')).strftime('%d %b %Y, %H:%M')+' (Madrid time'+(', after commit '+_h if _h else '')+')'
 html=html.replace('__BUILD__',_stamp)
 open(__import__('os').path.join(__import__('os').path.dirname(__file__),'index.html'),'w').write(html)
