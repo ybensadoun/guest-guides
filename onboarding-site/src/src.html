@@ -351,7 +351,7 @@ const Q = {
   lookAvoid:{t:'area',rows:2,label:'Anything to avoid?',opt:true,full:true,ph:'No pink, nothing too corporate…'},
   moduleIdeas:{t:'area',rows:2,label:'An idea we don’t have yet?',opt:true,full:true,ph:'A page about the vineyard next door…',hint:'We build new ideas as new sections.'},
   amenities:{t:'chips',label:'What the place has',opts:AMEN,opt:true},
-  howTos:{t:'area',rows:7,label:'How things work',full:true,ph:'Boiler: press the red button for 3 seconds\nPool cover: the key is on the hook by the door\nTV: Netflix app, sign in with your own account'},
+  howTos:{t:'area',rows:8,label:'How things work',full:true,hint:'One tip per line. Say the room if it is not obvious: each line goes into its room in the guide.',ph:'Cleaning products and dishwasher tablets are under the kitchen sink\nSpare batteries are in the TV unit\nOne bath towel per person; beach towels are in the hall cupboard\nThe pool is not heated; the cover key hangs by the door\nThe heating is set on the thermostat by the front door'},
   checkIn:{t:'time',label:'Check-in from'},
   checkOut:{t:'time',label:'Check-out by'},
   houseRules:{t:'area',rows:4,label:'House rules',opt:true,full:true,ph:'Quiet after 23:00\nNo parties\nNo smoking inside'},
@@ -392,7 +392,7 @@ const Q = {
   notes:{t:'area',rows:3,label:'Anything else?',opt:true,full:true}
 };
 const UP = {
-  logo:{label:'Logo or symbol',opt:true,max:1,hint:'A logo, a drawing, a photo of your dog. None? We design a simple one.'},
+  logo:{label:'Your logo',opt:true,max:1,hint:'Optional. It shows on the welcome card and becomes the icon on guests’ phones. Without one, the guide shows no logo.'},
   inspiration:{label:'Images for the colours',max:3,what:'1 to 3 images',hint:'Artwork, a poster, a photo or a website screenshot. We only take their colours for your guide: the images themselves are not shown in it.'},
   cover:{label:'Your own cover picture',opt:true,max:1,hint:'A photo, or an artistic rendering of your house (made with an AI image tool or by an artist). It replaces the photo above. Landscape works best.'},
   photo:{label:'Photos of the place',max:16,rooms:true,what:'Up to 16 photos'},
@@ -479,7 +479,7 @@ function field(k){
   if (k === 'privacyNote') return `<div class="note full"><span aria-hidden="true">⌂</span><div>We never show your street address. The map uses a point near the house.</div></div>`;
   if (k === 'wifiNote') return `<div class="note full"><div>Guests see the password in the guide, so use your guest network if you have one.</div></div>`;
   if (k === 'sectionPicker') return sectionPicker();
-  if (k === 'up:cover' && typeof coverChoiceHTML === 'function') return coverChoiceHTML() + drop('cover');
+  if (k === 'up:cover' && typeof coverChoiceHTML === 'function') return coverChoiceHTML();
   if (k.startsWith('up:')) return drop(k.slice(3));
   const q = Q[k]; if (!q) return '';
   if (q.show && !q.show()) return '';
@@ -579,7 +579,7 @@ function summary(m){
   switch (m.id) {
     case 'listing': return [v('placeName'), v('propertyType'), [v('town'), v('region')].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'Not filled';
     case 'guide': return [v('guideName') || v('placeName'), (A.languages || []).map(l => l.toUpperCase()).join(' '), n('logo') ? 'logo' : 'no logo'].filter(Boolean).join(' · ');
-    case 'look': return `${n('inspiration')} image(s) · ${(MOODS.find(x => x.id === v('mood')) || {}).name || 'no mood'} · ${n('cover') ? 'main photo' : 'no main photo'}`;
+    case 'look': return [n('logo') ? 'Logo' : '', n('cover') ? 'Own cover' : A.coverChoice === 'drawn' ? 'Drawn cover' : A.coverUrl ? 'Listing photo' : '', (MOODS.find(x => x.id === v('mood')) || {}).name || ''].filter(Boolean).join(' · ') || 'Not started';
     case 'sections': return SECTIONS.filter(s => secOn(s.id)).map(s => s.name).join(', ');
     case 'photos': return `${n('photo')} photos, ${uploads.filter(u => u.kind === 'photo' && u.room).length} tagged`;
     case 'howto': return `${lines('howTos')} how-tos · ${(A.amenities || []).length} amenities`;

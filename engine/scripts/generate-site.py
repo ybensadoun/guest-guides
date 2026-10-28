@@ -335,6 +335,14 @@ for idx, x in enumerate(_listing_photos()):
     save_jpg(im, SITE / 'public' / f)
     room_photos[key].append(f)
 
+# The cover the host picked among the listing photos, when it is not one of the photos kept for the house guide
+_cu = str(A.get('coverUrl') or '').split('?')[0]
+if not cover and not (SITE / 'public/house.jpg').exists() and _cu.startswith('https://a0.muscache.com/'):
+    try:
+        req = urllib.request.Request(_cu + '?im_w=1440', headers={'User-Agent': 'Mozilla/5.0'})
+        save_jpg(Image.open(io.BytesIO(urllib.request.urlopen(req, timeout=20).read())), SITE / 'public/house.jpg', 1800)
+    except Exception as e: print('cover photo not downloaded:', _cu, e)
+
 def square(im, size):
     im = ImageOps.exif_transpose(im).convert('RGBA')
     return ImageOps.fit(im, (size, size), Image.LANCZOS)
@@ -422,10 +430,33 @@ for ln in lines('howTos'):
     k = next((r for r, rx in KW.items() if re.search(rx, ln, re.I)), 'other')
     items[k].append(ln)
 items['bedrooms'] = lines('sleeping') + items['bedrooms']   # sleeping arrangements as the listing states them
+# The listing's own equipment list (answers.listingAmenities, as the page states it), sorted into the rooms: each room
+# gets a short line under its title and "Also in the kitchen: ...", like Ca La Kimberly's house guide. Safety items go
+# to "Good to know"; Wi-Fi, parking and generic lines are left out (they have their own places).
+AM_KW = {'kitchen': KW['kitchen'] + r'|refrigerator|cooking basics|dishes|cutlery|silverware|wine glass|baking|dining table|blender|rice cooker|spices|bread maker',
+         'living': KW['living'] + r'|sound system|books|board games|game console|piano|record player|ethernet',
+         'bedrooms': KW['bedrooms'] + r'|hangers|clothing storage|room-darkening|blackout|crib|travel cot',
+         'bathrooms': KW['bathrooms'] + r'|hair dryer|shampoo|conditioner|body soap|shower gel|bidet|bathtub',
+         'pool': KW['pool'] + r'|hot tub',
+         'outside': KW['outside'] + r'|balcony|backyard|outdoor furniture|outdoor dining|sun lounger|fire pit|beach essentials',
+         'laundry': KW['laundry'] + r'|drying rack|clothes drying',
+         'office': KW['office'] + r'|dedicated workspace'}
+SAFE = r'first aid|fire extinguisher|smoke alarm|carbon monoxide'
+am_room = {k: [] for k in ROOM}
+for x in [str(v).strip() for v in (A.get('listingAmenities') or []) if str(v).strip()]:
+    if re.search(r'^(wifi|wi-fi|essentials|tv)$|parking|wifi', x, re.I) and not re.search(r'smart tv', x, re.I): continue
+    k = next((r for r, rx in AM_KW.items() if re.search(rx, x, re.I)), 'other' if re.search(SAFE, x, re.I) else None)
+    if k and x not in am_room[k]: am_room[k].append(x)
+low = lambda x: x[:1].lower() + x[1:] if x[1:2].islower() else x
+ALSO = {'living': 'Also in the living room', 'kitchen': 'Also in the kitchen', 'bedrooms': 'Also in the bedrooms', 'bathrooms': 'Also in the bathrooms',
+        'pool': 'Also by the pool', 'outside': 'Also outside', 'laundry': 'Also in the laundry', 'office': 'Also in the office', 'other': 'Also in the house'}
 blocks = []
 for k, (icon, tone, title) in ROOM.items():
-    if not items[k] and not room_photos.get(k): continue
+    if not items[k] and not room_photos.get(k) and not am_room[k]: continue
     b = {'id': k, 'icon': icon, 'tone': tone, 'title': L(title)}
+    if am_room[k]:
+        b['sub'] = L(', '.join([am_room[k][0]] + [low(x) for x in am_room[k][1:3]]))
+        b['body'] = L(f"{ALSO[k]}: {', '.join(low(x) for x in am_room[k])}.")
     if room_photos.get(k): b['photos'] = room_photos[k]
     if items[k]: b['items'] = [L(x) for x in items[k]]
     blocks.append(b)

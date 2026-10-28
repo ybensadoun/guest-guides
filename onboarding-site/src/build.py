@@ -65,22 +65,23 @@ seg1=rep(seg1,'''</style>
 seg1=rep(seg1,'''    <span id="ownerSlot"></span>\n''','')
 seg1=rep(seg1,"need:['placeName','town'],fields:['listingUrl','listingText','autofill','placeName'","need:['placeName','town'],fields:['listingUrl','listingText','placeName'")
 seg1=rep(seg1,"lead:'Paste your listing link and description: we fill in what we can. Nothing is copied from Airbnb by us, only what you paste.',","lead:'Your listing link and the basics. Pasting your description helps us write the guide in your words.',")
-seg1=rep(seg1,"need:['languages'],fields:['guideName','tagline','languages','guests','up:logo']","need:['slug','languages'],fields:['guideName','slug','tagline','languages','guests','up:logo']")
+seg1=rep(seg1,"need:['languages'],fields:['guideName','tagline','languages','guests','up:logo']","need:['slug','languages'],fields:['guideName','slug','tagline','languages','guests']")
 seg1=rep(seg1,"title:'Name and languages',sub:'What guests see'","title:'Name, address, languages',sub:'What guests see'")
 seg1=rep(seg1,"need:['upload:inspiration','mood','upload:cover'],fields:['styleBrief','up:inspiration','lookLikes','mood','up:cover','lookAvoid']",
- "need:['styleBrief'],fields:['styleBrief','up:inspiration','refLinks','feelWords','mood','colorsFrom','homeFirst','up:cover','lookAvoid']")
+ "need:[],fields:['up:logo','up:cover','mood','colorsFrom']")
+seg1=rep(seg1,"title:'The look',sub:'Images and mood'","title:'The look',sub:'Logo, cover, layout, colours'")
 seg1=rep(seg1,"lead:'Upload one to three images: an artwork you love, a photo of the place, a poster, or a screenshot of a website whose style you like. Colours, shapes and layout are built from them.',",
- "lead:'Your images give us the colours, your words the feel, and you pick the layout.',")
+ "lead:'Four steps: your logo, the cover picture, the layout and its colours. All optional, and you can change them later.',")
 seg1=rep(seg1,"""  {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},
 ""","")
 seg1=rep(seg1,""",
   {id:'auto',name:'Decide for me',d:'We match it to your images.',cls:'m-auto',n:0}
 ];""","""
 ];""")
-seg1=rep(seg1,"const MOODS = [\n","const MOODS = [\n  {id:'auto',name:'Decide for me',d:'We match it to your images.',cls:'m-auto',n:0},\n  {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},\n")
+seg1=rep(seg1,"const MOODS = [\n","const MOODS = [\n  {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},\n")
 seg1=rep(seg1,"  mood:{t:'mood',label:'Which feels closest?',hint:'This sets the layout, not only the colours.'},",
-"""  mood:{t:'mood',label:'Which layout should your guide have?',opt:true,hint:'Each one shows the same sections in a different way. “Decide for me” picks one from your images and words.'},
-  colorsFrom:{t:'radio',label:'Colours',opt:true,opts:['The colours of the layout','From my logo','From my cover picture'],hint:'Each layout comes with its own colours. You can also take them from your logo (add it in the first step) or from your cover picture.'},
+"""  mood:{t:'mood',label:'Layout',opt:true,hint:'Each one shows the same sections in a different way. Not sure? Leave it: we pick one that suits your listing.'},
+  colorsFrom:{t:'radio',label:'Colours',opt:true,opts:['The colours of the layout','From my logo','From my cover picture'],hint:'Each layout comes with its own colours. You can also take them from your logo or your cover picture.'},
   slug:{t:'slug',label:'Web address of your guide',hint:'The first part is ours, the last part is yours. Short and easy to type works best.'},
   refLinks:{t:'area',rows:2,label:'Apps or websites you love using',opt:true,full:true,ph:'Airbnb, Citymapper, a hotel site, a magazine…',hint:'Names or links. We read them for the overall feel, like the fonts and how round or sharp the corners are. Your guide keeps its own sections.'},
   feelWords:{t:'chips',label:'Words for the feel',opt:true,opts:['Cosy','Elegant','Playful','Modern','Rustic','Calm','Local and authentic','Luxurious','Family friendly','Colourful']},
@@ -136,7 +137,6 @@ views=rep(views,"${mods.length - done - chk} not started","${mods.length - done 
 import re as _re
 seg1=_re.sub(r"need:\[[^\]]*\]","need:[]",seg1)
 seg1=rep(seg1,"lead:'Paste your listing and we fill in most of the steps for you. You then only check them and approve.',","lead:'Your listing is where everything starts. With the link (or its text) and the town, we write the rest.',")
-seg1=rep(seg1,"need:[],fields:['styleBrief'","need:['styleBrief'],fields:['styleBrief'")
 seg1=rep(seg1,"need:[],fields:['listingUrl'","need:['source','town'],fields:['listingUrl'")
 seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'nearby',group:'area',title:'Places nearby',sub:'Pick and add your own',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',
    lead:'Things to do around you: keep the ones you would send a friend to, and add any we missed. All optional.',need:[],fields:['swipe','favDo','favourites']},

@@ -193,7 +193,7 @@ async function build(g) {
   const clean = { ...A }; delete clean._remote; delete clean._uploads;
   writeFileSync(join(job, 'src/host.json'), JSON.stringify({ answers: clean }));
   // The host's own images (sent to the guide's storage when they published): into the generator's uploads/ and assets/.
-  const own = (A._uploads || []).filter(u => u && typeof u.path === 'string' && u.path.startsWith(id + '/host/') && /^[\w./-]+\.jpg$/.test(u.path));
+  const own = (A._uploads || []).filter(u => u && typeof u.path === 'string' && (u.path.startsWith(id + '/host/') || u.path.startsWith(id + '/covers/')) && /^[\w./-]+\.jpg$/.test(u.path));
   if (own.length) { mkdirSync(join(job, 'src/uploads'), { recursive: true }); mkdirSync(join(job, 'src/assets'), { recursive: true }); }
   for (const [i, u] of own.entries()) {
     const r = await fetchRetry(`${URL_}/storage/v1/object/guide-assets/${u.path}`, { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } }).catch(e => ({ ok: false, status: e.message }));
@@ -531,21 +531,57 @@ async function autoEventsJob(j, jp) {
   await jp({ status: 'done', message: r.added.length ? `${r.added.length} events added` : 'Nothing new this time', result: r, finished_at: new Date().toISOString() });
 }
 
+/* ---------- Artistic cover: one of the host's photos redrawn (OpenAI image editing, OPENAI_API_KEY in .env.local) ----------
+   "Do it for me" asks for Bauhaus-style shapes in the photo's own colours; otherwise the host's own words. The picture
+   must be one of this guide's (its storage folder) or its listing's (Airbnb's image server). The result goes to the
+   guide's storage; the host sees it and keeps it or tries again. */
+const ART_PER_DAY = 8;
+const artPrompt = words => words
+  ? `Redraw this photo of a holiday home for the cover of its guest guide: ${words}. Keep the house and the viewpoint recognisable. No text, no letters, no people.`
+  : 'Redraw this photo of a holiday home as a Bauhaus-style artwork for the cover of its guest guide: flat geometric shapes, clean lines, simple bold forms, a little paper texture, like a screen print. Keep the house, the composition and the viewpoint recognisable. Use the colours of the photo itself. No text, no letters, no people.';
+async function coverArtJob(j, jp) {
+  if (!env.OPENAI_API_KEY) throw new Error('Artistic covers are not switched on yet.');
+  const p = j.params || {}, src = String(p.source || ''), words = String(p.prompt || '').trim().slice(0, 600);
+  const ours = src.startsWith(`${URL_}/storage/v1/object/public/guide-assets/${j.guide_id}/`), airbnb = /^https:\/\/a0\.muscache\.com\//.test(src);
+  if (!ours && !airbnb) throw new Error('This picture cannot be used. Pick one of your photos.');
+  const since = new Date(Date.now() - 864e5).toISOString();
+  const recent = await rest(`/rest/v1/guide_jobs?select=id&guide_id=eq.${j.guide_id}&kind=eq.cover-art&id=neq.${j.id}&created_at=gt.${encodeURIComponent(since)}`);
+  if ((recent || []).length >= ART_PER_DAY) throw new Error('You have made a lot of covers today. Try again tomorrow.');
+  await jp({ message: 'Reading your photo' });
+  const img = await fetchRetry(src.split('?')[0] + (airbnb ? '?im_w=1440' : ''));
+  if (!img.ok) throw new Error('Your photo could not be read.');
+  const fd = new FormData();
+  fd.append('model', 'gpt-image-1'); fd.append('image', new Blob([Buffer.from(await img.arrayBuffer())], { type: img.headers.get('content-type') || 'image/jpeg' }), 'photo.jpg');
+  fd.append('prompt', artPrompt(words)); fd.append('size', '1536x1024'); fd.append('quality', 'medium'); fd.append('output_format', 'jpeg'); fd.append('output_compression', '85');
+  await jp({ message: 'Drawing your cover' });
+  const r = await fetch('https://api.openai.com/v1/images/edits', { method: 'POST', headers: { Authorization: 'Bearer ' + env.OPENAI_API_KEY }, body: fd, signal: AbortSignal.timeout(240000) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error('The drawing did not work' + (d.error && d.error.message ? ': ' + String(d.error.message).slice(0, 120) : '.'));
+  const b64 = d.data && d.data[0] && d.data[0].b64_json;
+  if (!b64) throw new Error('The drawing came back empty. Try again.');
+  await jp({ message: 'Saving your cover' });
+  const name = `covers/art-${Date.now().toString(36)}.jpg`;
+  const up = await fetchRetry(`${URL_}/storage/v1/object/guide-assets/${j.guide_id}/${name}`, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' }, body: Buffer.from(b64, 'base64') });
+  if (!up.ok) throw new Error('Your cover could not be saved.');
+  log('  cover drawn:', name);
+  await jp({ status: 'done', message: 'Your artistic cover is ready', result: { path: name, url: `${URL_}/storage/v1/object/public/guide-assets/${j.guide_id}/${name}` }, finished_at: new Date().toISOString() });
+}
+
 // Up to three jobs run side by side (each one mostly waits for Claude). Two jobs that write the same guide (translate,
 // automatic events) never run together; searches for suggestions write nothing to the guide, so they never wait.
 const RUNNING = new Map(), MAX_JOBS = 3, WRITES = k => k === 'translate' || k === 'auto-events';
 async function runJobs() {
   if (RUNNING.size >= MAX_JOBS) return;
-  const jobs = await rest('/rest/v1/guide_jobs?select=id,guide_id,kind,langs&status=eq.queued&order=created_at.asc&limit=10');
+  const jobs = await rest('/rest/v1/guide_jobs?select=id,guide_id,kind,langs,params&status=eq.queued&order=created_at.asc&limit=10');
   for (const j of jobs || []) {
     if (RUNNING.size >= MAX_JOBS) break;
     if (WRITES(j.kind) && [...RUNNING.values()].some(r => r.guide === j.guide_id && WRITES(r.kind))) continue;
     const jp = b => rest('/rest/v1/guide_jobs?id=eq.' + j.id, { method: 'PATCH', body: b, headers: { Prefer: 'return=minimal' } }).catch(() => {});
-    const won = await rest('/rest/v1/guide_jobs?id=eq.' + j.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running', message: j.kind === 'translate' ? 'Translating' : 'Starting the search' }, headers: { Prefer: 'return=representation' } });
+    const won = await rest('/rest/v1/guide_jobs?id=eq.' + j.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running', message: j.kind === 'translate' ? 'Translating' : j.kind === 'cover-art' ? 'Starting the drawing' : 'Starting the search' }, headers: { Prefer: 'return=representation' } });
     if (!won || !won[0]) continue;
-    log(j.kind === 'translate' ? 'translating' : 'searching', 'job', j.id.slice(0, 8), j.kind === 'translate' ? (j.langs || []).join(',') : j.kind);
+    log(j.kind === 'translate' ? 'translating' : j.kind === 'cover-art' ? 'drawing' : 'searching', 'job', j.id.slice(0, 8), j.kind === 'translate' ? (j.langs || []).join(',') : j.kind);
     const work = (async () => {
-      try { if (j.kind === 'translate') await translateJob(j, jp); else if (j.kind === 'auto-events') await autoEventsJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
+      try { if (j.kind === 'translate') await translateJob(j, jp); else if (j.kind === 'cover-art') await coverArtJob(j, jp); else if (j.kind === 'auto-events') await autoEventsJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
       catch (e) { log('  job FAILED:', e.message); await jp({ status: 'failed', message: String(e.message).slice(0, 200), finished_at: new Date().toISOString() }); }
     })();
     RUNNING.set(j.id, { guide: j.guide_id, kind: j.kind, work });

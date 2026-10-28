@@ -91,6 +91,8 @@ function applyDraft(d){
     A[k] = val; pre[k] = mod;
   }
   A._pre = pre;
+  // The listing's own equipment list as the page states it (fridge, hair dryer...): the guide sorts it into the rooms.
+  if (Array.isArray(d.amenities) && d.amenities.length) A.listingAmenities = d.amenities.slice(0, 120);
   if (D.basis && typeof D.basis === 'object') A._basis = { ...(A._basis || {}), ...D.basis };
   if (D.sections && typeof D.sections === 'object') {
     const map = { wifi: 'wifi', rubbish: 'rubbish', markets: 'markets', eat: 'eat', todo: 'todo', events: 'events' };
@@ -324,19 +326,56 @@ async function resetAll(){
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
 fetch('/api/places?probe=1').then(r => r.json()).then(d => { if (!d.ok) { window.__placesOff = true; render(); } }).catch(() => {});
 
-/* ---------- Cover of the guide: the listing's own cover photo by default, or one drawn from the guide's colours ---------- */
+/* ---------- Cover of the guide: one of the listing's photos (its own cover by default), the host's own picture, one
+   drawn from the colours, or an artistic version of the chosen picture (drawn by the guide builder: the same "cover-art"
+   job and progress bar as in the editor, so it needs the account) ---------- */
+const obOwnCover = () => uploads.find(u => u.kind === 'cover');
+const obSized = u => u + (u.includes('?') ? '' : '?im_w=480');
 function coverChoiceHTML(){
-  const url = A.coverUrl, drawn = A.coverChoice === 'drawn', own = uploads.some(u => u.kind === 'cover');
-  if (!url) return `<div class="f full"><span class="lab">Cover of your guide</span><p class="hint">We use your listing’s cover photo once your listing is loaded. Without one, the cover is drawn from your colours.</p></div>`;
-  return `<div class="f full"><span class="lab">Cover of your guide</span><p class="hint">${own ? 'Your own photo below is used.' : drawn ? 'Drawn from your colours. You can go back to your listing photo.' : 'Your listing’s cover photo, as on your listing.'}</p>
-    <div class="cvc"><img src="${esc(url)}${url.includes('?') ? '' : '?im_w=720'}" alt="" class="${drawn || own ? 'off' : ''}">
-    <div class="row"><button type="button" class="btn small${!drawn ? ' on' : ''}" data-coverchoice="listing" aria-pressed="${!drawn}">Use this photo</button><button type="button" class="btn small${drawn ? ' on' : ''}" data-coverchoice="drawn" aria-pressed="${drawn}">Draw it from my colours</button></div></div></div>`;
+  const own = obOwnCover(), drawn = !own && A.coverChoice === 'drawn', cur = String(A.coverUrl || '').split('?')[0];
+  const pics = [...new Set([cur, ...(A.listingPhotos || [])].filter(p => typeof p === 'string' && /^https:/.test(p)).map(p => p.split('?')[0]))].slice(0, CM.allPics ? 18 : 6), more = !CM.allPics && (A.listingPhotos || []).length > 6;
+  const shown = own ? srcOf(own) : !drawn && cur ? obSized(cur) : '', g = window.__acctGuide && window.__acctGuide(), busy = !!CM.artJob;
+  return `<div class="f full"><span class="lab">Cover picture <span class="opt">optional</span></span><p class="hint">${pics.length ? 'Pick one of your listing photos, upload a picture, or let us draw an artistic version of it.' : 'Upload a picture, or let us draw the cover from your colours.'}</p>
+    ${pics.length ? `<div class="cm-pics">${pics.map(p => `<button type="button" class="cm-pic" data-obcover="${esc(p)}" aria-pressed="${!own && !drawn && p === cur}" aria-label="Use this photo as the cover"><img src="${esc(obSized(p))}" alt="" loading="lazy"></button>`).join('')}</div>${more ? '<button class="btn small cm-allpics" type="button" data-oballpics="1">Show all your listing photos</button>' : ''}` : ''}
+    ${own ? `<div class="cm-row cvc-own"><img src="${esc(srcOf(own))}" alt="Your cover picture"><button class="btn small" type="button" data-del="${own.id}">Remove</button></div>` : ''}
+    <div class="cm-row"><label class="btn small"><input class="sr" type="file" accept="image/*" data-obcoverfile="1">${own ? 'Upload another picture' : 'Upload a picture'}</label><button class="btn small" type="button" data-coverchoice="drawn" aria-pressed="${drawn}">Drawn from the colours</button></div>
+    ${shown ? `<div class="cm-art"><div class="cm-arthd"><img src="${esc(shown)}" alt=""><span><b>An artistic version of this picture</b><small>“Do it for me” redraws it with Bauhaus-style shapes in the picture’s own colours.</small></span></div>
+      ${!g ? '<p class="hint">Log in first: the drawing is made for your account.</p>' : `<div class="cm-row"><button class="btn small primary" type="button" data-obart="auto"${busy ? ' disabled' : ''}>Do it for me</button><button class="btn small" type="button" data-obart="words"${busy ? ' disabled' : ''}>With my own words</button></div>
+      ${CM.artWords != null ? `<div class="f full"><label for="ob_artw">How should it look?</label><textarea id="ob_artw" rows="2" placeholder="A watercolour in soft blues, like an old travel poster">${esc(CM.artWords)}</textarea><div class="cm-row"><button class="btn small primary" type="button" data-obart="draw"${busy ? ' disabled' : ''}>Draw it</button></div></div>` : ''}
+      ${busy ? progBar('art', 'Drawing your cover') : ''}
+      ${CM.artRes ? `<figure class="cm-artres"><img src="${esc(CM.artRes.url)}" alt="Your artistic cover"><figcaption class="cm-row"><button class="btn small primary" type="button" data-obartuse="1">Use this cover</button><button class="btn small" type="button" data-obart="again"${busy ? ' disabled' : ''}>Try again</button></figcaption></figure>` : ''}
+      ${CM.artErr ? `<p class="hint cm-err">${esc(CM.artErr)}</p>` : ''}`}</div>` : ''}</div>`;
 }
-document.addEventListener('click', e => {
-  const b = e.target.closest && e.target.closest('[data-coverchoice]'); if (!b) return;
-  A.coverChoice = b.dataset.coverchoice; queueSave(); render();
+async function obDropCovers(){ for (const u of uploads.filter(x => x.kind === 'cover')) { try { await idb.del(u.id); } catch (e) { /* gone from memory anyway */ } } uploads = uploads.filter(x => x.kind !== 'cover'); }
+document.addEventListener('change', async e => {
+  const t = e.target; if (!t.dataset || !t.dataset.obcoverfile || !t.files.length) return;
+  const f = [...t.files]; t.value = ''; await obDropCovers(); delete A.coverChoice; addFiles('cover', f, 1);
 });
-(function(){ const st = document.createElement('style'); st.textContent = '.cvc{display:flex;flex-direction:column;gap:10px}.cvc img{width:100%;max-width:420px;aspect-ratio:16/10;object-fit:cover;border-radius:14px;display:block}.cvc img.off{opacity:.35;filter:grayscale(1)}.cvc .row{display:flex;gap:8px;flex-wrap:wrap}.cvc .btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}'; document.head.appendChild(st); })();
+document.addEventListener('click', async e => {
+  const b = e.target.closest && e.target.closest('[data-coverchoice],[data-obcover],[data-obart],[data-obartuse],[data-oballpics]'); if (!b) return;
+  if (b.dataset.oballpics) { CM.allPics = true; return render(); }
+  if (b.dataset.coverchoice) { A.coverChoice = b.dataset.coverchoice; queueSave(); return render(); }
+  if (b.dataset.obcover) { await obDropCovers(); A.coverUrl = b.dataset.obcover; A.coverChoice = 'listing'; queueSave(); return render(); }
+  if (b.dataset.obartuse && CM.artRes) {   // the drawing becomes the host's own cover picture, already in the guide's storage
+    const g = window.__acctGuide && window.__acctGuide(); if (!g) return;
+    await obDropCovers();
+    const rec = { id: CM.artRes.path.split('/').pop().replace(/\.jpg$/, ''), kind: 'cover', name: 'Artistic cover.jpg', room: '', path: g.id + '/' + CM.artRes.path, url: CM.artRes.url, createdAt: new Date().toISOString() };
+    uploads.push(rec); await saveUpload(rec); CM.artRes = null; queueSave(); toast('Your new cover is set'); return render();
+  }
+  const k = b.dataset.obart, g = window.__acctGuide && window.__acctGuide(); if (!g) return;
+  if (k === 'words') { CM.artWords = CM.artWords || ''; render(); setTimeout(() => { const x = document.getElementById('ob_artw'); if (x) x.focus(); }, 0); return; }
+  let words = null;
+  if (k === 'draw') { words = ((document.getElementById('ob_artw') || {}).value || '').trim(); CM.artWords = words; if (!words) return toast('Say how it should look first.'); }
+  if (k === 'again') words = CM.artLast;
+  // the picture to redraw: the host's own (sent to the guide's storage first) or the listing photo
+  const own = obOwnCover(), cur = String(A.coverUrl || '').split('?')[0];
+  try {
+    if (own && !own.path) { CM.artJob = { status: 'queued', since: Date.now() }; render(); await window.__acctSendOne(own); }
+    const src = own ? `${SB.url}/storage/v1/object/public/guide-assets/${own.path}` : cur;
+    artStart(src, words, g.id);
+  } catch (err) { CM.artJob = null; CM.artErr = 'Your picture could not be sent: ' + niceError(err); render(); }
+});
+(function(){ const st = document.createElement('style'); st.textContent = '.cvc-own img{width:160px;aspect-ratio:3/2;object-fit:cover;border-radius:12px;display:block}'; document.head.appendChild(st); })();
 
 /* ---------- Rubbish: the containers guests can use, each with a description, an optional map link and what it takes ---------- */
 // Older answers had one free-text "Where are the containers?": it becomes the first row.

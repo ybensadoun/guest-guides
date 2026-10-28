@@ -39,11 +39,11 @@ const cmLen = p => (edGet(edC(), edPath(p)) || []).length;
 /* --- The steps once the guide exists: same groups, colours and shapes as the onboarding steps --- */
 const CSTEPS = [
   { id: 'guide', group: 'basics', title: 'Name and languages', sub: 'What guests see', icon: 'tag', tc: 'var(--sun)', ti: '#1b1407', sh: 'var(--tomato)', shape: 'half', lang: true,
-    lead: 'The name on the guide and on guests’ phones, the text under a shared link, your logo and the languages.',
-    paths: ['content/site/name', 'content/site/description', 'content/site/shareDescription', 'content/site/logo', 'content/site/languages', 'content/files/house/name', 'content/files/house/listing'], body: c => cmGuide(c) },
-  { id: 'look', group: 'basics', title: 'The look', sub: 'Layout, fonts, colours', icon: 'eye', tc: 'var(--tomato)', sh: 'var(--ink)', shape: 'tri',
-    lead: 'Pick the layout, then fine-tune the fonts and colours. Preview shows the result before guests see it.',
-    paths: ['theme', 'content/site/theme', 'content/files/house/cover', 'content/files/house/photo'], body: c => cmLook(c) },
+    lead: 'The name on the guide and on guests’ phones, the text under a shared link and the languages.',
+    paths: ['content/site/name', 'content/site/description', 'content/site/shareDescription', 'content/site/languages', 'content/files/house/name', 'content/files/house/listing'], body: c => cmGuide(c) },
+  { id: 'look', group: 'basics', title: 'The look', sub: 'Logo, cover, layout, colours', icon: 'eye', tc: 'var(--tomato)', sh: 'var(--ink)', shape: 'tri',
+    lead: 'Four steps: your logo, the cover picture, the layout and its colours. Preview shows the result before guests see it.',
+    paths: ['theme', 'content/site/theme', 'content/site/logo', 'content/site/icons', 'content/files/house/cover', 'content/files/house/photo'], body: c => cmLook(c) },
   { id: 'sections', group: 'basics', title: 'Guide sections', sub: 'What goes in', icon: 'grid', tc: 'var(--ink)', ti: '#fff', sh: 'var(--sky)', shape: 'square',
     lead: 'A section you switch off disappears from the guide, its page and the map. Its step here goes too, until you switch it back on.',
     paths: ['content/site/modules'], body: c => cmSections(c) },
@@ -203,7 +203,6 @@ function cmGuide(c) {
   return `<div class="grid">${cf('Guide name', 'site/name', s.name, { hint: 'The title of the guide, and the app name on guests’ phones.' })}${cf('House name on the cover', 'files/house/name', h.name)}
     ${cf('Text under the link when you share it', s.shareDescription != null ? 'site/shareDescription' : 'site/description', s.shareDescription != null ? s.shareDescription : s.description, { long: true, rows: 2 })}
     ${'listing' in h || !(c.files || {})['house-page'] ? cf('Your listing link', 'files/house/listing', h.listing || '', { type: 'url' }) : ''}</div>
-    <div class="f full"><span class="lab">Logo</span><p class="hint">Optional. It shows on the welcome card and becomes the icon on guests’ phones. Without one, the guide shows no logo.</p><div class="cm-row cm-logo">${s.logo ? `<img src="${esc(edImg(s.logo))}" alt="Your logo">` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="site/logo" data-kind="logo">${s.logo ? 'Change the logo' : 'Add a logo'}</label>${s.logo ? '<button class="btn small" type="button" data-logodel>Remove</button>' : ''}</div></div>
     <div class="f full"><span class="lab">Languages</span><p class="hint">The guide opens in the guest’s phone language when it can. The first one is the main language.</p>
     <div class="chips">${Object.entries(ED_LANGS).map(([k, n]) => { const on = langs.includes(k), miss = on ? edMissing(k) : 0; return `<label class="chip"><input type="checkbox" data-clang="${k}"${on ? ' checked' : ''}${k === langs[0] ? ' disabled' : ''}><span>${n}${k === langs[0] ? ' (main)' : ''}${miss ? ` · ${miss} to translate` : ''}</span></label>`; }).join('')}</div>
     <div class="cm-row"><button class="btn small" type="button" data-translate${CM.trJob && (CM.trJob.status === 'queued' || CM.trJob.status === 'running') ? ' disabled' : ''}>Translate missing texts</button><span class="hint" id="edJob">${esc(CM.trDone || '')}</span></div>
@@ -213,22 +212,60 @@ function cmGuide(c) {
 const edCssVar = (css, name) => { const m = css.match(new RegExp(name + '\\s*:\\s*([^;}]+)')); return m ? m[1].trim() : ''; };
 const edBlockOf = css => { const m = css.match(/\/\* editor:start \*\/([\s\S]*?)\/\* editor:end \*\//); return m ? m[1] : ''; };
 const edCoverPhoto = h => !!h.photo && h.cover !== 'themed';
+// The look, in four steps: logo, cover picture (one of the guide's photos, an upload, drawn from the colours, or an
+// artistic version of a photo), layout, colours. Fonts are optional, folded away and shown in their own typeface.
+const cmPhotos = c => { const f = c.files || {}, out = [], add = x => { if (typeof x === 'string' && x && !out.includes(x)) out.push(x); };
+  add((f.house || {}).photo); ((f['house-page'] || {}).photos || []).forEach(add); (((f.message || {}).blocks) || []).forEach(b => (b.photos || []).forEach(add)); return out.slice(0, 18); };
 function cmLook(c) {
-  const th = CM.g.theme, css = th.css || '', blk = edBlockOf(css), h = (c.files || {}).house || {};
+  const th = CM.g.theme, css = th.css || '', blk = edBlockOf(css), h = (c.files || {}).house || {}, s = c.site || {};
   const val = (n, d) => { const x = edCssVar(blk, n) || edCssVar(css, n); return /^#[0-9a-fA-F]{6}$/.test(x) ? x : d; };
   const fam = n => { const x = (edCssVar(blk, n) || edCssVar(css, n)).match(/"([^"]+)"/); return x ? x[1] : ''; };
-  const dispSel = (ED_FONTS.find(f => f[1] === fam('--display')) || [])[0] || ((th.fonts || [])[0] || '').split('/')[0] || 'jost';
-  const bodySel = (ED_FONTS.find(f => f[1] === fam('--font')) || [])[0] || ((th.fonts || []).slice(-1)[0] || '').split('/')[0] || 'jost';
-  const opts = sel => ED_FONTS.map(([id, n]) => `<option value="${id}"${id === sel ? ' selected' : ''}>${n}</option>`).join('');
-  const preset = th.preset || ((c.site || {}).theme || {}).preset || 'bauhaus';
-  return `<div class="f full"><span class="lab" id="l_cpreset">Layout</span><p class="hint">Each one shows the same sections in a different way.</p><div class="moods" role="radiogroup" aria-labelledby="l_cpreset">${ED_PRESETS.map(([id, n, d, cls]) => `<label class="mood"><input type="radio" name="cpreset" data-design="preset" value="${id}"${preset === id ? ' checked' : ''}><div class="box"><div class="mock ${cls}">${'<i></i>'.repeat(6)}</div><b>${n}</b><small>${d}</small></div></label>`).join('')}</div></div>
-    <div class="grid"><div class="f"><label for="c_font_d">Font for titles</label><select id="c_font_d" data-design="display">${opts(dispSel)}</select></div><div class="f"><label for="c_font_b">Font for text</label><select id="c_font_b" data-design="body">${opts(bodySel)}</select></div></div>
-    <div class="f full"><span class="lab">Colours</span><p class="hint">Each layout has its own colours. You can take them from your logo or your cover picture instead${preset === 'bauhaus' ? '' : ' (in this layout the tiles keep their own colours: yours go to the accents)'}, or set each one below.</p>
-      <div class="cm-row"><button class="btn small" type="button" data-colorsfrom="look">The layout’s own</button>${(c.site || {}).logo ? '<button class="btn small" type="button" data-colorsfrom="logo">From my logo</button>' : ''}${h.photo ? '<button class="btn small" type="button" data-colorsfrom="cover">From my cover picture</button>' : ''}</div>
-      ${CM.logoCol ? `<p class="hint" id="cmLogoCol">${esc(CM.logoCol)}</p>` : ''}<div class="cm-colors">${ED_COLORS.map(([v, l, d]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></div>
-    <div class="f full"><span class="lab">Cover</span><p class="hint">Guests have already seen your listing photos, so the cover is drawn from your colours unless you choose a picture of your own: a photo, or an artistic rendering of your house (made with an AI image tool or by an artist).</p>
-    <div class="chips"><button class="chip" type="button" data-cover="themed" aria-pressed="${!edCoverPhoto(h)}"><span>Drawn from my colours</span></button><button class="chip" type="button" data-cover="photo" aria-pressed="${edCoverPhoto(h)}"${h.photo ? '' : ' disabled'}><span>My photo</span></button></div>
-    <div class="cm-cover">${h.photo ? `<img src="${esc(edImg(h.photo))}" alt="Your cover photo"${edCoverPhoto(h) ? '' : ' class="off"'}>` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="files/house/photo">${h.photo ? 'Change the photo' : 'Add a photo'}</label></div></div>`;
+  const dispSel = (ED_FONTS.find(f => f[1] === fam('--display')) || [])[0] || '', bodySel = (ED_FONTS.find(f => f[1] === fam('--font')) || [])[0] || '';
+  const preset = th.preset || ((c.site || {}).theme || {}).preset || 'bauhaus', pics = cmPhotos(c), busy = !!CM.artJob, n = i => `<span class="cm-n">${i}</span>`;
+  const fonts = (name, kind, sel) => `<div class="cm-fontlist" role="radiogroup" aria-label="${kind === 'display' ? 'Font for titles' : 'Font for text'}">${[['', 'The layout’s own'], ...ED_FONTS].map(([id, nm]) => `<label class="chip"><input type="radio" name="${name}" data-design="${kind}" value="${id}"${sel === id ? ' checked' : ''}><span${id ? ` style="font-family:'${nm}',system-ui"` : ''}>${esc(nm)}</span></label>`).join('')}</div>`;
+  edFontsLoad();
+  return `<div class="f full"><span class="lab">${n(1)}Your logo</span><p class="hint">Optional. It shows on the welcome card and becomes the icon on guests’ phones. Without one, the guide shows no logo.</p><div class="cm-row cm-logo">${s.logo ? `<img src="${esc(edImg(s.logo))}" alt="Your logo">` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="site/logo" data-kind="logo">${s.logo ? 'Change the logo' : 'Add a logo'}</label>${s.logo ? '<button class="btn small" type="button" data-logodel>Remove</button>' : ''}</div></div>
+    <div class="f full"><span class="lab">${n(2)}Cover picture</span><p class="hint">Pick one of your photos, upload a picture, or let us draw an artistic version of your cover photo.</p>
+      ${pics.length ? `<div class="cm-pics">${(CM.allPics ? pics : pics.slice(0, 6)).map(p => `<button type="button" class="cm-pic" data-coverpic="${esc(p)}" aria-pressed="${edCoverPhoto(h) && h.photo === p}" aria-label="Use this photo as the cover"><img src="${esc(edImg(p))}" alt="" loading="lazy"></button>`).join('')}</div>${pics.length > 6 && !CM.allPics ? `<button class="btn small cm-allpics" type="button" data-allpics>Show all ${pics.length} photos</button>` : ''}` : ''}
+      <div class="cm-row"><label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="files/house/photo">Upload a picture</label><button class="btn small" type="button" data-cover="themed" aria-pressed="${!edCoverPhoto(h)}">Drawn from the colours</button></div>
+      ${h.photo ? `<div class="cm-art"><div class="cm-arthd"><img src="${esc(edImg(h.photo))}" alt=""><span><b>An artistic version of this photo</b><small>“Do it for me” redraws it with Bauhaus-style shapes in the photo’s own colours.</small></span></div>
+        <div class="cm-row"><button class="btn small primary" type="button" data-art="auto"${busy ? ' disabled' : ''}>Do it for me</button><button class="btn small" type="button" data-art="words"${busy ? ' disabled' : ''}>With my own words</button></div>
+        ${CM.artWords != null ? `<div class="f full"><label for="c_artw">How should it look?</label><textarea id="c_artw" rows="2" placeholder="A watercolour in soft blues, like an old travel poster">${esc(CM.artWords)}</textarea><div class="cm-row"><button class="btn small primary" type="button" data-art="draw"${busy ? ' disabled' : ''}>Draw it</button></div></div>` : ''}
+        ${busy ? progBar('art', 'Drawing your cover') : ''}
+        ${CM.artRes ? `<figure class="cm-artres"><img src="${esc(CM.artRes.url)}" alt="Your artistic cover"><figcaption class="cm-row"><button class="btn small primary" type="button" data-artuse>Use this cover</button><button class="btn small" type="button" data-art="again"${busy ? ' disabled' : ''}>Try again</button></figcaption></figure>` : ''}
+        ${CM.artErr ? `<p class="hint cm-err">${esc(CM.artErr)}</p>` : ''}</div>` : ''}</div>
+    <div class="f full"><span class="lab" id="l_cpreset">${n(3)}Layout</span><p class="hint">Each one shows the same sections in a different way.</p><div class="moods" role="radiogroup" aria-labelledby="l_cpreset">${ED_PRESETS.map(([id, nm, d, cls]) => `<label class="mood"><input type="radio" name="cpreset" data-design="preset" value="${id}"${preset === id ? ' checked' : ''}><div class="box"><div class="mock ${cls}">${'<i></i>'.repeat(6)}</div><b>${nm}</b><small>${d}</small></div></label>`).join('')}</div></div>
+    <div class="f full"><span class="lab">${n(4)}Colours</span><p class="hint">Each layout has its own colours. You can take them from your cover picture or your logo instead${preset === 'bauhaus' ? '' : ' (in this layout the tiles keep their own colours: yours go to the accents)'}.</p>
+      <div class="cm-row"><button class="btn small" type="button" data-colorsfrom="look">The layout’s own</button>${h.photo ? '<button class="btn small" type="button" data-colorsfrom="cover">From my cover picture</button>' : ''}${s.logo ? '<button class="btn small" type="button" data-colorsfrom="logo">From my logo</button>' : ''}</div>
+      ${CM.logoCol ? `<p class="hint" id="cmLogoCol">${esc(CM.logoCol)}</p>` : ''}
+      <details class="cm-more" data-open="look-colours"${CM.open.has('look-colours') ? ' open' : ''}><summary>Fine-tune each colour</summary><div class="cm-colors">${ED_COLORS.map(([v, l, d]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></details></div>
+    <details class="cm-more" data-open="look-fonts"${CM.open.has('look-fonts') ? ' open' : ''}><summary>Fonts <small>Optional: each layout comes with its own</small></summary>
+      <span class="lab">Titles</span>${fonts('cfd', 'display', dispSel)}<span class="lab">Text</span>${fonts('cfb', 'body', bodySel)}</details>`;
+}
+// The fonts' names in their own typeface: one stylesheet for the list, loaded once.
+function edFontsLoad() {
+  if (document.getElementById('edFonts')) return;
+  const l = document.createElement('link'); l.id = 'edFonts'; l.rel = 'stylesheet';
+  l.href = 'https://fonts.googleapis.com/css2?' + ED_FONTS.map(f => 'family=' + f[1].replace(/ /g, '+')).join('&') + '&display=swap'; document.head.appendChild(l);
+}
+/* --- Artistic cover: the guide builder redraws one of the host's photos (job "cover-art"); the host keeps it or not --- */
+async function artStart(source, prompt, gid = CM.g && CM.g.id) {
+  CM.artJob = { status: 'queued', since: Date.now() }; CM.artErr = ''; CM.artRes = null; CM.artLast = prompt || null; render();
+  try {
+    await ensureFresh();
+    const r = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: gid, kind: 'cover-art', params: { source, prompt: prompt || null } } });
+    CM.artJob.id = r && r[0] && r[0].id; setTimeout(artPoll, 2000);
+  } catch (e) { CM.artJob = null; CM.artErr = 'The drawing could not start: ' + niceError(e); render(); }
+}
+async function artPoll() {
+  const j = CM.artJob; if (!j || !j.id) return;
+  try {
+    const r = (await sb('/rest/v1/guide_jobs?select=status,message,result&id=eq.' + j.id))[0];
+    if (r) progSet(j, r);
+    if (r && r.status === 'done') { CM.artRes = r.result; CM.artJob = null; return render(); }
+    if (r && r.status === 'failed') { CM.artErr = r.message || 'The drawing did not work. Try again.'; CM.artJob = null; return render(); }
+  } catch (e) { /* asked again below */ }
+  setTimeout(artPoll, 2500);
 }
 function cmSections(c) {
   const ids = [...((((c.files || {}).sections || {}).sections) || []).map(x => x.id)];
@@ -379,6 +416,7 @@ const PROG_STEPS = {
   places: [[/Searching the web/, 4, 70, 210], [/Checking on Google: (\d+) of (\d+)/, 70, 85, 2], [/Translating/, 85, 98, 60]],
   events: [[/Searching the web/, 4, 85, 240], [/Translating/, 85, 98, 60]],
   translate: [[/Translating (\d+) of (\d+)/, 5, 97, 45]],
+  art: [[/Reading your photo/, 3, 8, 8], [/Drawing your cover/, 8, 94, 70], [/Saving your cover/, 94, 99, 5]],
   build: [[/Reading your answers/, 3, 8, 20], [/Researching: markets/, 8, 30, 180], [/Researching: todo/, 30, 52, 180], [/Researching: emergency/, 52, 62, 90], [/Building the guide/, 62, 78, 40], [/Translating/, 78, 92, 90], [/Saving the guide/, 92, 99, 30]]
 };
 const progEase = (t, tau) => 1 - Math.exp(-Math.max(0, t) / tau);
@@ -404,8 +442,8 @@ function progOf(j, kind) {
 // The bar itself; its key says which job it follows (see progJob).
 const progBar = (key, label, dark) => { const p = progOf(progJob(key), progKind(key)) || { pct: 2, text: '' };
   return `<div class="cm-progw${dark ? ' dark' : ''}" data-prog="${key}"><div class="cm-prog" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p.pct)}"><i style="width:${p.pct.toFixed(1)}%"></i></div><p class="hint cm-progt">${esc(p.text)}</p></div>`; };
-const progJob = key => key === 'auto' ? CM.evJob : key === 'tr' ? CM.trJob : key === 'build' ? window.__buildJob : (CM.find || {})[key];
-const progKind = key => key === 'tr' ? 'translate' : key === 'build' ? 'build' : key === 'find-todo' || key === 'find-markets' ? 'places' : 'events';
+const progJob = key => key === 'auto' ? CM.evJob : key === 'tr' ? CM.trJob : key === 'art' ? CM.artJob : key === 'build' ? window.__buildJob : (CM.find || {})[key];
+const progKind = key => key === 'tr' ? 'translate' : key === 'build' ? 'build' : key === 'art' ? 'art' : key === 'find-todo' || key === 'find-markets' ? 'places' : 'events';
 // A job's new state from the database: a new step restarts the clock of that step.
 function progSet(j, st) { if (st.message !== j.message || st.status !== j.status) j.phaseAt = Date.now(); j.status = st.status; j.message = st.message; }
 setInterval(() => document.querySelectorAll('[data-prog]').forEach(el => {
@@ -890,6 +928,14 @@ function edWriteVars(th, vars) {
 function edApplyDesign(kind, el) {
   const th = CM.g.theme = CM.g.theme || {}, site = edC().site = edC().site || {};
   if (kind === 'preset') { th.preset = el.value; site.theme = { ...(site.theme || {}), preset: el.value }; return cmQueue(); }
+  if ((kind === 'display' || kind === 'body') && !el.value) {   // the layout's own font: no token, no extra font files
+    const v = kind === 'display' ? '--display' : '--font';
+    th.css = (th.css || '').replace(new RegExp(v + '\\s*:\\s*[^;}]+;?', 'g'), '');
+    const keep = ['--display', '--font'].map(x => (edCssVar(th.css, x).match(/"([^"]+)"/) || [])[1]).filter(Boolean), fs = [];
+    for (const nm of keep) { const f = ED_FONTS.find(x => x[1] === nm); if (f) for (const w of (f[2] || [400, 500, 600, 700])) fs.push(`${f[0]}/${w}.css`); }
+    if (fs.length) { th.fonts = fs; site.theme = { ...(site.theme || {}), fonts: fs }; } else { delete th.fonts; if (site.theme) delete site.theme.fonts; }
+    return cmQueue();
+  }
   const decl = edVarsOf(th.css || '');
   if (kind === 'color') decl[el.dataset.var] = el.value;
   else {
@@ -923,7 +969,7 @@ document.addEventListener('change', e => {
   else if (t.dataset.phadd !== undefined || t.dataset.phset !== undefined) edPhotoInput(t);
   else if (t.dataset.clang) { const s = edC().site = edC().site || {}; s.languages = [...(s.languages || ['en'])]; const l = t.dataset.clang, i = s.languages.indexOf(l); if (t.checked && i < 0) s.languages.push(l); else if (!t.checked && i > 0) s.languages.splice(i, 1); cmQueue(); render(); }
 });
-document.addEventListener('toggle', e => { const d = e.target; if (CM.on && d.matches && d.matches('details.cmi')) d.open ? CM.open.add(d.dataset.open) : CM.open.delete(d.dataset.open); }, true);
+document.addEventListener('toggle', e => { const d = e.target; if (CM.on && d.matches && d.matches('details.cmi,details.cm-more[data-open]')) d.open ? CM.open.add(d.dataset.open) : CM.open.delete(d.dataset.open); }, true);
 document.addEventListener('click', e => {
   if (!CM.on) return;
   const t = e.target.closest && e.target.closest('button,a[data-cpreview]'); if (!t) return;
@@ -937,6 +983,15 @@ document.addEventListener('click', e => {
   if (d.cdiscard !== undefined) return cmDiscard(t);
   if (!t.closest('.edz')) return;
   if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); return done(); }
+  if (d.allpics !== undefined) { CM.allPics = true; return render(); }
+  if (d.coverpic) { edSet(edC(), ['files', 'house', 'photo'], d.coverpic); edSet(edC(), ['files', 'house', 'cover'], 'photo'); return done(); }
+  if (d.art) {
+    const src = edImg(((edC().files || {}).house || {}).photo || '');
+    if (d.art === 'words') { CM.artWords = CM.artWords || ''; render(); setTimeout(() => { const x = document.getElementById('c_artw'); if (x) x.focus(); }, 0); return; }
+    if (d.art === 'draw') { const w = (document.getElementById('c_artw') || {}).value || ''; CM.artWords = w; return w.trim() ? artStart(src, w.trim()) : toast('Say how it should look first.'); }
+    return artStart(src, d.art === 'again' ? CM.artLast : null);
+  }
+  if (d.artuse !== undefined && CM.artRes) { edSet(edC(), ['files', 'house', 'photo'], CM.artRes.path); edSet(edC(), ['files', 'house', 'cover'], 'photo'); CM.artRes = null; toast('Your new cover is set. Preview to see it.'); return done(); }
   if (d.daytog) { const o = edGet(edC(), edPath(d.daytog)); if (o) { const s = new Set(o.days || []); s.has(d.d) ? s.delete(d.d) : s.add(d.d); o.days = ED_DAYS.map(x => x[0]).filter(x => s.has(x)); done(); } return; }
   if (d.cflag) { const it = edGet(edC(), edPath(d.cflag)); if (it) { const s = new Set(it.flags || []); s.has(d.f) ? s.delete(d.f) : s.add(d.f); it.flags = [...s]; done(); } return; }
   if (d.addsch) { arr(d.addsch).push({ days: [], open: '09:00', close: '14:00' }); return done(); }
@@ -1045,6 +1100,29 @@ function cmInit() {
 .cm-cover img{width:100%;max-width:420px;aspect-ratio:16/10;object-fit:cover;border-radius:14px;display:block}
 .cm-cover img.off{opacity:.35;filter:grayscale(1)}
 .cm-logo img{width:88px;height:88px;object-fit:contain;background:#fff;border-radius:14px;border:1px solid var(--line)}
+.cm-n{display:inline-grid;place-items:center;width:24px;height:24px;margin-right:8px;border-radius:50%;background:var(--ink);color:var(--paper);font-size:13px;vertical-align:1px}
+.cm-pics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.cm-allpics{margin-bottom:10px;align-self:flex-start}
+.cm-pic{padding:0;border:0;border-radius:12px;overflow:hidden;cursor:pointer;background:var(--sunk);aspect-ratio:4/3}
+.cm-pic img{width:100%;height:100%;object-fit:cover;display:block}
+.cm-pic[aria-pressed=true]{outline:3px solid var(--ink);outline-offset:2px}
+.cm-pic:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.btn[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.cm-art{display:flex;flex-direction:column;gap:12px;margin-top:14px;padding:14px;border-radius:var(--r-s);background:var(--sunk)}
+.cm-arthd{display:flex;gap:12px;align-items:center}
+.cm-arthd img{flex:none;width:64px;height:48px;object-fit:cover;border-radius:8px}
+.cm-arthd span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cm-arthd small{color:var(--muted);font-size:13.5px}
+.cm-artres{margin:0;display:flex;flex-direction:column;gap:10px}
+.cm-artres img{width:100%;max-width:480px;aspect-ratio:3/2;object-fit:cover;border-radius:14px;display:block}
+.cm-err{color:var(--danger)}
+.cm-more{border-top:1.5px solid var(--line);padding-top:12px}
+.cm-more>summary{cursor:pointer;font-weight:700;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;min-height:32px}
+.cm-more>summary small{font-weight:500;color:var(--muted);font-size:13.5px}
+.cm-more[open]>summary{margin-bottom:12px}
+.cm-more .lab{display:block;margin:12px 0 8px}
+.cm-fontlist{display:flex;flex-wrap:wrap;gap:8px}
+.cm-fontlist .chip span{font-size:16px;font-weight:500}
 .hero .cm-url{font-size:14px;opacity:.85;overflow-wrap:anywhere}
 .cm-act{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .hero .btn.cm-ghost{background:transparent;color:inherit;border-color:rgba(255,255,255,.55)}

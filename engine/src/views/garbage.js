@@ -48,7 +48,7 @@ export function renderGarbage(V) {
 
   // Rows: the evening you put out, then the morning it is collected.
   const order = [1, 2, 3, 4, 5, 6, 0];
-  const week = `<section class="gsec"><h3 class="section-h">${esc(t('gWeek'))}</h3><p class="lead">${esc(t('gWeekLead'))}</p>
+  const week = `<section class="gsec"><h3 class="section-h">${esc(t('gWeek'))}</h3><p class="lead">${esc(t('gWeekLead', { time: String(GARBAGE.collectionTime || '').replace(/^0(\d)/, '$1') }))}</p>
     ${RED ? redLine('gRedNote') : ''}
     <div class="gweek">${order.map(d => {
       const ev = (d + 6) % 7;

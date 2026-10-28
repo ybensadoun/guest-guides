@@ -241,13 +241,15 @@ function acctBar() {
 // to the guide's storage, so the guide builder can use them (their paths travel in the answers, _uploads).
 const HOST_KINDS = ['logo', 'cover', 'photo', 'inspiration'];
 async function acctSendUploads(){
-  for (const u of uploads.filter(x => !x.remote && x.blob && !x.path && HOST_KINDS.includes(x.kind))) {
-    const path = `${GUIDE.id}/host/${u.id}.jpg`;
-    await ensureFresh();
-    const r = await fetch(`${SB.url}/storage/v1/object/guide-assets/${path}`, { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + AUTH.access_token, 'Content-Type': u.blob.type || 'image/jpeg', 'x-upsert': 'true' }, body: u.blob });
-    if (!r.ok) throw new Error('Your images could not be sent. Check your connection and try again.');
-    u.path = path; try { await saveUpload(u); } catch (e) { /* kept in memory for this send */ }
-  }
+  for (const u of uploads.filter(x => !x.remote && x.blob && !x.path && HOST_KINDS.includes(x.kind))) await acctSendOne(u);
+}
+// One image now (the cover to redraw as an artwork); the rest wait for Publish.
+async function acctSendOne(u){
+  const path = `${GUIDE.id}/host/${u.id}.jpg`;
+  await ensureFresh();
+  const r = await fetch(`${SB.url}/storage/v1/object/guide-assets/${path}`, { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + AUTH.access_token, 'Content-Type': u.blob.type || 'image/jpeg', 'x-upsert': 'true' }, body: u.blob });
+  if (!r.ok) throw new Error('Your images could not be sent. Check your connection and try again.');
+  u.path = path; try { await saveUpload(u); } catch (e) { /* kept in memory for this send */ }
 }
 async function acctQueueBuild(){
   if (!AUTH || !GUIDE) throw new Error('Log in to publish your guide.');
@@ -268,7 +270,7 @@ async function acctStatus(){
   if (r && r[0]) { GUIDE.status = r[0].status; GUIDE.message = r[0].message; return r[0]; }
   return null;
 }
-window.__acctQueueBuild = acctQueueBuild; window.__acctStatus = acctStatus;
+window.__acctQueueBuild = acctQueueBuild; window.__acctStatus = acctStatus; window.__acctSendOne = acctSendOne;
 window.__acctGuide = () => GUIDE;
 
 async function accountBoot(){

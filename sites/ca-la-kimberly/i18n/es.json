@@ -4,5 +4,8 @@
   "appName": "Ca La Kimberly",
   "mapLabel": "Mapa de mercados alrededor de Can Gordei",
   "stayWhere": "Tu guía de la casa · Can Gordei, La Bisbal del Penedès",
-  "noneDay": "Este día no hay mercadillos. Los mercados municipales de El Vendrell y Tarragona abren de lunes a sábado."
+  "noneDay": "Este día no hay mercadillos. Los mercados municipales de El Vendrell y Tarragona abren de lunes a sábado.",
+  "barsRestaurantsLead": "Probados y queridos, casi todos a menos de 20 minutos en coche.",
+  "whatToDoLead": "Actividades, playas, vino y visitas a menos de una hora de la casa.",
+  "eventsLead": "Castells, fiestas mayores, carnavales y ferias a menos de una hora de casa."
 }
