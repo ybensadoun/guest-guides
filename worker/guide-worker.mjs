@@ -556,7 +556,12 @@ async function coverArtJob(j, jp) {
   await jp({ message: 'Drawing your cover' });
   const r = await fetch('https://api.openai.com/v1/images/edits', { method: 'POST', headers: { Authorization: 'Bearer ' + env.OPENAI_API_KEY }, body: fd, signal: AbortSignal.timeout(240000) });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error('The drawing did not work' + (d.error && d.error.message ? ': ' + String(d.error.message).slice(0, 120) : '.'));
+  // OpenAI's own words (credits, key, verification) are for us, not the host: they go to the log only
+  if (!r.ok) {
+    const why = (d.error && (d.error.code || d.error.message)) || '', refused = /moderation|safety/i.test(why + ' ' + ((d.error && d.error.message) || ''));
+    log('  OpenAI said:', r.status, String((d.error && d.error.message) || why).slice(0, 200));
+    throw new Error(refused ? 'That drawing was refused. Try other words.' : [401, 403, 429].includes(r.status) ? 'Artistic covers are paused for now. Try again later.' : 'The drawing did not work. Try again.');
+  }
   const b64 = d.data && d.data[0] && d.data[0].b64_json;
   if (!b64) throw new Error('The drawing came back empty. Try again.');
   await jp({ message: 'Saving your cover' });
