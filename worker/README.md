@@ -26,7 +26,7 @@ Only one worker runs at a time: a copy started by hand while the agent runs says
 
 Build what is queued right now and stop: `node worker/guide-worker.mjs --once`
 
-Try one "Find more" search without the queue (safe next to a running worker: it prints the suggestions and writes nothing): `node worker/guide-worker.mjs --find find-todo --slug <slug>` (or `find-markets`, `find-events`). With `RESEARCH=api` it shows what the search cost.
+Try one "Find more" search without the queue (safe next to a running worker: it prints the suggestions and writes nothing): `node worker/guide-worker.mjs --find find-todo --slug <slug>` (or `find-markets`, `find-events`; `--out <file>` saves the whole result). With `RESEARCH=api` it shows what the search cost.
 
 A stop by SIGTERM (a server's update or restart) takes nothing new and lets running jobs and a build finish before the worker exits; a second SIGTERM or `Ctrl+C` stops at once.
 

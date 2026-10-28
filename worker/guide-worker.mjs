@@ -652,6 +652,8 @@ if (process.argv.includes('--find')) {
   try { await findJob({ id: '00000000-0000-0000-0000-000000000000', guide_id: g.id, kind }, async b => { if (b.message) log(b.message); if (b.result) res = b.result; }); }
   catch (e) { log('did not work:', e.message); process.exit(1); }
   for (const it of res.items) console.log(`  ${nameOf(it.name)}${it.town ? ` (${it.town})` : ''}, ${it.km_from_house} km${it._google ? ': ' + it._google : ''}`);
+  const outFile = process.argv.includes('--out') ? process.argv[process.argv.indexOf('--out') + 1] : '';   // --out <file>: the whole result, as the editor gets it
+  if (outFile) { writeFileSync(outFile, JSON.stringify(res, null, 1)); log('result in', outFile); }
   process.exit(0);
 }
 // One worker at a time: a second one would put the first one's running jobs back in the queue (below). Since 28 Oct 2026

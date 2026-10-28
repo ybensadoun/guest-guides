@@ -59,6 +59,8 @@ Budget, in three layers:
 2. `RESEARCH_USD_PER_DAY` in the worker (default 5 USD): from the usage of each answer the worker adds up the day's expected cost and stops asking Claude past it until the next day (UTC). The count starts again when the worker restarts, so the Console limit is the real ceiling. Hosts see "Searches are paused for today. Try again tomorrow."
 3. Already there: at most 8 searches (Find more and automatic events) and 8 covers per guide a day.
 
+Measured on 28 Oct 2026, the first real search (Find more, things to do, home-in-tordera, `--find`): research on Opus 5.5 used 20 web searches (the per-request cap), read 6 pages, 308k tokens in and 10k out, 2.5 minutes, about 0.64 USD; translating its 7 suggestions into es, ca and fr on Haiku 5.5 took 45 s and about 0.01 USD. 7 good, local suggestions (Palafolls castle, Montsoriu, Calella lighthouse centre, Lloret's modernist cemetery, the Montseny ethnological museum, Sils lake, Arbre Aventura). French: spaces inside « » were no-break spaces; number and unit spaces come from the engine's typo() at display; decimals stayed "2.8 km" in fr, es and ca (the translation prompt says to keep numbers).
+
 Expected cost (list prices, Oct 2026: Opus 5.5 4 USD per million tokens in, 20 out, cache reads 0.20; Sonnet 5.5 2 and 10; Haiku 5.5 0.10 and 0.50; web search 10 USD per 1,000 searches; web fetch only its tokens). Each call logs its real numbers, so the first real search replaces these guesses:
 - one Find more search (10 to 20 searches, a few pages, mostly input tokens): expected 0.30 to 1.50 USD on Opus 5.5, about half on Sonnet 5.5;
 - translating 10 suggestions into 5 languages: expected under 0.10 USD on Opus 5.5, under 0.01 on Haiku 5.5;
