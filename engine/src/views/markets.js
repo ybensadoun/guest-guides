@@ -9,7 +9,8 @@ import { overviewMap } from './map.js';
 const FILTER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>';
 
 export function sorted(list) {
-  return list.slice().sort((a, b) => (st.sort === 'me' && st.me ? kmMe(a) - kmMe(b) : a.km - b.km) || a.town.localeCompare(b.town));
+  const d = v => v == null ? 1e9 : v;   // no distance known: last
+  return list.slice().sort((a, b) => (st.sort === 'me' && st.me ? d(kmMe(a)) - d(kmMe(b)) : d(a.km) - d(b.km)) || a.town.localeCompare(b.town));
 }
 
 export const sortRow = () => `<div class="row"><div class="pills" role="group">

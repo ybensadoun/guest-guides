@@ -429,11 +429,9 @@ for k, (icon, tone, title) in ROOM.items():
     if room_photos.get(k): b['photos'] = room_photos[k]
     if items[k]: b['items'] = [L(x) for x in items[k]]
     blocks.append(b)
-if wifi:
-    blocks.insert(0, {'id': 'wifi', 'icon': 'wifi', 'tone': 'green', 'title': L('Wi-Fi'),
-                      'items': [L('Tap Wi-Fi on the home page for the network, the password and a QR code.')]})
+# No Wi-Fi block here: Wi-Fi is the first thing on Home (its card opens the network, password and QR code), as in Ca La Kimberly.
 if lines('arrival'):
-    blocks.insert(1 if wifi else 0, {'id': 'arrival', 'icon': 'car', 'tone': 'blue', 'title': L('Getting here'), 'items': [L(x) for x in lines('arrival')]})
+    blocks.insert(0, {'id': 'arrival', 'icon': 'car', 'tone': 'blue', 'title': L('Getting here'), 'items': [L(x) for x in lines('arrival')]})
 if lines('houseRules'):
     blocks.append({'id': 'rules', 'icon': 'home', 'tone': 'ink', 'title': L('House rules'), 'items': [L(x) for x in lines('houseRules')]})
 co = [f"Check-out by {house['checkout']}."] + lines('checkoutTasks')
@@ -544,14 +542,18 @@ if fav:
     items = []
     for r in fav:
         key = r['p'].strip(); g = GEO.get(key) or resolve_short(key)
-        nm = g.get('name') or place_name_from(key)
+        nm = (g.get('name') or place_name_from(key)) if key.startswith('http') else key   # a name the host typed stays theirs (Jopenkerk, not Google's "Jopen")
         isurl = key.startswith('http'); ismaps = bool(re.search(r'google\.[a-z.]+/maps|maps\.app\.goo\.gl|goo\.gl/maps', key))
+        # Looked up on Google by the worker (geocode.json): real position, distance, town, hours, kind of place. Not found:
+        # no position (nomap: no pin, no distance, directions by name; the house's point only satisfies the content check),
+        # no kind, no warning (the host vouches for their own places).
         it = {'id': re.sub(r'[^a-z0-9]+', '-', nm.lower()).strip('-')[:40] or 'place', 'name': {l: nm for l in LANGS},
-              'type': L(g.get('type') or "Host's pick"), 'town': g.get('town') or town, 'place': g.get('place', ''),
-              'lat': g.get('lat', args.lat), 'lng': g.get('lng', args.lng), 'km_from_house': g.get('km', 0),
+              **({'type': L(g['type'])} if g.get('type') else {}), 'town': g.get('town') or town, 'place': g.get('place', ''),
+              'lat': g.get('lat', args.lat), 'lng': g.get('lng', args.lng), 'km_from_house': g.get('km'),
               'tags': g.get('tags', []),
-              'flags': ['check'] if not g.get('hours') and not g.get('schedule') else [], 'hostPick': True,
-              'gmaps': key if ismaps else 'https://www.google.com/maps/search/?api=1&query=' + __import__('urllib.parse').parse.quote_plus(nm + ' ' + (g.get('town') or town))}
+              'flags': ['check'] if g.get('status') == 'CLOSED_TEMPORARILY' else [], 'hostPick': True,
+              **({'gid': g['gid']} if g.get('gid') else {}), **({'always': True} if g.get('always') else {}), **({} if g.get('lat') else {'nomap': True}),
+              'gmaps': g.get('gmaps') or (key if ismaps else 'https://www.google.com/maps/search/?api=1&query=' + __import__('urllib.parse').parse.quote_plus(nm + ' ' + (g.get('town') or town)))}
         if (r.get('c') or '').strip(): it['description'] = L(r['c'].strip())   # the host's own words; no comment, no description
         if isurl and not ismaps: it['url'] = key
         for k2 in ('phone', 'hours', 'schedule', 'price', 'priceNote', 'icon', 'wiki'):

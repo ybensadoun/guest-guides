@@ -8,7 +8,7 @@ import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, statSy
 import { resolve, dirname, join, relative, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync, spawn } from 'node:child_process';
-import { makeGoogle, hav, nameOf, sameName, sameMarket, schedule } from './places.mjs';   // Google check for Find more suggestions
+import { makeGoogle, hav, nameOf, sameName, sameMarket, schedule, hostPlace } from './places.mjs';   // Google check for Find more suggestions
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
 const env = { ...process.env };
@@ -203,6 +203,14 @@ async function build(g) {
     writeFileSync(join(job, 'src/uploads', aid + '.json'), JSON.stringify({ kind: u.kind, assetId: aid, room: u.room || '', name: u.name || '' }));
   }
   writeFileSync(join(job, 'src/listing_photos.json'), JSON.stringify(remote.map(u => ({ url: u.src, room: u.room || '', caption: u.name || '' }))));
+  // The host's favourite places, as they typed them: looked up on Google, so each one gets its real position, distance,
+  // town, opening hours and Maps link (src/geocode.json, read by the generator). Not found: the generator says less.
+  const fav = (A.favEat || []).map(r => String((r && r.p) || '').trim()).filter(Boolean);
+  if (fav.length && env.GOOGLE_PLACES_KEY) {
+    say(id, 'Finding your favourite places'); const geo = {};
+    for (const p of fav) { try { const g = await hostPlace(env.GOOGLE_PLACES_KEY, p, { lat: A.lat, lng: A.lng }); if (g) geo[p]= g; else log('  favourite place not found on Google:', p.slice(0, 60)); } catch (e) { log('  favourite place lookup failed:', e.message); } }
+    writeFileSync(join(job, 'src/geocode.json'), JSON.stringify(geo));
+  }
   const srcLang = ['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(A.sourceLang) ? A.sourceLang : 'en';
   const gen = ['engine/scripts/generate-site.py', join(job, 'src'), '--slug', tmp, '--lat', String(A.lat), '--lng', String(A.lng), '--src', srcLang];
 

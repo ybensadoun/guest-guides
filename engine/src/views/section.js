@@ -229,7 +229,7 @@ export function renderSection(V, id) {
   const box = V.querySelector('#secmap');
   if (box && oldMap && prevF === V.dataset.secf) box.replaceWith(oldMap);
   else if (box) { const gs = (V.dataset.secf || '').split('|')[0]; const extra = id === 'restaurants' ? QUICK.filter(q => q.id === 'shop' && q.lat).map(q => ({ lat: q.lat, lng: q.lng, pinHtml: quickIcon('shop'), pinColor: 'var(--green)' })) : [];
-    overviewMap(box, SPOTS.filter(s => s.section === id && (gs === 'all' || !gs || s.group === gs)).concat(extra)); }
+    overviewMap(box, SPOTS.filter(s => s.section === id && !s.nomap && (gs === 'all' || !gs || s.group === gs)).concat(extra)); }
 }
 
 // Full-screen photo viewer: swipe through the group, tap the cross or the backdrop to close.

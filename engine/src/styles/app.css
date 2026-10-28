@@ -722,6 +722,9 @@ body:not(.is-home) .hero .back{position:fixed;top:calc(env(safe-area-inset-top,0
 .ws-qrs figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px}
 .ws-qrs svg{width:100%;max-width:150px;height:auto;background:#fff}
 .ws-qrs figcaption{font-size:13px;font-weight:600;text-align:center}
+.ws-how.one{text-align:center}
+.ws-qrs.one{grid-template-columns:1fr;justify-items:center}
+.ws-qrs.one svg{max-width:200px}
 .qst small{font-size:inherit;font-weight:500;color:var(--muted)}
 
 /* Home header v6: shorter photo, and a slim fixed bar once it has scrolled away. */

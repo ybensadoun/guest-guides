@@ -17,6 +17,22 @@ export default async (req) => {
   if (!key) return new Response(JSON.stringify({ ok: false, message: 'Places are not set up yet.' }), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
   if (new URL(req.url).searchParams.get('probe')) return new Response(JSON.stringify({ ok: true, enabled: true }), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
   const u = new URL(req.url), cat = CATS[u.searchParams.get('cat')] ? u.searchParams.get('cat') : 'eat';
+  // ?q=<name>&lat=..&lng=..: one place by its name near the house (the editor's "Find it on Google" for a host's place).
+  // The host sees the answer and keeps it or not: no name check here.
+  if (u.searchParams.get('q')) {
+    const q = u.searchParams.get('q').slice(0, 160), la = parseFloat(u.searchParams.get('lat')), ln = parseFloat(u.searchParams.get('lng'));
+    if (!(la && ln)) return json({ ok: false, message: 'The guide does not know where the house is.' });
+    try {
+      const d = await g('places:searchText', { textQuery: q, maxResultCount: 1, languageCode: 'en', locationBias: { circle: { center: { latitude: la, longitude: ln }, radius: 50000 } } },
+        'places.id,places.displayName,places.location,places.googleMapsUri,places.formattedAddress,places.primaryTypeDisplayName,places.businessStatus,places.regularOpeningHours', key);
+      const p = (d.places || [])[0];
+      if (!p || !p.location || hav(la, ln, p.location.latitude, p.location.longitude) > 60) return json({ ok: true, place: null });
+      const parts = String(p.formattedAddress || '').split(',').map(x => x.trim()), coded = parts.find(x => /\b\d{4,5}\b/.test(x));
+      return json({ ok: true, place: { id: p.id, name: p.displayName && p.displayName.text, lat: p.location.latitude, lng: p.location.longitude, maps: p.googleMapsUri,
+        km: Math.max(1, Math.round(hav(la, ln, p.location.latitude, p.location.longitude) * 1.3)), town: ((coded || parts[parts.length - 2] || '').replace(/\b\d{4,5}\b\s*([A-Z]{2}\b)?/, '').trim()) || null,
+        type: p.primaryTypeDisplayName && p.primaryTypeDisplayName.text, status: p.businessStatus || null, periods: (p.regularOpeningHours && p.regularOpeningHours.periods) || null } });
+    } catch (e) { return json({ ok: false, message: 'Could not reach Google right now.' }); }
+  }
   let lat = parseFloat(u.searchParams.get('lat')), lng = parseFloat(u.searchParams.get('lng'));
   const town = (u.searchParams.get('town') || '').slice(0, 120), lang = (u.searchParams.get('lang') || 'en').slice(0, 5);
   const radius = Math.min(30000, Math.max(1500, parseInt(u.searchParams.get('radius') || '8000', 10)));

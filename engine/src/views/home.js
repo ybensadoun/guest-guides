@@ -215,16 +215,17 @@ function wifiQr(ssid, pw) {
   const c = qrcode(0, 'M'); c.addData(`WIFI:T:WPA;S:${q(ssid)};P:${q(pw)};;`); c.make();
   return c.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
 }
-// Wifi sheet: network name, password with a copy button, and a QR code for a second device.
+// Wifi sheet: network name, password with a copy button, and a QR code for a second device. One network: singular
+// labels, no generic "Wi-Fi" label, one larger QR code in the middle with the network's name under it.
 function wifiSheet() {
-  const w = HOUSE.wifi;
+  const w = HOUSE.wifi, one = w.networks.length === 1, label = n => (one && /^\s*wi-?fi\s*$/i.test(tx(n.label) || '') ? '' : tx(n.label));
   const o = document.createElement('div');
   o.className = 'wsheet';
   o.innerHTML = `<div class="ws-card" role="dialog" aria-modal="true">
     <div class="ws-hd"><h3>${esc(t('qWifi'))}</h3><button type="button" class="ws-x" aria-label="${esc(t('close'))}">×</button></div>
-    <div class="ws-f"><small>${esc(t('wifiNets'))}</small>${w.networks.map(n => `<b>${esc(n.ssid)}</b><span class="ws-l">${esc(tx(n.label))}</span>`).join('')}</div>
-    <div class="ws-f ws-pwrow"><span><small>${esc(t('wifiPwBoth'))}</small><b class="ws-pw">${esc(w.password)}</b></span><button type="button" class="btn primary ws-copy">${esc(t('copyShort'))}</button></div>
-    <p class="ws-how">${esc(t('wifiScan'))}</p><div class="ws-qrs">${w.networks.map(n => `<figure>${n.qr || wifiQr(n.ssid, w.password)}<figcaption>${esc(tx(n.label).split(/[:：]/)[0].trim())}</figcaption></figure>`).join('')}</div>
+    <div class="ws-f"><small>${esc(t(one ? 'wifiNet' : 'wifiNets'))}</small>${w.networks.map(n => `<b>${esc(n.ssid)}</b>${label(n) ? `<span class="ws-l">${esc(label(n))}</span>` : ''}`).join('')}</div>
+    <div class="ws-f ws-pwrow"><span><small>${esc(t(one ? 'wifiPw' : 'wifiPwBoth'))}</small><b class="ws-pw">${esc(w.password)}</b></span><button type="button" class="btn primary ws-copy">${esc(t('copyShort'))}</button></div>
+    <p class="ws-how${one ? ' one' : ''}">${esc(t('wifiScan'))}</p><div class="ws-qrs${one ? ' one' : ''}">${w.networks.map(n => `<figure>${n.qr || wifiQr(n.ssid, w.password)}<figcaption>${esc(one ? n.ssid : tx(n.label).split(/[:：]/)[0].trim())}</figcaption></figure>`).join('')}</div>
   </div>`;
   document.body.appendChild(o);
   document.body.style.overflow = 'hidden';

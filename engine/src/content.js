@@ -35,8 +35,10 @@ export const SECTIONS = get('sections').sections.filter(s => MODULE_ON(s.id)).ma
 // Live sections with map points (restaurants, places... and the glass container from garbage)
 // share the map with markets. Points from non-"spots" sections are utilities: shown only when zoomed in.
 export const SPOT_SECTIONS = SECTIONS.filter(s => s.status === 'live' && s.kind !== 'markets' && s.kind !== 'events' && (s.data?.items || []).length);
-export const SPOTS = SPOT_SECTIONS.flatMap(sec => (sec.data?.items || []).map(it => ({
+// "Host's pick" marks the host's own places among researched ones: in a list of only the host's places it says nothing.
+export const SPOTS = SPOT_SECTIONS.flatMap(sec => { const own = (sec.data?.items || []).every(x => x.hostPick); return (sec.data?.items || []).map(it => ({
   ...it,
+  hostPick: it.hostPick && !own,
   id: sec.id + '-' + it.id,
   kind: 'spot',
   section: sec.id,
@@ -47,7 +49,7 @@ export const SPOTS = SPOT_SECTIONS.flatMap(sec => (sec.data?.items || []).map(it
   groupKey: it.mapGroup || it.town,
   groupSlug: slug(it.mapGroup || it.town),
   s: slots(it.schedule)
-})));
+})); });
 
 export const MAP_CATS = [...CATS, ...new Set(SPOTS.map(s => s.cat))];
 // The local bar & shop next door (a Home quick tile) also belongs on the map, under Eat.
@@ -58,7 +60,7 @@ const QSHOP = ((QUICK_ON && get('quick')?.items) || []).filter(q => q.id === 'sh
   description: q.what, hours: q.hours, price: q.price, priceNote: q.priceNote, gmaps: q.gmaps, phone: q.phone || undefined, flags: [], tags: [],
   groupKey: HOUSE.name, groupSlug: slug(HOUSE.name) + '-bar', s: slots(q.schedule)
 }));
-export const MAP_ITEMS = [...MARKETS, ...SPOTS, ...QSHOP];
+export const MAP_ITEMS = [...MARKETS, ...SPOTS.filter(s => !s.nomap), ...QSHOP];
 export const byId = id => MAP_ITEMS.find(m => m.id === id);
 
 export const GARBAGE = get('garbage');

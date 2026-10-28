@@ -34,6 +34,9 @@ Up to three run side by side (each mostly waits for Claude), even while a guide 
 - `find-todo`, `find-markets`, `find-events` ("Find more" on those steps): Claude searches the web around the house with the build's research rules plus the curation rule, leaves out what the guide has, checks each place on Google (`worker/places.mjs`, same rules as the monthly check: permanently closed ones are dropped, listing link, Google id and hours added; events are not checked), translates into the guide's languages and returns the suggestions in `result`. Nothing goes into the guide here: the host keeps or skips each one in the editor. At most 8 searches per guide a day. Needs `GOOGLE_PLACES_KEY` in `Guest Guides/.env` for the Google check (without it the suggestions are unchecked). "Find more" on Events looks at the next three months.
 - `auto-events` (the host switches on "Keep events up to date", or presses "Search now"): the same search as the monthly run below, for one guide, written straight into the guide.
 
+## Host's favourite places
+Before the generator runs, each place the host typed (a name or a Google Maps link, answers.favEat) is looked up on Google near the house (`hostPlace` in worker/places.mjs, key GOOGLE_PLACES_KEY): position, distance, town, hours, kind, Maps link and Google id go into the job's `src/geocode.json`, which the generator reads. The host's own name stays. A place Google does not know keeps the host's words but gets no distance and no pin (`nomap`).
+
 ## Host images
 When the host publishes, the onboarding sends their own images (logo, cover, photos, inspiration images) to the guide's storage folder (`<guide id>/host/`) and lists them in `answers._uploads`. The worker downloads them into the job's `src/uploads` and `src/assets` for the generator. Without a logo the guide shows none; the icons then come from the house photo.
 

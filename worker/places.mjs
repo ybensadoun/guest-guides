@@ -59,3 +59,33 @@ export const makeGoogle = GK => async function google(it) {
   if (d.error) throw new Error(d.error.message);
   return (d.places || [])[0] || null;
 };
+
+// One of the host's own favourite places, as they typed it: a name, or a Google Maps link (a short maps.app.goo.gl
+// link is read for the name and pin it points to). Searched on Google near the house; kept only when Google's answer
+// shares a real word with the name and lies within reach. Gives what the guide needs: position, distance, town,
+// opening hours, its Maps link, its id for the monthly check and what kind of place it is.
+const townOf = addr => { const parts = String(addr || '').split(',').map(x => x.trim()).filter(Boolean); const withCode = parts.find(x => /\b\d{4,5}\b/.test(x));
+  return (withCode || parts[parts.length - 2] || '').replace(/\b\d{4,5}\b\s*([A-Z]{2}\b)?/, '').trim() || null; };
+export async function hostPlace(GK, raw, house, reachKm = 50) {
+  let q = String(raw || '').trim(), pin = null;
+  if (/^https?:/.test(q)) {
+    let url = q;
+    if (/maps\.app\.goo\.gl|goo\.gl\/maps/.test(url)) { try { const r = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(10000) }); url = r.headers.get('location') || url; } catch (e) { /* read the link as it is */ } }
+    const n = url.match(/\/maps\/place\/([^/@?]+)/), p = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/), s = url.match(/[?&]q(?:uery)?=([^&]+)/);
+    q = n ? decodeURIComponent(n[1]).replace(/\+/g, ' ') : s ? decodeURIComponent(s[1]).replace(/\+/g, ' ') : '';
+    if (p) pin = { lat: +p[1], lng: +p[2] };
+    if (!q) return null;
+  }
+  const at = pin || house, body = { textQuery: q, maxResultCount: 1, languageCode: 'en', locationBias: { circle: { center: { latitude: at.lat, longitude: at.lng }, radius: pin ? 300 : Math.min(50000, reachKm * 1000) } } };
+  const r = await get('https://places.googleapis.com/v1/places:searchText', { method: 'POST', headers: { 'X-Goog-Api-Key': GK, 'Content-Type': 'application/json', 'X-Goog-FieldMask': [...FIELDS.split(','), 'primaryTypeDisplayName'].map(f => 'places.' + f).join(',') }, body: JSON.stringify(body) });
+  const d = await r.json(); if (d.error) throw new Error(d.error.message);
+  const p = (d.places || [])[0];
+  if (!p || !p.location) return null;
+  const km = hav(house.lat, house.lng, p.location.latitude, p.location.longitude);
+  const close = () => { const a = [...words(q)], b = [...words(p.displayName && p.displayName.text)]; return a.some(x => b.some(y => Math.min(x.length, y.length) >= 4 && (x.includes(y) || y.includes(x)))); };
+  if (km > reachKm || !(sameName({ name: { en: q } }, p) || close())) return null;
+  const sch = schedule(p.regularOpeningHours && p.regularOpeningHours.periods);
+  return { name: p.displayName && p.displayName.text || q, lat: p.location.latitude, lng: p.location.longitude, km: Math.max(1, Math.round(km * 1.3)),
+    town: townOf(p.formattedAddress), gmaps: p.googleMapsUri, gid: p.id, type: p.primaryTypeDisplayName && p.primaryTypeDisplayName.text || null, status: p.businessStatus || null,
+    ...(sch === 'always' ? { always: true } : sch ? { schedule: sch } : {}) };
+}

@@ -202,7 +202,7 @@ export function row(m, opts = {}) {
      <div class="actions">
        <a class="btn primary" href="${gDir(m)}" target="_blank" rel="noopener">${ICON.dir}${esc(t('directions'))}</a>
        <a class="btn" href="${gSearch(m)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>
-       <a class="btn" href="#map/m/${encodeURIComponent(m.id)}">${esc(t('onMap'))}</a>
+       ${m.nomap ? '' : `<a class="btn" href="#map/m/${encodeURIComponent(m.id)}">${esc(t('onMap'))}</a>`}
        ${m.phone ? `<a class="btn" href="tel:${m.phone.replace(/\s+/g, '')}">${esc(t('callLabel'))} ${esc(m.phone)}</a>` : ''}
        ${m.url ? `<a class="btn" href="${esc(m.url)}" target="_blank" rel="noopener">${esc(t('website'))}</a>` : ''}
      ${m.wiki ? `<a class="btn" href="${wikiUrl(m.wiki)}" target="_blank" rel="noopener">Wikipedia</a>` : ''}
