@@ -17,12 +17,14 @@ Optional lines in `worker/.env.local`:
 - `OPENAI_API_KEY=<key>` switches on artistic covers (the `cover-art` job below). Without it the host sees "Artistic covers are not switched on yet."
 
 ## Run
-Since 28 Oct 2026 the worker starts by itself on Yohann's Mac (a launch agent): at login, again within 30 s if it stops, with `caffeinate` keeping the Mac awake while it runs. It still only works while the Mac is on and awake (lid closed = jobs wait in the queue). Moving it to a server: `docs/plan-worker-on-server.md` (proposal, code ready, see "On a server" below).
-- `sh worker/autostart.sh status`: is it running, and the last lines of its log (`~/Library/Logs/guide-worker.log`, restarted past 5 MB).
-- `sh worker/autostart.sh restart`: after changing or pulling worker code, or editing `worker/.env.local`. The running worker keeps the old code until then.
-- `sh worker/autostart.sh install` sets it up (again after moving the folder or installing another node); `remove` takes it out.
+Since 28 Oct 2026, 22:15, the worker runs on the server (Hetzner CX23 `guide-worker`, its address in `~/.ssh/config` on Yohann's Mac, see "On a server" below), not on the Mac: never start one on the Mac while the server's runs.
+- Log: `ssh guide-worker 'cd /opt/guest-guides && docker compose -f worker/compose.yaml logs -f --tail 50 worker'` (`ssh guide-worker` works from Yohann's Mac: `~/.ssh/config`).
+- Restart: `ssh guide-worker 'cd /opt/guest-guides && docker compose -f worker/compose.yaml restart worker'` (lets running jobs finish first, up to 15 minutes). Keys and settings: `/etc/guide-worker.env` on the server (root only), then `docker compose -f worker/compose.yaml up -d --force-recreate`.
+- Updates: a push to `main` reaches the server within 5 minutes (`worker/server-update.sh`, timer `guide-worker-update`; `journalctl -u guide-worker-update` shows each one).
 
-Only one worker runs at a time: a copy started by hand while the agent runs says so and stops (a second one would put the first one's running jobs back in the queue). By hand, after `remove`: `caffeinate -i node worker/guide-worker.mjs`, `Ctrl+C` stops it. A guide or editor job left half-built when the worker stopped goes back in the queue as soon as it starts again (and after 30 minutes if a build stalls while the worker runs).
+The Mac's launch agent (`worker/autostart.sh`) was the stopgap until the server and was removed on 28 Oct; the script stays until about 25 Nov 2026 as a fallback (server down for long: stop the server's worker first, then `sh worker/autostart.sh install` on the Mac). `status`, `restart`, `remove` work as before.
+
+Only one worker runs at a time: a copy started by hand while another runs on the same computer says so and stops (a second one would put the first one's running jobs back in the queue). By hand, after `remove`: `caffeinate -i node worker/guide-worker.mjs`, `Ctrl+C` stops it. A guide or editor job left half-built when the worker stopped goes back in the queue as soon as it starts again (and after 30 minutes if a build stalls while the worker runs).
 
 Build what is queued right now and stop: `node worker/guide-worker.mjs --once`
 
@@ -31,7 +33,7 @@ Try one "Find more" search without the queue (safe next to a running worker: it 
 A stop by SIGTERM (a server's update or restart) takes nothing new and lets running jobs and a build finish before the worker exits; a second SIGTERM or `Ctrl+C` stops at once.
 
 ## On a server
-`worker/Dockerfile` (build from the repo folder: `docker build -f worker/Dockerfile -t guide-worker .`) holds Node, Python with the generator's packages, the engine and the worker, with `RESEARCH=api`. No keys in the image: they come from the server's environment (`worker/compose.yaml` reads `/etc/guide-worker.env`); `worker/server-update.sh` pulls and rebuilds after each push. Only one worker may run: stop the one on the Mac before starting the server's. Plan, hosting options and setup steps: `docs/plan-worker-on-server.md`.
+`worker/Dockerfile` (build from the repo folder: `docker build -f worker/Dockerfile -t guide-worker .`) holds Node, Python with the generator's packages, the engine and the worker, with `RESEARCH=api`. No keys in the image: they come from the server's environment (`worker/compose.yaml` reads `/etc/guide-worker.env`); `worker/server-update.sh` pulls and rebuilds after each push. Only one worker may run: stop the one on the Mac before starting the server's. Plan, hosting options and setup steps: `docs/plan-worker-on-server.md`. The server's env file also sets `TZ=Europe/Madrid`, so the log shows local times.
 
 ## What it does for each queued guide
 1. Takes it (status `generating`) and writes progress messages the host sees.

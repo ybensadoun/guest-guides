@@ -1,6 +1,6 @@
 # Plan: nothing on the Mac: the guide worker on a small server, the monthly check in the cloud (decided 28 Oct 2026)
 
-Status: decided (see "Decided by Yohann"), code ready, setup starting. `RESEARCH=api` (worker/claude-api.mjs), `worker/Dockerfile`, `worker/compose.yaml`, `worker/server-update.sh` and `.dockerignore` are in the repo and tested locally against a stand-in for the Claude API. Nothing is deployed and no account is created: Yohann chooses the provider, creates the server account and the Claude API key, and sets the budget (end of this page). Widened the same day at Yohann's request ("What if we did it all in the cloud?"): the monthly check and everything else that needs the Mac on are in scope too.
+Status: the worker runs on the server since 28 Oct 2026, 22:15 (Hetzner CX23 `guide-worker`, address in `~/.ssh/config` on Yohann's Mac, Ubuntu 26.04, Docker 29.9; the Mac's launch agent removed). Still to do: Steps 6 to 9 (the monthly run, the routine, cleanup). Earlier: `RESEARCH=api` (worker/claude-api.mjs), `worker/Dockerfile`, `worker/compose.yaml`, `worker/server-update.sh` and `.dockerignore` are in the repo and tested locally against a stand-in for the Claude API. Nothing is deployed and no account is created: Yohann chooses the provider, creates the server account and the Claude API key, and sets the budget (end of this page). Widened the same day at Yohann's request ("What if we did it all in the cloud?"): the monthly check and everything else that needs the Mac on are in scope too.
 
 ## Decided by Yohann (28 Oct 2026)
 1. Provider: Hetzner Cloud, CX23 in Germany (option A).
@@ -79,7 +79,7 @@ Why not keep the `claude` command on a server: Yohann's personal login would liv
 |---|---|---|---|
 | Company, place | German; Nuremberg, Falkenstein or Helsinki | French; Paris or Amsterdam | American, EU regions (Frankfurt, Paris, Amsterdam) |
 | Size | CX23: 2 vCPU, 4 GB, 40 GB | DEV1-S: 2 vCPU, 2 GB | shared-cpu-1x, 1 GB |
-| Expected cost a month | about 4 EUR plus 0.50 EUR for the IPv4 address | about 6.55 EUR plus about 2.90 EUR IPv4 plus storage | about 5.70 USD |
+| Expected cost a month | about 4 EUR plus 0.50 EUR for the IPv4 address (CX23 taken on 28 Oct; the CPX line was 7.25 EUR and up) | about 6.55 EUR plus about 2.90 EUR IPv4 plus storage | about 5.70 USD |
 | Keys | `/etc/guide-worker.env`, root only | the same | `fly secrets set`, encrypted at Fly |
 | Logs | `docker compose logs`, 5 files of 10 MB on the server | the same | `fly logs`, short history |
 | Restarts | Docker `restart: unless-stopped` | the same | Fly's restart policy |
@@ -92,7 +92,7 @@ Prices are expected (third-party comparisons and the providers' pages, Oct 2026;
 2. On the server: `apt update && apt full-upgrade`, `apt install unattended-upgrades` (security updates by themselves), Docker Engine with the compose plugin from Docker's own apt repository.
 3. `git clone https://github.com/ybensadoun/guest-guides /opt/guest-guides` (public: no GitHub credentials on the server).
 4. Keys: Yohann types them into `/etc/guide-worker.env` over SSH (never in chat, the repo or GitHub), then `chmod 600`:
-   `SUPABASE_SERVICE_KEY=`, `GOOGLE_PLACES_KEY=`, `OPENAI_API_KEY=`, `WORKER_ANTHROPIC_KEY=`, `RESEARCH_USD_PER_DAY=5`, `HEARTBEAT_URL=` (optional), later `RESEND_API_KEY=` (monthly report).
+   `SUPABASE_SERVICE_KEY=`, `GOOGLE_PLACES_KEY=`, `OPENAI_API_KEY=`, `WORKER_ANTHROPIC_KEY=`, `RESEARCH=api`, `RESEARCH_USD_PER_DAY=5`, `TZ=Europe/Madrid` (local times in the log), `HEARTBEAT_URL=` (optional), later `RESEND_API_KEY=` (monthly report). Done on 28 Oct by copying them from the Mac's files over SSH, never displayed (Yohann's choice).
 5. Switch, in a quiet hour: on the Mac `sh worker/autostart.sh remove` (stops the launch agent and takes it out, so it does not start again at the next login), then on the server `cd /opt/guest-guides && docker compose -f worker/compose.yaml up -d --build`. Check: `docker compose -f worker/compose.yaml logs -f` shows "Research: api"; a Find more search from the editor ends with suggestions and a cost line in the log.
 6. Updates on each push: a systemd timer runs `worker/server-update.sh` every 5 minutes. It rebuilds only when files the worker uses changed (not sites/, onboarding-site/, docs/); the old worker finishes its jobs first (up to 15 minutes, new jobs wait meanwhile). No GitHub secret and no way in: the server pulls from the public repo. `/etc/systemd/system/guide-worker-update.service`:
    ```ini
