@@ -1,0 +1,10 @@
+[Unit]
+Description=The guide worker's monthly run (worker/monthly.mjs): Google check, automatic events, Find more for Ca La Kimberly, report by email
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/guest-guides
+ExecStart=/usr/bin/docker compose -f worker/compose.yaml run --rm -T worker node worker/monthly.mjs
+TimeoutStartSec=4h

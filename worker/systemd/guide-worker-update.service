@@ -1,0 +1,9 @@
+# Copy worker/systemd/* to /etc/systemd/system on the server (docs/plan-worker-on-server.md).
+[Unit]
+Description=Pull main and rebuild the guide worker when its files changed (worker/server-update.sh)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/guest-guides/worker/server-update.sh
