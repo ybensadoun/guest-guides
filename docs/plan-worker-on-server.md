@@ -1,10 +1,25 @@
-# Plan: the guide worker on a small server (proposal, 28 Oct 2026)
+# Plan: nothing on the Mac: the guide worker on a small server, the monthly check in the cloud (proposal, 28 Oct 2026)
 
-Status: proposal, code ready. `RESEARCH=api` (worker/claude-api.mjs), `worker/Dockerfile`, `worker/compose.yaml`, `worker/server-update.sh` and `.dockerignore` are in the repo and tested locally against a stand-in for the Claude API. Nothing is deployed and no account is created: Yohann chooses the provider, creates the server account and the Claude API key, and sets the budget (end of this page).
+Status: proposal, code ready. `RESEARCH=api` (worker/claude-api.mjs), `worker/Dockerfile`, `worker/compose.yaml`, `worker/server-update.sh` and `.dockerignore` are in the repo and tested locally against a stand-in for the Claude API. Nothing is deployed and no account is created: Yohann chooses the provider, creates the server account and the Claude API key, and sets the budget (end of this page). Widened the same day at Yohann's request ("What if we did it all in the cloud?"): the monthly check and everything else that needs the Mac on are in scope too.
 
 ## Why
 - The worker (`worker/guide-worker.mjs`) runs on Yohann's MacBook Air, started at login by the launch agent `com.guestguides.worker` (`sh worker/autostart.sh`, log in ~/Library/Logs/guide-worker.log). When the Mac sleeps or is off, guides stay "queued" and the editor's jobs (Find more, translate, automatic events, artistic covers) never start. The 19 Oct plan (`plan-accounts-and-publishing.md`, "Interim model") already says to move it before the first real host.
 - Research and translation use the `claude` command logged in with Yohann's own account: a personal login doing a business service's work, no bill of its own, no spending limit, and it cannot run on a server without storing his login there.
+
+## Everything that only runs while the Mac is on (28 Oct 2026)
+| What | Today, on the Mac | In the cloud | When |
+|---|---|---|---|
+| Guide worker: builds, translate, Find more, automatic events on demand, artistic covers | launch agent `com.guestguides.worker` (`worker/autostart.sh`, `caffeinate`), the `claude` command for research | the server (option A below), Docker, the Claude API | switch day (Steps 4) |
+| Monthly check, scripts: `check-guides --apply`, `refresh-events --apply` | the scheduled task "Monthly check of every live guide" (Claude desktop app, id live-guides-monthly-check, 1st of the month 9:00), the `claude` command | a monthly timer on the same server, the Claude API | the first 1st of the month after the switch |
+| Monthly check, judgment: the lines "for a human" (official sources), events that look wrong, the summary for Yohann | the same task: a Claude session reads the reports and searches | the server emails the reports; a Claude Code routine scheduled in Anthropic's cloud does the research (or a cloud session Yohann starts when a report needs it) | the same month, or the next |
+| Monthly check, part B: new places for Ca La Kimberly | the same task | the server queues a Find more search for Ca La Kimberly; the suggestions wait 14 days in the editor, Yohann keeps or skips each one | with the monthly timer |
+| Ca La Kimberly fixes from sources (pull, edit, check, build, UX check, push, commit) | the same task, in the Mac's checkout | in the editor (the live guide is the database), or by the routine, which opens a pull request for repo files such as docs/sources.json | with the routine |
+| Project notes outside the repo (../CLAUDE.md, PROJECTS.md, CHANGES.md, BACKLOG.md, GITHUB-SETUP.md) | the Google Drive folder | a cloud routine or session only sees GitHub repositories: the notes move to a private repository (Phase 2 of GITHUB-SETUP.md already asks for one), or the routine's prompt carries the few rules it needs | before the routine |
+| Keys (worker/.env.local, Guest Guides/.env) | files on the Mac | the server's env file and the routine's cloud environment; the Mac keeps its own for development | switch day |
+| Development sessions and pushes | Claude desktop app, GitHub Desktop | optional: Claude Code on the web or the phone (cloud sessions push branches; merging on github.com publishes) | when Yohann wants; hosts do not need it |
+| Cowork task "Ca La Kimberly accuracy check" | paused | deleted | after the first good cloud month |
+
+Already in the cloud, nothing to move: Netlify (the guides, the shared viewer, the onboarding and its functions, Day Rental), Supabase (accounts, data, photos), Google and OpenAI. Day Rental has nothing scheduled. Once the steps below are done, the Mac is only needed for development, and not even for that if Yohann works in cloud sessions.
 
 ## What the worker needs
 | Need | On the Mac today | On the server |
@@ -94,6 +109,25 @@ The same as A (Docker, env file, compose, timer) on a DEV1-S. Equivalent, about 
 4. Fly lets a stop wait only a few minutes (`kill_timeout`), so a long events search can be cut by an update and starts again from the beginning (paid twice).
 Simpler if Yohann never wants to touch a Linux server; otherwise one more account, a token in GitHub or a manual step, short logs, and a little dearer than A.
 
+## The monthly check in the cloud
+Today it is one Claude session on the Mac (`~/.claude/scheduled-tasks/live-guides-monthly-check/SKILL.md`): check-guides as a dry run, read, apply; refresh-events; research for the lines "for a human"; Ca La Kimberly's fixes, build, UX check, push to the database, commit; new places for Ca La Kimberly; a summary. In the cloud it splits into what a script does and what needs judgment.
+
+1. On the server, a monthly systemd timer (`OnCalendar=*-*-01 09:00 Europe/Madrid`), each step a `docker compose -f worker/compose.yaml run --rm worker ...`:
+   - `node worker/check-guides.mjs`, then `node worker/check-guides.mjs --apply`. The first two months as a dry run only: Yohann reads the report and decides whether apply may run by itself. Its rules are careful already: official hours are compared, never replaced; Ca La Kimberly is report only; a doubtful answer is left for a human.
+   - `RESEARCH_USD_PER_DAY=30 node worker/guide-worker.mjs --refresh-events --apply`: the Claude API; one run searches every guide with automatic events on (expected 1 to 5 USD per guide), so it gets its own, higher day limit.
+   - A Find more search (things to do, markets) queued for Ca La Kimberly: the worker runs it like the editor's button, and the editor's Find more panel shows its suggestions for 14 days; Yohann keeps or skips each one and publishes as usual. Same curation rule and Google check as the task's part B, and nothing goes live without him.
+   - The reports by email to Yohann: per guide what was fixed, added, re-dated or dropped, the lines for a human, Google requests used, Claude cost. For example with Resend's free plan (one key in the env file; expected free at this volume). The same report saved in the database (the `events` table) for the routine below.
+   Code still to write (small): queuing the two Find more jobs, the report email, the reports saved in the database.
+2. The judgment: a Claude Code routine scheduled in Anthropic's cloud on the 1st at 11:00, after the server's run, on the GitHub repo and Yohann's Claude account (like the desktop task today). It reads the saved report, looks up official sources for the lines "for a human", checks events that look wrong, makes Ca La Kimberly's fixes through `guide:pull` and `guide:push` (the live guide is the database) after the content check and the UX check, and opens a pull request for repo files (docs/sources.json); Yohann merges it from his phone. Its environment needs the Supabase key, a Google Places key of its own and Playwright's Chromium (UX check). To confirm when setting it up: how the routine's environment keeps keys, and how it reads the project notes (see the table above).
+   Without the routine: Yohann reads the email and, when a line needs research, starts a Claude Code session on the web or the phone for it. Less to set up; the research waits for him.
+3. Once a cloud month has gone well: switch the desktop task off (Claude desktop app > Scheduled) and delete the paused Cowork task.
+
+## The launch agent: what replaces it, and when it goes
+- Since 28 Oct the worker runs on the Mac as a launch agent (`sh worker/autostart.sh install`: at login, back within 30 s if it stops, `caffeinate`, log in ~/Library/Logs/guide-worker.log, a pid guard so only one worker runs). It is the stopgap until the server.
+- On the server: Docker's restart policy replaces KeepAlive, `docker compose logs` replaces the log file, `worker/server-update.sh` replaces "restart after pulling", and there is no sleep to prevent. The pid guard stays in the code: in the container it finds no other worker and does nothing, and it still protects a worker started by hand.
+- Switch day: `sh worker/autostart.sh remove` on the Mac (stops it and takes it out of the login items), then the server's worker starts. Never both at once: each would put the other's running jobs back in the queue.
+- Four weeks after the switch without trouble: one commit removes `worker/autostart.sh`, its part of worker/README.md ("Run") and its row in CLAUDE.md. Until then it is the fallback: if the server is down for long, stop it, then `sh worker/autostart.sh install` on the Mac.
+
 ## Why not GitHub Actions
 - The repo is public, so every run's log is public. The worker's log carries guide slugs, place names and error messages that can quote host texts; Actions masks the registered secrets but not host data, so one careless log line publishes it. Phase 2 of GITHUB-SETUP.md asks to keep code and customer data apart.
 - No always-on runner: a schedule runs at most every 5 minutes and often later, and each run starts cold (Node, Python and packages, about a minute), so a host on the progress screen waits minutes more. Starting one run per job (repository_dispatch from Netlify) needs a GitHub token in Netlify and a workflow per kind of job.
@@ -102,15 +136,18 @@ Simpler if Yohann never wants to touch a Linux server; otherwise one more accoun
 
 ## Recommendation
 Option A: Hetzner CX23 in Germany, Docker with `worker/compose.yaml`, keys in `/etc/guide-worker.env`, updates pulled by a timer, a heartbeat monitor. Claude API with its own key in its own workspace: Opus 5.5 at medium effort, a monthly spend limit of 50 USD to start and 5 USD a day in the worker. After the first real searches (the log prints their cost), decide whether translation moves to Haiku 5.5 (`TRANSLATE_MODEL`) and research to Sonnet 5.5 (`RESEARCH_MODEL`).
+The monthly check: the scripts and Ca La Kimberly's Find more on the server's timer, the reports by email, a Claude Code routine for the research. Then nothing needs the Mac.
 Expected total: about 5 EUR a month for the server, plus Claude API use (expected 10 to 40 USD a month in the test phase), plus OpenAI covers (about 0.02 USD each) and Google Places as today.
 
 ## Steps
 1. Yohann: Claude Console, workspace "guide-worker", an API key in it, a spend limit. Key into the Mac's `worker/.env.local` as `WORKER_ANTHROPIC_KEY=` (leave `RESEARCH=cli` for the running worker).
 2. Test on the Mac, beside the running worker: `npm ci --prefix worker`, then `RESEARCH=api node worker/guide-worker.mjs --find find-todo --slug home-in-tordera`. It prints the suggestions and what the search cost; the same command without `RESEARCH=api` gives the `claude` command's answer to compare. Choose model and effort.
 3. Yohann: the server account and server (A 1-2), a Google Places key for the server, the monitoring check.
-4. Server setup and switch (A 3-7). The Mac's launch agent stays removed; `sh worker/autostart.sh install` brings it back if the server is ever down for long (stop the server's worker first: one worker only).
-5. Monthly jobs on the server too: `check-guides --apply` and `refresh-events --apply` as a monthly systemd timer (`docker compose -f worker/compose.yaml run --rm -e RESEARCH_USD_PER_DAY=30 worker npm run refresh-events -- --apply`: one run searches every guide, so it needs a higher day limit). The desktop task "Monthly check of every live guide" then keeps only Ca La Kimberly's new places (it needs a Claude session) and reads the server's report.
-6. Before real hosts: delete a job's folder (worker/jobs/<id>: host answers and photos) once its guide is saved; the privacy notice names the processors; an alert on failed jobs (BACKLOG item 7).
+4. Server setup and switch (A 3-7): `sh worker/autostart.sh remove` on the Mac, then the server's worker.
+5. The monthly run on the server: write the small code (Ca La Kimberly's Find more jobs, the report email, the report in the database), then the monthly timer. The first two months check-guides runs as a dry run.
+6. The judgment: the project notes into a private repository (or a self-contained prompt), the Claude Code routine with its keys; or decide to do it on demand from the email.
+7. After a good cloud month: the desktop task off, the Cowork task deleted. Four weeks after the switch: `worker/autostart.sh` removed (see "The launch agent").
+8. Before real hosts: delete a job's folder (worker/jobs/<id>: host answers and photos) once its guide is saved; the privacy notice names the processors; an alert on failed jobs (BACKLOG item 7).
 
 ## Yohann's choices
 1. Provider: Hetzner (recommended), Scaleway or Fly.io.
@@ -118,3 +155,6 @@ Expected total: about 5 EUR a month for the server, plus Claude API use (expecte
 3. Budget: the Console's monthly limit (50 USD suggested to start) and the worker's day limit (5 USD default).
 4. Model: Opus 5.5 for research (default) or Sonnet 5.5; translation on Haiku 5.5 once a test shows the quality holds.
 5. When: now, or just before the first real host.
+6. The monthly check-guides: apply by itself after two dry-run months, or always read first.
+7. The research for the lines "for a human": a scheduled Claude Code routine (the notes in a private repository, keys in its environment) or on demand from the report email.
+8. The report: by email (Resend's free plan suggested) or another channel.
