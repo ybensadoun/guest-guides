@@ -1,6 +1,6 @@
 # Guide worker
 
-Builds guides that hosts have published. It runs on this computer, only while it is on and the worker is running. Before going public it moves to the cloud (see `docs/plan-accounts-and-publishing.md`).
+Builds guides that hosts have published. It runs on this computer, only while it is on and the worker is running. Before going public it moves to a small server: plan in `docs/plan-worker-on-server.md`, image in `worker/Dockerfile` (see "On a server" below).
 
 ## One-time setup
 1. In Supabase: project `dmoxszfwulolqkgxtxcp` > Project Settings > API Keys > copy the **secret** key (starts with `sb_secret_`, or the `service_role` key). It can do everything in the database, so it stays on this computer only.
@@ -9,7 +9,9 @@ Builds guides that hosts have published. It runs on this computer, only while it
 3. Needed on this computer: Node 18+, Python 3 with Pillow and NumPy (`pip3 install pillow numpy`), and `npm install` done once in the repo.
 
 Optional lines in `worker/.env.local`:
-- `RESEARCH=cli` research nearby markets, things to do and emergency contacts, and translate, using the `claude` command on this computer (default `skip`: the guide is built from the host's answers only).
+- `RESEARCH=cli` research nearby markets, things to do and emergency contacts, and translate, using the `claude` command on this computer (default `skip`: the guide is built from the host's answers only). Jobs from the editor (Find more, translate, automatic events) use the `claude` command unless `RESEARCH=api`.
+- `RESEARCH=api` the same with the Claude API (web search and web fetch run on Anthropic's side) and the worker's own key `WORKER_ANTHROPIC_KEY=<key>`: for a server, where nobody is logged in to `claude`. Needs `npm ci --prefix worker` once (the Claude SDK). Optional: `RESEARCH_MODEL` (default `claude-opus-5-5`), `TRANSLATE_MODEL` (default: the same), `RESEARCH_EFFORT` (default `medium`), `RESEARCH_MAX_SEARCHES` (web searches per request, default 20), `RESEARCH_USD_PER_DAY` (the worker stops asking Claude past this expected cost until the next day, default 5). Each Claude call writes its searches, tokens and expected cost to the log. These settings have their own names on purpose: Claude Code sets `ANTHROPIC_BASE_URL`, `CLAUDE_EFFORT` and others in its sessions.
+- `HEARTBEAT_URL=<address>` a monitoring service's ping address, called at most once a minute while the worker runs (an alert when it stops).
 - `AUTO_PUBLISH=0` hold built guides for review (status `ready`) instead of publishing them at once (default: publish at once, for the test phase).
 - `POLL_SECONDS=10` how often to look for new guides.
 - `OPENAI_API_KEY=<key>` switches on artistic covers (the `cover-art` job below). Without it the host sees "Artistic covers are not switched on yet."
@@ -21,9 +23,16 @@ From the repo folder:
 
 Build what is queued right now and stop: `node worker/guide-worker.mjs --once`
 
+Try one "Find more" search without the queue (safe next to a running worker: it prints the suggestions and writes nothing): `node worker/guide-worker.mjs --find find-todo --slug <slug>` (or `find-markets`, `find-events`). With `RESEARCH=api` it shows what the search cost.
+
+A stop by SIGTERM (a server's update or restart) takes nothing new and lets running jobs and a build finish before the worker exits; a second SIGTERM or `Ctrl+C` stops at once.
+
+## On a server
+`worker/Dockerfile` (build from the repo folder: `docker build -f worker/Dockerfile -t guide-worker .`) holds Node, Python with the generator's packages, the engine and the worker, with `RESEARCH=api`. No keys in the image: they come from the server's environment (`worker/compose.yaml` reads `/etc/guide-worker.env`); `worker/server-update.sh` pulls and rebuilds after each push. Only one worker may run: stop the one on the Mac before starting the server's. Plan, hosting options and setup steps: `docs/plan-worker-on-server.md`.
+
 ## What it does for each queued guide
 1. Takes it (status `generating`) and writes progress messages the host sees.
-2. Runs `engine/scripts/generate-site.py` on the host's answers (and research and translation when `RESEARCH=cli`), then the content check.
+2. Runs `engine/scripts/generate-site.py` on the host's answers (and research and translation when `RESEARCH=cli` or `api`), then the content check.
 3. Uploads the images to the `guide-assets` bucket and saves content and theme to the guide row.
 4. Sets status `published` (or `ready`), or `failed` with a plain message the host sees.
 

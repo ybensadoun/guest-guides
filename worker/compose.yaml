@@ -1,0 +1,14 @@
+# The guide worker on a server with Docker (docs/plan-worker-on-server.md). From the repo folder on the server:
+#   docker compose -f worker/compose.yaml up -d --build
+# Keys and settings live in /etc/guide-worker.env on the server (readable by root only), never in the repo.
+services:
+  worker:
+    build: { context: .., dockerfile: worker/Dockerfile }
+    image: guide-worker
+    env_file: /etc/guide-worker.env
+    restart: unless-stopped       # starts again after a crash or a reboot
+    init: true                    # passes the stop signal on to the worker
+    stop_grace_period: 15m        # a stop lets running searches and builds finish
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "5" }

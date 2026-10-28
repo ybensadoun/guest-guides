@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-// Guide worker: runs on Yohann's computer while it is on (interim, see docs/plan-accounts-and-publishing.md).
+// Guide worker: runs on Yohann's computer while it is on (interim, see docs/plan-accounts-and-publishing.md), and is
+// ready for a small server (docs/plan-worker-on-server.md, worker/Dockerfile).
 // Watches the database for guides a host has queued, builds each one and writes the result back.
 //   node worker/guide-worker.mjs            keep running, build guides as they arrive
 //   node worker/guide-worker.mjs --once     build whatever is queued now, then stop
-// Settings live in worker/.env.local (never committed). See worker/README.md.
+//   node worker/guide-worker.mjs --find find-todo --slug <slug>   one Find more search, printed, written nowhere
+// Settings live in worker/.env.local (never committed) or in the environment. See worker/README.md.
 import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { resolve, dirname, join, relative, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,12 +22,20 @@ const KEY = env.SUPABASE_SERVICE_KEY;
 const rootEnv = resolve(ROOT, '.env');
 if (existsSync(rootEnv)) for (const l of readFileSync(rootEnv, 'utf8').split('\n')) { const m = l.match(/^\s*(GOOGLE_PLACES_KEY)\s*=\s*(.*?)\s*$/); if (m && !(m[1] in env)) env[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); }
 const AUTO_PUBLISH = env.AUTO_PUBLISH !== '0';          // test phase: a built guide goes live at once. Set AUTO_PUBLISH=0 to review first.
-const RESEARCH = env.RESEARCH || 'skip';                 // skip | cli  (cli = research and translation with the `claude` command)
+const RESEARCH = env.RESEARCH || 'skip';                 // skip | cli | api  (research and translation with the `claude` command, or with the Claude API)
+const RESEARCHING = RESEARCH === 'cli' || RESEARCH === 'api';   // builds research and translate (jobs from the editor always do)
 const POLL = Math.max(3, +env.POLL_SECONDS || 10) * 1000;
 const ONCE = process.argv.includes('--once');
 if (!KEY) { console.error('Missing SUPABASE_SERVICE_KEY. Put it in worker/.env.local (see worker/README.md).'); process.exit(1); }
 
 const log = (...a) => console.log(new Date().toLocaleTimeString(), ...a);
+// RESEARCH=api: the Claude API with the worker's own key (worker/claude-api.mjs), for a server. Otherwise the `claude` command.
+let claudeApi = null;
+if (RESEARCH === 'api') {
+  if (!env.WORKER_ANTHROPIC_KEY) { console.error('RESEARCH=api needs WORKER_ANTHROPIC_KEY, the worker\'s own Claude API key (worker/.env.local or the environment).'); process.exit(1); }
+  try { claudeApi = (await import('./claude-api.mjs')).makeClaude(env, log); }
+  catch (e) { console.error('RESEARCH=api needs the Claude SDK once: npm ci --prefix worker (' + e.message.slice(0, 120) + ')'); process.exit(1); }
+}
 const H = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 // A dropped connection ("fetch failed") is retried a few times instead of failing the whole guide.
 async function fetchRetry(url, init, tries = 4) {
@@ -65,9 +75,15 @@ function runAsync(cmd, args, o = {}) {
 }
 
 /* ---------- Claude research and translation (optional) ---------- */
+// One question to Claude, with the web (research) or without (translation): the Claude API when RESEARCH=api, else the
+// `claude` command on this computer. Returns the text of the answer.
+async function claudeAsk(prompt, { web = false, what = '' } = {}) {
+  if (claudeApi) return claudeApi(prompt, { web, what });
+  const r = await runAsync('claude', web ? ['-p', prompt, '--allowedTools', 'WebSearch,WebFetch', '--max-turns', '40'] : ['-p', prompt], { timeout: web ? 900000 : 600000 });
+  return r.stdout || '';
+}
 async function claudeJson(prompt, what) {
-  const r = await runAsync('claude', ['-p', prompt, '--allowedTools', 'WebSearch,WebFetch', '--max-turns', '40'], { timeout: 900000 });
-  const out = (r.stdout || '').trim();
+  const out = (await claudeAsk(prompt, { web: true, what })).trim();
   const a = out.indexOf('{'), b = out.lastIndexOf('}');
   if (a < 0 || b < a) throw new Error(`Claude returned no JSON for ${what}`);
   try { return JSON.parse(out.slice(a, b + 1)); } catch (e) { throw new Error(`Claude's JSON for ${what} did not parse`); }
@@ -163,8 +179,9 @@ async function research(A, outDir, id) {
 async function translate(texts, langs, srcLang, file) {
   if (!texts.length || !langs.length) return;
   const prompt = `Translate these texts from ${srcLang} into ${langs.join(', ')}. Keep names, numbers and times. No em-dashes. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else: {"<exact source text>": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(texts)}`;
-  const r = await runAsync('claude', ['-p', prompt], { timeout: 600000 });
-  const out = (r.stdout || ''), a = out.indexOf('{'), b = out.lastIndexOf('}');
+  let out = '';   // no translation (Claude down, the day's budget spent): the texts stay as they are, a search is not lost
+  try { out = await claudeAsk(prompt, { what: 'translation' }); } catch (e) { log('  translation skipped:', e.message); return; }
+  const a = out.indexOf('{'), b = out.lastIndexOf('}');
   if (a >= 0 && b > a) { try { writeFileSync(file, JSON.stringify(JSON.parse(out.slice(a, b + 1)), null, 1)); } catch (e) {} }
 }
 
@@ -215,10 +232,10 @@ async function build(g) {
   const gen = ['engine/scripts/generate-site.py', join(job, 'src'), '--slug', tmp, '--lat', String(A.lat), '--lng', String(A.lng), '--src', srcLang];
 
   let researchDir = null;
-  if (RESEARCH === 'cli') { researchDir = join(job, 'research'); await research(A, researchDir, id); gen.push('--research', researchDir); }
+  if (RESEARCHING) { researchDir = join(job, 'research'); await research(A, researchDir, id); gen.push('--research', researchDir); }
   say(id, 'Building the guide');
   let out = run('python3', gen).stdout;
-  if (RESEARCH === 'cli') {
+  if (RESEARCHING) {
     const need = existsSync(join(siteDir, 'docs/untranslated.json')) ? JSON.parse(readFileSync(join(siteDir, 'docs/untranslated.json'), 'utf8')) : [];
     const langs = (A.languages || []).filter(l => l !== srcLang && ['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(l));
     if (need.length && langs.length) { say(id, 'Translating'); const tf = join(job, 'translations.json'); await translate(need, langs, srcLang, tf); if (existsSync(tf)) out = run('python3', [...gen, '--translations', tf]).stdout; }
@@ -271,7 +288,7 @@ async function translateJob(j, jp) {
   }
   let n = 0;
   for (const o of todo) { const t = map[o[main]]; if (!t) continue; for (const l of j.langs) if (!o[l] && t[l]) { o[l] = t[l]; n++; } }
-  if (!n) throw new Error('No translations came back. Is the claude command set up on this computer?');
+  if (!n) throw new Error(claudeApi ? 'No translations came back. Try again in a few minutes.' : 'No translations came back. Is the claude command set up on this computer?');
   const now = (await rest('/rest/v1/guides?select=content,theme,draft&id=eq.' + j.guide_id))[0];   // merge into the latest copy, not an old one
   const draft = now.draft && now.draft.content ? now.draft : { content: now.content, theme: now.theme };
   const objs2 = []; const walk2 = x => { if (Array.isArray(x)) x.forEach(walk2); else if (x && typeof x === 'object') { if (isI18(x)) objs2.push(x); else Object.values(x).forEach(walk2); } };
@@ -576,8 +593,9 @@ async function coverArtJob(j, jp) {
 // Up to three jobs run side by side (each one mostly waits for Claude). Two jobs that write the same guide (translate,
 // automatic events) never run together; searches for suggestions write nothing to the guide, so they never wait.
 const RUNNING = new Map(), MAX_JOBS = 3, WRITES = k => k === 'translate' || k === 'auto-events';
+let STOPPING = false;   // set by SIGTERM: no new jobs or builds
 async function runJobs() {
-  if (RUNNING.size >= MAX_JOBS) return;
+  if (STOPPING || RUNNING.size >= MAX_JOBS) return;
   const jobs = await rest('/rest/v1/guide_jobs?select=id,guide_id,kind,langs,params&status=eq.queued&order=created_at.asc&limit=10');
   for (const j of jobs || []) {
     if (RUNNING.size >= MAX_JOBS) break;
@@ -597,7 +615,7 @@ async function runJobs() {
 async function tick() {
   await runJobs().catch(e => log('jobs:', e.message));
   await recover();
-  for (let g; (g = await claim());) {
+  for (let g; !STOPPING && (g = await claim());) {
     log('building', g.slug);
     try { await build(g); }
     catch (e) {
@@ -620,7 +638,29 @@ if (process.argv.includes('--refresh-events')) {
   }
   process.exit(0);
 }
+// node worker/guide-worker.mjs --find find-todo|find-markets|find-events --slug <slug>: one "Find more" search for a guide,
+// as the editor's button runs it (web search, Google check, translation), printed here and written nowhere. To try a new
+// computer or server, or RESEARCH=api, without the queue (and alongside a running worker).
+if (process.argv.includes('--find')) {
+  const kind = process.argv[process.argv.indexOf('--find') + 1], slug = (process.argv[process.argv.indexOf('--slug') + 1] || '').replace(/^--.*/, '');
+  if (!FIND[kind] || !slug) { console.error('Use: --find find-todo|find-markets|find-events --slug <slug>'); process.exit(1); }
+  const g = (await rest(`/rest/v1/guides?select=id&slug=eq.${encodeURIComponent(slug)}`))[0];
+  if (!g) { console.error(`No guide ${slug}.`); process.exit(1); }
+  log(`Find more, ${kind}, ${slug}. Research: ${RESEARCH === 'api' ? 'Claude API' : 'claude command'}. Nothing is written.`);
+  let res = null;
+  try { await findJob({ id: '00000000-0000-0000-0000-000000000000', guide_id: g.id, kind }, async b => { if (b.message) log(b.message); if (b.result) res = b.result; }); }
+  catch (e) { log('did not work:', e.message); process.exit(1); }
+  for (const it of res.items) console.log(`  ${nameOf(it.name)}${it.town ? ` (${it.town})` : ''}, ${it.km_from_house} km${it._google ? ': ' + it._google : ''}`);
+  process.exit(0);
+}
 log(`Guide worker on. Database ${URL_}. Publish on build: ${AUTO_PUBLISH}. Research: ${RESEARCH}.`);
+// A server stops the worker with SIGTERM (an update, a restart): it takes nothing new and finishes what is running (a search
+// is paid for), then exits. A second SIGTERM, or Ctrl+C, stops at once: what was running starts again at the next start.
+process.on('SIGTERM', () => { if (STOPPING) process.exit(0); STOPPING = true; log(`Stopping: finishing ${RUNNING.size} job(s) and any build, taking nothing new.`); });
+// HEARTBEAT_URL (optional, a monitoring service's ping address): pinged at most once a minute while the worker can reach
+// the database, so we hear when it stops.
+let lastBeat = 0;
+const beat = () => { if (env.HEARTBEAT_URL && Date.now() - lastBeat > 60000) { lastBeat = Date.now(); fetch(env.HEARTBEAT_URL, { signal: AbortSignal.timeout(10000) }).catch(() => {}); } };
 // Jobs still "running" and guides still "generating" belong to a worker that was stopped (only one runs at a time):
 // they start again from the beginning, at once (recover() alone would wait 30 minutes).
 { const back = await rest('/rest/v1/guide_jobs?status=eq.running', { method: 'PATCH', body: { status: 'queued', message: 'Starting again' }, headers: { Prefer: 'return=representation' } }).catch(() => []);
@@ -629,6 +669,9 @@ log(`Guide worker on. Database ${URL_}. Publish on build: ${AUTO_PUBLISH}. Resea
   if ((built || []).length) log(`${built.map(g => g.slug).join(', ')}: build interrupted by the last stop, queued again.`); }
 if (ONCE) { await tick(); while (RUNNING.size) { await Promise.all([...RUNNING.values()].map(r => r.work)); await tick(); } log('done'); }
 else {
-  setInterval(() => runJobs().catch(e => log('jobs:', e.message)), POLL);   // jobs from the editor start even while a guide is being built
-  for (;;) { try { await tick(); } catch (e) { log('waiting, could not reach the database:', e.message); } await new Promise(r => setTimeout(r, POLL)); }
+  const timer = setInterval(() => runJobs().catch(e => log('jobs:', e.message)), POLL);   // jobs from the editor start even while a guide is being built
+  while (!STOPPING) { try { await tick(); beat(); } catch (e) { log('waiting, could not reach the database:', e.message); } await new Promise(r => setTimeout(r, POLL)); }
+  clearInterval(timer);
+  await Promise.all([...RUNNING.values()].map(r => r.work));
+  log('stopped'); process.exit(0);
 }

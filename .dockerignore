@@ -1,0 +1,21 @@
+# What the guide worker's image (worker/Dockerfile) never contains: keys, host data, Wi-Fi, other sites' builds.
+# The image needs the engine (scripts, i18n, templates) and the worker; nothing else.
+.git
+**/node_modules
+.env
+**/.env*
+worker/.env.local
+worker/jobs
+test-submissions
+archive
+onboarding
+onboarding-site
+sites/*
+!sites/README.md
+docs
+**/*.zip
+**/.DS_Store
+**/__pycache__
+**/*.pyc
+.job-*.json
+.claude

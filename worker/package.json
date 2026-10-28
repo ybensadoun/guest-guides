@@ -1,0 +1,8 @@
+{
+  "name": "guide-worker",
+  "private": true,
+  "description": "What the guide worker needs beyond the engine's packages: the Claude SDK for RESEARCH=api. Install once with: npm ci --prefix worker",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0"
+  }
+}
