@@ -190,8 +190,18 @@ async function build(g) {
   rmSync(job, { recursive: true, force: true }); rmSync(siteDir, { recursive: true, force: true });
   mkdirSync(join(job, 'src'), { recursive: true });
   const remote = (A._remote || []).filter(u => u && u.src && String(u.src).startsWith('https://a0.muscache.com/'));
-  const clean = { ...A }; delete clean._remote;
+  const clean = { ...A }; delete clean._remote; delete clean._uploads;
   writeFileSync(join(job, 'src/host.json'), JSON.stringify({ answers: clean }));
+  // The host's own images (sent to the guide's storage when they published): into the generator's uploads/ and assets/.
+  const own = (A._uploads || []).filter(u => u && typeof u.path === 'string' && u.path.startsWith(id + '/host/') && /^[\w./-]+\.jpg$/.test(u.path));
+  if (own.length) { mkdirSync(join(job, 'src/uploads'), { recursive: true }); mkdirSync(join(job, 'src/assets'), { recursive: true }); }
+  for (const [i, u] of own.entries()) {
+    const r = await fetchRetry(`${URL_}/storage/v1/object/guide-assets/${u.path}`, { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } }).catch(e => ({ ok: false, status: e.message }));
+    if (!r.ok) { log('  host image not downloaded:', u.path, r.status); continue; }
+    const aid = 'host-' + String(i).padStart(2, '0');
+    writeFileSync(join(job, 'src/assets', aid + '.jpg'), Buffer.from(await r.arrayBuffer()));
+    writeFileSync(join(job, 'src/uploads', aid + '.json'), JSON.stringify({ kind: u.kind, assetId: aid, room: u.room || '', name: u.name || '' }));
+  }
   writeFileSync(join(job, 'src/listing_photos.json'), JSON.stringify(remote.map(u => ({ url: u.src, room: u.room || '', caption: u.name || '' }))));
   const srcLang = ['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(A.sourceLang) ? A.sourceLang : 'en';
   const gen = ['engine/scripts/generate-site.py', join(job, 'src'), '--slug', tmp, '--lat', String(A.lat), '--lng', String(A.lng), '--src', srcLang];

@@ -118,6 +118,7 @@ async function acctHash(){
 const cleanForAccount = () => {
   const p = { ...A }; delete p._log; delete p._sessions;
   p._remote = uploads.filter(u => u.remote).map(u => { const r = { ...u }; delete r.blob; return r; });
+  p._uploads = uploads.filter(u => !u.remote && u.path).map(u => ({ kind: u.kind, path: u.path, room: u.room || '', name: u.name || '' }));
   return p;
 };
 async function wipeLocal(){
@@ -179,10 +180,23 @@ function acctBar() {
 }
 
 /* ---------- Publish: queue the guide for building, then follow its status ---------- */
+// The host's own images (logo, cover, photos, inspiration images) stay on their device until they publish: then they go
+// to the guide's storage, so the guide builder can use them (their paths travel in the answers, _uploads).
+const HOST_KINDS = ['logo', 'cover', 'photo', 'inspiration'];
+async function acctSendUploads(){
+  for (const u of uploads.filter(x => !x.remote && x.blob && !x.path && HOST_KINDS.includes(x.kind))) {
+    const path = `${GUIDE.id}/host/${u.id}.jpg`;
+    await ensureFresh();
+    const r = await fetch(`${SB.url}/storage/v1/object/guide-assets/${path}`, { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + AUTH.access_token, 'Content-Type': u.blob.type || 'image/jpeg', 'x-upsert': 'true' }, body: u.blob });
+    if (!r.ok) throw new Error('Your images could not be sent. Check your connection and try again.');
+    u.path = path; try { await saveUpload(u); } catch (e) { /* kept in memory for this send */ }
+  }
+}
 async function acctQueueBuild(){
   if (!AUTH || !GUIDE) throw new Error('Log in to publish your guide.');
   clearTimeout(pushTimer);
   for (let i = 0; i < 40 && pushing; i++) await new Promise(r => setTimeout(r, 150));
+  await acctSendUploads();
   await acctPush();
   if (A.slug && A.slug !== GUIDE.slug) throw new Error('That web address is already taken. Pick another one in the first step.');
   await ensureFresh();

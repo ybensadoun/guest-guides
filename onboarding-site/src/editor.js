@@ -177,7 +177,7 @@ function cmGuide(c) {
   return `<div class="grid">${cf('Guide name', 'site/name', s.name, { hint: 'The title of the guide, and the app name on guests’ phones.' })}${cf('House name on the cover', 'files/house/name', h.name)}
     ${cf('Text under the link when you share it', s.shareDescription != null ? 'site/shareDescription' : 'site/description', s.shareDescription != null ? s.shareDescription : s.description, { long: true, rows: 2 })}
     ${'listing' in h || !(c.files || {})['house-page'] ? cf('Your listing link', 'files/house/listing', h.listing || '', { type: 'url' }) : ''}</div>
-    <div class="f full"><span class="lab">Logo</span><div class="cm-row cm-logo">${s.logo ? `<img src="${esc(edImg(s.logo))}" alt="Your logo">` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="site/logo" data-kind="logo">${s.logo ? 'Change the logo' : 'Add a logo'}</label></div></div>
+    <div class="f full"><span class="lab">Logo</span><p class="hint">Optional. It shows on the welcome card and becomes the icon on guests’ phones. Without one, the guide shows no logo.</p><div class="cm-row cm-logo">${s.logo ? `<img src="${esc(edImg(s.logo))}" alt="Your logo">` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="site/logo" data-kind="logo">${s.logo ? 'Change the logo' : 'Add a logo'}</label>${s.logo ? '<button class="btn small" type="button" data-logodel>Remove</button>' : ''}</div></div>
     <div class="f full"><span class="lab">Languages</span><p class="hint">The guide opens in the guest’s phone language when it can. The first one is the main language.</p>
     <div class="chips">${Object.entries(ED_LANGS).map(([k, n]) => { const on = langs.includes(k), miss = on ? edMissing(k) : 0; return `<label class="chip"><input type="checkbox" data-clang="${k}"${on ? ' checked' : ''}${k === langs[0] ? ' disabled' : ''}><span>${n}${k === langs[0] ? ' (main)' : ''}${miss ? ` · ${miss} to translate` : ''}</span></label>`; }).join('')}</div>
     <div class="cm-row"><button class="btn small" type="button" data-translate${CM.trJob && (CM.trJob.status === 'queued' || CM.trJob.status === 'running') ? ' disabled' : ''}>Translate missing texts</button><span class="hint" id="edJob">${esc(CM.trDone || '')}</span></div>
@@ -197,7 +197,7 @@ function cmLook(c) {
   const preset = th.preset || ((c.site || {}).theme || {}).preset || 'bauhaus';
   return `<div class="f full"><span class="lab" id="l_cpreset">Layout</span><p class="hint">Each one shows the same sections in a different way.</p><div class="moods" role="radiogroup" aria-labelledby="l_cpreset">${ED_PRESETS.map(([id, n, d, cls]) => `<label class="mood"><input type="radio" name="cpreset" data-design="preset" value="${id}"${preset === id ? ' checked' : ''}><div class="box"><div class="mock ${cls}">${'<i></i>'.repeat(6)}</div><b>${n}</b><small>${d}</small></div></label>`).join('')}</div></div>
     <div class="grid"><div class="f"><label for="c_font_d">Font for titles</label><select id="c_font_d" data-design="display">${opts(dispSel)}</select></div><div class="f"><label for="c_font_b">Font for text</label><select id="c_font_b" data-design="body">${opts(bodySel)}</select></div></div>
-    <div class="f full"><span class="lab">Colours</span><div class="cm-colors">${ED_COLORS.map(([v, l, d]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></div>
+    <div class="f full"><span class="lab">Colours</span>${(c.site || {}).logo ? `<div class="cm-row"><button class="btn small" type="button" data-logocolors>Use the colours of my logo</button><span class="hint" id="cmLogoCol">${esc(CM.logoCol || (preset === 'bauhaus' ? '' : 'In this look the tiles keep their own colours: your logo’s go to the accents.'))}</span></div>` : ''}<div class="cm-colors">${ED_COLORS.map(([v, l, d]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></div>
     <div class="f full"><span class="lab">Cover</span><p class="hint">Guests have already seen your listing photos, so the cover is drawn from your colours unless you choose a photo of your own.</p>
     <div class="chips"><button class="chip" type="button" data-cover="themed" aria-pressed="${!edCoverPhoto(h)}"><span>Drawn from my colours</span></button><button class="chip" type="button" data-cover="photo" aria-pressed="${edCoverPhoto(h)}"${h.photo ? '' : ' disabled'}><span>My photo</span></button></div>
     <div class="cm-cover">${h.photo ? `<img src="${esc(edImg(h.photo))}" alt="Your cover photo"${edCoverPhoto(h) ? '' : ' class="off"'}>` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="files/house/photo">${h.photo ? 'Change the photo' : 'Add a photo'}</label></div></div>`;
@@ -704,11 +704,63 @@ async function edUpload(file, kind) {
   const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(bmp.width * k)); cv.height = Math.max(1, Math.round(bmp.height * k));
   cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
   const png = kind === 'logo', blob = await new Promise(r => cv.toBlob(r, png ? 'image/png' : 'image/jpeg', 0.85));
-  const name = (png ? 'logo-' : 'guide/u-') + Date.now().toString(36) + Math.random().toString(36).slice(2, 5) + (png ? '.png' : '.jpg');
+  return edPut(blob, (png ? 'logo-' : 'guide/u-') + Date.now().toString(36) + Math.random().toString(36).slice(2, 5) + (png ? '.png' : '.jpg'));
+}
+async function edPut(blob, name) {
   await ensureFresh();
   const r = await fetch(`${SB.url}/storage/v1/object/guide-assets/${CM.g.id}/${name}`, { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + AUTH.access_token, 'Content-Type': blob.type, 'x-upsert': 'true' }, body: blob });
   if (!r.ok) throw new Error('The photo could not be uploaded');
   return name;
+}
+/* --- The logo: on the welcome card and, as icons, on guests' phones and browser tabs (site.icons, read by the viewer).
+   No logo: none is shown; the icons then come from the house photo. --- */
+const edLoad = src => src instanceof Blob ? createImageBitmap(src) : new Promise((res, rej) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => rej(new Error('The image could not be read')); i.src = src; });
+async function edIconsFrom(src, fit) {   // fit: 'contain' for a logo (never cut), 'cover' for a photo
+  const im = await edLoad(src), w = im.width, h = im.height, stamp = Date.now().toString(36), out = {};
+  for (const [k, n] of [['favicon', 64], ['apple', 180], ['i192', 192], ['i512', 512], ['maskable', 512]]) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = n; const x = cv.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, n, n);
+    const box = k === 'maskable' ? n * 0.8 : n, k2 = fit === 'cover' ? Math.max(box / w, box / h) : Math.min(box / w, box / h);
+    x.drawImage(im, (n - w * k2) / 2, (n - h * k2) / 2, w * k2, h * k2);
+    out[k] = await edPut(await new Promise(r => cv.toBlob(r, 'image/png')), `icons/${stamp}-${k}.png`);
+  }
+  return out;
+}
+async function edLogoRemove() {
+  const s = edC().site, h = (edC().files || {}).house || {};
+  delete s.logo; delete s.icons; CM.logoCol = ''; cmQueue(); render();
+  if (h.photo) { try { s.icons = await edIconsFrom(edImg(h.photo), 'cover'); cmQueue(); } catch (e) { /* the build's icons stay */ } }
+}
+// Colours from the logo: its most visible distinct colours, each to the accent slot nearest its hue, made readable
+// (white text on red, blue and green tiles; dark text on yellow and orange ones). Same idea as the build's palette.
+const edHsl = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn; if (!d) return [0, 0, l]; const s = d / (1 - Math.abs(2 * l - 1)); const h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return [h / 6, s, l]; };
+const edRgb = ([h, s, l]) => { const k = n => (n + h * 12) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)); return [f(0), f(8), f(4)].map(x => Math.round(x * 255)); };
+const edLum = c => { const [r, g, b] = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const edContrast = (a, b) => { const [x, y] = [edLum(a), edLum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+const edHueGap = (a, b) => Math.min(Math.abs(a - b), 1 - Math.abs(a - b));
+async function edLogoColours() {
+  const im = await edLoad(edImg(edC().site.logo)), n = 64, cv = document.createElement('canvas'); cv.width = cv.height = n;
+  const x = cv.getContext('2d', { willReadFrequently: true }); x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); x.drawImage(im, 0, 0, n, n);
+  const px = x.getImageData(0, 0, n, n).data, bins = new Map();
+  for (let i = 0; i < px.length; i += 4) {
+    const c = [px[i], px[i + 1], px[i + 2]], [, s, l] = edHsl(c); if (s < .25 || l < .12 || l > .9) continue;   // no white, black or grey
+    const k = (c[0] >> 4) << 8 | (c[1] >> 4) << 4 | c[2] >> 4, e = bins.get(k) || [0, 0, 0, 0]; e[0]++; e[1] += c[0]; e[2] += c[1]; e[3] += c[2]; bins.set(k, e);
+  }
+  const picked = [];
+  for (const e of [...bins.values()].sort((a, b) => b[0] - a[0])) { const c = [e[1] / e[0], e[2] / e[0], e[3] / e[0]]; if (picked.every(p => edHueGap(edHsl(p)[0], edHsl(c)[0]) > .06)) picked.push(c); if (picked.length === 5) break; }
+  if (!picked.length) throw new Error('Your logo has no colours we can use (only black, white or grey)');
+  const T = { '--yellow': .14, '--red': 0, '--blue': .6, '--green': .33, '--orange': .07 }, out = {};
+  for (const c of picked) {
+    const k = Object.keys(T).filter(v => !out[v]).sort((a, b) => edHueGap(edHsl(c)[0], T[a]) - edHueGap(edHsl(c)[0], T[b]))[0];
+    let [h, s, l] = edHsl(c); const dark = !['--yellow', '--orange'].includes(k);
+    for (let i = 0; i < 30 && (dark ? edContrast(edRgb([h, s, l]), [255, 255, 255]) < 3.2 : edContrast(edRgb([h, s, l]), [18, 18, 18]) < 5); i++) l += dark ? -0.03 : 0.03;
+    out[k] = '#' + edRgb([h, s, l]).map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+  return out;
+}
+async function edLogoColoursApply() {
+  try { const vars = await edLogoColours(); edWriteVars(CM.g.theme = CM.g.theme || {}, vars); CM.logoCol = `Done: ${Object.keys(vars).length} colours from your logo.`; cmQueue(); render(); }
+  catch (e) { CM.logoCol = e.message; render(); }
 }
 async function edPhotoInput(t) {
   const files = [...t.files]; if (!files.length) return;
@@ -718,6 +770,7 @@ async function edPhotoInput(t) {
       const name = await edUpload(f, t.dataset.kind);
       if (t.dataset.phadd) { const p = edPath(t.dataset.phadd); let a = edGet(edC(), p); if (!Array.isArray(a)) { edSet(edC(), p, []); a = edGet(edC(), p); } a.push(name); }
       else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') edSet(edC(), ['files', 'house', 'cover'], 'photo'); }
+      if (t.dataset.phset === 'site/logo') { setSave('busy', 'Making the icons for phones…'); edC().site.icons = await edIconsFrom(f, 'contain'); CM.logoCol = ''; }
     }
     cmQueue(); render();
   } catch (e) { setSave('err', 'Not uploaded: ' + (e.message || 'try again')); }
@@ -778,11 +831,17 @@ function cmWifiQr() {
   const w = (edC().private || {}).wifi, lw = ((CM.live.content.private || {}).wifi) || {};
   if (w) (w.networks || []).forEach((n, i) => { const l = (lw.networks || [])[i]; if (l && l.qr && l.ssid === n.ssid && lw.password === w.password) n.qr = l.qr; else delete n.qr; });
 }
+// The editor's own tokens live in one block at the end of the theme CSS (editor:start ... editor:end).
+const edVarsOf = css => { const decl = {}; for (const m of edBlockOf(css).matchAll(/(--[a-z-]+)\s*:\s*([^;}]+)/g)) decl[m[1]] = m[2].trim(); return decl; };
+function edWriteVars(th, vars) {
+  const css = th.css || '', decl = { ...edVarsOf(css), ...vars };
+  const block = `/* editor:start */\n:root{${Object.entries(decl).map(([k, x]) => `${k}:${x}`).join(';')}}\n/* editor:end */`;
+  th.css = /\/\* editor:start \*\//.test(css) ? css.replace(/\/\* editor:start \*\/[\s\S]*?\/\* editor:end \*\//, block) : css + '\n' + block;
+}
 function edApplyDesign(kind, el) {
   const th = CM.g.theme = CM.g.theme || {}, site = edC().site = edC().site || {};
   if (kind === 'preset') { th.preset = el.value; site.theme = { ...(site.theme || {}), preset: el.value }; return cmQueue(); }
-  const css = th.css || '', blk = edBlockOf(css), decl = {};
-  for (const m of blk.matchAll(/(--[a-z-]+)\s*:\s*([^;}]+)/g)) decl[m[1]] = m[2].trim();
+  const decl = edVarsOf(th.css || '');
   if (kind === 'color') decl[el.dataset.var] = el.value;
   else {
     const f = ED_FONTS.find(x => x[0] === el.value), disp = kind === 'display';
@@ -791,8 +850,7 @@ function edApplyDesign(kind, el) {
     const fonts = []; for (const x of [d, b]) for (const w of (x[2] || [400, 500, 600, 700])) { const s = `${x[0]}/${w}.css`; if (!fonts.includes(s)) fonts.push(s); }
     th.fonts = fonts; site.theme = { ...(site.theme || {}), fonts };
   }
-  const block = `/* editor:start */\n:root{${Object.entries(decl).map(([k, x]) => `${k}:${x}`).join(';')}}\n/* editor:end */`;
-  th.css = /\/\* editor:start \*\//.test(css) ? css.replace(/\/\* editor:start \*\/[\s\S]*?\/\* editor:end \*\//, block) : css + '\n' + block;
+  edWriteVars(th, decl);
   cmQueue();
 }
 const inEd = t => CM.on && t.closest && t.closest('.edz');
@@ -823,6 +881,8 @@ document.addEventListener('click', e => {
   const d = t.dataset, arr = p => { let a = edGet(edC(), edPath(p)); if (!Array.isArray(a)) { edSet(edC(), edPath(p), []); a = edGet(edC(), edPath(p)); } return a; };
   const done = () => { cmQueue(); render(); };
   if (d.cpreview !== undefined) return cmPreview(e, t);
+  if (d.logodel !== undefined) return edLogoRemove();
+  if (d.logocolors !== undefined) return edLogoColoursApply();
   if (d.cpublish !== undefined) return cmPublish(t);
   if (d.cdiscard !== undefined) return cmDiscard(t);
   if (!t.closest('.edz')) return;

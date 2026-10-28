@@ -57,13 +57,15 @@ function saveCopy(slug, row) { try { localStorage.setItem(CK(slug), JSON.stringi
 function loadCopy(slug) { try { return JSON.parse(localStorage.getItem(CK(slug)) || 'null'); } catch (e) { return null; } }
 function dropCopy(slug) { try { localStorage.removeItem(CK(slug)); } catch (e) { /* nothing to do */ } }
 
-function goOffline(site, files, base, slug, paper) {
+const ICON_FILE = { favicon: 'favicon.png', apple: 'apple-touch-icon.png', i192: 'icons/icon-192.png', i512: 'icons/icon-512.png', maskable: 'icons/icon-maskable-512.png' };
+function goOffline(site, files, base, slug, paper, icons = {}) {
+  const icon = k => { const v = icons[k]; return v ? (/^https?:/.test(v) ? v : base + v) : base + ICON_FILE[k]; };
   try {
     const man = { name: site.name, short_name: String(site.name).slice(0, 14), start_url: FIXED ? `${location.origin}/` : `${location.origin}/g/${slug}`, scope: FIXED ? `${location.origin}/` : `${location.origin}/g/`, display: 'standalone', background_color: paper, theme_color: paper,
-      icons: [{ src: base + 'icons/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: base + 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }, { src: base + 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] };
+      icons: [{ src: icon('i192'), sizes: '192x192', type: 'image/png' }, { src: icon('i512'), sizes: '512x512', type: 'image/png' }, { src: icon('maskable'), sizes: '512x512', type: 'image/png', purpose: 'maskable' }] };
     let l = document.querySelector('link[rel="manifest"]'); if (!l) { l = document.createElement('link'); l.rel = 'manifest'; document.head.appendChild(l); }
     l.href = URL.createObjectURL(new Blob([JSON.stringify(man)], { type: 'application/manifest+json' }));
-    let ai = document.querySelector('link[rel="apple-touch-icon"]'); if (!ai) { ai = document.createElement('link'); ai.rel = 'apple-touch-icon'; document.head.appendChild(ai); } ai.href = base + 'apple-touch-icon.png';
+    let ai = document.querySelector('link[rel="apple-touch-icon"]'); if (!ai) { ai = document.createElement('link'); ai.rel = 'apple-touch-icon'; document.head.appendChild(ai); } ai.href = icon('apple');
   } catch (e) { /* the guide works without these */ }
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker.register(FIXED ? '/sw.js' : '/g-sw.js', { scope: FIXED ? '/' : '/g/' }).then(() => navigator.serviceWorker.ready).then(reg => {
@@ -98,8 +100,11 @@ function goOffline(site, files, base, slug, paper) {
   const setMeta = (sel, v) => { const e = document.querySelector(sel); if (e) e.setAttribute('content', v); };
   setMeta('meta[name="theme-color"]', (site.theme && site.theme.paper) || '#FFFFFF');
   setMeta('meta[name="apple-mobile-web-app-title"]', site.name);
-  const logo = document.getElementById('viewerLogo'); if (logo) logo.src = base + (c.site.logo || 'logo-head.png');
-  const ic = document.querySelector('link[rel="icon"]'); if (ic && c.favicon !== false) ic.href = base + 'favicon.png';
+  // No logo: none is shown (never a made-up one). Icons: the set made from the host's logo in the editor (site.icons),
+  // else the ones the build made (from the logo, else from the house photo).
+  const logo = document.getElementById('viewerLogo'); if (logo && c.site.logo) logo.src = base + c.site.logo;
+  const icon = k => { const v = (c.site.icons || {})[k]; return v ? (/^https?:/.test(v) ? v : base + v) : base + ICON_FILE[k]; };
+  const ic = document.querySelector('link[rel="icon"]'); if (ic && c.favicon !== false) ic.href = icon('favicon');
 
   // Fonts come from the CDN (the viewer does not bundle every font): the look's own, then this guide's; then the look's
   // styles, then this guide's own theme.
@@ -121,5 +126,5 @@ function goOffline(site, files, base, slug, paper) {
     b.style.cssText = `position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:45;max-width:calc(100% - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 13px/1 system-ui,sans-serif;padding:9px 14px;border-radius:999px;background:#F2B33D;color:#1b1407;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none`;
     document.body.appendChild(b); document.body.style.paddingBottom = `calc(${getComputedStyle(document.body).paddingBottom} + 48px)`;
   }
-  goOffline(site, files, base, slug, (site.theme && site.theme.paper) || '#ffffff');
+  goOffline(site, files, base, slug, (site.theme && site.theme.paper) || '#ffffff', c.site.icons || {});
 })();
