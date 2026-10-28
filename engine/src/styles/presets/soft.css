@@ -1,8 +1,12 @@
-/* Preset "soft": rounded, gentle and airy. Pastel tiles built from the palette (mixed with white),
-   ink text everywhere, blurred blobs instead of hard shapes, soft shadows instead of outlines. */
+/* Preset "soft": rounded, gentle and airy. Ca La Kimberly's tiles in one pastel set of its own (powder blue, butter,
+   blush, lilac, peach, mint), ink text everywhere, one crisp circle in a deeper shade in each tile's corner, soft
+   shadows instead of outlines. Tile colours are set here per section, so a site's own palette (theme.css) changes the
+   accents, not the tiles. */
 :root{
-  --paper:#F6F2EF;--white:#FFFFFF;--ink:#2B2A33;--muted:#62606C;--faint:#8C8A95;--line:#E8E2DE;
-  --red:#E07A6F;--blue:#6F9CD8;--yellow:#F2C36B;--orange:#EE9B6A;--green:#79B791;
+  --paper:#F7F3EE;--white:#FFFFFF;--ink:#2E2B37;--muted:#64606E;--faint:#8D8996;--line:#E9E2DA;
+  --red:#E0806F;--blue:#7FA7DA;--yellow:#F1C96A;--orange:#F0A877;--green:#6FB08B;
+  --sf-blue:#D3E3F6;--sf-blue-d:#9DBFE8;--sf-butter:#F7E6B0;--sf-butter-d:#EBC75F;--sf-blush:#F6D0C8;--sf-blush-d:#E9A093;
+  --sf-lilac:#E1D9F3;--sf-lilac-d:#B7A7E4;--sf-peach:#F9DABF;--sf-peach-d:#F0AE7B;--sf-mint:#D3EBDC;--sf-mint-d:#93CDA9;
   --display:"Outfit",system-ui,sans-serif;--font:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
   --r:28px;--r-s:18px;--r-m:16px;--shadow:0 6px 24px rgba(43,42,51,.08),0 1px 3px rgba(43,42,51,.06);
 }
@@ -16,9 +20,18 @@ h2.title{font-weight:600;letter-spacing:-.02em}
 .hc-id .go{background:var(--yellow);color:var(--ink)}
 .hc-id > img{border-radius:50%}
 
-/* Tiles: pastel, ink text, one soft blob each */
-.gt{background:color-mix(in srgb,var(--tc) 26%,var(--white))!important;color:var(--ink)!important;box-shadow:var(--shadow);border:0!important}
-.gt::before{filter:blur(22px);opacity:.55;border:0!important;width:140px!important;height:140px!important;border-radius:50%!important;background:var(--tc)!important;transform:none!important}
+/* Tiles: one pastel per section, ink text, one crisp circle in a deeper shade */
+.gt[data-k="garbage"],.gt[data-k="events"],.gt[data-k="arrival"]{--tc:var(--sf-blue)!important;--sh:var(--sf-blue-d)}
+.gt[data-k="message"]{--tc:var(--sf-butter)!important;--sh:var(--sf-butter-d)}
+.gt[data-k="emergency"],.gt[data-k="daytrips"]{--tc:var(--sf-blush)!important;--sh:var(--sf-blush-d)}
+.gt[data-k="markets"]{--tc:var(--sf-lilac)!important;--sh:var(--sf-lilac-d)}
+.gt[data-k="restaurants"],.gt[data-k="kids"]{--tc:var(--sf-peach)!important;--sh:var(--sf-peach-d)}
+.gt[data-k="todo"],.gt[data-k="transport"],.gt[data-k="essentials"]{--tc:var(--sf-mint)!important;--sh:var(--sf-mint-d)}
+.gt[data-k="map"]{--tc:var(--white)!important;--sh:var(--sf-blue)}
+.gt{color:var(--ink)!important;box-shadow:var(--shadow);border:0!important}
+.gt::before{filter:none;opacity:1;border:0!important;border-radius:50%!important;background:var(--sh,var(--sf-blue-d))!important;transform:none!important}
+.gt:not(.wide)::before{width:66px!important;height:66px!important;right:-18px!important;top:-18px!important;bottom:auto!important;left:auto!important;margin:0!important}
+.gt[data-k="garbage"]::before{width:84px!important;height:84px!important;right:-20px!important;bottom:-22px!important;top:auto!important}
 .gt::after{display:none!important}
 .gt .go{background:var(--white)!important;color:var(--ink)!important;box-shadow:0 2px 8px rgba(43,42,51,.12)}
 .gt-t{font-weight:600}
@@ -26,18 +39,17 @@ h2.title{font-weight:600;letter-spacing:-.02em}
 .gt-tonight,.gtn{color:var(--ink)!important}
 .gtb{background:rgba(255,255,255,.7)!important}
 .gt-tl svg{color:var(--orange)!important}
-.gt[data-k="map"]{background:var(--white)!important}
 
 .whatson,.mlist,.clist,.hsec,.allphotos,.pl-hours,.pl-alt,#mapview .maplist,.filters,.sheet{box-shadow:var(--shadow);border:0!important}
 .mbody,.mrow[open] summary{background:color-mix(in srgb,var(--paper) 60%,var(--white))!important}
 .mlist > .mrow[open] + .mrow,.mlist > .mrow + .mrow[open]{border-top-color:var(--paper)!important}
 .dot{border-radius:50%;background:color-mix(in srgb,var(--cc) 22%,var(--white))!important;color:var(--ink)}
-.dbadge{border-radius:14px;background:color-mix(in srgb,var(--blue) 25%,var(--white))!important;color:var(--ink)}
+.dbadge{border-radius:14px;background:var(--sf-blue)!important;color:var(--ink)}
 
 .btn,.chip,.gchip,.pills,.mapseg .seg,.mapat,.hbook,.amall summary{border:0!important;box-shadow:inset 0 0 0 1.5px var(--line)}
 .btn.primary,.gchip[aria-pressed="true"],.chip[aria-pressed="true"],.pills button[aria-pressed="true"],.mapseg .seg button[aria-checked="true"]{background:var(--ink)!important;color:var(--white)!important}
 .qcall{border:0;box-shadow:var(--shadow);border-radius:var(--r-s);color:var(--ink)}
-.qcall .qi{border-radius:50%;background:color-mix(in srgb,var(--red) 25%,var(--white))!important;color:var(--ink)!important}
+.qcall .qi{border-radius:50%;background:var(--sf-peach)!important;color:var(--ink)!important}
 .ccall{border-radius:999px}
 .pl-map,#mapview .mapbox{border:0!important;box-shadow:var(--shadow);border-radius:var(--r)!important}
 .hero .back,.langsel{box-shadow:var(--shadow)!important}

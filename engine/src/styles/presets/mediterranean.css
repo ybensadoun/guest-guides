@@ -1,0 +1,39 @@
+/* Preset "mediterranean": blue and white, like the Greek islands and the south of Spain. Ca La Kimberly's tiles on a
+   whitewashed background: cobalt, navy, sky, Aegean teal, lemon and terracotta, and a small azulejo in each tile's
+   corner (the shape zone of app.css: top-right, never under the text or the arrow). Tile colours are set here per
+   section, so a site's own palette (theme.css) changes the accents, not the tiles. */
+:root{
+  --paper:#F7F5F0;--white:#FFFFFF;--ink:#122B4C;--muted:#4C5A6E;--faint:#7A8597;--line:#DCE2EA;
+  --red:#BF5536;--blue:#1F4F96;--yellow:#F2C64B;--orange:#E39A3B;--green:#2D7A62;
+  --display:"DM Serif Display",Georgia,serif;--font:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:22px;--r-s:12px;--r-m:14px;
+  --med-cobalt:#1F4F96;--med-navy:#122B4C;--med-sky:#D6E6F5;--med-teal:#17748A;--med-lemon:#F2C64B;--med-clay:#BF5536;
+}
+body{background:var(--paper)}
+h2.title,.sh,.section-h,.gt-t,.hc-nm b{font-weight:400!important;letter-spacing:0!important}
+.hc-nm b{text-transform:none!important;font-size:26px!important}
+.hc-id .go{background:var(--med-cobalt);color:#fff}
+.hero{border-bottom-color:var(--med-cobalt)}
+
+/* Tiles: one colour per section, white text on the deep ones, navy on the light ones */
+.gt[data-k="garbage"],.gt[data-k="events"],.gt[data-k="arrival"]{--tc:var(--med-cobalt)!important;--ti:#fff!important;--gofg:var(--med-navy)!important}
+.gt[data-k="message"]{--tc:var(--med-sky)!important;--ti:var(--med-navy)!important;--gofg:#fff!important}
+.gt[data-k="emergency"],.gt[data-k="daytrips"]{--tc:var(--med-clay)!important;--ti:#fff!important;--gofg:var(--med-navy)!important}
+.gt[data-k="markets"]{--tc:var(--med-navy)!important;--ti:#fff!important;--gofg:var(--med-navy)!important}
+.gt[data-k="restaurants"],.gt[data-k="kids"]{--tc:var(--med-lemon)!important;--ti:var(--med-navy)!important;--gofg:#fff!important}
+.gt[data-k="todo"],.gt[data-k="transport"],.gt[data-k="essentials"]{--tc:var(--med-teal)!important;--ti:#fff!important;--gofg:var(--med-navy)!important}
+.gt[data-k="map"]{--tc:#fff!important;--ti:var(--med-navy)!important;--gofg:#fff!important}
+
+/* The azulejo: a blue and white tile with a four-petal flower, a lemon heart and quarter circles that meet across
+   tiles, drawn as an SVG pattern (one tile is 40 px, shown at 30 px) */
+.gt::before{border:0!important;transform:none!important;border-radius:12px!important;box-shadow:0 0 0 3px rgba(255,255,255,.2);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23fff'/%3E%3Cg fill='%231F4F96'%3E%3Ccircle cx='0' cy='0' r='7'/%3E%3Ccircle cx='40' cy='0' r='7'/%3E%3Ccircle cx='0' cy='40' r='7'/%3E%3Ccircle cx='40' cy='40' r='7'/%3E%3Cellipse cx='20' cy='10.5' rx='3.4' ry='6.5'/%3E%3Cellipse cx='20' cy='29.5' rx='3.4' ry='6.5'/%3E%3Cellipse cx='10.5' cy='20' rx='6.5' ry='3.4'/%3E%3Cellipse cx='29.5' cy='20' rx='6.5' ry='3.4'/%3E%3Cpath d='M20 0l3 3-3 3-3-3zM20 34l3 3-3 3-3-3zM0 20l3-3 3 3-3 3zM34 20l3-3 3 3-3 3z'/%3E%3C/g%3E%3Ccircle cx='20' cy='20' r='4.2' fill='%23F2C64B'/%3E%3Ccircle cx='20' cy='20' r='1.6' fill='%231F4F96'/%3E%3Cpath d='M0 .5h40M.5 0v40' stroke='%231F4F96' stroke-opacity='.35' stroke-width='1'/%3E%3C/svg%3E") 0 0/30px 30px repeat,#fff!important}
+.gt:not(.wide)::before{width:70px!important;height:70px!important;right:-14px!important;top:-14px!important;bottom:auto!important;left:auto!important;margin:0!important}
+.gt[data-k="garbage"]::before{width:84px!important;height:84px!important;right:-14px!important;bottom:-14px!important;top:auto!important}
+.gt[data-k="map"]::after{background:var(--med-lemon)!important}
+
+/* Elsewhere: cobalt accents; the quick tiles and the map tile get a fine line instead of Bauhaus' thick ink outline */
+.qcall,.gt[data-k="map"]{border:1.5px solid #C5D4E6!important}
+.dbadge{background:var(--med-sky)!important;color:var(--med-navy)}
+.qcall{color:var(--ink)!important}.qcall b{font-weight:400!important}.qcall small{color:var(--muted)!important}
+.qcall .qi{background:var(--med-sky)!important;color:var(--med-cobalt)!important}

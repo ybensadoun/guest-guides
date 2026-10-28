@@ -10,15 +10,10 @@ export const siteDir = slug => resolve(SITES, slug);
 export const listSites = () => readdirSync(SITES, { withFileTypes: true })
   .filter(e => e.isDirectory() && !e.name.startsWith('_') && existsSync(resolve(SITES, e.name, 'site.json'))).map(e => e.name);
 
-// Layout presets: bauhaus is app.css itself; the others live in src/styles/presets/<name>.css.
-export const PRESETS = ['bauhaus', 'editorial', 'soft', 'minimal'];
-const w = (fam, ws) => ws.map(x => `${fam}/${x}.css`);
-export const PRESET_FONTS = {
-  bauhaus: w('jost', [400, 500, 600, 700]),
-  editorial: [...w('instrument-serif', [400]), ...w('geist', [400, 500, 600, 700])],
-  soft: w('outfit', [400, 500, 600, 700]),
-  minimal: w('geist', [400, 500, 600, 700])
-};
+// Layout presets (the guide looks) and their fonts: src/presets.json. bauhaus is app.css itself; the others live in
+// src/styles/presets/<name>.css.
+const P = JSON.parse(readFileSync(resolve(ENGINE, 'src/presets.json'), 'utf8'));
+export const PRESETS = P.presets, PRESET_FONTS = P.fonts;
 
 // Languages the engine has UI strings for. A site picks a subset in site.json.
 export const ENGINE_LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
@@ -54,7 +49,8 @@ export function sitePlugin(slug) {
   const preset = site.theme.preset || 'bauhaus';
   const presetFile = resolve(ENGINE, 'src/styles/presets', preset + '.css');
   if (preset !== 'bauhaus' && !existsSync(presetFile)) throw new Error(`Unknown theme preset "${preset}". Presets: ${PRESETS.join(', ')}`);
-  const fonts = site.theme.fonts || PRESET_FONTS[preset] || [];
+  // The look's fonts, then the site's own. "fonts": [] bundles none (the shared viewer loads each guide's from the CDN).
+  const own = site.theme.fonts, fonts = Array.isArray(own) && !own.length ? [] : [...new Set([...(PRESET_FONTS[preset] || []), ...(own || [])])];
   return {
     name: 'guest-guide-site',
     resolveId(id) { if (id === FONTS || id === PRESET) return '\0' + id; },

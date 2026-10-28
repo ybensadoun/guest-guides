@@ -42,20 +42,22 @@ async function paletteFromImages(){
 function choosePreset(p){
   const mood = v('mood'), nav = v('navStyle');
   if (mood && mood !== 'auto') return mood;
-  if (/magazine/i.test(nav)) return 'editorial';
+  if (/magazine/i.test(nav)) return 'minimal';
   if (/list|search|map/i.test(nav)) return 'minimal';
   if (/tiles/i.test(nav)) return p.light > .66 && p.sat < .5 ? 'soft' : 'bold';
   const feel = A.feelWords || [];
-  if (feel.some(f => /Elegant|Luxurious/.test(f))) return 'editorial';
+  if (feel.some(f => /Elegant|Luxurious/.test(f))) return 'minimal';
   if (feel.some(f => /Calm|Modern/.test(f))) return 'minimal';
-  if (feel.some(f => /Cosy|Family|Rustic/.test(f))) return 'soft';
-  return p.sat > .45 ? 'bold' : 'editorial';
+  if (feel.some(f => /Rustic/.test(f))) return 'rural';
+  if (feel.some(f => /Cosy|Family/.test(f))) return 'soft';
+  return p.sat > .45 ? 'bold' : 'minimal';
 }
 const PRESET_FONTS = {
   bold: ['Jost:wght@400;500;600;700', '"Jost",system-ui,sans-serif', '"Jost",system-ui,sans-serif'],
-  editorial: ['Instrument+Serif&family=Geist:wght@400;500;600', '"Instrument Serif",Georgia,serif', '"Geist",system-ui,sans-serif'],
   soft: ['Outfit:wght@400;500;600;700', '"Outfit",system-ui,sans-serif', '"Outfit",system-ui,sans-serif'],
-  minimal: ['Geist:wght@400;500;600;700', '"Geist",system-ui,sans-serif', '"Geist",system-ui,sans-serif']
+  minimal: ['Geist:wght@400;500;600;700&family=Jost:wght@400;500;600', '"Geist",system-ui,sans-serif', '"Jost",system-ui,sans-serif'],
+  mediterranean: ['DM+Serif+Display&family=Outfit:wght@400;500;600;700', '"DM Serif Display",Georgia,serif', '"Outfit",system-ui,sans-serif'],
+  rural: ['Fraunces:wght@400;600;700&family=Nunito:wght@400;600;700', '"Fraunces",Georgia,serif', '"Nunito",system-ui,sans-serif']
 };
 
 // The guide's sections, built from what the host chose and wrote.
@@ -165,12 +167,20 @@ function pvStyle(p, preset){
 .pv-sec::before{content:"";position:absolute;z-index:-1;width:130px;height:130px;border-radius:50%;background:var(--sc);filter:blur(26px);opacity:.45;right:-30px;top:-30px}
 .pv-sec .ic{margin-bottom:auto}.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:90px}
 .pv-fact{background:#fff;border-radius:18px;box-shadow:0 4px 16px rgba(0,0,0,.06)}.pv-cover{border-radius:0 0 28px 28px}.pv h1,.pv h2{font-weight:600}.pv-card{border-radius:22px}`,
-    editorial: `.pv-secs{counter-reset:s;gap:0}.pv-sec{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;border-top:1px solid var(--pi);counter-increment:s}
-.pv-sec .ic{display:none}.pv-sec b{font-size:30px;font-weight:400}.pv-sec small{display:block}
-.pv-sec::before{content:counter(s,decimal-leading-zero);font:600 12px var(--pb);letter-spacing:.14em;opacity:.6;align-self:flex-start;margin-top:6px}
-.pv-sec .tx{flex:1}.pv-sec.has-photo{display:grid;grid-template-columns:auto 1fr 96px}.pv-sec .ph{width:96px;height:72px;object-fit:cover}
-.pv-fact{border-top:1px solid var(--pi);border-radius:0;padding:12px 0}.pv-fact b{font-family:var(--pd);font-weight:400;font-size:24px}
-.pv-h{font:600 12px var(--pb);letter-spacing:.16em;text-transform:uppercase;opacity:.7}.pv h1,.pv h2{font-weight:400}.pv-cover{height:clamp(300px,58vh,520px)}`,
+    mediterranean: `.pv-sec{min-height:140px;padding:16px;border-radius:22px;color:#fff;background:var(--sc)}
+.pv-sec:nth-child(6n+1){--sc:#1F4F96!important}.pv-sec:nth-child(6n+2){--sc:#D6E6F5!important;color:#122B4C}.pv-sec:nth-child(6n+3){--sc:#BF5536!important}
+.pv-sec:nth-child(6n+4){--sc:#122B4C!important}.pv-sec:nth-child(6n+5){--sc:#F2C64B!important;color:#122B4C}.pv-sec:nth-child(6n){--sc:#17748A!important}
+.pv-sec::before{content:"";position:absolute;z-index:-1;width:62px;height:62px;border-radius:10px;right:-12px;top:-12px;background:#fff radial-gradient(circle,#1F4F96 0 4.5px,transparent 5px) 0 0/15px 15px}
+.pv-sec .ic svg{width:22px;height:22px}.pv-sec b{font-size:18px;font-weight:400;font-family:var(--pd)}.pv-sec .tx{display:flex;flex-direction:column}
+.pv-fact{background:#fff;color:#122B4C;border:1px solid #DCE2EA;border-radius:12px}.pv h1,.pv h2{font-weight:400}.pv-h{font-size:15px;font-weight:600;opacity:.7}
+.pv-cover{height:clamp(200px,32vh,280px)}`,
+    rural: `.pv-sec{min-height:140px;padding:16px;border-radius:18px;color:#FFFDF8;background:var(--sc)}
+.pv-sec:nth-child(6n+1){--sc:#5A7034!important}.pv-sec:nth-child(6n+2){--sc:#E8D7A5!important;color:#3B2E21}.pv-sec:nth-child(6n+3){--sc:#A3482B!important}
+.pv-sec:nth-child(6n+4){--sc:#3B2E21!important}.pv-sec:nth-child(6n+5){--sc:#DFA54A!important;color:#3B2E21}.pv-sec:nth-child(6n){--sc:#2F5236!important}
+.pv-sec::before{content:"";position:absolute;z-index:-1;width:54px;height:54px;border-radius:0 100% 0 100%;right:-8px;top:-8px;background:#D9C98F}
+.pv-sec .ic svg{width:22px;height:22px}.pv-sec b{font-size:17px;font-weight:600;font-family:var(--pd)}.pv-sec .tx{display:flex;flex-direction:column}
+.pv-fact{background:#FFFDF8;color:#2A2318;border:1px solid #DDD2BF;border-radius:10px}.pv h1,.pv h2{font-weight:600}.pv-h{font-size:15px;font-weight:600;opacity:.7}
+.pv-cover{height:clamp(200px,32vh,280px)}`,
     minimal: `.pv-secs{gap:0;border:1px solid color-mix(in srgb,var(--pi) 15%,transparent);border-radius:10px;overflow:hidden;background:#fff;color:#111}
 .pv-sec{flex-direction:row;align-items:center;gap:14px;justify-content:flex-start;padding:14px 16px;border-top:1px solid #eee}.pv-sec:first-child{border-top:0}
 .pv-sec .ic{color:var(--a1)}.pv-sec .ic svg{width:22px;height:22px}.pv-sec b{font-size:17px;font-weight:600;font-family:var(--pb)}.pv-sec .tx{display:flex;flex-direction:column}
@@ -206,7 +216,7 @@ async function renderPreview(){
     ${/search/i.test(v('navStyle')) ? `<input class="pv-search" id="pvSearch" placeholder="Search the guide: wifi, bins, beach…" aria-label="Search the guide">` : ''}
     ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
     <h2 class="pv-h">${/map/i.test(v('navStyle')) ? 'Around you' : 'Your guide'}</h2>
-    <div class="pv-secs" id="pvSecs">${S.map((x, i) => { const pic = preset === 'editorial' && ph(x.id); return `<button type="button" class="pv-sec${(preset === 'bold' || preset === 'soft') && (i === S.length - 1 && S.length % 2 === 1) ? ' wide' : ''}${pic ? ' has-photo' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span>${pic ? `<img class="ph" src="${pic}" alt="">` : ''}</button>`; }).join('')}</div>`;
+    <div class="pv-secs" id="pvSecs">${S.map((x, i) => { const pic = false; return `<button type="button" class="pv-sec${['bold', 'soft', 'mediterranean', 'rural'].includes(preset) && (i === S.length - 1 && S.length % 2 === 1) ? ' wide' : ''}${pic ? ' has-photo' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span>${pic ? `<img class="ph" src="${pic}" alt="">` : ''}</button>`; }).join('')}</div>`;
   const page = sec ? pageHTML(sec) : '';
   document.body.innerHTML = `${pvStyle(p, preset)}
     <div class="pv-bar" style="background:#fff3d6;color:#5a3a00;font-weight:600">This is a generic preview, not the final look and feel. Get in touch with Yohann to activate the final look.</div>

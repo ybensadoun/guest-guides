@@ -3,7 +3,7 @@
 
 Usage:
   python3 engine/scripts/generate-site.py <submission-dir> --slug <slug> --lat <lat> --lng <lng>
-      [--src en] [--translations <file.json>] [--preset auto|bauhaus|editorial|soft|minimal]
+      [--src en] [--translations <file.json>] [--preset auto|bauhaus|soft|minimal|mediterranean|rural]
 
 <submission-dir> holds what the onboarding page stored:
   host.json                 the hosts/<uid> document (answers, status...)
@@ -160,31 +160,31 @@ else:
 
 # ---------- layout preset ----------
 mood = args.preset or A.get('mood') or 'auto'
-MAP = {'bold': 'bauhaus', 'editorial': 'editorial', 'soft': 'soft', 'minimal': 'minimal'}
+MAP = {'bold': 'bauhaus', 'editorial': 'minimal', 'soft': 'soft', 'minimal': 'minimal', 'mediterranean': 'mediterranean', 'rural': 'rural'}   # editorial: an old answer, the look is gone
 if mood in MAP: preset = MAP[mood]
 elif mood in MAP.values(): preset = mood
 else:  # decide from the images
-    if not stats: preset = 'editorial'
+    if not stats: preset = 'bauhaus'
     elif stats['saturation'] < .18: preset = 'minimal'
     elif stats['lightness'] > .68 and stats['saturation'] < .5: preset = 'soft'
     elif stats['colourful'] >= 3 and stats['saturation'] > .45: preset = 'bauhaus'
-    else: preset = 'editorial'
+    else: preset = 'bauhaus'
 
 
 # ---------- style: the host describes it in words; we start from the closest kit, then a design pass makes it theirs ----------
 W = lambda fam, ws: [f'{fam}/{x}.css' for x in ws]
 KITS = {
- 'rustic':   dict(words='rustic warm earthy cosy farmhouse country countryside tuscan authentic wine terracotta olive handmade natural traditional', preset='soft',
+ 'rustic':   dict(words='rustic warm earthy cosy farmhouse country countryside tuscan authentic wine terracotta olive handmade natural traditional', preset='rural',
                   fonts=W('fraunces', [400, 600, 700]) + W('dm-sans', [400, 500, 700]), display='"Fraunces",Georgia,serif', font='"DM Sans",system-ui,sans-serif', r='18px', rs='10px'),
- 'elegant':  dict(words='elegant luxurious luxury refined boutique hotel classic sophisticated chic upscale quiet', preset='editorial',
+ 'elegant':  dict(words='elegant luxurious luxury refined boutique hotel classic sophisticated chic upscale quiet', preset='minimal',
                   fonts=W('cormorant-garamond', [400, 500, 600, 700]) + W('jost', [400, 500, 600]), display='"Cormorant Garamond",Georgia,serif', font='"Jost",system-ui,sans-serif', r='2px', rs='2px'),
  'playful':  dict(words='playful fun colourful colorful bright kids family children cheerful happy lively cartoon picture', preset='bauhaus',
                   fonts=W('bricolage-grotesque', [400, 500, 600, 700]) + W('nunito', [400, 600, 700]), display='"Bricolage Grotesque",system-ui,sans-serif', font='"Nunito",system-ui,sans-serif', r='24px', rs='14px'),
  'modern':   dict(words='modern minimal clean simple sleek scandinavian white crisp contemporary tech', preset='minimal',
                   fonts=W('space-grotesk', [400, 500, 600, 700]) + W('inter', [400, 500, 600]), display='"Space Grotesk",system-ui,sans-serif', font='"Inter",system-ui,sans-serif', r='10px', rs='8px'),
- 'coastal':  dict(words='sea beach coastal mediterranean blue breezy relaxed surf sun sand island nautical summer', preset='soft',
+ 'coastal':  dict(words='sea beach coastal mediterranean blue breezy relaxed surf sun sand island nautical summer greek andalusia whitewashed', preset='mediterranean',
                   fonts=W('dm-serif-display', [400]) + W('dm-sans', [400, 500, 700]), display='"DM Serif Display",Georgia,serif', font='"DM Sans",system-ui,sans-serif', r='20px', rs='12px'),
- 'magazine': dict(words='magazine editorial photo story journal design art gallery', preset='editorial',
+ 'magazine': dict(words='magazine editorial photo story journal design art gallery', preset='minimal',
                   fonts=W('instrument-serif', [400]) + W('geist', [400, 500, 600, 700]), display='"Instrument Serif",Georgia,serif', font='"Geist",system-ui,sans-serif', r='4px', rs='4px'),
 }
 style_text = ' '.join([A.get('styleBrief') or '', A.get('lookLikes') or '', A.get('refLinks') or '', ' '.join(A.get('feelWords') or [])]).lower()

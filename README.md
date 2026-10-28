@@ -68,16 +68,17 @@ Needs Node 20+. Run `npm install` once in this folder.
 
 ## Layout presets
 
-`site.json` → `theme.preset` changes the structure of the look, not just colours. Fonts default per preset.
+`site.json` → `theme.preset` changes the structure of the look, not just colours. Each look brings its own fonts (`engine/src/presets.json`, loaded on top of the site's own).
 
-| Preset | Feel | Home sections |
-|---|---|---|
-| `bauhaus` | bold colour blocks and shapes (Ca La Kimberly; the engine's base `app.css`) | colour tiles, mosaic |
-| `editorial` | photo-led magazine, serif titles, hairlines | full-width cover, numbered contents list |
-| `soft` | rounded pastel cards, soft shadows | pastel tiles with blurred blobs |
-| `minimal` | black on white, one accent, thin lines | outlined two-column grid |
+| Preset | Name in the editor | Feel | Home sections |
+|---|---|---|---|
+| `bauhaus` | Big colour tiles | bold colour blocks and shapes (Ca La Kimberly; the engine's base `app.css`) | colour tiles, mosaic |
+| `soft` | Soft rounded cards | its own pastels (powder blue, butter, blush, lilac, peach, mint), soft shadows | pastel tiles, a crisp circle in the corner |
+| `minimal` | Clean and calm | black on white, one accent, thin lines (Geist titles, Jost text) | outlined two-column grid |
+| `mediterranean` | Mediterranean | blue and white, Greek islands and the south of Spain (DM Serif Display, Outfit) | cobalt, sky, teal, lemon and terracotta tiles, an azulejo in the corner |
+| `rural` | Rural | wood, moss and warm earth (Fraunces, Nunito) | moss, wheat, rust, bark, honey and forest tiles, a leaf in the corner |
 
-Presets live in `engine/src/styles/presets/<name>.css`; the site's `theme.css` sits on top.
+Presets live in `engine/src/styles/presets/<name>.css`; the site's `theme.css` sits on top. Soft, Mediterranean and Rural set their tile colours per section, so a site's own palette changes the accents, not the tiles. The photo-led `editorial` look was dropped on 28 Oct 2026 (an old `editorial` answer becomes `minimal`).
 
 ## Modules
 

@@ -1,0 +1,38 @@
+/* Preset "rural": wood, moss and warm earth, for farmhouses, masies and country houses. Ca La Kimberly's tiles on an
+   oat background: moss, forest, bark, rust, wheat and honey, and a leaf in each tile's corner (the shape zone of
+   app.css: top-right, never under the text or the arrow). Tile colours are set here per section, so a site's own
+   palette (theme.css) changes the accents, not the tiles. */
+:root{
+  --paper:#F2ECDF;--white:#FFFDF8;--ink:#2A2318;--muted:#62574A;--faint:#8A7E6C;--line:#DDD2BF;
+  --red:#A3482B;--blue:#4E6A3A;--yellow:#E2B45A;--orange:#C98536;--green:#3F6B3F;
+  --display:"Fraunces",Georgia,serif;--font:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:18px;--r-s:10px;--r-m:12px;
+  --ru-moss:#5A7034;--ru-forest:#2F5236;--ru-bark:#3B2E21;--ru-wheat:#E8D7A5;--ru-honey:#DFA54A;--ru-rust:#A3482B;--ru-leaf:#D9C98F;
+}
+body{background:var(--paper)}
+h2.title,.sh,.section-h,.gt-t,.hc-nm b{font-weight:600!important;letter-spacing:0!important}
+.hc-nm b{text-transform:none!important;font-size:25px!important}
+.hc-id .go{background:var(--ru-forest);color:#fff}
+.hero{border-bottom-color:var(--ru-bark)}
+
+/* Tiles: one colour per section, cream text on the deep ones, bark on the light ones */
+.gt[data-k="garbage"],.gt[data-k="events"],.gt[data-k="arrival"]{--tc:var(--ru-moss)!important;--ti:#FFFDF8!important;--gofg:var(--ru-bark)!important;--leaf:var(--ru-leaf)}
+.gt[data-k="message"]{--tc:var(--ru-wheat)!important;--ti:var(--ru-bark)!important;--gofg:#FFFDF8!important;--leaf:var(--ru-moss)}
+.gt[data-k="emergency"],.gt[data-k="daytrips"]{--tc:var(--ru-rust)!important;--ti:#FFFDF8!important;--gofg:var(--ru-bark)!important;--leaf:var(--ru-honey)}
+.gt[data-k="markets"]{--tc:var(--ru-bark)!important;--ti:#FFFDF8!important;--gofg:var(--ru-bark)!important;--leaf:var(--ru-moss)}
+.gt[data-k="restaurants"],.gt[data-k="kids"]{--tc:var(--ru-honey)!important;--ti:var(--ru-bark)!important;--gofg:#FFFDF8!important;--leaf:var(--ru-forest)}
+.gt[data-k="todo"],.gt[data-k="transport"],.gt[data-k="essentials"]{--tc:var(--ru-forest)!important;--ti:#FFFDF8!important;--gofg:var(--ru-bark)!important;--leaf:var(--ru-leaf)}
+.gt[data-k="map"]{--tc:var(--white)!important;--ti:var(--ru-bark)!important;--gofg:#FFFDF8!important;--leaf:var(--ru-moss)}
+
+/* The leaf: a lens shape with its vein (not rotated: a turned shape takes a bigger box and would reach the title) */
+.gt::before{border:0!important;border-radius:0 100% 0 100%!important;transform:none!important;
+  background:linear-gradient(135deg,transparent 47%,rgba(42,35,24,.22) 48% 52%,transparent 53%),var(--leaf)!important}
+.gt:not(.wide)::before{width:58px!important;height:58px!important;right:-8px!important;top:-10px!important;bottom:auto!important;left:auto!important;margin:0!important}
+.gt[data-k="garbage"]::before{width:80px!important;height:80px!important;right:-14px!important;bottom:-18px!important;top:auto!important}
+.gt[data-k="map"]::after{background:var(--ru-honey)!important}
+
+/* Elsewhere: forest accents; the quick tiles and the map tile get a fine line instead of Bauhaus' thick ink outline */
+.qcall,.gt[data-k="map"]{border:1.5px solid #D3C6AE!important}
+.dbadge{background:var(--ru-wheat)!important;color:var(--ru-bark)}
+.qcall{color:var(--ink)!important}.qcall b{font-weight:600!important}.qcall small{color:var(--muted)!important}
+.qcall .qi{background:var(--ru-wheat)!important;color:var(--ru-forest)!important}

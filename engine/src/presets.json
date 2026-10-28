@@ -1,0 +1,48 @@
+{
+  "_doc": "The guide looks (layout presets), in the order the editor offers them, and the fonts each one needs (@fontsource files). bauhaus is app.css itself; the others live in styles/presets/<id>.css. Read by site.config.js (builds) and viewer.js (guides loaded from the database), which loads a look's fonts on top of the guide's own.",
+  "presets": [
+    "bauhaus",
+    "soft",
+    "minimal",
+    "mediterranean",
+    "rural"
+  ],
+  "fonts": {
+    "bauhaus": [
+      "jost/400.css",
+      "jost/500.css",
+      "jost/600.css",
+      "jost/700.css"
+    ],
+    "soft": [
+      "outfit/400.css",
+      "outfit/500.css",
+      "outfit/600.css",
+      "outfit/700.css"
+    ],
+    "minimal": [
+      "geist/400.css",
+      "geist/500.css",
+      "geist/600.css",
+      "geist/700.css",
+      "jost/400.css",
+      "jost/500.css",
+      "jost/600.css"
+    ],
+    "mediterranean": [
+      "dm-serif-display/400.css",
+      "outfit/400.css",
+      "outfit/500.css",
+      "outfit/600.css",
+      "outfit/700.css"
+    ],
+    "rural": [
+      "fraunces/400.css",
+      "fraunces/600.css",
+      "fraunces/700.css",
+      "nunito/400.css",
+      "nunito/600.css",
+      "nunito/700.css"
+    ]
+  }
+}

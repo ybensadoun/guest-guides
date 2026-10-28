@@ -154,9 +154,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 .mock{height:128px;border-radius:9px;overflow:hidden;display:grid;gap:4px;padding:7px}
 .mock i{display:block;min-height:0}
 .mood b{font-size:15px}.mood small{color:var(--muted);font-size:12.5px;line-height:1.35}
-.m-bold,.m-soft,.m-min{grid-template-columns:1fr 1fr;grid-template-rows:34px 6px 1fr 1fr}
-.m-bold i:nth-child(1),.m-soft i:nth-child(1),.m-min i:nth-child(1){grid-column:1/-1}
-.m-bold i:nth-child(2),.m-soft i:nth-child(2),.m-min i:nth-child(2){grid-column:1/-1;width:55%;border-radius:3px}
+.m-bold,.m-soft,.m-min,.m-med,.m-rural{grid-template-columns:1fr 1fr;grid-template-rows:34px 6px 1fr 1fr}
+.m-bold i:nth-child(1),.m-soft i:nth-child(1),.m-min i:nth-child(1),.m-med i:nth-child(1),.m-rural i:nth-child(1){grid-column:1/-1}
+.m-bold i:nth-child(2),.m-soft i:nth-child(2),.m-min i:nth-child(2),.m-med i:nth-child(2),.m-rural i:nth-child(2){grid-column:1/-1;width:55%;border-radius:3px}
 .m-bold{background:#F3EEE3}
 .m-bold i{border-radius:6px}
 .m-bold i:nth-child(1){background:linear-gradient(135deg,#7f93a8,#c9b48a)}.m-bold i:nth-child(2){background:#121212}
@@ -164,12 +164,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 .m-soft{background:#F6EEF0}
 .m-soft i{border-radius:13px}
 .m-soft i:nth-child(1){background:linear-gradient(135deg,#d9c7cf,#f3dcc8)}.m-soft i:nth-child(2){background:#8a7a80}
-.m-soft i:nth-child(3){background:#CFE3F2}.m-soft i:nth-child(4){background:#F6D5C9}.m-soft i:nth-child(5){background:#DCEFD9}.m-soft i:nth-child(6){background:#EADCF5}
-.m-edit{background:#FAF8F4;grid-template-rows:58px 8px 5px 5px 5px 5px;gap:5px}
-.m-edit i:nth-child(1){background:linear-gradient(135deg,#6d7d5c,#c9b48a)}
-.m-edit i:nth-child(2){background:#222;width:75%}
-.m-edit i:nth-child(n+3){background:#c4beb4}
-.m-edit i:nth-child(4){width:92%}.m-edit i:nth-child(6){width:60%}
+.m-soft i:nth-child(3){background:#D3E3F6}.m-soft i:nth-child(4){background:#F7E6B0}.m-soft i:nth-child(5){background:#F6D0C8}.m-soft i:nth-child(6){background:#D3EBDC}
+.m-med{background:#F7F5F0}.m-med i{border-radius:7px}
+.m-med i:nth-child(1){background:linear-gradient(135deg,#9fc2e0,#f2e6c9)}.m-med i:nth-child(2){background:#122B4C}
+.m-med i:nth-child(3){background:#1F4F96}.m-med i:nth-child(4){background:#D6E6F5}.m-med i:nth-child(5){background:#BF5536}.m-med i:nth-child(6){background:#17748A}
+.m-rural{background:#F2ECDF}.m-rural i{border-radius:6px}
+.m-rural i:nth-child(1){background:linear-gradient(135deg,#7d8f5a,#d9c08a)}.m-rural i:nth-child(2){background:#2A2318}
+.m-rural i:nth-child(3){background:#5A7034}.m-rural i:nth-child(4){background:#E8D7A5}.m-rural i:nth-child(5){background:#A3482B}.m-rural i:nth-child(6){background:#2F5236}
 .m-min{background:#fff;gap:0}
 .m-min i{border:1px solid #e2e2e2}
 .m-min i:nth-child(1){background:#ededed;border:0;margin-bottom:4px}.m-min i:nth-child(2){background:#111;border:0;margin-bottom:4px}
@@ -262,9 +263,10 @@ const ROOMS = ['Outside','Living room','Kitchen','Bedroom','Bathroom','Pool','Ga
 const INTERESTS = ['Beaches','Wine and food','Hiking and nature','Culture and history','Local markets','Nightlife','Festivals','Sports','Shopping','Wellness'];
 const MOODS = [
   {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},
-  {id:'editorial',name:'Photo-led, like a magazine',d:'Big photos and elegant type.',cls:'m-edit',n:6},
-  {id:'soft',name:'Soft rounded cards',d:'Gentle colours, rounded corners.',cls:'m-soft',n:6},
+  {id:'soft',name:'Soft rounded cards',d:'Gentle pastels, rounded corners.',cls:'m-soft',n:6},
   {id:'minimal',name:'Clean and calm',d:'Text first, thin lines, lots of white.',cls:'m-min',n:6},
+  {id:'mediterranean',name:'Mediterranean',d:'Blue and white, like the Greek islands and the south of Spain.',cls:'m-med',n:6},
+  {id:'rural',name:'Rural',d:'Wood, moss and warm earth, for farmhouses and country homes.',cls:'m-rural',n:6},
   {id:'auto',name:'Decide for me',d:'We match it to your images.',cls:'m-auto',n:0}
 ];
 

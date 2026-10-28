@@ -3,14 +3,16 @@
 import './styles/app.css';
 import './styles/map.css';
 import soft from './styles/presets/soft.css?url';
-import editorial from './styles/presets/editorial.css?url';
 import minimal from './styles/presets/minimal.css?url';
+import mediterranean from './styles/presets/mediterranean.css?url';
+import rural from './styles/presets/rural.css?url';
+import LOOKS from './presets.json';
 
 // A guide's own address (ca-la-kimberly.netlify.app) is the same viewer built for one guide, served from the root:
 // GUIDE_SLUG=<slug> at build time (engine/vite.viewer.config.js). Otherwise the guide comes from the path /g/<slug>.
 const FIXED = import.meta.env.VITE_GUIDE_SLUG || '';
 const DB = { url: 'https://dmoxszfwulolqkgxtxcp.supabase.co', key: 'sb_publishable_4esKE09oxNusDwlEPNdeWg_sUroV5Kr' };   // public values
-const PRESET_CSS = { soft, editorial, minimal };
+const PRESET_CSS = { soft, minimal, mediterranean, rural };
 const V = () => document.getElementById('view');
 
 function say(title, text) {
@@ -99,12 +101,13 @@ function goOffline(site, files, base, slug, paper) {
   const logo = document.getElementById('viewerLogo'); if (logo) logo.src = base + (c.site.logo || 'logo-head.png');
   const ic = document.querySelector('link[rel="icon"]'); if (ic && c.favicon !== false) ic.href = base + 'favicon.png';
 
-  // Fonts come from the CDN (the viewer does not bundle every font), then the layout preset, then this guide's own theme.
-  for (const f of (th.fonts || (site.theme || {}).fonts || [])) {
+  // Fonts come from the CDN (the viewer does not bundle every font): the look's own, then this guide's; then the look's
+  // styles, then this guide's own theme.
+  const preset = th.preset || (site.theme || {}).preset;
+  for (const f of new Set([...(LOOKS.fonts[preset] || []), ...(th.fonts || (site.theme || {}).fonts || [])])) {
     const [fam, file] = f.replace(/^@fontsource\//, '').split('/');
     const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = `https://cdn.jsdelivr.net/npm/@fontsource/${fam}@5/${file}`; document.head.appendChild(l);
   }
-  const preset = th.preset || (site.theme || {}).preset;
   if (PRESET_CSS[preset]) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = PRESET_CSS[preset]; document.head.appendChild(l); }
   if (th.css) { const s = document.createElement('style'); s.id = 'guideTheme'; s.textContent = th.css; document.head.appendChild(s); }
 
