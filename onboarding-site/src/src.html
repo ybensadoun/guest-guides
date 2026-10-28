@@ -520,31 +520,6 @@ function sectionPicker(){
 /* ---------- Views ---------- */
 const route = () => (location.hash || '#home').slice(1);
 function tileVars(m){ return `--tc:${m.tc};--ti:${m.ti || '#fff'};--sh:${m.sh}`; }
-function homeHTML(){
-  const mods = visible(), st = mods.map(m => statusOf(m)), done = st.filter(s => s.k === 'done').length, chk = st.filter(s => s.k === 'chk').length;
-  const next = mods.find(m => statusOf(m).k !== 'done');
-  const last = A._last && mods.find(m => m.id === A._last && statusOf(m).k !== 'done');
-  const go = last || next;
-  const name = v('guideName') || v('placeName');
-  const miss = sendMissing();
-  return `<section class="hero">
-      <small>${name ? 'Your guide' : 'New guide'}</small>
-      <h1>${esc(name || 'Let’s build your guest guide')}</h1>
-      <p>${done === mods.length ? 'Everything is done. Check it once more, then send it.' : `Do the steps in any order. Each one is “Done” once its needed answers are in and you press Done. You can come back any time: everything saves as you type.`}</p>
-      <div class="meter" aria-label="${done} of ${mods.length} done">${st.map(s => `<i class="${s.k === 'done' ? 'd' : s.k === 'chk' ? 'c' : ''}"></i>`).join('')}</div>
-      <div class="legend"><span><i></i>${done} done</span><span><i class="c"></i>${chk} checked</span><span><i class="n"></i>${mods.length - done - chk} not started</span></div>
-      ${go ? `<a class="go-next" href="#${go.id}"><span>${last ? 'Continue' : done || chk ? 'Next' : 'Start'}: ${esc(go.title)}</span><span class="ar">${ARROW}</span></a>` : `<a class="go-next" href="#send"><span>Review and send</span><span class="ar">${ARROW}</span></a>`}
-    </section>
-    ${GROUPS.map(([g, gt]) => { const ms = mods.filter(m => m.group === g); if (!ms.length) return ''; const n = ms.filter(m => statusOf(m).k === 'done').length;
-      return `<div class="gh"><h2>${gt}</h2><span>${n}/${ms.length} done</span></div><div class="tiles">${ms.map(tileHTML).join('')}</div>`; }).join('')}
-    <div class="tiles"><a class="tile send${miss.length ? ' locked' : ''}" href="#send"><span class="ic">${I.send}</span><span class="tx"><b>Review and send</b><small>${miss.length ? `${miss.length} thing${miss.length > 1 ? 's' : ''} left before sending` : 'Ready to send'}</small></span><span class="go">${ARROW}</span></a></div>`;
-}
-function tileHTML(m){
-  const s = statusOf(m);
-  return `<a class="tile${s.k === 'done' ? ' is-done' : ''}" href="#${m.id}" data-shape="${m.shape}" style="${tileVars(m)}">
-    <span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span>
-    <span class="ic">${I[m.icon] || ''}</span><b>${esc(m.title)}</b><small>${esc(m.sub)}</small></a>`;
-}
 function moduleHTML(m){
   const s = statusOf(m), mods = visible(), i = mods.indexOf(m);
   const nxt = mods.slice(i + 1).concat(mods.slice(0, i)).find(x => statusOf(x).k !== 'done');

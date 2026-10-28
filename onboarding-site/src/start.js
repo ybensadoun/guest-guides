@@ -319,7 +319,7 @@ async function resetAll(){
 /* ---------- Version stamp, tiny, so you can tell which build you are looking at ---------- */
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
-  // "Start over" is on the overview page only (#resetAll): a floating copy sat on top of the step bar.
+  // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
   const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated __BUILD__'; document.body.appendChild(d);
 })();
 

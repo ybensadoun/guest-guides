@@ -130,9 +130,6 @@ seg1=rep(seg1,".loading{padding:40px;text-align:center;color:var(--muted)}",""".
 :root:not([data-theme="light"]) .pill.pre{color:#2c5aa0}""")
 views=rep(views,"  if (k === 'privacyNote')","  if (k === 'fillBtn') return `<div class=\"full\" style=\"display:flex;gap:12px;align-items:center;flex-wrap:wrap\"><button class=\"btn sun\" type=\"button\" id=\"fillListing\">Fill in from my listing</button><span class=\"hint\">Fills the steps it can and marks them “Review”. Nothing you typed is replaced.</span></div>`;\n  if (k === 'privacyNote')")
 views=rep(views,"  const head = `${esc(q.label)} ${badge(k)}`;","  const head = `${esc(q.label)} ${badge(k)}${A._pre && A._pre[k] && filled(k) ? (A._basis && A._basis[k] === 'suggested' ? ' <span class=\"frm sug\">Suggested by Claude: please check</span>' : ' <span class=\"frm\">From your listing</span>') : ''}`;")
-views=rep(views,"<i class=\"${s.k === 'done' ? 'd' : s.k === 'chk' ? 'c' : ''}\"></i>","<i class=\"${s.k === 'done' ? 'd' : s.k === 'chk' ? 'c' : s.k === 'pre' ? 'p' : ''}\"></i>")
-views=rep(views,"<span><i class=\"c\"></i>${chk} checked</span>","${st.some(s => s.k === 'pre') ? `<span><i class=\"p\"></i>${st.filter(s => s.k === 'pre').length} to review</span>` : ''}<span><i class=\"c\"></i>${chk} opened, not done</span>")
-views=rep(views,"${mods.length - done - chk} not started","${mods.length - done - chk - st.filter(s => s.k === 'pre').length} not started")
 # ---- v2: link-first, everything optional except the listing and the town ----
 import re as _re
 seg1=_re.sub(r"need:\[[^\]]*\]","need:[]",seg1)
@@ -144,10 +141,7 @@ seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'nearby',group:'area',title:
 seg1=seg1.replace('family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700','family=Gloock&family=Onest:wght@400;500;600;700')
 seg1=rep(seg1,"</style>\n</head>","\n"+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'theme2.css')).read()+"\n</style>\n</head>")
 views=rep(views,"  if (k === 'privacyNote')","  if (k === 'swipe') return swipeHTML();\n  if (k === 'privacyNote')")
-views=rep(views,"    ${GROUPS.map(([g, gt]) => { const ms = mods.filter(m => m.group === g); if (!ms.length) return '';","    ${draftBanner()}\n    ${GROUPS.map(([g, gt]) => { const ms = mods.filter(m => m.group === g); if (!ms.length) return '';")
 views=rep(views,"    case 'taste':","    case 'nearby': { const y = Object.values(A.swipes || {}).filter(x => x.d === 'yes').length + lines('favDo').length; return y ? `${y} places` : 'Not started'; }\n    case 'taste':")
-views=rep(views,"${done === mods.length ? 'Everything is done. Check it once more, then send it.' : `Do the steps in any order. Each one is “Done” once its needed answers are in and you press Done. You can come back any time: everything saves as you type.`}","${A._draftAt ? 'Everything here is optional apart from your listing. Review what we wrote, add what is missing, send when you like.' : 'Go in any order. Only your listing and town are needed; the rest makes your guide better. Everything saves as you type.'}")
-views=rep(views,"<span>${last ? 'Continue' : done || chk ? 'Next' : 'Start'}: ${esc(go.title)}</span>","<span>${statusOf(go).k === 'pre' ? 'Review' : last ? 'Continue' : done || chk ? 'Next' : 'Start'}: ${esc(go.title)}</span>")
 # ---- v3: loading the listing is its own first step; the place details come right after ----
 seg1=rep(seg1,"{id:'listing',group:'basics',title:'Your listing',sub:'Link, name, town',icon:'link',tc:'var(--pine)',sh:'var(--sun)',shape:'circle',",
  "{id:'listing',group:'basics',title:'Load your listing',sub:'We read it for you',icon:'link',tc:'var(--pine)',sh:'var(--sun)',shape:'circle',")
@@ -185,8 +179,6 @@ views=rep(views,"  if (k === 'privacyNote')","  if (k === 'reviewsNote') return 
 # ---- v5: photos show their image, room names match the tiles, start over ----
 views=rep(views,"${/^image\\//.test(u.type) || u.dataUrl ?","${/^image\\//.test(u.type) || u.dataUrl || u.remote ?")
 views=rep(views,"${ROOMS.map(r => `<option${u.room===r?' selected':''}>${r}</option>`).join('')}","${roomChoices(u).map(r => `<option${(u.roomLabel||u.room)===r?' selected':''}>${esc(r)}</option>`).join('')}")
-views=rep(views,"""'Ready to send'}</small></span><span class="go">${ARROW}</span></a></div>`;""","""'Ready to send'}</small></span><span class="go">${ARROW}</span></a></div>
-    <div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div>`;""")
 forms=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'forms.html')).read()
 html=seg1+'\n'+views+'\n'+runtime+'\n})();\n</script>\n'+forms+'</body>\n</html>\n'
 import subprocess,datetime

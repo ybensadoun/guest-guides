@@ -659,7 +659,7 @@ function cmTile(m) {
   const ch = cmChanged(m);
   return `<a class="tile" href="#${m.id}" data-shape="${m.shape}" style="${tileVars(m)}">${ch ? '<span class="pill chk">Changed</span>' : ''}<span class="ic">${I[m.icon] || ''}</span><b>${esc(m.title)}</b><small>${esc(cmSub(m))}</small></a>`;
 }
-const cmPillText = ch => ch ? 'Changed' : cmLive() ? 'Live' : 'Not published yet';
+const cmPillText = (ch, m) => ch ? 'Changed' : m && cmNeeds(m) ? 'Needs you' : cmLive() ? 'Live' : 'Not published yet';
 const cmFootText = () => cmDirty() ? 'Saved as a draft. Guests see it once you publish.' : 'Changes save as you type, as a draft only you see until you publish.';
 function cmLangBar(langs) {
   return `<div class="cm-lang"><label for="c_lang">You are editing in</label><select id="c_lang" data-cmlang>${langs.map(l => `<option value="${l}"${CM.lang === l ? ' selected' : ''}>${ED_LANGS[l]}</option>`).join('')}</select></div>
@@ -668,7 +668,7 @@ function cmLangBar(langs) {
 function cmStepHTML(m) {
   const ch = cmChanged(m), langs = edLangs();
   return `<div class="split">${railHTML(m.id)}<div class="col">
-    <section class="mhead" style="${tileVars(m)}"><div class="row1"><span class="pill ${ch ? 'chk' : 'done'}" id="cmPill">${esc(cmPillText(ch))}</span></div><h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
+    <section class="mhead" style="${tileVars(m)}"><div class="row1"><span class="pill ${ch ? 'chk' : cmNeeds(m) ? 'new' : 'done'}" id="cmPill">${esc(cmPillText(ch, m))}</span></div><h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
     <section class="card">${m.lang && langs.length > 1 ? cmLangBar(langs) : ''}<div class="edz">${m.body(edC())}</div>
       <div class="foot"><p class="todo" id="cmFoot">${esc(cmFootText())}</p><div class="row"><a class="btn small" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${I.eye}Preview</a><a class="btn small primary" href="#publish" id="cmGoPub"${cmDirty() ? '' : ' hidden'}>Review and publish</a></div></div></section></div></div>`;
 }
@@ -691,12 +691,18 @@ const CM_LAST = 'porta-editor-step-v1';
 function cmStart() { let id = ''; try { id = (JSON.parse(localStorage.getItem(CM_LAST) || '{}') || {})[CM.g.id] || ''; } catch (e) {} return cmIsPage(id) ? id : (cmSteps()[0] || { id: 'publish' }).id; }
 function cmRemember(r) { try { const o = JSON.parse(localStorage.getItem(CM_LAST) || '{}') || {}; if (o[CM.g.id] !== r) { o[CM.g.id] = r; localStorage.setItem(CM_LAST, JSON.stringify(o)); } } catch (e) {} }
 // Rail and bottom bar (nav.js asks for these while CM.on)
+// What only the host can tell us and the guide still lacks: listed first, as "Needs you" (docs/plan-fast-builder.md).
+// For a guide that exists this is the Wi-Fi: rubbish and contacts pages only exist once they are filled.
+const CM_NEEDS = { wifi: c => { const w = (c.private || {}).wifi || {}; return !w.password || !(w.networks || []).some(n => n.ssid); } };
+const cmNeeds = m => !!(CM_NEEDS[m.id] && CM_NEEDS[m.id](edC()));
 function cmStepList(cur) {
-  const item = m => { const ch = cmChanged(m); return `<a class="si s-${ch ? 'chk' : 'new'}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${ch ? STATUS_ICON.chk : I[m.icon] || ''}</span><span class="st">${esc(m.title)}</span><span class="sl">${ch ? 'Changed' : ''}</span></a>`; };
+  const item = m => { const ch = cmChanged(m); return `<a class="si s-${ch ? 'chk' : 'new'}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${ch ? STATUS_ICON.chk : I[m.icon] || ''}</span><span class="st">${esc(m.title)}</span><span class="sl">${ch ? 'Changed' : cmNeeds(m) ? 'Needs you' : ''}</span></a>`; };
+  const need = cmSteps().filter(cmNeeds);
   const dirty = cmDirty();
   const url = cmLiveUrl();
   return `<div class="si-guide"><b>${esc((edC().site || {}).name || CM.g.slug)}</b><small>${cmLive() ? `Live: <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url.replace(/^https?:\/\//, ''))}</a>` : 'Not published yet'}</small></div>
-    ${GROUPS.map(([g, gt]) => { const ms = cmSteps().filter(m => m.group === g); return ms.length ? `<p class="sg">${gt}</p>${ms.map(item).join('')}` : ''; }).join('')}
+    ${need.length ? `<p class="sg">Needs you</p>${need.map(item).join('')}` : ''}
+    ${GROUPS.map(([g, gt]) => { const ms = cmSteps().filter(m => m.group === g && !cmNeeds(m)); return ms.length ? `<p class="sg">${gt}</p>${ms.map(item).join('')}` : ''; }).join('')}
     <p class="sg">Finish</p><a class="si s-${dirty ? 'chk' : 'done'} send" href="#publish"${cur === 'publish' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Publish changes</span><span class="sl">${dirty ? 'Waiting' : cmLive() ? 'Live' : ''}</span></a>`;
 }
 function cmNavbar(cur) {
@@ -713,7 +719,7 @@ function cmMarks() {
   CM.marks = setTimeout(() => {
     refreshNav();
     const m = cmSteps().find(x => x.id === route()), p = document.getElementById('cmPill');
-    if (m && p) { const ch = cmChanged(m); p.className = 'pill ' + (ch ? 'chk' : 'done'); p.textContent = cmPillText(ch); }
+    if (m && p) { const ch = cmChanged(m); p.className = 'pill ' + (ch ? 'chk' : cmNeeds(m) ? 'new' : 'done'); p.textContent = cmPillText(ch, m); }
     const f = document.getElementById('cmFoot'); if (f) f.textContent = cmFootText();
     const g = document.getElementById('cmGoPub'); if (g) g.hidden = !cmDirty();
   }, 250);

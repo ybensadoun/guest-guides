@@ -7,13 +7,35 @@ const visible = () => MODULES.filter(m => (!m.sec || secOn(m.sec)));   // "Place
 const filled = k => { if (k === 'source') return hasSource(); if (k === 'slug') return !slugProblem(v('slug')); if (k.startsWith('upload:')) return uploads.some(u => u.kind === k.slice(7)); const x = A[k]; return Array.isArray(x) ? x.length > 0 : !!String(x ?? '').trim(); };
 const missingOf = m => m.need.filter(k => !filled(k));
 const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k] || {}).label;
+// Two kinds of step (docs/plan-fast-builder.md). FLOW: what only the host can tell us, in the order they meet it, from the
+// listing to Send; Next and the count follow it. Every other step is filled in from the listing: ready without pressing
+// anything, there to check if they like.
+const FLOW = ['listing', 'look', 'nearby', 'wifi', 'arrival', 'rubbish', 'contacts'];
+const needsYou = m => FLOW.includes(m.id);
+const flowMods = () => FLOW.map(id => visible().find(m => m.id === id)).filter(Boolean);
+const readyMods = () => visible().filter(m => !needsYou(m));
+// A step that needs the host counts as done once they answered it (or pressed Done). The look has no answer of its own:
+// its defaults are good, but the host confirms it.
+const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || filled('favDo') || filled('favourites'),
+  wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('hostPhone') };
+// Something in this step came from the listing (or is there): only then is it "Ready". Sections are always chosen for them.
+const hasContent = m => m.id === 'sections' || preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));
 function statusOf(m){
   const miss = missingOf(m).length, seen = (A._seen || []).includes(m.id), done = !!(A._done || {})[m.id];
+  if (!needsYou(m)) {
+    if (miss) return { k: seen ? 'chk' : 'new', label: `${miss} to do`, miss };
+    if (!A._draftAt && !done && !seen) return { k:'new', label:'Start', miss };   // filled step by step: nothing from a listing yet
+    if (!done && !hasContent(m)) return { k:'new', label:'Optional', miss };      // the listing said nothing here
+    return { k:'done', label: done || seen ? 'Checked' : 'Ready', miss };
+  }
   if (done && !miss) return { k:'done', label:'Done', miss };
-  if (preKeys(m).length) return { k:'pre', label: miss ? `Review · ${miss} to do` : 'Review', miss };
-  if (seen || done) return { k:'chk', label: miss ? `${miss} to do` : 'Not done', miss };
-  return { k:'new', label:'Start', miss };
+  if (preKeys(m).length && !seen) return { k:'pre', label:'Check', miss };   // the listing said it: the host only checks
+  if (!miss && ANSWERED[m.id] && ANSWERED[m.id]()) return { k:'done', label:'Done', miss };
+  if (seen) return { k:'chk', label: miss ? `${miss} to do` : 'Later', miss };
+  return { k:'new', label:'Needs you', miss };
 }
+// Where the builder opens: the first step that still needs the host, else Review and send.
+const obNext = () => (flowMods().find(m => statusOf(m).k !== 'done') || { id: 'send' }).id;
 // Only the listing and the town are needed to send. Everything else is a first version to review, or optional.
 const sendMissing = () => [...(hasSource() ? [] : ['Your listing link or text']), ...(v('town') ? [] : ['The town']), ...(A.consent ? [] : ['The consent box'])];
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -128,13 +150,15 @@ async function sendNote(mod, text){
 const progressText = () => { const ms = visible(); return `${ms.filter(m => statusOf(m).k === 'done').length}/${ms.length} done`; };
 
 /* ---------- After the first version: what to check ---------- */
+// Right after the listing is read, on the first step the host lands on: the guide is written, here is what is left.
 function draftBanner(){
   if (!A._draftAt) return '';
-  const pre = visible().filter(m => statusOf(m).k === 'pre');
+  const ready = readyMods().filter(m => statusOf(m).k === 'done').length, left = flowMods().filter(m => statusOf(m).k !== 'done').length, ask = A.toConfirm || [];
   return `<section class="draft">
-    <div><small>First version ready</small><h2>${pre.length ? `${pre.length} step${pre.length > 1 ? 's' : ''} written for you. Check them and make them yours.` : 'All checked. Add photos and your places to finish.'}</h2>
-    ${(A.toConfirm || []).length ? `<p>Things your listing does not say, worth adding:</p><ul>${A.toConfirm.map(q => `<li>${esc(q)}</li>`).join('')}</ul>` : ''}</div>
-    <div class="draft-act"><button class="btn primary" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"', 'stroke-width="2.2" width="17" height="17"')}See your guide</button>${pre[0] ? `<a class="btn" href="#${pre[0].id}">Start reviewing</a>` : ''}</div></section>`;
+    <div><small>Your guide is written</small><h2>${ready} step${ready === 1 ? ' is' : 's are'} ready from your listing${left ? `, and ${left === 1 ? 'one needs' : left + ' need'} you` : ''}.</h2>
+    ${ask.length ? `<details><summary>${ask.length === 1 ? 'One thing' : ask.length + ' things'} your listing does not say</summary><ul>${ask.map(q => `<li>${esc(q)}</li>`).join('')}</ul></details>` : ''}</div>
+    <div class="draft-act"><button class="btn primary" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"', 'stroke-width="2.2" width="17" height="17"')}See your guide</button></div>
+  </section>`;
 }
 
 /* ---------- Extra questions for the public test ---------- */
@@ -226,7 +250,7 @@ function render(){
   else if (m) { main.innerHTML = moduleHTML(m); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
   else if (r === 'send') { main.innerHTML = sendHTML(); if (r !== lastRoute) { log('open', 'send'); queueSave(); } }
   else if ((r === 'home' || r === 'start') && (r === 'start' || (!A._draftAt && !A._skipStart && !visible().some(m => statusOf(m).k !== 'new')))) { main.innerHTML = startHTML(); if (r !== lastRoute) { log('open', 'start'); queueSave(); } }
-  else { main.innerHTML = homeHTML(); if (r !== lastRoute) { log('open', 'home'); queueSave(); } }
+  else { history.replaceState(null, '', '#' + obNext()); return render(); }   // no overview page: straight to the next step
   let nb = document.getElementById('navbar'); if (!nb) { nb = document.createElement('div'); nb.id = 'navbar'; nb.hidden = true; document.body.appendChild(nb); }
   const stepView = CM.on ? cmIsPage(r) : r === 'send' || !!m;
   nb.hidden = !stepView || new URLSearchParams(location.search).has('feedback') || (r === 'thanks');

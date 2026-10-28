@@ -349,6 +349,10 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .draft h2{font-size:26px;margin-top:4px}
 .draft p{margin:10px 0 4px;color:var(--muted);font-size:14.5px}
 .draft ul{margin:0;padding-left:20px;display:grid;gap:4px;font-size:15px}
+.draft details summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:center}
+.draft details summary::after{content:"";flex:none;width:7px;height:7px;margin-left:10px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}
+.draft details[open] summary::after{transform:rotate(-135deg) translateY(-2px)}
+.draft details[open] summary{margin-bottom:6px}
 .draft-act{display:flex;gap:10px;flex-wrap:wrap}
 
 /* Step cards: white plaster cards, one coloured badge, no shapes */
@@ -409,7 +413,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .sw-pick input{grid-column:1/-1;grid-row:2;font-size:14px!important;padding:8px 10px!important}
 .sw-pick .x{grid-column:2;grid-row:1;border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)}
 
-@media (max-width:620px){.mhead::before{width:52px!important;height:84px!important;right:14px!important}.mhead p{padding-right:58px}}   /* text stops 10 px before the shape */
+@media (max-width:620px){.mhead::before{width:52px!important;height:84px!important;right:14px!important}.mhead p,.mhead h1{padding-right:58px}}   /* text stops 10 px before the shape */
 
 /* Host lists */
 .pl{display:flex;flex-direction:column;gap:12px;margin-bottom:10px}
@@ -685,63 +689,42 @@ function sectionPicker(){
 /* ---------- Views ---------- */
 const route = () => (location.hash || '#home').slice(1);
 function tileVars(m){ return `--tc:${m.tc};--ti:${m.ti || '#fff'};--sh:${m.sh}`; }
-function homeHTML(){
-  const mods = visible(), st = mods.map(m => statusOf(m)), done = st.filter(s => s.k === 'done').length, chk = st.filter(s => s.k === 'chk').length;
-  const next = mods.find(m => statusOf(m).k !== 'done');
-  const last = A._last && mods.find(m => m.id === A._last && statusOf(m).k !== 'done');
-  const go = last || next;
-  const name = v('guideName') || v('placeName');
-  const miss = sendMissing();
-  return `<section class="hero">
-      <small>${name ? 'Your guide' : 'New guide'}</small>
-      <h1>${esc(name || 'Let’s build your guest guide')}</h1>
-      <p>${A._draftAt ? 'Everything here is optional apart from your listing. Review what we wrote, add what is missing, send when you like.' : 'Go in any order. Only your listing and town are needed; the rest makes your guide better. Everything saves as you type.'}</p>
-      <div class="meter" aria-label="${done} of ${mods.length} done">${st.map(s => `<i class="${s.k === 'done' ? 'd' : s.k === 'chk' ? 'c' : s.k === 'pre' ? 'p' : ''}"></i>`).join('')}</div>
-      <div class="legend"><span><i></i>${done} done</span>${st.some(s => s.k === 'pre') ? `<span><i class="p"></i>${st.filter(s => s.k === 'pre').length} to review</span>` : ''}<span><i class="c"></i>${chk} opened, not done</span><span><i class="n"></i>${mods.length - done - chk - st.filter(s => s.k === 'pre').length} not started</span></div>
-      ${go ? `<a class="go-next" href="#${go.id}"><span>${statusOf(go).k === 'pre' ? 'Review' : last ? 'Continue' : done || chk ? 'Next' : 'Start'}: ${esc(go.title)}</span><span class="ar">${ARROW}</span></a>` : `<a class="go-next" href="#send"><span>Review and send</span><span class="ar">${ARROW}</span></a>`}
-    </section>
-    ${draftBanner()}
-    ${GROUPS.map(([g, gt]) => { const ms = mods.filter(m => m.group === g); if (!ms.length) return ''; const n = ms.filter(m => statusOf(m).k === 'done').length;
-      return `<div class="gh"><h2>${gt}</h2><span>${n}/${ms.length} done</span></div><div class="tiles">${ms.map(tileHTML).join('')}</div>`; }).join('')}
-    <div class="tiles"><a class="tile send${miss.length ? ' locked' : ''}" href="#send"><span class="ic">${I.send}</span><span class="tx"><b>Review and send</b><small>${miss.length ? `${miss.length} thing${miss.length > 1 ? 's' : ''} left before sending` : 'Ready to send'}</small></span><span class="go">${ARROW}</span></a></div>
-    <div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div>`;
-}
-function tileHTML(m){
-  const s = statusOf(m);
-  return `<a class="tile${s.k === 'done' ? ' is-done' : ''}" href="#${m.id}" data-shape="${m.shape}" style="${tileVars(m)}">
-    <span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span>
-    <span class="ic">${I[m.icon] || ''}</span><b>${esc(m.title)}</b><small>${esc(m.sub)}</small></a>`;
-}
 /* ---------- Navigation between steps ----------
    Desktop: a rail with every step and its status, always visible next to the page.
    Phone: a bottom bar with Back, "3 of 15" (opens the full list) and Done / Next.
    The browser back button works too: every step has its own address (#look, #wifi…). */
 const STATUS_ICON = { pre: '<i class="pre" aria-hidden="true"></i>', done: CHECK, chk: '<i class="half" aria-hidden="true"></i>', new: '<i class="ring" aria-hidden="true"></i>' };
-const stepsOrder = () => [...visible().map(m => m.id), 'send'];
+const stepsOrder = () => [...flowMods().map(m => m.id), 'send'];   // the path: only the steps that need the host
 const titleOf = id => id === 'send' ? 'Review and send' : (MODULES.find(m => m.id === id) || {}).title;
 function stepListHTML(cur){
   if (CM.on) return cmStepList(cur);   // once the guide exists, the steps edit the guide (editor.js)
   const mods = visible();
-  const item = (m) => { const s = statusOf(m); return `<a class="si s-${s.k}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${STATUS_ICON[s.k]}</span><span class="st">${esc(m.title)}</span><span class="sl">${esc(s.k === 'done' ? 'Done' : s.k === 'chk' || s.k === 'pre' ? s.label : '')}</span></a>`; };
+  const item = (m) => { const s = statusOf(m); return `<a class="si s-${s.k}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${STATUS_ICON[s.k]}</span><span class="st">${esc(m.title)}</span><span class="sl">${esc(s.k === 'new' && !needsYou(m) && s.label === 'Start' ? '' : s.label)}</span></a>`; };
   const miss = sendMissing().length;
-  return `<a class="si home" href="#home"${cur === 'home' ? ' aria-current="step"' : ''}><span class="sic">${I.grid}</span><span class="st">Overview</span></a>
-    ${GROUPS.map(([g, gt]) => { const ms = mods.filter(m => m.group === g); return ms.length ? `<p class="sg">${gt}</p>${ms.map(item).join('')}` : ''; }).join('')}
+  const flow = flowMods(), left = flow.filter(m => statusOf(m).k !== 'done').length;
+  return `<div class="si-guide"><b>${esc(v('guideName') || v('placeName') || 'Your guide')}</b><small>${A._draftAt ? 'Filled in from your listing' : 'Your listing is not loaded yet'}</small></div>
+    <p class="sg">Needs you${left ? ` · ${left} left` : ''}</p>${flow.map(item).join('')}
+    <p class="sg">Ready: check if you like</p>${mods.filter(m => !needsYou(m)).map(item).join('')}
     <p class="sg">Finish</p><a class="si s-${miss ? 'new' : 'done'} send" href="#send"${cur === 'send' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Review and send</span><span class="sl">${miss ? miss + ' left' : 'Ready'}</span></a>`;
 }
 function railHTML(cur){ return `<aside class="rail" aria-label="All steps"><nav>${stepListHTML(cur)}</nav></aside>`; }
 function navbarHTML(cur){
   if (CM.on) return cmNavbar(cur);
-  const order = stepsOrder(), i = order.indexOf(cur), prev = order[i - 1], next = order[i + 1];
-  const m = MODULES.find(x => x.id === cur);
+  const order = stepsOrder(), i = order.indexOf(cur), m = MODULES.find(x => x.id === cur);
+  // A step filled in from the listing is off the path: one button back to where the host was going.
+  if (m && !needsYou(m)) return `<div class="nbin"><span></span>
+    <button class="nb count" type="button" id="openSteps" aria-haspopup="dialog">All steps<i class="chev" aria-hidden="true"></i></button>
+    <a class="nb primary" href="#${obNext()}"><span>Continue</span>${ARROW}</a></div>`;
+  const prev = order[i - 1], next = order[i + 1];
   let main = '';
   if (m) {
-    const s = statusOf(m), miss = missingOf(m).length;
+    const s = statusOf(m), miss = missingOf(m).length, answered = !ANSWERED[m.id] || ANSWERED[m.id]();
     if (s.k === 'done') main = next ? `<a class="nb primary" href="#${next}"><span>Next</span>${ARROW}</a>` : '';
-    else if (!miss) main = `<button class="nb primary" type="button" data-donenext="${m.id}"><span>${s.k === 'pre' ? 'Looks right' : 'Done'}${next ? ', next' : ''}</span>${next ? ARROW : CHECK}</button>`;
-    else main = next ? `<a class="nb" href="#${next}"><span>Skip for now</span>${ARROW}</a>` : '';
+    else if (!miss && (answered || s.k === 'pre')) main = `<button class="nb primary" type="button" data-donenext="${m.id}"><span>${s.k === 'pre' ? 'Looks right' : 'Done'}${next ? ', next' : ''}</span>${next ? ARROW : CHECK}</button>`;
+    else main = next ? `<a class="nb" href="#${next}"><span>${miss ? 'Skip for now' : 'Later'}</span>${ARROW}</a>` : '';   // leaving it for later never marks it done
   }
   return `<div class="nbin">
-    ${prev ? `<a class="nb ghost" href="#${prev}" aria-label="Back to ${esc(titleOf(prev))}">${BACK}<span class="hide-s">${esc(titleOf(prev))}</span></a>` : `<a class="nb ghost" href="#home" aria-label="Overview">${BACK}<span class="hide-s">Overview</span></a>`}
+    ${prev ? `<a class="nb ghost" href="#${prev}" aria-label="Back to ${esc(titleOf(prev))}">${BACK}<span class="hide-s">${esc(titleOf(prev))}</span></a>` : '<span></span>'}
     <button class="nb count" type="button" id="openSteps" aria-haspopup="dialog"><b>${i + 1}</b> of ${order.length}<i class="chev" aria-hidden="true"></i></button>
     ${main || '<span></span>'}</div>`;
 }
@@ -764,10 +747,13 @@ function moduleHTML(m){
     <section class="mhead" style="${tileVars(m)}">
       <div class="row1"><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
       <h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
+    ${m.id === 'look' && !(A._done || {}).look ? draftBanner() : ''}
     <section class="card"><div class="grid">${m.fields.map(field).join('')}</div>
       <div class="foot">
-        <p class="todo">${miss.length ? `Still needed for Done: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>` : s.k === 'done' ? 'This step is done. You can still change anything.' : 'Everything needed is here. Press Done when you are happy with it.'}</p>
-        ${s.k === 'done' ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
+        <p class="todo">${miss.length ? `Still needed: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>`
+          : !needsYou(m) ? (A._draftAt ? 'Filled in from your listing. Change anything that is off: it saves as you type, nothing to press.' : 'Optional. Anything you add here saves as you type.')
+          : s.k === 'done' ? 'Done. You can still change anything.' : m.id === 'look' ? 'Already set for you. Change what you like, then press Done.' : 'Only you know this. Answer it now or later: your guide works without it.'}</p>
+        ${(A._done || {})[m.id] && needsYou(m) ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
       </div></section>
     <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
 }
@@ -1451,8 +1437,8 @@ async function resetAll(){
 /* ---------- Version stamp, tiny, so you can tell which build you are looking at ---------- */
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
-  // "Start over" is on the overview page only (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 28 Oct 2026, 23:54 (Madrid time, after commit 493ffa9)'; document.body.appendChild(d);
+  // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 00:12 (Madrid time, after commit 933782b)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -2486,7 +2472,7 @@ function cmTile(m) {
   const ch = cmChanged(m);
   return `<a class="tile" href="#${m.id}" data-shape="${m.shape}" style="${tileVars(m)}">${ch ? '<span class="pill chk">Changed</span>' : ''}<span class="ic">${I[m.icon] || ''}</span><b>${esc(m.title)}</b><small>${esc(cmSub(m))}</small></a>`;
 }
-const cmPillText = ch => ch ? 'Changed' : cmLive() ? 'Live' : 'Not published yet';
+const cmPillText = (ch, m) => ch ? 'Changed' : m && cmNeeds(m) ? 'Needs you' : cmLive() ? 'Live' : 'Not published yet';
 const cmFootText = () => cmDirty() ? 'Saved as a draft. Guests see it once you publish.' : 'Changes save as you type, as a draft only you see until you publish.';
 function cmLangBar(langs) {
   return `<div class="cm-lang"><label for="c_lang">You are editing in</label><select id="c_lang" data-cmlang>${langs.map(l => `<option value="${l}"${CM.lang === l ? ' selected' : ''}>${ED_LANGS[l]}</option>`).join('')}</select></div>
@@ -2495,7 +2481,7 @@ function cmLangBar(langs) {
 function cmStepHTML(m) {
   const ch = cmChanged(m), langs = edLangs();
   return `<div class="split">${railHTML(m.id)}<div class="col">
-    <section class="mhead" style="${tileVars(m)}"><div class="row1"><span class="pill ${ch ? 'chk' : 'done'}" id="cmPill">${esc(cmPillText(ch))}</span></div><h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
+    <section class="mhead" style="${tileVars(m)}"><div class="row1"><span class="pill ${ch ? 'chk' : cmNeeds(m) ? 'new' : 'done'}" id="cmPill">${esc(cmPillText(ch, m))}</span></div><h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
     <section class="card">${m.lang && langs.length > 1 ? cmLangBar(langs) : ''}<div class="edz">${m.body(edC())}</div>
       <div class="foot"><p class="todo" id="cmFoot">${esc(cmFootText())}</p><div class="row"><a class="btn small" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${I.eye}Preview</a><a class="btn small primary" href="#publish" id="cmGoPub"${cmDirty() ? '' : ' hidden'}>Review and publish</a></div></div></section></div></div>`;
 }
@@ -2518,12 +2504,18 @@ const CM_LAST = 'porta-editor-step-v1';
 function cmStart() { let id = ''; try { id = (JSON.parse(localStorage.getItem(CM_LAST) || '{}') || {})[CM.g.id] || ''; } catch (e) {} return cmIsPage(id) ? id : (cmSteps()[0] || { id: 'publish' }).id; }
 function cmRemember(r) { try { const o = JSON.parse(localStorage.getItem(CM_LAST) || '{}') || {}; if (o[CM.g.id] !== r) { o[CM.g.id] = r; localStorage.setItem(CM_LAST, JSON.stringify(o)); } } catch (e) {} }
 // Rail and bottom bar (nav.js asks for these while CM.on)
+// What only the host can tell us and the guide still lacks: listed first, as "Needs you" (docs/plan-fast-builder.md).
+// For a guide that exists this is the Wi-Fi: rubbish and contacts pages only exist once they are filled.
+const CM_NEEDS = { wifi: c => { const w = (c.private || {}).wifi || {}; return !w.password || !(w.networks || []).some(n => n.ssid); } };
+const cmNeeds = m => !!(CM_NEEDS[m.id] && CM_NEEDS[m.id](edC()));
 function cmStepList(cur) {
-  const item = m => { const ch = cmChanged(m); return `<a class="si s-${ch ? 'chk' : 'new'}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${ch ? STATUS_ICON.chk : I[m.icon] || ''}</span><span class="st">${esc(m.title)}</span><span class="sl">${ch ? 'Changed' : ''}</span></a>`; };
+  const item = m => { const ch = cmChanged(m); return `<a class="si s-${ch ? 'chk' : 'new'}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${ch ? STATUS_ICON.chk : I[m.icon] || ''}</span><span class="st">${esc(m.title)}</span><span class="sl">${ch ? 'Changed' : cmNeeds(m) ? 'Needs you' : ''}</span></a>`; };
+  const need = cmSteps().filter(cmNeeds);
   const dirty = cmDirty();
   const url = cmLiveUrl();
   return `<div class="si-guide"><b>${esc((edC().site || {}).name || CM.g.slug)}</b><small>${cmLive() ? `Live: <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url.replace(/^https?:\/\//, ''))}</a>` : 'Not published yet'}</small></div>
-    ${GROUPS.map(([g, gt]) => { const ms = cmSteps().filter(m => m.group === g); return ms.length ? `<p class="sg">${gt}</p>${ms.map(item).join('')}` : ''; }).join('')}
+    ${need.length ? `<p class="sg">Needs you</p>${need.map(item).join('')}` : ''}
+    ${GROUPS.map(([g, gt]) => { const ms = cmSteps().filter(m => m.group === g && !cmNeeds(m)); return ms.length ? `<p class="sg">${gt}</p>${ms.map(item).join('')}` : ''; }).join('')}
     <p class="sg">Finish</p><a class="si s-${dirty ? 'chk' : 'done'} send" href="#publish"${cur === 'publish' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Publish changes</span><span class="sl">${dirty ? 'Waiting' : cmLive() ? 'Live' : ''}</span></a>`;
 }
 function cmNavbar(cur) {
@@ -2540,7 +2532,7 @@ function cmMarks() {
   CM.marks = setTimeout(() => {
     refreshNav();
     const m = cmSteps().find(x => x.id === route()), p = document.getElementById('cmPill');
-    if (m && p) { const ch = cmChanged(m); p.className = 'pill ' + (ch ? 'chk' : 'done'); p.textContent = cmPillText(ch); }
+    if (m && p) { const ch = cmChanged(m); p.className = 'pill ' + (ch ? 'chk' : cmNeeds(m) ? 'new' : 'done'); p.textContent = cmPillText(ch, m); }
     const f = document.getElementById('cmFoot'); if (f) f.textContent = cmFootText();
     const g = document.getElementById('cmGoPub'); if (g) g.hidden = !cmDirty();
   }, 250);
@@ -3014,13 +3006,35 @@ const visible = () => MODULES.filter(m => (!m.sec || secOn(m.sec)));   // "Place
 const filled = k => { if (k === 'source') return hasSource(); if (k === 'slug') return !slugProblem(v('slug')); if (k.startsWith('upload:')) return uploads.some(u => u.kind === k.slice(7)); const x = A[k]; return Array.isArray(x) ? x.length > 0 : !!String(x ?? '').trim(); };
 const missingOf = m => m.need.filter(k => !filled(k));
 const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k] || {}).label;
+// Two kinds of step (docs/plan-fast-builder.md). FLOW: what only the host can tell us, in the order they meet it, from the
+// listing to Send; Next and the count follow it. Every other step is filled in from the listing: ready without pressing
+// anything, there to check if they like.
+const FLOW = ['listing', 'look', 'nearby', 'wifi', 'arrival', 'rubbish', 'contacts'];
+const needsYou = m => FLOW.includes(m.id);
+const flowMods = () => FLOW.map(id => visible().find(m => m.id === id)).filter(Boolean);
+const readyMods = () => visible().filter(m => !needsYou(m));
+// A step that needs the host counts as done once they answered it (or pressed Done). The look has no answer of its own:
+// its defaults are good, but the host confirms it.
+const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || filled('favDo') || filled('favourites'),
+  wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('hostPhone') };
+// Something in this step came from the listing (or is there): only then is it "Ready". Sections are always chosen for them.
+const hasContent = m => m.id === 'sections' || preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));
 function statusOf(m){
   const miss = missingOf(m).length, seen = (A._seen || []).includes(m.id), done = !!(A._done || {})[m.id];
+  if (!needsYou(m)) {
+    if (miss) return { k: seen ? 'chk' : 'new', label: `${miss} to do`, miss };
+    if (!A._draftAt && !done && !seen) return { k:'new', label:'Start', miss };   // filled step by step: nothing from a listing yet
+    if (!done && !hasContent(m)) return { k:'new', label:'Optional', miss };      // the listing said nothing here
+    return { k:'done', label: done || seen ? 'Checked' : 'Ready', miss };
+  }
   if (done && !miss) return { k:'done', label:'Done', miss };
-  if (preKeys(m).length) return { k:'pre', label: miss ? `Review · ${miss} to do` : 'Review', miss };
-  if (seen || done) return { k:'chk', label: miss ? `${miss} to do` : 'Not done', miss };
-  return { k:'new', label:'Start', miss };
+  if (preKeys(m).length && !seen) return { k:'pre', label:'Check', miss };   // the listing said it: the host only checks
+  if (!miss && ANSWERED[m.id] && ANSWERED[m.id]()) return { k:'done', label:'Done', miss };
+  if (seen) return { k:'chk', label: miss ? `${miss} to do` : 'Later', miss };
+  return { k:'new', label:'Needs you', miss };
 }
+// Where the builder opens: the first step that still needs the host, else Review and send.
+const obNext = () => (flowMods().find(m => statusOf(m).k !== 'done') || { id: 'send' }).id;
 // Only the listing and the town are needed to send. Everything else is a first version to review, or optional.
 const sendMissing = () => [...(hasSource() ? [] : ['Your listing link or text']), ...(v('town') ? [] : ['The town']), ...(A.consent ? [] : ['The consent box'])];
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -3135,13 +3149,15 @@ async function sendNote(mod, text){
 const progressText = () => { const ms = visible(); return `${ms.filter(m => statusOf(m).k === 'done').length}/${ms.length} done`; };
 
 /* ---------- After the first version: what to check ---------- */
+// Right after the listing is read, on the first step the host lands on: the guide is written, here is what is left.
 function draftBanner(){
   if (!A._draftAt) return '';
-  const pre = visible().filter(m => statusOf(m).k === 'pre');
+  const ready = readyMods().filter(m => statusOf(m).k === 'done').length, left = flowMods().filter(m => statusOf(m).k !== 'done').length, ask = A.toConfirm || [];
   return `<section class="draft">
-    <div><small>First version ready</small><h2>${pre.length ? `${pre.length} step${pre.length > 1 ? 's' : ''} written for you. Check them and make them yours.` : 'All checked. Add photos and your places to finish.'}</h2>
-    ${(A.toConfirm || []).length ? `<p>Things your listing does not say, worth adding:</p><ul>${A.toConfirm.map(q => `<li>${esc(q)}</li>`).join('')}</ul>` : ''}</div>
-    <div class="draft-act"><button class="btn primary" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"', 'stroke-width="2.2" width="17" height="17"')}See your guide</button>${pre[0] ? `<a class="btn" href="#${pre[0].id}">Start reviewing</a>` : ''}</div></section>`;
+    <div><small>Your guide is written</small><h2>${ready} step${ready === 1 ? ' is' : 's are'} ready from your listing${left ? `, and ${left === 1 ? 'one needs' : left + ' need'} you` : ''}.</h2>
+    ${ask.length ? `<details><summary>${ask.length === 1 ? 'One thing' : ask.length + ' things'} your listing does not say</summary><ul>${ask.map(q => `<li>${esc(q)}</li>`).join('')}</ul></details>` : ''}</div>
+    <div class="draft-act"><button class="btn primary" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"', 'stroke-width="2.2" width="17" height="17"')}See your guide</button></div>
+  </section>`;
 }
 
 /* ---------- Extra questions for the public test ---------- */
@@ -3233,7 +3249,7 @@ function render(){
   else if (m) { main.innerHTML = moduleHTML(m); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
   else if (r === 'send') { main.innerHTML = sendHTML(); if (r !== lastRoute) { log('open', 'send'); queueSave(); } }
   else if ((r === 'home' || r === 'start') && (r === 'start' || (!A._draftAt && !A._skipStart && !visible().some(m => statusOf(m).k !== 'new')))) { main.innerHTML = startHTML(); if (r !== lastRoute) { log('open', 'start'); queueSave(); } }
-  else { main.innerHTML = homeHTML(); if (r !== lastRoute) { log('open', 'home'); queueSave(); } }
+  else { history.replaceState(null, '', '#' + obNext()); return render(); }   // no overview page: straight to the next step
   let nb = document.getElementById('navbar'); if (!nb) { nb = document.createElement('div'); nb.id = 'navbar'; nb.hidden = true; document.body.appendChild(nb); }
   const stepView = CM.on ? cmIsPage(r) : r === 'send' || !!m;
   nb.hidden = !stepView || new URLSearchParams(location.search).has('feedback') || (r === 'thanks');

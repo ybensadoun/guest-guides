@@ -3,31 +3,37 @@
    Phone: a bottom bar with Back, "3 of 15" (opens the full list) and Done / Next.
    The browser back button works too: every step has its own address (#look, #wifi…). */
 const STATUS_ICON = { pre: '<i class="pre" aria-hidden="true"></i>', done: CHECK, chk: '<i class="half" aria-hidden="true"></i>', new: '<i class="ring" aria-hidden="true"></i>' };
-const stepsOrder = () => [...visible().map(m => m.id), 'send'];
+const stepsOrder = () => [...flowMods().map(m => m.id), 'send'];   // the path: only the steps that need the host
 const titleOf = id => id === 'send' ? 'Review and send' : (MODULES.find(m => m.id === id) || {}).title;
 function stepListHTML(cur){
   if (CM.on) return cmStepList(cur);   // once the guide exists, the steps edit the guide (editor.js)
   const mods = visible();
-  const item = (m) => { const s = statusOf(m); return `<a class="si s-${s.k}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${STATUS_ICON[s.k]}</span><span class="st">${esc(m.title)}</span><span class="sl">${esc(s.k === 'done' ? 'Done' : s.k === 'chk' || s.k === 'pre' ? s.label : '')}</span></a>`; };
+  const item = (m) => { const s = statusOf(m); return `<a class="si s-${s.k}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${STATUS_ICON[s.k]}</span><span class="st">${esc(m.title)}</span><span class="sl">${esc(s.k === 'new' && !needsYou(m) && s.label === 'Start' ? '' : s.label)}</span></a>`; };
   const miss = sendMissing().length;
-  return `<a class="si home" href="#home"${cur === 'home' ? ' aria-current="step"' : ''}><span class="sic">${I.grid}</span><span class="st">Overview</span></a>
-    ${GROUPS.map(([g, gt]) => { const ms = mods.filter(m => m.group === g); return ms.length ? `<p class="sg">${gt}</p>${ms.map(item).join('')}` : ''; }).join('')}
+  const flow = flowMods(), left = flow.filter(m => statusOf(m).k !== 'done').length;
+  return `<div class="si-guide"><b>${esc(v('guideName') || v('placeName') || 'Your guide')}</b><small>${A._draftAt ? 'Filled in from your listing' : 'Your listing is not loaded yet'}</small></div>
+    <p class="sg">Needs you${left ? ` · ${left} left` : ''}</p>${flow.map(item).join('')}
+    <p class="sg">Ready: check if you like</p>${mods.filter(m => !needsYou(m)).map(item).join('')}
     <p class="sg">Finish</p><a class="si s-${miss ? 'new' : 'done'} send" href="#send"${cur === 'send' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Review and send</span><span class="sl">${miss ? miss + ' left' : 'Ready'}</span></a>`;
 }
 function railHTML(cur){ return `<aside class="rail" aria-label="All steps"><nav>${stepListHTML(cur)}</nav></aside>`; }
 function navbarHTML(cur){
   if (CM.on) return cmNavbar(cur);
-  const order = stepsOrder(), i = order.indexOf(cur), prev = order[i - 1], next = order[i + 1];
-  const m = MODULES.find(x => x.id === cur);
+  const order = stepsOrder(), i = order.indexOf(cur), m = MODULES.find(x => x.id === cur);
+  // A step filled in from the listing is off the path: one button back to where the host was going.
+  if (m && !needsYou(m)) return `<div class="nbin"><span></span>
+    <button class="nb count" type="button" id="openSteps" aria-haspopup="dialog">All steps<i class="chev" aria-hidden="true"></i></button>
+    <a class="nb primary" href="#${obNext()}"><span>Continue</span>${ARROW}</a></div>`;
+  const prev = order[i - 1], next = order[i + 1];
   let main = '';
   if (m) {
-    const s = statusOf(m), miss = missingOf(m).length;
+    const s = statusOf(m), miss = missingOf(m).length, answered = !ANSWERED[m.id] || ANSWERED[m.id]();
     if (s.k === 'done') main = next ? `<a class="nb primary" href="#${next}"><span>Next</span>${ARROW}</a>` : '';
-    else if (!miss) main = `<button class="nb primary" type="button" data-donenext="${m.id}"><span>${s.k === 'pre' ? 'Looks right' : 'Done'}${next ? ', next' : ''}</span>${next ? ARROW : CHECK}</button>`;
-    else main = next ? `<a class="nb" href="#${next}"><span>Skip for now</span>${ARROW}</a>` : '';
+    else if (!miss && (answered || s.k === 'pre')) main = `<button class="nb primary" type="button" data-donenext="${m.id}"><span>${s.k === 'pre' ? 'Looks right' : 'Done'}${next ? ', next' : ''}</span>${next ? ARROW : CHECK}</button>`;
+    else main = next ? `<a class="nb" href="#${next}"><span>${miss ? 'Skip for now' : 'Later'}</span>${ARROW}</a>` : '';   // leaving it for later never marks it done
   }
   return `<div class="nbin">
-    ${prev ? `<a class="nb ghost" href="#${prev}" aria-label="Back to ${esc(titleOf(prev))}">${BACK}<span class="hide-s">${esc(titleOf(prev))}</span></a>` : `<a class="nb ghost" href="#home" aria-label="Overview">${BACK}<span class="hide-s">Overview</span></a>`}
+    ${prev ? `<a class="nb ghost" href="#${prev}" aria-label="Back to ${esc(titleOf(prev))}">${BACK}<span class="hide-s">${esc(titleOf(prev))}</span></a>` : '<span></span>'}
     <button class="nb count" type="button" id="openSteps" aria-haspopup="dialog"><b>${i + 1}</b> of ${order.length}<i class="chev" aria-hidden="true"></i></button>
     ${main || '<span></span>'}</div>`;
 }
@@ -50,10 +56,13 @@ function moduleHTML(m){
     <section class="mhead" style="${tileVars(m)}">
       <div class="row1"><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
       <h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
+    ${m.id === 'look' && !(A._done || {}).look ? draftBanner() : ''}
     <section class="card"><div class="grid">${m.fields.map(field).join('')}</div>
       <div class="foot">
-        <p class="todo">${miss.length ? `Still needed for Done: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>` : s.k === 'done' ? 'This step is done. You can still change anything.' : 'Everything needed is here. Press Done when you are happy with it.'}</p>
-        ${s.k === 'done' ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
+        <p class="todo">${miss.length ? `Still needed: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>`
+          : !needsYou(m) ? (A._draftAt ? 'Filled in from your listing. Change anything that is off: it saves as you type, nothing to press.' : 'Optional. Anything you add here saves as you type.')
+          : s.k === 'done' ? 'Done. You can still change anything.' : m.id === 'look' ? 'Already set for you. Change what you like, then press Done.' : 'Only you know this. Answer it now or later: your guide works without it.'}</p>
+        ${(A._done || {})[m.id] && needsYou(m) ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
       </div></section>
     <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
 }
