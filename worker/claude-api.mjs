@@ -4,7 +4,7 @@
 // Settings (worker/.env.local or the server's environment). Their own names, so nothing set for Claude Code or another
 // app on the same computer (ANTHROPIC_API_KEY, ANTHROPIC_BASE_URL, CLAUDE_EFFORT...) changes what the worker does:
 //   WORKER_ANTHROPIC_KEY     the worker's own API key (Claude Console, a workspace with a monthly spend limit)
-//   RESEARCH_MODEL           default claude-opus-5-5; TRANSLATE_MODEL for translation (default: the same)
+//   RESEARCH_MODEL           default claude-opus-5-5; TRANSLATE_MODEL for translation (default claude-haiku-5-5)
 //   RESEARCH_EFFORT          low | medium | high (default medium)
 //   RESEARCH_MAX_SEARCHES    web searches per request (default 20; a long research carries on in up to 5 more requests)
 //   RESEARCH_USD_PER_DAY     this worker stops asking Claude past this expected cost, until the next day (default 5)
@@ -30,7 +30,7 @@ const k = x => x >= 1000 ? Math.round(x / 1000) + 'k' : String(x);
 
 export function makeClaude(env, log = console.log) {
   const client = new Anthropic({ apiKey: env.WORKER_ANTHROPIC_KEY, authToken: null, baseURL: env.RESEARCH_API_URL || 'https://api.anthropic.com', maxRetries: 3, timeout: 900000 });
-  const MODEL = env.RESEARCH_MODEL || 'claude-opus-5-5', TMODEL = env.TRANSLATE_MODEL || MODEL, EFFORT = env.RESEARCH_EFFORT || 'medium';
+  const MODEL = env.RESEARCH_MODEL || 'claude-opus-5-5', TMODEL = env.TRANSLATE_MODEL || 'claude-haiku-5-5', EFFORT = env.RESEARCH_EFFORT || 'medium';
   const SEARCHES = Math.max(1, +env.RESEARCH_MAX_SEARCHES || 20), PER_DAY = +env.RESEARCH_USD_PER_DAY || 5;
   let day = '', spent = 0;
   // One question to Claude, with the web (research) or without (translation). Returns the text of the answer.

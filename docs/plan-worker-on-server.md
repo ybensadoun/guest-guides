@@ -1,6 +1,16 @@
-# Plan: nothing on the Mac: the guide worker on a small server, the monthly check in the cloud (proposal, 28 Oct 2026)
+# Plan: nothing on the Mac: the guide worker on a small server, the monthly check in the cloud (decided 28 Oct 2026)
 
-Status: proposal, code ready. `RESEARCH=api` (worker/claude-api.mjs), `worker/Dockerfile`, `worker/compose.yaml`, `worker/server-update.sh` and `.dockerignore` are in the repo and tested locally against a stand-in for the Claude API. Nothing is deployed and no account is created: Yohann chooses the provider, creates the server account and the Claude API key, and sets the budget (end of this page). Widened the same day at Yohann's request ("What if we did it all in the cloud?"): the monthly check and everything else that needs the Mac on are in scope too.
+Status: decided (see "Decided by Yohann"), code ready, setup starting. `RESEARCH=api` (worker/claude-api.mjs), `worker/Dockerfile`, `worker/compose.yaml`, `worker/server-update.sh` and `.dockerignore` are in the repo and tested locally against a stand-in for the Claude API. Nothing is deployed and no account is created: Yohann chooses the provider, creates the server account and the Claude API key, and sets the budget (end of this page). Widened the same day at Yohann's request ("What if we did it all in the cloud?"): the monthly check and everything else that needs the Mac on are in scope too.
+
+## Decided by Yohann (28 Oct 2026)
+1. Provider: Hetzner Cloud, CX23 in Germany (option A).
+2. Claude API key: in the Console's default workspace for now (demo stage). Move it to its own workspace when the first real host signs up, or when Claude spending passes about 20 USD a month and the worker's share must show apart.
+3. Budget: a 50 USD monthly spend limit in the Console (it covers the whole organisation, the onboarding's key too) and `RESEARCH_USD_PER_DAY=5` in the worker.
+4. Models: research on Opus 5.5 (`RESEARCH_MODEL`, default), translation on Haiku 5.5 (`TRANSLATE_MODEL`, now the default). The first real translations get checked for the typography rules (French no-break spaces, German and Dutch soft hyphens).
+5. When: now, with help for the setup.
+6. Monthly check-guides: applies its fixes by itself from the first month; the report still goes to Yohann.
+7. The research for the lines "for a human": a scheduled Claude Code routine in Anthropic's cloud (needs the project notes in a private GitHub repository and keys in its environment).
+8. The monthly report: by email through Resend's free plan, to Yohann's address.
 
 ## Why
 - The worker (`worker/guide-worker.mjs`) runs on Yohann's MacBook Air, started at login by the launch agent `com.guestguides.worker` (`sh worker/autostart.sh`, log in ~/Library/Logs/guide-worker.log). When the Mac sleeps or is off, guides stay "queued" and the editor's jobs (Find more, translate, automatic events, artistic covers) never start. The 19 Oct plan (`plan-accounts-and-publishing.md`, "Interim model") already says to move it before the first real host.
@@ -38,7 +48,7 @@ Already in the cloud, nothing to move: Netlify (the guides, the shared viewer, t
 ## The Claude API in place of the `claude` command
 What changed in the code (on the Mac nothing changes while `RESEARCH=cli`):
 - `claudeAsk()` in guide-worker.mjs sends each question either to the `claude` command or, with `RESEARCH=api`, to `worker/claude-api.mjs`. Same prompts, same JSON reading, same curation and Google rules.
-- Requests: model `claude-opus-5-5` (`RESEARCH_MODEL`), effort `medium` (`RESEARCH_EFFORT`; this model always thinks, effort sets how much), streaming. Research gets Anthropic's web search (`web_search_20260318`, which filters results with code before they reach Claude) and web fetch (`web_fetch_20260209`, pages cut at 30,000 tokens), each at most 20 uses per request (`RESEARCH_MAX_SEARCHES`). A long research comes back paused after Anthropic's own loop of steps; the worker sends it back as it is, up to 5 times. Server-side fallback (`fallbacks: "default"`, beta header `server-side-fallback-2026-07-01`): if the model's safety checks decline a request, another model answers inside the same call. Automatic prompt caching makes the continuations cheaper.
+- Requests: research on `claude-opus-5-5` (`RESEARCH_MODEL`), translation on `claude-haiku-5-5` (`TRANSLATE_MODEL`), effort `medium` (`RESEARCH_EFFORT`; this model always thinks, effort sets how much), streaming. Research gets Anthropic's web search (`web_search_20260318`, which filters results with code before they reach Claude) and web fetch (`web_fetch_20260209`, pages cut at 30,000 tokens), each at most 20 uses per request (`RESEARCH_MAX_SEARCHES`). A long research comes back paused after Anthropic's own loop of steps; the worker sends it back as it is, up to 5 times. Server-side fallback (`fallbacks: "default"`, beta header `server-side-fallback-2026-07-01`): if the model's safety checks decline a request, another model answers inside the same call. Automatic prompt caching makes the continuations cheaper.
 - Errors: the API's own words go to the log only. Hosts see "Searches are paused for now. Try again later." (key, permission, billing, bad request) or "The search did not work this time. Try again in a few minutes." (overload, rate limit, network, after 3 retries). A translation that fails no longer throws a paid search away: the suggestions come back untranslated, as when the `claude` command fails.
 - Settings with their own names (`WORKER_ANTHROPIC_KEY`, `RESEARCH_*`, `TRANSLATE_MODEL`): Claude Code sets `ANTHROPIC_BASE_URL`, `CLAUDE_EFFORT` and others inside its sessions (the monthly task runs in one), and an `ANTHROPIC_API_KEY` meant for something else must not be picked up.
 - `node worker/guide-worker.mjs --find find-todo --slug <slug>`: one Find more search for a guide, printed and written nowhere, safe next to a running worker. It is how to test a new key, model or server.
@@ -80,7 +90,7 @@ Prices are expected (third-party comparisons and the providers' pages, Oct 2026;
 2. On the server: `apt update && apt full-upgrade`, `apt install unattended-upgrades` (security updates by themselves), Docker Engine with the compose plugin from Docker's own apt repository.
 3. `git clone https://github.com/ybensadoun/guest-guides /opt/guest-guides` (public: no GitHub credentials on the server).
 4. Keys: Yohann types them into `/etc/guide-worker.env` over SSH (never in chat, the repo or GitHub), then `chmod 600`:
-   `SUPABASE_SERVICE_KEY=`, `GOOGLE_PLACES_KEY=`, `OPENAI_API_KEY=`, `WORKER_ANTHROPIC_KEY=`, `RESEARCH_USD_PER_DAY=5`, `HEARTBEAT_URL=` (optional).
+   `SUPABASE_SERVICE_KEY=`, `GOOGLE_PLACES_KEY=`, `OPENAI_API_KEY=`, `WORKER_ANTHROPIC_KEY=`, `RESEARCH_USD_PER_DAY=5`, `HEARTBEAT_URL=` (optional), later `RESEND_API_KEY=` (monthly report).
 5. Switch, in a quiet hour: on the Mac `sh worker/autostart.sh remove` (stops the launch agent and takes it out, so it does not start again at the next login), then on the server `cd /opt/guest-guides && docker compose -f worker/compose.yaml up -d --build`. Check: `docker compose -f worker/compose.yaml logs -f` shows "Research: api"; a Find more search from the editor ends with suggestions and a cost line in the log.
 6. Updates on each push: a systemd timer runs `worker/server-update.sh` every 5 minutes. It rebuilds only when files the worker uses changed (not sites/, onboarding-site/, docs/); the old worker finishes its jobs first (up to 15 minutes, new jobs wait meanwhile). No GitHub secret and no way in: the server pulls from the public repo. `/etc/systemd/system/guide-worker-update.service`:
    ```ini
@@ -113,13 +123,12 @@ Simpler if Yohann never wants to touch a Linux server; otherwise one more accoun
 Today it is one Claude session on the Mac (`~/.claude/scheduled-tasks/live-guides-monthly-check/SKILL.md`): check-guides as a dry run, read, apply; refresh-events; research for the lines "for a human"; Ca La Kimberly's fixes, build, UX check, push to the database, commit; new places for Ca La Kimberly; a summary. In the cloud it splits into what a script does and what needs judgment.
 
 1. On the server, a monthly systemd timer (`OnCalendar=*-*-01 09:00 Europe/Madrid`), each step a `docker compose -f worker/compose.yaml run --rm worker ...`:
-   - `node worker/check-guides.mjs`, then `node worker/check-guides.mjs --apply`. The first two months as a dry run only: Yohann reads the report and decides whether apply may run by itself. Its rules are careful already: official hours are compared, never replaced; Ca La Kimberly is report only; a doubtful answer is left for a human.
+   - `node worker/check-guides.mjs --apply` (decided: it applies by itself from the first month). Its rules are careful: official hours are compared, never replaced; Ca La Kimberly is report only; a doubtful answer is left for a human and goes to the routine below.
    - `RESEARCH_USD_PER_DAY=30 node worker/guide-worker.mjs --refresh-events --apply`: the Claude API; one run searches every guide with automatic events on (expected 1 to 5 USD per guide), so it gets its own, higher day limit.
    - A Find more search (things to do, markets) queued for Ca La Kimberly: the worker runs it like the editor's button, and the editor's Find more panel shows its suggestions for 14 days; Yohann keeps or skips each one and publishes as usual. Same curation rule and Google check as the task's part B, and nothing goes live without him.
-   - The reports by email to Yohann: per guide what was fixed, added, re-dated or dropped, the lines for a human, Google requests used, Claude cost. For example with Resend's free plan (one key in the env file; expected free at this volume). The same report saved in the database (the `events` table) for the routine below.
+   - The reports by email to Yohann (decided: Resend's free plan, one key `RESEND_API_KEY` in the env file, sent from Resend's own address to Yohann's; expected free at this volume): per guide what was fixed, added, re-dated or dropped, the lines for a human, Google requests used, Claude cost. The same report saved in the database (the `events` table) for the routine below.
    Code still to write (small): queuing the two Find more jobs, the report email, the reports saved in the database.
 2. The judgment: a Claude Code routine scheduled in Anthropic's cloud on the 1st at 11:00, after the server's run, on the GitHub repo and Yohann's Claude account (like the desktop task today). It reads the saved report, looks up official sources for the lines "for a human", checks events that look wrong, makes Ca La Kimberly's fixes through `guide:pull` and `guide:push` (the live guide is the database) after the content check and the UX check, and opens a pull request for repo files (docs/sources.json); Yohann merges it from his phone. Its environment needs the Supabase key, a Google Places key of its own and Playwright's Chromium (UX check). To confirm when setting it up: how the routine's environment keeps keys, and how it reads the project notes (see the table above).
-   Without the routine: Yohann reads the email and, when a line needs research, starts a Claude Code session on the web or the phone for it. Less to set up; the research waits for him.
 3. Once a cloud month has gone well: switch the desktop task off (Claude desktop app > Scheduled) and delete the paused Cowork task.
 
 ## The launch agent: what replaces it, and when it goes
@@ -134,27 +143,17 @@ Today it is one Claude session on the Mac (`~/.claude/scheduled-tasks/live-guide
 - Scheduled workflows of a public repo stop after 60 days without commits.
 - Actions stays fine for work without host data (building the image, checks).
 
-## Recommendation
-Option A: Hetzner CX23 in Germany, Docker with `worker/compose.yaml`, keys in `/etc/guide-worker.env`, updates pulled by a timer, a heartbeat monitor. Claude API with its own key in its own workspace: Opus 5.5 at medium effort, a monthly spend limit of 50 USD to start and 5 USD a day in the worker. After the first real searches (the log prints their cost), decide whether translation moves to Haiku 5.5 (`TRANSLATE_MODEL`) and research to Sonnet 5.5 (`RESEARCH_MODEL`).
-The monthly check: the scripts and Ca La Kimberly's Find more on the server's timer, the reports by email, a Claude Code routine for the research. Then nothing needs the Mac.
-Expected total: about 5 EUR a month for the server, plus Claude API use (expected 10 to 40 USD a month in the test phase), plus OpenAI covers (about 0.02 USD each) and Google Places as today.
+## Recommendation (taken)
+Option A, Hetzner CX23 in Germany, with the Claude API (Opus 5.5 research, Haiku 5.5 translation), a 50 USD monthly limit and 5 USD a day, the monthly check on the server's timer with an emailed report, and a Claude Code routine for the research. Then nothing needs the Mac.
+Expected total: about 5 EUR a month for the server, plus Claude API use (expected 10 to 40 USD a month in the demo stage), plus OpenAI covers (about 0.02 USD each) and Google Places as today.
 
 ## Steps
-1. Yohann: Claude Console, workspace "guide-worker", an API key in it, a spend limit. Key into the Mac's `worker/.env.local` as `WORKER_ANTHROPIC_KEY=` (leave `RESEARCH=cli` for the running worker).
-2. Test on the Mac, beside the running worker: `npm ci --prefix worker`, then `RESEARCH=api node worker/guide-worker.mjs --find find-todo --slug home-in-tordera`. It prints the suggestions and what the search cost; the same command without `RESEARCH=api` gives the `claude` command's answer to compare. Choose model and effort.
-3. Yohann: the server account and server (A 1-2), a Google Places key for the server, the monitoring check.
-4. Server setup and switch (A 3-7): `sh worker/autostart.sh remove` on the Mac, then the server's worker.
-5. The monthly run on the server: write the small code (Ca La Kimberly's Find more jobs, the report email, the report in the database), then the monthly timer. The first two months check-guides runs as a dry run.
-6. The judgment: the project notes into a private repository (or a self-contained prompt), the Claude Code routine with its keys; or decide to do it on demand from the email.
-7. After a good cloud month: the desktop task off, the Cowork task deleted. Four weeks after the switch: `worker/autostart.sh` removed (see "The launch agent").
-8. Before real hosts: delete a job's folder (worker/jobs/<id>: host answers and photos) once its guide is saved; the privacy notice names the processors; an alert on failed jobs (BACKLOG item 7).
-
-## Yohann's choices
-1. Provider: Hetzner (recommended), Scaleway or Fly.io.
-2. The Claude API key: a workspace and key in the Claude Console, created by Yohann; it goes only into env files.
-3. Budget: the Console's monthly limit (50 USD suggested to start) and the worker's day limit (5 USD default).
-4. Model: Opus 5.5 for research (default) or Sonnet 5.5; translation on Haiku 5.5 once a test shows the quality holds.
-5. When: now, or just before the first real host.
-6. The monthly check-guides: apply by itself after two dry-run months, or always read first.
-7. The research for the lines "for a human": a scheduled Claude Code routine (the notes in a private repository, keys in its environment) or on demand from the report email.
-8. The report: by email (Resend's free plan suggested) or another channel.
+1. Yohann: Claude Console, default workspace: an API key named "guide-worker"; Settings > Limits: a 50 USD monthly spend limit. The key goes into the Mac's `worker/.env.local` as `WORKER_ANTHROPIC_KEY=` (the running worker keeps `RESEARCH=cli`).
+2. First real test on the Mac, beside the running worker (Yohann's go: expected under 1.50 USD): `npm ci --prefix worker`, then `RESEARCH=api node worker/guide-worker.mjs --find find-todo --slug home-in-tordera`. Check the suggestions, their translations (typography) and the printed cost.
+3. Yohann, with help: a Hetzner account, an SSH key on the Mac, the CX23 server (Ubuntu 24.04, Germany, firewall SSH only), a Google Places key for the server, a free monitoring check for `HEARTBEAT_URL`.
+4. The branch merged into `main` and pushed (Yohann's go): the server runs what is on `main`.
+5. Server setup and switch (A 3-7): `sh worker/autostart.sh remove` on the Mac, then the server's worker.
+6. The monthly run: the small code (Ca La Kimberly's Find more jobs, the report saved in the database, the email through Resend), a Resend account (Yohann), then the monthly timer on the server.
+7. The routine: the project notes into a private GitHub repository, the Claude Code routine with its keys, on the 1st at 11:00.
+8. After a good cloud month: the desktop task off, the Cowork task deleted. Four weeks after the switch: `worker/autostart.sh` removed (see "The launch agent").
+9. Before real hosts: delete a job's folder (worker/jobs/<id>: host answers and photos) once its guide is saved; the privacy notice names the processors; an alert on failed jobs (BACKLOG item 7); the API key in its own workspace (decision 2).
