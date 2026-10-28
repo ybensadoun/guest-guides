@@ -33,6 +33,8 @@ h2.title{font-weight:600;letter-spacing:-.02em}
 .gt:not(.wide)::before{width:66px!important;height:66px!important;right:-18px!important;top:-18px!important;bottom:auto!important;left:auto!important;margin:0!important}
 .gt[data-k="garbage"]::before{width:84px!important;height:84px!important;right:-20px!important;bottom:-22px!important;top:auto!important}
 .gt::after{display:none!important}
+/* The rubbish tile without a "tonight" list (village containers) is short: no shape there, it would reach the arrow */
+.gt[data-k="garbage"]:not(:has(.gt-tonight))::before{display:none!important}
 .gt .go{background:var(--white)!important;color:var(--ink)!important;box-shadow:0 2px 8px rgba(43,42,51,.12)}
 .gt-t{font-weight:600}
 .soon-tag{background:var(--white);color:var(--ink)}

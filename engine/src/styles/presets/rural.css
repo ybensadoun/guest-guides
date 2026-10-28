@@ -29,7 +29,10 @@ h2.title,.sh,.section-h,.gt-t,.hc-nm b{font-weight:600!important;letter-spacing:
   background:linear-gradient(135deg,transparent 47%,rgba(42,35,24,.22) 48% 52%,transparent 53%),var(--leaf)!important}
 .gt:not(.wide)::before{width:58px!important;height:58px!important;right:-8px!important;top:-10px!important;bottom:auto!important;left:auto!important;margin:0!important}
 .gt[data-k="garbage"]::before{width:80px!important;height:80px!important;right:-14px!important;bottom:-18px!important;top:auto!important}
-.gt[data-k="map"]::after{background:var(--ru-honey)!important}
+.gt[data-k="map"]::before{width:40px!important;height:40px!important;right:12px!important;top:50%!important;margin-top:-20px!important;bottom:auto!important}
+.gt[data-k="map"]::after{display:none!important}
+/* The rubbish tile without a "tonight" list (village containers) is short: no shape there, it would reach the arrow */
+.gt[data-k="garbage"]:not(:has(.gt-tonight))::before{display:none!important}
 
 /* Elsewhere: forest accents; the quick tiles and the map tile get a fine line instead of Bauhaus' thick ink outline */
 .qcall,.gt[data-k="map"]{border:1.5px solid #D3C6AE!important}
