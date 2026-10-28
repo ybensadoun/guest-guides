@@ -107,7 +107,22 @@ logo_up = (by_kind.get('logo') or [None])[0]
 logo_im = load_upload(logo_up) if logo_up else None
 def on_white_bg(im):   # a transparent logo is read on white, not on black
     im = ImageOps.exif_transpose(im).convert('RGBA'); bg = Image.new('RGBA', im.size, (255, 255, 255, 255)); bg.alpha_composite(im); return bg.convert('RGB')
-insp = [on_white_bg(logo_im)] if logo_im else [im for im in (load_upload(u) for u in by_kind.get('inspiration', [])) if im]
+# Colours: the chosen look's own, unless the host asked for those of their logo or of their cover picture
+# (answers.colorsFrom). Inspiration images only help "Decide for me" pick a look.
+CF = str(A.get('colorsFrom') or '').lower()
+COLORS_FROM = 'logo' if 'logo' in CF else 'cover' if ('cover' in CF or 'photo' in CF or 'picture' in CF) else 'look'
+def cover_im():
+    cv = (by_kind.get('cover') or [None])[0]
+    im = load_upload(cv) if cv else None
+    url = str(A.get('coverUrl') or '').split('?')[0]
+    if not im and url.startswith('https://a0.muscache.com/'):
+        try: im = Image.open(io.BytesIO(urllib.request.urlopen(urllib.request.Request(url + '?im_w=720', headers={'User-Agent': 'Mozilla/5.0'}), timeout=20).read()))
+        except Exception as e: print('cover for the colours not downloaded:', e)
+    return im
+import urllib.request
+SRC = [on_white_bg(logo_im)] if COLORS_FROM == 'logo' and logo_im else [c for c in [cover_im()] if c] if COLORS_FROM == 'cover' else []
+OWN_COLORS = bool(SRC)
+insp = SRC or [im for im in (load_upload(u) for u in by_kind.get('inspiration', [])) if im]
 stats = {}
 if insp:
     px = np.concatenate([np.asarray(ImageOps.exif_transpose(im).convert('RGB').resize((120, 120))).reshape(-1, 3).astype(float) for im in insp])
@@ -150,12 +165,12 @@ if insp:
     pool = list(acc[:6]); slots = {}
     # A logo has few colours: each one, most visible first, takes the free slot nearest its hue, however far.
     TARGET = {'yellow': .14, 'red': .0, 'blue': .6, 'green': .33, 'orange': .07}
-    for c in (real[:5] if logo_im else []):
+    for c in (real[:5] if COLORS_FROM == 'logo' and OWN_COLORS else []):
         free = [k for k in TARGET if k not in slots]
         slots[min(free, key=lambda k: hd(hls(c)[0], TARGET[k]))] = c
     for slot, target in TARGET.items():
         if slot in slots: continue
-        if pool and not logo_im:
+        if pool and not (COLORS_FROM == 'logo' and OWN_COLORS):
             c = min(pool, key=lambda c: hd(hls(c)[0], target))
             if hd(hls(c)[0], target) < .12:
                 slots[slot] = c; pool.remove(c); continue
@@ -249,14 +264,15 @@ if BP:
 
 a = palette['accents'] + palette['accents']
 ink_on = lambda c: '#FFFFFF' if contrast(tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)), (255, 255, 255)) >= 3 else palette['ink']
-theme_css = f"""/* {A.get('guideName') or A.get('placeName')}: generated from the host's inspiration images (preset "{preset}").
+_from = {'logo': "the host's logo", 'cover': "the host's cover picture"}.get(COLORS_FROM, '')
+theme_css = (f"""/* {A.get('guideName') or A.get('placeName')}: colours from {_from} (preset "{preset}").
    Edit freely: these tokens sit on top of the engine look and the preset. */
 :root{{
   --paper:{palette['paper']};--ink:{palette['ink']};
   --blue:{a[0]};--red:{a[1]};--yellow:{a[2]};--orange:{a[3]};--green:{a[4] if len(palette['accents']) > 4 else a[3]};
-  --accent:{a[0]};--k-sky:var(--blue);{(chr(10) + '  --display:' + KIT['display'] + ';--font:' + KIT['font'] + ';--r:' + KIT['r'] + ';--r-s:' + KIT['rs'] + ';--r-m:' + KIT['rs'] + ';') if KIT else ''}
-}}
-"""
+  --accent:{a[0]};--k-sky:var(--blue);
+}}""" if OWN_COLORS else f"""/* {A.get('guideName') or A.get('placeName')}: the colours and fonts of the preset "{preset}", as they are.
+   Edit freely: tokens here sit on top of the engine look and the preset. */""")
 _tc = SITE / 'theme.css'
 if _tc.exists() and _tc.read_text().lstrip().startswith('/* designed:'):
     print('theme.css was designed by hand: kept as is')   # the design pass owns it once it starts with "/* designed:"
@@ -591,7 +607,7 @@ site = {
     **({'logo': 'logo-head.png'} if logo_im else {}), 'shareImage': 'house.jpg' if HAS_PHOTO else ('logo-head.png' if logo_im else 'favicon.png'), 'languages': LANGS, 'storageKey': args.slug,
     'area': {'radiusKm': {'15 min': 15, '30 min': 30, '45 min': 45, '1 hour': 60}.get(A.get('radius'), 30)},
     'modules': modules,
-    'theme': {'preset': preset, **({'fonts': (DISP_FILES or (KIT['fonts'] if KIT else [])) + (TXT_FILES or [])} if (KIT or DISP_FILES or TXT_FILES) else {}), 'paper': palette['paper'], 'manifestBackground': palette['paper'], 'manifestTheme': a[0], 'darkMode': False},
+    'theme': {'preset': preset, **({'fonts': DISP_FILES + TXT_FILES} if (DISP_FILES or TXT_FILES) else {}), 'paper': palette['paper'], 'manifestBackground': palette['paper'], 'manifestTheme': a[0], 'darkMode': False},
     'previewImages': (['logo-head.png'] if logo_im else []) + ['favicon.png'] + (['house.jpg'] if HAS_PHOTO else []),
     'onboarding': {'mood': A.get('mood'), 'styleKit': kit_id, 'imageStats': stats, 'palette': palette, 'presetChosen': preset}
 }

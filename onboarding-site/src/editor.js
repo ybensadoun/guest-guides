@@ -197,8 +197,10 @@ function cmLook(c) {
   const preset = th.preset || ((c.site || {}).theme || {}).preset || 'bauhaus';
   return `<div class="f full"><span class="lab" id="l_cpreset">Layout</span><p class="hint">Each one shows the same sections in a different way.</p><div class="moods" role="radiogroup" aria-labelledby="l_cpreset">${ED_PRESETS.map(([id, n, d, cls]) => `<label class="mood"><input type="radio" name="cpreset" data-design="preset" value="${id}"${preset === id ? ' checked' : ''}><div class="box"><div class="mock ${cls}">${'<i></i>'.repeat(6)}</div><b>${n}</b><small>${d}</small></div></label>`).join('')}</div></div>
     <div class="grid"><div class="f"><label for="c_font_d">Font for titles</label><select id="c_font_d" data-design="display">${opts(dispSel)}</select></div><div class="f"><label for="c_font_b">Font for text</label><select id="c_font_b" data-design="body">${opts(bodySel)}</select></div></div>
-    <div class="f full"><span class="lab">Colours</span>${(c.site || {}).logo ? `<div class="cm-row"><button class="btn small" type="button" data-logocolors>Use the colours of my logo</button><span class="hint" id="cmLogoCol">${esc(CM.logoCol || (preset === 'bauhaus' ? '' : 'In this look the tiles keep their own colours: your logo’s go to the accents.'))}</span></div>` : ''}<div class="cm-colors">${ED_COLORS.map(([v, l, d]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></div>
-    <div class="f full"><span class="lab">Cover</span><p class="hint">Guests have already seen your listing photos, so the cover is drawn from your colours unless you choose a photo of your own.</p>
+    <div class="f full"><span class="lab">Colours</span><p class="hint">Each layout has its own colours. You can take them from your logo or your cover picture instead${preset === 'bauhaus' ? '' : ' (in this layout the tiles keep their own colours: yours go to the accents)'}, or set each one below.</p>
+      <div class="cm-row"><button class="btn small" type="button" data-colorsfrom="look">The layout’s own</button>${(c.site || {}).logo ? '<button class="btn small" type="button" data-colorsfrom="logo">From my logo</button>' : ''}${h.photo ? '<button class="btn small" type="button" data-colorsfrom="cover">From my cover picture</button>' : ''}</div>
+      ${CM.logoCol ? `<p class="hint" id="cmLogoCol">${esc(CM.logoCol)}</p>` : ''}<div class="cm-colors">${ED_COLORS.map(([v, l, d]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></div>
+    <div class="f full"><span class="lab">Cover</span><p class="hint">Guests have already seen your listing photos, so the cover is drawn from your colours unless you choose a picture of your own: a photo, or an artistic rendering of your house (made with an AI image tool or by an artist).</p>
     <div class="chips"><button class="chip" type="button" data-cover="themed" aria-pressed="${!edCoverPhoto(h)}"><span>Drawn from my colours</span></button><button class="chip" type="button" data-cover="photo" aria-pressed="${edCoverPhoto(h)}"${h.photo ? '' : ' disabled'}><span>My photo</span></button></div>
     <div class="cm-cover">${h.photo ? `<img src="${esc(edImg(h.photo))}" alt="Your cover photo"${edCoverPhoto(h) ? '' : ' class="off"'}>` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="files/house/photo">${h.photo ? 'Change the photo' : 'Add a photo'}</label></div></div>`;
 }
@@ -731,15 +733,15 @@ async function edLogoRemove() {
   delete s.logo; delete s.icons; CM.logoCol = ''; cmQueue(); render();
   if (h.photo) { try { s.icons = await edIconsFrom(edImg(h.photo), 'cover'); cmQueue(); } catch (e) { /* the build's icons stay */ } }
 }
-// Colours from the logo: its most visible distinct colours, each to the accent slot nearest its hue, made readable
+// Colours from a picture (the logo or the cover): its most visible distinct colours, each to the accent slot nearest its hue, made readable
 // (white text on red, blue and green tiles; dark text on yellow and orange ones). Same idea as the build's palette.
 const edHsl = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn; if (!d) return [0, 0, l]; const s = d / (1 - Math.abs(2 * l - 1)); const h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return [h / 6, s, l]; };
 const edRgb = ([h, s, l]) => { const k = n => (n + h * 12) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)); return [f(0), f(8), f(4)].map(x => Math.round(x * 255)); };
 const edLum = c => { const [r, g, b] = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 const edContrast = (a, b) => { const [x, y] = [edLum(a), edLum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 const edHueGap = (a, b) => Math.min(Math.abs(a - b), 1 - Math.abs(a - b));
-async function edLogoColours() {
-  const im = await edLoad(edImg(edC().site.logo)), n = 64, cv = document.createElement('canvas'); cv.width = cv.height = n;
+async function edImageColours(src) {
+  const im = await edLoad(src), n = 64, cv = document.createElement('canvas'); cv.width = cv.height = n;
   const x = cv.getContext('2d', { willReadFrequently: true }); x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); x.drawImage(im, 0, 0, n, n);
   const px = x.getImageData(0, 0, n, n).data, bins = new Map();
   for (let i = 0; i < px.length; i += 4) {
@@ -748,7 +750,7 @@ async function edLogoColours() {
   }
   const picked = [];
   for (const e of [...bins.values()].sort((a, b) => b[0] - a[0])) { const c = [e[1] / e[0], e[2] / e[0], e[3] / e[0]]; if (picked.every(p => edHueGap(edHsl(p)[0], edHsl(c)[0]) > .06)) picked.push(c); if (picked.length === 5) break; }
-  if (!picked.length) throw new Error('Your logo has no colours we can use (only black, white or grey)');
+  if (!picked.length) throw new Error('This picture has no colours we can use (only black, white or grey)');
   const T = { '--yellow': .14, '--red': 0, '--blue': .6, '--green': .33, '--orange': .07 }, out = {};
   for (const c of picked) {
     const k = Object.keys(T).filter(v => !out[v]).sort((a, b) => edHueGap(edHsl(c)[0], T[a]) - edHueGap(edHsl(c)[0], T[b]))[0];
@@ -758,9 +760,16 @@ async function edLogoColours() {
   }
   return out;
 }
-async function edLogoColoursApply() {
-  try { const vars = await edLogoColours(); edWriteVars(CM.g.theme = CM.g.theme || {}, vars); CM.logoCol = `Done: ${Object.keys(vars).length} colours from your logo.`; cmQueue(); render(); }
-  catch (e) { CM.logoCol = e.message; render(); }
+// The layout's own colours: every colour token comes out of the theme (the generated ones and the editor's), fonts stay.
+const ED_COLOR_VARS = /--(paper|white|ink|muted|faint|line|red|blue|yellow|orange|green|accent|k-sky)\s*:\s*[^;}]+;?/g;
+async function edColoursFrom(kind) {
+  const th = CM.g.theme = CM.g.theme || {}, c = edC();
+  if (kind === 'look') { th.css = (th.css || '').replace(ED_COLOR_VARS, ''); CM.logoCol = 'Back to the layout’s own colours.'; cmQueue(); return render(); }
+  try {
+    const vars = await edImageColours(edImg(kind === 'logo' ? c.site.logo : c.files.house.photo));
+    th.css = (th.css || '').replace(ED_COLOR_VARS, '');   // each choice starts from the layout's own colours
+    edWriteVars(th, vars); CM.logoCol = `Done: ${Object.keys(vars).length} colours from your ${kind === 'logo' ? 'logo' : 'cover picture'}.`; cmQueue(); render();
+  } catch (e) { CM.logoCol = e.message; render(); }
 }
 async function edPhotoInput(t) {
   const files = [...t.files]; if (!files.length) return;
@@ -882,7 +891,7 @@ document.addEventListener('click', e => {
   const done = () => { cmQueue(); render(); };
   if (d.cpreview !== undefined) return cmPreview(e, t);
   if (d.logodel !== undefined) return edLogoRemove();
-  if (d.logocolors !== undefined) return edLogoColoursApply();
+  if (d.colorsfrom !== undefined) return edColoursFrom(d.colorsfrom);
   if (d.cpublish !== undefined) return cmPublish(t);
   if (d.cdiscard !== undefined) return cmDiscard(t);
   if (!t.closest('.edz')) return;
