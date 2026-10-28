@@ -177,14 +177,26 @@ async function research(A, outDir, id) {
     catch (e) { log(`  research ${kind} skipped:`, e.message); }
   }
 }
-async function translate(texts, langs, srcLang, file) {
-  if (!texts.length || !langs.length) return;
-  const prompt = `Translate these texts from ${srcLang} into ${langs.join(', ')}. Keep names, numbers and times. No em-dashes. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else: {"<exact source text>": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(texts)}`;
-  let out = '';   // no translation (Claude down, the day's budget spent): the texts stay as they are, a search is not lost
-  try { out = await claudeAsk(prompt, { what: 'translation' }); } catch (e) { log('  translation skipped:', e.message); return; }
-  const a = out.indexOf('{'), b = out.lastIndexOf('}');
-  if (a >= 0 && b > a) { try { writeFileSync(file, JSON.stringify(JSON.parse(out.slice(a, b + 1)), null, 1)); } catch (e) {} }
+// Translation by Claude, 40 texts per question: {"<source text>": {"es": "...", ...}}. A text that does not come back stays
+// as it is (Claude down, the day's budget spent): a search or a build is never lost for it. onPart(done, all) for progress.
+async function translate(texts, langs, srcLang, onPart) {
+  const map = {};
+  for (let i = 0; langs.length && i < texts.length; i += 40) {
+    if (onPart) await onPart(Math.min(i + 40, texts.length), texts.length);
+    const prompt = `Translate these texts from ${srcLang} into ${langs.join(', ')}. Keep names, numbers and times. No em-dashes. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else: {"<exact source text>": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(texts.slice(i, i + 40))}`;
+    let out = '';
+    try { out = await claudeAsk(prompt, { what: 'translation' }); } catch (e) { log('  translation skipped:', e.message); break; }
+    const a = out.indexOf('{'), b = out.lastIndexOf('}');
+    if (a >= 0 && b > a) { try { Object.assign(map, JSON.parse(out.slice(a, b + 1))); } catch (e) {} }
+  }
+  return map;
 }
+// A text in all of a guide's languages is an object like {"en": "...", "es": "..."}: i18nOf lists those inside x, fill adds
+// the languages they miss from a translation map (by their text in src) and says how many it added.
+const LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
+const isI18 = o => !!o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length > 0 && Object.keys(o).every(k => LANGS.includes(k));
+const i18nOf = x => { const out = [], walk = y => { if (Array.isArray(y)) y.forEach(walk); else if (y && typeof y === 'object') { if (isI18(y)) out.push(y); else Object.values(y).forEach(walk); } }; walk(x); return out; };
+const fill = (objs, map, langs, src) => { let n = 0; for (const o of objs) { const t = map[o[src]]; if (t) for (const l of langs) if (!o[l] && t[l]) { o[l] = t[l]; n++; } } return n; };
 
 /* ---------- Build one guide ---------- */
 async function upload(guideId, localRoot) {
@@ -239,7 +251,8 @@ async function build(g) {
   if (RESEARCHING) {
     const need = existsSync(join(siteDir, 'docs/untranslated.json')) ? JSON.parse(readFileSync(join(siteDir, 'docs/untranslated.json'), 'utf8')) : [];
     const langs = (A.languages || []).filter(l => l !== srcLang && ['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(l));
-    if (need.length && langs.length) { say(id, 'Translating'); const tf = join(job, 'translations.json'); await translate(need, langs, srcLang, tf); if (existsSync(tf)) out = run('python3', [...gen, '--translations', tf]).stdout; }
+    if (need.length && langs.length) { say(id, 'Translating'); const map = await translate(need, langs, srcLang);
+      if (Object.keys(map).length) { const tf = join(job, 'translations.json'); writeFileSync(tf, JSON.stringify(map, null, 1)); out = run('python3', [...gen, '--translations', tf]).stdout; } }
   }
   const checked = run('node', ['engine/scripts/run.js', 'check', tmp], { allowFail: true });
   if (checked.status !== 0) throw new Error('The guide did not pass its checks: ' + ((checked.stdout || '') + (checked.stderr || '')).trim().split('\n').slice(-3).join(' | '));
@@ -271,30 +284,18 @@ async function recover() {   // a guide left "generating" by a crashed run goes 
    The editor saves its changes as a draft (guides.draft) first, so the job translates the draft, or makes one from the
    live guide: new translations are previewed and published like any change. The texts also go back in the job's result,
    for the editor that is still open (it fills them into its own copy, so nothing it saved meanwhile is lost). */
-const LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
-const isI18 = o => !!o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length > 0 && Object.keys(o).every(k => LANGS.includes(k));
 async function translateJob(j, jp) {
   const g = (await rest('/rest/v1/guides?select=content,draft&id=eq.' + j.guide_id))[0];
-  const c = g.draft && g.draft.content ? g.draft.content : g.content, main = ((c.site || {}).languages || ['en'])[0] || 'en', objs = [];
-  const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (isI18(x)) objs.push(x); else Object.values(x).forEach(walk); } };
-  walk(c.files || {});
-  const todo = objs.filter(o => o[main] && j.langs.some(l => !o[l]));
+  const c = g.draft && g.draft.content ? g.draft.content : g.content, main = ((c.site || {}).languages || ['en'])[0] || 'en';
+  const todo = i18nOf(c.files || {}).filter(o => o[main] && j.langs.some(l => !o[l]));
   const texts = [...new Set(todo.map(o => o[main]))];
   if (!texts.length) return jp({ status: 'done', message: 'Nothing to translate', finished_at: new Date().toISOString() });
-  const tmp = resolve(ROOT, '.job-' + j.id.slice(0, 8) + '.json'); let map = {};
-  for (let i = 0; i < texts.length; i += 40) {
-    await jp({ message: `Translating ${Math.min(i + 40, texts.length)} of ${texts.length}` });
-    await translate(texts.slice(i, i + 40), j.langs, main, tmp);
-    if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
-  }
-  let n = 0;
-  for (const o of todo) { const t = map[o[main]]; if (!t) continue; for (const l of j.langs) if (!o[l] && t[l]) { o[l] = t[l]; n++; } }
+  const map = await translate(texts, j.langs, main, (done, all) => jp({ message: `Translating ${done} of ${all}` }));
+  const n = fill(todo, map, j.langs, main);
   if (!n) throw new Error(claudeApi ? 'No translations came back. Try again in a few minutes.' : 'No translations came back. Is the claude command set up on this computer?');
   const now = (await rest('/rest/v1/guides?select=content,theme,draft&id=eq.' + j.guide_id))[0];   // merge into the latest copy, not an old one
   const draft = now.draft && now.draft.content ? now.draft : { content: now.content, theme: now.theme };
-  const objs2 = []; const walk2 = x => { if (Array.isArray(x)) x.forEach(walk2); else if (x && typeof x === 'object') { if (isI18(x)) objs2.push(x); else Object.values(x).forEach(walk2); } };
-  walk2(draft.content.files || {});
-  for (const o of objs2) { const t = map[o[main]]; if (t) for (const l of j.langs) if (!o[l] && t[l]) o[l] = t[l]; }
+  fill(i18nOf(draft.content.files || {}), map, j.langs, main);
   await rest('/rest/v1/guides?id=eq.' + j.guide_id, { method: 'PATCH', body: { draft: { ...draft, savedAt: new Date().toISOString() } }, headers: { Prefer: 'return=minimal' } });
   const result = Object.fromEntries(Object.entries(map).map(([k, t]) => [k, Object.fromEntries(j.langs.filter(l => t[l]).map(l => [l, t[l]]))]));
   await jp({ status: 'done', message: n + ' texts translated', result, finished_at: new Date().toISOString() });
@@ -364,19 +365,9 @@ async function findJob(j, jp) {
     }
     items = kept;
   }
-  const langs = (site.languages || ['en']).filter(l => l !== 'en' && LANGS.includes(l)), objs = [];
-  const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (isI18(x)) objs.push(x); else Object.values(x).forEach(walk); } };
-  walk(items);
+  const langs = (site.languages || ['en']).filter(l => l !== 'en' && LANGS.includes(l)), objs = i18nOf(items);
   const texts = [...new Set(objs.map(o => o.en).filter(Boolean))];
-  if (langs.length && texts.length) {
-    const tmp = resolve(ROOT, '.job-' + j.id.slice(0, 8) + '.json'), map = {};
-    for (let i = 0; i < texts.length; i += 40) {
-      await jp({ message: `Translating ${items.length} ${F.what}` });
-      await translate(texts.slice(i, i + 40), langs, 'en', tmp);
-      if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
-    }
-    for (const o of objs) { const t = map[o.en]; if (t) for (const l of langs) if (!o[l] && t[l]) o[l] = t[l]; }
-  }
+  if (langs.length && texts.length) { await jp({ message: `Translating ${items.length} ${F.what}` }); fill(objs, await translate(texts, langs, 'en'), langs, 'en'); }
   log(`  found ${items.length} ${F.what}`);
   await jp({ status: 'done', message: items.length ? `${items.length} ${F.what} found` : 'Nothing new found', result: { kind: j.kind, items, categories: out.categories || [] }, finished_at: new Date().toISOString() });
 }
@@ -403,11 +394,8 @@ const windowRule = (now = new Date()) => `Today is ${dayStr(now)}: only events w
 const enText = it => [it.name, it.description, it.type, it.venue, it.town].map(x => x && typeof x === 'object' ? x.en || '' : x || '').join(' ').toLowerCase();
 // "bullfighting" also catches "bullfights": each word of a topic matches a word that starts like it.
 const hits = (text, topic) => String(topic).toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 2).every(w => new RegExp('\\b' + w.slice(0, Math.max(4, w.length - 3))).test(text));
-async function englishTopics(topics, tmpName) {
-  if (!topics.length) return [];
-  const tmp = resolve(ROOT, '.job-' + tmpName + '.json');
-  await translate(topics, ['en'], 'the language they are written in (it may already be English)', tmp);
-  let map = {}; if (existsSync(tmp)) { try { map = JSON.parse(readFileSync(tmp, 'utf8')); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} }
+async function englishTopics(topics) {
+  const map = await translate(topics, ['en'], 'the language they are written in (it may already be English)');
   return topics.map(t => ((map[t] || {}).en || t).toLowerCase());
 }
 // Two events are the same when their names share a word that says which one it is, in any language, and they are
@@ -501,20 +489,13 @@ async function refreshEvents(g, { apply = true, say = () => {} } = {}) {
   const known = (ev.items || []).map(x => x.name_local || nameOf(x.name)).filter(Boolean);
   say(want.length ? `Searching the web for events, and for ${want.join(', ')}` : 'Searching the web for events');
   const out = { items: await searchEvents(A, { update: known, want, skip, reach: R }) };
-  const skipEn = await englishTopics(skip, g.id.slice(0, 8) + '-skip');
+  const skipEn = await englishTopics(skip);
   let found = (out.items || []).filter(f => (f.dates || []).some(d => (d.end || d.start) >= today) && !skipEn.some(t => hits(enText(f), t)));
   found = found.filter((f, i) => !found.slice(0, i).some(o => sameEvent(o, f)));   // the same event found twice
   for (const f of found) { f.id = slugOf(f.name_local || nameOf(f.name)); f.km_from_house = Math.round(hav(h.lat, h.lng, f.lat, f.lng) * 10) / 10; }
-  const langs = (site.languages || ['en']).filter(l => l !== 'en' && LANGS.includes(l)), objs = [];
-  const walk = x => { if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') { if (isI18(x)) objs.push(x); else Object.values(x).forEach(walk); } };
-  walk(found);
+  const langs = (site.languages || ['en']).filter(l => l !== 'en' && LANGS.includes(l)), objs = i18nOf(found);
   const texts = [...new Set(objs.map(o => o.en).filter(Boolean))];
-  if (langs.length && texts.length) {
-    say(`Translating ${found.length} events`);
-    const tmp = resolve(ROOT, '.job-' + g.id.slice(0, 8) + '-ev.json'), map = {};
-    for (let i = 0; i < texts.length; i += 40) { await translate(texts.slice(i, i + 40), langs, 'en', tmp); if (existsSync(tmp)) { try { Object.assign(map, JSON.parse(readFileSync(tmp, 'utf8'))); } catch (e) {} try { rmSync(tmp, { force: true }); } catch (e) {} } }
-    for (const o of objs) { const t = map[o.en]; if (t) for (const l of langs) if (!o[l] && t[l]) o[l] = t[l]; }
-  }
+  if (langs.length && texts.length) { say(`Translating ${found.length} events`); fill(objs, await translate(texts, langs, 'en'), langs, 'en'); }
   const unsized = (ev.items || []).filter(x => x.auto && !x.scale && typeof x.km_from_house === 'number' && x.km_from_house > R.near && !found.some(f => sameEvent(x, f)));
   if (unsized.length) say(`Checking how big ${unsized.length} events are`);
   const scales = await eventScales(unsized, A);

@@ -1,3 +1,5 @@
+> Outdated since 19 Oct 2026: hosts now sign in and publish, the database holds their answers and the worker builds the guide (worker/README.md). `import-submission.py` (Netlify Forms) was removed on 28 Oct 2026. Kept for the record of the first friend test.
+
 # Runbook: a friend tests the Guest Guide Maker, end to end
 
 Plain language. Today this is manual on purpose. Each step says what happens and why.

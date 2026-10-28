@@ -8,7 +8,6 @@ worker/.env.local
 worker/jobs
 test-submissions
 archive
-onboarding
 onboarding-site
 sites/*
 !sites/README.md
@@ -17,5 +16,4 @@ docs
 **/.DS_Store
 **/__pycache__
 **/*.pyc
-.job-*.json
 .claude
