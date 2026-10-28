@@ -49,7 +49,20 @@ function niceError(e){
 /* Account row under the header: in the page flow, so it never sits on the step bar. */
 #acctbar{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:-4px 0 2px}
 #acctbar:empty{display:none}
-#acctbar button{font:600 13px/1 inherit;font-family:inherit;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}`;
+#acctbar button{font:600 13px/1 inherit;font-family:inherit;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}
+/* Houses: one account, several houses; the one being edited, and a menu to pick another or add one */
+#acctbar .houses{position:relative;margin-right:auto;min-width:0}
+#acctbar .houses>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;font:600 13px/1.2 inherit;font-family:inherit;padding:8px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);max-width:calc(100vw - 150px)}
+#acctbar .houses>summary::-webkit-details-marker{display:none}
+#acctbar .houses>summary b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#acctbar .houses>summary::after{content:"";flex:none;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 2px 3px 4px}
+#acctbar .hmenu{position:absolute;left:0;top:calc(100% + 6px);z-index:60;width:min(320px,calc(100vw - 32px));background:var(--surface,#fff);border:1px solid var(--line,#ccc);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:6px;display:flex;flex-direction:column;gap:2px}
+#acctbar .hmenu button{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:10px;cursor:pointer;font:inherit}
+#acctbar .hmenu button:hover,#acctbar .hmenu button:focus-visible{background:var(--sunk,#f3f1ec)}
+#acctbar .hmenu button[aria-current=true]{background:var(--sunk,#f3f1ec)}
+#acctbar .hmenu b{font-size:15px;overflow-wrap:anywhere}
+#acctbar .hmenu small{font-size:12.5px;color:var(--muted,#666)}
+#acctbar .hmenu .add{border-top:1px solid var(--line,#ddd);border-radius:0 0 10px 10px;margin-top:4px;font-weight:700}`;
   document.head.appendChild(st);
 })();
 
@@ -125,15 +138,25 @@ async function wipeLocal(){
   A = {}; try { for (const u of await idb.all()) await idb.del(u.id); } catch (e) {} uploads = []; try { localStorage.removeItem(KEY); } catch (e) {}
 }
 async function adoptRemote(remote){
-  const r = { ...remote }, photos = r._remote || []; delete r._remote;
-  for (const u of uploads.filter(x => x.remote)) { try { await idb.del(u.id); } catch (e) {} }
-  A = r; uploads = [...uploads.filter(u => !u.remote), ...photos];
-  for (const u of photos) await saveUpload(u);
+  const r = { ...remote }, photos = r._remote || [], own = (r._uploads || []).filter(u => u && u.path); delete r._remote; delete r._uploads;
+  for (const u of uploads.filter(x => x.remote || x.path)) { try { await idb.del(u.id); } catch (e) {} }
+  const sent = own.map(u => ({ id: u.path.split('/').pop().replace(/\.jpg$/, ''), kind: u.kind, name: u.name || '', room: u.room || '', path: u.path, url: `${SB.url}/storage/v1/object/public/guide-assets/${u.path}`, createdAt: '' }));
+  A = r; uploads = [...uploads.filter(u => !u.remote && !u.path), ...photos, ...sent];
+  for (const u of [...photos, ...sent]) await saveUpload(u);
 }
+// One account, several houses (decided 28 Oct 2026). The house being edited is remembered on this device, per account;
+// what this device holds (answers, photos not sent yet) belongs to one house only (A._house).
+const HOUSE_KEY = 'porta-house-v1';
+let HOUSES = [];
+const houseSaved = uid => { try { const h = JSON.parse(localStorage.getItem(HOUSE_KEY) || 'null'); return h && h.acct === uid ? h.id : null; } catch (e) { return null; } };
+const houseSave = (uid, id) => { try { localStorage.setItem(HOUSE_KEY, JSON.stringify({ acct: uid, id })); } catch (e) { /* this device forgets the choice */ } };
 async function acctAttach(){
   const user = AUTH.user || {};
   if (A._acct && A._acct !== user.id) await wipeLocal();     // someone else used this device before: never mix their answers in
-  const rows = await sb('/rest/v1/guides?select=id,answers,status,slug,origin,content,theme,draft&order=created_at.asc&limit=1');
+  HOUSES = (await sb('/rest/v1/guides?select=id,slug,status,origin,name:content->site->>name,guideName:answers->>guideName,place:answers->>placeName&order=created_at.asc')) || [];
+  const pick = HOUSES.find(h => h.id === houseSaved(user.id)) || HOUSES[0];
+  if (pick && A._house && A._house !== pick.id) await wipeLocal();     // this device's answers are another house's
+  const rows = pick ? await sb('/rest/v1/guides?select=id,answers,status,slug,origin,content,theme,draft&id=eq.' + pick.id) : null;
   const local = !!((A._seen && A._seen.length) || A.listingUrl);
   if (rows && rows[0]) {
     GUIDE = rows[0];
@@ -141,9 +164,10 @@ async function acctAttach(){
     if (rT && (rT > lT || !local)) { await adoptRemote(GUIDE.answers); }
   } else {
     const made = await sb('/rest/v1/guides', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { owner: user.id, answers: cleanForAccount() } });
-    GUIDE = made && made[0];
+    GUIDE = made && made[0]; if (GUIDE) HOUSES.push({ id: GUIDE.id, status: GUIDE.status });
   }
-  A._acct = user.id; flush();
+  if (GUIDE) houseSave(user.id, GUIDE.id);
+  A._acct = user.id; A._house = GUIDE && GUIDE.id; flush();
   if (local) acctQueue();
 }
 // Once the guide exists (CM.on), the steps edit the guide itself and the answers are not saved any more.
@@ -172,6 +196,39 @@ async function acctLogout(){
   authStore(null); await wipeLocal(); location.hash = ''; location.reload();
 }
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.logoutTop')) acctLogout(); });
+const houseName = h => h.name || h.guideName || h.place || h.slug || 'New house';
+const houseState = h => ({ published: 'Published', ready: 'Not published', approved: 'Not published', queued: 'Being built', generating: 'Being built', failed: 'The build did not work' })[h.status] || 'Not built yet';
+function acctHouses(){
+  if (!AUTH || !GUIDE) return;
+  let d = document.querySelector('#acctbar .houses');
+  const cur = HOUSES.find(h => h.id === GUIDE.id) || { ...GUIDE, name: ((GUIDE.content || {}).site || {}).name };
+  const html = `<summary aria-label="Your houses"><b>${esc(houseName(cur))}</b></summary><div class="hmenu">${HOUSES.map(h => `<button type="button" data-house="${esc(h.id)}"${h.id === GUIDE.id ? ' aria-current="true"' : ''}><b>${esc(houseName(h))}</b><small>${esc(houseState(h))}${h.id === GUIDE.id ? ' · open now' : ''}</small></button>`).join('')}<button type="button" class="add" data-addhouse>+ Add a house</button></div>`;
+  if (!d) { d = document.createElement('details'); d.className = 'houses'; acctBar().prepend(d); }
+  const open = d.open; d.innerHTML = html; d.open = open;
+}
+window.__acctHouses = () => { const h = HOUSES.find(x => x.id === GUIDE.id); if (h) { h.status = GUIDE.status; h.name = ((GUIDE.content || {}).site || {}).name || h.name; } acctHouses(); };
+// Leaving a house: what this device holds for it goes to the account first (answers, photos not sent yet, the editor's
+// draft), then the device forgets it.
+async function acctLeaveHouse(){
+  clearTimeout(pushTimer);
+  if (CM.on) { if (CM.timer) await cmSave(); while (CM.saving) await CM.saving; }
+  else if (GUIDE && GUIDE.origin !== 'imported') { try { await acctSendUploads(); } catch (e) { /* kept on the account as far as sent */ } await acctPush(); }
+  window.__resetting = true; await wipeLocal();
+}
+async function acctOpenHouse(id){ houseSave(AUTH.user.id, id); location.hash = ''; location.reload(); }
+document.addEventListener('click', async e => {
+  const b = e.target.closest && e.target.closest('#acctbar [data-house], #acctbar [data-addhouse]'); if (!b || b.disabled) return;
+  if (b.dataset.house === GUIDE.id) { b.closest('details').open = false; return; }
+  b.disabled = true;
+  try {
+    if (b.dataset.addhouse !== undefined) {
+      await ensureFresh();
+      const made = await sb('/rest/v1/guides', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { owner: AUTH.user.id, answers: {} } });
+      await acctLeaveHouse(); return acctOpenHouse(made[0].id);
+    }
+    await acctLeaveHouse(); acctOpenHouse(b.dataset.house);
+  } catch (e) { b.disabled = false; window.__resetting = false; toast((b.dataset.addhouse !== undefined ? 'No house added: ' : 'Could not open it: ') + niceError(e)); }
+});
 // "Log out" lives in a row right under the page header.
 function acctBar() {
   let b = document.getElementById('acctbar');
@@ -226,4 +283,5 @@ async function accountBoot(){
   catch (e) { if (e.status === 401 || e.status === 403) { authStore(null); await accountBoot(); return; } /* offline: keep working on this device */ }
   try { cmInit(); } catch (e) {}
   if (!document.querySelector('.logoutTop')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'logoutTop'; b.textContent = 'Log out'; acctBar().appendChild(b); }
+  acctHouses();
 }

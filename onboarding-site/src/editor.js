@@ -625,9 +625,10 @@ function cmPublishHTML() {
       <p>${dirty ? 'Look at your changes in the preview, then publish: guests see them straight away.' : cmLive() ? 'Nothing is waiting: guests see the guide as it is here.' : 'Your guide is ready. Publish it to share it with your guests.'}</p></section>
     <section class="card">
       ${ch.length ? `<div class="sum">${ch.map(m => `<a href="#${m.id}" style="--tc:${m.tc}"><span class="sw"></span><span><b>${esc(m.title)}</b><p>${esc(cmSub(m))}</p></span><span class="pill chk" style="position:static">Changed</span></a>`).join('')}</div>` : dirty ? '<p class="hint">Translations and other small changes are waiting.</p>' : ''}
-      <p class="hint">Guests open <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url.replace(/^https?:\/\//, ''))}</a></p>
+      <p class="hint">${cmLive() ? 'Guests open' : 'Once it is published, guests open'} <a href="${esc(url)}" target="_blank" rel="noopener" style="white-space:nowrap">${esc(url.replace(/^https?:\/\//, ''))}</a></p>
       <div class="foot"><div class="row"><a class="btn" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${I.eye}Preview</a>${dirty || !cmLive() ? `<button class="btn primary" type="button" data-cpublish>${I.send}${cmLive() ? 'Publish changes' : 'Publish my guide'}</button>` : ''}</div>
-        ${dirty ? `<div class="cm-row"><button class="btn small" type="button" data-cdiscard>Undo all changes</button><p class="hint">Goes back to the guide guests see now.</p></div>` : ''}</div></section></div></div>`;
+        ${dirty ? `<div class="cm-row"><button class="btn small" type="button" data-cdiscard>Undo all changes</button><p class="hint">Goes back to the guide guests see now.</p></div>` : ''}</div></section>
+    ${cmLive() ? `<section class="card"><div class="cm-row"><button class="btn small" type="button" data-cunpublish>Unpublish</button><p class="hint">Takes the guide offline: guests can no longer open it. Nothing is deleted, and you can publish it again any time.</p></div></section>` : ''}</div></div>`;
 }
 const cmIsPage = r => r === 'publish' || cmSteps().some(m => m.id === r);
 function cmPageHTML(r) { const m = cmSteps().find(x => x.id === r); return m ? cmStepHTML(m) : r === 'publish' ? cmPublishHTML() : cmHomeHTML(); }
@@ -660,7 +661,7 @@ function cmMarks() {
 }
 
 /* --- Saving the draft, publishing, undoing --- */
-const cmSaveText = () => cmDirty() ? 'Draft saved, not live yet' : cmLive() ? 'Everything is live' : 'Saved';
+const cmSaveText = () => cmDirty() ? 'Draft saved, not live yet' : cmLive() ? 'Everything is live' : 'Saved, not published';
 function cmQueue() { setSave('busy', 'Saving…'); clearTimeout(CM.timer); CM.timer = setTimeout(cmSave, 900); cmMarks(); }
 async function cmSave() {
   clearTimeout(CM.timer); CM.timer = null;
@@ -680,11 +681,24 @@ async function cmPublish(btn) {
     await ensureFresh();
     const body = { content: CM.g.content, theme: CM.g.theme, draft: null }; if (!cmLive()) body.status = 'published';
     const r = await sb('/rest/v1/guides?id=eq.' + CM.g.id + '&select=status', { method: 'PATCH', headers: { Prefer: 'return=representation' }, body });
-    if (r && r[0]) CM.g.status = r[0].status;
-    CM.live = { content: cmClone(CM.g.content), theme: cmClone(CM.g.theme) };
+    if (r && r[0]) CM.g.status = GUIDE.status = r[0].status;
+    CM.live = { content: cmClone(CM.g.content), theme: cmClone(CM.g.theme) }; GUIDE.content = CM.live.content;
+    if (window.__acctHouses) window.__acctHouses();
     setSave('ok', cmSaveText()); toast(cmLive() ? 'Published. Guests see it now.' : 'Saved, but not published. Try again.');
     location.hash = '#home'; render();
   } catch (e) { toast('Not published: ' + niceError(e)); if (btn) btn.disabled = false; }
+}
+// Unpublish: the guide goes offline (status "ready": built, not public); its content and any draft stay as they are.
+async function cmUnpublish(btn) {
+  if (btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = 'Sure? Tap again to take it offline'; return; }
+  btn.disabled = true;
+  try {
+    await ensureFresh();
+    const r = await sb('/rest/v1/guides?id=eq.' + CM.g.id + '&select=status', { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: { status: 'ready' } });
+    if (r && r[0]) CM.g.status = GUIDE.status = r[0].status;
+    if (window.__acctHouses) window.__acctHouses();
+    setSave('ok', cmSaveText()); toast(cmLive() ? 'Still published. Try again.' : 'Unpublished: guests can no longer open it.'); location.hash = '#home'; render();
+  } catch (e) { toast('Not unpublished: ' + niceError(e)); btn.disabled = false; }
 }
 async function cmDiscard(btn) {
   if (btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = 'Sure? Tap again to undo everything'; return; }
@@ -893,6 +907,7 @@ document.addEventListener('click', e => {
   if (d.logodel !== undefined) return edLogoRemove();
   if (d.colorsfrom !== undefined) return edColoursFrom(d.colorsfrom);
   if (d.cpublish !== undefined) return cmPublish(t);
+  if (d.cunpublish !== undefined) return cmUnpublish(t);
   if (d.cdiscard !== undefined) return cmDiscard(t);
   if (!t.closest('.edz')) return;
   if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); return done(); }
