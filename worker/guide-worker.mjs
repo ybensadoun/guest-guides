@@ -7,6 +7,7 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { resolve, dirname, join, relative, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 import { spawnSync, spawn } from 'node:child_process';
 import { makeGoogle, hav, nameOf, sameName, sameMarket, schedule, hostPlace } from './places.mjs';   // Google check for Find more suggestions
 
@@ -25,7 +26,7 @@ const POLL = Math.max(3, +env.POLL_SECONDS || 10) * 1000;
 const ONCE = process.argv.includes('--once');
 if (!KEY) { console.error('Missing SUPABASE_SERVICE_KEY. Put it in worker/.env.local (see worker/README.md).'); process.exit(1); }
 
-const log = (...a) => console.log(new Date().toLocaleTimeString(), ...a);
+const log = (...a) => console.log(new Date().toLocaleString('sv-SE'), ...a);   // date and time: the log file spans days
 const H = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 // A dropped connection ("fetch failed") is retried a few times instead of failing the whole guide.
 async function fetchRetry(url, init, tries = 4) {
@@ -620,6 +621,15 @@ if (process.argv.includes('--refresh-events')) {
   }
   process.exit(0);
 }
+// One worker at a time: a second one would put the first one's running jobs back in the queue (below). Since 28 Oct 2026
+// the worker starts by itself (worker/autostart.sh), so a copy started by hand stops here.
+{ const pidFile = join(tmpdir(), 'guide-worker.pid');
+  const other = existsSync(pidFile) ? +readFileSync(pidFile, 'utf8') : 0;
+  if (other && other !== process.pid && (spawnSync('ps', ['-o', 'command=', '-p', String(other)], { encoding: 'utf8' }).stdout || '').includes('guide-worker.mjs')) {
+    console.error(`Another guide worker is already running (process ${other}). It starts by itself: sh worker/autostart.sh status (or restart).`);
+    process.exit(1);
+  }
+  writeFileSync(pidFile, String(process.pid)); }
 log(`Guide worker on. Database ${URL_}. Publish on build: ${AUTO_PUBLISH}. Research: ${RESEARCH}.`);
 // Jobs still "running" and guides still "generating" belong to a worker that was stopped (only one runs at a time):
 // they start again from the beginning, at once (recover() alone would wait 30 minutes).
