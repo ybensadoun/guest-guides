@@ -3,7 +3,7 @@
 Status: proposal, code ready. `RESEARCH=api` (worker/claude-api.mjs), `worker/Dockerfile`, `worker/compose.yaml`, `worker/server-update.sh` and `.dockerignore` are in the repo and tested locally against a stand-in for the Claude API. Nothing is deployed and no account is created: Yohann chooses the provider, creates the server account and the Claude API key, and sets the budget (end of this page).
 
 ## Why
-- The worker (`worker/guide-worker.mjs`) runs on Yohann's MacBook Air, started at login by the launch agent `com.guestguides.worker` (~/Library/LaunchAgents, log in ~/Library/Logs/guide-worker.log). When the Mac sleeps or is off, guides stay "queued" and the editor's jobs (Find more, translate, automatic events, artistic covers) never start. The 19 Oct plan (`plan-accounts-and-publishing.md`, "Interim model") already says to move it before the first real host.
+- The worker (`worker/guide-worker.mjs`) runs on Yohann's MacBook Air, started at login by the launch agent `com.guestguides.worker` (`sh worker/autostart.sh`, log in ~/Library/Logs/guide-worker.log). When the Mac sleeps or is off, guides stay "queued" and the editor's jobs (Find more, translate, automatic events, artistic covers) never start. The 19 Oct plan (`plan-accounts-and-publishing.md`, "Interim model") already says to move it before the first real host.
 - Research and translation use the `claude` command logged in with Yohann's own account: a personal login doing a business service's work, no bill of its own, no spending limit, and it cannot run on a server without storing his login there.
 
 ## What the worker needs
@@ -66,7 +66,7 @@ Prices are expected (third-party comparisons and the providers' pages, Oct 2026;
 3. `git clone https://github.com/ybensadoun/guest-guides /opt/guest-guides` (public: no GitHub credentials on the server).
 4. Keys: Yohann types them into `/etc/guide-worker.env` over SSH (never in chat, the repo or GitHub), then `chmod 600`:
    `SUPABASE_SERVICE_KEY=`, `GOOGLE_PLACES_KEY=`, `OPENAI_API_KEY=`, `WORKER_ANTHROPIC_KEY=`, `RESEARCH_USD_PER_DAY=5`, `HEARTBEAT_URL=` (optional).
-5. Switch, in a quiet hour: on the Mac `launchctl disable gui/$(id -u)/com.guestguides.worker` then `launchctl bootout gui/$(id -u)/com.guestguides.worker` (stopped now and not started again at the next login; KeepAlive would restart it otherwise), then on the server `cd /opt/guest-guides && docker compose -f worker/compose.yaml up -d --build`. Check: `docker compose -f worker/compose.yaml logs -f` shows "Research: api"; a Find more search from the editor ends with suggestions and a cost line in the log.
+5. Switch, in a quiet hour: on the Mac `sh worker/autostart.sh remove` (stops the launch agent and takes it out, so it does not start again at the next login), then on the server `cd /opt/guest-guides && docker compose -f worker/compose.yaml up -d --build`. Check: `docker compose -f worker/compose.yaml logs -f` shows "Research: api"; a Find more search from the editor ends with suggestions and a cost line in the log.
 6. Updates on each push: a systemd timer runs `worker/server-update.sh` every 5 minutes. It rebuilds only when files the worker uses changed (not sites/, onboarding-site/, docs/); the old worker finishes its jobs first (up to 15 minutes, new jobs wait meanwhile). No GitHub secret and no way in: the server pulls from the public repo. `/etc/systemd/system/guide-worker-update.service`:
    ```ini
    [Service]
@@ -108,7 +108,7 @@ Expected total: about 5 EUR a month for the server, plus Claude API use (expecte
 1. Yohann: Claude Console, workspace "guide-worker", an API key in it, a spend limit. Key into the Mac's `worker/.env.local` as `WORKER_ANTHROPIC_KEY=` (leave `RESEARCH=cli` for the running worker).
 2. Test on the Mac, beside the running worker: `npm ci --prefix worker`, then `RESEARCH=api node worker/guide-worker.mjs --find find-todo --slug home-in-tordera`. It prints the suggestions and what the search cost; the same command without `RESEARCH=api` gives the `claude` command's answer to compare. Choose model and effort.
 3. Yohann: the server account and server (A 1-2), a Google Places key for the server, the monitoring check.
-4. Server setup and switch (A 3-7). The Mac's launch agent stays disabled (the plist can stay; `launchctl enable` and `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.guestguides.worker.plist` bring it back if the server is ever down for long).
+4. Server setup and switch (A 3-7). The Mac's launch agent stays removed; `sh worker/autostart.sh install` brings it back if the server is ever down for long (stop the server's worker first: one worker only).
 5. Monthly jobs on the server too: `check-guides --apply` and `refresh-events --apply` as a monthly systemd timer (`docker compose -f worker/compose.yaml run --rm -e RESEARCH_USD_PER_DAY=30 worker npm run refresh-events -- --apply`: one run searches every guide, so it needs a higher day limit). The desktop task "Monthly check of every live guide" then keeps only Ca La Kimberly's new places (it needs a Claude session) and reads the server's report.
 6. Before real hosts: delete a job's folder (worker/jobs/<id>: host answers and photos) once its guide is saved; the privacy notice names the processors; an alert on failed jobs (BACKLOG item 7).
 

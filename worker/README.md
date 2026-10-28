@@ -17,9 +17,12 @@ Optional lines in `worker/.env.local`:
 - `OPENAI_API_KEY=<key>` switches on artistic covers (the `cover-art` job below). Without it the host sees "Artistic covers are not switched on yet."
 
 ## Run
-From the repo folder:
-`caffeinate -i node worker/guide-worker.mjs`
-`caffeinate` keeps the Mac awake while it runs. Leave the window open. `Ctrl+C` stops it. Run only one worker at a time. A guide or editor job left half-built when the worker stopped goes back in the queue as soon as it starts again (and after 30 minutes if a build stalls while the worker runs).
+Since 28 Oct 2026 the worker starts by itself on Yohann's Mac (a launch agent): at login, again within 30 s if it stops, with `caffeinate` keeping the Mac awake while it runs. It still only works while the Mac is on and awake (lid closed = jobs wait in the queue). Moving it to a server: `docs/plan-worker-on-server.md` (proposal, code ready, see "On a server" below).
+- `sh worker/autostart.sh status`: is it running, and the last lines of its log (`~/Library/Logs/guide-worker.log`, restarted past 5 MB).
+- `sh worker/autostart.sh restart`: after changing or pulling worker code, or editing `worker/.env.local`. The running worker keeps the old code until then.
+- `sh worker/autostart.sh install` sets it up (again after moving the folder or installing another node); `remove` takes it out.
+
+Only one worker runs at a time: a copy started by hand while the agent runs says so and stops (a second one would put the first one's running jobs back in the queue). By hand, after `remove`: `caffeinate -i node worker/guide-worker.mjs`, `Ctrl+C` stops it. A guide or editor job left half-built when the worker stopped goes back in the queue as soon as it starts again (and after 30 minutes if a build stalls while the worker runs).
 
 Build what is queued right now and stop: `node worker/guide-worker.mjs --once`
 

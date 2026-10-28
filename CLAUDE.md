@@ -9,7 +9,7 @@ This repo is PUBLIC (ybensadoun/guest-guides). No keys, host data, Wi-Fi or busi
 | `engine/` | Shared guide code: Vite + vanilla JS PWA, MapLibre with OpenFreeMap, 6 languages | A change here rebuilds every guide. Never site-specific code. |
 | `sites/<slug>/` | One folder of data per guide | `ca-la-kimberly` is the real guide (its own CLAUDE.md, and the source of truth for the section structure). All others are local tests: never publish (see `sites/README.md`). |
 | `onboarding-site/` | Guest Guide Maker: sign-in, then one set of steps that first collects the answers and, once the guide exists, edits the guide itself (`src/editor.js`, drafts and Publish changes: `docs/plan-single-editor.md`). Live at porta-guides | Hosts see "Guest Guide Maker"; "Porta" is only an internal name. Details in its README. |
-| `worker/` | Builds guides that hosts publish (runs on Yohann's Mac for now) | See `worker/README.md`. Secrets in `worker/.env.local`. |
+| `worker/` | Builds guides that hosts publish (runs on Yohann's Mac for now, by itself since 28 Oct: `worker/autostart.sh`) | See `worker/README.md`. Secrets in `worker/.env.local`. |
 | `docs/` | Rules and plans | TYPOGRAPHY, CURATION, UX-GUIDELINES, plan-accounts-and-publishing, runbooks, learnings |
 
 ## Commands (from this folder, Node 20+)
@@ -21,7 +21,7 @@ This repo is PUBLIC (ybensadoun/guest-guides). No keys, host data, Wi-Fi or busi
 | `npm run preview-file -- <site>` | one self-contained HTML in `sites/<site>/preview/` (git-ignored) to send or open |
 | `node engine/scripts/ux-check.mjs <site>` | must print "UX check OK" (overlaps, words wider than their line, page wider than screen; Home + 5 pages, 360/390/430 px, all languages). One-time setup: `npm i --no-save playwright && npx playwright install chromium` |
 | `cd onboarding-site/src && python3 build.py` | rebuild the onboarding page, then copy `src/index.html` up one level |
-| `caffeinate -i node worker/guide-worker.mjs` (`--once`) | run the guide worker |
+| `sh worker/autostart.sh status` / `restart` | the guide worker runs by itself (launch agent). Restart it after changing or pulling worker code or `worker/.env.local`; never start a second one by hand |
 | `node worker/guide-worker.mjs --find find-todo --slug <slug>` | one Find more search, printed, nothing written (safe next to the running worker; `RESEARCH=api` tries the Claude API and prints the cost) |
 | `python3 engine/scripts/generate-site.py` | generator from host answers (used by the worker) |
 
