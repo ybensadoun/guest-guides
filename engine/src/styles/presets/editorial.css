@@ -20,6 +20,8 @@ h2.title{font-weight:400;font-size:46px;letter-spacing:-.01em;line-height:1}
 .hc-id{position:absolute;left:0;right:0;top:clamp(300px,52vh,460px);transform:translateY(-100%);background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;border:0;padding:60px 20px 18px;align-items:flex-end}
 .hc-id > img{display:none}
 .hc-nm b{font-family:var(--display);font-weight:400;font-size:44px!important;letter-spacing:0!important;text-transform:none!important;line-height:.95}
+/* over the photo the name is always white, whatever colour the site's own theme gives it */
+.hc-id .hc-nm b{color:#fff}
 .hc-nm small,.hc-nm .hc-w{color:rgba(255,255,255,.85)!important;font-size:13px!important;letter-spacing:.14em!important;text-transform:uppercase!important;font-weight:600!important}
 .hc-id .go{background:#fff;color:var(--ink)}
 .keyfacts{background:none!important;border-top:1px solid var(--ink);border-bottom:1px solid var(--line)!important;margin:0 16px}
