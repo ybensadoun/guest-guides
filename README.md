@@ -75,7 +75,7 @@ Needs Node 20+. Run `npm install` once in this folder.
 | `bauhaus` | Big colour tiles | bold colour blocks and shapes (Ca La Kimberly; the engine's base `app.css`) | colour tiles, mosaic |
 | `soft` | Soft rounded cards | its own pastels (powder blue, butter, blush, lilac, peach, mint), soft shadows | pastel tiles, a crisp circle in the corner |
 | `minimal` | Clean and calm | black on white, one accent, thin lines (Geist titles, Jost text) | outlined two-column grid |
-| `mediterranean` | Mediterranean | blue and white, Greek islands and the south of Spain (DM Serif Display, Outfit) | cobalt, sky, teal, lemon and terracotta tiles, an azulejo in the corner |
+| `mediterranean` | Mediterranean | whitewash and cobalt, Greek islands and the south of Spain (DM Serif Display, Outfit) | white tiles with a cobalt frame and solid cobalt ones, arched tops with an azulejo keystone, the cover as an arched window |
 | `rural` | Rural | wood, moss and warm earth (Fraunces, Nunito) | moss, wheat, rust, bark, honey and forest tiles, a leaf in the corner |
 
 Presets live in `engine/src/styles/presets/<name>.css`; the site's `theme.css` sits on top. Soft, Mediterranean and Rural set their tile colours per section, so a site's own palette changes the accents, not the tiles. The photo-led `editorial` look was dropped on 28 Oct 2026 (an old `editorial` answer becomes `minimal`).
