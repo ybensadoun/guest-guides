@@ -534,8 +534,9 @@ async function autoEventsJob(j, jp) {
 /* ---------- Artistic cover: one of the host's photos redrawn (OpenAI image editing, OPENAI_API_KEY in .env.local) ----------
    "Do it for me" asks for Bauhaus-style shapes in the photo's own colours; otherwise the host's own words. The picture
    must be one of this guide's (its storage folder) or its listing's (Airbnb's image server). The result goes to the
-   guide's storage; the host sees it and keeps it or tries again. */
-const ART_PER_DAY = 8;
+   guide's storage; the host sees it and keeps it or tries again. OpenAI retires image models (gpt-image-1 shut down on
+   23 Oct 2026): OPENAI_IMAGE_MODEL in .env.local switches to another one without a code change. */
+const ART_PER_DAY = 8, ART_MODEL = () => env.OPENAI_IMAGE_MODEL || 'gpt-image-2.5-sunburst';
 const artPrompt = words => words
   ? `Redraw this photo of a holiday home for the cover of its guest guide: ${words}. Keep the house and the viewpoint recognisable. No text, no letters, no people.`
   : 'Redraw this photo of a holiday home as a Bauhaus-style artwork for the cover of its guest guide: flat geometric shapes, clean lines, simple bold forms, a little paper texture, like a screen print. Keep the house, the composition and the viewpoint recognisable. Use the colours of the photo itself. No text, no letters, no people.';
@@ -551,7 +552,7 @@ async function coverArtJob(j, jp) {
   const img = await fetchRetry(src.split('?')[0] + (airbnb ? '?im_w=1440' : ''));
   if (!img.ok) throw new Error('Your photo could not be read.');
   const fd = new FormData();
-  fd.append('model', 'gpt-image-1'); fd.append('image', new Blob([Buffer.from(await img.arrayBuffer())], { type: img.headers.get('content-type') || 'image/jpeg' }), 'photo.jpg');
+  fd.append('model', ART_MODEL()); fd.append('image', new Blob([Buffer.from(await img.arrayBuffer())], { type: img.headers.get('content-type') || 'image/jpeg' }), 'photo.jpg');
   fd.append('prompt', artPrompt(words)); fd.append('size', '1536x1024'); fd.append('quality', 'medium'); fd.append('output_format', 'jpeg'); fd.append('output_compression', '85');
   await jp({ message: 'Drawing your cover' });
   const r = await fetch('https://api.openai.com/v1/images/edits', { method: 'POST', headers: { Authorization: 'Bearer ' + env.OPENAI_API_KEY }, body: fd, signal: AbortSignal.timeout(240000) });
@@ -568,7 +569,7 @@ async function coverArtJob(j, jp) {
   const name = `covers/art-${Date.now().toString(36)}.jpg`;
   const up = await fetchRetry(`${URL_}/storage/v1/object/guide-assets/${j.guide_id}/${name}`, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' }, body: Buffer.from(b64, 'base64') });
   if (!up.ok) throw new Error('Your cover could not be saved.');
-  log('  cover drawn:', name);
+  log('  cover drawn:', name, ART_MODEL(), d.usage ? `${d.usage.input_tokens} tokens in, ${d.usage.output_tokens} out` : '');
   await jp({ status: 'done', message: 'Your artistic cover is ready', result: { path: name, url: `${URL_}/storage/v1/object/public/guide-assets/${j.guide_id}/${name}` }, finished_at: new Date().toISOString() });
 }
 
