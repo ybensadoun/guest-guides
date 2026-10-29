@@ -20,7 +20,7 @@ async function paletteFromImages(){
   const hex = c => '#' + c.map(x => x.toString(16).padStart(2, '0')).join('');
   const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
   const con = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
-  if (px.length < 50) return { paper: '#F7F5F0', ink: '#1E1E1E', acc: ['#2F5D8A', '#C2502E', '#E2A93B', '#3E7D4F'], sat: .4, light: .6 };
+  if (px.length < 50) return { paper: '#F3EEE3', ink: '#121212', acc: ['#1D4FA0', '#D52B1E', '#F5C400', '#0E7C46'], sat: .6, light: .6 };   // no images: Bauhaus, the guides' default
   let cent = [0, 1, 2, 3, 4, 5, 6, 7].map(i => px[Math.floor(i * px.length / 8)].slice());
   let lab = [];
   for (let it = 0; it < 10; it++) {
@@ -39,18 +39,12 @@ async function paletteFromImages(){
   const onWhite = h => { let [a, s, l] = h; let c = rgb([a, s, l]); while (con(c, [255, 255, 255]) < 3.2 && l > .08) { l -= .03; c = rgb([a, s, l]); } return c; };
   return { paper: hex(paper), ink: hex(ink), acc: acc.slice(0, 4).map(h => hex(onWhite(h))), sat, light };
 }
-function choosePreset(p){
-  const mood = v('mood'), nav = v('navStyle');
-  if (mood && mood !== 'auto') return mood;
-  if (/magazine/i.test(nav)) return 'minimal';
-  if (/list|search|map/i.test(nav)) return 'minimal';
-  if (/tiles/i.test(nav)) return p.light > .66 && p.sat < .5 ? 'soft' : 'bold';
-  const feel = A.feelWords || [];
-  if (feel.some(f => /Elegant|Luxurious/.test(f))) return 'minimal';
-  if (feel.some(f => /Calm|Modern/.test(f))) return 'minimal';
-  if (feel.some(f => /Rustic/.test(f))) return 'rural';
-  if (feel.some(f => /Cosy|Family/.test(f))) return 'soft';
-  return p.sat > .45 ? 'bold' : 'minimal';
+// The layout the host picked in The look, else Bauhaus ("Big colour tiles"), the guides' default (Yohann, 29 Oct 2026;
+// engine/scripts/generate-site.py picks Bauhaus too when there is nothing to go on).
+function choosePreset(){
+  const mood = v('mood');
+  if (mood === 'editorial') return 'minimal';   // an old answer
+  return PRESET_FONTS[mood] ? mood : 'bold';
 }
 const PRESET_FONTS = {
   bold: ['Jost:wght@400;500;600;700', '"Jost",system-ui,sans-serif', '"Jost",system-ui,sans-serif'],
@@ -125,6 +119,7 @@ function pvStyle(p, preset){
 .pv-sec b{font-family:var(--pd);font-size:22px;line-height:1.1}
 .pv-sec small{opacity:.8;font-size:14px}
 .pv-sec .ic svg{width:28px;height:28px}
+.pv-sec .ar{display:none}
 .pv-top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--pp)}
 .pv-back{display:inline-flex;align-items:center;gap:6px;border:0;background:none;font:inherit;font-weight:700;cursor:pointer;color:inherit;padding:8px 4px}
 .pv-back svg{width:18px;height:18px}
@@ -157,11 +152,15 @@ function pvStyle(p, preset){
 .fbs-card .stars button[aria-pressed="true"]{background:#F2B33D;border-color:#F2B33D}
 .fbs-card .hint{font-size:13px;color:#666;margin:0}`;
   const P = {
-    bold: `.pv-sec{min-height:140px;padding:16px;border-radius:20px;color:#fff;background:var(--sc)}
-.pv-sec::before{content:"";position:absolute;z-index:-1;width:120px;height:120px;border-radius:50%;background:var(--a3);right:-40px;top:-40px;opacity:.9}
-.pv-sec:nth-child(3n+2)::before{border-radius:0;transform:rotate(14deg);width:70px;height:70px;right:-10px;top:-10px;background:var(--pi)}
-.pv-sec:nth-child(3n)::before{width:0;height:0;border-left:44px solid transparent;border-right:44px solid transparent;border-bottom:72px solid var(--a3);border-radius:0;top:auto;bottom:-6px;right:-10px;background:none}
-.pv-sec .ic{margin-bottom:auto}.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:96px}
+    bold: `.pv-secs{grid-template-columns:1fr 1fr}
+.pv-sec{min-height:156px;padding:14px;border-radius:20px;color:var(--st,#fff);background:var(--sc);justify-content:flex-start;gap:4px}
+.pv-sec::before{content:"";position:absolute;z-index:-1;top:0;right:0;width:54px;height:54px;background:var(--ss);border-radius:0 0 0 54px}
+.pv-sec:nth-child(3n+2)::before{width:0;height:0;background:none;border-radius:0;border-left:25px solid transparent;border-right:25px solid transparent;border-top:44px solid var(--ss);right:12px}
+.pv-sec:nth-child(3n)::before{width:46px;height:46px;border-radius:50%;top:-12px;right:-12px}
+.pv-sec .ic{min-height:50px}.pv-sec .ic svg{width:26px;height:26px}
+.pv-sec .tx{display:flex;flex-direction:column;gap:2px}.pv-sec b{font-family:var(--pb);font-weight:700;font-size:20px;line-height:1.12}.pv-sec small{font-size:13.5px}
+.pv-sec .ar{display:grid;place-items:center;align-self:flex-end;margin-top:auto;width:32px;height:32px;border-radius:50%;background:#fff;color:#121212;font-weight:700}
+.pv-sec.lt .ar{background:var(--pi);color:#fff}.pv-sec.wide{grid-column:1/-1;min-height:120px}
 .pv-fact{background:#fff;border-radius:14px;border:2px solid var(--pi)}.pv-h{font-weight:700}.pv h1,.pv h2{font-weight:700}`,
     soft: `.pv-sec{min-height:130px;padding:16px;border-radius:26px;background:color-mix(in srgb,var(--sc) 24%,#fff);box-shadow:0 6px 22px rgba(0,0,0,.07)}
 .pv-sec::before{content:"";position:absolute;z-index:-1;width:130px;height:130px;border-radius:50%;background:var(--sc);filter:blur(26px);opacity:.45;right:-30px;top:-30px}
@@ -196,14 +195,16 @@ const PV_ART = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" 
 // One screen of the guide as guests will see it, built from the answers: the cover, the name, the sections. Used by the
 // phone in the builder (the wow, and next to the steps) and by the full-page preview.
 async function pvParts(screen){
-  const p = PV.palette || (PV.palette = await paletteFromImages());
-  const preset = PV.preset || (PV.preset = choosePreset(p));
+  const key = uploads.filter(u => u.kind === 'inspiration' || u.kind === 'cover').map(u => u.id).join();
+  if (!PV.palette || PV.palKey !== key) { PV.palKey = key; PV.palette = await paletteFromImages(); }
+  const p = PV.palette, preset = PV.preset || choosePreset();
   const S = ordered(guideSections()), name = v('guideName') || v('placeName') || WOW.name || 'Your guide';
   // Same rule as the guide (engine/scripts/generate-site.py): the host's own cover, else the listing photo they chose,
   // unless they asked for a cover drawn from the colours.
   const own = (uploads.find(u => u.kind === 'cover') || {}).url, listing = A.coverChoice !== 'drawn' && A.coverUrl ? String(A.coverUrl).split('?')[0] + '?im_w=720' : '';
   const cover = own || listing;
-  const colours = [p.acc[0], p.acc[1], p.ink, p.acc[3], p.acc[2]];
+  const colours = [p.acc[0], p.acc[1], p.ink, p.acc[3], p.acc[2]], shapes = [p.acc[2], p.ink, p.acc[1], p.acc[2], p.ink];
+  const light = hex => { const n = parseInt(String(hex).slice(1), 16); return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 160; };
   const scr = screen, sec = S.find(x => x.id === scr);
   const facts = [];
   for (const f of (A.homeFirst && A.homeFirst.length ? A.homeFirst : ['Wi-Fi', 'Check-out time'])) {
@@ -220,7 +221,7 @@ async function pvParts(screen){
     ${/search/i.test(v('navStyle')) ? `<input class="pv-search" id="pvSearch" placeholder="Search the guide: wifi, bins, beach…" aria-label="Search the guide">` : ''}
     ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
     <h2 class="pv-h">${/map/i.test(v('navStyle')) ? 'Around you' : 'Your guide'}</h2>
-    <div class="pv-secs" id="pvSecs">${S.map((x, i) => { const pic = false; return `<button type="button" class="pv-sec${['bold', 'soft', 'mediterranean', 'rural'].includes(preset) && (i === S.length - 1 && S.length % 2 === 1) ? ' wide' : ''}${pic ? ' has-photo' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span>${pic ? `<img class="ph" src="${pic}" alt="">` : ''}</button>`; }).join('')}</div>`;
+    <div class="pv-secs" id="pvSecs">${S.map((x, i) => { const pic = false; return `<button type="button" class="pv-sec${['bold', 'soft', 'mediterranean', 'rural'].includes(preset) && (i === S.length - 1 && S.length % 2 === 1) ? ' wide' : ''}${light(colours[i % colours.length]) ? ' lt' : ''}${pic ? ' has-photo' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]};--ss:${shapes[i % shapes.length]};--st:${light(colours[i % colours.length]) ? p.ink : '#fff'}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span><span class="ar" aria-hidden="true">→</span>${pic ? `<img class="ph" src="${pic}" alt="">` : ''}</button>`; }).join('')}</div>`;
   return { name, style: pvStyle(p, preset), body: `<div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
       <div class="pv-in">${sec ? pageHTML(sec) : home}</div></div>` };
 }
@@ -241,7 +242,13 @@ const PHONE = { screen: 'home', build: false, timer: null };
 const WOW = { stage: '', name: '' };   // the wow page: reading (the listing page), writing (Claude), done
 // The guide screen each step changes, shown next to it.
 const STEP_SCREEN = { wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'houseguide', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', area: 'todo', taste: 'todo' };
-const phoneHTML = () => `<div class="phone"><iframe id="phoneFrame" title="Your guide, as guests will see it"></iframe></div>`;
+const phoneHTML = () => `<div class="phone"><div class="phone-scr"><iframe id="phoneFrame" title="Your guide, as guests will see it"></iframe></div></div>`;
+// Both phones (this one, and the editor's, which shows the guide itself) draw the guide at a real phone's width, then
+// scale it down to the frame: text and tiles keep their true sizes and wrap as they do on a phone.
+const PHONE_W = 390;
+function phoneFit(f){ const s = f && f.parentElement; if (!s || !s.clientWidth) return; const k = s.clientWidth / PHONE_W; f.style.transform = `scale(${k})`; f.style.height = Math.ceil(s.clientHeight / k) + 'px'; }
+const phoneRO = typeof ResizeObserver === 'function' ? new ResizeObserver(es => es.forEach(e => phoneFit(e.target.querySelector('iframe')))) : null;
+function phoneWatch(f){ phoneFit(f); if (phoneRO && f && !f.__watched) { f.__watched = true; phoneRO.observe(f.parentElement); } }
 const PHONE_CSS = `<style>.pv{min-height:100vh;padding-bottom:28px}.pv-in{padding:0 14px}.pv-cover{margin:0 -14px;height:236px}.pv-name h1{font-size:34px}.pv-top{padding:8px 14px}
 .pv-build .pv-cover,.pv-build .pv-name,.pv-build .pv-welcome,.pv-build .pv-fact,.pv-build .pv-h,.pv-build .pv-sec{animation:pvIn .55s cubic-bezier(.2,.7,.2,1) both}
 .pv-build .pv-name{animation-delay:.25s}.pv-build .pv-welcome{animation-delay:.4s}.pv-build .pv-fact{animation-delay:.5s}.pv-build .pv-h{animation-delay:.6s}
@@ -250,6 +257,7 @@ ${Array.from({ length: 14 }, (_, i) => `.pv-build .pv-sec:nth-child(${i + 1}){an
 @media (prefers-reduced-motion:reduce){.pv-build *{animation:none!important}}</style>`;
 async function phoneRender(){
   const f = document.getElementById('phoneFrame'); if (!f) return;
+  phoneWatch(f);
   // The step's own screen once it exists (Wi-Fi as soon as it has a name), the guide's home until then.
   const scr = ordered(guideSections()).some(x => x.id === PHONE.screen) ? PHONE.screen : 'home';
   const { style, body } = await pvParts(scr);
@@ -297,7 +305,7 @@ function openFeedback(){
       const d = device();
       const fields = mode === 'screen' ? { kind: 'screen', screen: screenName, wrong: val('fbt') } : { kind: 'overall', screen: '', rating: rating || '', right: val('fbr'), wrong: val('fbw'), ux: val('fbu') };
       if (!(fields.wrong || fields.right || fields.ux || fields.rating)) { toast('Write a few words first'); return; }
-      try { await nf('feedback', { sid, guide: v('slug'), round: 'preview', email: v('email'), preset: PV.preset, device: deviceLine(d), device_json: JSON.stringify(d), ...fields }); log('feedback', PV.screen); flush(); o.remove(); toast('Thank you, sent!'); }
+      try { await nf('feedback', { sid, guide: v('slug'), round: 'preview', email: v('email'), preset: PV.preset || choosePreset(), device: deviceLine(d), device_json: JSON.stringify(d), ...fields }); log('feedback', PV.screen); flush(); o.remove(); toast('Thank you, sent!'); }
       catch (err) { toast('Could not send. Check your connection.'); }
     }
   });

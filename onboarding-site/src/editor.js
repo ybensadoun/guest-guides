@@ -667,14 +667,14 @@ function cmLangBar(langs) {
 }
 function cmStepHTML(m) {
   const ch = cmChanged(m), langs = edLangs();
-  return `<div class="split">${railHTML(m.id)}<div class="col">
+  return `<div class="split has-phone">${railHTML(m.id)}<div class="col">
     <section class="mhead" style="${tileVars(m)}"><div class="row1"><span class="pill ${ch ? 'chk' : cmNeeds(m) ? 'new' : 'done'}" id="cmPill">${esc(cmPillText(ch, m))}</span></div><h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
     <section class="card">${m.lang && langs.length > 1 ? cmLangBar(langs) : ''}<div class="edz">${m.body(edC())}</div>
-      <div class="foot"><p class="todo" id="cmFoot">${esc(cmFootText())}</p><div class="row"><a class="btn small" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${I.eye}Preview</a><a class="btn small primary" href="#publish" id="cmGoPub"${cmDirty() ? '' : ' hidden'}>Review and publish</a></div></div></section></div></div>`;
+      <div class="foot"><p class="todo" id="cmFoot">${esc(cmFootText())}</p><div class="row"><a class="btn small" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${I.eye}Preview</a><a class="btn small primary" href="#publish" id="cmGoPub"${cmDirty() ? '' : ' hidden'}>Review and publish</a></div></div></section></div>${cmPhoneHTML(m.id)}</div>`;
 }
 function cmPublishHTML() {
   const ch = cmSteps().filter(cmChanged), dirty = cmDirty(), url = cmLiveUrl();
-  return `<div class="split">${railHTML('publish')}<div class="col">
+  return `<div class="split has-phone">${railHTML('publish')}<div class="col">
     <section class="mhead" style="--tc:var(--ink);--ti:var(--paper);--sh:var(--sun)"><h1>${cmLive() ? 'Publish changes' : 'Publish your guide'}</h1>
       <p>${dirty ? 'Look at your changes in the preview, then publish: guests see them straight away.' : cmLive() ? 'Nothing is waiting: guests see the guide as it is here.' : 'Your guide is ready. Publish it to share it with your guests.'}</p></section>
     <section class="card">
@@ -682,9 +682,33 @@ function cmPublishHTML() {
       <p class="hint">${cmLive() ? 'Guests open' : 'Once it is published, guests open'} <a href="${esc(url)}" target="_blank" rel="noopener" style="white-space:nowrap">${esc(url.replace(/^https?:\/\//, ''))}</a></p>
       <div class="foot"><div class="row"><a class="btn" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${I.eye}Preview</a>${dirty || !cmLive() ? `<button class="btn primary" type="button" data-cpublish>${I.send}${cmLive() ? 'Publish changes' : 'Publish my guide'}</button>` : ''}</div>
         ${dirty ? `<div class="cm-row"><button class="btn small" type="button" data-cdiscard>Undo all changes</button><p class="hint">Goes back to the guide guests see now.</p></div>` : ''}</div></section>
-    ${cmLive() ? `<section class="card"><div class="cm-row"><button class="btn small" type="button" data-cunpublish>Unpublish</button><p class="hint">Takes the guide offline: guests can no longer open it. Nothing is deleted, and you can publish it again any time.</p></div></section>` : ''}</div></div>`;
+    ${cmLive() ? `<section class="card"><div class="cm-row"><button class="btn small" type="button" data-cunpublish>Unpublish</button><p class="hint">Takes the guide offline: guests can no longer open it. Nothing is deleted, and you can publish it again any time.</p></div></section>` : ''}</div>${cmPhoneHTML('publish')}</div>`;
 }
 const cmIsPage = r => r === 'publish' || cmSteps().some(m => m.id === r);
+/* The phone next to every step (from 1240 px wide), as in the builder. Here it is the guide itself: the shared viewer with
+   the changes not published yet (/g/<slug>?preview), on the screen the step changes; it reloads after each saved change,
+   where it was. Yohann, 29 Oct 2026: "we should always see the preview". */
+const cmScreen = r => { const m = cmSteps().find(x => x.id === r); return !m || !m.sec || m.sec === 'quick' ? 'home' : m.sec === 'markets' ? 'markets' : 's/' + m.sec; };
+const cmPhoneHTML = r => `<aside class="side-phone" aria-label="Your guide, as guests will see it"><div class="phone"><div class="phone-scr" id="cmPhone" data-screen="${esc(cmScreen(r))}"><p class="phone-msg" id="cmPhoneMsg" hidden></p></div></div><p>Your guide with your changes, as guests will see it</p></aside>`;
+function cmPhoneOn() {
+  const s = document.getElementById('cmPhone'); if (!s) return;
+  const msg = document.getElementById('cmPhoneMsg'), say = t => { msg.textContent = t; msg.hidden = !t; };
+  if (!CM.g.slug) return say('Your guide shows here once it has a web address.');
+  if (!matchMedia('(min-width:1240px)').matches) return;   // the phone is hidden on narrower screens: nothing loads
+  let f = s.querySelector('iframe');
+  if (!f) {
+    if (CM.phoneScr !== s.dataset.screen) { CM.phoneScr = s.dataset.screen; CM.phoneY = 0; }
+    f = document.createElement('iframe'); f.id = 'cmPhoneFrame'; f.title = 'Your guide, as guests will see it';
+    f.addEventListener('load', () => {
+      say(navigator.onLine ? '' : 'No connection: your guide shows here again once you are online.');
+      try { const w = f.contentWindow, y = CM.phoneY || 0; w.addEventListener('scroll', () => { CM.phoneY = w.scrollY; }, { passive: true }); if (y) setTimeout(() => w.scrollTo(0, y), 600); } catch (e) { /* another origin: no scroll memory */ }
+    });
+    s.prepend(f); f.src = cmPreviewUrl() + '#' + s.dataset.screen;
+  }
+  phoneWatch(f);
+}
+function cmPhoneRefresh() { const f = document.getElementById('cmPhoneFrame'); if (!f) return; try { f.contentWindow.location.reload(); } catch (e) { f.src = f.src; } }
+addEventListener('resize', () => { if (CM.on) cmPhoneOn(); });
 function cmPageHTML(r) { const m = cmSteps().find(x => x.id === r); return m ? cmStepHTML(m) : cmPublishHTML(); }
 // No overview page: the editor opens on the step the host was on last time in this guide (remembered on this device), else the first.
 const CM_LAST = 'porta-editor-step-v1';
@@ -734,7 +758,8 @@ async function cmSave() {
   CM.saving = (async () => {
     const dirty = cmDirty();
     try { await ensureFresh(); await sb('/rest/v1/guides?id=eq.' + CM.g.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: { draft: dirty ? { content: CM.g.content, theme: CM.g.theme, savedAt: new Date().toISOString() } : null } }); setSave('ok', cmSaveText()); }
-    catch (e) { setSave('err', 'Not saved: ' + niceError(e)); }
+    catch (e) { setSave('err', 'Not saved: ' + niceError(e)); return; }
+    cmPhoneRefresh();
   })();
   try { await CM.saving; } finally { CM.saving = null; }
   if (CM.again) { CM.again = false; return cmSave(); }

@@ -65,7 +65,7 @@ function moduleHTML(m){
         ${(A._done || {})[m.id] && needsYou(m) ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
       </div></section>
     <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div>
-    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside></div>`;
+    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>${A._draftAt || v('placeName') || v('guideName') ? 'Your guide, live, as guests see it' : 'An example for now: load your listing and it becomes your guide'}</p></aside></div>`;
 }
 function sendHTML(){
   const mods = visible(), miss = sendMissing();

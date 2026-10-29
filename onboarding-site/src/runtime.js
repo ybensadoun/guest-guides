@@ -244,7 +244,7 @@ function render(){
   if (path && path !== 'index.html' && CM.on) { location.replace('/g/' + encodeURIComponent(CM.g.slug)); return; }
   if (path && path !== 'index.html') { if (path === v('slug') || path === 'preview') { renderPreview(); return; } main.innerHTML = notHereHTML(path); return; }
   if (CM.on && !cmIsPage(r)) { history.replaceState(null, '', '#' + cmStart()); r = route(); }   // no overview: the editor opens on a step
-  if (CM.on) { main.innerHTML = cmPageHTML(r); cmRemember(r); }   // the guide exists: the steps edit it (editor.js)
+  if (CM.on) { main.innerHTML = cmPageHTML(r); cmRemember(r); cmPhoneOn(); }   // the guide exists: the steps edit it (editor.js)
   else if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
   else if (r === 'building' || (A._sentAt && !location.hash && window.__acctGuide && window.__acctGuide() && window.__acctGuide().status !== 'draft')) { main.innerHTML = buildingHTML(); watchBuild(); }
   else if (r === 'thanks' || (A._sentAt && !location.hash)) main.innerHTML = thanksHTML();

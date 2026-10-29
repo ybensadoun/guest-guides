@@ -45,6 +45,7 @@ async function open(browser, G, w, h, stored = {}, listing = null) {
   await ctx.route('**/*', route => {
     const req = route.request(), u = new URL(req.url());
     if (u.host === 'editor.test' && u.pathname === '/api/listing' && listing) return listing(route, JSON.parse(req.postData() || '{}'));
+    if (u.host === 'editor.test' && u.pathname.startsWith('/g/')) { ctx.viewer = (ctx.viewer || 0) + 1; return route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><meta charset="utf-8"><body style="margin:0;font:18px sans-serif"><div id="view" style="padding:24px">The guide itself</div><div style="height:3000px"></div>' }); }
     if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
     if (u.origin !== SB) return route.continue();   // fonts, public pictures
     if (u.pathname.startsWith('/auth/v1/user')) return json(route, { id: G.owner, email: 'test@example.org' });
@@ -266,6 +267,18 @@ try {
     const shown = await inPhone(p, d => d.body.textContent);
     ok('desktop: typing the Wi-Fi updates the phone', /Casa Test Wifi/.test(shown || ''), (shown || '').slice(0, 60));
     await p.screenshot({ path: join(SHOTS, 'step-with-phone-desktop.png') });
+    const arrows = () => inPhone(p, d => { const a = d.querySelector('.pv-sec .ar'); return a ? getComputedStyle(a).display !== 'none' : null; });
+    await go(p, '#look'); await p.waitForTimeout(700);   // The look shows the guide's home in the phone
+    ok('desktop: no layout picked, the phone shows Bauhaus (colour tiles with arrows)', (await arrows()) === true);
+    await p.screenshot({ path: join(SHOTS, 'look-bauhaus-desktop.png') });
+    ok('desktop: the phone draws the guide at a phone\'s width (390 px), scaled into the frame', await p.$eval('#phoneFrame', f => f.offsetWidth === 390 && /scale\(0\.\d+\)/.test(f.style.transform)).catch(() => false));
+    const clash = await inPhone(p, d => [...d.querySelectorAll('.pv-sec')].flatMap(el => { const s = getComputedStyle(el, '::before'), b = el.getBoundingClientRect(), n = x => parseFloat(x) || 0;
+      const w = n(s.width) + n(s.borderLeftWidth) + n(s.borderRightWidth), h = n(s.height) + n(s.borderTopWidth) + n(s.borderBottomWidth), x2 = b.right - n(s.right), x1 = x2 - w, y1 = b.top + n(s.top), y2 = y1 + h;
+      const boxes = t => { if (t.matches('.ic, .ar')) return [t.getBoundingClientRect()]; const g = d.createRange(); g.selectNodeContents(t); return [...g.getClientRects()]; };
+      return [...el.querySelectorAll('b, small, .ic svg, .ar')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent); }));
+    ok('desktop: in the phone, no tile text under its corner shape', Array.isArray(clash) && clash.length === 0 && !!(await inPhone(p, d => d.querySelectorAll('.pv-sec').length)), (clash || []).join('; '));
+    await p.click('.moods input[value="minimal"]', { force: true }); await p.waitForTimeout(700);
+    ok('desktop: picking another layout changes the phone at once', (await arrows()) === false);
     ok('desktop wow: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const slug = B.answers.slug || 'my-house';   // "Preview my guide" saves the answers on the device first, then opens /<address>
@@ -293,6 +306,26 @@ try {
   { const { ctx, p } = await open(browser, E, 360, 780, { 'porta-editor-step-v1': JSON.stringify({ [E.id]: 'look' }) });
     await p.goto('http://editor.test/'); await ready(p);
     ok('editor: reopens on the step left last time', (await p.evaluate(() => location.hash)) === '#look');
+    await ctx.close(); }
+  { const { ctx, p, errors } = await open(browser, E, 1280, 860);
+    await p.goto('http://editor.test/#guide'); await ready(p); await p.waitForTimeout(500);
+    const src = () => p.$eval('#cmPhoneFrame', f => f.getAttribute('src')).catch(() => '');
+    ok('editor, desktop: the phone sits next to the step and shows the guide itself, with the changes', await p.$eval('.side-phone', e => getComputedStyle(e).display !== 'none').catch(() => false) && /\/g\/[^?]+\?preview#home$/.test(await src()), await src());
+    const sec = await p.evaluate(() => ['todo', 'rubbish', 'contacts', 'transport', 'events'].find(id => document.querySelector(`.rail a.si[href="#${id}"]`)));
+    await go(p, '#' + sec); await p.waitForTimeout(400);
+    ok('editor, desktop: a section step shows that section in the phone', new RegExp('#s/').test(await src()), `${sec}: ${await src()}`);
+    const lay = await p.evaluate(() => { const a = document.querySelector('.split .col').getBoundingClientRect(), b = document.querySelector('.side-phone').getBoundingClientRect(); return a.right <= b.left && b.right <= innerWidth; });
+    ok('editor, desktop: the step and the phone do not overlap', lay);
+    await p.screenshot({ path: join(SHOTS, 'editor-phone-desktop.png') });
+    const before = ctx.viewer || 0; await go(p, '#guide'); await p.waitForTimeout(400);
+    const loads = ctx.viewer || 0, field = await p.$('.edz input[type="text"], .edz textarea');
+    if (field) { await field.fill(((await field.inputValue()) || '') + ' '); await p.waitForTimeout(2200); }
+    ok('editor, desktop: a saved change reloads the phone', !!field && (ctx.viewer || 0) > loads, `${before} -> ${loads} -> ${ctx.viewer}`);
+    ok('editor, desktop phone: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  { const { ctx, p } = await open(browser, E, 360, 780);
+    await p.goto('http://editor.test/#guide'); await ready(p); await p.waitForTimeout(400);
+    ok('editor, 360 px: no phone is loaded (it is hidden on small screens)', !(await p.$('#cmPhoneFrame')) && !(ctx.viewer || 0));
     await ctx.close(); }
   for (const [G, tag] of [[B, 'builder'], [E, 'editor']]) {
     const { ctx, p, errors } = await open(browser, G, 1280, 860);

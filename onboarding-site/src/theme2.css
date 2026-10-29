@@ -142,6 +142,10 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .phone{width:300px;max-width:100%;aspect-ratio:300/620;border-radius:44px;background:#121417;padding:11px;position:relative;box-shadow:0 30px 60px -26px rgba(20,24,30,.5),inset 0 0 0 2px #2b2f35}
 .phone::before{content:"";position:absolute;top:19px;left:50%;width:72px;height:20px;margin-left:-36px;border-radius:12px;background:#121417;z-index:2}
 .phone iframe{display:block;width:100%;height:100%;border:0;border-radius:34px;background:#fff}
+.phone .phone-scr{position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;background:#fff}
+.phone .phone-scr iframe{position:absolute;left:0;top:0;width:390px;height:100%;border-radius:0;transform-origin:0 0}
+.phone-msg{position:absolute;left:12px;right:12px;bottom:14px;z-index:1;margin:0;padding:10px 12px;border-radius:14px;background:rgba(18,18,18,.88);color:#fff;font-size:13px;line-height:1.35;text-align:center}
+.phone-msg[hidden]{display:none}
 .side-phone{display:none}
 @media (min-width:1240px){
   .wrap:has(.split.has-phone){max-width:1440px}
