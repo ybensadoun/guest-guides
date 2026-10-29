@@ -104,7 +104,7 @@ try {
     return [...el.querySelectorAll('b, small, .ex-ic svg, .ex-ar, .ex-tag, .ex-pill')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent + ': ' + t.tagName); }));
   for (const [w, h, tag] of [[360, 780, '360 px'], [1280, 860, 'desktop']]) {
     const { ctx, p, errors } = await signedOut(w, h, false);
-    ok(`signed out, ${tag}: the page in the guides' look, sign-up card shown`, !!(await p.$('#acct .ac-hero')) && !!(await p.$('#acct #acForm')));
+    ok(`signed out, ${tag}: the page in the guides' look, asking for the listing link, not an account`, !!(await p.$('#acct .ac-hero')) && !!(await p.$('#acct #acUrl')) && !(await p.$('#acct #acEmail')) && !!(await p.$('#acct [data-m="login"]')));
     ok(`signed out, ${tag}: no Google button while Google is off`, !(await p.$('#acGoogle')));
     ok(`signed out, ${tag}: no sideways scroll`, (await p.evaluate(() => document.getElementById('acct').scrollWidth - window.innerWidth)) <= 0);
     const clash = await tileClash(p); ok(`signed out, ${tag}: no tile text under its corner shape`, !clash.length, clash.join('; '));
@@ -117,12 +117,64 @@ try {
     await ctx.close();
   }
   { const { ctx, p, errors, seen } = await signedOut(360, 780, true);
-    ok('signed out: with Google on, "Continue with Google" is there', !!(await p.$('#acGoogle')));
+    ok('signed out: the first page has no Google button (no account asked yet)', !(await p.$('#acGoogle')));
+    await p.click('#acct [data-m="login"]'); await p.waitForTimeout(200);
+    ok('signed out: with Google on, Log in offers "Continue with Google"', !!(await p.$('#acGoogle')));
     await p.screenshot({ path: join(SHOTS, 'signed-out-google-360.png') });
     await p.click('#acGoogle'); await p.waitForTimeout(800);
     const to = seen[0] ? new URL(seen[0]) : null;
     ok('signed out: Google button goes to Supabase Google sign-in and back to this site', !!to && to.searchParams.get('provider') === 'google' && to.searchParams.get('redirect_to') === 'http://editor.test/', seen[0] || 'no call');
     ok('signed out with Google: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // ---- No account until the end (docs/plan-fast-builder.md, step 7): the link, the wow and the steps on this device, then the account ----
+  const visitor = async (w, h, existing) => {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } }), rows = {}, calls = [], uid = '00000000-0000-0000-0000-0000000070aa';
+    if (existing) rows[existing.id] = { ...existing, owner: uid };
+    await ctx.route('**/*', route => { const req = route.request(), u = new URL(req.url());
+      if (u.host === 'editor.test' && u.pathname === '/api/listing') return listing(route, JSON.parse(req.postData() || '{}'));
+      if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
+      if (u.origin !== SB) return route.continue();
+      if (u.pathname === '/auth/v1/settings') return json(route, { external: { google: true, email: true } });
+      if (u.pathname === '/auth/v1/signup' || u.pathname === '/auth/v1/token') { calls.push(u.pathname.split('/').pop()); return json(route, { access_token: 'tk', refresh_token: 'rt', expires_in: 3600, user: { id: uid, email: 'visitor@example.org' } }); }
+      if (u.pathname.startsWith('/auth/v1/user')) return json(route, { id: uid, email: 'visitor@example.org' });
+      if (u.pathname.startsWith('/rest/v1/guides')) {
+        const id = (u.search.match(/id=eq\.([0-9a-f-]+)/) || [])[1];
+        if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'), r = { id: '00000000-0000-0000-0000-00000000710' + Object.keys(rows).length, owner: uid, answers: b.answers || {}, status: 'draft', slug: null, origin: null, content: null, theme: null, draft: null }; rows[r.id] = r; calls.push('new house'); return json(route, [r]); }
+        if (req.method() === 'PATCH') { const b = JSON.parse(req.postData() || '{}'); if (rows[id] && b.answers) rows[id].answers = b.answers; return json(route, rows[id] ? [rows[id]] : []); }
+        if (/select=id(%2C|,)slug/.test(u.search)) return json(route, Object.values(rows).map(r => ({ id: r.id, slug: r.slug, status: r.status })));
+        return json(route, rows[id] ? [rows[id]] : []);
+      }
+      return json(route, u.pathname.startsWith('/auth/') ? {} : []); });
+    const p = await ctx.newPage(), errors = []; p.on('pageerror', e => errors.push(e.message));
+    await p.goto('http://editor.test/'); await p.waitForSelector('#acUrl', { timeout: 15000 }).catch(() => {});
+    await p.fill('#acUrl', 'https://www.airbnb.com/rooms/12345678'); await p.click('#acct .go');
+    await p.waitForFunction(() => /Your guide is written/.test((document.getElementById('yoursTx') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+    return { ctx, p, errors, rows, calls };
+  };
+  { const { ctx, p, errors, rows, calls } = await visitor(360, 780);
+    ok('no account yet: the link opens the wow at once, the first page is gone, the top bar offers Log in', (await p.evaluate(() => location.hash)) === '#yours' && !(await p.$('#acct')) && !!(await p.$('.loginTop')) && !(await p.$('.logoutTop')));
+    await go(p, '#known'); await p.fill('[data-k="wifiName"]', 'Visitor wifi'); await p.waitForTimeout(400);
+    ok('no account yet: the steps work, answers saved on this device', /on this device/i.test(await p.textContent('#saveState').catch(() => '')) && !calls.length, (await p.textContent('#saveState').catch(() => '')).trim());
+    await go(p, '#send');
+    ok('no account yet: Review and send offers "Save my guide", not Send', !!(await p.$('[data-acctnow="signup"]')) && !(await p.$('#send')));
+    await p.click('[data-acctnow="signup"]'); await p.waitForSelector('#acct.only #acEmail', { timeout: 3000 }).catch(() => {});
+    ok('Save my guide: the account card alone, over the builder, with Google', /Save your guide/.test(await p.textContent('#acct.only .ac-card h2').catch(() => '')) && !!(await p.$('#acct.only #acGoogle')) && !(await p.$('#acct.only .ac-hero')));
+    await p.screenshot({ path: join(SHOTS, 'save-sheet-360.png') });
+    await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+    ok('Save my guide: Escape closes it, nothing lost', !(await p.$('#acct')) && (await p.evaluate(() => location.hash)) === '#send');
+    await p.click('[data-acctnow="signup"]'); await p.waitForSelector('#acEmail'); await p.fill('#acEmail', 'visitor@example.org'); await p.fill('#acPw', 'a-good-password'); await p.click('#acct .go');
+    await p.waitForLoadState('load'); await p.waitForTimeout(2500);
+    const h = Object.values(rows)[0] || { answers: {} };
+    ok('after the account: the answers from this device are the account\'s house, back on Review and send, with Send', Object.keys(rows).length === 1 && h.answers.wifiName === 'Visitor wifi' && h.answers.listingUrl === 'https://www.airbnb.com/rooms/12345678' && (await p.evaluate(() => location.hash)) === '#send' && !!(await p.$('#send')) && !!(await p.$('.logoutTop')), calls.join(', '));
+    ok('no account until the end: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  { const existing = { id: '00000000-0000-0000-0000-0000000072ee', answers: { placeName: 'My published house', _savedAt: 1 }, status: 'published', slug: 'my-house', origin: null, content: null, theme: null, draft: null };
+    const { ctx, p, errors, rows } = await visitor(1280, 860, existing);
+    await p.click('.loginTop'); await p.waitForSelector('#acct.only #acEmail', { timeout: 3000 }).catch(() => {});
+    await p.fill('#acEmail', 'visitor@example.org'); await p.fill('#acPw', 'whatever'); await p.click('#acct .go');
+    await p.waitForLoadState('load'); await p.waitForTimeout(2500);
+    ok('Log in after building without an account: a new house with those answers, the account\'s own house untouched', Object.keys(rows).length === 2 && rows[existing.id].answers.placeName === 'My published house' && Object.values(rows).some(r => r.id !== existing.id && r.answers.listingUrl === 'https://www.airbnb.com/rooms/12345678'));
+    ok('Log in after building: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // Back from Google, brand-new account: signed in, no gate, straight to "paste your link".
   { const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } }), rows = {}, uid = '00000000-0000-0000-0000-00000000600d';

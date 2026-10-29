@@ -881,7 +881,9 @@ function sendHTML(){
         <label class="f full" style="flex-direction:row;gap:10px;align-items:flex-start"><input type="checkbox" data-check="consent"${A.consent ? ' checked' : ''} style="width:20px;height:20px;margin-top:2px;flex:none"><span>I own these photos and texts or may use them, and I understand the guide is visible to anyone who has its link.</span></label></div>
       <div class="foot">${miss.length ? `<p class="todo">Before sending: <b>${miss.map(esc).join(', ')}</b></p>` : '<p class="todo"></p>'}
         <p id="sendState"></p>
-        <div class="row"><button class="btn" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Preview my guide</button><button class="btn primary" type="button" id="send"${miss.length ? ' disabled' : ''}>${I.send.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Send to build my guide</button></div></div>
+        ${AUTH ? '' : '<p class="hint">Your answers are on this device only. Save them to an account first: then we build your guide from them.</p>'}
+        <div class="row"><button class="btn" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Preview my guide</button>${AUTH ? `<button class="btn primary" type="button" id="send"${miss.length ? ' disabled' : ''}>${I.send.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Send to build my guide</button>`
+          : '<button class="btn primary" type="button" data-acctnow="signup">Save my guide</button>'}</div></div>
     </section><div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div></div></div>`;
 }
 
@@ -1702,7 +1704,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 09:26 (Madrid time, after commit 5589491)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 09:41 (Madrid time, after commit d5720df)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -1784,7 +1786,7 @@ function lookCoverHTML(){
 function lookArtHTML(shown){
   const g = window.__acctGuide && window.__acctGuide(), busy = !!CM.artJob;
   return `<div class="cm-art"><div class="cm-arthd"><img src="${esc(shown)}" alt=""><span><b>An artistic version of this picture</b><small>“Do it for me” makes an artistic rendering of the house, in the picture’s own colours.</small></span></div>
-      ${!g ? '<p class="hint">Log in first: the drawing is made for your account.</p>' : `<div class="cm-row"><button class="btn small primary" type="button" data-obart="auto"${busy ? ' disabled' : ''}>Do it for me</button><button class="btn small" type="button" data-obart="words"${busy ? ' disabled' : ''}>With my own words</button></div>
+      ${!g ? '<div class="cm-row"><span class="hint">The drawing is made for your account, so it comes after you save your guide.</span><button class="btn small primary" type="button" data-acctnow="signup">Save my guide</button></div>' : `<div class="cm-row"><button class="btn small primary" type="button" data-obart="auto"${busy ? ' disabled' : ''}>Do it for me</button><button class="btn small" type="button" data-obart="words"${busy ? ' disabled' : ''}>With my own words</button></div>
       ${CM.artWords != null ? `<div class="f full"><label for="ob_artw">How should it look?</label><textarea id="ob_artw" rows="2" placeholder="A watercolour in soft blues, like an old travel poster">${esc(CM.artWords)}</textarea><div class="cm-row"><button class="btn small primary" type="button" data-obart="draw"${busy ? ' disabled' : ''}>Draw it</button></div></div>` : ''}
       ${busy ? progBar('art', 'Drawing your cover') : ''}
       ${CM.artRes ? `<figure class="cm-artres"><img src="${esc(CM.artRes.url)}" alt="Your artistic cover"><figcaption class="cm-row"><button class="btn small primary" type="button" data-obartuse="1">Use this cover</button><button class="btn small" type="button" data-obart="again"${busy ? ' disabled' : ''}>Try again</button></figcaption></figure>` : ''}
@@ -1903,13 +1905,18 @@ function niceError(e){
   return m || 'Something went wrong. Try again.';
 }
 
-/* The sign-in screen: shown before anything else, so every answer belongs to an account. */
+/* The first page for a visitor who is not signed in, and the account card (gate, below). */
 (function(){
   const st = document.createElement('style');
   st.textContent = `/* The sign-in screen, in the guides' own look (Ca La Kimberly's "Bauhaus summer": paper, bold primaries, Jost) */
 #acct{position:fixed;inset:0;z-index:200;overflow:auto;background:#F3EEE3;color:#121212;font-family:"Jost",system-ui,-apple-system,"Segoe UI",sans-serif;
   --k-ink:#121212;--k-blue:#1D4FA0;--k-red:#D52B1E;--k-yellow:#F5C400;--k-orange:#EC6A1C;--k-green:#0E7C46;--k-line:#DED6C6;--k-muted:#4A4A4A}
 #acct *{box-sizing:border-box}
+#acct.only{background:rgba(18,18,18,.55);display:grid;place-items:center;padding:16px}
+#acct .ac-sheet{position:relative;width:100%;max-width:440px;margin:auto}
+#acct .ac-sheet .ac-card{box-shadow:0 24px 60px rgba(0,0,0,.3)}
+#acct .ac-sheet .ac-card h2{padding-right:44px}
+#acct .ac-x{position:absolute;top:12px;right:12px;z-index:1;width:40px;height:40px;border-radius:50%;border:0;background:#F3EEE3;color:var(--k-ink);font-size:24px;line-height:1;cursor:pointer}
 #acct .ac2{max-width:1120px;margin:0 auto;padding:18px 16px 48px;display:grid;gap:18px;grid-template-areas:"top" "hero" "card" "tiles"}
 #acct .ac-top{grid-area:top;display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px}
 #acct .ac-door{width:22px;height:28px;border-radius:11px 11px 3px 3px;background:var(--k-ink);position:relative;flex:none}
@@ -2166,39 +2173,61 @@ function acExample(){
           <button class="ac-cta" type="button">Make this guide for your house →</button>
         </section>`;
 }
-async function gate(mode0, notice, noticeOk){
+// The account card. On the first page (signed out, nothing on this device yet) it asks for the listing link, not an
+// account: the account comes at the end, after the wow (docs/plan-fast-builder.md, step 7; Yohann, 29 Oct 2026).
+// mode: 'start' (the link), 'signup', 'login', 'recover', 'reset'. sheet: the card alone over the builder, with a close
+// button, when the account is needed (Review and send, an artistic cover, Log in in the top bar).
+// Resolves true once signed in, 'link' or 'steps' when the visitor starts without one, false when the sheet is closed.
+async function gate(mode0, notice, noticeOk, sheet){
   await googleOn();
   return new Promise(resolve => {
-    let mode = mode0 || 'signup', drawn = 0;
+    let mode = mode0 || 'start', drawn = 0;
     const el = document.getElementById('acct') || Object.assign(document.createElement('div'), { id: 'acct' });
     if (!el.isConnected) document.body.appendChild(el);
+    const done = r => { el.remove(); removeEventListener('keydown', esc_); resolve(r); };
+    const esc_ = e => { if (sheet && e.key === 'Escape') done(false); };
+    if (sheet) addEventListener('keydown', esc_);
     const draw = (msg, ok) => {
-      const up = mode === 'signup', rec = mode === 'recover', reset = mode === 'reset';
+      const up = mode === 'signup', rec = mode === 'recover', reset = mode === 'reset', start = mode === 'start';
       const google = window.__googleOn && (up || mode === 'login');
-      el.innerHTML = `<div class="ac2">
+      const card = `<section class="ac-card">
+          <h2>${start ? 'Start with your listing' : reset ? 'Choose a new password' : rec ? 'Reset your password' : up ? (sheet ? 'Save your guide' : 'Create your account') : 'Welcome back'}</h2>
+          <p class="lead">${start ? 'See your whole guide in about a minute. No account needed: you save it at the end.' : reset ? 'Pick a new password, then you are back in.' : rec ? 'We email you a link to choose a new password.' : up ? (sheet ? 'Create your account: your guide is kept in it, and you can come back to it from any device.' : 'So you can come back any time and change your answers. It takes a minute.') : 'Log in to continue where you left off.'}</p>
+          ${google ? `<button class="gbtn" type="button" id="acGoogle">${GOOGLE_G}Continue with Google</button><div class="or">or with your email</div>` : ''}
+          <form id="acForm" novalidate>
+          ${start ? `<label for="acUrl">Your listing link</label><input id="acUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://www.airbnb.com/rooms/…" value="${esc(v('listingUrl'))}">` : ''}
+          ${start || reset ? '' : '<label for="acEmail">Email</label><input id="acEmail" type="email" autocomplete="email" inputmode="email" required>'}
+          ${start || rec ? '' : `<label for="acPw">${reset ? 'New password' : 'Password'}</label><input id="acPw" type="password" autocomplete="${up || reset ? 'new-password' : 'current-password'}" ${up || reset ? 'minlength="8" placeholder="At least 8 characters"' : ''} required>`}
+          <button class="go" type="submit">${start ? 'Show me my guide' : reset ? 'Save password' : rec ? 'Send me the link' : up ? (sheet ? 'Create my account' : 'Create my account') : 'Log in'}</button>
+          <div class="acmsg${ok ? ' ok' : ''}" id="acMsg" role="status">${esc(msg || '')}</div>
+        </form>
+          <div class="alt">${start ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : `New here? <button type="button" data-m="${sheet ? 'signup' : 'start'}">${sheet ? 'Create an account' : 'Start with your listing'}</button> · <button type="button" data-m="recover">Forgot password?</button>`}</div>
+          ${start ? '<div class="alt"><button type="button" id="acSteps">No listing link? Fill it in step by step</button></div>' : ''}
+        ${start ? '<p class="small">Your answers stay on this device until you create your account. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>'
+          : up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>' : ''}</section>`;
+      el.className = sheet ? 'only' : '';
+      el.innerHTML = sheet ? `<div class="ac-sheet" role="dialog" aria-modal="true" aria-label="Your account"><button type="button" class="ac-x" aria-label="Close">×</button>${card}</div>`
+        : `<div class="ac2">
         <div class="ac-top"><span class="ac-door" aria-hidden="true"></span>Guest Guide Maker</div>
         <section class="ac-hero"><div class="ac-art" aria-hidden="true"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i><i class="s5"></i></div>
           <div class="ac-name"><small>Guest guides for holiday homes</small><h1>Your guest guide, written for you.</h1>
             <p>Paste your Airbnb link: in about a minute you see your whole guide, with the house, the rules, the Wi-Fi and the best of the area, in your guests' languages. Then you make it yours.</p></div>
 </section>
-        <section class="ac-card">
-          <h2>${reset ? 'Choose a new password' : rec ? 'Reset your password' : up ? 'Create your account' : 'Welcome back'}</h2>
-          <p class="lead">${reset ? 'Pick a new password, then you are back in.' : rec ? 'We email you a link to choose a new password.' : up ? 'So you can come back any time and change your answers. It takes a minute.' : 'Log in to continue where you left off.'}</p>
-          ${google ? `<button class="gbtn" type="button" id="acGoogle">${GOOGLE_G}Continue with Google</button><div class="or">or with your email</div>` : ''}
-          <form id="acForm" novalidate>
-          ${reset ? '' : '<label for="acEmail">Email</label><input id="acEmail" type="email" autocomplete="email" inputmode="email" required>'}
-          ${rec ? '' : `<label for="acPw">${reset ? 'New password' : 'Password'}</label><input id="acPw" type="password" autocomplete="${up || reset ? 'new-password' : 'current-password'}" ${up || reset ? 'minlength="8" placeholder="At least 8 characters"' : ''} required>`}
-          <button class="go" type="submit">${reset ? 'Save password' : rec ? 'Send me the link' : up ? 'Create my account' : 'Log in'}</button>
-          <div class="acmsg${ok ? ' ok' : ''}" id="acMsg" role="status">${esc(msg || '')}</div>
-        </form>
-          <div class="alt">${rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : 'New here? <button type="button" data-m="signup">Create an account</button> · <button type="button" data-m="recover">Forgot password?</button>'}</div>
-        ${up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>' : ''}</section>
+        ${card}
         ${acExample()}</div>`;
-      const gb = el.querySelector('#acGoogle'); if (gb) gb.onclick = () => { gb.disabled = true; location.href = `${SB.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + '/')}`; };
+      const gb = el.querySelector('#acGoogle'); if (gb) gb.onclick = () => { gb.disabled = true; flush(); try { sessionStorage.setItem('porta-return', location.hash); if (sheet) sessionStorage.setItem('porta-saved', '1'); } catch (e) {} location.href = `${SB.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + '/')}`; };
       el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; draw(); });
+      const x = el.querySelector('.ac-x'); if (x) x.onclick = () => done(false);
+      if (sheet) el.onclick = e => { if (e.target === el) done(false); };
+      const st = el.querySelector('#acSteps'); if (st) st.onclick = () => { A._skipStart = true; flush(); done('steps'); setTimeout(() => { location.hash = '#listing'; render(); }); };
       const f = el.querySelector('#acForm'), m = el.querySelector('#acMsg');
       f.onsubmit = async ev => {
         ev.preventDefault();
+        if (start) {   // the link: the wow starts at once, no account yet
+          const url = el.querySelector('#acUrl').value.trim(), p = url ? linkProblem(url) : 'Paste the link of your listing first.';
+          if (p) { m.className = 'acmsg'; m.textContent = p; return; }
+          A.listingUrl = url; flush(); done('link'); setTimeout(() => createDraft()); return;
+        }
         const email = ((el.querySelector('#acEmail') || {}).value || '').trim(), pw = (el.querySelector('#acPw') || {}).value || '';
         const btn = f.querySelector('.go'); m.className = "acmsg"; m.textContent = '';
         if (!reset && !/^\S+@\S+\.\S+$/.test(email)) { m.textContent = 'That email address does not look right.'; return; }
@@ -2207,24 +2236,35 @@ async function gate(mode0, notice, noticeOk){
         btn.disabled = true;
         try {
           if (rec) { await sb('/auth/v1/recover', { method: 'POST', body: { email }, token: SB.key }); mode = 'login'; draw('If that email has an account, a link is on its way. Check your inbox.', true); return; }
-          if (reset) { await sb('/auth/v1/user', { method: 'PUT', body: { password: pw } }); history.replaceState(null, '', location.pathname); el.remove(); resolve(true); return; }
+          if (reset) { await sb('/auth/v1/user', { method: 'PUT', body: { password: pw } }); history.replaceState(null, '', location.pathname); done(true); return; }
           if (up) {
             const j = await sb('/auth/v1/signup', { method: 'POST', body: { email, password: pw }, token: SB.key });
-            if (j && j.access_token) { authStore(toSession(j)); try { await nf('signup', { sid, email, device: deviceLine(device()) }); } catch (e) {} el.remove(); resolve(true); return; }
-            mode = 'login'; draw('Almost there: we sent a confirmation link to ' + email + '. Open it, then log in here.', true); return;
+            if (j && j.access_token) { authStore(toSession(j)); try { await nf('signup', { sid, email, device: deviceLine(device()) }); } catch (e) {} done(true); return; }
+            mode = 'login'; draw('Almost there: we sent a confirmation link to ' + email + '. Open it on this device (your answers are kept here), then log in.', true); return;
           }
           const j = await sb('/auth/v1/token?grant_type=password', { method: 'POST', body: { email, password: pw }, token: SB.key });
-          authStore(toSession(j)); el.remove(); resolve(true);
+          authStore(toSession(j)); done(true);
         } catch (e) { btn.disabled = false; m.className = "acmsg"; m.textContent = niceError(e); }
       };
-      setTimeout(() => { const i = el.querySelector('input'); if (i && (drawn++ || innerWidth >= 900)) i.focus(); }, 30);   // on a phone the page opens on the guide, not the keyboard
+      setTimeout(() => { const i = el.querySelector('input'); if (i && (drawn++ || innerWidth >= 900 || sheet)) i.focus(); }, 30);   // on a phone the first page opens on the guide, not the keyboard
     };
     draw(notice, noticeOk);
+    if (sheet) return;
     el.addEventListener('click', e => { if (!e.target.closest('.ac-ex [data-ex], .ac-ex .ac-cta')) return; const c = el.querySelector('.ac-card'); c.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => { const i = c.querySelector('input'); if (i) i.focus({ preventScroll: true }); }, 450); });
     let shown = '';
     const live = setInterval(() => { if (!el.isConnected) return clearInterval(live); const x = el.querySelector('.ac-ex'), h = acExample(); if (x && h !== shown) { shown = h; x.outerHTML = h; } }, 30000);
   });
 }
+// The account, asked when it is needed (Review and send, an artistic cover, Log in). Once signed in, the page starts
+// again: the answers on this device go to the account as a house of their own (acctAttach), and the host is where they were.
+async function acctNow(mode){
+  if (AUTH) return true;
+  const ok = await gate(mode || 'signup', '', false, true);
+  if (ok === true) { flush(); try { sessionStorage.setItem('porta-saved', '1'); } catch (e) {} location.reload(); }
+  return ok === true;
+}
+window.__acctNow = acctNow;
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.loginTop, [data-acctnow]'); if (b) acctNow(b.dataset.acctnow || 'login'); });
 
 // Links in confirmation and reset emails come back as /#access_token=...&type=signup|recovery.
 async function acctHash(){
@@ -2244,6 +2284,9 @@ async function acctHash(){
   } catch (e) { history.replaceState(null, '', location.pathname); return null; }
 }
 
+// The visitor started a guide on this device: a listing link, a listing read, or "step by step". Pages seen do not count
+// (a step can be drawn before the account is known).
+const startedHere = () => !!(A._draftAt || A.listingUrl || A._skipStart);
 const cleanForAccount = () => {
   const p = { ...A }; delete p._log; delete p._sessions;
   p._remote = uploads.filter(u => u.remote).map(u => { const r = { ...u }; delete r.blob; return r; });
@@ -2270,17 +2313,19 @@ async function acctAttach(){
   const user = AUTH.user || {};
   if (A._acct && A._acct !== user.id) await wipeLocal();     // someone else used this device before: never mix their answers in
   HOUSES = (await sb('/rest/v1/guides?select=id,slug,status,origin,name:content->site->>name,guideName:answers->>guideName,place:answers->>placeName&order=created_at.asc')) || [];
-  const pick = HOUSES.find(h => h.id === houseSaved(user.id)) || HOUSES[0];
+  const local = !!((A._seen && A._seen.length) || A.listingUrl);
+  // A guide started on this device before signing in (no account yet, docs/plan-fast-builder.md step 7) becomes a house
+  // of its own: never put on top of a house the account already has.
+  const pick = startedHere() && !A._acct ? null : HOUSES.find(h => h.id === houseSaved(user.id)) || HOUSES[0];
   if (pick && A._house && A._house !== pick.id) await wipeLocal();     // this device's answers are another house's
   const rows = pick ? await sb('/rest/v1/guides?select=id,answers,status,slug,origin,content,theme,draft&id=eq.' + pick.id) : null;
-  const local = !!((A._seen && A._seen.length) || A.listingUrl);
   if (rows && rows[0]) {
     GUIDE = rows[0];
     const rT = (GUIDE.answers || {})._savedAt || 0, lT = A._savedAt || 0;
     if (rT && (rT > lT || !local)) { await adoptRemote(GUIDE.answers); }
   } else {
     const made = await sb('/rest/v1/guides', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { owner: user.id, answers: cleanForAccount() } });
-    GUIDE = made && made[0]; if (GUIDE) HOUSES.push({ id: GUIDE.id, status: GUIDE.status });
+    GUIDE = made && made[0]; if (GUIDE) HOUSES.push({ id: GUIDE.id, status: GUIDE.status, guideName: A.guideName, place: A.placeName });
   }
   if (GUIDE) houseSave(user.id, GUIDE.id);
   A._acct = user.id; A._house = GUIDE && GUIDE.id; flush();
@@ -2456,7 +2501,12 @@ async function accountBoot(){
   if (type === 'recovery' && AUTH) await gate('reset');
   let notice = window.__authError ? 'That sign-in did not work. Try again, or use your email.' : '', noticeOk = false;
   try { if (sessionStorage.getItem('porta-deleted')) { sessionStorage.removeItem('porta-deleted'); notice = 'Your account is deleted, with its houses and photos.'; noticeOk = true; } } catch (e) {}
-  while (!AUTH) { await gate(window.__everSignedIn ? 'login' : 'signup', notice, noticeOk); notice = ''; }
+  try { const back = sessionStorage.getItem('porta-return'); if (back != null) { sessionStorage.removeItem('porta-return'); if (AUTH && back) history.replaceState(null, '', location.pathname + back); } } catch (e) {}   // back from Google, where the host was
+  // Not signed in: the first page asks for the listing link; a visitor who already started goes on where they were. The
+  // answers stay on this device until they make an account (acctNow).
+  if (!AUTH && !startedHere()) await gate('start', notice, noticeOk);
+  if (!AUTH) { if (!document.querySelector('.loginTop')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'loginTop'; b.textContent = 'Log in'; acctBar().appendChild(b); } return; }
+  try { if (sessionStorage.getItem('porta-saved')) { sessionStorage.removeItem('porta-saved'); setTimeout(() => toast('Your guide is saved to your account.'), 700); } } catch (e) {}
   try { await acctAttach(); }
   catch (e) { if (e.status === 401 || e.status === 403) { authStore(null); await accountBoot(); return; } /* offline: keep working on this device */ }
   try { cmInit(); } catch (e) {}
