@@ -167,7 +167,8 @@ const MARKETS_RULE = 'Find the weekly and notable local markets within the radiu
 const TODO_RULE = 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example. ' + HOURS_RULE;
 // A part already in outDir (areaResearch) is not searched again. id: the guide whose progress message follows the research
 // (none for an area or a research job). opt.meter adds up what it costs; opt.parts, opt.rules and opt.searches change which parts
-// are searched, how, and with how many web searches (the quick search at the listing link).
+// are searched, how, and with how many web searches; opt.together asks them side by side (the quick search at the listing
+// link: small questions; the big ones stay one after the other, within the API's tokens per minute).
 async function research(A, outDir, id, opt = {}) {
   mkdirSync(outDir, { recursive: true });
   const { clean, located, allowed, normSchedule } = researchTools();
@@ -176,13 +177,14 @@ async function research(A, outDir, id, opt = {}) {
     ['todo', TODO_RULE],
     ['emergency', 'Find the nearest hospital with an emergency department, the national emergency number and the local health advice line. Same shape: {"groups":[...]}.'],
   ];
-  for (const [kind, rules0] of jobs) {
-    if (existsSync(join(outDir, kind + '.json')) || (opt.parts && !opt.parts.includes(kind))) continue;
+  const one = async ([kind, rules0]) => {
+    if (existsSync(join(outDir, kind + '.json')) || (opt.parts && !opt.parts.includes(kind))) return;
     if (id) say(id, `Researching: ${kind}`);
     const rules = (opt.rules || {})[kind] || rules0;
     try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind, opt.meter, (opt.searches || {})[kind]))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); }
     catch (e) { log(`  research ${kind} skipped:`, e.message); }
-  }
+  };
+  if (opt.together) await Promise.all(jobs.map(one)); else for (const j of jobs) await one(j);
 }
 // Translation by Claude, 40 texts per question: {"<source text>": {"es": "...", ...}}. A text that does not come back stays
 // as it is (Claude down, the day's budget spent): a search or a build is never lost for it. onPart(done, all) for progress.
@@ -643,7 +645,7 @@ async function coverArtJob(j, jp) {
    1. At the listing link, with or without an account: a quick search, for the wow and the phone (area_research). The few
       markets nearest the house, whatever their distance (a city has them within a few streets, the countryside 10 to
       20 km away), and the emergency services, with fewer web searches. Things to do come from Google in the swipe deck.
-      The browser asks the database (start_area_research: one per area of about 3 km for 14 days, shared, with limits per
+      The browser asks the database (start_area_research: one per area, shared for 14 days with the houses its reach covers, with limits per
       visitor, per network address and in all); this worker does it (runArea) within VISITOR_USD_PER_DAY (default 3 USD
       a day, Claude API only), past which it is left to the build. Rows older than 30 days are removed.
    2. Once the guide has an account: the full research in the background (guide job "research", at most one a day per
@@ -673,11 +675,12 @@ async function runArea(only) {
     const dir = join(HERE, 'jobs', 'area-' + row.id), meter = { usd: 0 };
     try {
       rmSync(dir, { recursive: true, force: true });
-      await research({ town: row.town, region: row.region, lat: row.lat, lng: row.lng }, dir, null, { meter, parts: AREA_KINDS, rules: { markets: QUICK_MARKETS }, searches: QUICK_SEARCHES });
+      await research({ town: row.town, region: row.region, lat: row.lat, lng: row.lng }, dir, null, { meter, parts: AREA_KINDS, rules: { markets: QUICK_MARKETS }, searches: QUICK_SEARCHES, together: true });
       const result = Object.fromEntries(AREA_KINDS.filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))]));
       if (!Object.keys(result).length) throw new Error('Nothing came back from the research');
-      await ap({ status: 'done', result, usd: claudeApi ? +meter.usd.toFixed(3) : null, message: null, finished_at: new Date().toISOString() });
-      log(`  area researched: ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
+      const reach = Math.max(0, ...(((result.markets || {}).markets) || []).filter(m => m.lat != null && m.lng != null).map(m => kmBetween(+row.lat, +row.lng, +m.lat, +m.lng)));   // the database shares it within half of this
+      await ap({ status: 'done', result, reach_km: reach ? +reach.toFixed(2) : null, usd: claudeApi ? +meter.usd.toFixed(3) : null, message: null, finished_at: new Date().toISOString() });
+      log(`  area researched (reach ${reach.toFixed(1)} km): ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
     } catch (e) { log('  area research FAILED:', e.message); await ap({ status: 'failed', message: String(e.message).slice(0, 200), usd: claudeApi ? +meter.usd.toFixed(3) : null, finished_at: new Date().toISOString() }); }
     finally { rmSync(dir, { recursive: true, force: true }); }
   })();

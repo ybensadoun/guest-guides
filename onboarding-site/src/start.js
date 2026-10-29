@@ -78,7 +78,7 @@ async function createDraft(fromStep){
     let d = await listingAsk({ url, text, town, stage: 'page' });
     if (!d.ok) { log('draft_fail', d.need || 'error'); return back(d.need || 'text', d.message); }
     if (d.stage === 'page') {   // the page is read: show the house, then let Claude write the rest from what was read
-      applyEarly(d); WOW.stage = 'writing'; yoursRefresh(); phoneRender();
+      applyEarly(d); WOW.stage = 'writing'; yoursRefresh(); phoneRender(); researchStart();   // the research of the area starts with the house's position, without waiting for Claude
       d = await listingAsk({ url, text, town, stage: 'write', src: d.src });
       if (!d.ok) { log('draft_fail', d.need || 'error'); return back(d.need || 'retry', d.message); }
     }
@@ -121,7 +121,7 @@ async function researchJob(g){
   }
   areaWatch();
 }
-// Every 20 s while the page is open, until both are settled (40 minutes at most).
+// Every 6 s for the first 3 minutes (the quick search takes about one), then every 20 s, until both are settled.
 async function areaWatch(){
   clearTimeout(AREA.timer); let wait = false;
   try {
@@ -133,7 +133,7 @@ async function areaWatch(){
   const before = JSON.stringify(AREA.result);
   AREA.result = (AREA.quick || AREA.full) ? { ...(AREA.quick || {}), ...(AREA.full || {}) } : null;
   if (JSON.stringify(AREA.result) !== before) phoneSoon();
-  if (wait && ++AREA.tries < 120) AREA.timer = setTimeout(areaWatch, 20000);
+  if (wait && ++AREA.tries < 150) AREA.timer = setTimeout(areaWatch, AREA.tries < 30 ? 6000 : 20000);
 }
 // What the listing page says, before Claude: its name (for the phone only, Claude writes the real one), its photos,
 // cover, rating and position.
