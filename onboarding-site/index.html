@@ -1550,7 +1550,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 07:34 (Madrid time, after commit 26bcf7a)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 07:40 (Madrid time, after commit d38886c)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -1569,7 +1569,7 @@ function coverChoiceHTML(){
     ${pics.length ? `<div class="cm-pics">${pics.map(p => `<button type="button" class="cm-pic" data-obcover="${esc(p)}" aria-pressed="${!own && !drawn && p === cur}" aria-label="Use this photo as the cover"><img src="${esc(obSized(p))}" alt="" loading="lazy"></button>`).join('')}</div>${more ? '<button class="btn small cm-allpics" type="button" data-oballpics="1">Show all your listing photos</button>' : ''}` : ''}
     ${own ? `<div class="cm-row cvc-own"><img src="${esc(srcOf(own))}" alt="Your cover picture"><button class="btn small" type="button" data-del="${own.id}">Remove</button></div>` : ''}
     <div class="cm-row"><label class="btn small"><input class="sr" type="file" accept="image/*" data-obcoverfile="1">${own ? 'Upload another picture' : 'Upload a picture'}</label><button class="btn small" type="button" data-coverchoice="drawn" aria-pressed="${drawn}">Drawn from the colours</button></div>
-    ${shown ? `<div class="cm-art"><div class="cm-arthd"><img src="${esc(shown)}" alt=""><span><b>An artistic version of this picture</b><small>“Do it for me” redraws it with Bauhaus-style shapes in the picture’s own colours.</small></span></div>
+    ${shown ? `<div class="cm-art"><div class="cm-arthd"><img src="${esc(shown)}" alt=""><span><b>An artistic version of this picture</b><small>“Do it for me” makes an artistic rendering of the house, in the picture’s own colours.</small></span></div>
       ${!g ? '<p class="hint">Log in first: the drawing is made for your account.</p>' : `<div class="cm-row"><button class="btn small primary" type="button" data-obart="auto"${busy ? ' disabled' : ''}>Do it for me</button><button class="btn small" type="button" data-obart="words"${busy ? ' disabled' : ''}>With my own words</button></div>
       ${CM.artWords != null ? `<div class="f full"><label for="ob_artw">How should it look?</label><textarea id="ob_artw" rows="2" placeholder="A watercolour in soft blues, like an old travel poster">${esc(CM.artWords)}</textarea><div class="cm-row"><button class="btn small primary" type="button" data-obart="draw"${busy ? ' disabled' : ''}>Draw it</button></div></div>` : ''}
       ${busy ? progBar('art', 'Drawing your cover') : ''}
@@ -2374,7 +2374,7 @@ function cmLook(c) {
     <div class="f full"><span class="lab">${n(2)}Cover picture</span><p class="hint">Pick one of your photos, upload a picture, or let us draw an artistic version of your cover photo.</p>
       ${pics.length ? `<div class="cm-pics">${(CM.allPics ? pics : pics.slice(0, 6)).map(p => `<button type="button" class="cm-pic" data-coverpic="${esc(p)}" aria-pressed="${edCoverPhoto(h) && h.photo === p}" aria-label="Use this photo as the cover"><img src="${esc(edImg(p))}" alt="" loading="lazy"></button>`).join('')}</div>${pics.length > 6 && !CM.allPics ? `<button class="btn small cm-allpics" type="button" data-allpics>Show all ${pics.length} photos</button>` : ''}` : ''}
       <div class="cm-row"><label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="files/house/photo">Upload a picture</label><button class="btn small" type="button" data-cover="themed" aria-pressed="${!edCoverPhoto(h)}">Drawn from the colours</button></div>
-      ${h.photo ? `<div class="cm-art"><div class="cm-arthd"><img src="${esc(edImg(h.photo))}" alt=""><span><b>An artistic version of this photo</b><small>“Do it for me” redraws it with Bauhaus-style shapes in the photo’s own colours.</small></span></div>
+      ${h.photo ? `<div class="cm-art"><div class="cm-arthd"><img src="${esc(edImg(h.photo))}" alt=""><span><b>An artistic version of this photo</b><small>“Do it for me” makes an artistic rendering of the house, in the photo’s own colours.</small></span></div>
         <div class="cm-row"><button class="btn small primary" type="button" data-art="auto"${busy ? ' disabled' : ''}>Do it for me</button><button class="btn small" type="button" data-art="words"${busy ? ' disabled' : ''}>With my own words</button></div>
         ${CM.artWords != null ? `<div class="f full"><label for="c_artw">How should it look?</label><textarea id="c_artw" rows="2" placeholder="A watercolour in soft blues, like an old travel poster">${esc(CM.artWords)}</textarea><div class="cm-row"><button class="btn small primary" type="button" data-art="draw"${busy ? ' disabled' : ''}>Draw it</button></div></div>` : ''}
         ${busy ? progBar('art', 'Drawing your cover') : ''}
