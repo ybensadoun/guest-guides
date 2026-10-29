@@ -1048,12 +1048,16 @@ function guideSections(){
   if (on('arrival') && v('arrival')) S.push({ id: 'arrival', title: 'Getting here', sub: 'Arrival and parking', icon: 'car', kind: 'text', items: lines('arrival'), photos: uploads.filter(u => u.kind === 'arrivalPhoto').map(u => u.url) });
   S.push({ id: 'stay', title: 'Check-in and check-out', sub: `In from ${v('checkIn') || '?'} · out by ${v('checkOut') || '?'}`, icon: 'key', kind: 'text', items: [v('checkIn') && `Check-in from ${v('checkIn')}.`, v('checkOut') && `Check-out by ${v('checkOut')}.`, ...lines('checkoutTasks')].filter(Boolean), extra: lines('houseRules').length ? { h: 'House rules', items: lines('houseRules') } : null });
   if (on('rubbish')) S.push({ id: 'rubbish', title: 'Rubbish and recycling', sub: 'Which bin, which day', icon: 'bin', kind: 'text', items: rubbishLines(), research: !rubbishLines().length && 'Tell us how rubbish works at the house and we write it here.' });
-  if (on('emergency')) S.push({ id: 'emergency', title: 'Emergency and contacts', sub: '112, your number', icon: 'phone', kind: 'contacts', research: 'We add the nearest hospital, pharmacy and on-call doctor, with hours.' });
+  // What the research from the link found (start.js areaWatch), shown as it arrives; the full guide has the details.
+  const found = (k, list) => (((AREA.result || {})[k] || {})[list] || []).slice(0, 10), nm = x => typeof x === 'string' ? x : (x && (x.en || Object.values(x)[0])) || '';
+  const help = found('emergency', 'groups').flatMap(g => g.items || []).map(x => nm(x.name)).filter(n => n && !/^emergenc/i.test(n));
+  if (on('emergency')) S.push({ id: 'emergency', title: 'Emergency and contacts', sub: '112, your number', icon: 'phone', kind: 'contacts', research: help.length ? `Found near you: ${help.slice(0, 3).join(', ')}. Hours and directions are in your full guide.` : 'We add the nearest hospital, pharmacy and on-call doctor, with hours.' });
   if (on('essentials')) S.push({ id: 'essentials', title: 'Shops and essentials', sub: 'Supermarket, bakery, pharmacy', icon: 'bag', kind: 'places', items: lines('essentials'), research: 'We add opening hours, distances and the ones you did not list.' });
   const picks = cats => Object.values(A.swipes || {}).filter(x => x.d === 'yes' && cats.includes(x.cat));
   if (on('eat')) S.push({ picks: picks(['eat', 'coffee', 'drinks']), id: 'eat', title: 'Eat and drink', sub: 'Our favourite places', icon: 'heart', kind: 'places', items: placeRows('favEat').map(r => r.p + (r.c ? ': ' + r.c : '')), research: !placeRows('favEat').length && 'Add the places you recommend, with a link or a name and a comment. We do not add restaurants of our own.' });
-  if (on('todo')) S.push({ picks: picks(['todo']), id: 'todo', title: 'Things to do', sub: (A.interests || []).slice(0, 3).join(', ') || 'Around you', icon: 'compass', kind: 'places', items: [...lines('favDo'), ...lines('favourites')], research: `We research ${(A.interests || ['beaches', 'walks', 'sights']).join(', ').toLowerCase()} within ${v('radius') || '30 min'}.` });
-  if (on('markets')) S.push({ id: 'markets', title: 'Local markets', sub: 'What is on today', icon: 'bag', kind: 'places', items: [], research: 'We list every weekly market nearby, with what runs today.' });
+  if (on('todo')) S.push({ picks: picks(['todo']), id: 'todo', title: 'Things to do', sub: (A.interests || []).slice(0, 3).join(', ') || 'Around you', icon: 'compass', kind: 'places', items: [...lines('favDo'), ...lines('favourites')], research: found('todo', 'items').length ? 'Found near you by our research. Details and directions are in your full guide.' : `We research ${(A.interests || ['beaches', 'walks', 'sights']).join(', ').toLowerCase()} within ${v('radius') || '30 min'}.` });
+  if (on('todo')) S[S.length - 1].items.push(...found('todo', 'items').map(t => `${nm(t.name)}${t.town ? ': ' + t.town : ''}`));
+  if (on('markets')) S.push({ id: 'markets', title: 'Local markets', sub: 'What is on today', icon: 'bag', kind: 'places', items: found('markets', 'markets').map(m => `${nm(m.name)}${m.town ? ': ' + m.town : ''}`), research: found('markets', 'markets').length ? 'Found near you. Days and hours are in your full guide.' : 'We list every weekly market nearby, with what runs today.' });
   if (on('events')) S.push({ id: 'events', title: 'Local events', sub: 'During your stay', icon: 'kite', kind: 'places', items: [], research: 'We list festivals and fairs, with dates.' });
   if (on('kids')) S.push({ id: 'kids', title: 'Kids corner', sub: (A.kidsAges || []).join(', ') || 'Families', icon: 'kite', kind: 'text', items: [...(A.kidsGear || []).map(g => `${g} at the house`), ...lines('kidsNotes')], research: 'We add playgrounds and family days out.' });
   if (on('daytrips')) S.push({ id: 'daytrips', title: 'Day trips', sub: 'Worth the drive', icon: 'car', kind: 'places', items: [], research: 'We pick the best trips within two hours.' });
@@ -1396,11 +1400,38 @@ async function createDraft(fromStep){
       d = await listingAsk({ url, text, town, stage: 'write', src: d.src });
       if (!d.ok) { log('draft_fail', d.need || 'error'); return back(d.need || 'retry', d.message); }
     }
-    applyDraft(d); log('draft_ok', d.source); classifyPhotos();
+    applyDraft(d); log('draft_ok', d.source); classifyPhotos(); areaStart();
     A._done = { ...(A._done || {}), listing: true }; START.need = ''; START.msg = '';
     WOW.stage = 'done'; PHONE.build = true; yoursRefresh(); phoneRender();
   } catch (e) { back('retry', 'We could not reach the assistant. Check your connection and press the button again.'); }
   finally { START.busy = false; queueSave(); if (WOW.stage !== 'done' || route() !== 'yours') render(); }
+}
+/* ---------- Research from the link (docs/plan-fast-builder.md, step 8): markets, things to do and emergency services
+   near the house are looked up while the host goes through the steps, with or without an account. One research per area,
+   shared and limited in the database (start_area_research: over the limits, the build does it); the worker does it, the
+   build uses it (A._research travels with the answers). ---------- */
+const AREA = { status: '', result: null, timer: null, tries: 0 };
+async function areaStart(){
+  if (!A.lat || !A.lng) return;
+  if (!A._research) {
+    try {
+      const r = await sb('/rest/v1/rpc/start_area_research', { method: 'POST', token: SB.key, body: { p_visitor: sid, p_lat: +A.lat, p_lng: +A.lng, p_town: v('town') || null, p_region: v('region') || null } });
+      if (!r || !r.ok || !r.id) return;
+      A._research = r.id; queueSave(); log('research', r.shared ? 'shared' : 'new');
+    } catch (e) { return; }   // offline, or the database said no: the build looks it up
+  }
+  areaWatch();
+}
+// Every 20 s while the page is open, until it is done (40 minutes at most): what is found shows in the phone.
+async function areaWatch(){
+  clearTimeout(AREA.timer); if (!A._research || AREA.result) return;
+  try {
+    const r = await sb('/rest/v1/rpc/area_research_status', { method: 'POST', token: SB.key, body: { p_id: A._research } });
+    AREA.status = (r && r.status) || '';
+    if (AREA.status === 'done' && r.result) { AREA.result = r.result; phoneSoon(); return; }
+    if (!['queued', 'running'].includes(AREA.status)) return;
+  } catch (e) { /* no connection: try again */ }
+  if (++AREA.tries < 120) AREA.timer = setTimeout(areaWatch, 20000);
 }
 // What the listing page says, before Claude: its name (for the phone only, Claude writes the real one), its photos,
 // cover, rating and position.
@@ -1704,7 +1735,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 09:41 (Madrid time, after commit d5720df)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 09:57 (Madrid time, after commit ddb2e78)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -4185,6 +4216,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { cle
   try { await accountBoot(); } catch (e) {}
   setSave('ok', CM.on ? cmSaveText() : A._seen ? 'Saved on this device' : 'Answers save on this device');
   render();
+  if (!CM.on) areaWatch();   // the research from the link, when it is still on its way
 })();
 
 })();

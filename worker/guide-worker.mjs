@@ -80,13 +80,13 @@ function runAsync(cmd, args, o = {}) {
 /* ---------- Claude research and translation (optional) ---------- */
 // One question to Claude, with the web (research) or without (translation): the Claude API when RESEARCH=api, else the
 // `claude` command on this computer. Returns the text of the answer.
-async function claudeAsk(prompt, { web = false, what = '' } = {}) {
-  if (claudeApi) return claudeApi(prompt, { web, what });
+async function claudeAsk(prompt, { web = false, what = '', meter = null } = {}) {
+  if (claudeApi) return claudeApi(prompt, { web, what, meter });
   const r = await runAsync('claude', web ? ['-p', prompt, '--allowedTools', 'WebSearch,WebFetch', '--max-turns', '40'] : ['-p', prompt], { timeout: web ? 900000 : 600000 });
   return r.stdout || '';
 }
-async function claudeJson(prompt, what) {
-  const out = (await claudeAsk(prompt, { web: true, what })).trim();
+async function claudeJson(prompt, what, meter) {
+  const out = (await claudeAsk(prompt, { web: true, what, meter })).trim();
   const a = out.indexOf('{'), b = out.lastIndexOf('}');
   if (a < 0 || b < a) throw new Error(`Claude returned no JSON for ${what}`);
   try { return JSON.parse(out.slice(a, b + 1)); } catch (e) { throw new Error(`Claude's JSON for ${what} did not parse`); }
@@ -165,7 +165,9 @@ function normSchedule(it) {
 }
 const MARKETS_RULE = 'Find the weekly and notable local markets within the radius (street markets, covered markets, fairs). Same shape as the example: {"categories":[...],"markets":[...]} with schedule days as mon..sun. Every market MUST have numeric lat and lng: use the exact spot if a source gives it, otherwise the centre of the town or the market square from Wikipedia or OpenStreetMap, and add "verify": true when approximate. Its "category" must be one of: covered, street, flea, antiques, events. ' + HOURS_RULE;
 const TODO_RULE = 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example. ' + HOURS_RULE;
-async function research(A, outDir, id) {
+// A part already in outDir (the research started with the listing link, areaResearch) is not searched again. id: the
+// guide whose progress message follows the research (none for an area). meter: adds up what it costs.
+async function research(A, outDir, id, meter) {
   mkdirSync(outDir, { recursive: true });
   const { clean, located, allowed, normSchedule } = researchTools();
   const jobs = [
@@ -174,8 +176,9 @@ async function research(A, outDir, id) {
     ['emergency', 'Find the nearest hospital with an emergency department, the national emergency number and the local health advice line. Same shape: {"groups":[...]}.'],
   ];
   for (const [kind, rules] of jobs) {
-    say(id, `Researching: ${kind}`);
-    try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); }
+    if (existsSync(join(outDir, kind + '.json'))) continue;
+    if (id) say(id, `Researching: ${kind}`);
+    try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind, meter))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); }
     catch (e) { log(`  research ${kind} skipped:`, e.message); }
   }
 }
@@ -247,7 +250,7 @@ async function build(g) {
   const gen = ['engine/scripts/generate-site.py', join(job, 'src'), '--slug', tmp, '--lat', String(A.lat), '--lng', String(A.lng), '--src', srcLang];
 
   let researchDir = null;
-  if (RESEARCHING) { researchDir = join(job, 'research'); await research(A, researchDir, id); gen.push('--research', researchDir); }
+  if (RESEARCHING) { researchDir = join(job, 'research'); await areaResearch(A, researchDir, id); await research(A, researchDir, id); gen.push('--research', researchDir); }
   say(id, 'Building the guide');
   let out = run('python3', gen).stdout;
   if (RESEARCHING) {
@@ -634,6 +637,64 @@ async function coverArtJob(j, jp) {
   await jp({ status: 'done', message: 'Your artistic cover is ready', result: { path: name, url: `${URL_}/storage/v1/object/public/guide-assets/${j.guide_id}/${name}` }, finished_at: new Date().toISOString() });
 }
 
+/* ---------- Area research: markets, things to do and emergency services, started with the listing link, before any
+   account (docs/plan-fast-builder.md, step 8; Yohann, 29 Oct 2026). The browser asks the database (start_area_research:
+   one research per area of about 3 km for 14 days, shared, with limits per visitor, per network address and in all); this
+   worker does it with the build's own questions (research) and keeps it in area_research. A build in that area uses it
+   (areaResearch) and only searches what is missing. VISITOR_USD_PER_DAY caps what they cost each day with the Claude
+   API (default 3 USD): past it, they wait for the build, as before. Rows older than 30 days are removed. ---------- */
+const AREA_KINDS = ['markets', 'todo', 'emergency'], VISITOR_USD = +env.VISITOR_USD_PER_DAY || 3;
+const kmBetween = (a, b, c, d) => { const R = 6371, t = Math.PI / 180, x = (c - a) * t, y = (d - b) * t; const h = Math.sin(x / 2) ** 2 + Math.cos(a * t) * Math.cos(c * t) * Math.sin(y / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+let areaSweep = 0;
+async function runArea(only) {
+  if (!only && Date.now() - areaSweep > 3600000) { areaSweep = Date.now(); rest('/rest/v1/area_research?created_at=lt.' + new Date(Date.now() - 30 * 86400000).toISOString(), { method: 'DELETE', headers: { Prefer: 'return=minimal' } }).catch(() => {}); }
+  const row = ((await rest('/rest/v1/area_research?select=id,lat,lng,town,region&status=eq.queued' + (only ? '&id=eq.' + only : '') + '&order=created_at.asc&limit=1')) || [])[0];
+  if (!row) return null;
+  const ap = b => rest('/rest/v1/area_research?id=eq.' + row.id, { method: 'PATCH', body: b, headers: { Prefer: 'return=minimal' } }).catch(() => {});
+  if (claudeApi) {
+    const midnight = new Date(); midnight.setUTCHours(0, 0, 0, 0);
+    const spent = ((await rest('/rest/v1/area_research?select=usd&usd=not.is.null&finished_at=gte.' + midnight.toISOString())) || []).reduce((s, r) => s + (+r.usd || 0), 0);
+    if (spent >= VISITOR_USD) { log(`area research for ${row.town || row.id.slice(0, 8)} left to the build: about ${spent.toFixed(2)} USD spent today (VISITOR_USD_PER_DAY=${VISITOR_USD})`); await ap({ status: 'limited', message: 'Left to the build: today\'s research for visitors is spent', finished_at: new Date().toISOString() }); return null; }
+  }
+  const won = await rest('/rest/v1/area_research?id=eq.' + row.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running' }, headers: { Prefer: 'return=representation' } });
+  if (!won || !won[0]) return;
+  log('researching the area of', row.town || `${row.lat}, ${row.lng}`, row.id.slice(0, 8));
+  const work = (async () => {
+    const dir = join(HERE, 'jobs', 'area-' + row.id), meter = { usd: 0 };
+    try {
+      rmSync(dir, { recursive: true, force: true });
+      await research({ town: row.town, region: row.region, lat: row.lat, lng: row.lng }, dir, null, meter);
+      const result = Object.fromEntries(AREA_KINDS.filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))]));
+      if (!Object.keys(result).length) throw new Error('Nothing came back from the research');
+      await ap({ status: 'done', result, usd: claudeApi ? +meter.usd.toFixed(3) : null, message: null, finished_at: new Date().toISOString() });
+      log(`  area researched: ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
+    } catch (e) { log('  area research FAILED:', e.message); await ap({ status: 'failed', message: String(e.message).slice(0, 200), usd: claudeApi ? +meter.usd.toFixed(3) : null, finished_at: new Date().toISOString() }); }
+    finally { rmSync(dir, { recursive: true, force: true }); }
+  })();
+  RUNNING.set(row.id, { guide: null, kind: 'area', work });
+  work.finally(() => RUNNING.delete(row.id));
+  return { work };   // in an object: returned as it is, the promise would make the caller wait for the whole research
+}
+// The research started with this guide's link, when it is for this place (within 5 km): its parts go into the build's
+// research folder, so they are not searched again. Not finished yet: the build waits for it (up to 10 minutes; the jobs
+// loop takes it within seconds) rather than paying twice. Anything else (limited, failed, another place): the build
+// searches as before.
+async function areaResearch(A, dir, id) {
+  if (!/^[0-9a-f-]{36}$/.test(String(A._research || ''))) return;
+  let r = null;
+  for (let i = 0; i < 40; i++) {
+    r = ((await rest('/rest/v1/area_research?select=status,lat,lng,result&id=eq.' + A._research).catch(() => [])) || [])[0];
+    if (!r || !['queued', 'running'].includes(r.status)) break;
+    if (i === 0) say(id, 'Finishing the research of your area');
+    await new Promise(ok => setTimeout(ok, 15000));
+  }
+  if (!r || r.status !== 'done' || !r.result) return;
+  if (!(A.lat && A.lng) || kmBetween(r.lat, r.lng, +A.lat, +A.lng) > 5) { log('  the research from the link is for another place: searched again'); return; }
+  mkdirSync(dir, { recursive: true });
+  for (const k of AREA_KINDS) if (r.result[k]) writeFileSync(join(dir, k + '.json'), JSON.stringify(r.result[k], null, 1));
+  log('  research from the link used:', AREA_KINDS.filter(k => r.result[k]).join(', '));
+}
+
 // Up to three jobs run side by side (each one mostly waits for Claude). Two jobs that write the same guide (translate,
 // automatic events) never run together; searches for suggestions write nothing to the guide, so they never wait.
 const RUNNING = new Map(), MAX_JOBS = 3, WRITES = k => k === 'translate' || k === 'auto-events' || k === 'find-transport';
@@ -655,6 +716,7 @@ async function runJobs() {
     RUNNING.set(j.id, { guide: j.guide_id, kind: j.kind, work });
     work.finally(() => RUNNING.delete(j.id));
   }
+  if (RESEARCHING && !STOPPING && RUNNING.size < MAX_JOBS) await runArea().catch(e => log('area research:', e.message));
 }
 async function tick() {
   await runJobs().catch(e => log('jobs:', e.message));
@@ -681,6 +743,17 @@ if (process.argv.includes('--refresh-events')) {
     catch (e) { console.log(`${g.slug}: did not work: ${e.message}`); }
   }
   process.exit(0);
+}
+// node worker/guide-worker.mjs --area-research <id>: that one area research (still queued) now, as the worker does it,
+// written to its row. To try it without the queue, next to a running worker (which may take it first).
+if (process.argv.includes('--area-research')) {
+  const id = process.argv[process.argv.indexOf('--area-research') + 1] || '';
+  if (!/^[0-9a-f-]{36}$/.test(id)) { console.error('Use: --area-research <id of a queued area_research row>'); process.exit(1); }
+  const started = await runArea(id);
+  if (!started) { console.error('No queued area research with that id (or today\'s research for visitors is spent).'); process.exit(1); }
+  await started.work; const r = ((await rest('/rest/v1/area_research?select=status,message,usd,result&id=eq.' + id)) || [])[0] || {};
+  log(`${r.status}${r.message ? ': ' + r.message : ''}${r.usd != null ? `, about ${(+r.usd).toFixed(2)} USD` : ''}. Parts: ${Object.keys(r.result || {}).join(', ') || 'none'}`);
+  process.exit(r.status === 'done' ? 0 : 1);
 }
 // node worker/guide-worker.mjs --find find-todo|find-markets|find-events --slug <slug>: one "Find more" search for a guide,
 // as the editor's button runs it (web search, Google check, translation), printed here and written nowhere. To try a new
@@ -729,6 +802,8 @@ const beat = () => { if (env.HEARTBEAT_URL && Date.now() - lastBeat > 60000) { l
 // they start again from the beginning, at once (recover() alone would wait 30 minutes).
 { const back = await rest('/rest/v1/guide_jobs?status=eq.running', { method: 'PATCH', body: { status: 'queued', message: 'Starting again' }, headers: { Prefer: 'return=representation' } }).catch(() => []);
   if ((back || []).length) log(`${back.length} job(s) interrupted by the last stop: queued again.`);
+  const areas = await rest('/rest/v1/area_research?status=eq.running', { method: 'PATCH', body: { status: 'queued' }, headers: { Prefer: 'return=representation' } }).catch(() => []);
+  if ((areas || []).length) log(`${areas.length} area research(es) interrupted by the last stop: queued again.`);
   const built = await rest('/rest/v1/guides?status=eq.generating&select=slug', { method: 'PATCH', body: { status: 'queued', message: 'Starting again' }, headers: { Prefer: 'return=representation' } }).catch(() => []);
   if ((built || []).length) log(`${built.map(g => g.slug).join(', ')}: build interrupted by the last stop, queued again.`); }
 if (ONCE) { await tick(); while (RUNNING.size) { await Promise.all([...RUNNING.values()].map(r => r.work)); await tick(); } log('done'); }

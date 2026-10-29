@@ -361,4 +361,5 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { cle
   try { await accountBoot(); } catch (e) {}
   setSave('ok', CM.on ? cmSaveText() : A._seen ? 'Saved on this device' : 'Answers save on this device');
   render();
+  if (!CM.on) areaWatch();   // the research from the link, when it is still on its way
 })();

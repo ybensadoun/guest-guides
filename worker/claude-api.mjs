@@ -34,7 +34,8 @@ export function makeClaude(env, log = console.log) {
   const SEARCHES = Math.max(1, +env.RESEARCH_MAX_SEARCHES || 20), PER_DAY = +env.RESEARCH_USD_PER_DAY || 5;
   let day = '', spent = 0;
   // One question to Claude, with the web (research) or without (translation). Returns the text of the answer.
-  return async function ask(prompt, { web = false, what = 'text' } = {}) {
+  // meter (optional): { usd } that this question's expected cost is added to (what one piece of work costs).
+  return async function ask(prompt, { web = false, what = 'text', meter = null } = {}) {
     const today = new Date().toISOString().slice(0, 10); if (today !== day) { day = today; spent = 0; }
     const paused = web ? 'Searches are paused for now. Try again later.' : 'Translation is paused for now. Try again later.';
     if (spent >= PER_DAY) { log(`  claude api: ${what} not asked, about ${spent.toFixed(2)} USD spent today (RESEARCH_USD_PER_DAY=${PER_DAY})`); throw new Error(web ? 'Searches are paused for today. Try again tomorrow.' : 'Translation is paused for today. Try again tomorrow.'); }
@@ -44,7 +45,7 @@ export function makeClaude(env, log = console.log) {
       ...(web ? { tools: [{ type: 'web_search_20260318', name: 'web_search', max_uses: SEARCHES, response_inclusion: 'excluded' },
         { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: SEARCHES, max_content_tokens: 30000 }] } : {}) };
     const messages = [{ role: 'user', content: prompt }], n = { in: 0, out: 0, cw: 0, cr: 0, s: 0, f: 0 }, t0 = Date.now();
-    const done = m => { const usd = cost(model, n); spent += usd;
+    const done = m => { const usd = cost(model, n); spent += usd; if (meter) meter.usd = (meter.usd || 0) + usd;
       log(`  claude api, ${what}: ${m ? m.model : model}, ${n.s} searches, ${n.f} pages read, ${k(n.in + n.cw + n.cr)} tokens in, ${k(n.out)} out, ${Math.round((Date.now() - t0) / 1000)} s, about ${usd.toFixed(2)} USD (${spent.toFixed(2)} today)`); };
     // A long search comes back paused (pause_turn) after Anthropic's own loop of steps: sent back as it is, it carries on.
     for (let turn = 1; ; turn++) {

@@ -82,11 +82,38 @@ async function createDraft(fromStep){
       d = await listingAsk({ url, text, town, stage: 'write', src: d.src });
       if (!d.ok) { log('draft_fail', d.need || 'error'); return back(d.need || 'retry', d.message); }
     }
-    applyDraft(d); log('draft_ok', d.source); classifyPhotos();
+    applyDraft(d); log('draft_ok', d.source); classifyPhotos(); areaStart();
     A._done = { ...(A._done || {}), listing: true }; START.need = ''; START.msg = '';
     WOW.stage = 'done'; PHONE.build = true; yoursRefresh(); phoneRender();
   } catch (e) { back('retry', 'We could not reach the assistant. Check your connection and press the button again.'); }
   finally { START.busy = false; queueSave(); if (WOW.stage !== 'done' || route() !== 'yours') render(); }
+}
+/* ---------- Research from the link (docs/plan-fast-builder.md, step 8): markets, things to do and emergency services
+   near the house are looked up while the host goes through the steps, with or without an account. One research per area,
+   shared and limited in the database (start_area_research: over the limits, the build does it); the worker does it, the
+   build uses it (A._research travels with the answers). ---------- */
+const AREA = { status: '', result: null, timer: null, tries: 0 };
+async function areaStart(){
+  if (!A.lat || !A.lng) return;
+  if (!A._research) {
+    try {
+      const r = await sb('/rest/v1/rpc/start_area_research', { method: 'POST', token: SB.key, body: { p_visitor: sid, p_lat: +A.lat, p_lng: +A.lng, p_town: v('town') || null, p_region: v('region') || null } });
+      if (!r || !r.ok || !r.id) return;
+      A._research = r.id; queueSave(); log('research', r.shared ? 'shared' : 'new');
+    } catch (e) { return; }   // offline, or the database said no: the build looks it up
+  }
+  areaWatch();
+}
+// Every 20 s while the page is open, until it is done (40 minutes at most): what is found shows in the phone.
+async function areaWatch(){
+  clearTimeout(AREA.timer); if (!A._research || AREA.result) return;
+  try {
+    const r = await sb('/rest/v1/rpc/area_research_status', { method: 'POST', token: SB.key, body: { p_id: A._research } });
+    AREA.status = (r && r.status) || '';
+    if (AREA.status === 'done' && r.result) { AREA.result = r.result; phoneSoon(); return; }
+    if (!['queued', 'running'].includes(AREA.status)) return;
+  } catch (e) { /* no connection: try again */ }
+  if (++AREA.tries < 120) AREA.timer = setTimeout(areaWatch, 20000);
 }
 // What the listing page says, before Claude: its name (for the phone only, Claude writes the real one), its photos,
 // cover, rating and position.
