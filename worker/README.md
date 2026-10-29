@@ -43,6 +43,9 @@ A stop by SIGTERM (a server's update or restart) takes nothing new and lets runn
 
 The guide is then at `https://porta-guides.netlify.app/g/<slug>`.
 
+## Photos of deleted houses
+The database cannot delete files, so the worker removes every `guide-assets` folder whose house no longer exists (a host deleted it, or their account): at start, then at most once an hour (`worker/sweep-photos.mjs`). Folders are listed before the houses, only folders named like a house id count, an empty list of houses stops it, and each house is checked again just before its photos go.
+
 ## Jobs from the editor (`guide_jobs`)
 Up to three run side by side (each mostly waits for Claude), even while a guide is being built; two jobs that write the same guide (translate, auto-events) never run together. A search takes about 3 to 6 minutes. Run one worker at a time: when it starts, jobs left "running" by the previous one go back in the queue and start again.
 - `translate`: fills the missing languages of the draft (or makes a draft from the live guide); the texts also go back in the job's `result` for the editor that is open.

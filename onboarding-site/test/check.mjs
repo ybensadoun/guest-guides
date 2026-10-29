@@ -151,6 +151,59 @@ try {
     ok('Add a house: the houses menu now shows the new house', !!menu && !/Ca La Kimberly/.test(menu), menu);
     ok('Add a house: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // Deleting: a published house (type its address), the open house (the next one opens), then the whole account.
+  { const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } }), calls = [];
+    const draft = n => ({ id: `00000000-0000-0000-0000-0000000000d${n}`, owner: E.owner, answers: { placeName: `Test house ${n}` }, status: 'draft', slug: null, origin: null, content: null, theme: null, draft: null });
+    const rows = { [draft(1).id]: draft(1), [E.id]: E, [draft(2).id]: draft(2) };
+    await ctx.addInitScript(g => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', '1'); localStorage.setItem('porta-auth-v1', JSON.stringify({ access_token: 't', refresh_token: 't', expires_at: Math.floor(Date.now() / 1000) + 86400, user: { id: g.owner, email: 'host@example.org' } })); }, E);
+    await ctx.route('**/*', route => { const req = route.request(), u = new URL(req.url());
+      if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
+      if (u.origin === SB && u.pathname === '/rest/v1/rpc/delete_my_account') { calls.push('delete account'); for (const k of Object.keys(rows)) delete rows[k]; return route.fulfill({ status: 204, body: '' }); }
+      if (u.origin === SB && u.pathname.startsWith('/auth/v1/user')) return json(route, { id: E.owner, email: 'host@example.org' });
+      if (u.origin === SB && u.pathname.startsWith('/rest/v1/guides')) {
+        const id = (u.search.match(/id=eq\.([0-9a-f-]+)/) || [])[1];
+        if (req.method() === 'DELETE') { const r = rows[id]; delete rows[id]; calls.push('delete ' + id); return json(route, r ? [r] : []); }
+        if (req.method() === 'POST') { const r = { ...draft(9), answers: {} }; rows[r.id] = r; return json(route, [r]); }
+        if (req.method() !== 'GET') return json(route, []);
+        if (/select=id(%2C|,)slug/.test(u.search)) return json(route, Object.values(rows).map(r => ({ id: r.id, slug: r.slug, status: r.status, origin: r.origin, name: r.content && r.content.site.name, place: r.answers && r.answers.placeName })));
+        return json(route, rows[id] ? [rows[id]] : []);
+      }
+      if (u.origin === SB) return json(route, u.pathname.startsWith('/auth/') ? {} : []);
+      return route.continue(); });
+    const p = await ctx.newPage(), errors = []; p.on('pageerror', e => errors.push(e.message));
+    const menu = async () => { await p.click('#acctbar .houses > summary'); await p.waitForTimeout(150); };
+    const current = () => p.$eval('#acctbar [data-house][aria-current=true]', e => e.dataset.house).catch(() => '');
+    await p.goto('http://editor.test/'); await p.waitForSelector('#acctbar .houses', { timeout: 15000 }).catch(() => {});
+    await menu();
+    const rowsClash = await p.$$eval('#acctbar .hrow', rs => rs.filter(r => { const [a, b] = [...r.children].map(x => x.getBoundingClientRect()); return a.right > b.left + 1 || b.right > innerWidth; }).length);
+    ok('houses menu, 360 px: each house has its delete button, nothing overlaps', (await p.$$('#acctbar .hdel')).length === 3 && !rowsClash && !!(await p.$('#acctbar [data-delacct]')));
+    await p.screenshot({ path: join(SHOTS, 'delete-menu-360.png') });
+    // A published house: the box asks to type its web address.
+    await p.click(`#acctbar [data-delhouse="${E.id}"]`); await p.waitForSelector('.acdel', { timeout: 3000 }).catch(() => {});
+    const yes = () => p.$eval('.acdel [data-yes]', b => !b.disabled).catch(() => null);
+    const offAtFirst = (await yes()) === false; await p.fill('#acdelIn', 'wrong'); const offWrong = (await yes()) === false;
+    ok('delete a published house: "Delete" stays off until its web address is typed', offAtFirst && offWrong && /not found/.test(await p.textContent('.acdel').catch(() => '')));
+    ok('delete box, 360 px: fits the screen, no sideways scroll', (await p.evaluate(() => { const b = document.querySelector('.acdel .box').getBoundingClientRect(); return b.left >= 0 && b.right <= innerWidth && document.documentElement.scrollWidth <= innerWidth; })));
+    await p.screenshot({ path: join(SHOTS, 'delete-published-360.png') });
+    await p.fill('#acdelIn', E.slug); await p.click('.acdel [data-yes]'); await p.waitForTimeout(600);
+    ok('delete a published house: deleted, gone from the menu, the open house stays', calls.includes('delete ' + E.id) && !rows[E.id] && (await current()) === draft(1).id && !(await p.$(`#acctbar [data-house="${E.id}"]`)), calls.join(', '));
+    // Cancel keeps it.
+    await menu(); await p.click(`#acctbar [data-delhouse="${draft(2).id}"]`); await p.click('.acdel [data-no]'); await p.waitForTimeout(200);
+    ok('delete, then Cancel: nothing deleted', !!rows[draft(2).id] && !(await p.$('.acdel')));
+    // The open house: deleted, the next house opens.
+    await menu(); await p.click(`#acctbar [data-delhouse="${draft(1).id}"]`); await p.click('.acdel [data-yes]');
+    await p.waitForLoadState('load'); await p.waitForSelector('#acctbar .houses', { timeout: 15000 }).catch(() => {}); await p.waitForTimeout(400);
+    await menu();
+    ok('delete the open house: the next house opens', !rows[draft(1).id] && (await current()) === draft(2).id, await current());
+    // The account: type the email, then the sign-in page says it is deleted.
+    await p.click('#acctbar [data-delacct]'); await p.waitForSelector('.acdel #acdelIn', { timeout: 3000 }).catch(() => {});
+    await p.fill('#acdelIn', 'host@example.org'); await p.click('.acdel [data-yes]');
+    await p.waitForLoadState('load'); await p.waitForSelector('#acct .ac-card', { timeout: 15000 }).catch(() => {}); await p.waitForTimeout(300);
+    const msg = await p.$eval('#acMsg', e => [e.textContent, e.className]).catch(() => ['', '']);
+    ok('delete my account: done, signed out, the sign-in page says so', calls.includes('delete account') && /account is deleted/.test(msg[0]) && /ok/.test(msg[1]) && !(await p.evaluate(() => localStorage.getItem('porta-auth-v1'))), msg[0]);
+    await p.screenshot({ path: join(SHOTS, 'delete-account-done-360.png') });
+    ok('deleting: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // ---- The builder, just after the listing was read ----
   { const { ctx, p, errors } = await open(browser, B, 360, 780);
     await p.goto('http://editor.test/'); await ready(p);

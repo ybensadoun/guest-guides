@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { spawnSync, spawn } from 'node:child_process';
 import { makeGoogle, hav, nameOf, sameName, sameMarket, schedule, hostPlace } from './places.mjs';   // Google check for Find more suggestions
+import { makeSweep } from './sweep-photos.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
 const env = { ...process.env };
@@ -52,6 +53,7 @@ async function rest(path, o = {}) {
   return j;
 }
 const patch = (id, body) => rest('/rest/v1/guides?id=eq.' + id, { method: 'PATCH', body, headers: { Prefer: 'return=minimal' } });
+const sweepPhotos = makeSweep({ url: URL_, headers: H, rest, fetchRetry, log });   // photos of deleted houses (worker/sweep-photos.mjs)
 let lastSay = Promise.resolve();   // status messages go out in order, and the final result waits for them
 const say = (id, message) => { lastSay = lastSay.then(() => patch(id, { message }).catch(() => {})); };
 
@@ -663,7 +665,7 @@ const beat = () => { if (env.HEARTBEAT_URL && Date.now() - lastBeat > 60000) { l
 if (ONCE) { await tick(); while (RUNNING.size) { await Promise.all([...RUNNING.values()].map(r => r.work)); await tick(); } log('done'); }
 else {
   const timer = setInterval(() => runJobs().catch(e => log('jobs:', e.message)), POLL);   // jobs from the editor start even while a guide is being built
-  while (!STOPPING) { try { await tick(); beat(); } catch (e) { log('waiting, could not reach the database:', e.message); } await new Promise(r => setTimeout(r, POLL)); }
+  while (!STOPPING) { try { await tick(); beat(); sweepPhotos().catch(e => log('photos of deleted houses:', e.message)); } catch (e) { log('waiting, could not reach the database:', e.message); } await new Promise(r => setTimeout(r, POLL)); }
   clearInterval(timer);
   await Promise.all([...RUNNING.values()].map(r => r.work));
   log('stopped'); process.exit(0);

@@ -106,7 +106,24 @@ function niceError(e){
 #acctbar .hmenu button[aria-current=true]{background:var(--sunk,#f3f1ec)}
 #acctbar .hmenu b{font-size:15px;overflow-wrap:anywhere}
 #acctbar .hmenu small{font-size:12.5px;color:var(--muted,#666)}
-#acctbar .hmenu .add{border-top:1px solid var(--line,#ddd);border-radius:0 0 10px 10px;margin-top:4px;font-weight:700}`;
+#acctbar .hmenu .add{border-top:1px solid var(--line,#ddd);border-radius:0 0 10px 10px;margin-top:4px;font-weight:700}
+#acctbar .hrow{display:flex;gap:2px;align-items:stretch}
+#acctbar .hrow>[data-house]{flex:1;min-width:0}
+#acctbar .hmenu .hdel{flex:none;width:42px;align-items:center;justify-content:center;color:var(--muted,#666)}
+#acctbar .hmenu .hdel svg{width:18px;height:18px}
+#acctbar .hmenu .hdel:hover,#acctbar .hmenu .hdel:focus-visible{color:#B3261E;background:#FBEAE8}
+#acctbar .hmenu .gone{color:#B3261E;font-size:13.5px;font-weight:600}
+/* Deleting a house or the account: a box that asks first */
+.acdel{position:fixed;inset:0;z-index:250;background:rgba(18,18,18,.45);display:flex;align-items:flex-end;justify-content:center;padding:16px}
+@media (min-width:621px){.acdel{align-items:center}}
+.acdel .box{width:min(440px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--surface,#fff);color:var(--ink,#121212);border-radius:20px;padding:20px;box-shadow:0 18px 48px rgba(0,0,0,.25)}
+.acdel h2{font-family:var(--display,Georgia,serif);font-weight:400;font-size:26px;line-height:1.1;margin:0 0 10px;overflow-wrap:anywhere}
+.acdel p{margin:0 0 10px;line-height:1.45}
+.acdel label{display:block;font-size:14.5px;margin:14px 0 6px}
+.acdel label .typed{display:block;margin-top:4px;font-size:16px;overflow-wrap:anywhere}   /* on its own line: the address or email never breaks at a hyphen */
+.acdel input{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit}
+.acdel .row{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;margin-top:18px}
+.acdel .btn.danger{background:#B3261E;border-color:#B3261E;color:#fff}`;
   document.head.appendChild(st);
 })();
 
@@ -119,7 +136,7 @@ async function googleOn(){
   return window.__googleOn;
 }
 (function(){ if (document.getElementById('jostFont')) return; const l = document.createElement('link'); l.id = 'jostFont'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap'; document.head.appendChild(l); })();
-async function gate(mode0, notice){
+async function gate(mode0, notice, noticeOk){
   await googleOn();
   return new Promise(resolve => {
     let mode = mode0 || 'signup', drawn = 0;
@@ -142,7 +159,7 @@ async function gate(mode0, notice){
           ${reset ? '' : '<label for="acEmail">Email</label><input id="acEmail" type="email" autocomplete="email" inputmode="email" required>'}
           ${rec ? '' : `<label for="acPw">${reset ? 'New password' : 'Password'}</label><input id="acPw" type="password" autocomplete="${up || reset ? 'new-password' : 'current-password'}" ${up || reset ? 'minlength="8" placeholder="At least 8 characters"' : ''} required>`}
           <button class="go" type="submit">${reset ? 'Save password' : rec ? 'Send me the link' : up ? 'Create my account' : 'Log in'}</button>
-          <div class="acmsg${ok ? ' ok' : ''}" id="acMsg" role="status">${esc(msg || notice || '')}</div>
+          <div class="acmsg${ok ? ' ok' : ''}" id="acMsg" role="status">${esc(msg || '')}</div>
         </form>
           <div class="alt">${rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : 'New here? <button type="button" data-m="signup">Create an account</button> · <button type="button" data-m="recover">Forgot password?</button>'}</div>
         ${up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>' : ''}</section>
@@ -176,7 +193,7 @@ async function gate(mode0, notice){
       };
       setTimeout(() => { const i = el.querySelector('input'); if (i && (drawn++ || innerWidth >= 900)) i.focus(); }, 30);   // on a phone the page opens on the guide, not the keyboard
     };
-    draw();
+    draw(notice, noticeOk);
   });
 }
 
@@ -272,7 +289,7 @@ function acctHouses(){
   if (!AUTH || !GUIDE) return;
   let d = document.querySelector('#acctbar .houses');
   const cur = HOUSES.find(h => h.id === GUIDE.id) || { ...GUIDE, name: ((GUIDE.content || {}).site || {}).name };
-  const html = `<summary aria-label="Your houses"><b>${esc(houseName(cur))}</b></summary><div class="hmenu">${HOUSES.map(h => `<button type="button" data-house="${esc(h.id)}"${h.id === GUIDE.id ? ' aria-current="true"' : ''}><b>${esc(houseName(h))}</b><small>${esc(houseState(h))}${h.id === GUIDE.id ? ' · open now' : ''}</small></button>`).join('')}<button type="button" class="add" data-addhouse>+ Add a house</button></div>`;
+  const html = `<summary aria-label="Your houses"><b>${esc(houseName(cur))}</b></summary><div class="hmenu">${HOUSES.map(h => `<div class="hrow"><button type="button" data-house="${esc(h.id)}"${h.id === GUIDE.id ? ' aria-current="true"' : ''}><b>${esc(houseName(h))}</b><small>${esc(houseState(h))}${h.id === GUIDE.id ? ' · open now' : ''}</small></button><button type="button" class="hdel" data-delhouse="${esc(h.id)}" aria-label="Delete ${esc(houseName(h))}" title="Delete this house">${TRASH}</button></div>`).join('')}<button type="button" class="add" data-addhouse>+ Add a house</button><button type="button" class="gone" data-delacct>Delete my account</button></div>`;
   if (!d) { d = document.createElement('details'); d.className = 'houses'; acctBar().prepend(d); }
   const open = d.open; d.innerHTML = html; d.open = open;
 }
@@ -298,6 +315,65 @@ document.addEventListener('click', async e => {
     }
     await acctLeaveHouse(); acctOpenHouse(b.dataset.house);
   } catch (e) { b.disabled = false; window.__resetting = false; toast((b.dataset.addhouse !== undefined ? 'No house added: ' : 'Could not open it: ') + niceError(e)); }
+});
+// Deleting (29 Oct 2026, Yohann: "I should be able to delete it"): a house from the houses menu, or the whole account.
+// Both ask first; a published guide and the account also ask to type its web address or the email, since guests lose
+// the guide at once. Not while a guide is being built (the database refuses too). Photos go with the house: the guide
+// worker removes the photos of houses that no longer exist (worker/sweep-photos.mjs).
+const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>';
+const building = h => h.status === 'queued' || h.status === 'generating';
+function askDelete(o){
+  return new Promise(done => {
+    const el = document.createElement('div'); el.className = 'acdel';
+    el.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="acdelT"><h2 id="acdelT">${esc(o.title)}</h2>${o.text.map(t => `<p>${esc(t)}</p>`).join('')}${o.typed ? `<label for="acdelIn">${esc(o.label)}<b class="typed">${esc(o.typed)}</b></label><input id="acdelIn" autocomplete="off" autocapitalize="off" spellcheck="false">` : ''}<div class="row"><button type="button" class="btn" data-no>Cancel</button><button type="button" class="btn danger" data-yes${o.typed ? ' disabled' : ''}>${esc(o.confirm)}</button></div></div>`;
+    document.body.appendChild(el);
+    const yes = el.querySelector('[data-yes]'), inp = el.querySelector('#acdelIn');
+    const key = e => { if (e.key === 'Escape') end(false); };
+    const end = v => { el.remove(); removeEventListener('keydown', key); done(v); };
+    addEventListener('keydown', key);
+    if (inp) inp.oninput = () => { yes.disabled = inp.value.trim().toLowerCase() !== o.typed.toLowerCase(); };
+    el.querySelector('[data-no]').onclick = () => end(false);
+    el.onclick = e => { if (e.target === el) end(false); };
+    yes.onclick = () => end(true);
+    setTimeout(() => (inp || el.querySelector('[data-no]')).focus(), 30);
+  });
+}
+async function acctDeleteHouse(id){
+  const h = HOUSES.find(x => x.id === id); if (!h) return;
+  if (building(h)) return toast('It is being built. You can delete it once that is done.');
+  const name = houseName(h), live = h.status === 'published' && h.slug;
+  const ok = await askDelete({ title: `Delete ${name}?`,
+    text: [...(live ? ['It is published: from now on, guests who open its link see "not found".'] : []), 'Its answers, photos and guide are deleted for good. This cannot be undone.'],
+    confirm: 'Delete this house', typed: live ? h.slug : '', label: 'To confirm, type its web address:' });
+  if (!ok) return;
+  try {
+    await ensureFresh();
+    const r = await sb('/rest/v1/guides?id=eq.' + id, { method: 'DELETE', headers: { Prefer: 'return=representation' } });
+    if (!r || !r.length) throw new Error('It was not deleted. Try again.');
+  } catch (e) { return toast('Not deleted: ' + niceError(e)); }
+  HOUSES = HOUSES.filter(x => x.id !== id);
+  if (id !== GUIDE.id) { acctHouses(); return toast(`${name} is deleted.`); }
+  window.__resetting = true; clearTimeout(pushTimer); await wipeLocal();   // what this device held belonged to that house
+  houseSave(AUTH.user.id, HOUSES[0] ? HOUSES[0].id : null); location.hash = ''; location.reload();   // the next house, or a new one
+}
+async function acctDeleteAccount(){
+  if (HOUSES.some(building)) return toast('A guide is being built. You can delete your account once that is done.');
+  const email = (AUTH.user && AUTH.user.email) || '', n = HOUSES.length, live = HOUSES.filter(h => h.status === 'published').length;
+  const ok = await askDelete({ title: 'Delete your account?',
+    text: [`Your account and ${n === 1 ? 'your house' : `your ${n} houses`}, with their answers, photos and guides, are deleted for good.${live ? ` ${live === 1 ? 'Your published guide goes' : `Your ${live} published guides go`} offline at once.` : ''}`, 'This cannot be undone.'],
+    confirm: 'Delete my account', typed: email || 'delete', label: email ? 'To confirm, type your email:' : 'To confirm, type:' });
+  if (!ok) return;
+  try { await ensureFresh(); await sb('/rest/v1/rpc/delete_my_account', { method: 'POST', body: {} }); }
+  catch (e) { return toast('Not deleted: ' + niceError(e)); }
+  window.__resetting = true; clearTimeout(pushTimer);
+  authStore(null); await wipeLocal();
+  try { localStorage.removeItem(HOUSE_KEY); localStorage.removeItem('porta-editor-step-v1'); sessionStorage.setItem('porta-deleted', '1'); } catch (e) {}
+  location.hash = ''; location.reload();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('#acctbar [data-delhouse], #acctbar [data-delacct]'); if (!b) return;
+  const d = b.closest('details'); if (d) d.open = false;
+  if (b.dataset.delhouse) acctDeleteHouse(b.dataset.delhouse); else acctDeleteAccount();
 });
 // "Log out" lives in a row right under the page header.
 function acctBar() {
@@ -349,8 +425,9 @@ async function accountBoot(){
   const type = await acctHash();
   if (AUTH) { try { await ensureFresh(); } catch (e) { authStore(null); } }
   if (type === 'recovery' && AUTH) await gate('reset');
-  let notice = window.__authError ? 'That sign-in did not work. Try again, or use your email.' : '';
-  while (!AUTH) { await gate(window.__everSignedIn ? 'login' : 'signup', notice); }
+  let notice = window.__authError ? 'That sign-in did not work. Try again, or use your email.' : '', noticeOk = false;
+  try { if (sessionStorage.getItem('porta-deleted')) { sessionStorage.removeItem('porta-deleted'); notice = 'Your account is deleted, with its houses and photos.'; noticeOk = true; } } catch (e) {}
+  while (!AUTH) { await gate(window.__everSignedIn ? 'login' : 'signup', notice, noticeOk); notice = ''; }
   try { await acctAttach(); }
   catch (e) { if (e.status === 401 || e.status === 403) { authStore(null); await accountBoot(); return; } /* offline: keep working on this device */ }
   try { cmInit(); } catch (e) {}
