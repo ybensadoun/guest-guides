@@ -74,6 +74,83 @@ const everyPage = async (p, tag) => { const pages = [...new Set(await p.$$eval('
 
 const browser = await chromium.launch();
 try {
+  // ---- Signed out: the first page, in the guides' look, with Google when it is switched on ----
+  const signedOut = async (w, h, googleOn) => {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } }), seen = [];
+    await ctx.route('**/*', route => { const u = new URL(route.request().url());
+      if (u.host === 'editor.test') return route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
+      if (u.origin === SB && u.pathname === '/auth/v1/settings') return json(route, { external: { google: googleOn, email: true } });
+      if (u.origin === SB && u.pathname === '/auth/v1/authorize') { seen.push(u.toString()); return route.fulfill({ status: 200, contentType: 'text/html', body: '<p>Google</p>' }); }
+      if (u.origin === SB) return json(route, []);
+      return route.continue(); });
+    const p = await ctx.newPage(), errors = []; p.on('pageerror', e => errors.push(e.message));
+    await p.goto('http://editor.test/'); await p.waitForSelector('#acct .ac-card', { timeout: 15000 }).catch(() => {}); await p.waitForTimeout(400);
+    return { ctx, p, errors, seen };
+  };
+  const tileClash = p => p.$$eval('#acct .ac-tile', els => els.flatMap(el => { const s = getComputedStyle(el, '::before'), b = el.getBoundingClientRect();
+    const w = parseFloat(s.width) + parseFloat(s.borderLeftWidth) + parseFloat(s.borderRightWidth), h = parseFloat(s.height) + parseFloat(s.borderTopWidth) + parseFloat(s.borderBottomWidth);
+    const x2 = b.right - parseFloat(s.right), x1 = x2 - w, y1 = b.top + parseFloat(s.top), y2 = y1 + h;
+    const boxes = t => { if (t.matches('.ic, .ar')) return [t.getBoundingClientRect()]; const g = document.createRange(); g.selectNodeContents(t); return [...g.getClientRects()]; };   // text: the words, not the line
+    return [...el.querySelectorAll('b, small, .ic, .ar')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent + ': ' + t.tagName); }));
+  for (const [w, h, tag] of [[360, 780, '360 px'], [1280, 860, 'desktop']]) {
+    const { ctx, p, errors } = await signedOut(w, h, false);
+    ok(`signed out, ${tag}: the page in the guides' look, sign-up card shown`, !!(await p.$('#acct .ac-hero')) && !!(await p.$('#acct #acForm')));
+    ok(`signed out, ${tag}: no Google button while Google is off`, !(await p.$('#acGoogle')));
+    ok(`signed out, ${tag}: no sideways scroll`, (await p.evaluate(() => document.getElementById('acct').scrollWidth - window.innerWidth)) <= 0);
+    const clash = await tileClash(p); ok(`signed out, ${tag}: no tile text under its corner shape`, !clash.length, clash.join('; '));
+    ok(`signed out, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await p.screenshot({ path: join(SHOTS, `signed-out-${tag.replace(' ', '')}.png`), fullPage: false });
+    await ctx.close();
+  }
+  { const { ctx, p, errors, seen } = await signedOut(360, 780, true);
+    ok('signed out: with Google on, "Continue with Google" is there', !!(await p.$('#acGoogle')));
+    await p.screenshot({ path: join(SHOTS, 'signed-out-google-360.png') });
+    await p.click('#acGoogle'); await p.waitForTimeout(800);
+    const to = seen[0] ? new URL(seen[0]) : null;
+    ok('signed out: Google button goes to Supabase Google sign-in and back to this site', !!to && to.searchParams.get('provider') === 'google' && to.searchParams.get('redirect_to') === 'http://editor.test/', seen[0] || 'no call');
+    ok('signed out with Google: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // Back from Google, brand-new account: signed in, no gate, straight to "paste your link".
+  { const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } }), rows = {}, uid = '00000000-0000-0000-0000-00000000600d';
+    await ctx.route('**/*', route => { const req = route.request(), u = new URL(req.url());
+      if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
+      if (u.origin === SB && u.pathname.startsWith('/auth/v1/user')) return json(route, { id: uid, email: 'new@example.org', created_at: new Date().toISOString() });
+      if (u.origin === SB && u.pathname.startsWith('/rest/v1/guides')) {
+        if (req.method() === 'POST') { const r = { id: '00000000-0000-0000-0000-0000000060aa', owner: uid, answers: {}, status: 'draft', slug: null, origin: null, content: null, theme: null, draft: null }; rows[r.id] = r; return json(route, [r]); }
+        if (/select=id(%2C|,)slug/.test(u.search)) return json(route, Object.values(rows).map(r => ({ id: r.id, slug: r.slug, status: r.status })));
+        const id = (u.search.match(/id=eq\.([0-9a-f-]+)/) || [])[1]; return json(route, rows[id] ? [rows[id]] : []);
+      }
+      if (u.origin === SB) return json(route, u.pathname.startsWith('/auth/') ? {} : []);
+      return route.continue(); });
+    const p = await ctx.newPage(), errors = []; p.on('pageerror', e => errors.push(e.message));
+    await p.goto('http://editor.test/#access_token=test-token&expires_in=3600&refresh_token=r1&token_type=bearer&provider_token=g1');
+    await p.waitForSelector('#st_url', { timeout: 15000 }).catch(() => {});
+    ok('back from Google (new account): signed in, on "paste your link"', !(await p.$('#acct')) && !!(await p.$('#st_url')), await p.evaluate(() => location.hash || '(no hash)'));
+    ok('back from Google: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // Add a house from the Ca La Kimberly account: the same start as a new account.
+  { const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } }), rows = { [E.id]: E };
+    await ctx.addInitScript(g => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', '1'); localStorage.setItem('porta-auth-v1', JSON.stringify({ access_token: 't', refresh_token: 't', expires_at: Math.floor(Date.now() / 1000) + 86400, user: { id: g.owner } })); }, E);
+    await ctx.route('**/*', route => { const req = route.request(), u = new URL(req.url());
+      if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
+      if (u.origin === SB && u.pathname.startsWith('/auth/v1/user')) return json(route, { id: E.owner });
+      if (u.origin === SB && u.pathname.startsWith('/rest/v1/guides')) {
+        if (req.method() === 'POST') { const r = { id: '00000000-0000-0000-0000-0000000000ad', owner: E.owner, answers: {}, status: 'draft', slug: null, origin: null, content: null, theme: null, draft: null }; rows[r.id] = r; return json(route, [r]); }
+        if (req.method() !== 'GET') return json(route, []);
+        if (/select=id(%2C|,)slug/.test(u.search)) return json(route, Object.values(rows).map(r => ({ id: r.id, slug: r.slug, status: r.status, origin: r.origin, name: r.content && r.content.site.name })));
+        const id = (u.search.match(/id=eq\.([0-9a-f-]+)/) || [])[1]; return json(route, rows[id] ? [rows[id]] : []);
+      }
+      if (u.origin === SB) return json(route, u.pathname.startsWith('/auth/') ? {} : []);
+      return route.continue(); });
+    const p = await ctx.newPage(), errors = []; p.on('pageerror', e => errors.push(e.message));
+    await p.goto('http://editor.test/'); await ready(p);
+    await p.click('#acctbar .houses > summary'); await p.click('#acctbar [data-addhouse]').catch(() => {});
+    await p.waitForSelector('#st_url', { timeout: 15000 }).catch(() => {});
+    ok('Add a house (Ca La Kimberly account): the same "paste your link" start as a new account', !!(await p.$('#st_url')) && !(await p.$('.mhead')));
+    const menu = await p.$eval('#acctbar .houses > summary', e => e.textContent.trim()).catch(() => '');
+    ok('Add a house: the houses menu now shows the new house', !!menu && !/Ca La Kimberly/.test(menu), menu);
+    ok('Add a house: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // ---- The builder, just after the listing was read ----
   { const { ctx, p, errors } = await open(browser, B, 360, 780);
     await p.goto('http://editor.test/'); await ready(p);

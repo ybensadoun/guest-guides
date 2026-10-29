@@ -234,6 +234,7 @@ function feedbackPageHTML(){
 /* ---------- Render ---------- */
 let lastRoute = null;
 function render(){
+  if (/(^|[#&])(access_token|error_description)=/.test(location.hash)) return;   // a sign-in link: accountBoot reads it first
   let r = route(); const main = $('#main');
   if (!main) return;
   clearInterval(buildTimer);

@@ -31,21 +31,64 @@ function niceError(e){
 /* The sign-in screen: shown before anything else, so every answer belongs to an account. */
 (function(){
   const st = document.createElement('style');
-  st.textContent = `#acct{position:fixed;inset:0;z-index:200;background:var(--paper);display:flex;align-items:flex-start;justify-content:center;padding:max(24px,8vh) 16px 40px;overflow:auto}
-#acct .ac{width:100%;max-width:420px}
-#acct .ab{display:flex;align-items:center;gap:10px;margin-bottom:26px;font-family:var(--display,inherit);font-size:22px}
-#acct h1{font-size:34px;line-height:1.05;margin:0 0 10px;letter-spacing:-.01em}
-#acct p.lead{margin:0 0 22px;color:var(--muted);font-size:16px;line-height:1.45}
+  st.textContent = `/* The sign-in screen, in the guides' own look (Ca La Kimberly's "Bauhaus summer": paper, bold primaries, Jost) */
+#acct{position:fixed;inset:0;z-index:200;overflow:auto;background:#F3EEE3;color:#121212;font-family:"Jost",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --k-ink:#121212;--k-blue:#1D4FA0;--k-red:#D52B1E;--k-yellow:#F5C400;--k-orange:#EC6A1C;--k-green:#0E7C46;--k-line:#DED6C6;--k-muted:#4A4A4A}
+#acct *{box-sizing:border-box}
+#acct .ac2{max-width:1120px;margin:0 auto;padding:18px 16px 48px;display:grid;gap:18px;grid-template-areas:"top" "hero" "card" "tiles"}
+#acct .ac-top{grid-area:top;display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px}
+#acct .ac-door{width:22px;height:28px;border-radius:11px 11px 3px 3px;background:var(--k-ink);position:relative;flex:none}
+#acct .ac-door::after{content:"";position:absolute;left:6px;top:14px;width:5px;height:5px;border-radius:50%;background:var(--k-yellow)}
+#acct .ac-hero{grid-area:hero;background:#fff;border:2px solid var(--k-ink);border-radius:20px;overflow:hidden;display:flex;flex-direction:column}
+#acct .ac-art{position:relative;height:150px;background:var(--k-blue);overflow:hidden}
+#acct .ac-art i{position:absolute;display:block}
+#acct .ac-art .s1{width:92px;height:92px;border-radius:50%;background:var(--k-yellow);right:44px;top:22px}
+#acct .ac-art .s2{width:120px;height:120px;border-radius:0 120px 0 0;background:var(--k-red);left:0;bottom:0}
+#acct .ac-art .s3{width:0;height:0;border-left:46px solid transparent;border-right:46px solid transparent;border-bottom:78px solid var(--k-ink);left:128px;bottom:0}
+#acct .ac-art .s4{width:150px;height:44px;background:#F3EEE3;right:0;bottom:0}
+#acct .ac-art .s5{width:44px;height:44px;border-radius:50% 50% 0 0;background:var(--k-green);right:66px;bottom:44px}
+#acct .ac-name{padding:18px 20px 16px;display:flex;flex-direction:column;gap:8px}
+#acct .ac-name small{font-size:12.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--k-muted)}
+#acct .ac-name h1{margin:0;font-size:clamp(30px,7.5vw,48px);line-height:1.04;font-weight:700;letter-spacing:-.01em}
+#acct .ac-name p{margin:0;font-size:17px;line-height:1.45;color:#2a2a2a}
+#acct .ac-facts{display:grid;grid-template-columns:1fr 1fr;border-top:1.5px solid var(--k-line)}
+#acct .ac-facts div{padding:12px 20px;display:flex;flex-direction:column;gap:2px;min-width:0}
+#acct .ac-facts div+div{border-left:1.5px solid var(--k-line)}
+#acct .ac-facts small{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--k-muted)}
+#acct .ac-facts b{font-weight:600;font-size:16px;color:var(--k-blue)}
+#acct .ac-tiles{grid-area:tiles;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#acct .ac-tiles h2{grid-column:1/-1;margin:6px 0 0;font-size:24px;font-weight:700}
+#acct .ac-tile{position:relative;overflow:hidden;isolation:isolate;border-radius:20px;padding:16px;min-height:150px;display:flex;flex-direction:column;gap:6px;color:#fff}
+#acct .ac-tile .ic{width:30px;height:30px;margin-bottom:18px}
+#acct .ac-tile .ic svg{width:28px;height:28px}
+#acct .ac-tile b{font-size:clamp(19px,5vw,22px);line-height:1.12;font-weight:700;margin-top:auto}
+#acct .ac-tile small{font-size:14px;opacity:.9;line-height:1.3}
+#acct .ac-tile .ar{align-self:flex-end;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#fff;color:var(--k-ink);font-weight:700}
+#acct .ac-tile::before{content:"";position:absolute;z-index:-1;top:0;right:0}
+#acct .t-y{background:var(--k-yellow);color:var(--k-ink)}#acct .t-y .ar{background:var(--k-ink);color:#fff}
+#acct .t-y::before{width:60px;height:60px;border-radius:0 0 0 60px;background:var(--k-ink)}
+#acct .t-r{background:var(--k-red)}#acct .t-r::before{border-left:30px solid transparent;border-right:30px solid transparent;border-top:50px solid var(--k-ink);right:10px}
+#acct .t-k{background:var(--k-ink)}#acct .t-k::before{width:64px;height:64px;border-radius:0 0 0 64px;background:var(--k-red)}
+#acct .t-g{background:var(--k-green)}#acct .t-g::before{border-left:26px solid transparent;border-right:26px solid transparent;border-top:44px solid var(--k-yellow);right:14px}
+#acct .ac-card{grid-area:card;background:#fff;border:2px solid var(--k-ink);border-radius:20px;padding:22px 20px}
+#acct .ac-card h2{margin:0 0 6px;font-size:28px;line-height:1.08;font-weight:700}
+#acct p.lead{margin:0 0 16px;color:var(--k-muted);font-size:16px;line-height:1.45}
+#acct .gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;font:inherit;font-weight:600;font-size:16px;padding:12px 14px;border-radius:999px;border:2px solid var(--k-ink);background:#fff;color:var(--k-ink);cursor:pointer;text-decoration:none}
+#acct .gbtn svg{width:20px;height:20px;flex:none}
+#acct .or{display:flex;align-items:center;gap:12px;margin:16px 0 2px;font-size:13px;color:var(--k-muted)}
+#acct .or::before,#acct .or::after{content:"";flex:1;border-top:1.5px solid var(--k-line)}
 #acct label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
-#acct input{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
-#acct input:focus{outline:2px solid var(--pine);outline-offset:1px}
-#acct .go{margin-top:20px;width:100%;font:inherit;font-weight:700;font-size:16px;padding:14px;border-radius:999px;border:0;background:var(--sun);color:#1b1407;cursor:pointer}
+#acct input{width:100%;font:inherit;font-size:16px;padding:13px 14px;border-radius:12px;border:1.5px solid var(--k-line);background:#F3EEE3;color:var(--k-ink)}
+#acct input:focus{outline:2px solid var(--k-blue);outline-offset:1px}
+#acct .go{margin-top:18px;width:100%;font:inherit;font-weight:700;font-size:16px;padding:14px;border-radius:999px;border:0;background:var(--k-ink);color:#fff;cursor:pointer}
 #acct .go[disabled]{opacity:.6;cursor:wait}
-#acct .alt{margin-top:16px;text-align:center;font-size:14px;color:var(--muted)}
-#acct .alt button{font:inherit;background:none;border:0;color:var(--pine);font-weight:700;text-decoration:underline;cursor:pointer;padding:0}
-#acct .acmsg{margin-top:14px;font-size:14px;min-height:20px;color:var(--tomato)}
-#acct .acmsg.ok{color:var(--pine)}
-#acct .small{margin-top:22px;font-size:12.5px;color:var(--faint);line-height:1.5}
+#acct .alt{margin-top:16px;text-align:center;font-size:14px;color:var(--k-muted)}
+#acct .alt button{font:inherit;background:none;border:0;color:var(--k-blue);font-weight:600;text-decoration:underline;cursor:pointer;padding:0}
+#acct .acmsg{margin-top:14px;font-size:14px;min-height:20px;color:var(--k-red)}
+#acct .acmsg.ok{color:var(--k-green)}
+#acct .small{margin-top:18px;font-size:12.5px;color:#6E6A63;line-height:1.5}
+@media (min-width:900px){#acct .ac2{grid-template-columns:minmax(0,1fr) 420px;grid-template-areas:"top top" "hero card" "tiles card";align-items:start;column-gap:28px;padding-top:28px}
+  #acct .ac-card{position:sticky;top:24px}#acct .ac-art{height:210px}#acct .ac-art .s1{width:130px;height:130px}}
 /* Account row under the header: in the page flow, so it never sits on the step bar. */
 #acctbar{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:-4px 0 2px}
 #acctbar:empty{display:none}
@@ -66,24 +109,48 @@ function niceError(e){
   document.head.appendChild(st);
 })();
 
-function gate(mode0, notice){
+// Google sign-in (Supabase Auth, provider "google"): the button shows only once it is switched on there.
+const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+async function googleOn(){
+  if (window.__googleOn !== undefined) return window.__googleOn;
+  try { const r = await fetch(SB.url + '/auth/v1/settings', { headers: { apikey: SB.key }, signal: AbortSignal.timeout(4000) }); const j = await r.json(); window.__googleOn = !!(j && j.external && j.external.google); }
+  catch (e) { window.__googleOn = false; }
+  return window.__googleOn;
+}
+(function(){ if (document.getElementById('jostFont')) return; const l = document.createElement('link'); l.id = 'jostFont'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap'; document.head.appendChild(l); })();
+async function gate(mode0, notice){
+  await googleOn();
   return new Promise(resolve => {
-    let mode = mode0 || 'signup';
+    let mode = mode0 || 'signup', drawn = 0;
     const el = document.getElementById('acct') || Object.assign(document.createElement('div'), { id: 'acct' });
     if (!el.isConnected) document.body.appendChild(el);
     const draw = (msg, ok) => {
       const up = mode === 'signup', rec = mode === 'recover', reset = mode === 'reset';
-      el.innerHTML = `<div class="ac"><div class="ab">Guest Guide Maker</div>
-        <h1>${reset ? 'Choose a new password' : rec ? 'Reset your password' : up ? 'Create your account' : 'Welcome back'}</h1>
-        <p class="lead">${reset ? 'Pick a new password, then you are back in.' : rec ? 'We email you a link to choose a new password.' : up ? 'So you can come back any time and change your answers. It takes a minute.' : 'Log in to continue where you left off.'}</p>
-        <form id="acForm" novalidate>
+      const google = window.__googleOn && (up || mode === 'login');
+      el.innerHTML = `<div class="ac2">
+        <div class="ac-top"><span class="ac-door" aria-hidden="true"></span>Guest Guide Maker</div>
+        <section class="ac-hero"><div class="ac-art" aria-hidden="true"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i><i class="s5"></i></div>
+          <div class="ac-name"><small>Guest guides for holiday homes</small><h1>Your guest guide, written for you.</h1>
+            <p>Paste your Airbnb link: in about a minute you see your whole guide, with the house, the rules, the Wi-Fi and the best of the area, in your guests' languages. Then you make it yours.</p></div>
+          <div class="ac-facts"><div><small>Wi-Fi</small><b>Tap to connect</b></div><div><small>Check-out</small><b>Before 11:00</b></div></div></section>
+        <section class="ac-card">
+          <h2>${reset ? 'Choose a new password' : rec ? 'Reset your password' : up ? 'Create your account' : 'Welcome back'}</h2>
+          <p class="lead">${reset ? 'Pick a new password, then you are back in.' : rec ? 'We email you a link to choose a new password.' : up ? 'So you can come back any time and change your answers. It takes a minute.' : 'Log in to continue where you left off.'}</p>
+          ${google ? `<button class="gbtn" type="button" id="acGoogle">${GOOGLE_G}Continue with Google</button><div class="or">or with your email</div>` : ''}
+          <form id="acForm" novalidate>
           ${reset ? '' : '<label for="acEmail">Email</label><input id="acEmail" type="email" autocomplete="email" inputmode="email" required>'}
           ${rec ? '' : `<label for="acPw">${reset ? 'New password' : 'Password'}</label><input id="acPw" type="password" autocomplete="${up || reset ? 'new-password' : 'current-password'}" ${up || reset ? 'minlength="8" placeholder="At least 8 characters"' : ''} required>`}
           <button class="go" type="submit">${reset ? 'Save password' : rec ? 'Send me the link' : up ? 'Create my account' : 'Log in'}</button>
           <div class="acmsg${ok ? ' ok' : ''}" id="acMsg" role="status">${esc(msg || notice || '')}</div>
         </form>
-        <div class="alt">${rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : 'New here? <button type="button" data-m="signup">Create an account</button> · <button type="button" data-m="recover">Forgot password?</button>'}</div>
-        ${up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it.</p>' : ''}</div>`;
+          <div class="alt">${rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : 'New here? <button type="button" data-m="signup">Create an account</button> · <button type="button" data-m="recover">Forgot password?</button>'}</div>
+        ${up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it.</p>' : ''}</section>
+        <section class="ac-tiles" aria-label="What your guests get"><h2>What your guests get</h2>
+          <div class="ac-tile t-y"><span class="ic">${I.tool}</span><b>House guide</b><small>How everything works, room by room</small><span class="ar" aria-hidden="true">→</span></div>
+          <div class="ac-tile t-r"><span class="ic">${I.phone}</span><b>Emergencies</b><small>112, the hospital, the pharmacy</small><span class="ar" aria-hidden="true">→</span></div>
+          <div class="ac-tile t-k"><span class="ic">${I.bag}</span><b>Markets</b><small>What is on today</small><span class="ar" aria-hidden="true">→</span></div>
+          <div class="ac-tile t-g"><span class="ic">${I.compass}</span><b>What to do</b><small>Picked near your house</small><span class="ar" aria-hidden="true">→</span></div></section></div>`;
+      const gb = el.querySelector('#acGoogle'); if (gb) gb.onclick = () => { gb.disabled = true; location.href = `${SB.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + '/')}`; };
       el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; draw(); });
       const f = el.querySelector('#acForm'), m = el.querySelector('#acMsg');
       f.onsubmit = async ev => {
@@ -106,7 +173,7 @@ function gate(mode0, notice){
           authStore(toSession(j)); el.remove(); resolve(true);
         } catch (e) { btn.disabled = false; m.className = "acmsg"; m.textContent = niceError(e); }
       };
-      setTimeout(() => { const i = el.querySelector('input'); if (i) i.focus(); }, 30);
+      setTimeout(() => { const i = el.querySelector('input'); if (i && (drawn++ || innerWidth >= 900)) i.focus(); }, 30);   // on a phone the page opens on the guide, not the keyboard
     };
     draw();
   });
@@ -115,6 +182,7 @@ function gate(mode0, notice){
 // Links in confirmation and reset emails come back as /#access_token=...&type=signup|recovery.
 async function acctHash(){
   const h = location.hash.replace(/^#/, '');
+  if (/(^|&)error_description=/.test(h)) { window.__authError = new URLSearchParams(h).get('error_description'); history.replaceState(null, '', location.pathname); return null; }   // Google said no
   if (!/access_token=/.test(h)) return null;
   const p = new URLSearchParams(h);
   const tok = p.get('access_token'), type = p.get('type');
@@ -123,7 +191,8 @@ async function acctHash(){
     const user = await sb('/auth/v1/user', { token: tok });
     authStore({ access_token: tok, refresh_token: p.get('refresh_token'), expires_at: Number(p.get('expires_at')) || Math.floor(Date.now() / 1000) + Number(p.get('expires_in') || 3600), user });
     history.replaceState(null, '', location.pathname);
-    if (type === 'signup') { try { await nf('signup', { sid, email: user.email, device: deviceLine(device()) }); } catch (e) {} }
+    const fresh = !type && p.get('provider_token') && Date.now() - Date.parse(user.created_at || 0) < 10 * 60000;   // a new account made with Google
+    if (type === 'signup' || fresh) { try { await nf('signup', { sid, email: user.email, device: deviceLine(device()) }); } catch (e) {} }
     return type;
   } catch (e) { history.replaceState(null, '', location.pathname); return null; }
 }
@@ -279,7 +348,7 @@ async function accountBoot(){
   const type = await acctHash();
   if (AUTH) { try { await ensureFresh(); } catch (e) { authStore(null); } }
   if (type === 'recovery' && AUTH) await gate('reset');
-  let notice = '';
+  let notice = window.__authError ? 'That sign-in did not work. Try again, or use your email.' : '';
   while (!AUTH) { await gate(window.__everSignedIn ? 'login' : 'signup', notice); }
   try { await acctAttach(); }
   catch (e) { if (e.status === 401 || e.status === 403) { authStore(null); await accountBoot(); return; } /* offline: keep working on this device */ }
