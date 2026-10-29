@@ -1,8 +1,8 @@
 /* Preset "mediterranean": whitewash and cobalt, like the Greek islands and the south of Spain. Ca La Kimberly's tile
    system, drawn differently: most tiles are white walls with a painted cobalt frame, a few are solid cobalt like blue
    doors; the narrow tiles have arched tops with a small azulejo as their keystone, the cover photo is an arched window,
-   lemon is kept for the arrows on the blue tiles. Tile colours are set here per section, so a site's own palette
-   (theme.css) changes the accents, not the tiles. */
+   lemon is kept for the arrows on the blue tiles. Tile colours are set here per section, in this preset's own tokens; a site that takes its colours
+   from a picture overrides those tokens too (theme.css: generate-site.py layout_vars, the editor's edLayoutVars). */
 :root{
   --paper:#FBFAF6;--white:#FFFFFF;--ink:#122B4C;--muted:#4C5A6E;--faint:#7A8597;--line:#DCE4EE;
   --red:#BF5536;--blue:#1F4F96;--yellow:#F2C64B;--orange:#E39A3B;--green:#2D7A62;

@@ -1,7 +1,7 @@
 /* Preset "rural": wood, moss and warm earth, for farmhouses, masies and country houses. Ca La Kimberly's tiles on an
    oat background: moss, forest, bark, rust, wheat and honey, and a leaf in each tile's corner (the shape zone of
-   app.css: top-right, never under the text or the arrow). Tile colours are set here per section, so a site's own
-   palette (theme.css) changes the accents, not the tiles. */
+   app.css: top-right, never under the text or the arrow). Tile colours are set here per section, in this preset's own tokens; a site that takes its colours
+   from a picture overrides those tokens too (theme.css: generate-site.py layout_vars, the editor's edLayoutVars). */
 :root{
   --paper:#F2ECDF;--white:#FFFDF8;--ink:#2A2318;--muted:#62574A;--faint:#8A7E6C;--line:#DDD2BF;
   --red:#A3482B;--blue:#4E6A3A;--yellow:#E2B45A;--orange:#C98536;--green:#3F6B3F;

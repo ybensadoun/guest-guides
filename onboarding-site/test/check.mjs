@@ -339,6 +339,7 @@ try {
   // The look, Colours: the layout's own is chosen until another is picked, and the chosen one stays highlighted.
   { const { ctx, p, errors } = await open(browser, E, 360, 780);
     await ctx.route(/\.(jpe?g|png|webp)(\?.*)?$/i, route => route.fulfill({ status: 200, contentType: 'image/png', headers: { 'Access-Control-Allow-Origin': '*' }, body: PNG4 }));
+    const saved = []; await ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
     await p.goto('http://editor.test/#look'); await ready(p); await p.waitForTimeout(300);
     const pressed = () => p.$$eval('[data-colorsfrom]', bs => bs.filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.colorsfrom).join()).catch(() => '');
     const first = await pressed();
@@ -347,7 +348,9 @@ try {
     await p.click('[data-colorsfrom="look"]'); await p.waitForTimeout(300);
     const third = await pressed();
     ok('editor, Colours: "The layout\'s own" is highlighted at first, the picked one after, and back', first === 'look' && second === 'cover' && third === 'look' && bg !== 'rgba(0, 0, 0, 0)', `${first} -> ${second} (${bg}) -> ${third}`);
-    await p.click('[data-colorsfrom="cover"]'); await p.waitForTimeout(1500); await p.screenshot({ path: join(SHOTS, 'editor-colours-360.png') });
+    await p.click('[data-colorsfrom="cover"]'); await p.waitForTimeout(1800); await p.screenshot({ path: join(SHOTS, 'editor-colours-360.png') });
+    const last = saved[saved.length - 1] || '';
+    ok('editor, Colours: the picture\'s colours reach every layout (Mediterranean, Rural, Soft, Clean)', ['--med-cobalt', '--med-azulejo', '--ru-moss', '--sf-mint', '--accent'].every(k => last.includes(k)) && !/in this layout the tiles keep/.test(await p.textContent('.edz')), saved.length + ' saves');
     ok('editor, Colours: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const { ctx, p } = await open(browser, E, 360, 780);

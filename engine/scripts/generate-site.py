@@ -263,6 +263,30 @@ if BP:
     palette = {'paper': BP['paper'], 'ink': BP['ink'], 'accents': [BP['primary'], BP['cta'], BP.get('stone', _mix(BP['paper'], BP['ink'], .12))]}
 
 a = palette['accents'] + palette['accents']
+# Colours from the host's picture reach every layout in its own way (29 Oct 2026): the presets keep their tile colours in
+# their own tokens (engine/src/styles/presets/*.css), so those come from the picture too, for all layouts at once.
+# Same mapping as the editor (onboarding-site/src/editor.js edLayoutVars).
+def _azulejo(c, l):
+    from urllib.parse import quote
+    svg = (f"<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><rect width='40' height='40' fill='#fff'/><g fill='{c}'>"
+           "<circle cx='0' cy='0' r='7'/><circle cx='40' cy='0' r='7'/><circle cx='0' cy='40' r='7'/><circle cx='40' cy='40' r='7'/><ellipse cx='20' cy='10.5' rx='3.4' ry='6.5'/>"
+           "<ellipse cx='20' cy='29.5' rx='3.4' ry='6.5'/><ellipse cx='10.5' cy='20' rx='6.5' ry='3.4'/><ellipse cx='29.5' cy='20' rx='6.5' ry='3.4'/>"
+           f"<path d='M20 0l3 3-3 3-3-3zM20 34l3 3-3 3-3-3zM0 20l3-3 3 3-3 3zM34 20l3-3 3 3-3 3z'/></g><circle cx='20' cy='20' r='4.2' fill='{l}'/><circle cx='20' cy='20' r='1.6' fill='{c}'/>"
+           f"<path d='M0 .5h40M.5 0v40' stroke='{c}' stroke-opacity='.35' stroke-width='1'/></svg>")
+    return 'url("data:image/svg+xml,' + quote(svg, safe='') + '")'
+def layout_vars(blue, red, yellow, orange, green):
+    W, K = '#FFFFFF', '#000000'
+    def dk(c):   # white text stays readable on it
+        for _ in range(12):
+            if contrast(_hx(c), (255, 255, 255)) >= 3.2: break
+            c = _mix(c, K, .12)
+        return c
+    blue, red, green = dk(blue), dk(red), dk(green)
+    o = {'--med-cobalt': blue, '--med-navy': _mix(blue, K, .45), '--med-sky': _mix(blue, W, .88), '--med-lemon': yellow, '--med-clay': red, '--med-azulejo': _azulejo(blue, yellow),
+         '--ru-moss': green, '--ru-forest': _mix(green, K, .35), '--ru-bark': _mix(red, K, .62), '--ru-wheat': _mix(yellow, W, .62), '--ru-honey': yellow, '--ru-rust': red, '--ru-leaf': _mix(yellow, W, .45)}
+    for k, c in [('blue', blue), ('butter', yellow), ('blush', red), ('lilac', _mix(blue, red, .5)), ('peach', orange), ('mint', green)]:
+        o[f'--sf-{k}'] = _mix(c, W, .78); o[f'--sf-{k}-d'] = _mix(c, W, .42)
+    return ';'.join(f'{k}:{v}' for k, v in o.items()) + ';'
 ink_on = lambda c: '#FFFFFF' if contrast(tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)), (255, 255, 255)) >= 3 else palette['ink']
 _from = {'logo': "the host's logo", 'cover': "the host's cover picture"}.get(COLORS_FROM, '')
 theme_css = (f"""/* {A.get('guideName') or A.get('placeName')}: colours from {_from} (preset "{preset}").
@@ -271,6 +295,7 @@ theme_css = (f"""/* {A.get('guideName') or A.get('placeName')}: colours from {_f
   --paper:{palette['paper']};--ink:{palette['ink']};
   --blue:{a[0]};--red:{a[1]};--yellow:{a[2]};--orange:{a[3]};--green:{a[4] if len(palette['accents']) > 4 else a[3]};
   --accent:{a[0]};--k-sky:var(--blue);
+  {layout_vars(a[0], a[1], a[2], a[3], a[4] if len(palette['accents']) > 4 else a[3])}
 }}""" if OWN_COLORS else f"""/* {A.get('guideName') or A.get('placeName')}: the colours and fonts of the preset "{preset}", as they are.
    Edit freely: tokens here sit on top of the engine look and the preset. */""")
 _tc = SITE / 'theme.css'

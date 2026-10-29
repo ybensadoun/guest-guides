@@ -235,7 +235,7 @@ function cmLook(c) {
         ${CM.artRes ? `<figure class="cm-artres"><img src="${esc(CM.artRes.url)}" alt="Your artistic cover"><figcaption class="cm-row"><button class="btn small primary" type="button" data-artuse>Use this cover</button><button class="btn small" type="button" data-art="again"${busy ? ' disabled' : ''}>Try again</button></figcaption></figure>` : ''}
         ${CM.artErr ? `<p class="hint cm-err">${esc(CM.artErr)}</p>` : ''}</div>` : ''}</div>
     <div class="f full"><span class="lab" id="l_cpreset">${n(3)}Layout</span><p class="hint">Each one shows the same sections in a different way.</p><div class="moods" role="radiogroup" aria-labelledby="l_cpreset">${ED_PRESETS.map(([id, nm, d, cls]) => `<label class="mood"><input type="radio" name="cpreset" data-design="preset" value="${id}"${preset === id ? ' checked' : ''}><div class="box"><div class="mock ${cls}">${'<i></i>'.repeat(6)}</div><b>${nm}</b><small>${d}</small></div></label>`).join('')}</div></div>
-    <div class="f full"><span class="lab">${n(4)}Colours</span><p class="hint">Each layout has its own colours. You can take them from your cover picture or your logo instead${preset === 'bauhaus' ? '' : ' (in this layout the tiles keep their own colours: yours go to the accents)'}.</p>
+    <div class="f full"><span class="lab">${n(4)}Colours</span><p class="hint">Each layout has its own colours. You can take them from your cover picture or your logo instead: every layout uses them in its own way.</p>
       <div class="cm-row" role="group" aria-label="Colours">${[['look', 'The layout’s own', true], ['cover', 'From my cover picture', h.photo], ['logo', 'From my logo', s.logo]].filter(x => x[2]).map(([k, l]) => `<button class="btn small" type="button" data-colorsfrom="${k}" aria-pressed="${(th.colorsFrom || 'look') === k}">${l}</button>`).join('')}</div>
       ${CM.logoCol ? `<p class="hint" id="cmLogoCol">${esc(CM.logoCol)}</p>` : ''}
       <details class="cm-more" data-open="look-colours"${CM.open.has('look-colours') ? ' open' : ''}><summary>Fine-tune each colour</summary><div class="cm-colors">${ED_COLORS.map(([v, l, d]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></details></div>
@@ -865,14 +865,30 @@ async function edImageColours(src) {
   return out;
 }
 // The layout's own colours: every colour token comes out of the theme (the generated ones and the editor's), fonts stay.
-const ED_COLOR_VARS = /--(paper|white|ink|muted|faint|line|red|blue|yellow|orange|green|accent|k-sky)\s*:\s*[^;}]+;?/g;
+const ED_COLOR_VARS = /--(paper|white|ink|muted|faint|line|red|blue|yellow|orange|green|accent|k-sky|med-[a-z]+|ru-[a-z]+|sf-[a-z]+(?:-d)?)\s*:\s*[^;}]+;?/g;
+// Colours from a picture reach every layout, in its own way (Yohann, 29 Oct 2026: "only Big colour tiles adapts"): the
+// layouts keep their tile colours in their own tokens (engine/src/styles/presets/*.css), so those come from the picture too,
+// for all layouts at once (changing layout later keeps them). Same mapping as engine/scripts/generate-site.py layout_vars.
+const edMix = (a, b, t) => { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), x = p(a), y = p(b); return '#' + x.map((c, i) => Math.round(c + (y[i] - c) * t).toString(16).padStart(2, '0')).join('').toUpperCase(); };
+const edAzulejo = (c, l) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><rect width='40' height='40' fill='#fff'/><g fill='${c}'><circle cx='0' cy='0' r='7'/><circle cx='40' cy='0' r='7'/><circle cx='0' cy='40' r='7'/><circle cx='40' cy='40' r='7'/><ellipse cx='20' cy='10.5' rx='3.4' ry='6.5'/><ellipse cx='20' cy='29.5' rx='3.4' ry='6.5'/><ellipse cx='10.5' cy='20' rx='6.5' ry='3.4'/><ellipse cx='29.5' cy='20' rx='6.5' ry='3.4'/><path d='M20 0l3 3-3 3-3-3zM20 34l3 3-3 3-3-3zM0 20l3-3 3 3-3 3zM34 20l3-3 3 3-3 3z'/></g><circle cx='20' cy='20' r='4.2' fill='${l}'/><circle cx='20' cy='20' r='1.6' fill='${c}'/><path d='M0 .5h40M.5 0v40' stroke='${c}' stroke-opacity='.35' stroke-width='1'/></svg>`).replace(/'/g, '%27')}")`;
+function edLayoutVars(v) {
+  const pick = (...ks) => ks.map(k => v[k]).find(Boolean), W = '#FFFFFF', K = '#000000';
+  const dk = c => { for (let i = 0; i < 12 && edContrast([1, 3, 5].map(j => parseInt(c.slice(j, j + 2), 16)), [255, 255, 255]) < 3.2; i++) c = edMix(c, K, .12); return c; };   // white text stays readable on it
+  const blue = dk(pick('--blue', '--green', '--red', '--orange', '--yellow')), red = dk(pick('--red', '--orange', '--yellow', '--blue', '--green')),
+    yellow = pick('--yellow', '--orange', '--green', '--red', '--blue'), orange = pick('--orange', '--yellow', '--red', '--green', '--blue'), green = dk(pick('--green', '--blue', '--yellow', '--orange', '--red'));
+  const o = { '--accent': blue,
+    '--med-cobalt': blue, '--med-navy': edMix(blue, K, .45), '--med-sky': edMix(blue, W, .88), '--med-lemon': yellow, '--med-clay': red, '--med-azulejo': edAzulejo(blue, yellow),
+    '--ru-moss': green, '--ru-forest': edMix(green, K, .35), '--ru-bark': edMix(red, K, .62), '--ru-wheat': edMix(yellow, W, .62), '--ru-honey': yellow, '--ru-rust': red, '--ru-leaf': edMix(yellow, W, .45) };
+  for (const [k, c] of [['blue', blue], ['butter', yellow], ['blush', red], ['lilac', edMix(blue, red, .5)], ['peach', orange], ['mint', green]]) { o[`--sf-${k}`] = edMix(c, W, .78); o[`--sf-${k}-d`] = edMix(c, W, .42); }
+  return o;
+}
 async function edColoursFrom(kind) {
   const th = CM.g.theme = CM.g.theme || {}, c = edC();
   if (kind === 'look') { th.css = (th.css || '').replace(ED_COLOR_VARS, ''); delete th.colorsFrom; CM.logoCol = 'Back to the layout’s own colours.'; cmQueue(); return render(); }
   try {
     const vars = await edImageColours(edImg(kind === 'logo' ? c.site.logo : c.files.house.photo));
     th.css = (th.css || '').replace(ED_COLOR_VARS, '');   // each choice starts from the layout's own colours
-    edWriteVars(th, vars); th.colorsFrom = kind; CM.logoCol = `Done: ${Object.keys(vars).length} colours from your ${kind === 'logo' ? 'logo' : 'cover picture'}.`; cmQueue(); render();
+    edWriteVars(th, { ...vars, ...edLayoutVars(vars) }); th.colorsFrom = kind; CM.logoCol = `Done: ${Object.keys(vars).length} colours from your ${kind === 'logo' ? 'logo' : 'cover picture'}.`; cmQueue(); render();
   } catch (e) { CM.logoCol = e.message; render(); }
 }
 async function edPhotoInput(t) {
