@@ -633,6 +633,7 @@ async function accountBoot(){
   try { await acctAttach(); }
   catch (e) { if (e.status === 401 || e.status === 403) { authStore(null); await accountBoot(); return; } /* offline: keep working on this device */ }
   try { cmInit(); } catch (e) {}
+  if (!CM.on && GUIDE && GUIDE.status === 'draft' && !A._researchJob) researchStart();   // the full research, now that the guide has an account
   if (!document.querySelector('.logoutTop')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'logoutTop'; b.textContent = 'Log out'; acctBar().appendChild(b); }
   acctHouses();
 }

@@ -82,19 +82,25 @@ async function createDraft(fromStep){
       d = await listingAsk({ url, text, town, stage: 'write', src: d.src });
       if (!d.ok) { log('draft_fail', d.need || 'error'); return back(d.need || 'retry', d.message); }
     }
-    applyDraft(d); log('draft_ok', d.source); classifyPhotos(); areaStart();
+    applyDraft(d); log('draft_ok', d.source); classifyPhotos(); researchStart();
     A._done = { ...(A._done || {}), listing: true }; START.need = ''; START.msg = '';
     WOW.stage = 'done'; PHONE.build = true; yoursRefresh(); phoneRender();
   } catch (e) { back('retry', 'We could not reach the assistant. Check your connection and press the button again.'); }
   finally { START.busy = false; queueSave(); if (WOW.stage !== 'done' || route() !== 'yours') render(); }
 }
-/* ---------- Research from the link (docs/plan-fast-builder.md, step 8): markets, things to do and emergency services
-   near the house are looked up while the host goes through the steps, with or without an account. One research per area,
-   shared and limited in the database (start_area_research: over the limits, the build does it); the worker does it, the
-   build uses it (A._research travels with the answers). ---------- */
-const AREA = { status: '', result: null, timer: null, tries: 0 };
-async function areaStart(){
+/* ---------- Research of the area (docs/plan-fast-builder.md, step 8), in two stages (worker/README.md):
+   - at the link, without an account: a quick search (the nearest markets, the emergency services), for the phone; one
+     per area, shared and limited in the database (start_area_research: over the limits, the build does it);
+   - once the guide has an account (at once for a host who is signed in): the full research in the background, a job of
+     the guide (all the markets in reach, things to do). The build uses both: A._research and A._researchJob travel with
+     the answers. What comes back shows in the phone, the full research first. ---------- */
+const AREA = { result: null, quick: null, full: null, timer: null, tries: 0 };
+function researchStart(){
   if (!A.lat || !A.lng) return;
+  const g = window.__acctGuide && window.__acctGuide();
+  if (AUTH && g && g.status === 'draft') researchJob(g); else if (!AUTH) areaStart();
+}
+async function areaStart(){
   if (!A._research) {
     try {
       const r = await sb('/rest/v1/rpc/start_area_research', { method: 'POST', token: SB.key, body: { p_visitor: sid, p_lat: +A.lat, p_lng: +A.lng, p_town: v('town') || null, p_region: v('region') || null } });
@@ -104,16 +110,30 @@ async function areaStart(){
   }
   areaWatch();
 }
-// Every 20 s while the page is open, until it is done (40 minutes at most): what is found shows in the phone.
+async function researchJob(g){
+  if (!A._researchJob) {
+    try {
+      await ensureFresh();
+      const r = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: g.id, kind: 'research', params: { lat: +A.lat, lng: +A.lng, town: v('town') || null, region: v('region') || null } } });
+      if (!r || !r[0]) return;
+      A._researchJob = r[0].id; queueSave(); log('research', 'full');
+    } catch (e) { return; }   // the build researches instead
+  }
+  areaWatch();
+}
+// Every 20 s while the page is open, until both are settled (40 minutes at most).
 async function areaWatch(){
-  clearTimeout(AREA.timer); if (!A._research || AREA.result) return;
+  clearTimeout(AREA.timer); let wait = false;
   try {
-    const r = await sb('/rest/v1/rpc/area_research_status', { method: 'POST', token: SB.key, body: { p_id: A._research } });
-    AREA.status = (r && r.status) || '';
-    if (AREA.status === 'done' && r.result) { AREA.result = r.result; phoneSoon(); return; }
-    if (!['queued', 'running'].includes(AREA.status)) return;
-  } catch (e) { /* no connection: try again */ }
-  if (++AREA.tries < 120) AREA.timer = setTimeout(areaWatch, 20000);
+    if (A._research && !AREA.quick) { const r = await sb('/rest/v1/rpc/area_research_status', { method: 'POST', token: SB.key, body: { p_id: A._research } });
+      if (r && r.status === 'done' && r.result) AREA.quick = r.result; else if (r && ['queued', 'running'].includes(r.status)) wait = true; }
+    if (A._researchJob && AUTH && !AREA.full) { const r = ((await sb('/rest/v1/guide_jobs?select=status,result&id=eq.' + A._researchJob)) || [])[0];
+      if (r && r.status === 'done' && r.result) AREA.full = r.result; else if (r && ['queued', 'running'].includes(r.status)) wait = true; }
+  } catch (e) { wait = true; }   // no connection: try again
+  const before = JSON.stringify(AREA.result);
+  AREA.result = (AREA.quick || AREA.full) ? { ...(AREA.quick || {}), ...(AREA.full || {}) } : null;
+  if (JSON.stringify(AREA.result) !== before) phoneSoon();
+  if (wait && ++AREA.tries < 120) AREA.timer = setTimeout(areaWatch, 20000);
 }
 // What the listing page says, before Claude: its name (for the phone only, Claude writes the real one), its photos,
 // cover, rating and position.

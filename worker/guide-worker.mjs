@@ -80,13 +80,13 @@ function runAsync(cmd, args, o = {}) {
 /* ---------- Claude research and translation (optional) ---------- */
 // One question to Claude, with the web (research) or without (translation): the Claude API when RESEARCH=api, else the
 // `claude` command on this computer. Returns the text of the answer.
-async function claudeAsk(prompt, { web = false, what = '', meter = null } = {}) {
-  if (claudeApi) return claudeApi(prompt, { web, what, meter });
+async function claudeAsk(prompt, { web = false, what = '', meter = null, searches = 0 } = {}) {
+  if (claudeApi) return claudeApi(prompt, { web, what, meter, searches });
   const r = await runAsync('claude', web ? ['-p', prompt, '--allowedTools', 'WebSearch,WebFetch', '--max-turns', '40'] : ['-p', prompt], { timeout: web ? 900000 : 600000 });
   return r.stdout || '';
 }
-async function claudeJson(prompt, what, meter) {
-  const out = (await claudeAsk(prompt, { web: true, what, meter })).trim();
+async function claudeJson(prompt, what, meter, searches) {
+  const out = (await claudeAsk(prompt, { web: true, what, meter, searches })).trim();
   const a = out.indexOf('{'), b = out.lastIndexOf('}');
   if (a < 0 || b < a) throw new Error(`Claude returned no JSON for ${what}`);
   try { return JSON.parse(out.slice(a, b + 1)); } catch (e) { throw new Error(`Claude's JSON for ${what} did not parse`); }
@@ -165,9 +165,10 @@ function normSchedule(it) {
 }
 const MARKETS_RULE = 'Find the weekly and notable local markets within the radius (street markets, covered markets, fairs). Same shape as the example: {"categories":[...],"markets":[...]} with schedule days as mon..sun. Every market MUST have numeric lat and lng: use the exact spot if a source gives it, otherwise the centre of the town or the market square from Wikipedia or OpenStreetMap, and add "verify": true when approximate. Its "category" must be one of: covered, street, flea, antiques, events. ' + HOURS_RULE;
 const TODO_RULE = 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example. ' + HOURS_RULE;
-// A part already in outDir (the research started with the listing link, areaResearch) is not searched again. id: the
-// guide whose progress message follows the research (none for an area). meter: adds up what it costs.
-async function research(A, outDir, id, meter) {
+// A part already in outDir (areaResearch) is not searched again. id: the guide whose progress message follows the research
+// (none for an area or a research job). opt.meter adds up what it costs; opt.parts, opt.rules and opt.searches change which parts
+// are searched, how, and with how many web searches (the quick search at the listing link).
+async function research(A, outDir, id, opt = {}) {
   mkdirSync(outDir, { recursive: true });
   const { clean, located, allowed, normSchedule } = researchTools();
   const jobs = [
@@ -175,10 +176,11 @@ async function research(A, outDir, id, meter) {
     ['todo', TODO_RULE],
     ['emergency', 'Find the nearest hospital with an emergency department, the national emergency number and the local health advice line. Same shape: {"groups":[...]}.'],
   ];
-  for (const [kind, rules] of jobs) {
-    if (existsSync(join(outDir, kind + '.json'))) continue;
+  for (const [kind, rules0] of jobs) {
+    if (existsSync(join(outDir, kind + '.json')) || (opt.parts && !opt.parts.includes(kind))) continue;
     if (id) say(id, `Researching: ${kind}`);
-    try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind, meter))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); }
+    const rules = (opt.rules || {})[kind] || rules0;
+    try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind, opt.meter, (opt.searches || {})[kind]))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); }
     catch (e) { log(`  research ${kind} skipped:`, e.message); }
   }
 }
@@ -250,7 +252,7 @@ async function build(g) {
   const gen = ['engine/scripts/generate-site.py', join(job, 'src'), '--slug', tmp, '--lat', String(A.lat), '--lng', String(A.lng), '--src', srcLang];
 
   let researchDir = null;
-  if (RESEARCHING) { researchDir = join(job, 'research'); await areaResearch(A, researchDir, id); await research(A, researchDir, id); gen.push('--research', researchDir); }
+  if (RESEARCHING) { researchDir = join(job, 'research'); const quick = await areaResearch(A, researchDir, id); await research(A, researchDir, id); mergeQuick(researchDir, quick); gen.push('--research', researchDir); }
   say(id, 'Building the guide');
   let out = run('python3', gen).stdout;
   if (RESEARCHING) {
@@ -637,13 +639,21 @@ async function coverArtJob(j, jp) {
   await jp({ status: 'done', message: 'Your artistic cover is ready', result: { path: name, url: `${URL_}/storage/v1/object/public/guide-assets/${j.guide_id}/${name}` }, finished_at: new Date().toISOString() });
 }
 
-/* ---------- Area research: markets, things to do and emergency services, started with the listing link, before any
-   account (docs/plan-fast-builder.md, step 8; Yohann, 29 Oct 2026). The browser asks the database (start_area_research:
-   one research per area of about 3 km for 14 days, shared, with limits per visitor, per network address and in all); this
-   worker does it with the build's own questions (research) and keeps it in area_research. A build in that area uses it
-   (areaResearch) and only searches what is missing. VISITOR_USD_PER_DAY caps what they cost each day with the Claude
-   API (default 3 USD): past it, they wait for the build, as before. Rows older than 30 days are removed. ---------- */
-const AREA_KINDS = ['markets', 'todo', 'emergency'], VISITOR_USD = +env.VISITOR_USD_PER_DAY || 3;
+/* ---------- Research of the area (docs/plan-fast-builder.md, step 8; Yohann, 29 Oct 2026), in two stages:
+   1. At the listing link, with or without an account: a quick search, for the wow and the phone (area_research). The few
+      markets nearest the house, whatever their distance (a city has them within a few streets, the countryside 10 to
+      20 km away), and the emergency services, with fewer web searches. Things to do come from Google in the swipe deck.
+      The browser asks the database (start_area_research: one per area of about 3 km for 14 days, shared, with limits per
+      visitor, per network address and in all); this worker does it (runArea) within VISITOR_USD_PER_DAY (default 3 USD
+      a day, Claude API only), past which it is left to the build. Rows older than 30 days are removed.
+   2. Once the guide has an account: the full research in the background (guide job "research", at most one a day per
+      guide): all the markets in reach and the things to do, the build's own questions.
+   The build uses the full research, adds the markets the quick one found that it does not have, takes the emergency
+   services from the quick one, and only searches what is still missing (areaResearch, mergeQuick). ---------- */
+const AREA_KINDS = ['markets', 'emergency'], VISITOR_USD = +env.VISITOR_USD_PER_DAY || 3;
+const QUICK_MARKETS = MARKETS_RULE.replace(/^Find the weekly and notable local markets within the radius \([^)]*\)\./, 'Find only the 5 markets nearest the house (weekly street markets, covered markets), whatever their distance: in a city they may all be a few streets away, in the countryside 10 to 20 km. Give their days and hours.');
+if (QUICK_MARKETS === MARKETS_RULE) throw new Error('QUICK_MARKETS: the start of MARKETS_RULE changed, write the quick rule again');
+const QUICK_SEARCHES = { markets: 8, emergency: 6 }, RESEARCH_PER_DAY = 1, UUID = /^[0-9a-f-]{36}$/;
 const kmBetween = (a, b, c, d) => { const R = 6371, t = Math.PI / 180, x = (c - a) * t, y = (d - b) * t; const h = Math.sin(x / 2) ** 2 + Math.cos(a * t) * Math.cos(c * t) * Math.sin(y / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
 let areaSweep = 0;
 async function runArea(only) {
@@ -663,7 +673,7 @@ async function runArea(only) {
     const dir = join(HERE, 'jobs', 'area-' + row.id), meter = { usd: 0 };
     try {
       rmSync(dir, { recursive: true, force: true });
-      await research({ town: row.town, region: row.region, lat: row.lat, lng: row.lng }, dir, null, meter);
+      await research({ town: row.town, region: row.region, lat: row.lat, lng: row.lng }, dir, null, { meter, parts: AREA_KINDS, rules: { markets: QUICK_MARKETS }, searches: QUICK_SEARCHES });
       const result = Object.fromEntries(AREA_KINDS.filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))]));
       if (!Object.keys(result).length) throw new Error('Nothing came back from the research');
       await ap({ status: 'done', result, usd: claudeApi ? +meter.usd.toFixed(3) : null, message: null, finished_at: new Date().toISOString() });
@@ -675,24 +685,58 @@ async function runArea(only) {
   work.finally(() => RUNNING.delete(row.id));
   return { work };   // in an object: returned as it is, the promise would make the caller wait for the whole research
 }
-// The research started with this guide's link, when it is for this place (within 5 km): its parts go into the build's
-// research folder, so they are not searched again. Not finished yet: the build waits for it (up to 10 minutes; the jobs
-// loop takes it within seconds) rather than paying twice. Anything else (limited, failed, another place): the build
-// searches as before.
+// The full research of a guide (job "research"), queued by the browser once the guide has an account. The place comes
+// with the job (where the host's device had it), else from the answers.
+async function researchJob(j, jp) {
+  const since = new Date(Date.now() - 86400000).toISOString();
+  const recent = await rest(`/rest/v1/guide_jobs?select=id&guide_id=eq.${j.guide_id}&kind=eq.research&status=in.(running,done)&id=neq.${j.id}&created_at=gt.${encodeURIComponent(since)}`);
+  if ((recent || []).length >= RESEARCH_PER_DAY) return jp({ status: 'failed', message: 'This area was already researched today.', finished_at: new Date().toISOString() });
+  const g = ((await rest('/rest/v1/guides?select=answers&id=eq.' + j.guide_id)) || [])[0] || {}, p = j.params || {};
+  const A = { ...(g.answers || {}), ...Object.fromEntries(['lat', 'lng', 'town', 'region'].filter(k => p[k] != null && p[k] !== '').map(k => [k, p[k]])) };
+  if (!A.lat || !A.lng) throw new Error('We do not know where the house is yet.');
+  const dir = join(HERE, 'jobs', 'research-' + j.id), meter = { usd: 0 };
+  try {
+    rmSync(dir, { recursive: true, force: true }); await jp({ message: 'Researching your area' });
+    await research(A, dir, null, { meter, parts: ['markets', 'todo'] });
+    const result = Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))]));
+    if (!Object.keys(result).length) throw new Error('Nothing came back from the research. Try again later.');
+    await jp({ status: 'done', result, message: Object.keys(result).join(', '), finished_at: new Date().toISOString() });
+    log(`  guide area researched: ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+}
+// For a build: the full research of this guide and the quick one from its link, when they are for this place (within
+// 5 km). Not finished yet: the build waits (up to 10 minutes; the jobs loop takes them within seconds) rather than paying
+// twice. Returns the quick research, for mergeQuick after the build's own research.
 async function areaResearch(A, dir, id) {
-  if (!/^[0-9a-f-]{36}$/.test(String(A._research || ''))) return;
-  let r = null;
-  for (let i = 0; i < 40; i++) {
-    r = ((await rest('/rest/v1/area_research?select=status,lat,lng,result&id=eq.' + A._research).catch(() => [])) || [])[0];
-    if (!r || !['queued', 'running'].includes(r.status)) break;
-    if (i === 0) say(id, 'Finishing the research of your area');
-    await new Promise(ok => setTimeout(ok, 15000));
-  }
-  if (!r || r.status !== 'done' || !r.result) return;
-  if (!(A.lat && A.lng) || kmBetween(r.lat, r.lng, +A.lat, +A.lng) > 5) { log('  the research from the link is for another place: searched again'); return; }
   mkdirSync(dir, { recursive: true });
-  for (const k of AREA_KINDS) if (r.result[k]) writeFileSync(join(dir, k + '.json'), JSON.stringify(r.result[k], null, 1));
-  log('  research from the link used:', AREA_KINDS.filter(k => r.result[k]).join(', '));
+  const near = r => !r || r.lat == null || !(A.lat && A.lng) || kmBetween(+r.lat, +r.lng, +A.lat, +A.lng) <= 5;
+  const settled = async url => { let r = null;
+    for (let i = 0; i < 40; i++) { r = ((await rest(url).catch(() => [])) || [])[0]; if (!r || !['queued', 'running'].includes(r.status)) break; if (i === 0) say(id, 'Finishing the research of your area'); await new Promise(ok => setTimeout(ok, 15000)); }
+    return r; };
+  const used = [];
+  const full = await settled(`/rest/v1/guide_jobs?select=status,result,params&guide_id=eq.${id}&kind=eq.research&order=created_at.desc&limit=1`);
+  if (full && full.status === 'done' && full.result && near(full.params)) for (const k of ['markets', 'todo']) if (full.result[k]) { writeFileSync(join(dir, k + '.json'), JSON.stringify(full.result[k], null, 1)); used.push(k); }
+  let quick = null;
+  if (UUID.test(String(A._research || ''))) {
+    const r = await settled('/rest/v1/area_research?select=status,lat,lng,result&id=eq.' + A._research);
+    if (r && r.status === 'done' && r.result && near(r)) { quick = r.result; if (quick.emergency && !existsSync(join(dir, 'emergency.json'))) { writeFileSync(join(dir, 'emergency.json'), JSON.stringify(quick.emergency, null, 1)); used.push('emergency'); } }
+  }
+  if (used.length) log('  research done before the build used:', used.join(', '));
+  return quick;
+}
+// After the build's own research: the markets the quick search found that the full one does not have are added (by
+// name); if the build has no markets at all (its search did not work), the nearest ones from the quick search at least.
+function mergeQuick(dir, quick) {
+  const q = (((quick || {}).markets || {}).markets || []); if (!q.length) return;
+  const f = join(dir, 'markets.json');
+  if (!existsSync(f)) { writeFileSync(f, JSON.stringify(quick.markets, null, 1)); log('  markets from the quick search only'); return; }
+  const o = JSON.parse(readFileSync(f, 'utf8')), key = m => String(m.name_local || nameOf(m.name) || '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, ' ').trim();
+  const have = new Set((o.markets || []).map(key)), ids = new Set((o.markets || []).map(m => m.id));
+  const add = q.filter(m => key(m) && !have.has(key(m))).map(m => ({ ...m, id: ids.has(m.id) ? m.id + '-near' : m.id }));
+  if (!add.length) return;
+  o.markets = [...(o.markets || []), ...add];
+  if (Array.isArray(o.categories)) o.categories = [...new Set([...o.categories, ...add.map(m => m.category).filter(Boolean)])];
+  writeFileSync(f, JSON.stringify(o, null, 1)); log(`  ${add.length} market(s) from the quick search added`);
 }
 
 // Up to three jobs run side by side (each one mostly waits for Claude). Two jobs that write the same guide (translate,
@@ -710,7 +754,7 @@ async function runJobs() {
     if (!won || !won[0]) continue;
     log(j.kind === 'translate' ? 'translating' : j.kind === 'cover-art' ? 'drawing' : 'searching', 'job', j.id.slice(0, 8), j.kind === 'translate' ? (j.langs || []).join(',') : j.kind);
     const work = (async () => {
-      try { if (j.kind === 'translate') await translateJob(j, jp); else if (j.kind === 'cover-art') await coverArtJob(j, jp); else if (j.kind === 'auto-events') await autoEventsJob(j, jp); else if (j.kind === 'find-transport') await transportJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
+      try { if (j.kind === 'translate') await translateJob(j, jp); else if (j.kind === 'cover-art') await coverArtJob(j, jp); else if (j.kind === 'auto-events') await autoEventsJob(j, jp); else if (j.kind === 'find-transport') await transportJob(j, jp); else if (j.kind === 'research') await researchJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
       catch (e) { log('  job FAILED:', e.message); await jp({ status: 'failed', message: String(e.message).slice(0, 200), finished_at: new Date().toISOString() }); }
     })();
     RUNNING.set(j.id, { guide: j.guide_id, kind: j.kind, work });
