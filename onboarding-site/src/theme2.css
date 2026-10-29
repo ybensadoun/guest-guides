@@ -90,6 +90,19 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 :root[data-theme="dark"] .chip input:checked+span{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 
 /* Swipe cards */
+/* Only you know (start.js knownHTML): four parts in one card, each ticked once answered */
+.kn-card{gap:0;padding-block:6px}
+.kn-part{display:flex;flex-direction:column;gap:10px;padding:20px 0;border-top:1.5px solid var(--line)}
+.kn-part:first-child{border-top:0}
+.kn-hd{display:flex;align-items:center;gap:10px;min-height:34px}
+.kn-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--sunk);color:var(--ink);flex:none}
+.kn-ic svg{width:19px;height:19px}
+.kn-hd h2{font-size:22px;margin:0;flex:1;min-width:0}
+.kn-ok{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;color:var(--ok)}
+.kn-ok svg{width:14px;height:14px}
+.kn-part > .hint{margin:0}
+.kn-part > .grid{margin-top:4px}
+.kn-card .opt{display:none}   /* everything here is optional: the header says so once */
 /* Places nearby: one big card at a time, the next ones behind it; dragged with a finger, or the buttons, or the arrow keys */
 .sw{display:grid;gap:14px}
 .sw-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}

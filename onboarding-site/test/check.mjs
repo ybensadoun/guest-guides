@@ -239,10 +239,20 @@ try {
     const readyLabels = await p.$$eval('.sheet .si', els => els.map(e => [e.querySelector('.st')?.textContent, e.querySelector('.sl')?.textContent]));
     await p.screenshot({ path: join(SHOTS, 'builder-steps-360.png') });
     await p.click('.sheet-x');
-    await go(p, '#wifi');
-    ok('builder: an empty Wi-Fi step offers Later, not Done', /Later/.test(await barText(p)) && !/Done/.test(await barText(p)), await barText(p));
+    await go(p, '#known');
+    const parts = await p.$$eval('.kn-part h2', els => els.map(e => e.textContent).join(' | '));
+    ok('builder: "Only you know" is one step for Wi-Fi, arrival, rubbish and contacts, and the four steps are gone from the list', parts === 'Wi-Fi | Arrival and parking | Rubbish | Contacts'
+      && !(await p.$$eval('.rail a.si .st', els => els.map(e => e.textContent))).some(t => /^(Wi-Fi|Arrival and parking|Rubbish|Contacts|Your style)$/.test(t)), parts);
+    ok('builder: an empty "Only you know" offers Later, not Done', /Later/.test(await barText(p)) && !/Done/.test(await barText(p)), await barText(p));
+    ok('builder: Rubbish asks how it is collected before anything else', (await p.$$eval('[data-part="rubbish"] .f', els => els.length)) === 1);
     await p.fill('[data-k="wifiName"]', 'Test network').catch(() => {}); await p.fill('[data-k="wifiPassword"]', 'test-password').catch(() => {}); await p.waitForTimeout(600);
-    ok('builder: once answered, Wi-Fi counts as done and offers Next', /Next/.test(await barText(p)) && !/Later/.test(await barText(p)), await barText(p));
+    ok('builder: an answered part is ticked and counted, the step still offers Later', !!(await p.$('#kn_wifi .kn-ok')) && /1 of 4 done/.test(await p.textContent('.rail a.si[href="#known"]')) && /Later/.test(await barText(p)));
+    await p.fill('[data-k="arrival"]', 'Park under the pine tree.'); await p.click('input[name="rubbishMode"][value="Bins collected at the house"]', { force: true }); await p.waitForTimeout(500);
+    ok('builder: choosing how rubbish is collected keeps the choice and opens its questions', (await p.$eval('input[name="rubbishMode"]:checked', e => e.value).catch(() => '')) === 'Bins collected at the house' && (await p.$$eval('[data-part="rubbish"] .f', els => els.length)) > 2);
+    await p.fill('[data-k="hostPhone"]', '+34 600 000 000'); await p.waitForTimeout(600);
+    ok('builder: all four answered, the step is done and offers Next', /Next/.test(await barText(p)) && !/Later/.test(await barText(p)) && (await p.$$eval('.kn-ok', els => els.length)) === 4, await barText(p));
+    ok('builder, 360 px: "Only you know" has no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0);
+    await p.screenshot({ path: join(SHOTS, 'known-360.png'), fullPage: true });
     await go(p, '#stay');
     const stay = await barText(p);
     ok('builder: a ready step needs no Done, offers Continue', /Continue/.test(stay) && !/Done/.test(stay), stay);
@@ -276,7 +286,7 @@ try {
     ok('Places nearby: a recommended place is in the phone, as the host\'s pick', /Cala Test/.test(inGuide || '') && !/Castell Test/.test(inGuide || ''));
     ok('Places nearby, desktop: the card and its buttons above the bottom bar', await p.evaluate(() => document.querySelector('.sw-btns').getBoundingClientRect().bottom <= document.getElementById('navbar').getBoundingClientRect().top));
     const path = await p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent));
-    ok('builder: Bars and restaurants are on the path, right after Places nearby (hand-picked, never searched)', path.indexOf('Bars and restaurants') === path.indexOf('Places nearby') + 1 && path.indexOf('Bars and restaurants') < path.indexOf('Wi-Fi'), path.slice(0, 5).join(' > '));
+    ok('builder: Bars and restaurants are on the path, right after Places nearby (hand-picked, never searched)', path.indexOf('Bars and restaurants') === path.indexOf('Places nearby') + 1 && path.indexOf('Bars and restaurants') < path.indexOf('Only you know'), path.slice(0, 5).join(' > '));
     ok('Places nearby: no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
     const m = await deck(360, 780);
@@ -313,11 +323,13 @@ try {
     await p.fill('#st_url', 'https://www.airbnb.com/rooms/12345678'); await p.click('#startGo');
     await p.waitForFunction(() => /Your guide is written/.test((document.getElementById('yoursTx') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
     await p.waitForTimeout(2600); await p.screenshot({ path: join(SHOTS, 'wow-desktop.png') });
-    await go(p, '#wifi'); await p.waitForTimeout(300);
+    await go(p, '#known'); await p.waitForTimeout(300);
     ok('desktop: the phone sits next to the step', await p.$eval('.side-phone', e => getComputedStyle(e).display !== 'none').catch(() => false));
     await p.fill('[data-k="wifiName"]', 'Casa Test Wifi'); await p.fill('[data-k="wifiPassword"]', 'pass-1234'); await p.waitForTimeout(900);
     const shown = await inPhone(p, d => d.body.textContent);
     ok('desktop: typing the Wi-Fi updates the phone', /Casa Test Wifi/.test(shown || ''), (shown || '').slice(0, 60));
+    await p.focus('[data-k="hostPhone"]'); await p.waitForTimeout(600);
+    ok('desktop: the phone shows the part being filled in (Contacts: the numbers)', /Emergency and contacts/.test((await inPhone(p, d => (d.querySelector('.pv-page h2') || {}).textContent)) || ''));
     await p.screenshot({ path: join(SHOTS, 'step-with-phone-desktop.png') });
     const arrows = () => inPhone(p, d => { const a = d.querySelector('.pv-sec .ar'); return a ? getComputedStyle(a).display !== 'none' : null; });
     await go(p, '#look'); await p.waitForTimeout(700);   // The look shows the guide's home in the phone

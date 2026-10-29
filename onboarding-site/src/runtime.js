@@ -3,7 +3,8 @@ let A = {}, uploads = [], sid = '';
 const pending = new Map();
 const KEY = 'porta-onboarding-v1';
 const v = k => A[k] ?? '';
-const visible = () => MODULES.filter(m => (!m.sec || secOn(m.sec)));   // "Places nearby" stays without the search: hosts can still add places by hand
+// part: shown inside another step (Wi-Fi, arrival, rubbish and contacts are in "Only you know"); off: dropped (Your style)
+const visible = () => MODULES.filter(m => !m.part && !m.off && (!m.sec || secOn(m.sec)));   // "Places nearby" stays without the search: hosts can still add places by hand
 const filled = k => { if (k === 'source') return hasSource(); if (k === 'slug') return !slugProblem(v('slug')); if (k.startsWith('upload:')) return uploads.some(u => u.kind === k.slice(7)); const x = A[k]; return Array.isArray(x) ? x.length > 0 : !!String(x ?? '').trim(); };
 const missingOf = m => m.need.filter(k => !filled(k));
 const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k] || {}).label;
@@ -11,7 +12,7 @@ const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k]
 // listing to Send; Next and the count follow it. Bars and restaurants are on it: they are hand-picked, never searched
 // (Yohann, 29 Oct 2026: too much noise on Google Maps to choose for the host). Every other step is filled in from the listing: ready without pressing
 // anything, there to check if they like.
-const FLOW = ['listing', 'look', 'nearby', 'favourites', 'wifi', 'arrival', 'rubbish', 'contacts'];
+const FLOW = ['listing', 'look', 'nearby', 'favourites', 'known'];
 const needsYou = m => FLOW.includes(m.id);
 const flowMods = () => FLOW.map(id => visible().find(m => m.id === id)).filter(Boolean);
 const readyMods = () => visible().filter(m => !needsYou(m));
@@ -19,7 +20,8 @@ const readyMods = () => visible().filter(m => !needsYou(m));
 // its defaults are good, but the host confirms it.
 const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || filled('favDo') || filled('favourites'),
   favourites: () => placeRows('favEat').length > 0 || filled('localTips'),
-  wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('hostPhone') };
+  wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('hostPhone'),
+  known: () => knownParts().every(p => p.done()) };
 // Something in this step came from the listing (or is there): only then is it "Ready". Sections are always chosen for them.
 const hasContent = m => m.id === 'sections' || preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));
 function statusOf(m){
@@ -33,6 +35,7 @@ function statusOf(m){
   if (done && !miss) return { k:'done', label:'Done', miss };
   if (preKeys(m).length && !seen) return { k:'pre', label:'Check', miss };   // the listing said it: the host only checks
   if (!miss && ANSWERED[m.id] && ANSWERED[m.id]()) return { k:'done', label:'Done', miss };
+  if (m.id === 'known' && knownParts().some(p => p.done())) return { k:'chk', label: `${knownParts().filter(p => p.done()).length} of ${knownParts().length} done`, miss };
   if (seen) return { k:'chk', label: miss ? `${miss} to do` : 'Later', miss };
   return { k:'new', label:'Needs you', miss };
 }
@@ -241,7 +244,7 @@ function render(){
   else if (r === 'building' || (A._sentAt && !location.hash && window.__acctGuide && window.__acctGuide() && window.__acctGuide().status !== 'draft')) { main.innerHTML = buildingHTML(); watchBuild(); }
   else if (r === 'thanks' || (A._sentAt && !location.hash)) main.innerHTML = thanksHTML();
   else if (r === 'yours') { main.innerHTML = yoursHTML(); phoneRender(); if (r !== lastRoute) log('open', 'yours'); }   // the wow: the guide in a phone
-  else if (m) { main.innerHTML = moduleHTML(m); PHONE.screen = STEP_SCREEN[m.id] || 'home'; PHONE.build = false; phoneRender(); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
+  else if (m) { main.innerHTML = moduleHTML(m); PHONE.screen = (m.id === 'known' && KN.screen) || STEP_SCREEN[m.id] || 'home'; PHONE.build = false; phoneRender(); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
   else if (r === 'send') { main.innerHTML = sendHTML(); if (r !== lastRoute) { log('open', 'send'); queueSave(); } }
   else if ((r === 'home' || r === 'start') && (r === 'start' || (!A._draftAt && !A._skipStart && !visible().some(m => statusOf(m).k !== 'new')))) { main.innerHTML = startHTML(); if (r !== lastRoute) { log('open', 'start'); queueSave(); } }
   else { history.replaceState(null, '', '#' + obNext()); return render(); }   // no overview page: straight to the next step
@@ -261,6 +264,7 @@ function softRefresh(){
   const d = document.querySelector('[data-done]'); if (d) d.disabled = !!miss.length;
   const t = document.querySelector('.foot .todo'); if (t) t.innerHTML = miss.length ? `Still needed for Done: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>` : s.k === 'done' ? 'This step is done. You can still change anything.' : 'Everything needed is here. Press Done when you are happy with it.';
   document.querySelectorAll('[data-k],[data-multi],[data-radio]').forEach(el => { const k = el.dataset.k || el.dataset.multi || el.dataset.radio; const f = el.closest('.f'); const b = f && f.querySelector('.req'); if (b) b.outerHTML = badge(k); });
+  if (m.id === 'known') knownTicks();
   refreshNav();
 }
 window.addEventListener('hashchange', render);

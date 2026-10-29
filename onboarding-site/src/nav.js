@@ -1,7 +1,7 @@
 /* ---------- Navigation between steps ----------
    Desktop: a rail with every step and its status, always visible next to the page.
    Phone: a bottom bar with Back, "3 of 15" (opens the full list) and Done / Next.
-   The browser back button works too: every step has its own address (#look, #wifi…). */
+   The browser back button works too: every step has its own address (#look, #known…). */
 const STATUS_ICON = { pre: '<i class="pre" aria-hidden="true"></i>', done: CHECK, chk: '<i class="half" aria-hidden="true"></i>', new: '<i class="ring" aria-hidden="true"></i>' };
 const stepsOrder = () => [...flowMods().map(m => m.id), 'send'];   // the path: only the steps that need the host
 const titleOf = id => id === 'send' ? 'Review and send' : (MODULES.find(m => m.id === id) || {}).title;
@@ -53,6 +53,7 @@ function openSteps(){
 function moduleHTML(m){
   if (m.id === 'look') return lookHTML(m);   // one screen of their own (start.js)
   if (m.id === 'nearby') return nearbyHTML(m);
+  if (m.id === 'known') return knownHTML(m);
   const s = statusOf(m), miss = missingOf(m);
   return `<div class="split has-phone">${railHTML(m.id)}<div class="col">
     <section class="mhead" style="${tileVars(m)}">

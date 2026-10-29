@@ -266,7 +266,8 @@ document.addEventListener('change', e => {
   const k = t.dataset.plan, cur = { ...(A[k] || {}) }, s = new Set(cur[t.dataset.bin] || []); t.checked ? s.add(t.value) : s.delete(t.value);
   cur[t.dataset.bin] = DAYS7.map(d => d[0]).filter(d => s.has(d)); set(k, cur); softRefresh();
 });
-document.addEventListener('change', e => { const t = e.target; if (t.dataset && t.dataset.radio === 'rubbishMode') { const y = scrollY; render(); scrollTo(0, y); } });
+// How rubbish is collected decides which questions follow: drawn again once runtime.js has saved the answer (this runs first)
+document.addEventListener('change', e => { const t = e.target; if (t.dataset && t.dataset.radio === 'rubbishMode') setTimeout(() => { const y = scrollY; render(); scrollTo(0, y); }); });
 
 /* ---------- Step 1: load the listing ---------- */
 function loadListingHTML(){
@@ -408,6 +409,27 @@ function slimStep(m, lead, card, cls){
     <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
 }
 const nearbyHTML = m => slimStep(m, 'Swipe right on the ones you would send a friend to.', `<section class="card nb-card"><div class="grid">${m.fields.map(field).join('')}</div></section>`, 'nearby-page');
+
+/* ---------- Only you know (docs/plan-fast-builder.md, step 6): Wi-Fi, arrival, rubbish and contacts on one screen.
+   Each part is ticked once answered and can wait; the phone shows the part being filled in. Rubbish opens its details
+   once the host says how it is collected. ---------- */
+const KN = { screen: '' };
+const KNOWN_HINT = { wifi: 'Guests see it in the guide and join with one tap, from a QR code. Your guest network is best, if you have one.', arrival: 'For guests who arrive in the dark. No door codes here: send those privately.',
+  rubbish: 'How it is collected and, for bins at the house, which day each one is emptied.', contacts: 'Numbers guests can call. We add 112, the nearest hospital and pharmacy.' };
+const knownParts = () => MODULES.filter(p => p.part === 'known' && (!p.sec || secOn(p.sec))).map(p => ({ id: p.id, title: p.title, icon: p.icon, hint: KNOWN_HINT[p.id] || p.lead, screen: STEP_SCREEN[p.id] || 'home',
+  fields: p.fields.filter(k => k !== 'wifiNote' && (p.id !== 'rubbish' || k === 'rubbishMode' || filled('rubbishMode'))), done: ANSWERED[p.id] || (() => false) }));
+const knTick = p => p.done() ? `<span class="kn-ok">${CHECK}Done</span>` : '';
+function knownHTML(m){
+  return slimStep(m, m.lead, `<section class="card kn-card">${knownParts().map(p => `<div class="kn-part" data-part="${p.id}" data-screen="${p.screen}">
+      <div class="kn-hd"><span class="kn-ic" aria-hidden="true">${I[p.icon] || ''}</span><h2>${esc(p.title)}</h2><span class="kn-tick" id="kn_${p.id}">${knTick(p)}</span></div>
+      <p class="hint">${esc(p.hint)}</p><div class="grid">${p.fields.map(field).join('')}</div></div>`).join('')}</section>`, 'known-page');
+}
+function knownTicks(){ for (const p of knownParts()) { const el = document.getElementById('kn_' + p.id); if (el) el.innerHTML = knTick(p); } }
+// The phone shows the part being filled in: the Wi-Fi card, the way in, the bins, the numbers.
+document.addEventListener('focusin', e => {
+  const part = e.target.closest && e.target.closest('[data-part]'); if (!part || !document.getElementById('phoneFrame')) return;
+  if (KN.screen !== part.dataset.screen) { KN.screen = PHONE.screen = part.dataset.screen; PHONE.build = false; phoneRender(); }
+});
 
 /* ---------- The look on one screen (docs/plan-fast-builder.md, step 4) ----------
    The cover, the layout, the colours and the logo, each already chosen for the host: one tap changes one, and the phone

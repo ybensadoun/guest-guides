@@ -311,15 +311,17 @@ const MODULES = [
    lead:'One line per thing guests get stuck on. We put each line in the right room.',need:['howTos'],fields:['amenities','howTos','up:manual']},
   {id:'stay',group:'house',title:'Check-in and rules',sub:'Times, rules, leaving',icon:'key',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
    lead:'The times and the few rules that matter.',need:['checkIn','checkOut'],fields:['checkIn','checkOut','houseRules','checkoutTasks']},
-  {id:'wifi',group:'house',title:'Wi-Fi',sub:'Name and password',icon:'wifi',tc:'var(--pine)',ti:'#fff',sh:'var(--tomato)',shape:'half',sec:'wifi',
+  {id:'wifi',group:'house',title:'Wi-Fi',sub:'Name and password',icon:'wifi',tc:'var(--pine)',ti:'#fff',sh:'var(--tomato)',shape:'half',sec:'wifi',part:'known',
    lead:'We make a QR code so guests join with one tap.',need:['wifiName','wifiPassword'],fields:['wifiName','wifiPassword','wifiNote']},
-  {id:'arrival',group:'practical',title:'Arrival and parking',sub:'For a night arrival',icon:'car',tc:'var(--sun)',ti:'#1b1407',sh:'var(--sky)',shape:'square',sec:'houseguide',
+  {id:'arrival',group:'practical',title:'Arrival and parking',sub:'For a night arrival',icon:'car',tc:'var(--sun)',ti:'#1b1407',sh:'var(--sky)',shape:'square',sec:'houseguide',part:'known',
    lead:'Written for guests who arrive in the dark. No door codes here: send those privately.',need:['arrival'],fields:['arrival','up:arrivalPhoto']},
-  {id:'rubbish',group:'practical',title:'Rubbish',sub:'Bins and days',icon:'bin',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'circle',sec:'rubbish',
+  {id:'rubbish',group:'practical',title:'Rubbish',sub:'Bins and days',icon:'bin',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'circle',sec:'rubbish',part:'known',
    lead:'Only you know how this works at the house, so we do not look it up. Tell us how it is collected and, if bins go out at the house, which day each one is emptied.',need:[],fields:['rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto']},
-  {id:'contacts',group:'practical',title:'Contacts',sub:'You, backup, taxi',icon:'phone',tc:'var(--tomato)',ti:'#fff',sh:'var(--ink)',shape:'tri',
+  {id:'contacts',group:'practical',title:'Contacts',sub:'You, backup, taxi',icon:'phone',tc:'var(--tomato)',ti:'#fff',sh:'var(--ink)',shape:'tri',part:'known',
    lead:'Numbers guests can call. We add 112, the nearest hospital and pharmacy.',need:['hostPhone'],fields:['hostPhone','backupContact','taxi']},
-  {id:'taste',group:'area',title:'Your style',sub:'Outings and tone',icon:'heart',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
+  {id:'known',group:'practical',title:'Only you know',sub:'Wi-Fi, arrival, rubbish, phone',icon:'key',tc:'var(--pine)',ti:'#fff',sh:'var(--sun)',shape:'half',
+   lead:'Four things we cannot find for you. Answer what you can: each one can wait.',need:[],fields:['wifiName','wifiPassword','arrival','up:arrivalPhoto','rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto','hostPhone','backupContact','taxi']},
+  {id:'taste',group:'area',title:'Your style',sub:'Outings and tone',icon:'heart',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',off:true,
    lead:'All optional. It tells us which things to do to look for and how to write to your guests.',need:[],fields:['doStyle','avoidTypes','tone','voiceNotes']},
   {id:'favourites',group:'area',title:'Bars and restaurants',sub:'Where you eat and drink',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',
    lead:'The ones you send friends to, with a few words from you. We add none of our own.',need:[],fields:['favEat','localTips','avoidPlaces']},
@@ -357,8 +359,8 @@ const Q = {
   houseRules:{t:'area',rows:4,label:'House rules',opt:true,full:true,ph:'Quiet after 23:00\nNo parties\nNo smoking inside'},
   checkoutTasks:{t:'area',rows:3,label:'Before leaving',opt:true,full:true,ph:'Dishes in the dishwasher, keys in the box…'},
   wifiName:{label:'Network name'},
-  wifiPassword:{label:'Password',hint:'Shown to guests in the guide.'},
-  arrival:{t:'area',rows:5,label:'Finding the place and parking',full:true,ph:'From the roundabout take the dirt road, park under the pine tree…'},
+  wifiPassword:{label:'Password'},
+  arrival:{t:'area',rows:3,label:'Finding the place and parking',full:true,ph:'From the roundabout take the dirt road, park under the pine tree…'},
   rubbishMode:{t:'radio',label:'How is rubbish collected where you are?',opt:true,opts:['Shared containers in the street','Bins collected at the house','A mix of both']},
   rubbishWhere:{t:'area',rows:2,label:'Where are the containers?',opt:true,full:true},
   rubbishSpots:{t:'containers',label:'Containers guests can use',opt:true,full:true,hint:'Each place guests can take rubbish themselves, with what it takes. Even with collection at the house, glass often goes to a container.'},
@@ -366,7 +368,7 @@ const Q = {
   rubbishTime:{t:'time',label:'Bins must be out by',opt:true,show:()=>/house|mix/i.test(v('rubbishMode'))},
   rubbishNotes:{t:'area',rows:3,label:'Anything guests must know',opt:true,full:true,ph:'Organic goes in the small brown bin under the sink. Bring cardboard flat…'},
   hostPhone:{t:'tel',label:'Your phone for guests',ph:'With the country code'},
-  backupContact:{label:'Backup contact',opt:true,ph:'A neighbour or friend, with their number'},
+  backupContact:{label:'Backup contact',opt:true,ph:'Name and number'},
   taxi:{label:'Taxi you trust',opt:true,ph:'Name and number'},
   essentials:{t:'area',rows:4,label:'Shops you use',opt:true,full:true,ph:'The supermarket you use and why\nThe best bakery, the pharmacy that opens on Sundays…'},
   extras:{t:'area',rows:3,label:'Extras you offer',full:true,ph:'Late check-out, with the price\nAirport transfer, breakfast basket…'},
@@ -560,6 +562,7 @@ function summary(m){
     case 'howto': return `${lines('howTos')} how-tos · ${(A.amenities || []).length} amenities`;
     case 'stay': return `In ${v('checkIn') || '?'} · out ${v('checkOut') || '?'} · ${lines('houseRules')} rules`;
     case 'wifi': return v('wifiName') || 'Not filled';
+    case 'known': return knownParts().map(p => p.done() ? p.title : p.title + ' later').join(' · ');
     case 'favourites': return `${placeRows('favEat').length} bars and restaurants${v('localTips') ? ' · local tips' : ''}`;
     case 'taste': return [(A.doStyle || []).slice(0, 3).join(', '), v('tone')].filter(Boolean).join(' · ') || 'Not filled';
     case 'area': return [(A.interests || []).join(', '), v('radius')].filter(Boolean).join(' · ') || 'Not filled';
