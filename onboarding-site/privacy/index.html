@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy · Guest Guide Maker</title>
+<meta name="description" content="What Guest Guide Maker keeps about you, why, who helps us, and how to have it deleted.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Jost:wght@400;500;600;700&display=swap">
+<!-- The privacy page of Guest Guide Maker, in the guides' own look (like the sign-in page in src/account.js).
+     Linked from the sign-up card and from Google's consent screen (Google Auth Platform > Branding). Keep it true:
+     when a service is added or dropped, change the list below and the date. -->
+<style>
+:root{--paper:#F3EEE3;--ink:#121212;--blue:#1D4FA0;--red:#D52B1E;--yellow:#F5C400;--green:#0E7C46;--line:#DED6C6;--muted:#4A4A4A}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Jost",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.55}
+a{color:var(--blue);font-weight:600}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 56px}
+.top{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;color:var(--ink);text-decoration:none}
+.door{width:22px;height:28px;border-radius:11px 11px 3px 3px;background:var(--ink);position:relative;flex:none}
+.door::after{content:"";position:absolute;left:6px;top:14px;width:5px;height:5px;border-radius:50%;background:var(--yellow)}
+.card{background:#fff;border:2px solid var(--ink);border-radius:20px;overflow:hidden;margin-top:18px}
+.art{position:relative;height:96px;background:var(--blue);overflow:hidden}
+.art i{position:absolute;display:block}
+.art .s1{width:64px;height:64px;border-radius:50%;background:var(--yellow);right:36px;top:14px}
+.art .s2{width:84px;height:84px;border-radius:0 84px 0 0;background:var(--red);left:0;bottom:0}
+.art .s3{width:0;height:0;border-left:32px solid transparent;border-right:32px solid transparent;border-bottom:54px solid var(--ink);left:96px;bottom:0}
+.head{padding:18px 20px 20px}
+.head small{display:block;font-size:12.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1,h2{font-family:"Gloock",Georgia,"Times New Roman",serif;font-weight:400;letter-spacing:-.01em;margin:0}
+h1{font-size:clamp(34px,8vw,50px);line-height:1.04;margin-top:8px}
+.head p{margin:10px 0 0}
+.date{color:var(--muted);font-size:15px}
+section{background:#fff;border:2px solid var(--ink);border-radius:20px;padding:18px 20px;margin-top:14px}
+h2{font-size:26px;line-height:1.1;margin-bottom:8px}
+section p{margin:8px 0 0}
+ul{margin:8px 0 0;padding-left:20px}
+li{margin:6px 0}
+li b{font-weight:600}
+.who{list-style:none;padding:0;margin:10px 0 0}
+.who li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:12px 0;border-top:1.5px solid var(--line);margin:0}
+.who li:first-child{border-top:0;padding-top:4px}
+.who b{font-size:18px}
+.who span{grid-column:1/-1;color:#2a2a2a}
+.who em{font-style:normal;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);align-self:center;text-align:right}
+.back{display:inline-flex;align-items:center;gap:10px;margin-top:22px;padding:12px 18px;border-radius:999px;background:var(--ink);color:#fff;text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <a class="top" href="/"><span class="door" aria-hidden="true"></span>Guest Guide Maker</a>
+
+  <div class="card">
+    <div class="art" aria-hidden="true"><i class="s1"></i><i class="s2"></i><i class="s3"></i></div>
+    <div class="head">
+      <small>Privacy</small>
+      <h1>Your data, in plain words.</h1>
+      <p>What we keep about you, why, who helps us, and how to have it deleted.</p>
+      <p class="date">Last updated 29 October 2026</p>
+    </div>
+  </div>
+
+  <section>
+    <h2>Who we are</h2>
+    <p>Guest Guide Maker makes guest guides for holiday homes. It is run by Yohann Bensadoun, who decides what happens to your data (the "controller", in the words of the GDPR).</p>
+    <p>Questions and requests: <a href="mailto:yohann.bensadoun@gmail.com">yohann.bensadoun@gmail.com</a></p>
+  </section>
+
+  <section>
+    <h2>What we keep, and why</h2>
+    <ul>
+      <li><b>Your account.</b> Your email address, and your password (stored scrambled: nobody can read it) or, if you sign in with Google, the name and email address Google shares with us. So you can sign in and come back.</li>
+      <li><b>Your house and your guide.</b> The listing link you give us and what that public listing page shows (title, photos, house rules, rating), your answers (for example Wi-Fi, arrival, rubbish days, your phone number if you add it), the photos you upload and the places you choose. To build your guide and keep it up to date.</li>
+      <li><b>A little about your device.</b> Your browser and screen size, when you create an account or send us a note. To fix problems.</li>
+    </ul>
+    <p>We do not sell your data, we show no ads and we use no trackers.</p>
+  </section>
+
+  <section>
+    <h2>What your guests see</h2>
+    <p>Your guide is public to anyone who has its link. Everything you put in it can be read by them, Wi-Fi included. Guides do not record who opens them.</p>
+  </section>
+
+  <section>
+    <h2>Who helps us</h2>
+    <ul class="who">
+      <li><b>Supabase</b><em>Ireland, EU</em><span>Accounts, the database and your photos.</span></li>
+      <li><b>Netlify</b><em>USA</em><span>Hosts this site and the guides, and passes on sign-up notices and your notes to us.</span></li>
+      <li><b>Hetzner</b><em>Germany, EU</em><span>The server that builds the guides.</span></li>
+      <li><b>Anthropic (Claude)</b><em>USA</em><span>Reads your listing page and writes the first version of your guide, translates it and looks up places near the house. It never gets your email address, your password or your Wi-Fi details.</span></li>
+      <li><b>Google</b><em>USA</em><span>Places near the house, Sign in with Google if you choose it, and the fonts of this site.</span></li>
+      <li><b>Resend</b><em>USA</em><span>Sends us, not you, a monthly email report about the guides.</span></li>
+      <li><b>OpenFreeMap and Photon (Komoot)</b><em>Maps</em><span>The maps in your guide and searching on them.</span></li>
+    </ul>
+    <p>Where data leaves the EU, these companies' own data processing terms apply, with the safeguards the GDPR requires.</p>
+  </section>
+
+  <section>
+    <h2>On your device</h2>
+    <p>This site keeps your answers, the photos not sent yet and your sign-in in your browser's storage, so nothing is lost if you close the page. No advertising cookies.</p>
+  </section>
+
+  <section>
+    <h2>How long, and your rights</h2>
+    <p>We keep your data while you have an account. Ask us and we delete your account, your guides and your photos within 30 days.</p>
+    <p>You can also ask to see, correct or export your data, or object to how we use it: write to <a href="mailto:yohann.bensadoun@gmail.com">yohann.bensadoun@gmail.com</a>. If you are not happy with our answer, you can complain to the Spanish data protection authority (<a href="https://www.aepd.es">aepd.es</a>) or to the one where you live.</p>
+  </section>
+
+  <a class="back" href="/">Back to Guest Guide Maker <span aria-hidden="true">→</span></a>
+</main>
+</body>
+</html>

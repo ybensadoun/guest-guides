@@ -87,6 +87,7 @@ function niceError(e){
 #acct .acmsg{margin-top:14px;font-size:14px;min-height:20px;color:var(--k-red)}
 #acct .acmsg.ok{color:var(--k-green)}
 #acct .small{margin-top:18px;font-size:12.5px;color:#6E6A63;line-height:1.5}
+#acct .small a{color:var(--k-blue);font-weight:600}
 @media (min-width:900px){#acct .ac2{grid-template-columns:minmax(0,1fr) 420px;grid-template-areas:"top top" "hero card" "tiles card";align-items:start;column-gap:28px;padding-top:28px}
   #acct .ac-card{position:sticky;top:24px}#acct .ac-art{height:210px}#acct .ac-art .s1{width:130px;height:130px}}
 /* Account row under the header: in the page flow, so it never sits on the step bar. */
@@ -144,7 +145,7 @@ async function gate(mode0, notice){
           <div class="acmsg${ok ? ' ok' : ''}" id="acMsg" role="status">${esc(msg || notice || '')}</div>
         </form>
           <div class="alt">${rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : 'New here? <button type="button" data-m="signup">Create an account</button> · <button type="button" data-m="recover">Forgot password?</button>'}</div>
-        ${up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it.</p>' : ''}</section>
+        ${up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>' : ''}</section>
         <section class="ac-tiles" aria-label="What your guests get"><h2>What your guests get</h2>
           <div class="ac-tile t-y"><span class="ic">${I.tool}</span><b>House guide</b><small>How everything works, room by room</small><span class="ar" aria-hidden="true">→</span></div>
           <div class="ac-tile t-r"><span class="ic">${I.phone}</span><b>Emergencies</b><small>112, the hospital, the pharmacy</small><span class="ar" aria-hidden="true">→</span></div>
