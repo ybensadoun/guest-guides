@@ -4,40 +4,67 @@
    full guide will add. A Feedback button on every screen sends notes tagged with that screen. */
 const PV = { screen: 'home', palette: null, preset: null };
 
-// Colours from the inspiration images: k-means on a small sample, then readable roles.
-async function paletteFromImages(){
-  const imgs = uploads.filter(u => u.kind === 'inspiration').concat(uploads.filter(u => u.kind === 'cover')).slice(0, 4);
-  const px = [];
-  for (const u of imgs) {
-    try {
-      const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = u.url; });
-      const c = document.createElement('canvas'); c.width = 48; c.height = 48; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 48, 48);
-      const d = x.getImageData(0, 0, 48, 48).data; for (let i = 0; i < d.length; i += 4) px.push([d[i], d[i + 1], d[i + 2]]);
-    } catch (e) {}
+// The phone's colours (acc: blue, red, yellow, green). Each layout has its own (engine/src/styles/presets/*.css); the host
+// can take them from their cover picture or their logo instead (answers.colorsFrom), as the build does.
+const PRESET_PAL = {
+  bold: { paper: '#F3EEE3', ink: '#121212', acc: ['#1D4FA0', '#D52B1E', '#F5C400', '#0E7C46'] },
+  soft: { paper: '#F7F3EE', ink: '#2E2B37', acc: ['#7FA7DA', '#E0806F', '#F1C96A', '#6FB08B'] },
+  minimal: { paper: '#FFFFFF', ink: '#111111', acc: ['#2A5BD7', '#C8382B', '#2A5BD7', '#1F7A4D'] },
+  mediterranean: { paper: '#FBFAF6', ink: '#122B4C', acc: ['#1F4F96', '#BF5536', '#F2C64B', '#2D7A62'] },
+  rural: { paper: '#F2ECDF', ink: '#2A2318', acc: ['#4E6A3A', '#A3482B', '#E2B45A', '#3F6B3F'] }
+};
+const colorsFromKind = () => { const c = String(v('colorsFrom')).toLowerCase(); return /logo/.test(c) ? 'logo' : /cover|photo|picture/.test(c) ? 'cover' : 'look'; };
+// The picture the colours come from: the logo, or the cover (the host's own, else the listing photo, even when the cover
+// is drawn: engine/scripts/generate-site.py cover_im). None: the layout's own colours.
+function colourSource(){
+  const k = colorsFromKind(), up = kind => uploads.find(u => u.kind === kind), cur = String(A.coverUrl || '').split('?')[0];
+  if (k === 'logo') return up('logo') ? { src: srcOf(up('logo')), logo: true } : null;
+  if (k === 'cover') return up('cover') ? { src: srcOf(up('cover')) } : /^https:/.test(cur) ? { src: cur + '?im_w=480' } : null;
+  return null;
+}
+// Same steps as the build's palette (generate-site.py): k-means, a light paper, a dark ink, then each colour slot takes
+// the picture's colour nearest its hue (a logo's few colours each take the nearest free slot), made readable.
+async function paletteFrom(src, logo){
+  const im = await new Promise((res, rej) => { const i = new Image(); if (/^https?:/.test(src)) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = rej; i.src = src; });
+  const n = 64, c = document.createElement('canvas'); c.width = c.height = n; const x = c.getContext('2d', { willReadFrequently: true });
+  x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); x.drawImage(im, 0, 0, n, n);   // a transparent logo is read on white
+  const d = x.getImageData(0, 0, n, n).data, px = []; for (let i = 0; i < d.length; i += 4) px.push([d[i], d[i + 1], d[i + 2]]);
+  const hls = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; if (mx === mn) return [0, l, 0]; const dd = mx - mn, s = l > .5 ? dd / (2 - mx - mn) : dd / (mx + mn); const h = mx === r ? (g - b) / dd + (g < b ? 6 : 0) : mx === g ? (b - r) / dd + 2 : (r - g) / dd + 4; return [h / 6, l, s]; };
+  const fromHls = (h, l, s) => { const f = k0 => { const k = (k0 + h * 12) % 12, a = s * Math.min(l, 1 - l); return 255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))); }; return [f(0), f(8), f(4)]; };
+  const lum = cc => { const f = vv => { vv /= 255; return vv <= .03928 ? vv / 12.92 : ((vv + .055) / 1.055) ** 2.4; }; return .2126 * f(cc[0]) + .7152 * f(cc[1]) + .0722 * f(cc[2]); };
+  const con = (a, b) => { const [p, q] = [lum(a), lum(b)].sort((s, t) => t - s); return (p + .05) / (q + .05); };
+  const hex = cc => '#' + cc.map(vv => Math.round(vv).toString(16).padStart(2, '0')).join('').toUpperCase();
+  const hd = (a, b) => Math.min(Math.abs(a - b), 1 - Math.abs(a - b));
+  let cent = Array.from({ length: 9 }, (_, i) => px[Math.floor((i + .5) * px.length / 9)].slice()), lab = [];
+  for (let it = 0; it < 12; it++) {
+    lab = px.map(p => { let bi = 0, bd = 1e9; cent.forEach((q, i) => { const dd = (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2; if (dd < bd) { bd = dd; bi = i; } }); return bi; });
+    cent = cent.map((q, i) => { const m = px.filter((_, j) => lab[j] === i); return m.length ? [0, 1, 2].map(k => m.reduce((a, p) => a + p[k], 0) / m.length) : q; });
   }
-  const hsl = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; let h = 0, s = 0; if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h /= 6; } return [h, s, l]; };
-  const rgb = ([h, s, l]) => { const f = n => { const k = (n + h * 12) % 12, a = s * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); }; return [f(0), f(8), f(4)]; };
-  const hex = c => '#' + c.map(x => x.toString(16).padStart(2, '0')).join('');
-  const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
-  const con = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
-  if (px.length < 50) return { paper: '#F3EEE3', ink: '#121212', acc: ['#1D4FA0', '#D52B1E', '#F5C400', '#0E7C46'], sat: .6, light: .6 };   // no images: Bauhaus, the guides' default
-  let cent = [0, 1, 2, 3, 4, 5, 6, 7].map(i => px[Math.floor(i * px.length / 8)].slice());
-  let lab = [];
-  for (let it = 0; it < 10; it++) {
-    lab = px.map(p => { let bi = 0, bd = 1e9; cent.forEach((c, i) => { const d = (p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2; if (d < bd) { bd = d; bi = i; } }); return bi; });
-    cent = cent.map((c, i) => { const m = px.filter((_, j) => lab[j] === i); return m.length ? [0, 1, 2].map(k => m.reduce((a, p) => a + p[k], 0) / m.length) : c; });
-  }
-  const cl = cent.map((c, i) => ({ c: c.map(Math.round), w: lab.filter(x => x === i).length / px.length, h: hsl(c) }));
-  const sat = cl.reduce((a, x) => a + x.h[1] * x.w, 0), light = cl.reduce((a, x) => a + x.h[2] * x.w, 0);
-  const lightest = cl.filter(x => x.h[2] > .8 && x.h[1] < .55).sort((a, b) => b.h[2] - a.h[2])[0];
-  const base = cl.sort((a, b) => b.w - a.w)[0].h;
-  let paper = lightest ? lightest.h : [base[0], .25, .96]; paper = rgb([paper[0], Math.min(paper[1], .35), Math.max(paper[2], .945)]);
-  const dk = cl.slice().sort((a, b) => a.h[2] - b.h[2])[0].h; const ink = rgb([dk[0], Math.min(dk[1], .35), Math.min(dk[2], .13)]);
+  const cl = cent.map((q, i) => ({ c: q, w: lab.filter(z => z === i).length / px.length })).filter(z => z.w > 0).sort((a, b) => b.w - a.w);
+  const lights = cl.map(z => z.c).filter(q => hls(q)[1] > .82 && hls(q)[2] < .5).sort((a, b) => hls(b)[1] - hls(a)[1]), baseH = hls(cl[0].c)[0];
+  let [h, l, s] = hls(lights[0] || fromHls(baseH, .965, .25)); const paper = fromHls(h, Math.max(l, .94), Math.min(s, .35));
+  [h, l, s] = hls(cl.map(z => z.c).sort((a, b) => hls(a)[1] - hls(b)[1])[0]); const ink = fromHls(h, Math.min(l, .13), Math.min(s, .35));
   const acc = [];
-  cl.slice().sort((a, b) => b.h[1] * (.3 + b.w) - a.h[1] * (.3 + a.w)).forEach(x => { if (x.h[1] < .25) return; if (acc.some(a => Math.min(Math.abs(a[0] - x.h[0]), 1 - Math.abs(a[0] - x.h[0])) < .06)) return; acc.push(x.h); });
-  while (acc.length < 4) acc.push([((acc[acc.length - 1] || base)[0] + .3) % 1, .55, .45]);
-  const onWhite = h => { let [a, s, l] = h; let c = rgb([a, s, l]); while (con(c, [255, 255, 255]) < 3.2 && l > .08) { l -= .03; c = rgb([a, s, l]); } return c; };
-  return { paper: hex(paper), ink: hex(ink), acc: acc.slice(0, 4).map(h => hex(onWhite(h))), sat, light };
+  for (const z of cl.slice().sort((a, b) => hls(b.c)[2] * (.3 + b.w) - hls(a.c)[2] * (.3 + a.w))) { const q = hls(z.c); if (q[2] < .25 || acc.some(a => hd(q[0], hls(a)[0]) < .06)) continue; acc.push(z.c); }
+  const real = acc.slice();
+  while (acc.length < 4) acc.push(fromHls(acc.length ? (hls(acc[acc.length - 1])[0] + .33) % 1 : baseH, .45, .55));
+  const T = { yellow: .14, red: 0, blue: .6, green: .33, orange: .07 }, slots = {}, pool = acc.slice(0, 6), own = logo && real.length;
+  if (own) for (const q of real.slice(0, 5)) { const free = Object.keys(T).filter(k => !slots[k]); slots[free.sort((a, b) => hd(hls(q)[0], T[a]) - hd(hls(q)[0], T[b]))[0]] = q; }
+  for (const [k, t] of Object.entries(T)) {
+    if (slots[k]) continue;
+    if (pool.length && !own) { const q = pool.slice().sort((a, b) => hd(hls(a)[0], t) - hd(hls(b)[0], t))[0]; if (hd(hls(q)[0], t) < .12) { slots[k] = q; pool.splice(pool.indexOf(q), 1); continue; } }
+    slots[k] = k === 'blue' ? fromHls(t, .40, .45) : fromHls(t, .5, .55);   // no colour of the picture near this hue
+  }
+  if (con(slots.yellow, paper) < 1.6 || hls(slots.yellow)[2] < .45) slots.yellow = fromHls(.12, .58, .75);
+  const onWhite = q => { let [a, b, e] = hls(q); while (con(q, [255, 255, 255]) < 3.2 && b > .08) { b -= .03; q = fromHls(a, b, e); } return q; };
+  const onInk = q => { let [a, b, e] = hls(q); while (con(q, ink) < 5 && b < .92) { b += .03; q = fromHls(a, b, e); } return q; };
+  return { paper: hex(paper), ink: hex(ink), acc: [onWhite(slots.blue), onWhite(slots.red), onInk(slots.yellow), onWhite(slots.green)].map(hex), own: true };
+}
+async function phonePalette(preset){
+  const cs = colourSource();
+  if (!cs) return PRESET_PAL[preset];
+  if (PV.palSrc !== cs.src) { PV.palSrc = cs.src; PV.palette = await paletteFrom(cs.src, cs.logo).catch(() => null); }
+  return PV.palette || PRESET_PAL[preset];
 }
 // The layout the host picked in The look, else Bauhaus ("Big colour tiles"), the guides' default (Yohann, 29 Oct 2026;
 // engine/scripts/generate-site.py picks Bauhaus too when there is nothing to go on).
@@ -105,6 +132,7 @@ function pvStyle(p, preset){
 .pv-art .a-mid{fill:color-mix(in srgb,var(--a4) 60%,var(--pp))}.pv-art .a-near{fill:color-mix(in srgb,var(--a4) 35%,var(--pp))}
 .pv-art .a-wall{fill:#fff}.pv-art .a-roof{fill:var(--a2)}.pv-art .a-win,.pv-art .a-door{fill:color-mix(in srgb,var(--pi) 75%,var(--a1))}.pv-art .a-tree{fill:color-mix(in srgb,var(--a4) 55%,var(--pi))}
 .pv-name{position:absolute;left:20px;right:20px;bottom:18px;z-index:1;color:#fff}
+.pv-logo{display:block;width:56px;height:56px;object-fit:contain;background:#fff;border-radius:12px;padding:5px;margin-bottom:10px}
 .pv-name small{display:block;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.9}
 .pv-name h1{font-size:clamp(34px,9vw,52px)}
 .pv-welcome{font-size:18px;margin:4px 0 0}
@@ -166,14 +194,16 @@ function pvStyle(p, preset){
 .pv-sec::before{content:"";position:absolute;z-index:-1;width:130px;height:130px;border-radius:50%;background:var(--sc);filter:blur(26px);opacity:.45;right:-30px;top:-30px}
 .pv-sec .ic{margin-bottom:auto}.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:90px}
 .pv-fact{background:#fff;border-radius:18px;box-shadow:0 4px 16px rgba(0,0,0,.06)}.pv-cover{border-radius:0 0 28px 28px}.pv h1,.pv h2{font-weight:600}.pv-card{border-radius:22px}`,
-    mediterranean: `.pv-sec{min-height:140px;padding:16px;border-radius:22px;color:#fff;background:var(--sc)}
+    mediterranean: `.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:96px}
+.pv-sec{min-height:140px;padding:16px;border-radius:22px;color:#fff;background:var(--sc)}
 .pv-sec:nth-child(6n+1){--sc:#1F4F96!important}.pv-sec:nth-child(6n+2){--sc:#D6E6F5!important;color:#122B4C}.pv-sec:nth-child(6n+3){--sc:#BF5536!important}
 .pv-sec:nth-child(6n+4){--sc:#122B4C!important}.pv-sec:nth-child(6n+5){--sc:#F2C64B!important;color:#122B4C}.pv-sec:nth-child(6n){--sc:#17748A!important}
 .pv-sec::before{content:"";position:absolute;z-index:-1;width:62px;height:62px;border-radius:10px;right:-12px;top:-12px;background:#fff radial-gradient(circle,#1F4F96 0 4.5px,transparent 5px) 0 0/15px 15px}
 .pv-sec .ic svg{width:22px;height:22px}.pv-sec b{font-size:18px;font-weight:400;font-family:var(--pd)}.pv-sec .tx{display:flex;flex-direction:column}
 .pv-fact{background:#fff;color:#122B4C;border:1px solid #DCE2EA;border-radius:12px}.pv h1,.pv h2{font-weight:400}.pv-h{font-size:15px;font-weight:600;opacity:.7}
 .pv-cover{height:clamp(200px,32vh,280px)}`,
-    rural: `.pv-sec{min-height:140px;padding:16px;border-radius:18px;color:#FFFDF8;background:var(--sc)}
+    rural: `.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:96px}
+.pv-sec{min-height:140px;padding:16px;border-radius:18px;color:#FFFDF8;background:var(--sc)}
 .pv-sec:nth-child(6n+1){--sc:#5A7034!important}.pv-sec:nth-child(6n+2){--sc:#E8D7A5!important;color:#3B2E21}.pv-sec:nth-child(6n+3){--sc:#A3482B!important}
 .pv-sec:nth-child(6n+4){--sc:#3B2E21!important}.pv-sec:nth-child(6n+5){--sc:#DFA54A!important;color:#3B2E21}.pv-sec:nth-child(6n){--sc:#2F5236!important}
 .pv-sec::before{content:"";position:absolute;z-index:-1;width:54px;height:54px;border-radius:0 100% 0 100%;right:-8px;top:-8px;background:#D9C98F}
@@ -186,6 +216,15 @@ function pvStyle(p, preset){
 .pv-fact{background:#fff;color:#111;border:1px solid #eee;border-radius:10px}.pv h1,.pv h2{font-weight:600;letter-spacing:-.02em}.pv-h{font-size:15px;font-weight:600;opacity:.7}
 .pv-cover{height:clamp(200px,32vh,280px)}`
   };
+  // Colours from a picture reach the tiles of Mediterranean and Rural too, which have their own (same mapping as the
+  // build's layout_vars in engine/scripts/generate-site.py, and the editor's edLayoutVars).
+  if (p.own && P[preset] && (preset === 'mediterranean' || preset === 'rural')) {
+    const mix = (x, y, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(x.slice(i, i + 2), 16) * (1 - t) + parseInt(y.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('').toUpperCase();
+    const [bl, rd, ye, gr] = a, W = '#FFFFFF', K = '#000000';
+    const to = preset === 'mediterranean' ? { '#1F4F96': bl, '#D6E6F5': mix(bl, W, .88), '#BF5536': rd, '#122B4C': mix(bl, K, .45), '#F2C64B': ye, '#17748A': gr }
+      : { '#5A7034': gr, '#E8D7A5': mix(ye, W, .62), '#A3482B': rd, '#3B2E21': mix(rd, K, .62), '#DFA54A': ye, '#2F5236': mix(gr, K, .35), '#D9C98F': mix(ye, W, .45) };
+    P[preset] = P[preset].replace(/#[0-9A-Fa-f]{6}\b/g, h => to[h.toUpperCase()] || h);
+  }
   return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fam}&display=swap"><style>${base}${shared}${P[preset]}</style>`;
 }
 
@@ -195,14 +234,12 @@ const PV_ART = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" 
 // One screen of the guide as guests will see it, built from the answers: the cover, the name, the sections. Used by the
 // phone in the builder (the wow, and next to the steps) and by the full-page preview.
 async function pvParts(screen){
-  const key = uploads.filter(u => u.kind === 'inspiration' || u.kind === 'cover').map(u => u.id).join();
-  if (!PV.palette || PV.palKey !== key) { PV.palKey = key; PV.palette = await paletteFromImages(); }
-  const p = PV.palette, preset = PV.preset || choosePreset();
+  const preset = PV.preset || choosePreset(), p = await phonePalette(preset);
   const S = ordered(guideSections()), name = v('guideName') || v('placeName') || WOW.name || 'Your guide';
   // Same rule as the guide (engine/scripts/generate-site.py): the host's own cover, else the listing photo they chose,
   // unless they asked for a cover drawn from the colours.
   const own = (uploads.find(u => u.kind === 'cover') || {}).url, listing = A.coverChoice !== 'drawn' && A.coverUrl ? String(A.coverUrl).split('?')[0] + '?im_w=720' : '';
-  const cover = own || listing;
+  const cover = own || listing, logo = (uploads.find(u => u.kind === 'logo') || {}).url;   // on the welcome card, as in the guide
   const colours = [p.acc[0], p.acc[1], p.ink, p.acc[3], p.acc[2]], shapes = [p.acc[2], p.ink, p.acc[1], p.acc[2], p.ink];
   const light = hex => { const n = parseInt(String(hex).slice(1), 16); return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 160; };
   const scr = screen, sec = S.find(x => x.id === scr);
@@ -216,7 +253,7 @@ async function pvParts(screen){
     if (f === 'Places to eat') facts.push(['eat', 'Eat', lines('favourites').length + ' favourites']);
   }
   const ph = id => { const r = (S.find(x => x.id === 'houseguide') || {}).rooms || []; return id === 'houseguide' && r.find(x => x.photos.length) ? r.find(x => x.photos.length).photos[0] : null; };
-  const home = `<div class="pv-cover${cover ? '' : ' pv-art'}"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}<div class="pv-name"><small>Welcome to</small><h1>${esc(name)}</h1></div></div>
+  const home = `<div class="pv-cover${cover ? '' : ' pv-art'}"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}<div class="pv-name">${logo ? `<img class="pv-logo" src="${esc(logo)}" alt="">` : ''}<small>Welcome to</small><h1>${esc(name)}</h1></div></div>
     ${v('tagline') ? `<p class="pv-welcome">${esc(v('tagline'))}</p>` : ''}${v('welcome') ? `<p style="margin:0;opacity:.85">${esc(v('welcome'))}</p>` : ''}
     ${/search/i.test(v('navStyle')) ? `<input class="pv-search" id="pvSearch" placeholder="Search the guide: wifi, bins, beach…" aria-label="Search the guide">` : ''}
     ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}

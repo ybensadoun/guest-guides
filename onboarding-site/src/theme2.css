@@ -10,7 +10,8 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#0F1622;--surface:#172131;--sunk:#131C2A;--ink:#ECEEF2;--muted:#A6ADB8;--faint:#7F8794;--line:#283447;--shadow:none}}
 :root[data-theme="dark"]{--paper:#0F1622;--surface:#172131;--sunk:#131C2A;--ink:#ECEEF2;--muted:#A6ADB8;--faint:#7F8794;--line:#283447;--shadow:none}
 body{background:var(--paper);font-family:var(--body)}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+:root{--noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;background-image:var(--noise)}
 .wrap{position:relative;z-index:1}
 h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .brand b{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:0}
@@ -56,16 +57,6 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .go-next{background:var(--lamp);color:#2A1A04}
 .go-next .ar{background:#2A1A04;color:var(--lamp)}
 .meter i.d,.legend i{background:var(--lamp)}
-.draft{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;display:grid;gap:14px;border-left:5px solid var(--lamp)}
-.draft small{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--clay)}
-.draft h2{font-size:26px;margin-top:4px}
-.draft p{margin:10px 0 4px;color:var(--muted);font-size:14.5px}
-.draft ul{margin:0;padding-left:20px;display:grid;gap:4px;font-size:15px}
-.draft details summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:center}
-.draft details summary::after{content:"";flex:none;width:7px;height:7px;margin-left:10px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}
-.draft details[open] summary::after{transform:rotate(-135deg) translateY(-2px)}
-.draft details[open] summary{margin-bottom:6px}
-.draft-act{display:flex;gap:10px;flex-wrap:wrap}
 
 /* Step cards: white plaster cards, one coloured badge, no shapes */
 .gh h2{font-size:26px}
@@ -94,6 +85,8 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .nb.primary{background:var(--night);border-color:var(--night);color:#fff}
 #navbar{background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .chip input:checked+span{background:var(--night);border-color:var(--night);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip input:checked+span{background:var(--ink);border-color:var(--ink);color:var(--paper)}}   /* the night blue is the cards' own colour in dark mode */
+:root[data-theme="dark"] .chip input:checked+span{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 
 /* Swipe cards */
 .sw{display:grid;gap:12px}
@@ -153,6 +146,62 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
   .side-phone{display:flex;flex-direction:column;align-items:center;gap:10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 14px)}
   .side-phone .phone{width:280px}
   .side-phone p{margin:0;font-size:13px;color:var(--muted);text-align:center}
+}
+/* The look on one screen (start.js lookHTML): every choice is a row of small pictures or buttons. From 1240 px the phone
+   sits beside them (in the column's own grid, so it stays in view); below, it is pinned above them, its top half showing. */
+.mhead.slim{padding:16px 20px;gap:6px}
+.mhead.slim .row1{gap:12px}
+.mhead.slim h1{font-size:clamp(28px,5vw,34px);padding-right:0}
+.mhead.slim::before{height:96px}
+@media (min-width:621px){.mhead.slim p{max-width:none;padding-right:104px}}
+@media (max-width:620px){.mhead.slim::before{height:64px!important}}
+.lk-card{display:flex;flex-direction:column;gap:14px;padding-block:22px}
+.lk-row{display:flex;flex-direction:column;gap:8px;min-width:0}
+.lk-hd{display:flex;align-items:center;gap:10px;min-height:32px}
+.lk-hd > b{font-size:15.5px}
+.lk-hd .btn{margin-left:auto}
+.lk-strip{display:flex;gap:8px;overflow-x:auto;padding:5px;margin:-5px;scrollbar-width:thin}
+.lk-pic{flex:none;position:relative;width:96px;aspect-ratio:4/3;padding:0;border:0;border-radius:10px;overflow:hidden;cursor:pointer;background:var(--sunk);color:var(--ink);font:inherit}
+.lk-pic img{width:100%;height:100%;object-fit:cover;display:block}
+.lk-pic[aria-pressed=true],.lk-own{box-shadow:0 0 0 2px var(--surface),0 0 0 5px var(--ink)}
+.lk-pic:focus-visible{outline:3px solid var(--focus,var(--sea));outline-offset:2px}
+.lk-pic small{position:absolute;left:6px;bottom:5px;font-size:11.5px;font-weight:700;padding:1px 7px;border-radius:99px;background:rgba(18,18,18,.72);color:#fff}
+.lk-drawn svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.lk-drawn .a-sky{fill:var(--a1)}.lk-drawn .a-sun{fill:var(--a3)}.lk-drawn .a-far{fill:color-mix(in srgb,var(--a1) 72%,var(--pi))}
+.lk-drawn .a-mid{fill:color-mix(in srgb,var(--a4) 60%,var(--pp))}.lk-drawn .a-near{fill:color-mix(in srgb,var(--a4) 35%,var(--pp))}
+.lk-drawn .a-wall{fill:#fff}.lk-drawn .a-roof{fill:var(--a2)}.lk-drawn .a-win,.lk-drawn .a-door{fill:color-mix(in srgb,var(--pi) 75%,var(--a1))}.lk-drawn .a-tree{fill:color-mix(in srgb,var(--a4) 55%,var(--pi))}
+.lk-up{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--surface);box-shadow:inset 0 0 0 2px var(--line)}
+.lk-up b{font-size:26px;line-height:1;font-weight:400}
+.lk-up small{position:static;background:none;color:var(--muted);padding:0}
+.lk-up:focus-within{outline:3px solid var(--focus,var(--sea));outline-offset:2px}
+.lk-x{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:16px;line-height:1}
+.lk-moods{grid-template-columns:repeat(5,minmax(108px,1fr));gap:8px;overflow-x:auto;padding:5px;margin:-5px;scrollbar-width:thin}
+.lk-moods .box{padding:6px;gap:6px;border-radius:13px}
+.lk-moods .mock{height:56px;padding:5px;border-radius:8px;grid-template-rows:14px 3px 1fr 1fr}
+.lk-moods .mock:not(.m-min){gap:3px}
+.lk-moods b{font-size:13.5px;line-height:1.2}
+.lk-cols .chip span{padding:5px 14px 5px 6px}
+.lk-cols img{width:26px;height:26px;border-radius:50%;object-fit:cover;flex:none}
+.lk-dots{display:inline-grid;grid-template-columns:repeat(2,11px);gap:2px;padding:1px}
+.lk-dots i{width:11px;height:11px;border-radius:50%}
+.lk-logo{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lk-logo img{width:44px;height:44px;object-fit:contain;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px var(--line)}
+.lk-logo small{color:var(--muted);font-size:13.5px;flex:1 1 180px}
+@media (min-width:621px){.lk-in{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;column-gap:12px}.lk-in .lk-hd{min-height:0}}   /* Colours and Logo: one line each */
+@media (min-width:1240px){
+  .split.has-phone.look-page{grid-template-columns:240px minmax(0,1fr)}
+  /* the header, the choices and the note box in the first column; the phone beside all three, its extra height in a last row */
+  .look-page .col{display:grid;grid-template-columns:minmax(0,1fr) 290px;grid-template-rows:auto auto auto 1fr;column-gap:22px;row-gap:18px;align-items:start}
+  .look-page .col > *{grid-column:1}
+  .look-page .col > .side-phone{grid-column:2;grid-row:1 / span 4}
+}
+@media (max-width:1239px){
+  .look-page .side-phone{display:flex;justify-content:center;position:sticky;top:0;z-index:6;margin:-6px -16px 0;padding:6px 16px 0;background:var(--paper)}
+  .look-page .side-phone::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.35;background-image:var(--noise);background-attachment:fixed}   /* the page's grain, lined up with it */
+  .look-page .side-phone .phone{width:200px;height:244px;aspect-ratio:auto;padding:8px 8px 0;border-radius:34px 34px 0 0;box-shadow:none;-webkit-mask-image:linear-gradient(#000 72%,transparent);mask-image:linear-gradient(#000 72%,transparent)}
+  .look-page .side-phone .phone::before{top:15px;width:56px;height:16px;margin-left:-28px}
+  .look-page .side-phone .phone-scr{border-radius:27px 27px 0 0}
+  .look-page .side-phone p{display:none}
 }
 /* The wow page (#yours): the guide builds itself in the phone right after the link */
 .yours{display:grid;gap:24px;justify-items:center;align-items:center;padding:8px 0 48px}

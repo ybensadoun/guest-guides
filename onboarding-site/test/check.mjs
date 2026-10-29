@@ -222,7 +222,15 @@ try {
   { const { ctx, p, errors } = await open(browser, B, 360, 780);
     await p.goto('http://editor.test/'); await ready(p);
     ok('builder: opens on the first step that needs the host (The look), no overview', (await p.evaluate(() => location.hash)) === '#look' && !(await p.$('.hero')), await p.evaluate(() => location.hash));
-    ok('builder: The look says the guide is written', /Your guide is written/.test(await p.textContent('.draft').catch(() => '')), (await p.textContent('.draft h2').catch(() => '')).trim());
+    ok('builder: The look is one screen of four choices (cover, layout, colours, logo), the layout already picked',
+      (await p.$$eval('.lk-card .lk-row b[id], .lk-card .lk-row .lk-hd b', els => [...new Set(els.map(e => e.textContent))].join(' | '))) === 'Cover picture | Layout | Colours | Your logo' && (await p.$eval('.lk-moods input:checked', e => e.value).catch(() => '')) === 'bold',
+      await p.$$eval('.lk-card .lk-hd b', els => els.map(e => e.textContent).join(' | ')));
+    const pinned = async () => p.$eval('.look-page .side-phone', e => { const r = e.getBoundingClientRect(); return getComputedStyle(e).display !== 'none' && r.top >= -1 && r.bottom > 150; }).catch(() => false);
+    const pinnedTop = await pinned();
+    await p.$eval('.lk-logo', e => e.scrollIntoView({ block: 'center' })); await p.waitForTimeout(200);
+    ok('builder, 360 px: the phone shows above the choices, and stays in view while they scroll', pinnedTop && await pinned());
+    await p.evaluate(() => window.scrollTo(0, 0));
+    ok('builder, 360 px: The look has no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0);
     ok('builder: The look asks for Done (its defaults are confirmed)', /Done, next/.test(await barText(p)), await barText(p));
     await p.screenshot({ path: join(SHOTS, 'builder-look-360.png') });
     await p.click('#openSteps'); await p.waitForSelector('.sheet .si-guide', { timeout: 3000 }).catch(() => {});
@@ -290,8 +298,18 @@ try {
       const boxes = t => { if (t.matches('.ic, .ar')) return [t.getBoundingClientRect()]; const g = d.createRange(); g.selectNodeContents(t); return [...g.getClientRects()]; };
       return [...el.querySelectorAll('b, small, .ic svg, .ar')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent); }));
     ok('desktop: in the phone, no tile text under its corner shape', Array.isArray(clash) && clash.length === 0 && !!(await inPhone(p, d => d.querySelectorAll('.pv-sec').length)), (clash || []).join('; '));
+    const logoEnd = await p.$eval('.lk-logo', e => e.getBoundingClientRect().bottom), barTop = await p.$eval('#navbar', e => e.getBoundingClientRect().top);
+    ok('desktop: The look fits on one screen, its four choices above the bottom bar', logoEnd <= barTop, `logo row ends at ${Math.round(logoEnd)}, bar at ${Math.round(barTop)}`);
     await p.click('.moods input[value="minimal"]', { force: true }); await p.waitForTimeout(700);
     ok('desktop: picking another layout changes the phone at once', (await arrows()) === false);
+    const tile = () => inPhone(p, d => getComputedStyle(d.querySelector('.pv-sec')).backgroundColor);
+    await p.click('.moods input[value="rural"]', { force: true }); await p.waitForTimeout(700);
+    const ruralOwn = await tile();
+    await p.click('#lk_cf_cover', { force: true }); await p.waitForTimeout(1500);
+    const ruralCover = await tile();
+    ok('desktop: colours from the cover picture recolour Rural\'s own tiles in the phone', ruralOwn === 'rgb(90, 112, 52)' && !!ruralCover && ruralCover !== ruralOwn, `${ruralOwn} -> ${ruralCover}`);
+    await p.click('#lk_drawn'); await p.waitForTimeout(900);
+    ok('desktop: the drawn cover shows in the phone at once', !!(await inPhone(p, d => d.querySelector('.pv-cover.pv-art svg'))) && (await p.$eval('#lk_drawn', e => e.getAttribute('aria-pressed'))) === 'true');
     ok('desktop wow: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const slug = B.answers.slug || 'my-house';   // "Preview my guide" saves the answers on the device first, then opens /<address>

@@ -298,7 +298,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#0F1622;--surface:#172131;--sunk:#131C2A;--ink:#ECEEF2;--muted:#A6ADB8;--faint:#7F8794;--line:#283447;--shadow:none}}
 :root[data-theme="dark"]{--paper:#0F1622;--surface:#172131;--sunk:#131C2A;--ink:#ECEEF2;--muted:#A6ADB8;--faint:#7F8794;--line:#283447;--shadow:none}
 body{background:var(--paper);font-family:var(--body)}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+:root{--noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;background-image:var(--noise)}
 .wrap{position:relative;z-index:1}
 h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .brand b{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:0}
@@ -344,16 +345,6 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .go-next{background:var(--lamp);color:#2A1A04}
 .go-next .ar{background:#2A1A04;color:var(--lamp)}
 .meter i.d,.legend i{background:var(--lamp)}
-.draft{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;display:grid;gap:14px;border-left:5px solid var(--lamp)}
-.draft small{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--clay)}
-.draft h2{font-size:26px;margin-top:4px}
-.draft p{margin:10px 0 4px;color:var(--muted);font-size:14.5px}
-.draft ul{margin:0;padding-left:20px;display:grid;gap:4px;font-size:15px}
-.draft details summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:center}
-.draft details summary::after{content:"";flex:none;width:7px;height:7px;margin-left:10px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}
-.draft details[open] summary::after{transform:rotate(-135deg) translateY(-2px)}
-.draft details[open] summary{margin-bottom:6px}
-.draft-act{display:flex;gap:10px;flex-wrap:wrap}
 
 /* Step cards: white plaster cards, one coloured badge, no shapes */
 .gh h2{font-size:26px}
@@ -382,6 +373,8 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .nb.primary{background:var(--night);border-color:var(--night);color:#fff}
 #navbar{background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .chip input:checked+span{background:var(--night);border-color:var(--night);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip input:checked+span{background:var(--ink);border-color:var(--ink);color:var(--paper)}}   /* the night blue is the cards' own colour in dark mode */
+:root[data-theme="dark"] .chip input:checked+span{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 
 /* Swipe cards */
 .sw{display:grid;gap:12px}
@@ -441,6 +434,62 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
   .side-phone{display:flex;flex-direction:column;align-items:center;gap:10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 14px)}
   .side-phone .phone{width:280px}
   .side-phone p{margin:0;font-size:13px;color:var(--muted);text-align:center}
+}
+/* The look on one screen (start.js lookHTML): every choice is a row of small pictures or buttons. From 1240 px the phone
+   sits beside them (in the column's own grid, so it stays in view); below, it is pinned above them, its top half showing. */
+.mhead.slim{padding:16px 20px;gap:6px}
+.mhead.slim .row1{gap:12px}
+.mhead.slim h1{font-size:clamp(28px,5vw,34px);padding-right:0}
+.mhead.slim::before{height:96px}
+@media (min-width:621px){.mhead.slim p{max-width:none;padding-right:104px}}
+@media (max-width:620px){.mhead.slim::before{height:64px!important}}
+.lk-card{display:flex;flex-direction:column;gap:14px;padding-block:22px}
+.lk-row{display:flex;flex-direction:column;gap:8px;min-width:0}
+.lk-hd{display:flex;align-items:center;gap:10px;min-height:32px}
+.lk-hd > b{font-size:15.5px}
+.lk-hd .btn{margin-left:auto}
+.lk-strip{display:flex;gap:8px;overflow-x:auto;padding:5px;margin:-5px;scrollbar-width:thin}
+.lk-pic{flex:none;position:relative;width:96px;aspect-ratio:4/3;padding:0;border:0;border-radius:10px;overflow:hidden;cursor:pointer;background:var(--sunk);color:var(--ink);font:inherit}
+.lk-pic img{width:100%;height:100%;object-fit:cover;display:block}
+.lk-pic[aria-pressed=true],.lk-own{box-shadow:0 0 0 2px var(--surface),0 0 0 5px var(--ink)}
+.lk-pic:focus-visible{outline:3px solid var(--focus,var(--sea));outline-offset:2px}
+.lk-pic small{position:absolute;left:6px;bottom:5px;font-size:11.5px;font-weight:700;padding:1px 7px;border-radius:99px;background:rgba(18,18,18,.72);color:#fff}
+.lk-drawn svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.lk-drawn .a-sky{fill:var(--a1)}.lk-drawn .a-sun{fill:var(--a3)}.lk-drawn .a-far{fill:color-mix(in srgb,var(--a1) 72%,var(--pi))}
+.lk-drawn .a-mid{fill:color-mix(in srgb,var(--a4) 60%,var(--pp))}.lk-drawn .a-near{fill:color-mix(in srgb,var(--a4) 35%,var(--pp))}
+.lk-drawn .a-wall{fill:#fff}.lk-drawn .a-roof{fill:var(--a2)}.lk-drawn .a-win,.lk-drawn .a-door{fill:color-mix(in srgb,var(--pi) 75%,var(--a1))}.lk-drawn .a-tree{fill:color-mix(in srgb,var(--a4) 55%,var(--pi))}
+.lk-up{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--surface);box-shadow:inset 0 0 0 2px var(--line)}
+.lk-up b{font-size:26px;line-height:1;font-weight:400}
+.lk-up small{position:static;background:none;color:var(--muted);padding:0}
+.lk-up:focus-within{outline:3px solid var(--focus,var(--sea));outline-offset:2px}
+.lk-x{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:16px;line-height:1}
+.lk-moods{grid-template-columns:repeat(5,minmax(108px,1fr));gap:8px;overflow-x:auto;padding:5px;margin:-5px;scrollbar-width:thin}
+.lk-moods .box{padding:6px;gap:6px;border-radius:13px}
+.lk-moods .mock{height:56px;padding:5px;border-radius:8px;grid-template-rows:14px 3px 1fr 1fr}
+.lk-moods .mock:not(.m-min){gap:3px}
+.lk-moods b{font-size:13.5px;line-height:1.2}
+.lk-cols .chip span{padding:5px 14px 5px 6px}
+.lk-cols img{width:26px;height:26px;border-radius:50%;object-fit:cover;flex:none}
+.lk-dots{display:inline-grid;grid-template-columns:repeat(2,11px);gap:2px;padding:1px}
+.lk-dots i{width:11px;height:11px;border-radius:50%}
+.lk-logo{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lk-logo img{width:44px;height:44px;object-fit:contain;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px var(--line)}
+.lk-logo small{color:var(--muted);font-size:13.5px;flex:1 1 180px}
+@media (min-width:621px){.lk-in{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;column-gap:12px}.lk-in .lk-hd{min-height:0}}   /* Colours and Logo: one line each */
+@media (min-width:1240px){
+  .split.has-phone.look-page{grid-template-columns:240px minmax(0,1fr)}
+  /* the header, the choices and the note box in the first column; the phone beside all three, its extra height in a last row */
+  .look-page .col{display:grid;grid-template-columns:minmax(0,1fr) 290px;grid-template-rows:auto auto auto 1fr;column-gap:22px;row-gap:18px;align-items:start}
+  .look-page .col > *{grid-column:1}
+  .look-page .col > .side-phone{grid-column:2;grid-row:1 / span 4}
+}
+@media (max-width:1239px){
+  .look-page .side-phone{display:flex;justify-content:center;position:sticky;top:0;z-index:6;margin:-6px -16px 0;padding:6px 16px 0;background:var(--paper)}
+  .look-page .side-phone::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.35;background-image:var(--noise);background-attachment:fixed}   /* the page's grain, lined up with it */
+  .look-page .side-phone .phone{width:200px;height:244px;aspect-ratio:auto;padding:8px 8px 0;border-radius:34px 34px 0 0;box-shadow:none;-webkit-mask-image:linear-gradient(#000 72%,transparent);mask-image:linear-gradient(#000 72%,transparent)}
+  .look-page .side-phone .phone::before{top:15px;width:56px;height:16px;margin-left:-28px}
+  .look-page .side-phone .phone-scr{border-radius:27px 27px 0 0}
+  .look-page .side-phone p{display:none}
 }
 /* The wow page (#yours): the guide builds itself in the phone right after the link */
 .yours{display:grid;gap:24px;justify-items:center;align-items:center;padding:8px 0 48px}
@@ -773,17 +822,17 @@ function openSteps(){
   const c = o.querySelector('[aria-current]'); if (c) c.scrollIntoView({ block: 'center' });
 }
 function moduleHTML(m){
+  if (m.id === 'look') return lookHTML(m);   // one screen of its own (start.js)
   const s = statusOf(m), miss = missingOf(m);
   return `<div class="split has-phone">${railHTML(m.id)}<div class="col">
     <section class="mhead" style="${tileVars(m)}">
       <div class="row1"><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
       <h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
-    ${m.id === 'look' && !(A._done || {}).look ? draftBanner() : ''}
     <section class="card"><div class="grid">${m.fields.map(field).join('')}</div>
       <div class="foot">
         <p class="todo">${miss.length ? `Still needed: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>`
           : !needsYou(m) ? (A._draftAt ? 'Filled in from your listing. Change anything that is off: it saves as you type, nothing to press.' : 'Optional. Anything you add here saves as you type.')
-          : s.k === 'done' ? 'Done. You can still change anything.' : m.id === 'look' ? 'Already set for you. Change what you like, then press Done.' : 'Only you know this. Answer it now or later: your guide works without it.'}</p>
+          : s.k === 'done' ? 'Done. You can still change anything.' : 'Only you know this. Answer it now or later: your guide works without it.'}</p>
         ${(A._done || {})[m.id] && needsYou(m) ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
       </div></section>
     <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div>
@@ -872,40 +921,67 @@ const preKeys = m => Object.entries(A._pre || {}).filter(([k, mod]) => mod === m
    full guide will add. A Feedback button on every screen sends notes tagged with that screen. */
 const PV = { screen: 'home', palette: null, preset: null };
 
-// Colours from the inspiration images: k-means on a small sample, then readable roles.
-async function paletteFromImages(){
-  const imgs = uploads.filter(u => u.kind === 'inspiration').concat(uploads.filter(u => u.kind === 'cover')).slice(0, 4);
-  const px = [];
-  for (const u of imgs) {
-    try {
-      const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = u.url; });
-      const c = document.createElement('canvas'); c.width = 48; c.height = 48; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 48, 48);
-      const d = x.getImageData(0, 0, 48, 48).data; for (let i = 0; i < d.length; i += 4) px.push([d[i], d[i + 1], d[i + 2]]);
-    } catch (e) {}
+// The phone's colours (acc: blue, red, yellow, green). Each layout has its own (engine/src/styles/presets/*.css); the host
+// can take them from their cover picture or their logo instead (answers.colorsFrom), as the build does.
+const PRESET_PAL = {
+  bold: { paper: '#F3EEE3', ink: '#121212', acc: ['#1D4FA0', '#D52B1E', '#F5C400', '#0E7C46'] },
+  soft: { paper: '#F7F3EE', ink: '#2E2B37', acc: ['#7FA7DA', '#E0806F', '#F1C96A', '#6FB08B'] },
+  minimal: { paper: '#FFFFFF', ink: '#111111', acc: ['#2A5BD7', '#C8382B', '#2A5BD7', '#1F7A4D'] },
+  mediterranean: { paper: '#FBFAF6', ink: '#122B4C', acc: ['#1F4F96', '#BF5536', '#F2C64B', '#2D7A62'] },
+  rural: { paper: '#F2ECDF', ink: '#2A2318', acc: ['#4E6A3A', '#A3482B', '#E2B45A', '#3F6B3F'] }
+};
+const colorsFromKind = () => { const c = String(v('colorsFrom')).toLowerCase(); return /logo/.test(c) ? 'logo' : /cover|photo|picture/.test(c) ? 'cover' : 'look'; };
+// The picture the colours come from: the logo, or the cover (the host's own, else the listing photo, even when the cover
+// is drawn: engine/scripts/generate-site.py cover_im). None: the layout's own colours.
+function colourSource(){
+  const k = colorsFromKind(), up = kind => uploads.find(u => u.kind === kind), cur = String(A.coverUrl || '').split('?')[0];
+  if (k === 'logo') return up('logo') ? { src: srcOf(up('logo')), logo: true } : null;
+  if (k === 'cover') return up('cover') ? { src: srcOf(up('cover')) } : /^https:/.test(cur) ? { src: cur + '?im_w=480' } : null;
+  return null;
+}
+// Same steps as the build's palette (generate-site.py): k-means, a light paper, a dark ink, then each colour slot takes
+// the picture's colour nearest its hue (a logo's few colours each take the nearest free slot), made readable.
+async function paletteFrom(src, logo){
+  const im = await new Promise((res, rej) => { const i = new Image(); if (/^https?:/.test(src)) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = rej; i.src = src; });
+  const n = 64, c = document.createElement('canvas'); c.width = c.height = n; const x = c.getContext('2d', { willReadFrequently: true });
+  x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); x.drawImage(im, 0, 0, n, n);   // a transparent logo is read on white
+  const d = x.getImageData(0, 0, n, n).data, px = []; for (let i = 0; i < d.length; i += 4) px.push([d[i], d[i + 1], d[i + 2]]);
+  const hls = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; if (mx === mn) return [0, l, 0]; const dd = mx - mn, s = l > .5 ? dd / (2 - mx - mn) : dd / (mx + mn); const h = mx === r ? (g - b) / dd + (g < b ? 6 : 0) : mx === g ? (b - r) / dd + 2 : (r - g) / dd + 4; return [h / 6, l, s]; };
+  const fromHls = (h, l, s) => { const f = k0 => { const k = (k0 + h * 12) % 12, a = s * Math.min(l, 1 - l); return 255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))); }; return [f(0), f(8), f(4)]; };
+  const lum = cc => { const f = vv => { vv /= 255; return vv <= .03928 ? vv / 12.92 : ((vv + .055) / 1.055) ** 2.4; }; return .2126 * f(cc[0]) + .7152 * f(cc[1]) + .0722 * f(cc[2]); };
+  const con = (a, b) => { const [p, q] = [lum(a), lum(b)].sort((s, t) => t - s); return (p + .05) / (q + .05); };
+  const hex = cc => '#' + cc.map(vv => Math.round(vv).toString(16).padStart(2, '0')).join('').toUpperCase();
+  const hd = (a, b) => Math.min(Math.abs(a - b), 1 - Math.abs(a - b));
+  let cent = Array.from({ length: 9 }, (_, i) => px[Math.floor((i + .5) * px.length / 9)].slice()), lab = [];
+  for (let it = 0; it < 12; it++) {
+    lab = px.map(p => { let bi = 0, bd = 1e9; cent.forEach((q, i) => { const dd = (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2; if (dd < bd) { bd = dd; bi = i; } }); return bi; });
+    cent = cent.map((q, i) => { const m = px.filter((_, j) => lab[j] === i); return m.length ? [0, 1, 2].map(k => m.reduce((a, p) => a + p[k], 0) / m.length) : q; });
   }
-  const hsl = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; let h = 0, s = 0; if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h /= 6; } return [h, s, l]; };
-  const rgb = ([h, s, l]) => { const f = n => { const k = (n + h * 12) % 12, a = s * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); }; return [f(0), f(8), f(4)]; };
-  const hex = c => '#' + c.map(x => x.toString(16).padStart(2, '0')).join('');
-  const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
-  const con = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
-  if (px.length < 50) return { paper: '#F3EEE3', ink: '#121212', acc: ['#1D4FA0', '#D52B1E', '#F5C400', '#0E7C46'], sat: .6, light: .6 };   // no images: Bauhaus, the guides' default
-  let cent = [0, 1, 2, 3, 4, 5, 6, 7].map(i => px[Math.floor(i * px.length / 8)].slice());
-  let lab = [];
-  for (let it = 0; it < 10; it++) {
-    lab = px.map(p => { let bi = 0, bd = 1e9; cent.forEach((c, i) => { const d = (p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2; if (d < bd) { bd = d; bi = i; } }); return bi; });
-    cent = cent.map((c, i) => { const m = px.filter((_, j) => lab[j] === i); return m.length ? [0, 1, 2].map(k => m.reduce((a, p) => a + p[k], 0) / m.length) : c; });
-  }
-  const cl = cent.map((c, i) => ({ c: c.map(Math.round), w: lab.filter(x => x === i).length / px.length, h: hsl(c) }));
-  const sat = cl.reduce((a, x) => a + x.h[1] * x.w, 0), light = cl.reduce((a, x) => a + x.h[2] * x.w, 0);
-  const lightest = cl.filter(x => x.h[2] > .8 && x.h[1] < .55).sort((a, b) => b.h[2] - a.h[2])[0];
-  const base = cl.sort((a, b) => b.w - a.w)[0].h;
-  let paper = lightest ? lightest.h : [base[0], .25, .96]; paper = rgb([paper[0], Math.min(paper[1], .35), Math.max(paper[2], .945)]);
-  const dk = cl.slice().sort((a, b) => a.h[2] - b.h[2])[0].h; const ink = rgb([dk[0], Math.min(dk[1], .35), Math.min(dk[2], .13)]);
+  const cl = cent.map((q, i) => ({ c: q, w: lab.filter(z => z === i).length / px.length })).filter(z => z.w > 0).sort((a, b) => b.w - a.w);
+  const lights = cl.map(z => z.c).filter(q => hls(q)[1] > .82 && hls(q)[2] < .5).sort((a, b) => hls(b)[1] - hls(a)[1]), baseH = hls(cl[0].c)[0];
+  let [h, l, s] = hls(lights[0] || fromHls(baseH, .965, .25)); const paper = fromHls(h, Math.max(l, .94), Math.min(s, .35));
+  [h, l, s] = hls(cl.map(z => z.c).sort((a, b) => hls(a)[1] - hls(b)[1])[0]); const ink = fromHls(h, Math.min(l, .13), Math.min(s, .35));
   const acc = [];
-  cl.slice().sort((a, b) => b.h[1] * (.3 + b.w) - a.h[1] * (.3 + a.w)).forEach(x => { if (x.h[1] < .25) return; if (acc.some(a => Math.min(Math.abs(a[0] - x.h[0]), 1 - Math.abs(a[0] - x.h[0])) < .06)) return; acc.push(x.h); });
-  while (acc.length < 4) acc.push([((acc[acc.length - 1] || base)[0] + .3) % 1, .55, .45]);
-  const onWhite = h => { let [a, s, l] = h; let c = rgb([a, s, l]); while (con(c, [255, 255, 255]) < 3.2 && l > .08) { l -= .03; c = rgb([a, s, l]); } return c; };
-  return { paper: hex(paper), ink: hex(ink), acc: acc.slice(0, 4).map(h => hex(onWhite(h))), sat, light };
+  for (const z of cl.slice().sort((a, b) => hls(b.c)[2] * (.3 + b.w) - hls(a.c)[2] * (.3 + a.w))) { const q = hls(z.c); if (q[2] < .25 || acc.some(a => hd(q[0], hls(a)[0]) < .06)) continue; acc.push(z.c); }
+  const real = acc.slice();
+  while (acc.length < 4) acc.push(fromHls(acc.length ? (hls(acc[acc.length - 1])[0] + .33) % 1 : baseH, .45, .55));
+  const T = { yellow: .14, red: 0, blue: .6, green: .33, orange: .07 }, slots = {}, pool = acc.slice(0, 6), own = logo && real.length;
+  if (own) for (const q of real.slice(0, 5)) { const free = Object.keys(T).filter(k => !slots[k]); slots[free.sort((a, b) => hd(hls(q)[0], T[a]) - hd(hls(q)[0], T[b]))[0]] = q; }
+  for (const [k, t] of Object.entries(T)) {
+    if (slots[k]) continue;
+    if (pool.length && !own) { const q = pool.slice().sort((a, b) => hd(hls(a)[0], t) - hd(hls(b)[0], t))[0]; if (hd(hls(q)[0], t) < .12) { slots[k] = q; pool.splice(pool.indexOf(q), 1); continue; } }
+    slots[k] = k === 'blue' ? fromHls(t, .40, .45) : fromHls(t, .5, .55);   // no colour of the picture near this hue
+  }
+  if (con(slots.yellow, paper) < 1.6 || hls(slots.yellow)[2] < .45) slots.yellow = fromHls(.12, .58, .75);
+  const onWhite = q => { let [a, b, e] = hls(q); while (con(q, [255, 255, 255]) < 3.2 && b > .08) { b -= .03; q = fromHls(a, b, e); } return q; };
+  const onInk = q => { let [a, b, e] = hls(q); while (con(q, ink) < 5 && b < .92) { b += .03; q = fromHls(a, b, e); } return q; };
+  return { paper: hex(paper), ink: hex(ink), acc: [onWhite(slots.blue), onWhite(slots.red), onInk(slots.yellow), onWhite(slots.green)].map(hex), own: true };
+}
+async function phonePalette(preset){
+  const cs = colourSource();
+  if (!cs) return PRESET_PAL[preset];
+  if (PV.palSrc !== cs.src) { PV.palSrc = cs.src; PV.palette = await paletteFrom(cs.src, cs.logo).catch(() => null); }
+  return PV.palette || PRESET_PAL[preset];
 }
 // The layout the host picked in The look, else Bauhaus ("Big colour tiles"), the guides' default (Yohann, 29 Oct 2026;
 // engine/scripts/generate-site.py picks Bauhaus too when there is nothing to go on).
@@ -973,6 +1049,7 @@ function pvStyle(p, preset){
 .pv-art .a-mid{fill:color-mix(in srgb,var(--a4) 60%,var(--pp))}.pv-art .a-near{fill:color-mix(in srgb,var(--a4) 35%,var(--pp))}
 .pv-art .a-wall{fill:#fff}.pv-art .a-roof{fill:var(--a2)}.pv-art .a-win,.pv-art .a-door{fill:color-mix(in srgb,var(--pi) 75%,var(--a1))}.pv-art .a-tree{fill:color-mix(in srgb,var(--a4) 55%,var(--pi))}
 .pv-name{position:absolute;left:20px;right:20px;bottom:18px;z-index:1;color:#fff}
+.pv-logo{display:block;width:56px;height:56px;object-fit:contain;background:#fff;border-radius:12px;padding:5px;margin-bottom:10px}
 .pv-name small{display:block;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.9}
 .pv-name h1{font-size:clamp(34px,9vw,52px)}
 .pv-welcome{font-size:18px;margin:4px 0 0}
@@ -1034,14 +1111,16 @@ function pvStyle(p, preset){
 .pv-sec::before{content:"";position:absolute;z-index:-1;width:130px;height:130px;border-radius:50%;background:var(--sc);filter:blur(26px);opacity:.45;right:-30px;top:-30px}
 .pv-sec .ic{margin-bottom:auto}.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:90px}
 .pv-fact{background:#fff;border-radius:18px;box-shadow:0 4px 16px rgba(0,0,0,.06)}.pv-cover{border-radius:0 0 28px 28px}.pv h1,.pv h2{font-weight:600}.pv-card{border-radius:22px}`,
-    mediterranean: `.pv-sec{min-height:140px;padding:16px;border-radius:22px;color:#fff;background:var(--sc)}
+    mediterranean: `.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:96px}
+.pv-sec{min-height:140px;padding:16px;border-radius:22px;color:#fff;background:var(--sc)}
 .pv-sec:nth-child(6n+1){--sc:#1F4F96!important}.pv-sec:nth-child(6n+2){--sc:#D6E6F5!important;color:#122B4C}.pv-sec:nth-child(6n+3){--sc:#BF5536!important}
 .pv-sec:nth-child(6n+4){--sc:#122B4C!important}.pv-sec:nth-child(6n+5){--sc:#F2C64B!important;color:#122B4C}.pv-sec:nth-child(6n){--sc:#17748A!important}
 .pv-sec::before{content:"";position:absolute;z-index:-1;width:62px;height:62px;border-radius:10px;right:-12px;top:-12px;background:#fff radial-gradient(circle,#1F4F96 0 4.5px,transparent 5px) 0 0/15px 15px}
 .pv-sec .ic svg{width:22px;height:22px}.pv-sec b{font-size:18px;font-weight:400;font-family:var(--pd)}.pv-sec .tx{display:flex;flex-direction:column}
 .pv-fact{background:#fff;color:#122B4C;border:1px solid #DCE2EA;border-radius:12px}.pv h1,.pv h2{font-weight:400}.pv-h{font-size:15px;font-weight:600;opacity:.7}
 .pv-cover{height:clamp(200px,32vh,280px)}`,
-    rural: `.pv-sec{min-height:140px;padding:16px;border-radius:18px;color:#FFFDF8;background:var(--sc)}
+    rural: `.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:96px}
+.pv-sec{min-height:140px;padding:16px;border-radius:18px;color:#FFFDF8;background:var(--sc)}
 .pv-sec:nth-child(6n+1){--sc:#5A7034!important}.pv-sec:nth-child(6n+2){--sc:#E8D7A5!important;color:#3B2E21}.pv-sec:nth-child(6n+3){--sc:#A3482B!important}
 .pv-sec:nth-child(6n+4){--sc:#3B2E21!important}.pv-sec:nth-child(6n+5){--sc:#DFA54A!important;color:#3B2E21}.pv-sec:nth-child(6n){--sc:#2F5236!important}
 .pv-sec::before{content:"";position:absolute;z-index:-1;width:54px;height:54px;border-radius:0 100% 0 100%;right:-8px;top:-8px;background:#D9C98F}
@@ -1054,6 +1133,15 @@ function pvStyle(p, preset){
 .pv-fact{background:#fff;color:#111;border:1px solid #eee;border-radius:10px}.pv h1,.pv h2{font-weight:600;letter-spacing:-.02em}.pv-h{font-size:15px;font-weight:600;opacity:.7}
 .pv-cover{height:clamp(200px,32vh,280px)}`
   };
+  // Colours from a picture reach the tiles of Mediterranean and Rural too, which have their own (same mapping as the
+  // build's layout_vars in engine/scripts/generate-site.py, and the editor's edLayoutVars).
+  if (p.own && P[preset] && (preset === 'mediterranean' || preset === 'rural')) {
+    const mix = (x, y, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(x.slice(i, i + 2), 16) * (1 - t) + parseInt(y.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('').toUpperCase();
+    const [bl, rd, ye, gr] = a, W = '#FFFFFF', K = '#000000';
+    const to = preset === 'mediterranean' ? { '#1F4F96': bl, '#D6E6F5': mix(bl, W, .88), '#BF5536': rd, '#122B4C': mix(bl, K, .45), '#F2C64B': ye, '#17748A': gr }
+      : { '#5A7034': gr, '#E8D7A5': mix(ye, W, .62), '#A3482B': rd, '#3B2E21': mix(rd, K, .62), '#DFA54A': ye, '#2F5236': mix(gr, K, .35), '#D9C98F': mix(ye, W, .45) };
+    P[preset] = P[preset].replace(/#[0-9A-Fa-f]{6}\b/g, h => to[h.toUpperCase()] || h);
+  }
   return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fam}&display=swap"><style>${base}${shared}${P[preset]}</style>`;
 }
 
@@ -1063,14 +1151,12 @@ const PV_ART = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" 
 // One screen of the guide as guests will see it, built from the answers: the cover, the name, the sections. Used by the
 // phone in the builder (the wow, and next to the steps) and by the full-page preview.
 async function pvParts(screen){
-  const key = uploads.filter(u => u.kind === 'inspiration' || u.kind === 'cover').map(u => u.id).join();
-  if (!PV.palette || PV.palKey !== key) { PV.palKey = key; PV.palette = await paletteFromImages(); }
-  const p = PV.palette, preset = PV.preset || choosePreset();
+  const preset = PV.preset || choosePreset(), p = await phonePalette(preset);
   const S = ordered(guideSections()), name = v('guideName') || v('placeName') || WOW.name || 'Your guide';
   // Same rule as the guide (engine/scripts/generate-site.py): the host's own cover, else the listing photo they chose,
   // unless they asked for a cover drawn from the colours.
   const own = (uploads.find(u => u.kind === 'cover') || {}).url, listing = A.coverChoice !== 'drawn' && A.coverUrl ? String(A.coverUrl).split('?')[0] + '?im_w=720' : '';
-  const cover = own || listing;
+  const cover = own || listing, logo = (uploads.find(u => u.kind === 'logo') || {}).url;   // on the welcome card, as in the guide
   const colours = [p.acc[0], p.acc[1], p.ink, p.acc[3], p.acc[2]], shapes = [p.acc[2], p.ink, p.acc[1], p.acc[2], p.ink];
   const light = hex => { const n = parseInt(String(hex).slice(1), 16); return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 160; };
   const scr = screen, sec = S.find(x => x.id === scr);
@@ -1084,7 +1170,7 @@ async function pvParts(screen){
     if (f === 'Places to eat') facts.push(['eat', 'Eat', lines('favourites').length + ' favourites']);
   }
   const ph = id => { const r = (S.find(x => x.id === 'houseguide') || {}).rooms || []; return id === 'houseguide' && r.find(x => x.photos.length) ? r.find(x => x.photos.length).photos[0] : null; };
-  const home = `<div class="pv-cover${cover ? '' : ' pv-art'}"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}<div class="pv-name"><small>Welcome to</small><h1>${esc(name)}</h1></div></div>
+  const home = `<div class="pv-cover${cover ? '' : ' pv-art'}"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}<div class="pv-name">${logo ? `<img class="pv-logo" src="${esc(logo)}" alt="">` : ''}<small>Welcome to</small><h1>${esc(name)}</h1></div></div>
     ${v('tagline') ? `<p class="pv-welcome">${esc(v('tagline'))}</p>` : ''}${v('welcome') ? `<p style="margin:0;opacity:.85">${esc(v('welcome'))}</p>` : ''}
     ${/search/i.test(v('navStyle')) ? `<input class="pv-search" id="pvSearch" placeholder="Search the guide: wifi, bins, beach…" aria-label="Search the guide">` : ''}
     ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
@@ -1550,50 +1636,110 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 08:15 (Madrid time, after commit 80a2735)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 08:50 (Madrid time, after commit 8f38503)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
 fetch('/api/places?probe=1').then(r => r.json()).then(d => { if (!d.ok) { window.__placesOff = true; render(); } }).catch(() => {});
 
-/* ---------- Cover of the guide: one of the listing's photos (its own cover by default), the host's own picture, one
-   drawn from the colours, or an artistic version of the chosen picture (drawn by the guide builder: the same "cover-art"
-   job and progress bar as in the editor, so it needs the account) ---------- */
+/* ---------- The look on one screen (docs/plan-fast-builder.md, step 4) ----------
+   The cover, the layout, the colours and the logo, each already chosen for the host: one tap changes one, and the phone
+   shows it at once. On wide screens the phone sits next to the choices; on smaller ones it stays pinned above them.
+   The cover: one of the listing's photos (its own cover by default), the host's own picture, one drawn from the colours,
+   or an artistic version of the chosen picture (drawn by the guide builder: the same "cover-art" job and progress bar as
+   in the editor, so it needs the account). ---------- */
 const obOwnCover = () => uploads.find(u => u.kind === 'cover');
 const obSized = u => u + (u.includes('?') ? '' : '?im_w=480');
-function coverChoiceHTML(){
+function lookHTML(m){
+  const s = statusOf(m);
+  setTimeout(() => { lookPaint(); const x = document.querySelector('.lk-strip [aria-pressed="true"]'); if (x) { const st = x.parentElement, r = x.getBoundingClientRect(), q = st.getBoundingClientRect(); if (r.right > q.right) st.scrollLeft += r.left - q.left - 8; } });   // the drawn cover's colours, once the phone knows them; the cover chosen in view
+  return `<div class="split has-phone look-page">${railHTML(m.id)}<div class="col">
+    <section class="mhead slim" style="${tileVars(m)}"><div class="row1"><h1>${esc(m.title)}</h1><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
+      <p>Already chosen for you. Tap anything to change it.</p></section>
+    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside>
+    <section class="card lk-card" id="lookCard">${lookCardHTML()}</section>
+    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
+}
+const lookCardHTML = () => lookCoverHTML() + lookLayoutHTML() + lookColoursHTML() + lookLogoHTML()
+  + ((A._done || {}).look ? '<div class="row"><button class="btn small" type="button" data-undone="look">Mark as not done</button></div>' : '');
+// After a choice: the choices and the phone are drawn again, not the page, so the phone, the photo strip and the focus stay put.
+async function lookRefresh(){
+  const c = document.getElementById('lookCard'); if (!c) return render();
+  const id = document.activeElement && document.activeElement.id, x = c.querySelector('.lk-strip'), sx = x ? x.scrollLeft : 0;
+  c.innerHTML = lookCardHTML();
+  const y = c.querySelector('.lk-strip'); if (y) y.scrollLeft = sx;
+  if (id) { const el = document.getElementById(id); if (el && el !== document.activeElement) el.focus({ preventScroll: true }); }
+  softRefresh(); PHONE.build = false; await phoneRender(); lookPaint();
+}
+const lookPalVars = p => `--a1:${p.acc[0]};--a2:${p.acc[1]};--a3:${p.acc[2]};--a4:${p.acc[3]};--pp:${p.paper};--pi:${p.ink}`;
+async function lookPaint(){ const d = document.querySelector('.lk-drawn'); if (d) d.style.cssText = lookPalVars(await phonePalette(choosePreset())); }
+const lookArtOpen = () => !!(CM.artOpen || CM.artJob || CM.artRes || CM.artErr || CM.artWords != null);
+function lookCoverHTML(){
   const own = obOwnCover(), drawn = !own && A.coverChoice === 'drawn', cur = String(A.coverUrl || '').split('?')[0];
-  const pics = [...new Set([cur, ...(A.listingPhotos || [])].filter(p => typeof p === 'string' && /^https:/.test(p)).map(p => p.split('?')[0]))].slice(0, CM.allPics ? 18 : 6), more = !CM.allPics && (A.listingPhotos || []).length > 6;
-  const shown = own ? srcOf(own) : !drawn && cur ? obSized(cur) : '', g = window.__acctGuide && window.__acctGuide(), busy = !!CM.artJob;
-  return `<div class="f full"><span class="lab">Cover picture <span class="opt">optional</span></span><p class="hint">${pics.length ? 'Pick one of your listing photos, upload a picture, or let us draw an artistic version of it.' : 'Upload a picture, or let us draw the cover from your colours.'}</p>
-    ${pics.length ? `<div class="cm-pics">${pics.map(p => `<button type="button" class="cm-pic" data-obcover="${esc(p)}" aria-pressed="${!own && !drawn && p === cur}" aria-label="Use this photo as the cover"><img src="${esc(obSized(p))}" alt="" loading="lazy"></button>`).join('')}</div>${more ? '<button class="btn small cm-allpics" type="button" data-oballpics="1">Show all your listing photos</button>' : ''}` : ''}
-    ${own ? `<div class="cm-row cvc-own"><img src="${esc(srcOf(own))}" alt="Your cover picture"><button class="btn small" type="button" data-del="${own.id}">Remove</button></div>` : ''}
-    <div class="cm-row"><label class="btn small"><input class="sr" type="file" accept="image/*" data-obcoverfile="1">${own ? 'Upload another picture' : 'Upload a picture'}</label><button class="btn small" type="button" data-coverchoice="drawn" aria-pressed="${drawn}">Drawn from the colours</button></div>
-    ${shown ? `<div class="cm-art"><div class="cm-arthd"><img src="${esc(shown)}" alt=""><span><b>An artistic version of this picture</b><small>“Do it for me” makes an artistic rendering of the house, in the picture’s own colours.</small></span></div>
+  const pics = [...new Set([cur, ...(A.listingPhotos || [])].filter(p => typeof p === 'string' && /^https:/.test(p)).map(p => p.split('?')[0]))].slice(0, 18);
+  const shown = own ? srcOf(own) : !drawn && cur ? obSized(cur) : '';
+  return `<div class="lk-row"><div class="lk-hd"><b id="l_cover">Cover picture</b>${shown ? `<button class="btn small" type="button" id="lk_art" data-lkart="1" aria-expanded="${lookArtOpen()}">Make it artistic</button>` : ''}</div>
+    <div class="lk-strip" role="group" aria-labelledby="l_cover">
+      <label class="lk-pic lk-up"><input class="sr" type="file" accept="image/*" data-obcoverfile="1"><b aria-hidden="true">+</b><small>Your own</small></label>
+      <button type="button" class="lk-pic lk-drawn" id="lk_drawn" data-coverchoice="drawn" aria-pressed="${drawn}" aria-label="A cover drawn from the colours" style="${lookPalVars(PRESET_PAL[choosePreset()])}">${PV_ART}<small>Drawn</small></button>
+      ${own ? `<span class="lk-pic lk-own"><img src="${esc(srcOf(own))}" alt="Your own picture, the cover now"><button class="lk-x" type="button" data-del="${own.id}" aria-label="Remove your picture">×</button></span>` : ''}
+      ${pics.map((p, i) => `<button type="button" class="lk-pic" id="lk_pic${i}" data-obcover="${esc(p)}" aria-pressed="${!own && !drawn && p === cur}" aria-label="Use this photo as the cover"><img src="${esc(obSized(p))}" alt="" loading="lazy"></button>`).join('')}
+    </div>${shown && lookArtOpen() ? lookArtHTML(shown) : ''}</div>`;
+}
+function lookArtHTML(shown){
+  const g = window.__acctGuide && window.__acctGuide(), busy = !!CM.artJob;
+  return `<div class="cm-art"><div class="cm-arthd"><img src="${esc(shown)}" alt=""><span><b>An artistic version of this picture</b><small>“Do it for me” makes an artistic rendering of the house, in the picture’s own colours.</small></span></div>
       ${!g ? '<p class="hint">Log in first: the drawing is made for your account.</p>' : `<div class="cm-row"><button class="btn small primary" type="button" data-obart="auto"${busy ? ' disabled' : ''}>Do it for me</button><button class="btn small" type="button" data-obart="words"${busy ? ' disabled' : ''}>With my own words</button></div>
       ${CM.artWords != null ? `<div class="f full"><label for="ob_artw">How should it look?</label><textarea id="ob_artw" rows="2" placeholder="A watercolour in soft blues, like an old travel poster">${esc(CM.artWords)}</textarea><div class="cm-row"><button class="btn small primary" type="button" data-obart="draw"${busy ? ' disabled' : ''}>Draw it</button></div></div>` : ''}
       ${busy ? progBar('art', 'Drawing your cover') : ''}
       ${CM.artRes ? `<figure class="cm-artres"><img src="${esc(CM.artRes.url)}" alt="Your artistic cover"><figcaption class="cm-row"><button class="btn small primary" type="button" data-obartuse="1">Use this cover</button><button class="btn small" type="button" data-obart="again"${busy ? ' disabled' : ''}>Try again</button></figcaption></figure>` : ''}
-      ${CM.artErr ? `<p class="hint cm-err">${esc(CM.artErr)}</p>` : ''}`}</div>` : ''}</div>`;
+      ${CM.artErr ? `<p class="hint cm-err">${esc(CM.artErr)}</p>` : ''}`}</div>`;
+}
+// The layouts as small pictures of a guide's home; none picked means Big colour tiles, the guides' default (preview.js choosePreset).
+function lookLayoutHTML(){
+  const cur = choosePreset();
+  return `<div class="lk-row"><div class="lk-hd"><b id="l_mood">Layout</b></div>
+    <div class="moods lk-moods" role="radiogroup" aria-labelledby="l_mood">${MOODS.filter(x => x.n).map(x => `<label class="mood" title="${esc(x.d)}"><input type="radio" id="lk_mood_${x.id}" name="mood" data-radio="mood" value="${x.id}"${x.id === cur ? ' checked' : ''}><div class="box"><div class="mock ${x.cls}">${'<i></i>'.repeat(x.n)}</div><b>${esc(x.name)}</b></div></label>`).join('')}</div></div>`;
+}
+// Colours: the layout's own (its colours as dots), or those of the cover picture or the logo (that picture, small). A choice
+// whose picture is gone falls back to the layout's own, as the build does.
+function lookColoursHTML(){
+  const logo = uploads.find(u => u.kind === 'logo'), own = obOwnCover(), cur = String(A.coverUrl || '').split('?')[0];
+  const pics = { cover: own ? srcOf(own) : /^https:/.test(cur) ? obSized(cur) : '', logo: logo ? srcOf(logo) : '' };
+  const k = colorsFromKind(), on = pics[k] ? k : 'look';
+  const opts = [['look', 'The colours of the layout', 'The layout’s own'], ['cover', 'From my cover picture', 'From the cover'], ['logo', 'From my logo', 'From my logo']].filter(([id]) => id === 'look' || pics[id]);
+  return `<div class="lk-row lk-in"><div class="lk-hd"><b id="l_colorsFrom">Colours</b></div>
+    <div class="chips lk-cols" role="radiogroup" aria-labelledby="l_colorsFrom">${opts.map(([id, val, label]) => `<label class="chip"><input type="radio" id="lk_cf_${id}" name="colorsFrom" data-radio="colorsFrom" value="${esc(val)}"${on === id ? ' checked' : ''}><span>${id === 'look' ? `<i class="lk-dots" aria-hidden="true">${PRESET_PAL[choosePreset()].acc.map(c => `<i style="background:${c}"></i>`).join('')}</i>` : `<img src="${esc(pics[id])}" alt="">`}${esc(label)}</span></label>`).join('')}</div></div>`;
+}
+function lookLogoHTML(){
+  const logo = uploads.find(u => u.kind === 'logo'), adding = [...pending.values()].some(p => p.kind === 'logo');
+  return `<div class="lk-row lk-in"><div class="lk-hd"><b>Your logo</b></div>
+    <div class="lk-logo">${logo ? `<img src="${esc(srcOf(logo))}" alt="Your logo"><button class="btn small" type="button" data-del="${logo.id}">Remove</button>`
+      : `<span data-drop="logo" data-max="1"><label class="btn small"><input class="sr" type="file" accept="image/*" data-file="logo">${adding ? 'Adding your logo' : 'Add your logo'}</label></span>`}
+      <small>Optional. On the welcome card, and the app icon on guests’ phones.</small></div></div>`;
 }
 async function obDropCovers(){ for (const u of uploads.filter(x => x.kind === 'cover')) { try { await idb.del(u.id); } catch (e) { /* gone from memory anyway */ } } uploads = uploads.filter(x => x.kind !== 'cover'); }
 document.addEventListener('change', async e => {
-  const t = e.target; if (!t.dataset || !t.dataset.obcoverfile || !t.files.length) return;
+  const t = e.target;
+  // A layout or colours choice: the dots and the drawn cover follow it (after runtime.js has saved the answer)
+  if (t.dataset && /^(mood|colorsFrom)$/.test(t.dataset.radio || '') && !CM.on && route() === 'look') return setTimeout(lookRefresh);
+  if (!t.dataset || !t.dataset.obcoverfile || !t.files.length) return;
   const f = [...t.files]; t.value = ''; await obDropCovers(); delete A.coverChoice; addFiles('cover', f, 1);
 });
 document.addEventListener('click', async e => {
-  const b = e.target.closest && e.target.closest('[data-coverchoice],[data-obcover],[data-obart],[data-obartuse],[data-oballpics]'); if (!b) return;
-  if (b.dataset.oballpics) { CM.allPics = true; return render(); }
-  if (b.dataset.coverchoice) { A.coverChoice = b.dataset.coverchoice; queueSave(); return render(); }
-  if (b.dataset.obcover) { await obDropCovers(); A.coverUrl = b.dataset.obcover; A.coverChoice = 'listing'; queueSave(); return render(); }
+  const b = e.target.closest && e.target.closest('[data-coverchoice],[data-obcover],[data-obart],[data-obartuse],[data-lkart]'); if (!b) return;
+  if (b.dataset.lkart) { const open = !lookArtOpen(); CM.artOpen = open; if (!open && !CM.artJob) { CM.artWords = null; CM.artErr = ''; CM.artRes = null; } return lookRefresh(); }
+  // the host's own picture always wins in the guide (generate-site.py), so choosing another cover lets it go
+  if (b.dataset.coverchoice) { await obDropCovers(); A.coverChoice = b.dataset.coverchoice; queueSave(); return lookRefresh(); }
+  if (b.dataset.obcover) { await obDropCovers(); A.coverUrl = b.dataset.obcover; A.coverChoice = 'listing'; queueSave(); return lookRefresh(); }
   if (b.dataset.obartuse && CM.artRes) {   // the drawing becomes the host's own cover picture, already in the guide's storage
     const g = window.__acctGuide && window.__acctGuide(); if (!g) return;
     await obDropCovers();
     const rec = { id: CM.artRes.path.split('/').pop().replace(/\.jpg$/, ''), kind: 'cover', name: 'Artistic cover.jpg', room: '', path: g.id + '/' + CM.artRes.path, url: CM.artRes.url, createdAt: new Date().toISOString() };
-    uploads.push(rec); await saveUpload(rec); CM.artRes = null; queueSave(); toast('Your new cover is set'); return render();
+    uploads.push(rec); await saveUpload(rec); CM.artRes = null; CM.artOpen = false; queueSave(); toast('Your new cover is set'); return lookRefresh();
   }
   const k = b.dataset.obart, g = window.__acctGuide && window.__acctGuide(); if (!g) return;
-  if (k === 'words') { CM.artWords = CM.artWords || ''; render(); setTimeout(() => { const x = document.getElementById('ob_artw'); if (x) x.focus(); }, 0); return; }
+  if (k === 'words') { CM.artWords = CM.artWords || ''; await lookRefresh(); const x = document.getElementById('ob_artw'); if (x) x.focus(); return; }
   let words = null;
   if (k === 'draw') { words = ((document.getElementById('ob_artw') || {}).value || '').trim(); CM.artWords = words; if (!words) return toast('Say how it should look first.'); }
   if (k === 'again') words = CM.artLast;
@@ -1605,7 +1751,6 @@ document.addEventListener('click', async e => {
     artStart(src, words, g.id);
   } catch (err) { CM.artJob = null; CM.artErr = 'Your picture could not be sent: ' + niceError(err); render(); }
 });
-(function(){ const st = document.createElement('style'); st.textContent = '.cvc-own img{width:160px;aspect-ratio:3/2;object-fit:cover;border-radius:12px;display:block}'; document.head.appendChild(st); })();
 
 /* ---------- Rubbish: the containers guests can use, each with a description, an optional map link and what it takes ---------- */
 // Older answers had one free-text "Where are the containers?": it becomes the first row.
@@ -3684,16 +3829,6 @@ const progressText = () => { const ms = visible(); return `${ms.filter(m => stat
 
 /* ---------- After the first version: what to check ---------- */
 // Right after the listing is read, on the first step the host lands on: the guide is written, here is what is left.
-function draftBanner(){
-  if (!A._draftAt) return '';
-  const ready = readyMods().filter(m => statusOf(m).k === 'done').length, left = flowMods().filter(m => statusOf(m).k !== 'done').length, ask = A.toConfirm || [];
-  return `<section class="draft">
-    <div><small>Your guide is written</small><h2>${ready} step${ready === 1 ? ' is' : 's are'} ready from your listing${left ? `, and ${left === 1 ? 'one needs' : left + ' need'} you` : ''}.</h2>
-    ${ask.length ? `<details><summary>${ask.length === 1 ? 'One thing' : ask.length + ' things'} your listing does not say</summary><ul>${ask.map(q => `<li>${esc(q)}</li>`).join('')}</ul></details>` : ''}</div>
-    <div class="draft-act"><a class="btn primary" href="#yours">${I.eye.replace('stroke-width="2.2"', 'stroke-width="2.2" width="17" height="17"')}See your guide</a></div>
-  </section>`;
-}
-
 /* ---------- Extra questions for the public test ---------- */
 function noteBox(mod){
   const sent = (A._notes || {})[mod] || [];

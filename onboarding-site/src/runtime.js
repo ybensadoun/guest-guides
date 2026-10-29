@@ -151,16 +151,6 @@ const progressText = () => { const ms = visible(); return `${ms.filter(m => stat
 
 /* ---------- After the first version: what to check ---------- */
 // Right after the listing is read, on the first step the host lands on: the guide is written, here is what is left.
-function draftBanner(){
-  if (!A._draftAt) return '';
-  const ready = readyMods().filter(m => statusOf(m).k === 'done').length, left = flowMods().filter(m => statusOf(m).k !== 'done').length, ask = A.toConfirm || [];
-  return `<section class="draft">
-    <div><small>Your guide is written</small><h2>${ready} step${ready === 1 ? ' is' : 's are'} ready from your listing${left ? `, and ${left === 1 ? 'one needs' : left + ' need'} you` : ''}.</h2>
-    ${ask.length ? `<details><summary>${ask.length === 1 ? 'One thing' : ask.length + ' things'} your listing does not say</summary><ul>${ask.map(q => `<li>${esc(q)}</li>`).join('')}</ul></details>` : ''}</div>
-    <div class="draft-act"><a class="btn primary" href="#yours">${I.eye.replace('stroke-width="2.2"', 'stroke-width="2.2" width="17" height="17"')}See your guide</a></div>
-  </section>`;
-}
-
 /* ---------- Extra questions for the public test ---------- */
 function noteBox(mod){
   const sent = (A._notes || {})[mod] || [];

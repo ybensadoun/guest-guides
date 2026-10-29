@@ -361,44 +361,104 @@ async function resetAll(){
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
 fetch('/api/places?probe=1').then(r => r.json()).then(d => { if (!d.ok) { window.__placesOff = true; render(); } }).catch(() => {});
 
-/* ---------- Cover of the guide: one of the listing's photos (its own cover by default), the host's own picture, one
-   drawn from the colours, or an artistic version of the chosen picture (drawn by the guide builder: the same "cover-art"
-   job and progress bar as in the editor, so it needs the account) ---------- */
+/* ---------- The look on one screen (docs/plan-fast-builder.md, step 4) ----------
+   The cover, the layout, the colours and the logo, each already chosen for the host: one tap changes one, and the phone
+   shows it at once. On wide screens the phone sits next to the choices; on smaller ones it stays pinned above them.
+   The cover: one of the listing's photos (its own cover by default), the host's own picture, one drawn from the colours,
+   or an artistic version of the chosen picture (drawn by the guide builder: the same "cover-art" job and progress bar as
+   in the editor, so it needs the account). ---------- */
 const obOwnCover = () => uploads.find(u => u.kind === 'cover');
 const obSized = u => u + (u.includes('?') ? '' : '?im_w=480');
-function coverChoiceHTML(){
+function lookHTML(m){
+  const s = statusOf(m);
+  setTimeout(() => { lookPaint(); const x = document.querySelector('.lk-strip [aria-pressed="true"]'); if (x) { const st = x.parentElement, r = x.getBoundingClientRect(), q = st.getBoundingClientRect(); if (r.right > q.right) st.scrollLeft += r.left - q.left - 8; } });   // the drawn cover's colours, once the phone knows them; the cover chosen in view
+  return `<div class="split has-phone look-page">${railHTML(m.id)}<div class="col">
+    <section class="mhead slim" style="${tileVars(m)}"><div class="row1"><h1>${esc(m.title)}</h1><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
+      <p>Already chosen for you. Tap anything to change it.</p></section>
+    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside>
+    <section class="card lk-card" id="lookCard">${lookCardHTML()}</section>
+    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
+}
+const lookCardHTML = () => lookCoverHTML() + lookLayoutHTML() + lookColoursHTML() + lookLogoHTML()
+  + ((A._done || {}).look ? '<div class="row"><button class="btn small" type="button" data-undone="look">Mark as not done</button></div>' : '');
+// After a choice: the choices and the phone are drawn again, not the page, so the phone, the photo strip and the focus stay put.
+async function lookRefresh(){
+  const c = document.getElementById('lookCard'); if (!c) return render();
+  const id = document.activeElement && document.activeElement.id, x = c.querySelector('.lk-strip'), sx = x ? x.scrollLeft : 0;
+  c.innerHTML = lookCardHTML();
+  const y = c.querySelector('.lk-strip'); if (y) y.scrollLeft = sx;
+  if (id) { const el = document.getElementById(id); if (el && el !== document.activeElement) el.focus({ preventScroll: true }); }
+  softRefresh(); PHONE.build = false; await phoneRender(); lookPaint();
+}
+const lookPalVars = p => `--a1:${p.acc[0]};--a2:${p.acc[1]};--a3:${p.acc[2]};--a4:${p.acc[3]};--pp:${p.paper};--pi:${p.ink}`;
+async function lookPaint(){ const d = document.querySelector('.lk-drawn'); if (d) d.style.cssText = lookPalVars(await phonePalette(choosePreset())); }
+const lookArtOpen = () => !!(CM.artOpen || CM.artJob || CM.artRes || CM.artErr || CM.artWords != null);
+function lookCoverHTML(){
   const own = obOwnCover(), drawn = !own && A.coverChoice === 'drawn', cur = String(A.coverUrl || '').split('?')[0];
-  const pics = [...new Set([cur, ...(A.listingPhotos || [])].filter(p => typeof p === 'string' && /^https:/.test(p)).map(p => p.split('?')[0]))].slice(0, CM.allPics ? 18 : 6), more = !CM.allPics && (A.listingPhotos || []).length > 6;
-  const shown = own ? srcOf(own) : !drawn && cur ? obSized(cur) : '', g = window.__acctGuide && window.__acctGuide(), busy = !!CM.artJob;
-  return `<div class="f full"><span class="lab">Cover picture <span class="opt">optional</span></span><p class="hint">${pics.length ? 'Pick one of your listing photos, upload a picture, or let us draw an artistic version of it.' : 'Upload a picture, or let us draw the cover from your colours.'}</p>
-    ${pics.length ? `<div class="cm-pics">${pics.map(p => `<button type="button" class="cm-pic" data-obcover="${esc(p)}" aria-pressed="${!own && !drawn && p === cur}" aria-label="Use this photo as the cover"><img src="${esc(obSized(p))}" alt="" loading="lazy"></button>`).join('')}</div>${more ? '<button class="btn small cm-allpics" type="button" data-oballpics="1">Show all your listing photos</button>' : ''}` : ''}
-    ${own ? `<div class="cm-row cvc-own"><img src="${esc(srcOf(own))}" alt="Your cover picture"><button class="btn small" type="button" data-del="${own.id}">Remove</button></div>` : ''}
-    <div class="cm-row"><label class="btn small"><input class="sr" type="file" accept="image/*" data-obcoverfile="1">${own ? 'Upload another picture' : 'Upload a picture'}</label><button class="btn small" type="button" data-coverchoice="drawn" aria-pressed="${drawn}">Drawn from the colours</button></div>
-    ${shown ? `<div class="cm-art"><div class="cm-arthd"><img src="${esc(shown)}" alt=""><span><b>An artistic version of this picture</b><small>“Do it for me” makes an artistic rendering of the house, in the picture’s own colours.</small></span></div>
+  const pics = [...new Set([cur, ...(A.listingPhotos || [])].filter(p => typeof p === 'string' && /^https:/.test(p)).map(p => p.split('?')[0]))].slice(0, 18);
+  const shown = own ? srcOf(own) : !drawn && cur ? obSized(cur) : '';
+  return `<div class="lk-row"><div class="lk-hd"><b id="l_cover">Cover picture</b>${shown ? `<button class="btn small" type="button" id="lk_art" data-lkart="1" aria-expanded="${lookArtOpen()}">Make it artistic</button>` : ''}</div>
+    <div class="lk-strip" role="group" aria-labelledby="l_cover">
+      <label class="lk-pic lk-up"><input class="sr" type="file" accept="image/*" data-obcoverfile="1"><b aria-hidden="true">+</b><small>Your own</small></label>
+      <button type="button" class="lk-pic lk-drawn" id="lk_drawn" data-coverchoice="drawn" aria-pressed="${drawn}" aria-label="A cover drawn from the colours" style="${lookPalVars(PRESET_PAL[choosePreset()])}">${PV_ART}<small>Drawn</small></button>
+      ${own ? `<span class="lk-pic lk-own"><img src="${esc(srcOf(own))}" alt="Your own picture, the cover now"><button class="lk-x" type="button" data-del="${own.id}" aria-label="Remove your picture">×</button></span>` : ''}
+      ${pics.map((p, i) => `<button type="button" class="lk-pic" id="lk_pic${i}" data-obcover="${esc(p)}" aria-pressed="${!own && !drawn && p === cur}" aria-label="Use this photo as the cover"><img src="${esc(obSized(p))}" alt="" loading="lazy"></button>`).join('')}
+    </div>${shown && lookArtOpen() ? lookArtHTML(shown) : ''}</div>`;
+}
+function lookArtHTML(shown){
+  const g = window.__acctGuide && window.__acctGuide(), busy = !!CM.artJob;
+  return `<div class="cm-art"><div class="cm-arthd"><img src="${esc(shown)}" alt=""><span><b>An artistic version of this picture</b><small>“Do it for me” makes an artistic rendering of the house, in the picture’s own colours.</small></span></div>
       ${!g ? '<p class="hint">Log in first: the drawing is made for your account.</p>' : `<div class="cm-row"><button class="btn small primary" type="button" data-obart="auto"${busy ? ' disabled' : ''}>Do it for me</button><button class="btn small" type="button" data-obart="words"${busy ? ' disabled' : ''}>With my own words</button></div>
       ${CM.artWords != null ? `<div class="f full"><label for="ob_artw">How should it look?</label><textarea id="ob_artw" rows="2" placeholder="A watercolour in soft blues, like an old travel poster">${esc(CM.artWords)}</textarea><div class="cm-row"><button class="btn small primary" type="button" data-obart="draw"${busy ? ' disabled' : ''}>Draw it</button></div></div>` : ''}
       ${busy ? progBar('art', 'Drawing your cover') : ''}
       ${CM.artRes ? `<figure class="cm-artres"><img src="${esc(CM.artRes.url)}" alt="Your artistic cover"><figcaption class="cm-row"><button class="btn small primary" type="button" data-obartuse="1">Use this cover</button><button class="btn small" type="button" data-obart="again"${busy ? ' disabled' : ''}>Try again</button></figcaption></figure>` : ''}
-      ${CM.artErr ? `<p class="hint cm-err">${esc(CM.artErr)}</p>` : ''}`}</div>` : ''}</div>`;
+      ${CM.artErr ? `<p class="hint cm-err">${esc(CM.artErr)}</p>` : ''}`}</div>`;
+}
+// The layouts as small pictures of a guide's home; none picked means Big colour tiles, the guides' default (preview.js choosePreset).
+function lookLayoutHTML(){
+  const cur = choosePreset();
+  return `<div class="lk-row"><div class="lk-hd"><b id="l_mood">Layout</b></div>
+    <div class="moods lk-moods" role="radiogroup" aria-labelledby="l_mood">${MOODS.filter(x => x.n).map(x => `<label class="mood" title="${esc(x.d)}"><input type="radio" id="lk_mood_${x.id}" name="mood" data-radio="mood" value="${x.id}"${x.id === cur ? ' checked' : ''}><div class="box"><div class="mock ${x.cls}">${'<i></i>'.repeat(x.n)}</div><b>${esc(x.name)}</b></div></label>`).join('')}</div></div>`;
+}
+// Colours: the layout's own (its colours as dots), or those of the cover picture or the logo (that picture, small). A choice
+// whose picture is gone falls back to the layout's own, as the build does.
+function lookColoursHTML(){
+  const logo = uploads.find(u => u.kind === 'logo'), own = obOwnCover(), cur = String(A.coverUrl || '').split('?')[0];
+  const pics = { cover: own ? srcOf(own) : /^https:/.test(cur) ? obSized(cur) : '', logo: logo ? srcOf(logo) : '' };
+  const k = colorsFromKind(), on = pics[k] ? k : 'look';
+  const opts = [['look', 'The colours of the layout', 'The layout’s own'], ['cover', 'From my cover picture', 'From the cover'], ['logo', 'From my logo', 'From my logo']].filter(([id]) => id === 'look' || pics[id]);
+  return `<div class="lk-row lk-in"><div class="lk-hd"><b id="l_colorsFrom">Colours</b></div>
+    <div class="chips lk-cols" role="radiogroup" aria-labelledby="l_colorsFrom">${opts.map(([id, val, label]) => `<label class="chip"><input type="radio" id="lk_cf_${id}" name="colorsFrom" data-radio="colorsFrom" value="${esc(val)}"${on === id ? ' checked' : ''}><span>${id === 'look' ? `<i class="lk-dots" aria-hidden="true">${PRESET_PAL[choosePreset()].acc.map(c => `<i style="background:${c}"></i>`).join('')}</i>` : `<img src="${esc(pics[id])}" alt="">`}${esc(label)}</span></label>`).join('')}</div></div>`;
+}
+function lookLogoHTML(){
+  const logo = uploads.find(u => u.kind === 'logo'), adding = [...pending.values()].some(p => p.kind === 'logo');
+  return `<div class="lk-row lk-in"><div class="lk-hd"><b>Your logo</b></div>
+    <div class="lk-logo">${logo ? `<img src="${esc(srcOf(logo))}" alt="Your logo"><button class="btn small" type="button" data-del="${logo.id}">Remove</button>`
+      : `<span data-drop="logo" data-max="1"><label class="btn small"><input class="sr" type="file" accept="image/*" data-file="logo">${adding ? 'Adding your logo' : 'Add your logo'}</label></span>`}
+      <small>Optional. On the welcome card, and the app icon on guests’ phones.</small></div></div>`;
 }
 async function obDropCovers(){ for (const u of uploads.filter(x => x.kind === 'cover')) { try { await idb.del(u.id); } catch (e) { /* gone from memory anyway */ } } uploads = uploads.filter(x => x.kind !== 'cover'); }
 document.addEventListener('change', async e => {
-  const t = e.target; if (!t.dataset || !t.dataset.obcoverfile || !t.files.length) return;
+  const t = e.target;
+  // A layout or colours choice: the dots and the drawn cover follow it (after runtime.js has saved the answer)
+  if (t.dataset && /^(mood|colorsFrom)$/.test(t.dataset.radio || '') && !CM.on && route() === 'look') return setTimeout(lookRefresh);
+  if (!t.dataset || !t.dataset.obcoverfile || !t.files.length) return;
   const f = [...t.files]; t.value = ''; await obDropCovers(); delete A.coverChoice; addFiles('cover', f, 1);
 });
 document.addEventListener('click', async e => {
-  const b = e.target.closest && e.target.closest('[data-coverchoice],[data-obcover],[data-obart],[data-obartuse],[data-oballpics]'); if (!b) return;
-  if (b.dataset.oballpics) { CM.allPics = true; return render(); }
-  if (b.dataset.coverchoice) { A.coverChoice = b.dataset.coverchoice; queueSave(); return render(); }
-  if (b.dataset.obcover) { await obDropCovers(); A.coverUrl = b.dataset.obcover; A.coverChoice = 'listing'; queueSave(); return render(); }
+  const b = e.target.closest && e.target.closest('[data-coverchoice],[data-obcover],[data-obart],[data-obartuse],[data-lkart]'); if (!b) return;
+  if (b.dataset.lkart) { const open = !lookArtOpen(); CM.artOpen = open; if (!open && !CM.artJob) { CM.artWords = null; CM.artErr = ''; CM.artRes = null; } return lookRefresh(); }
+  // the host's own picture always wins in the guide (generate-site.py), so choosing another cover lets it go
+  if (b.dataset.coverchoice) { await obDropCovers(); A.coverChoice = b.dataset.coverchoice; queueSave(); return lookRefresh(); }
+  if (b.dataset.obcover) { await obDropCovers(); A.coverUrl = b.dataset.obcover; A.coverChoice = 'listing'; queueSave(); return lookRefresh(); }
   if (b.dataset.obartuse && CM.artRes) {   // the drawing becomes the host's own cover picture, already in the guide's storage
     const g = window.__acctGuide && window.__acctGuide(); if (!g) return;
     await obDropCovers();
     const rec = { id: CM.artRes.path.split('/').pop().replace(/\.jpg$/, ''), kind: 'cover', name: 'Artistic cover.jpg', room: '', path: g.id + '/' + CM.artRes.path, url: CM.artRes.url, createdAt: new Date().toISOString() };
-    uploads.push(rec); await saveUpload(rec); CM.artRes = null; queueSave(); toast('Your new cover is set'); return render();
+    uploads.push(rec); await saveUpload(rec); CM.artRes = null; CM.artOpen = false; queueSave(); toast('Your new cover is set'); return lookRefresh();
   }
   const k = b.dataset.obart, g = window.__acctGuide && window.__acctGuide(); if (!g) return;
-  if (k === 'words') { CM.artWords = CM.artWords || ''; render(); setTimeout(() => { const x = document.getElementById('ob_artw'); if (x) x.focus(); }, 0); return; }
+  if (k === 'words') { CM.artWords = CM.artWords || ''; await lookRefresh(); const x = document.getElementById('ob_artw'); if (x) x.focus(); return; }
   let words = null;
   if (k === 'draw') { words = ((document.getElementById('ob_artw') || {}).value || '').trim(); CM.artWords = words; if (!words) return toast('Say how it should look first.'); }
   if (k === 'again') words = CM.artLast;
@@ -410,7 +470,6 @@ document.addEventListener('click', async e => {
     artStart(src, words, g.id);
   } catch (err) { CM.artJob = null; CM.artErr = 'Your picture could not be sent: ' + niceError(err); render(); }
 });
-(function(){ const st = document.createElement('style'); st.textContent = '.cvc-own img{width:160px;aspect-ratio:3/2;object-fit:cover;border-radius:12px;display:block}'; document.head.appendChild(st); })();
 
 /* ---------- Rubbish: the containers guests can use, each with a description, an optional map link and what it takes ---------- */
 // Older answers had one free-text "Where are the containers?": it becomes the first row.

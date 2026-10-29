@@ -51,17 +51,17 @@ function openSteps(){
   const c = o.querySelector('[aria-current]'); if (c) c.scrollIntoView({ block: 'center' });
 }
 function moduleHTML(m){
+  if (m.id === 'look') return lookHTML(m);   // one screen of its own (start.js)
   const s = statusOf(m), miss = missingOf(m);
   return `<div class="split has-phone">${railHTML(m.id)}<div class="col">
     <section class="mhead" style="${tileVars(m)}">
       <div class="row1"><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
       <h1>${esc(m.title)}</h1><p>${esc(m.lead)}</p></section>
-    ${m.id === 'look' && !(A._done || {}).look ? draftBanner() : ''}
     <section class="card"><div class="grid">${m.fields.map(field).join('')}</div>
       <div class="foot">
         <p class="todo">${miss.length ? `Still needed: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>`
           : !needsYou(m) ? (A._draftAt ? 'Filled in from your listing. Change anything that is off: it saves as you type, nothing to press.' : 'Optional. Anything you add here saves as you type.')
-          : s.k === 'done' ? 'Done. You can still change anything.' : m.id === 'look' ? 'Already set for you. Change what you like, then press Done.' : 'Only you know this. Answer it now or later: your guide works without it.'}</p>
+          : s.k === 'done' ? 'Done. You can still change anything.' : 'Only you know this. Answer it now or later: your guide works without it.'}</p>
         ${(A._done || {})[m.id] && needsYou(m) ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
       </div></section>
     <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div>
