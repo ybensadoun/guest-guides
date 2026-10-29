@@ -13,6 +13,7 @@ body{background:var(--paper);font-family:var(--body)}
 :root{--noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;background-image:var(--noise)}
 .wrap{position:relative;z-index:1}
+#main.wrap{width:100%}   /* a .wrap inside the page's .wrap: its auto margins would shrink it to its content, so every step had its own width */
 h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .brand b{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:0}
 .door{background:var(--night)}
@@ -89,25 +90,36 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 :root[data-theme="dark"] .chip input:checked+span{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 
 /* Swipe cards */
-.sw{display:grid;gap:12px}
+/* Places nearby: one big card at a time, the next ones behind it; dragged with a finger, or the buttons, or the arrow keys */
+.sw{display:grid;gap:14px}
 .sw-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .sw-tabs::-webkit-scrollbar{display:none}
 .sw-tabs button{flex:none;border:1.5px solid var(--line);background:var(--sunk);border-radius:999px;padding:8px 14px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;color:var(--ink)}
 .sw-tabs button[aria-selected="true"]{background:var(--night);border-color:var(--night);color:#fff}
-.sw-count{margin:0;font-size:13px;color:var(--muted)}
-.sw-card{background:var(--surface);border-radius:22px;box-shadow:0 12px 32px rgba(20,35,58,.14);overflow:hidden;display:grid;max-width:440px;transition:transform .22s ease,opacity .22s ease}
-.sw-card.go-yes{transform:translateX(40%) rotate(6deg);opacity:0}
-.sw-card.go-no{transform:translateX(-40%) rotate(-6deg);opacity:0}
-.sw-ph{height:220px;background:var(--sunk) center/cover no-repeat;display:grid;place-items:center;font:400 64px var(--display);color:var(--faint)}
-.sw-tx{padding:14px 16px 4px;display:grid;gap:4px}
-.sw-tx small{font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-.sw-tx h3{font-size:26px}
-.sw-tx p{margin:0;font-size:14.5px;color:var(--muted)}
-.sw-meta b{color:var(--ink)}
-.sw-tx a{font-size:14px;color:var(--sea);font-weight:600}
-.sw-btns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;padding:14px 16px 16px}
-.sw-btns button{min-height:50px;border-radius:999px;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
-.sw-no{border:1.5px solid var(--line);background:var(--surface);color:var(--muted)}
+.sw-count{margin:0;font-size:13.5px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:26px}
+.nb-card{padding-top:16px}
+.sw-undo{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 12px;font:inherit;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer}
+.sw-deck{position:relative;width:100%;max-width:420px;margin:12px auto 0}
+.sw-back{position:absolute;left:14px;right:14px;top:-8px;bottom:8px;border-radius:22px;background:var(--surface);box-shadow:0 4px 14px rgba(20,35,58,.12)}
+.sw-back.b2{left:28px;right:28px;top:-16px;bottom:16px;opacity:.6}
+.sw-card{position:relative;background:var(--surface);border-radius:22px;box-shadow:0 12px 32px rgba(20,35,58,.16);overflow:hidden;display:block;transition:transform .24s ease,opacity .24s ease;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+.sw-card:active{cursor:grabbing}
+.sw-card:focus-visible{outline:3px solid var(--focus,var(--sea));outline-offset:3px}
+.sw-ph{position:relative;height:clamp(180px,28vh,320px);background:var(--sunk) center/cover no-repeat;display:grid;place-items:center;font:400 64px var(--display);color:var(--faint)}
+.sw-ph::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(10,14,20,.66))}
+.sw-on{position:absolute;left:16px;right:16px;bottom:12px;z-index:1;display:grid;gap:2px;color:#fff;font:15px/1.35 var(--body)}
+.sw-on small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.92}
+.sw-on h3{margin:0;font-size:27px;line-height:1.08;color:#fff;overflow-wrap:break-word}
+.sw-on p{margin:0;font-size:14px}
+.sw-on a{color:#fff;font-weight:600}
+.sw-stamp{position:absolute;top:16px;z-index:2;padding:4px 10px;border-radius:10px;border:3px solid currentColor;background:rgba(255,255,255,.9);font:800 17px/1.2 var(--body);text-transform:uppercase;letter-spacing:.04em}
+.sw-stamp.yes{left:14px;color:var(--ok);opacity:var(--yes,0);transform:rotate(-8deg)}
+.sw-stamp.no{right:14px;color:var(--danger,#B3261E);opacity:var(--no,0);transform:rotate(8deg)}
+.sw-tx{padding:11px 16px 12px}
+.sw-tx p{margin:0;font-size:14.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sw-btns{display:grid;grid-template-columns:1fr 1.3fr;gap:10px;width:100%;max-width:420px;margin:0 auto}
+.sw-btns button{min-height:52px;border-radius:999px;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.sw-no{border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
 .sw-yes{border:0;background:var(--clay);color:#fff}
 .sw-empty{padding:22px;border-radius:18px;background:var(--sunk);color:var(--muted);font-size:15px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .sw-picks{display:grid;gap:8px;max-width:520px}
@@ -117,6 +129,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .sw-pick small{font-weight:500;color:var(--muted)}
 .sw-pick input{grid-column:1/-1;grid-row:2;font-size:14px!important;padding:8px 10px!important}
 .sw-pick .x{grid-column:2;grid-row:1;border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){.sw-card{transition:none}}
 
 @media (max-width:620px){.mhead::before{width:52px!important;height:84px!important;right:14px!important}.mhead p,.mhead h1{padding-right:58px}.mhead .row1{padding-right:58px}}   /* text stops 10 px before the shape */
 @media (min-width:621px){.mhead .row1{padding-right:104px}}   /* the badge too: the shape is 90 px wide, 24 px in */
@@ -147,14 +160,15 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
   .side-phone .phone{width:280px}
   .side-phone p{margin:0;font-size:13px;color:var(--muted);text-align:center}
 }
-/* The look on one screen (start.js lookHTML): every choice is a row of small pictures or buttons. From 1240 px the phone
-   sits beside them (in the column's own grid, so it stays in view); below, it is pinned above them, its top half showing. */
+/* One-screen steps (start.js slimStep): The look and Places nearby. From 1240 px the phone sits beside the step (in the
+   column's own grid, so it stays in view). The look: every choice is a row of small pictures or buttons, and below 1240 px
+   the phone is pinned above them, its top half showing. */
 .mhead.slim{padding:16px 20px;gap:6px}
 .mhead.slim .row1{gap:12px}
 .mhead.slim h1{font-size:clamp(28px,5vw,34px);padding-right:0}
 .mhead.slim::before{height:96px}
 @media (min-width:621px){.mhead.slim p{max-width:none;padding-right:104px}}
-@media (max-width:620px){.mhead.slim::before{height:64px!important}}
+@media (max-width:620px){.mhead.slim::before{height:64px!important}.mhead.slim .pill{display:none}}   /* on a phone the step count says it */
 .lk-card{display:flex;flex-direction:column;gap:14px;padding-block:22px}
 .lk-row{display:flex;flex-direction:column;gap:8px;min-width:0}
 .lk-hd{display:flex;align-items:center;gap:10px;min-height:32px}
@@ -189,11 +203,11 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .lk-logo small{color:var(--muted);font-size:13.5px;flex:1 1 180px}
 @media (min-width:621px){.lk-in{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;column-gap:12px}.lk-in .lk-hd{min-height:0}}   /* Colours and Logo: one line each */
 @media (min-width:1240px){
-  .split.has-phone.look-page{grid-template-columns:240px minmax(0,1fr)}
+  .split.has-phone.slim-step{grid-template-columns:240px minmax(0,1fr)}
   /* the header, the choices and the note box in the first column; the phone beside all three, its extra height in a last row */
-  .look-page .col{display:grid;grid-template-columns:minmax(0,1fr) 290px;grid-template-rows:auto auto auto 1fr;column-gap:22px;row-gap:18px;align-items:start}
-  .look-page .col > *{grid-column:1}
-  .look-page .col > .side-phone{grid-column:2;grid-row:1 / span 4}
+  .slim-step .col{display:grid;grid-template-columns:minmax(0,1fr) 290px;grid-template-rows:auto auto auto 1fr;column-gap:22px;row-gap:18px;align-items:start}
+  .slim-step .col > *{grid-column:1}
+  .slim-step .col > .side-phone{grid-column:2;grid-row:1 / span 4}
 }
 @media (max-width:1239px){
   .look-page .side-phone{display:flex;justify-content:center;position:sticky;top:0;z-index:6;margin:-6px -16px 0;padding:6px 16px 0;background:var(--paper)}

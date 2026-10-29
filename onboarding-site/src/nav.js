@@ -51,7 +51,8 @@ function openSteps(){
   const c = o.querySelector('[aria-current]'); if (c) c.scrollIntoView({ block: 'center' });
 }
 function moduleHTML(m){
-  if (m.id === 'look') return lookHTML(m);   // one screen of its own (start.js)
+  if (m.id === 'look') return lookHTML(m);   // one screen of their own (start.js)
+  if (m.id === 'nearby') return nearbyHTML(m);
   const s = statusOf(m), miss = missingOf(m);
   return `<div class="split has-phone">${railHTML(m.id)}<div class="col">
     <section class="mhead" style="${tileVars(m)}">

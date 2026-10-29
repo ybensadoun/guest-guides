@@ -8,15 +8,17 @@ const filled = k => { if (k === 'source') return hasSource(); if (k === 'slug') 
 const missingOf = m => m.need.filter(k => !filled(k));
 const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k] || {}).label;
 // Two kinds of step (docs/plan-fast-builder.md). FLOW: what only the host can tell us, in the order they meet it, from the
-// listing to Send; Next and the count follow it. Every other step is filled in from the listing: ready without pressing
+// listing to Send; Next and the count follow it. Bars and restaurants are on it: they are hand-picked, never searched
+// (Yohann, 29 Oct 2026: too much noise on Google Maps to choose for the host). Every other step is filled in from the listing: ready without pressing
 // anything, there to check if they like.
-const FLOW = ['listing', 'look', 'nearby', 'wifi', 'arrival', 'rubbish', 'contacts'];
+const FLOW = ['listing', 'look', 'nearby', 'favourites', 'wifi', 'arrival', 'rubbish', 'contacts'];
 const needsYou = m => FLOW.includes(m.id);
 const flowMods = () => FLOW.map(id => visible().find(m => m.id === id)).filter(Boolean);
 const readyMods = () => visible().filter(m => !needsYou(m));
 // A step that needs the host counts as done once they answered it (or pressed Done). The look has no answer of its own:
 // its defaults are good, but the host confirms it.
 const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || filled('favDo') || filled('favourites'),
+  favourites: () => placeRows('favEat').length > 0 || filled('localTips'),
   wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('hostPhone') };
 // Something in this step came from the listing (or is there): only then is it "Ready". Sections are always chosen for them.
 const hasContent = m => m.id === 'sections' || preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));

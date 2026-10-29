@@ -180,38 +180,72 @@ function swipeHTML(){
   if (!v('town') && !A.lat) return `<div class="note full"><div>Add your town in <a href="#listing">Your listing</a> first, so we know where to look.</div></div>`;
   return `<div class="full sw" id="swipe">${swipeInner()}</div>`;
 }
+// The deck (docs/plan-fast-builder.md, step 5): one big card at a time, the next ones showing behind it. Drag it right to
+// recommend, left to skip (it follows the finger), or use the buttons or the arrow keys. Each yes lands in the phone.
 function swipeInner(){
-  const list = SW.lists[SW.cat];
-  const S = swipes();
-  const yes = Object.values(S).filter(x => x.d === 'yes').length;
-  const tabs = `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>`;
+  const list = SW.lists[SW.cat], S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
+  const tabs = SW_CATS.length > 1 ? `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>` : '';
   if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<div class="sw-empty">${SW.err ? esc(SW.err) : '<span class="spin dark"></span> Finding the best-rated places near you…'}</div>`; }
-  const left = list.filter(p => !S[p.id]);
-  const p = left[0];
-  const done = list.length - left.length;
-  const card = p ? `<article class="sw-card" data-pid="${esc(p.id)}">
-      <div class="sw-ph" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : ''}">${p.photo ? '' : `<span>${esc((p.type || '').slice(0, 1))}</span>`}</div>
-      <div class="sw-tx"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
-        <p class="sw-meta"><b>★ ${p.rating ? p.rating.toFixed(1) : '?'}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} ${p.price ? '· ' + esc(String(p.price).replace('PRICE_LEVEL_', '').toLowerCase().replace('_', ' ')) : ''}</p>
-        ${p.summary ? `<p>${esc(p.summary)}</p>` : ''}<a href="${esc(p.maps)}" target="_blank" rel="noopener">See on Google Maps</a></div>
-      <div class="sw-btns"><button type="button" class="sw-no" data-sw="no">Not for us</button><button type="button" class="sw-yes" data-sw="yes">${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>
-    </article>` : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> Missing one? Add it below.</div>`;
+  const left = list.filter(p => !S[p.id]), p = left[0], seen = list.length - left.length;
+  const undo = SW.last && S[SW.last] ? ' <button type="button" class="sw-undo" data-swlast="1">Undo</button>' : '';
+  const count = `<p class="sw-count" role="status">${p ? `${seen + 1} of ${list.length}` : `All ${list.length} seen`} · ${yes} recommended${undo}</p>`;
+  const card = p ? `<div class="sw-deck">${left.length > 2 ? '<i class="sw-back b2" aria-hidden="true"></i>' : ''}${left.length > 1 ? '<i class="sw-back" aria-hidden="true"></i>' : ''}
+      <article class="sw-card" data-pid="${esc(p.id)}" tabindex="0" aria-label="${esc(p.name)}: arrow right to recommend, arrow left to skip">
+        <div class="sw-ph" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : ''}">${p.photo ? '' : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
+          <span class="sw-stamp yes" aria-hidden="true">Recommend</span><span class="sw-stamp no" aria-hidden="true">Not for us</span>
+          <div class="sw-on"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
+            <p><b>★ ${p.rating ? p.rating.toFixed(1) : '?'}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · <a href="${esc(p.maps)}" target="_blank" rel="noopener">Google Maps</a></p></div></div>
+        ${p.summary ? `<div class="sw-tx"><p>${esc(p.summary)}</p></div>` : ''}
+      </article></div>
+    <div class="sw-btns"><button type="button" class="sw-no" data-sw="no">${svg('<path d="M6 6l12 12M18 6L6 18"/>').replace('stroke-width="2.2"', 'stroke-width="2.4" width="16" height="16"')}Not for us</button><button type="button" class="sw-yes" data-sw="yes">${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>`
+    : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> Missing one? Add it below.</div>`;
   const picks = Object.values(S).filter(x => x.d === 'yes' && x.cat === SW.cat);
-  return `${tabs}<p class="sw-count">${done} of ${list.length} seen · ${yes} recommended in total</p>${card}
-    ${picks.length ? `<div class="sw-picks"><b>Your picks here</b>${picks.map(x => `<div class="sw-pick"><span>${esc(x.name)} <small>★ ${x.rating ? (+x.rating).toFixed(1) : ''}</small></span>
-      <input type="text" data-swc="${esc(x.id)}" value="${esc(x.c || '')}" placeholder="Why you love it, what to order (optional)" aria-label="Comment on ${esc(x.name)}"><button type="button" class="x" data-swundo="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">×</button></div>`).join('')}</div>` : ''}`;
+  return `${tabs}${count}${card}
+    ${picks.length ? `<div class="sw-picks"><b>Your picks</b>${picks.map(x => `<div class="sw-pick"><span>${esc(x.name)} <small>★ ${x.rating ? (+x.rating).toFixed(1) : ''}</small></span>
+      <input type="text" data-swc="${esc(x.id)}" value="${esc(x.c || '')}" placeholder="Why you love it, when to go (optional)" aria-label="Comment on ${esc(x.name)}"><button type="button" class="x" data-swundo="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">×</button></div>`).join('')}</div>` : ''}`;
 }
 function refreshSwipe(){ const el = document.getElementById('swipe'); if (el) el.innerHTML = swipeInner(); }
+// A decision: the card flies off the way it went, the next one comes up (with the focus, for keyboard users), the phone follows.
+function swDecide(d, c){
+  const id = c && c.dataset.pid, p = id && (SW.lists[SW.cat] || []).find(x => x.id === id); if (!p || c.dataset.gone) return;
+  c.dataset.gone = '1';
+  swipes()[id] = { id, d, cat: SW.cat, name: p.name, rating: p.rating, reviews: p.reviews, type: p.type, maps: p.maps, lat: p.lat, lng: p.lng, km: p.km, photo: p.photo, c: '' };
+  SW.last = id; log('swipe', d); queueSave();
+  const dir = d === 'yes' ? 1 : -1, keys = document.activeElement === c;
+  c.style.transition = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'none' : ''; c.style.setProperty('--' + d, 1);
+  c.style.transform = `translateX(${dir * 130}%) rotate(${dir * 14}deg)`; c.style.opacity = '0';
+  setTimeout(() => { refreshSwipe(); if (keys) { const n = document.querySelector('.sw-card'); if (n) n.focus({ preventScroll: true }); } }, 240);
+  softRefresh(); phoneSoon();
+}
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-swcat]'); if (t) { SW.cat = t.dataset.swcat; refreshSwipe(); loadPlaces(SW.cat); return; }
-  const b = e.target.closest('[data-sw]'); if (b) {
-    const c = b.closest('.sw-card'), id = c.dataset.pid, p = (SW.lists[SW.cat] || []).find(x => x.id === id); if (!p) return;
-    swipes()[id] = { id, d: b.dataset.sw, cat: SW.cat, name: p.name, rating: p.rating, reviews: p.reviews, type: p.type, maps: p.maps, lat: p.lat, lng: p.lng, km: p.km, photo: p.photo, c: '' };
-    log('swipe', b.dataset.sw); queueSave(); c.classList.add(b.dataset.sw === 'yes' ? 'go-yes' : 'go-no'); setTimeout(refreshSwipe, 220); softRefresh(); return;
-  }
-  const u = e.target.closest('[data-swundo]'); if (u) { const s = swipes(); delete s[u.dataset.swundo]; queueSave(); refreshSwipe(); }
+  const b = e.target.closest('[data-sw]'); if (b) return swDecide(b.dataset.sw, document.querySelector('.sw-card'));
+  if (e.target.closest('[data-swlast]')) { delete swipes()[SW.last]; SW.last = null; queueSave(); refreshSwipe(); softRefresh(); phoneSoon(); return; }
+  const u = e.target.closest('[data-swundo]'); if (u) { const s = swipes(); delete s[u.dataset.swundo]; queueSave(); refreshSwipe(); softRefresh(); phoneSoon(); }
 });
-document.addEventListener('input', e => { const id = e.target.dataset && e.target.dataset.swc; if (id && swipes()[id]) { swipes()[id].c = e.target.value; queueSave(); } });
+document.addEventListener('keydown', e => {
+  const c = e.target.closest && e.target.closest('.sw-card'); if (!c || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return;
+  e.preventDefault(); swDecide(e.key === 'ArrowRight' ? 'yes' : 'no', c);
+});
+// The drag: the card follows the finger and tilts; past 90 px it goes, short of that it comes back. Vertical moves still
+// scroll the page (touch-action: pan-y), and the browser then cancels the drag.
+document.addEventListener('pointerdown', e => {
+  const c = e.target.closest && e.target.closest('.sw-card'); if (!c || e.button > 0 || e.target.closest('a') || c.dataset.gone) return;
+  const x0 = e.clientX; let dx = 0, moved = false;
+  const move = ev => {
+    dx = ev.clientX - x0; if (!moved && Math.abs(dx) < 6) return;
+    if (!moved) { moved = true; try { c.setPointerCapture(e.pointerId); } catch (er) { /* the pointer is gone */ } }
+    c.style.transition = 'none'; c.style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`;
+    c.style.setProperty('--yes', Math.max(0, Math.min(1, dx / 90))); c.style.setProperty('--no', Math.max(0, Math.min(1, -dx / 90)));
+  };
+  const up = () => {
+    c.removeEventListener('pointermove', move); c.removeEventListener('pointerup', up); c.removeEventListener('pointercancel', up);
+    if (moved && Math.abs(dx) > 90) return swDecide(dx > 0 ? 'yes' : 'no', c);
+    c.style.transition = ''; c.style.transform = ''; c.style.setProperty('--yes', 0); c.style.setProperty('--no', 0);
+  };
+  c.addEventListener('pointermove', move); c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
+});
+document.addEventListener('input', e => { const id = e.target.dataset && e.target.dataset.swc; if (id && swipes()[id]) { swipes()[id].c = e.target.value; queueSave(); phoneSoon(); } });
 
 
 /* ---------- Host lists: places (name or link + comment) and the rubbish plan ---------- */
@@ -361,6 +395,20 @@ async function resetAll(){
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
 fetch('/api/places?probe=1').then(r => r.json()).then(d => { if (!d.ok) { window.__placesOff = true; render(); } }).catch(() => {});
 
+/* ---------- One-screen steps (The look, Places nearby): a slim header, the step's own card, the note box, and the phone,
+   beside them from 1240 px (in the column's own grid, so it stays in view). Only The look keeps the phone on smaller
+   screens, pinned above its choices. ---------- */
+function slimStep(m, lead, card, cls){
+  const s = statusOf(m);
+  return `<div class="split has-phone slim-step ${cls}">${railHTML(m.id)}<div class="col">
+    <section class="mhead slim" style="${tileVars(m)}"><div class="row1"><h1>${esc(m.title)}</h1><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
+      <p>${esc(lead)}</p></section>
+    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside>
+    ${card}
+    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
+}
+const nearbyHTML = m => slimStep(m, 'Swipe right on the ones you would send a friend to.', `<section class="card nb-card"><div class="grid">${m.fields.map(field).join('')}</div></section>`, 'nearby-page');
+
 /* ---------- The look on one screen (docs/plan-fast-builder.md, step 4) ----------
    The cover, the layout, the colours and the logo, each already chosen for the host: one tap changes one, and the phone
    shows it at once. On wide screens the phone sits next to the choices; on smaller ones it stays pinned above them.
@@ -370,14 +418,8 @@ fetch('/api/places?probe=1').then(r => r.json()).then(d => { if (!d.ok) { window
 const obOwnCover = () => uploads.find(u => u.kind === 'cover');
 const obSized = u => u + (u.includes('?') ? '' : '?im_w=480');
 function lookHTML(m){
-  const s = statusOf(m);
   setTimeout(() => { lookPaint(); const x = document.querySelector('.lk-strip [aria-pressed="true"]'); if (x) { const st = x.parentElement, r = x.getBoundingClientRect(), q = st.getBoundingClientRect(); if (r.right > q.right) st.scrollLeft += r.left - q.left - 8; } });   // the drawn cover's colours, once the phone knows them; the cover chosen in view
-  return `<div class="split has-phone look-page">${railHTML(m.id)}<div class="col">
-    <section class="mhead slim" style="${tileVars(m)}"><div class="row1"><h1>${esc(m.title)}</h1><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
-      <p>Already chosen for you. Tap anything to change it.</p></section>
-    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside>
-    <section class="card lk-card" id="lookCard">${lookCardHTML()}</section>
-    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
+  return slimStep(m, 'Already chosen for you. Tap anything to change it.', `<section class="card lk-card" id="lookCard">${lookCardHTML()}</section>`, 'look-page');
 }
 const lookCardHTML = () => lookCoverHTML() + lookLayoutHTML() + lookColoursHTML() + lookLogoHTML()
   + ((A._done || {}).look ? '<div class="row"><button class="btn small" type="button" data-undone="look">Mark as not done</button></div>' : '');

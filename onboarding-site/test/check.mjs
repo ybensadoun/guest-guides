@@ -252,6 +252,37 @@ try {
     await everyPage(p, 'builder');
     ok('builder: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // ---- Places nearby: one card at a time, dragged with a finger or the arrow keys; each yes lands in the phone ----
+  { const places = ['Cala Test', 'Castell Test', 'Camí Test', 'Jardins Test'].map((name, i) => ({ id: 'tp' + i, name, rating: 4.5, reviews: 200, type: 'Beach', maps: 'https://maps.google.com/?q=' + i, summary: 'A test place.', lat: A0.lat, lng: A0.lng, km: 2 + i, photo: photos[i] || null }));
+    const deck = async (w, h) => { const o = await open(browser, B, w, h);
+      await o.ctx.route('**/api/places**', r => json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places }));
+      await o.p.goto('http://editor.test/'); await ready(o.p); await go(o.p, '#nearby'); await o.p.waitForSelector('.sw-card', { timeout: 5000 }).catch(() => {}); return o; };
+    const { ctx, p, errors } = await deck(1280, 860);
+    const top = () => p.$eval('.sw-card h3', e => e.textContent).catch(() => null);
+    const drag = async dx => { const [x, y] = await p.$eval('.sw-card', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + 80]; });
+      await p.mouse.move(x, y); await p.mouse.down(); for (let i = 1; i <= 8; i++) { await p.mouse.move(x + dx * i / 8, y); await p.waitForTimeout(16); } await p.mouse.up(); await p.waitForTimeout(450); };
+    await drag(40);
+    ok('Places nearby: a short drag puts the card back', (await top()) === 'Cala Test' && (await p.$eval('.sw-card', e => e.style.transform)) === '' && /0 recommended/.test(await p.textContent('.sw-count')));
+    await drag(160);
+    ok('Places nearby: dragging right recommends it, the next card comes up', (await top()) === 'Castell Test' && /1 recommended/.test(await p.textContent('.sw-count')), (await p.textContent('.sw-count')).trim());
+    await drag(-160);
+    ok('Places nearby: dragging left skips it', (await top()) === 'Camí Test' && /1 recommended/.test(await p.textContent('.sw-count')));
+    await p.focus('.sw-card'); await p.keyboard.press('ArrowRight'); await p.waitForTimeout(450);
+    ok('Places nearby: the arrow keys work, and the next card keeps the focus', (await top()) === 'Jardins Test' && await p.evaluate(() => document.activeElement.classList.contains('sw-card')));
+    await p.click('[data-swlast]'); await p.waitForTimeout(300);
+    ok('Places nearby: Undo brings the last card back', (await top()) === 'Camí Test' && /1 recommended/.test(await p.textContent('.sw-count')));
+    await p.waitForTimeout(600);
+    const inGuide = await inPhone(p, d => d.body.textContent);
+    ok('Places nearby: a recommended place is in the phone, as the host\'s pick', /Cala Test/.test(inGuide || '') && !/Castell Test/.test(inGuide || ''));
+    ok('Places nearby, desktop: the card and its buttons above the bottom bar', await p.evaluate(() => document.querySelector('.sw-btns').getBoundingClientRect().bottom <= document.getElementById('navbar').getBoundingClientRect().top));
+    const path = await p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent));
+    ok('builder: Bars and restaurants are on the path, right after Places nearby (hand-picked, never searched)', path.indexOf('Bars and restaurants') === path.indexOf('Places nearby') + 1 && path.indexOf('Bars and restaurants') < path.indexOf('Wi-Fi'), path.slice(0, 5).join(' > '));
+    ok('Places nearby: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+    const m = await deck(360, 780);
+    ok('Places nearby, 360 px: the whole card and its buttons on screen, above the bottom bar, no sideways scroll', await m.p.evaluate(() => document.querySelector('.sw-btns').getBoundingClientRect().bottom <= document.getElementById('navbar').getBoundingClientRect().top && document.documentElement.scrollWidth <= innerWidth));
+    await m.p.screenshot({ path: join(SHOTS, 'nearby-360.png') });
+    await m.ctx.close(); }
   // ---- The wow: a new host pastes their link ----
   { const { ctx, p, errors } = await open(browser, N, 360, 780, {}, listing);
     await p.goto('http://editor.test/'); await p.waitForSelector('#st_url', { timeout: 15000 });

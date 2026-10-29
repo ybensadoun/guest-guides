@@ -301,6 +301,7 @@ body{background:var(--paper);font-family:var(--body)}
 :root{--noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;background-image:var(--noise)}
 .wrap{position:relative;z-index:1}
+#main.wrap{width:100%}   /* a .wrap inside the page's .wrap: its auto margins would shrink it to its content, so every step had its own width */
 h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .brand b{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:0}
 .door{background:var(--night)}
@@ -377,25 +378,36 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 :root[data-theme="dark"] .chip input:checked+span{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 
 /* Swipe cards */
-.sw{display:grid;gap:12px}
+/* Places nearby: one big card at a time, the next ones behind it; dragged with a finger, or the buttons, or the arrow keys */
+.sw{display:grid;gap:14px}
 .sw-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .sw-tabs::-webkit-scrollbar{display:none}
 .sw-tabs button{flex:none;border:1.5px solid var(--line);background:var(--sunk);border-radius:999px;padding:8px 14px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;color:var(--ink)}
 .sw-tabs button[aria-selected="true"]{background:var(--night);border-color:var(--night);color:#fff}
-.sw-count{margin:0;font-size:13px;color:var(--muted)}
-.sw-card{background:var(--surface);border-radius:22px;box-shadow:0 12px 32px rgba(20,35,58,.14);overflow:hidden;display:grid;max-width:440px;transition:transform .22s ease,opacity .22s ease}
-.sw-card.go-yes{transform:translateX(40%) rotate(6deg);opacity:0}
-.sw-card.go-no{transform:translateX(-40%) rotate(-6deg);opacity:0}
-.sw-ph{height:220px;background:var(--sunk) center/cover no-repeat;display:grid;place-items:center;font:400 64px var(--display);color:var(--faint)}
-.sw-tx{padding:14px 16px 4px;display:grid;gap:4px}
-.sw-tx small{font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-.sw-tx h3{font-size:26px}
-.sw-tx p{margin:0;font-size:14.5px;color:var(--muted)}
-.sw-meta b{color:var(--ink)}
-.sw-tx a{font-size:14px;color:var(--sea);font-weight:600}
-.sw-btns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;padding:14px 16px 16px}
-.sw-btns button{min-height:50px;border-radius:999px;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
-.sw-no{border:1.5px solid var(--line);background:var(--surface);color:var(--muted)}
+.sw-count{margin:0;font-size:13.5px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:26px}
+.nb-card{padding-top:16px}
+.sw-undo{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 12px;font:inherit;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer}
+.sw-deck{position:relative;width:100%;max-width:420px;margin:12px auto 0}
+.sw-back{position:absolute;left:14px;right:14px;top:-8px;bottom:8px;border-radius:22px;background:var(--surface);box-shadow:0 4px 14px rgba(20,35,58,.12)}
+.sw-back.b2{left:28px;right:28px;top:-16px;bottom:16px;opacity:.6}
+.sw-card{position:relative;background:var(--surface);border-radius:22px;box-shadow:0 12px 32px rgba(20,35,58,.16);overflow:hidden;display:block;transition:transform .24s ease,opacity .24s ease;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+.sw-card:active{cursor:grabbing}
+.sw-card:focus-visible{outline:3px solid var(--focus,var(--sea));outline-offset:3px}
+.sw-ph{position:relative;height:clamp(180px,28vh,320px);background:var(--sunk) center/cover no-repeat;display:grid;place-items:center;font:400 64px var(--display);color:var(--faint)}
+.sw-ph::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(10,14,20,.66))}
+.sw-on{position:absolute;left:16px;right:16px;bottom:12px;z-index:1;display:grid;gap:2px;color:#fff;font:15px/1.35 var(--body)}
+.sw-on small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.92}
+.sw-on h3{margin:0;font-size:27px;line-height:1.08;color:#fff;overflow-wrap:break-word}
+.sw-on p{margin:0;font-size:14px}
+.sw-on a{color:#fff;font-weight:600}
+.sw-stamp{position:absolute;top:16px;z-index:2;padding:4px 10px;border-radius:10px;border:3px solid currentColor;background:rgba(255,255,255,.9);font:800 17px/1.2 var(--body);text-transform:uppercase;letter-spacing:.04em}
+.sw-stamp.yes{left:14px;color:var(--ok);opacity:var(--yes,0);transform:rotate(-8deg)}
+.sw-stamp.no{right:14px;color:var(--danger,#B3261E);opacity:var(--no,0);transform:rotate(8deg)}
+.sw-tx{padding:11px 16px 12px}
+.sw-tx p{margin:0;font-size:14.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sw-btns{display:grid;grid-template-columns:1fr 1.3fr;gap:10px;width:100%;max-width:420px;margin:0 auto}
+.sw-btns button{min-height:52px;border-radius:999px;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.sw-no{border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
 .sw-yes{border:0;background:var(--clay);color:#fff}
 .sw-empty{padding:22px;border-radius:18px;background:var(--sunk);color:var(--muted);font-size:15px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .sw-picks{display:grid;gap:8px;max-width:520px}
@@ -405,6 +417,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .sw-pick small{font-weight:500;color:var(--muted)}
 .sw-pick input{grid-column:1/-1;grid-row:2;font-size:14px!important;padding:8px 10px!important}
 .sw-pick .x{grid-column:2;grid-row:1;border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){.sw-card{transition:none}}
 
 @media (max-width:620px){.mhead::before{width:52px!important;height:84px!important;right:14px!important}.mhead p,.mhead h1{padding-right:58px}.mhead .row1{padding-right:58px}}   /* text stops 10 px before the shape */
 @media (min-width:621px){.mhead .row1{padding-right:104px}}   /* the badge too: the shape is 90 px wide, 24 px in */
@@ -435,14 +448,15 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
   .side-phone .phone{width:280px}
   .side-phone p{margin:0;font-size:13px;color:var(--muted);text-align:center}
 }
-/* The look on one screen (start.js lookHTML): every choice is a row of small pictures or buttons. From 1240 px the phone
-   sits beside them (in the column's own grid, so it stays in view); below, it is pinned above them, its top half showing. */
+/* One-screen steps (start.js slimStep): The look and Places nearby. From 1240 px the phone sits beside the step (in the
+   column's own grid, so it stays in view). The look: every choice is a row of small pictures or buttons, and below 1240 px
+   the phone is pinned above them, its top half showing. */
 .mhead.slim{padding:16px 20px;gap:6px}
 .mhead.slim .row1{gap:12px}
 .mhead.slim h1{font-size:clamp(28px,5vw,34px);padding-right:0}
 .mhead.slim::before{height:96px}
 @media (min-width:621px){.mhead.slim p{max-width:none;padding-right:104px}}
-@media (max-width:620px){.mhead.slim::before{height:64px!important}}
+@media (max-width:620px){.mhead.slim::before{height:64px!important}.mhead.slim .pill{display:none}}   /* on a phone the step count says it */
 .lk-card{display:flex;flex-direction:column;gap:14px;padding-block:22px}
 .lk-row{display:flex;flex-direction:column;gap:8px;min-width:0}
 .lk-hd{display:flex;align-items:center;gap:10px;min-height:32px}
@@ -477,11 +491,11 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .lk-logo small{color:var(--muted);font-size:13.5px;flex:1 1 180px}
 @media (min-width:621px){.lk-in{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;column-gap:12px}.lk-in .lk-hd{min-height:0}}   /* Colours and Logo: one line each */
 @media (min-width:1240px){
-  .split.has-phone.look-page{grid-template-columns:240px minmax(0,1fr)}
+  .split.has-phone.slim-step{grid-template-columns:240px minmax(0,1fr)}
   /* the header, the choices and the note box in the first column; the phone beside all three, its extra height in a last row */
-  .look-page .col{display:grid;grid-template-columns:minmax(0,1fr) 290px;grid-template-rows:auto auto auto 1fr;column-gap:22px;row-gap:18px;align-items:start}
-  .look-page .col > *{grid-column:1}
-  .look-page .col > .side-phone{grid-column:2;grid-row:1 / span 4}
+  .slim-step .col{display:grid;grid-template-columns:minmax(0,1fr) 290px;grid-template-rows:auto auto auto 1fr;column-gap:22px;row-gap:18px;align-items:start}
+  .slim-step .col > *{grid-column:1}
+  .slim-step .col > .side-phone{grid-column:2;grid-row:1 / span 4}
 }
 @media (max-width:1239px){
   .look-page .side-phone{display:flex;justify-content:center;position:sticky;top:0;z-index:6;margin:-6px -16px 0;padding:6px 16px 0;background:var(--paper)}
@@ -619,7 +633,7 @@ const MODULES = [
   {id:'taste',group:'area',title:'Your style',sub:'Outings and tone',icon:'heart',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
    lead:'All optional. It tells us which things to do to look for and how to write to your guests.',need:[],fields:['doStyle','avoidTypes','tone','voiceNotes']},
   {id:'favourites',group:'area',title:'Bars and restaurants',sub:'Where you eat and drink',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',
-   lead:'Where you eat and drink is your call, so we add nothing of our own here. Add the bars and restaurants you send friends to, with a few words from you.',need:[],fields:['favEat','localTips','avoidPlaces']},
+   lead:'The ones you send friends to, with a few words from you. We add none of our own.',need:[],fields:['favEat','localTips','avoidPlaces']},
   {id:'area',group:'area',title:'Your area',sub:'Interests and distance',icon:'link',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'circle',
    lead:'We research markets, things to do and events within the distance you pick.',need:[],fields:['interests','radius']},
 ];
@@ -822,7 +836,8 @@ function openSteps(){
   const c = o.querySelector('[aria-current]'); if (c) c.scrollIntoView({ block: 'center' });
 }
 function moduleHTML(m){
-  if (m.id === 'look') return lookHTML(m);   // one screen of its own (start.js)
+  if (m.id === 'look') return lookHTML(m);   // one screen of their own (start.js)
+  if (m.id === 'nearby') return nearbyHTML(m);
   const s = statusOf(m), miss = missingOf(m);
   return `<div class="split has-phone">${railHTML(m.id)}<div class="col">
     <section class="mhead" style="${tileVars(m)}">
@@ -1461,38 +1476,72 @@ function swipeHTML(){
   if (!v('town') && !A.lat) return `<div class="note full"><div>Add your town in <a href="#listing">Your listing</a> first, so we know where to look.</div></div>`;
   return `<div class="full sw" id="swipe">${swipeInner()}</div>`;
 }
+// The deck (docs/plan-fast-builder.md, step 5): one big card at a time, the next ones showing behind it. Drag it right to
+// recommend, left to skip (it follows the finger), or use the buttons or the arrow keys. Each yes lands in the phone.
 function swipeInner(){
-  const list = SW.lists[SW.cat];
-  const S = swipes();
-  const yes = Object.values(S).filter(x => x.d === 'yes').length;
-  const tabs = `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>`;
+  const list = SW.lists[SW.cat], S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
+  const tabs = SW_CATS.length > 1 ? `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>` : '';
   if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<div class="sw-empty">${SW.err ? esc(SW.err) : '<span class="spin dark"></span> Finding the best-rated places near you…'}</div>`; }
-  const left = list.filter(p => !S[p.id]);
-  const p = left[0];
-  const done = list.length - left.length;
-  const card = p ? `<article class="sw-card" data-pid="${esc(p.id)}">
-      <div class="sw-ph" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : ''}">${p.photo ? '' : `<span>${esc((p.type || '').slice(0, 1))}</span>`}</div>
-      <div class="sw-tx"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
-        <p class="sw-meta"><b>★ ${p.rating ? p.rating.toFixed(1) : '?'}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} ${p.price ? '· ' + esc(String(p.price).replace('PRICE_LEVEL_', '').toLowerCase().replace('_', ' ')) : ''}</p>
-        ${p.summary ? `<p>${esc(p.summary)}</p>` : ''}<a href="${esc(p.maps)}" target="_blank" rel="noopener">See on Google Maps</a></div>
-      <div class="sw-btns"><button type="button" class="sw-no" data-sw="no">Not for us</button><button type="button" class="sw-yes" data-sw="yes">${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>
-    </article>` : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> Missing one? Add it below.</div>`;
+  const left = list.filter(p => !S[p.id]), p = left[0], seen = list.length - left.length;
+  const undo = SW.last && S[SW.last] ? ' <button type="button" class="sw-undo" data-swlast="1">Undo</button>' : '';
+  const count = `<p class="sw-count" role="status">${p ? `${seen + 1} of ${list.length}` : `All ${list.length} seen`} · ${yes} recommended${undo}</p>`;
+  const card = p ? `<div class="sw-deck">${left.length > 2 ? '<i class="sw-back b2" aria-hidden="true"></i>' : ''}${left.length > 1 ? '<i class="sw-back" aria-hidden="true"></i>' : ''}
+      <article class="sw-card" data-pid="${esc(p.id)}" tabindex="0" aria-label="${esc(p.name)}: arrow right to recommend, arrow left to skip">
+        <div class="sw-ph" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : ''}">${p.photo ? '' : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
+          <span class="sw-stamp yes" aria-hidden="true">Recommend</span><span class="sw-stamp no" aria-hidden="true">Not for us</span>
+          <div class="sw-on"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
+            <p><b>★ ${p.rating ? p.rating.toFixed(1) : '?'}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · <a href="${esc(p.maps)}" target="_blank" rel="noopener">Google Maps</a></p></div></div>
+        ${p.summary ? `<div class="sw-tx"><p>${esc(p.summary)}</p></div>` : ''}
+      </article></div>
+    <div class="sw-btns"><button type="button" class="sw-no" data-sw="no">${svg('<path d="M6 6l12 12M18 6L6 18"/>').replace('stroke-width="2.2"', 'stroke-width="2.4" width="16" height="16"')}Not for us</button><button type="button" class="sw-yes" data-sw="yes">${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>`
+    : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> Missing one? Add it below.</div>`;
   const picks = Object.values(S).filter(x => x.d === 'yes' && x.cat === SW.cat);
-  return `${tabs}<p class="sw-count">${done} of ${list.length} seen · ${yes} recommended in total</p>${card}
-    ${picks.length ? `<div class="sw-picks"><b>Your picks here</b>${picks.map(x => `<div class="sw-pick"><span>${esc(x.name)} <small>★ ${x.rating ? (+x.rating).toFixed(1) : ''}</small></span>
-      <input type="text" data-swc="${esc(x.id)}" value="${esc(x.c || '')}" placeholder="Why you love it, what to order (optional)" aria-label="Comment on ${esc(x.name)}"><button type="button" class="x" data-swundo="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">×</button></div>`).join('')}</div>` : ''}`;
+  return `${tabs}${count}${card}
+    ${picks.length ? `<div class="sw-picks"><b>Your picks</b>${picks.map(x => `<div class="sw-pick"><span>${esc(x.name)} <small>★ ${x.rating ? (+x.rating).toFixed(1) : ''}</small></span>
+      <input type="text" data-swc="${esc(x.id)}" value="${esc(x.c || '')}" placeholder="Why you love it, when to go (optional)" aria-label="Comment on ${esc(x.name)}"><button type="button" class="x" data-swundo="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">×</button></div>`).join('')}</div>` : ''}`;
 }
 function refreshSwipe(){ const el = document.getElementById('swipe'); if (el) el.innerHTML = swipeInner(); }
+// A decision: the card flies off the way it went, the next one comes up (with the focus, for keyboard users), the phone follows.
+function swDecide(d, c){
+  const id = c && c.dataset.pid, p = id && (SW.lists[SW.cat] || []).find(x => x.id === id); if (!p || c.dataset.gone) return;
+  c.dataset.gone = '1';
+  swipes()[id] = { id, d, cat: SW.cat, name: p.name, rating: p.rating, reviews: p.reviews, type: p.type, maps: p.maps, lat: p.lat, lng: p.lng, km: p.km, photo: p.photo, c: '' };
+  SW.last = id; log('swipe', d); queueSave();
+  const dir = d === 'yes' ? 1 : -1, keys = document.activeElement === c;
+  c.style.transition = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'none' : ''; c.style.setProperty('--' + d, 1);
+  c.style.transform = `translateX(${dir * 130}%) rotate(${dir * 14}deg)`; c.style.opacity = '0';
+  setTimeout(() => { refreshSwipe(); if (keys) { const n = document.querySelector('.sw-card'); if (n) n.focus({ preventScroll: true }); } }, 240);
+  softRefresh(); phoneSoon();
+}
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-swcat]'); if (t) { SW.cat = t.dataset.swcat; refreshSwipe(); loadPlaces(SW.cat); return; }
-  const b = e.target.closest('[data-sw]'); if (b) {
-    const c = b.closest('.sw-card'), id = c.dataset.pid, p = (SW.lists[SW.cat] || []).find(x => x.id === id); if (!p) return;
-    swipes()[id] = { id, d: b.dataset.sw, cat: SW.cat, name: p.name, rating: p.rating, reviews: p.reviews, type: p.type, maps: p.maps, lat: p.lat, lng: p.lng, km: p.km, photo: p.photo, c: '' };
-    log('swipe', b.dataset.sw); queueSave(); c.classList.add(b.dataset.sw === 'yes' ? 'go-yes' : 'go-no'); setTimeout(refreshSwipe, 220); softRefresh(); return;
-  }
-  const u = e.target.closest('[data-swundo]'); if (u) { const s = swipes(); delete s[u.dataset.swundo]; queueSave(); refreshSwipe(); }
+  const b = e.target.closest('[data-sw]'); if (b) return swDecide(b.dataset.sw, document.querySelector('.sw-card'));
+  if (e.target.closest('[data-swlast]')) { delete swipes()[SW.last]; SW.last = null; queueSave(); refreshSwipe(); softRefresh(); phoneSoon(); return; }
+  const u = e.target.closest('[data-swundo]'); if (u) { const s = swipes(); delete s[u.dataset.swundo]; queueSave(); refreshSwipe(); softRefresh(); phoneSoon(); }
 });
-document.addEventListener('input', e => { const id = e.target.dataset && e.target.dataset.swc; if (id && swipes()[id]) { swipes()[id].c = e.target.value; queueSave(); } });
+document.addEventListener('keydown', e => {
+  const c = e.target.closest && e.target.closest('.sw-card'); if (!c || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return;
+  e.preventDefault(); swDecide(e.key === 'ArrowRight' ? 'yes' : 'no', c);
+});
+// The drag: the card follows the finger and tilts; past 90 px it goes, short of that it comes back. Vertical moves still
+// scroll the page (touch-action: pan-y), and the browser then cancels the drag.
+document.addEventListener('pointerdown', e => {
+  const c = e.target.closest && e.target.closest('.sw-card'); if (!c || e.button > 0 || e.target.closest('a') || c.dataset.gone) return;
+  const x0 = e.clientX; let dx = 0, moved = false;
+  const move = ev => {
+    dx = ev.clientX - x0; if (!moved && Math.abs(dx) < 6) return;
+    if (!moved) { moved = true; try { c.setPointerCapture(e.pointerId); } catch (er) { /* the pointer is gone */ } }
+    c.style.transition = 'none'; c.style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`;
+    c.style.setProperty('--yes', Math.max(0, Math.min(1, dx / 90))); c.style.setProperty('--no', Math.max(0, Math.min(1, -dx / 90)));
+  };
+  const up = () => {
+    c.removeEventListener('pointermove', move); c.removeEventListener('pointerup', up); c.removeEventListener('pointercancel', up);
+    if (moved && Math.abs(dx) > 90) return swDecide(dx > 0 ? 'yes' : 'no', c);
+    c.style.transition = ''; c.style.transform = ''; c.style.setProperty('--yes', 0); c.style.setProperty('--no', 0);
+  };
+  c.addEventListener('pointermove', move); c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
+});
+document.addEventListener('input', e => { const id = e.target.dataset && e.target.dataset.swc; if (id && swipes()[id]) { swipes()[id].c = e.target.value; queueSave(); phoneSoon(); } });
 
 
 /* ---------- Host lists: places (name or link + comment) and the rubbish plan ---------- */
@@ -1636,11 +1685,25 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 08:50 (Madrid time, after commit 8f38503)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 09:04 (Madrid time, after commit 57ebff5)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
 fetch('/api/places?probe=1').then(r => r.json()).then(d => { if (!d.ok) { window.__placesOff = true; render(); } }).catch(() => {});
+
+/* ---------- One-screen steps (The look, Places nearby): a slim header, the step's own card, the note box, and the phone,
+   beside them from 1240 px (in the column's own grid, so it stays in view). Only The look keeps the phone on smaller
+   screens, pinned above its choices. ---------- */
+function slimStep(m, lead, card, cls){
+  const s = statusOf(m);
+  return `<div class="split has-phone slim-step ${cls}">${railHTML(m.id)}<div class="col">
+    <section class="mhead slim" style="${tileVars(m)}"><div class="row1"><h1>${esc(m.title)}</h1><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
+      <p>${esc(lead)}</p></section>
+    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside>
+    ${card}
+    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
+}
+const nearbyHTML = m => slimStep(m, 'Swipe right on the ones you would send a friend to.', `<section class="card nb-card"><div class="grid">${m.fields.map(field).join('')}</div></section>`, 'nearby-page');
 
 /* ---------- The look on one screen (docs/plan-fast-builder.md, step 4) ----------
    The cover, the layout, the colours and the logo, each already chosen for the host: one tap changes one, and the phone
@@ -1651,14 +1714,8 @@ fetch('/api/places?probe=1').then(r => r.json()).then(d => { if (!d.ok) { window
 const obOwnCover = () => uploads.find(u => u.kind === 'cover');
 const obSized = u => u + (u.includes('?') ? '' : '?im_w=480');
 function lookHTML(m){
-  const s = statusOf(m);
   setTimeout(() => { lookPaint(); const x = document.querySelector('.lk-strip [aria-pressed="true"]'); if (x) { const st = x.parentElement, r = x.getBoundingClientRect(), q = st.getBoundingClientRect(); if (r.right > q.right) st.scrollLeft += r.left - q.left - 8; } });   // the drawn cover's colours, once the phone knows them; the cover chosen in view
-  return `<div class="split has-phone look-page">${railHTML(m.id)}<div class="col">
-    <section class="mhead slim" style="${tileVars(m)}"><div class="row1"><h1>${esc(m.title)}</h1><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
-      <p>Already chosen for you. Tap anything to change it.</p></section>
-    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside>
-    <section class="card lk-card" id="lookCard">${lookCardHTML()}</section>
-    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
+  return slimStep(m, 'Already chosen for you. Tap anything to change it.', `<section class="card lk-card" id="lookCard">${lookCardHTML()}</section>`, 'look-page');
 }
 const lookCardHTML = () => lookCoverHTML() + lookLayoutHTML() + lookColoursHTML() + lookLogoHTML()
   + ((A._done || {}).look ? '<div class="row"><button class="btn small" type="button" data-undone="look">Mark as not done</button></div>' : '');
@@ -3686,15 +3743,17 @@ const filled = k => { if (k === 'source') return hasSource(); if (k === 'slug') 
 const missingOf = m => m.need.filter(k => !filled(k));
 const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k] || {}).label;
 // Two kinds of step (docs/plan-fast-builder.md). FLOW: what only the host can tell us, in the order they meet it, from the
-// listing to Send; Next and the count follow it. Every other step is filled in from the listing: ready without pressing
+// listing to Send; Next and the count follow it. Bars and restaurants are on it: they are hand-picked, never searched
+// (Yohann, 29 Oct 2026: too much noise on Google Maps to choose for the host). Every other step is filled in from the listing: ready without pressing
 // anything, there to check if they like.
-const FLOW = ['listing', 'look', 'nearby', 'wifi', 'arrival', 'rubbish', 'contacts'];
+const FLOW = ['listing', 'look', 'nearby', 'favourites', 'wifi', 'arrival', 'rubbish', 'contacts'];
 const needsYou = m => FLOW.includes(m.id);
 const flowMods = () => FLOW.map(id => visible().find(m => m.id === id)).filter(Boolean);
 const readyMods = () => visible().filter(m => !needsYou(m));
 // A step that needs the host counts as done once they answered it (or pressed Done). The look has no answer of its own:
 // its defaults are good, but the host confirms it.
 const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || filled('favDo') || filled('favourites'),
+  favourites: () => placeRows('favEat').length > 0 || filled('localTips'),
   wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('hostPhone') };
 // Something in this step came from the listing (or is there): only then is it "Ready". Sections are always chosen for them.
 const hasContent = m => m.id === 'sections' || preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));
