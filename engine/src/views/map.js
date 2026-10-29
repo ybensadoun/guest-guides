@@ -35,10 +35,10 @@ let el = null;
 const countLabel = items => t(items.every(m => m.kind === 'market') ? 'nMarkets' : 'nPlaces', { n: items.length });
 
 // Map filters: one tab per kind of place, every place belongs to exactly one tab (All shows everything).
-// eat: places to eat and the bar next door · markets: every market · todo: What to do · useful: recycling centre and other practical spots.
-export const MAP_TABS = ['all', 'eat', 'markets', 'todo', 'useful'];
-const TAB_LABEL = { all: 'mapAll', eat: 'mapEat', markets: 'mapMarkets', todo: 'mapDo', useful: 'mapUseful' };
-export const tabOf = m => (m.kind === 'market' || CATS.includes(m.cat) ? 'markets' : m.section === 'restaurants' || m.cat === 'restaurants' ? 'eat' : ['todo', 'kids', 'daytrips'].includes(m.section) || m.cat === 'todo' ? 'todo' : 'useful');
+// eat: places to eat and the bar next door · markets: every market · todo: What to do · night: Nightlife · useful: recycling centre and other practical spots.
+export const MAP_TABS = ['all', 'eat', 'markets', 'todo', 'night', 'useful'];   // a tab without places is not shown (Nightlife is optional)
+const TAB_LABEL = { all: 'mapAll', eat: 'mapEat', markets: 'mapMarkets', todo: 'mapDo', night: 'mapNight', useful: 'mapUseful' };
+export const tabOf = m => (m.kind === 'market' || CATS.includes(m.cat) ? 'markets' : m.section === 'restaurants' || m.cat === 'restaurants' ? 'eat' : m.section === 'nightlife' ? 'night' : ['todo', 'kids', 'daytrips'].includes(m.section) || m.cat === 'todo' ? 'todo' : 'useful');
 const tabHasItems = k => k === 'all' || MAP_ITEMS.some(m => tabOf(m) === k);
 
 function visibleItems() {

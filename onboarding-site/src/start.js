@@ -209,7 +209,7 @@ document.addEventListener('input', e => { if (e.target.id === 'st_url') { const 
 /* ---------- Swipe: top-rated places near the house ---------- */
 const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {} };
 // Eating and drinking is the host's own list (see "Your places"): we only suggest things to do.
-const SW_CATS = [['todo', 'Things to do']];
+const SW_CATS = [['todo', 'Attractions']];
 const swipes = () => A.swipes || (A.swipes = {});
 async function loadPlaces(cat){
   if (SW.lists[cat] || SW.loading) return;
@@ -455,7 +455,7 @@ function slimStep(m, lead, card, cls){
     ${card}
     <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
 }
-const nearbyHTML = m => slimStep(m, 'Swipe right on the ones you would send a friend to.', `<section class="card nb-card"><div class="grid">${m.fields.map(field).join('')}</div></section>`, 'nearby-page');
+const nearbyHTML = m => slimStep(m, 'Museums, parks, karting, sights. Swipe right on the ones you recommend.', `<section class="card nb-card"><div class="grid">${m.fields.map(field).join('')}</div></section>`, 'nearby-page');
 
 /* ---------- Only you know (docs/plan-fast-builder.md, step 6): Wi-Fi, arrival, rubbish and contacts on one screen.
    Each part is ticked once answered and can wait; the phone shows the part being filled in. Rubbish opens its details

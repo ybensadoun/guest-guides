@@ -19,7 +19,7 @@ h2.title,.sh,.section-h,.gt-t,.hc-nm b{font-weight:600!important;letter-spacing:
 .gt[data-k="garbage"],.gt[data-k="events"],.gt[data-k="arrival"]{--tc:var(--ru-moss)!important;--ti:#FFFDF8!important;--gofg:var(--ru-bark)!important;--leaf:var(--ru-leaf)}
 .gt[data-k="message"]{--tc:var(--ru-wheat)!important;--ti:var(--ru-bark)!important;--gofg:#FFFDF8!important;--leaf:var(--ru-moss)}
 .gt[data-k="emergency"],.gt[data-k="daytrips"]{--tc:var(--ru-rust)!important;--ti:#FFFDF8!important;--gofg:var(--ru-bark)!important;--leaf:var(--ru-honey)}
-.gt[data-k="markets"]{--tc:var(--ru-bark)!important;--ti:#FFFDF8!important;--gofg:var(--ru-bark)!important;--leaf:var(--ru-moss)}
+.gt[data-k="markets"],.gt[data-k="nightlife"]{--tc:var(--ru-bark)!important;--ti:#FFFDF8!important;--gofg:var(--ru-bark)!important;--leaf:var(--ru-moss)}
 .gt[data-k="restaurants"],.gt[data-k="kids"]{--tc:var(--ru-honey)!important;--ti:var(--ru-bark)!important;--gofg:#FFFDF8!important;--leaf:var(--ru-forest)}
 .gt[data-k="todo"],.gt[data-k="transport"],.gt[data-k="essentials"]{--tc:var(--ru-forest)!important;--ti:#FFFDF8!important;--gofg:var(--ru-bark)!important;--leaf:var(--ru-leaf)}
 .gt[data-k="map"]{--tc:var(--white)!important;--ti:var(--ru-bark)!important;--gofg:#FFFDF8!important;--leaf:var(--ru-moss)}
@@ -39,3 +39,4 @@ h2.title,.sh,.section-h,.gt-t,.hc-nm b{font-weight:600!important;letter-spacing:
 .dbadge{background:var(--ru-wheat)!important;color:var(--ru-bark)}
 .qcall{color:var(--ink)!important}.qcall b{font-weight:600!important}.qcall small{color:var(--muted)!important}
 .qcall .qi{background:var(--ru-wheat)!important;color:var(--ru-forest)!important}
+.gt[data-k="nightlife"]::before{box-shadow:none!important}   /* Nightlife: this layout's own shape, not the Bauhaus crescent */

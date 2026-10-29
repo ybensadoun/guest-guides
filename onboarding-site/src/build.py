@@ -135,8 +135,8 @@ import re as _re
 seg1=_re.sub(r"need:\[[^\]]*\]","need:[]",seg1)
 seg1=rep(seg1,"lead:'Paste your listing and we fill in most of the steps for you. You then only check them and approve.',","lead:'Your listing is where everything starts. With the link (or its text) and the town, we write the rest.',")
 seg1=rep(seg1,"need:[],fields:['listingUrl'","need:['source','town'],fields:['listingUrl'")
-seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'nearby',group:'area',title:'Places nearby',sub:'Pick and add your own',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',
-   lead:'Things to do around you: keep the ones you would send a friend to, and add any we missed. All optional.',need:[],fields:['swipe','favDo','favourites']},
+seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'nearby',group:'area',title:'Attractions',sub:'Museums, parks, activities',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',
+   lead:'Places guests go to visit or to do something: museums, castles, theme parks, karting, nature. Keep the ones you would send a friend to, and add any we missed. Restaurants and bars go in Eat and drink.',need:[],fields:['swipe','favDo','favourites']},
   {id:'taste',group:'area'""")
 seg1=seg1.replace('family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700','family=Gloock&family=Onest:wght@400;500;600;700')
 seg1=rep(seg1,"</style>\n</head>","\n"+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'theme2.css')).read()+"\n</style>\n</head>")

@@ -10,7 +10,7 @@ const ED_FONTS = [['jost', 'Jost'], ['inter', 'Inter'], ['cormorant-garamond', '
 // Same layouts and skeletons as "The look" in the onboarding (MOODS), named by the guide's own presets.
 const ED_PRESETS = [['bauhaus', 'Big colour tiles', 'Like an app: bold blocks, strong shapes.', 'm-bold'], ['soft', 'Soft rounded cards', 'Gentle pastels, rounded corners.', 'm-soft'], ['minimal', 'Clean and calm', 'Text first, thin lines, lots of white.', 'm-min'], ['mediterranean', 'Mediterranean', 'Blue and white, like the Greek islands and the south of Spain.', 'm-med'], ['rural', 'Rural', 'Wood, moss and warm earth, for farmhouses and country homes.', 'm-rural']];
 const ED_COLORS = [['--paper', 'Background', '#F3EEE3'], ['--white', 'Cards', '#FFFFFF'], ['--ink', 'Text', '#121212'], ['--muted', 'Secondary text', '#4A4A4A'], ['--red', 'Accent 1 (red)', '#D52B1E'], ['--blue', 'Accent 2 (blue)', '#1D4FA0'], ['--yellow', 'Accent 3 (yellow)', '#F5C400'], ['--orange', 'Accent 4 (orange)', '#EC6A1C'], ['--green', 'Accent 5 (green)', '#0E7C46']];
-const ED_SEC = { transport: ['Getting around', 'Taxis, train stations and bus stops.'], house: ['The house page', 'Photos, rooms and what the house offers.'], garbage: ['Rubbish and recycling', 'Which bin goes out tonight.'], message: ['House guide', 'How everything works, room by room.'], emergency: ['Emergency contacts', '112, health, police, town services.'], quick: ['Home tiles', 'One tap for a taxi, the station, a favourite.'], markets: ['Markets', 'Weekly markets, with what is on today.'], restaurants: ['Bars and restaurants', 'The places you send friends to.'], todo: ['Things to do', 'Beaches, walks and sights nearby.'], events: ['Events', 'Festivals and fairs during the stay.'], reviews: ['Ratings and reviews', 'Your listing rating and reviews.'], map: ['Map', 'Every place in the guide on one map.'] };
+const ED_SEC = { transport: ['Getting around', 'Taxis, train stations and bus stops.'], house: ['The house page', 'Photos, rooms and what the house offers.'], garbage: ['Rubbish and recycling', 'Which bin goes out tonight.'], message: ['House guide', 'How everything works, room by room.'], emergency: ['Emergency contacts', '112, health, police, town services.'], quick: ['Home tiles', 'One tap for a taxi, the station, a favourite.'], markets: ['Local markets', 'Street, covered and flea markets, with what is on today.'], restaurants: ['Eat and drink', 'Restaurants, cafés and bars you send friends to.'], todo: ['Attractions', 'Museums, parks, activities and sights nearby.'], nightlife: ['Nightlife', 'Late bars, clubs and live music you recommend.'], events: ['Local events', 'Festivals, fairs and traditions during the stay.'], reviews: ['Ratings and reviews', 'Your listing rating and reviews.'], map: ['Map', 'Every place in the guide on one map.'] };
 
 const edIs18 = o => !!o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length > 0 && Object.keys(o).every(k => k in ED_LANGS);
 const edPath = s => s.split('/').map(k => /^\d+$/.test(k) ? +k : k);
@@ -68,17 +68,21 @@ const CSTEPS = [
   { id: 'tiles', group: 'practical', sec: 'quick', title: 'Home tiles', sub: c => cmCount(cmLen('files/quick/items'), 'tile', 'tiles'), icon: 'star', tc: 'var(--sun)', ti: '#1b1407', sh: 'var(--sky)', shape: 'square', lang: true,
     lead: 'One tap from the home page: the bar next door, a shop you love. Each tile opens a page with its map and your words.',
     paths: ['content/files/quick'], body: c => cmHomeTiles(c) },
-  { id: 'todo', group: 'area', sec: 'todo', title: 'Things to do', sub: c => cmCount(cmLen('files/todo/items'), 'place', 'places'), icon: 'compass', tc: 'var(--pine)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
-    lead: 'Beaches, walks and sights. Open a place to change its words, links, position and opening hours.',
+  { id: 'todo', group: 'area', sec: 'todo', title: 'Attractions', sub: c => cmCount(cmLen('files/todo/items'), 'place', 'places'), icon: 'compass', tc: 'var(--pine)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
+    lead: 'Places guests go to visit or to do something: museums, castles, theme parks, karting, beaches, nature. Restaurants and bars go in Eat and drink. Open a place to change its words, links, position and opening hours.',
     paths: ['content/files/todo'], body: () => cmPlaces('files/todo/items', 'place') },
-  { id: 'restaurants', group: 'area', sec: 'restaurants', when: c => !!(c.files || {}).restaurants, title: 'Bars and restaurants', sub: c => cmCount(cmLen('files/restaurants/items'), 'place', 'places'), icon: 'heart', tc: 'var(--tomato)', ti: '#fff', sh: 'var(--sun)', shape: 'half', lang: true,
-    lead: 'The places you send friends to, with a few words from you: what to order, when to go.',
+  { id: 'restaurants', group: 'area', sec: 'restaurants', when: c => !!(c.files || {}).restaurants, title: 'Eat and drink', sub: c => cmCount(cmLen('files/restaurants/items'), 'place', 'places'), icon: 'heart', tc: 'var(--tomato)', ti: '#fff', sh: 'var(--sun)', shape: 'half', lang: true,
+    lead: 'Restaurants, cafés, bakeries and bars you send friends to, with a few words from you: what to order, when to go. Late bars and clubs go in Nightlife.',
     paths: ['content/files/restaurants'], body: () => cmPlaces('files/restaurants/items', 'place') },
-  { id: 'markets', group: 'area', sec: 'markets', title: 'Markets', sub: c => cmCount(cmLen('files/markets/markets'), 'market', 'markets'), icon: 'bag', tc: 'var(--clay)', ti: '#fff', sh: 'var(--pine)', shape: 'circle', lang: true,
-    lead: 'Weekly markets nearby. The guide shows which ones are on today from the days and hours here.',
+  // Nightlife: optional (Guide sections), the host's own list; its section is made with the first place (cmNightEnsure)
+  { id: 'nightlife', group: 'area', sec: 'nightlife', when: c => ((c.site || {}).modules || {}).nightlife === true || !!(c.files || {}).nightlife, title: 'Nightlife', sub: c => cmCount(cmLen('files/nightlife/items'), 'place', 'places'), icon: 'moon', tc: 'var(--ink)', ti: '#fff', sh: 'var(--sun)', shape: 'half', lang: true,
+    lead: 'Late bars, cocktail bars, clubs and live music: where you send friends for the evening and the night, with a few words from you. We add none of our own.',
+    paths: ['content/files/nightlife'], body: () => cmPlaces('files/nightlife/items', 'place') },
+  { id: 'markets', group: 'area', sec: 'markets', title: 'Local markets', sub: c => cmCount(cmLen('files/markets/markets'), 'market', 'markets'), icon: 'bag', tc: 'var(--clay)', ti: '#fff', sh: 'var(--pine)', shape: 'circle', lang: true,
+    lead: 'Weekly street markets, covered food markets, flea and antiques markets nearby. The guide shows which ones are on today from the days and hours here.',
     paths: ['content/files/markets'], body: () => cmPlaces('files/markets/markets', 'market') },
-  { id: 'events', group: 'area', sec: 'events', title: 'Events', sub: c => cmCount(cmLen('files/events/items'), 'event', 'events'), icon: 'kite', tc: 'var(--plum)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
-    lead: 'Festivals and fairs. Guests see the ones during their stay, from the dates here.',
+  { id: 'events', group: 'area', sec: 'events', title: 'Local events', sub: c => cmCount(cmLen('files/events/items'), 'event', 'events'), icon: 'kite', tc: 'var(--plum)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
+    lead: 'Festivals, fairs, concerts and local traditions, with their dates. Guests see the ones during their stay.',
     paths: ['content/files/events'], body: () => cmPlaces('files/events/items', 'event') }
 ];
 const cmSteps = () => CSTEPS.filter(m => (!m.sec || cmOnSec(m.sec)) && (!m.when || m.when(edC())));
@@ -272,9 +276,10 @@ function cmSections(c) {
   if (!ids.includes('quick')) ids.push('quick');
   if (!ids.includes('transport')) ids.splice(Math.max(0, ids.indexOf('emergency') + 1) || ids.length, 0, 'transport');   // Getting around: switched on, its step appears   // Home tiles: the step appears once switched on, and its first tile makes the file
   if ((c.files || {}).reviews && !ids.includes('reviews')) ids.push('reviews');
+  const night = ids.includes('nightlife'); if (!night) ids.splice(ids.includes('todo') ? ids.indexOf('todo') + 1 : ids.length, 0, 'nightlife');   // Nightlife: optional, off until switched on
   if (!ids.includes('map')) ids.push('map');
-  const m = (c.site || {}).modules || {};
-  return `<div class="mods">${ids.map(id => { const [n, d] = ED_SEC[id] || [id, '']; return `<label class="mod"><input type="checkbox" data-cmod="${esc(id)}"${m[id] !== false ? ' checked' : ''}><div class="box"><span class="tick" aria-hidden="true">✓</span><div><b>${esc(n)}</b><small>${esc(d)}</small></div></div></label>`; }).join('')}</div>`;
+  const m = (c.site || {}).modules || {}, onNow = id => id === 'nightlife' && !night ? m[id] === true : m[id] !== false;
+  return `<div class="mods">${ids.map(id => { const [n, d] = ED_SEC[id] || [id, '']; return `<label class="mod"><input type="checkbox" data-cmod="${esc(id)}"${onNow(id) ? ' checked' : ''}><div class="box"><span class="tick" aria-hidden="true">✓</span><div><b>${esc(n)}</b><small>${esc(d)}</small></div></div></label>`; }).join('')}</div>`;
 }
 function cmHousePage(c) {
   const hp = c.files['house-page'], P = 'files/house-page';
@@ -325,7 +330,7 @@ function cmContacts(c) {
   return groups.map((g, gi) => `<h3 class="cm-h">${esc(title[g.id] || g.id)}</h3><div class="cm-list">${(g.items || []).map((it, i) => cItem(`files/emergency/groups/${gi}/items`, it, i, 'contact')).join('')}</div>
     <button class="btn small cm-add" type="button" data-addit="files/emergency/groups/${gi}/items">+ Add a contact</button>`).join('') || '<div class="note"><div>This guide has no contacts yet.</div></div>';
 }
-// Taxis, stations and bus stops are in Getting around; a bar or restaurant from your list can also be pinned from Bars and restaurants.
+// Taxis, stations and bus stops are in Getting around; a bar or restaurant from your list can also be pinned from Eat and drink.
 const ED_TILES = [['food', 'Add a bar or restaurant', 'Restaurant', { phone: '', lat: 0, lng: 0, gmaps: '' }], ['shop', 'Add a shop', 'Shop', { phone: '', lat: 0, lng: 0, gmaps: '' }]];
 function cmHomeTiles(c) {
   const items = ((c.files || {}).quick || {}).items || [];
@@ -356,6 +361,13 @@ const L6 = x => Object.fromEntries(edLangs().map(l => [l, typeof x === 'object' 
 function cmTrSub(c) {
   const T = (c.files || {}).transport || {}, n = (T.taxis || []).length, m = (T.stations || []).length;
   return n || m ? [n ? cmCount(n, 'taxi', 'taxis') : '', m ? cmCount(m, 'station or stop', 'stations and stops') : ''].filter(Boolean).join(', ') : 'Taxis, trains, buses';
+}
+// Nightlife: the file, its section row (after Attractions) and its switch, made with the first place.
+function cmNightEnsure() {
+  const f = edF(); f.nightlife = f.nightlife || { items: [] };
+  const ss = (f.sections = f.sections || { sections: [] }).sections = f.sections.sections || [];
+  if (!ss.some(x => x.id === 'nightlife')) { const at = ss.findIndex(x => x.id === 'todo'); ss.splice(at < 0 ? ss.length : at + 1, 0, { id: 'nightlife', group: 'area', kind: 'spots', labelKey: 'nightlife', status: 'live', color: 'nightlife' }); }
+  const site = edC().site = edC().site || {}; site.modules = { ...(site.modules || {}), nightlife: true };
 }
 // The file, its section row and its switch, made the first time something is added (a guide built without one).
 function cmTrEnsure() {
@@ -1133,7 +1145,7 @@ document.addEventListener('click', e => {
   if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
   if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
   if (d.gfind) return cmFindOnGoogle(d.gfind, t);
-  if (d.addit) { const a = arr(d.addit); a.push(edNewItem(a)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
+  if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); const a = arr(d.addit); a.push(edNewItem(a)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
   if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }] }; return done(); }
   if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }); return done(); }
   if (d.add) { const o = {}; for (const l of edLangs()) o[l] = ''; arr(d.add).push(o); done(); setTimeout(() => { const x = document.getElementById(cmId(d.add + '/' + (arr(d.add).length - 1))); if (x) x.focus(); }, 0); return; }

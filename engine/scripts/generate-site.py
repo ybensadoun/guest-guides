@@ -593,10 +593,12 @@ def resolve_short(url):
         out['lat'], out['lng'] = float(m.group(1)), float(m.group(2))
         out['km'] = max(1, round(math.hypot((out['lat'] - args.lat) * 111, (out['lng'] - args.lng) * 111 * math.cos(math.radians(args.lat))) * 1.3))
     return out
-fav = [r for r in (A.get('favEat') or []) if isinstance(r, dict) and (r.get('p') or '').strip()]
-if fav:
+# The host's own places (bars and restaurants, and Nightlife when they switched it on), each list into its own file.
+def host_list(key):
+    return [r for r in (A.get(key) or []) if isinstance(r, dict) and (r.get('p') or '').strip()]
+def write_host_places(rows, file):
     items = []
-    for r in fav:
+    for r in rows:
         key = r['p'].strip(); g = GEO.get(key) or resolve_short(key)
         nm = (g.get('name') or place_name_from(key)) if key.startswith('http') else key   # a name the host typed stays theirs (Jopenkerk, not Google's "Jopen")
         isurl = key.startswith('http'); ismaps = bool(re.search(r'google\.[a-z.]+/maps|maps\.app\.goo\.gl|goo\.gl/maps', key))
@@ -615,7 +617,10 @@ if fav:
         for k2 in ('phone', 'hours', 'schedule', 'price', 'priceNote', 'icon', 'wiki'):
             if g.get(k2): it[k2] = L(g[k2]) if k2 in ('hours', 'priceNote') else g[k2]
         items.append(it)
-    (SITE / 'content/restaurants.json').write_text(json.dumps({'_doc': "The host's own list, written by generate-site.py. No researched places are added here.", 'items': items}, ensure_ascii=False, indent=1))
+    (SITE / f'content/{file}.json').write_text(json.dumps({'_doc': "The host's own list, written by generate-site.py. No researched places are added here.", 'items': items}, ensure_ascii=False, indent=1))
+fav, night = host_list('favEat'), host_list('favNight')
+if fav: write_host_places(fav, 'restaurants')
+if night: write_host_places(night, 'nightlife')
 
 # Sections, in Home order. Researched ones start as "soon" until their content file has items.
 def has_items(f):
@@ -624,7 +629,8 @@ def has_items(f):
     d = json.loads(p.read_text())
     return bool(d.get('items') or d.get('blocks') or d.get('groups') or d.get('markets') or d.get('fractions') or d.get('taxis') or d.get('stations'))
 # Same sections as the live Ca La Kimberly guide (sites/ca-la-kimberly/content/sections.json): house guide, garbage, emergency, markets,
-# restaurants (the host's own list), things to do, events, plus the quick tiles and the map. Arrival and parking live inside the house guide.
+# restaurants (the host's own list), things to do, events, plus the quick tiles and the map; and Nightlife (the host's own
+# list too), part of the design since 29 Oct 2026 but off unless the host switches it on (Ca La Kimberly does not have it). Arrival and parking live inside the house guide.
 # Optional extra sections for other hosts (arrival, extras, essentials, kids, day trips) come later: add them back here and in onboarding SECTIONS.
 SEC = [
     ('garbage', 'house', 'garbage', 'garbage', {'color': 'glass', 'mapLabelKey': 'glassChip'}, 'rubbish'),
@@ -634,6 +640,7 @@ SEC = [
     ('markets', 'area', 'markets', 'markets', {}, 'markets'),
     ('restaurants', 'area', 'spots', 'barsRestaurants', {'color': 'restaurants'}, 'eat'),
     ('todo', 'area', 'spots', 'whatToDo', {'color': 'todo'}, 'todo'),
+    ('nightlife', 'area', 'spots', 'nightlife', {'color': 'nightlife'}, 'nightlife'),   # optional (off unless the host switched it on); not in Ca La Kimberly
     ('events', 'area', 'events', 'events', {'color': 'events'}, 'events'),
 ]
 sections, modules, research = [], {'house': False, 'quick': bool(quick) and on('quick'), 'map': on('map')}, []
@@ -641,6 +648,7 @@ for sid, grp, kind, label, extra, mod in SEC:
     want = on(mod, mod in ('houseguide', 'emergency', 'todo', 'rubbish', 'markets'))   # rubbish needs the host's answer, markets need researched content: both checked below
     if sid == 'garbage': want = want and bool(rmode)   # only the host can tell us: no answer, no section
     if sid == 'restaurants': want = want and bool(fav)
+    if sid == 'nightlife': want = on('nightlife', False) and bool(night)
     if sid == 'transport': want = want and bool(taxis)
     modules[sid] = bool(want)
     if not want: continue

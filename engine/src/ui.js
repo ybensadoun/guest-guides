@@ -35,7 +35,8 @@ export const CAT_ICON = {
   deixalleria: P('<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/>'),
   restaurants: P('<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 21V3c-2 1-3 4-3 7h3"/>'),
   places: P('<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>'),
-  todo: P('<path d="M12 3l2.6 5.5 6 .8-4.4 4.1 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.3l6-.8z"/>')
+  todo: P('<path d="M12 3l2.6 5.5 6 .8-4.4 4.1 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.3l6-.8z"/>'),
+  nightlife: P('<path d="M20 14.6A8.2 8.2 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6z"/><path d="M17 3.5v2.4M15.8 4.7h2.4"/>')
 };
 export const NAV_ICON = {
   home: P('<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>'),
@@ -52,6 +53,8 @@ export const SECTION_LOOK = {
   'markets': { icon: NAV_ICON.markets, color: 'var(--ink)' },
   'restaurants': { icon: P('<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 21V3c-2 1-3 4-3 7h3"/>'), color: 'var(--orange)', ink: true },
   'todo': { icon: CAT_ICON.todo, color: 'var(--k-green)' },
+  // Optional, for guides that want it (late bars, clubs, live music: the host's own list); not in Ca La Kimberly.
+  'nightlife': { icon: CAT_ICON.nightlife, color: 'var(--ink)' },
   'events': { icon: P('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M12 13l1 2 2 .3-1.5 1.4.4 2.3-1.9-1-1.9 1 .4-2.3L9 15.3l2-.3z"/>'), color: 'var(--k-blue)' },
   'map': { icon: NAV_ICON.map, color: 'var(--white)', ink: true },
   'transport': { icon: P('<rect x="5.5" y="3" width="13" height="13" rx="3"/><path d="M5.5 10h13"/><circle cx="9" cy="13" r=".9" fill="currentColor"/><circle cx="15" cy="13" r=".9" fill="currentColor"/><path d="M8.5 16l-2 4.5M15.5 16l2 4.5M7.5 19h9"/>'), color: 'var(--k-green)' },

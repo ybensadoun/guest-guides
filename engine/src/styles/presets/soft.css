@@ -24,7 +24,7 @@ h2.title{font-weight:600;letter-spacing:-.02em}
 .gt[data-k="garbage"],.gt[data-k="events"],.gt[data-k="arrival"]{--tc:var(--sf-blue)!important;--sh:var(--sf-blue-d)}
 .gt[data-k="message"]{--tc:var(--sf-butter)!important;--sh:var(--sf-butter-d)}
 .gt[data-k="emergency"],.gt[data-k="daytrips"]{--tc:var(--sf-blush)!important;--sh:var(--sf-blush-d)}
-.gt[data-k="markets"]{--tc:var(--sf-lilac)!important;--sh:var(--sf-lilac-d)}
+.gt[data-k="markets"],.gt[data-k="nightlife"]{--tc:var(--sf-lilac)!important;--sh:var(--sf-lilac-d)}
 .gt[data-k="restaurants"],.gt[data-k="kids"]{--tc:var(--sf-peach)!important;--sh:var(--sf-peach-d)}
 .gt[data-k="todo"],.gt[data-k="transport"],.gt[data-k="essentials"]{--tc:var(--sf-mint)!important;--sh:var(--sf-mint-d)}
 .gt[data-k="map"]{--tc:var(--white)!important;--sh:var(--sf-blue)}
@@ -56,3 +56,4 @@ h2.title{font-weight:600;letter-spacing:-.02em}
 .pl-map,#mapview .mapbox{border:0!important;box-shadow:var(--shadow);border-radius:var(--r)!important}
 .hero .back,.langsel{box-shadow:var(--shadow)!important}
 .gphotos img{border-radius:16px}
+.gt[data-k="nightlife"]::before{box-shadow:none!important}   /* Nightlife: this layout's own shape, not the Bauhaus crescent */

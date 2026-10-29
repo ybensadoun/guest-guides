@@ -107,6 +107,7 @@ function guideSections(){
   if (on('eat')) S.push({ picks: picks(['eat', 'coffee', 'drinks']), id: 'eat', title: 'Eat and drink', sub: 'Our favourite places', icon: 'heart', kind: 'places', items: placeRows('favEat').map(r => r.p + (r.c ? ': ' + r.c : '')), research: !placeRows('favEat').length && 'Add the places you recommend, with a link or a name and a comment. We do not add restaurants of our own.' });
   if (on('todo')) S.push({ picks: picks(['todo']), id: 'todo', title: 'Things to do', sub: (A.interests || []).slice(0, 3).join(', ') || 'Around you', icon: 'compass', kind: 'places', items: [...lines('favDo'), ...lines('favourites')], research: found('todo', 'items').length ? 'Found near you by our research. Details and directions are in your full guide.' : `We research ${(A.interests || ['beaches', 'walks', 'sights']).join(', ').toLowerCase()} within ${v('radius') || '30 min'}.` });
   if (on('todo')) S[S.length - 1].items.push(...found('todo', 'items').map(t => `${nm(t.name)}${t.town ? ': ' + t.town : ''}`));
+  if (on('nightlife')) S.push({ id: 'nightlife', title: 'Nightlife', sub: 'Bars, clubs, live music', icon: 'moon', kind: 'places', items: placeRows('favNight').map(r => r.p + (r.c ? ': ' + r.c : '')), research: !placeRows('favNight').length && 'Add the late bars, clubs and live music you recommend. We add none of our own.' });
   if (on('markets')) S.push({ id: 'markets', title: 'Local markets', sub: 'What is on today', icon: 'bag', kind: 'places', items: found('markets', 'markets').map(m => `${nm(m.name)}${m.town ? ': ' + m.town : ''}`), research: found('markets', 'markets').length ? 'Found near you. Days and hours are in your full guide.' : 'We list every weekly market nearby, with what runs today.' });
   if (on('events')) S.push({ id: 'events', title: 'Local events', sub: 'During your stay', icon: 'kite', kind: 'places', items: [], research: 'We list festivals and fairs, with dates.' });
   if (on('kids')) S.push({ id: 'kids', title: 'Kids corner', sub: (A.kidsAges || []).join(', ') || 'Families', icon: 'kite', kind: 'text', items: [...(A.kidsGear || []).map(g => `${g} at the house`), ...lines('kidsNotes')], research: 'We add playgrounds and family days out.' });
@@ -282,7 +283,7 @@ async function renderPreview(){
 const PHONE = { screen: 'home', build: false, timer: null };
 const WOW = { stage: '', name: '' };   // the wow page: reading (the listing page), writing (Claude), done
 // The guide screen each step changes, shown next to it.
-const STEP_SCREEN = { known: 'wifi', wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'houseguide', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', area: 'todo', taste: 'todo' };
+const STEP_SCREEN = { nightlife: 'nightlife', known: 'wifi', wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'houseguide', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', area: 'todo', taste: 'todo' };
 const phoneHTML = () => `<div class="phone"><div class="phone-scr"><iframe id="phoneFrame" title="Your guide, as guests will see it"></iframe></div></div>`;
 // Both phones (this one, and the editor's, which shows the guide itself) draw the guide at a real phone's width, then
 // scale it down to the frame: text and tiles keep their true sizes and wrap as they do on a phone.

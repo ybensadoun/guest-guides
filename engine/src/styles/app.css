@@ -19,7 +19,7 @@
   --c-covered:var(--blue);--c-street:var(--red);--c-flea:var(--orange);--c-antiques:var(--ink);--c-events:var(--green);
   --c-covered-s:var(--paper);--c-street-s:var(--paper);--c-flea-s:var(--paper);--c-antiques-s:var(--paper);--c-events-s:var(--paper);
   /* Other map layers */
-  --c-restaurants:var(--orange);--c-todo:var(--green);--c-places:var(--green);--c-deixalleria:#5B6B2E;
+  --c-restaurants:var(--orange);--c-todo:var(--green);--c-nightlife:var(--ink);--c-places:var(--green);--c-deixalleria:#5B6B2E;
   /* Bins: the real colours of the bins, kept recognisable */
   --w-organic:#7A4A1E;--w-packaging:#F5C400;--w-paper:#1D4FA0;--w-rest:#6B6B6B;--w-sanitary:#D52B1E;--w-glass:#0E7C46;--w-kitchen:#6B6B6B;--c-glass:#0E7C46;
   --r:20px;--r-s:12px;
@@ -955,6 +955,11 @@ body:not(.is-home) #view h2.title{min-height:44px;display:flex;align-items:cente
 .gt[data-k="message"]::before{width:64px;height:32px;border-radius:64px 64px 0 0;background:var(--ink);right:-6px;top:-2px;bottom:auto;transform:rotate(180deg)}
 .gt[data-k="emergency"]::before{width:0;height:0;border-left:34px solid transparent;border-right:34px solid transparent;border-bottom:46px solid var(--ink);right:-6px;top:-4px;bottom:auto;transform:rotate(180deg)}
 .gt[data-k="transport"]::before{width:44px;height:44px;background:var(--yellow);right:-10px;top:-10px;bottom:auto;transform:rotate(14deg)}
+/* Nightlife, wide when it has a row of its own (as Events): the crescent at the far right, the arrow just left of it, the text before both */
+.gt.wide[data-k="nightlife"]{padding-right:110px!important}
+.gt.wide[data-k="nightlife"] .go{top:50%!important;bottom:auto!important;margin-top:-18px;right:62px}
+.gt[data-k="nightlife"]::before{width:56px;height:56px;border-radius:50%;background:transparent;box-shadow:inset -14px 8px 0 0 var(--yellow);right:-4px;top:-6px;bottom:auto;transform:rotate(-12deg)}
+.gt.wide[data-k="nightlife"]::before{right:2px;top:50%;margin-top:-28px}
 /* Wide tiles: the shape takes the far right edge, the arrow sits just left of it, the text stops before both. */
 .gt[data-k="map"] .gt-tx{padding-right:96px}
 .gt[data-k="map"] .go{bottom:auto!important;top:50%!important;right:52px;margin-top:-18px}

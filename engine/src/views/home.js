@@ -164,7 +164,7 @@ function sectionGrid(now, todayCount) {
       <span class="gt-tx"><span class="gt-t">${esc(label)}</span>${href && meta ? `<span class="gt-m">${esc(meta)}</span>` : ''}</span>${extra}${href ? `<span class="go" aria-hidden="true">${ARROW}</span>` : `<span class="soon-tag">${esc(t('soonShort'))}</span>`}`;
     return href ? `<a class="gt${live ? ' live' : ''} ${cls}" data-k="${key}" style="${vars}" href="${href}">${inner}</a>` : `<div class="gt soon ${cls}" data-k="${key}" style="${vars}" aria-label="${esc(label)}, ${esc(meta)}">${inner}</div>`;
   };
-  const one = sec => {
+  const one = (sec, cls = '') => {
     if (sec.kind === 'markets') return tile(sec.id, t('markets'), '#markets/today', t('openToday', { n: todayCount ?? todaysMarkets(now).length }), true);
     if (sec.status !== 'live') return tile(sec.id, t(sec.labelKey), null, t('soon'), false);
     if (sec.kind === 'garbage' && CONTAINERS_ONLY) return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, t('gTileContainers'), false, 'wide');
@@ -185,7 +185,7 @@ function sectionGrid(now, todayCount) {
       return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, meta, false, 'wide');
     }
     // Short label on the half-width tile ("Emergencies"); the page itself keeps the full title.
-    return tile(sec.id, t(sec.id === 'emergency' ? 'emergencyTile' : sec.labelKey), '#s/' + sec.id, '', false);
+    return tile(sec.id, t(sec.id === 'emergency' ? 'emergencyTile' : sec.labelKey), '#s/' + sec.id, '', false, cls);
   };
   const live = x => x.status === 'live';
   // Order follows content/sections.json.
@@ -195,12 +195,15 @@ function sectionGrid(now, todayCount) {
   // Garbage wide on top, then the other house tiles side by side.
   // Around the house: the first tile (markets) is tall, the others stack next to it. Map last, wide.
   const wideHouse = house.filter(x => x.kind === 'garbage' && live(x));
+  // Around the house: the first tile is tall, the next two stack beside it, then two a row. A tile left alone in its last
+  // row is wide (with Nightlife: markets, eat and drink, things to do, then Nightlife under them).
+  const mosaic = area.filter(x => x.kind !== 'events'), alone = i => i === mosaic.length - 1 && i >= 3 && (i - 3) % 2 === 0;
   const smallHouse = house.filter(x => !wideHouse.includes(x));
   return `<h2 class="sh">${esc(t('atHouse'))}</h2>
    <div class="ggrid">${wideHouse.map(one).join('')}${smallHouse.map(one).join('')}</div>
    <h2 class="sh">${esc(t('aroundHouse'))}</h2>
    ${quickRow()}
-   <div class="ggrid mosaic">${area.filter(x => x.kind !== 'events').map(one).join('')}${MODULE_ON('map') ? tile('map', t('mapTile'), '#map', t('nPlaces', { n: MAP_ITEMS.length }), false, 'wide') : ''}</div>`;
+   <div class="ggrid mosaic">${mosaic.map((x, i) => one(x, alone(i) ? 'wide' : '')).join('')}${MODULE_ON('map') ? tile('map', t('mapTile'), '#map', t('nPlaces', { n: MAP_ITEMS.length }), false, 'wide') : ''}</div>`;
 }
 
 export function renderMore(V) {

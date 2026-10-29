@@ -254,7 +254,7 @@ async function build(g) {
   writeFileSync(join(job, 'src/listing_photos.json'), JSON.stringify(remote.map(u => ({ url: u.src, room: u.room || '', caption: u.name || '' }))));
   // The host's favourite places, as they typed them: looked up on Google, so each one gets its real position, distance,
   // town, opening hours and Maps link (src/geocode.json, read by the generator). Not found: the generator says less.
-  const fav = (A.favEat || []).map(r => String((r && r.p) || '').trim()).filter(Boolean);
+  const fav = [...(A.favEat || []), ...(A.favNight || [])].map(r => String((r && r.p) || '').trim()).filter(Boolean);   // Eat and drink, and Nightlife
   if (fav.length && env.GOOGLE_PLACES_KEY) {
     say(id, 'Finding your favourite places'); const geo = {};
     for (const p of fav) { try { const g = await hostPlace(env.GOOGLE_PLACES_KEY, p, { lat: A.lat, lng: A.lng }); if (g) geo[p]= g; else log('  favourite place not found on Google:', p.slice(0, 60)); } catch (e) { log('  favourite place lookup failed:', e.message); } }

@@ -33,7 +33,8 @@ const WRITE = { ok: true, source: 'page', site: 'airbnb', draft: { placeName: A0
 const listing = (route, body) => setTimeout(() => json(route, body.stage === 'page' ? PAGE : WRITE), body.stage === 'page' ? 400 : 1500);
 const inPhone = (p, fn) => p.evaluate(fn => { const d = document.getElementById('phoneFrame') && document.getElementById('phoneFrame').contentDocument; return d ? new Function('d', 'return (' + fn + ')(d)')(d) : null; }, fn.toString());
 mkdirSync(SHOTS, { recursive: true });
-const results = [], ok = (name, pass, more = '') => results.push(`${pass ? 'PASS' : 'FAIL'}  ${name}${more ? '  (' + more + ')' : ''}`);
+// CHECK_LIVE=1: each result is printed as it comes, to see where a run is stuck.
+const results = [], ok = (name, pass, more = '') => { const l = `${pass ? 'PASS' : 'FAIL'}  ${name}${more ? '  (' + more + ')' : ''}`; results.push(l); if (env.CHECK_LIVE) console.error(l); };
 // A 4x4 picture in four colours (blue, red, yellow, green), for the colour checks.
 const PNG4 = (() => { const W = 4, rows = [], C = [[29, 79, 160], [213, 43, 30], [245, 196, 0], [14, 124, 70]];
   for (let y = 0; y < W; y++) { rows.push(0); for (let x = 0; x < W; x++) rows.push(...C[(x >> 1) + 2 * (y >> 1)]); }
@@ -348,7 +349,14 @@ try {
     ok('Places nearby: a recommended place is in the phone, as the host\'s pick', /Cala Test/.test(inGuide || '') && !/Castell Test/.test(inGuide || ''));
     ok('Places nearby, desktop: the card and its buttons above the bottom bar', await p.evaluate(() => document.querySelector('.sw-btns').getBoundingClientRect().bottom <= document.getElementById('navbar').getBoundingClientRect().top));
     const path = await p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent));
-    ok('builder: Bars and restaurants are on the path, right after Places nearby (hand-picked, never searched)', path.indexOf('Bars and restaurants') === path.indexOf('Places nearby') + 1 && path.indexOf('Bars and restaurants') < path.indexOf('Only you know'), path.slice(0, 5).join(' > '));
+    ok('builder: Eat and drink is on the path, right after Attractions (hand-picked, never searched)', path.indexOf('Eat and drink') === path.indexOf('Attractions') + 1 && path.indexOf('Eat and drink') < path.indexOf('Only you know'), path.slice(0, 5).join(' > '));
+    ok('builder: each Around you step says what goes in it (Attractions: museums; Eat and drink: restaurants, cafés)', /museums/i.test(await p.textContent('.mhead').catch(() => '')) && (await (async () => { await go(p, '#favourites'); return /Restaurants, cafés/.test(await p.textContent('.mhead p').catch(() => '')); })()));
+    await go(p, '#sections'); await p.waitForTimeout(300);
+    const nb = await p.$('[data-sec="nightlife"]');
+    ok('builder: Nightlife is a section of its own, off at first', !!nb && !(await nb.isChecked()));
+    await p.$eval('[data-sec="nightlife"]', e => e.closest('label').scrollIntoView({ block: 'center' })); await p.click('[data-sec="nightlife"]', { force: true }); await p.waitForTimeout(400);   // in the middle: just into view, it is under the fixed bottom bar
+    const path2 = await p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent));
+    ok('builder: switched on, Nightlife is on the path right after Eat and drink', path2.indexOf('Nightlife') === path2.indexOf('Eat and drink') + 1, path2.slice(0, 7).join(' > '));
     ok('Places nearby: no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
     const m = await deck(360, 780);
@@ -475,6 +483,22 @@ try {
     ok('Getting around, 360 px: no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0);
     await p.screenshot({ path: join(SHOTS, 'transport-360.png'), fullPage: true });
     ok('Getting around: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // Nightlife (29 Oct 2026): optional and off in Ca La Kimberly; switched on in Guide sections, its first place makes its
+  // section, right after Attractions.
+  { const { ctx, p, errors } = await open(browser, E, 1280, 860);
+    const saved = []; await ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
+    await p.goto('http://editor.test/#sections'); await ready(p); await p.waitForTimeout(400);
+    const rail = () => p.$$eval('.rail a.si .st', els => els.map(e => e.textContent));
+    const box = await p.$('[data-cmod="nightlife"]');
+    ok('editor: Nightlife is in Guide sections, off for Ca La Kimberly, and not among its steps', !!box && !(await box.isChecked()) && !(await rail()).includes('Nightlife'));
+    await p.$eval('[data-cmod="nightlife"]', e => e.closest('label').scrollIntoView({ block: 'center' })); await p.click('[data-cmod="nightlife"]', { force: true }); await p.waitForTimeout(500);
+    const r = await rail();
+    ok('editor: switched on, the Nightlife step comes right after Eat and drink (as in the builder)', r.indexOf('Nightlife') === r.indexOf('Eat and drink') + 1, r.join(' > '));
+    await go(p, '#nightlife'); await p.$eval('[data-addit="files/nightlife/items"]', e => e.scrollIntoView({ block: 'center' })).catch(() => {}); await p.click('[data-addit="files/nightlife/items"]').catch(() => {}); await p.waitForTimeout(3000);
+    let ids = []; for (const b of saved.slice().reverse()) { try { const j = JSON.parse(b), c = (j.draft || {}).content || j.content || {}; ids = (((c.files || {}).sections || {}).sections || []).map(x => x.id); if (ids.length) break; } catch (e) { /* not a save */ } }
+    ok('editor: the first place makes the Nightlife section, right after Attractions (things to do)', ids.indexOf('nightlife') === ids.indexOf('todo') + 1 && ids.indexOf('todo') >= 0, ids.join(', '));
+    ok('editor, Nightlife: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // The look, Colours: the layout's own is chosen until another is picked, and the chosen one stays highlighted.
   { const { ctx, p, errors } = await open(browser, E, 360, 780);
