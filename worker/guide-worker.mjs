@@ -35,7 +35,7 @@ const log = (...a) => console.log(new Date().toLocaleString('sv-SE'), ...a);   /
 let claudeApi = null;
 if (RESEARCH === 'api') {
   if (!env.WORKER_ANTHROPIC_KEY) { console.error('RESEARCH=api needs WORKER_ANTHROPIC_KEY, the worker\'s own Claude API key (worker/.env.local or the environment).'); process.exit(1); }
-  try { claudeApi = (await import('./claude-api.mjs')).makeClaude(env, log); }
+  try { claudeApi = (await import('./claude-api.mjs')).makeClaude(env, log, { spentToday: costToday, record: costRecord }); }
   catch (e) { console.error('RESEARCH=api needs the Claude SDK once: npm ci --prefix worker (' + e.message.slice(0, 120) + ')'); process.exit(1); }
 }
 const H = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
@@ -52,6 +52,16 @@ async function rest(path, o = {}) {
   if (!r.ok) throw new Error(`${o.method || 'GET'} ${path.split('?')[0]} -> ${r.status} ${typeof j === 'string' ? j : JSON.stringify(j)}`.slice(0, 400));
   return j;
 }
+// What Claude costs, kept in the database (events, kind claude_cost): the day limit (RESEARCH_USD_PER_DAY) adds it up
+// before each question, so a restart or an update does not start the day again at zero, and every process counts. Each
+// budget counts its own: the worker and one-off commands "daily", the monthly run "monthly" (RESEARCH_BUDGET, set by
+// worker/monthly.mjs with its own, higher limit).
+async function costToday() {
+  const d = new Date(); d.setUTCHours(0, 0, 0, 0);
+  const rows = await rest(`/rest/v1/events?select=usd:data->>usd&kind=eq.claude_cost&data->>budget=eq.${env.RESEARCH_BUDGET || 'daily'}&created_at=gte.${d.toISOString()}`);
+  return (rows || []).reduce((s, r) => s + (+r.usd || 0), 0);
+}
+function costRecord(usd, info) { return rest('/rest/v1/events', { method: 'POST', body: { kind: 'claude_cost', data: { budget: env.RESEARCH_BUDGET || 'daily', usd: +usd.toFixed(4), ...info } }, headers: { Prefer: 'return=minimal' } }); }
 const patch = (id, body) => rest('/rest/v1/guides?id=eq.' + id, { method: 'PATCH', body, headers: { Prefer: 'return=minimal' } });
 const sweepPhotos = makeSweep({ url: URL_, headers: H, rest, fetchRetry, log });   // photos of deleted houses (worker/sweep-photos.mjs)
 let lastSay = Promise.resolve();   // status messages go out in order, and the final result waits for them

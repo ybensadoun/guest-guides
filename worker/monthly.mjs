@@ -45,7 +45,7 @@ if (STEPS.includes('check')) {
   parts.push(`1. Google check of every published guide${DRY ? ' (dry run: nothing written)' : ', fixes applied'}${r.ok ? '' : ` (it stopped with an error, code ${r.status})`}\n${r.out}`);
 }
 if (STEPS.includes('events')) {
-  const r = step('guide-worker.mjs', ['--refresh-events', ...(DRY ? [] : ['--apply'])], { RESEARCH_USD_PER_DAY: env.MONTHLY_USD || '30' });
+  const r = step('guide-worker.mjs', ['--refresh-events', ...(DRY ? [] : ['--apply'])], { RESEARCH_USD_PER_DAY: env.MONTHLY_USD || '30', RESEARCH_BUDGET: 'monthly' });
   for (const m of r.out.matchAll(/claude api, .*?about ([\d.]+) USD \(/g)) sum.claudeUsd += +m[1];
   sum.added = (r.out.match(/^\s+\+ /gm) || []).length;   // refresh-events prints one "  + " line per event it adds
   parts.push(`2. Automatic events, next three months${DRY ? ' (dry run: nothing written)' : ''}${r.ok ? '' : ` (it stopped with an error, code ${r.status})`}\n${r.out}`);

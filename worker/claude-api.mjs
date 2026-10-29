@@ -7,7 +7,8 @@
 //   RESEARCH_MODEL           default claude-opus-5-5; TRANSLATE_MODEL for translation (default claude-haiku-5-5)
 //   RESEARCH_EFFORT          low | medium | high (default medium)
 //   RESEARCH_MAX_SEARCHES    web searches per request (default 20; a long research carries on in up to 5 more requests)
-//   RESEARCH_USD_PER_DAY     this worker stops asking Claude past this expected cost, until the next day (default 5)
+//   RESEARCH_USD_PER_DAY     this worker stops asking Claude past this expected cost, until the next day (default 5). With a
+//                            ledger (the worker's: the database), the day's cost survives a restart and counts every process
 //   RESEARCH_API_URL         tests only: another address for the API
 // Needs the SDK once: npm ci --prefix worker
 import Anthropic from '@anthropic-ai/sdk';
@@ -28,7 +29,8 @@ const answer = c => { const last = c.findLastIndex(b => !['text', 'thinking', 'r
   return t.trim() ? t : c.filter(b => b.type === 'text').map(b => b.text).join(''); };
 const k = x => x >= 1000 ? Math.round(x / 1000) + 'k' : String(x);
 
-export function makeClaude(env, log = console.log) {
+// ledger (optional): { spentToday: async () => USD so far today, record: async (usd, info) => {} }, where the costs are kept.
+export function makeClaude(env, log = console.log, ledger = null) {
   const client = new Anthropic({ apiKey: env.WORKER_ANTHROPIC_KEY, authToken: null, baseURL: env.RESEARCH_API_URL || 'https://api.anthropic.com', maxRetries: 3, timeout: 900000 });
   const MODEL = env.RESEARCH_MODEL || 'claude-opus-5-5', TMODEL = env.TRANSLATE_MODEL || 'claude-haiku-5-5', EFFORT = env.RESEARCH_EFFORT || 'medium';
   const SEARCHES = Math.max(1, +env.RESEARCH_MAX_SEARCHES || 20), PER_DAY = +env.RESEARCH_USD_PER_DAY || 5;
@@ -38,6 +40,7 @@ export function makeClaude(env, log = console.log) {
   // searches (optional): fewer web searches than RESEARCH_MAX_SEARCHES for this question.
   return async function ask(prompt, { web = false, what = 'text', meter = null, searches = 0 } = {}) {
     const today = new Date().toISOString().slice(0, 10); if (today !== day) { day = today; spent = 0; }
+    if (ledger) { try { spent = Math.max(spent, await ledger.spentToday()); } catch (e) { /* out of reach: this process's own count */ } }
     const paused = web ? 'Searches are paused for now. Try again later.' : 'Translation is paused for now. Try again later.';
     if (spent >= PER_DAY) { log(`  claude api: ${what} not asked, about ${spent.toFixed(2)} USD spent today (RESEARCH_USD_PER_DAY=${PER_DAY})`); throw new Error(web ? 'Searches are paused for today. Try again tomorrow.' : 'Translation is paused for today. Try again tomorrow.'); }
     const model = web ? MODEL : TMODEL;
@@ -47,6 +50,7 @@ export function makeClaude(env, log = console.log) {
         { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: Math.min(SEARCHES, searches || SEARCHES), max_content_tokens: 30000 }] } : {}) };
     const messages = [{ role: 'user', content: prompt }], n = { in: 0, out: 0, cw: 0, cr: 0, s: 0, f: 0 }, t0 = Date.now();
     const done = m => { const usd = cost(model, n); spent += usd; if (meter) meter.usd = (meter.usd || 0) + usd;
+      if (ledger && usd > 0) Promise.resolve(ledger.record(usd, { what, model: m ? m.model : model, searches: n.s, pages: n.f, tokens_in: n.in + n.cw + n.cr, tokens_out: n.out })).catch(() => {});
       log(`  claude api, ${what}: ${m ? m.model : model}, ${n.s} searches, ${n.f} pages read, ${k(n.in + n.cw + n.cr)} tokens in, ${k(n.out)} out, ${Math.round((Date.now() - t0) / 1000)} s, about ${usd.toFixed(2)} USD (${spent.toFixed(2)} today)`); };
     // A long search comes back paused (pause_turn) after Anthropic's own loop of steps: sent back as it is, it carries on.
     for (let turn = 1; ; turn++) {
