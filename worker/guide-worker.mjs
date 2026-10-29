@@ -532,6 +532,66 @@ async function autoEventsJob(j, jp) {
   await jp({ status: 'done', message: r.added.length ? `${r.added.length} events added` : 'Nothing new this time', result: r, finished_at: new Date().toISOString() });
 }
 
+/* ---------- Getting around: the lines through a station or stop, and the main places they reach ----------
+   From the editor (Getting around > Add a train station or bus stop, or Refresh the lines; job "find-transport", params
+   {id, mode, name, lat, lng}). Claude looks them up on the web (the operators' sites and timetables first); the line names
+   and colours, the destinations and journey times go into the draft's station, translated into the guide's languages, and
+   back in the job for the editor that is still open. The host's own words (tag, what) and a timetable link they set
+   themselves are never touched (onboarding-site/src/editor.js cmLinesApply does the same in the open copy). */
+const HEX6 = /^#[0-9a-f]{6}$/i;
+const lumOf = h => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+function applyLines(s, r, langs) {
+  s.badges = r.badges; s.to = r.to;
+  if (r.link && (!s.link || s.link === (s.auto || {}).link)) { s.link = r.link; s.linkKey = 'timetable'; }
+  const nm = s.name || {}, first = nm[langs[0]] || '';
+  if (r.name && langs.every(l => (nm[l] || '') === first)) s.name = { ...nm, ...r.name };
+  s.auto = { checked: r.checked, operator: r.operator, link: r.link, sources: r.sources };
+}
+async function transportJob(j, jp, { dry = false } = {}) {
+  const P = j.params || {}, since = new Date(Date.now() - 864e5).toISOString();
+  const recent = await rest(`/rest/v1/guide_jobs?select=id&guide_id=eq.${j.guide_id}&kind=eq.find-transport&id=neq.${j.id}&created_at=gt.${encodeURIComponent(since)}`);
+  if ((recent || []).length >= 20) throw new Error('You have looked up a lot of lines today. Try again tomorrow.');
+  const g = (await rest('/rest/v1/guides?select=content,draft,answers&id=eq.' + j.guide_id))[0];
+  const c = g.draft && g.draft.content ? g.draft.content : g.content, site = c.site || {}, h = (c.files || {}).house || {}, A0 = g.answers || {};
+  const st = (((c.files || {}).transport || {}).stations || []).find(x => x.id === P.id) || {};
+  const name = String(P.name || nameOf(st.name) || '').slice(0, 120), mode = (P.mode || st.mode) === 'bus' ? 'bus' : 'train';
+  const lat = +P.lat || st.lat, lng = +P.lng || st.lng;
+  if (!name || !(typeof lat === 'number' && lat)) throw new Error('The station needs a name and a pin first.');
+  const km = typeof h.lat === 'number' ? Math.round(hav(h.lat, h.lng, lat, lng)) : null, where = [A0.town, A0.region].filter(Boolean).join(', ');
+  await jp({ message: `Looking up the ${mode === 'bus' ? 'buses' : 'trains'} at ${name}` });
+  const out = await claudeJson(`You fill the "Getting around" page of a holiday home's guest guide, for guests without a car.
+The ${mode === 'bus' ? 'bus stop' : 'train station'}: "${name}", at ${lat.toFixed(5)}, ${lng.toFixed(5)}${where ? `, near ${where}` : ''}${km != null ? `, ${km} km from the house` : ''}.
+Search the web, the operators' own sites and timetables first, then Wikipedia, for:
+1. "lines": every line or service that stops here, written as on signs and tickets (for example "R4", "R2 Sud", "AVE", "Avlo", "Alvia", "Euromed", "L1", "Bus 900"), each with its official colour as "#RRGGBB" when the operator uses one, else null.
+2. "to": up to 5 places guests will want to reach from here: the nearest big city first, then other cities, the airport, a beach town or a famous sight when one is served. Each {"dest": the place in English, "time": the usual fastest journey like "35 min" or "1 h 30", "note": "direct", "1 change", or ""}. Only places reachable by public transport from this stop.
+3. "name": the usual name of this ${mode === 'bus' ? 'stop' : 'station'} in English (for example "El Vendrell station"), "operator": who runs it, "link": the official timetable page (the operator's site), "sources": the pages you used.
+Only facts you found on the web: never invent a line, a time or a colour. When a time varies, give the usual one with "about". Return only JSON:
+{"name":"","operator":"","link":"","lines":[{"t":"","c":"#RRGGBB"}],"to":[{"dest":"","time":"","note":""}],"sources":[]}`, 'transport');
+  const seen = new Set(), badges = [];
+  for (const l of Array.isArray(out.lines) ? out.lines : []) {
+    const t = String((l && l.t) || '').trim().slice(0, 24); if (!t || seen.has(t.toLowerCase())) continue; seen.add(t.toLowerCase());
+    const col = HEX6.test((l && l.c) || '') ? l.c.toUpperCase() : (mode === 'bus' ? '#0E7C46' : '#1D4FA0');
+    badges.push({ t, c: col, ink: lumOf(col) > .45 });
+    if (badges.length >= 12) break;
+  }
+  const to = (Array.isArray(out.to) ? out.to : []).map(d => ({ dest: String((d && d.dest) || '').trim().slice(0, 60), time: String((d && d.time) || '').trim().slice(0, 20), note: String((d && d.note) || '').trim().slice(0, 40) })).filter(d => d.dest && d.time).slice(0, 5);
+  if (!badges.length && !to.length) return jp({ status: 'done', message: 'No lines found on the web. Add them by hand.', result: { id: P.id, badges: [], to: [] }, finished_at: new Date().toISOString() });
+  const langs = (site.languages || ['en']).filter(l => LANGS.includes(l)), other = langs.filter(l => l !== 'en');
+  const texts = [...new Set([...to.flatMap(d => [d.dest, d.note]), String(out.name || '').trim()].filter(Boolean))];
+  await jp({ message: `Found ${badges.length} line${badges.length === 1 ? '' : 's'}: translating` });
+  const map = other.length && texts.length ? await translate(texts, other, 'en') : {};
+  const six = x => x ? Object.fromEntries([['en', x], ...other.map(l => [l, ((map[x] || {})[l]) || x])]) : Object.fromEntries([['en', ''], ...other.map(l => [l, ''])]);
+  const link = /^https?:\/\//.test(out.link || '') ? String(out.link) : '';
+  const result = { id: P.id, badges, to: to.map(d => ({ dest: six(d.dest), time: d.time, note: six(d.note) })), link, name: out.name ? six(String(out.name).trim().slice(0, 80)) : null,
+    operator: String(out.operator || '').slice(0, 80), sources: (Array.isArray(out.sources) ? out.sources : []).filter(u => /^https?:\/\//.test(u)).slice(0, 6), checked: new Date().toISOString().slice(0, 10) };
+  // Into the newest copy (the editor may have saved meanwhile), and back to the editor that asked.
+  const now = (await rest('/rest/v1/guides?select=content,theme,draft&id=eq.' + j.guide_id))[0];
+  const draft = now.draft && now.draft.content ? now.draft : { content: now.content, theme: now.theme };
+  const s2 = (((draft.content.files || {}).transport || {}).stations || []).find(x => x.id === P.id);
+  if (s2 && !dry) { applyLines(s2, result, langs.length ? langs : ['en']); await rest('/rest/v1/guides?id=eq.' + j.guide_id, { method: 'PATCH', body: { draft: { ...draft, savedAt: new Date().toISOString() } }, headers: { Prefer: 'return=minimal' } }); }
+  await jp({ status: 'done', message: `${badges.length} line${badges.length === 1 ? '' : 's'}, ${to.length} destination${to.length === 1 ? '' : 's'}`, result, finished_at: new Date().toISOString() });
+}
+
 /* ---------- Artistic cover: one of the host's photos redrawn (OpenAI image editing, OPENAI_API_KEY in .env.local) ----------
    "Do it for me" asks for Bauhaus-style shapes in the photo's own colours; otherwise the host's own words. The picture
    must be one of this guide's (its storage folder) or its listing's (Airbnb's image server). The result goes to the
@@ -576,7 +636,7 @@ async function coverArtJob(j, jp) {
 
 // Up to three jobs run side by side (each one mostly waits for Claude). Two jobs that write the same guide (translate,
 // automatic events) never run together; searches for suggestions write nothing to the guide, so they never wait.
-const RUNNING = new Map(), MAX_JOBS = 3, WRITES = k => k === 'translate' || k === 'auto-events';
+const RUNNING = new Map(), MAX_JOBS = 3, WRITES = k => k === 'translate' || k === 'auto-events' || k === 'find-transport';
 let STOPPING = false;   // set by SIGTERM: no new jobs or builds
 async function runJobs() {
   if (STOPPING || RUNNING.size >= MAX_JOBS) return;
@@ -589,7 +649,7 @@ async function runJobs() {
     if (!won || !won[0]) continue;
     log(j.kind === 'translate' ? 'translating' : j.kind === 'cover-art' ? 'drawing' : 'searching', 'job', j.id.slice(0, 8), j.kind === 'translate' ? (j.langs || []).join(',') : j.kind);
     const work = (async () => {
-      try { if (j.kind === 'translate') await translateJob(j, jp); else if (j.kind === 'cover-art') await coverArtJob(j, jp); else if (j.kind === 'auto-events') await autoEventsJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
+      try { if (j.kind === 'translate') await translateJob(j, jp); else if (j.kind === 'cover-art') await coverArtJob(j, jp); else if (j.kind === 'auto-events') await autoEventsJob(j, jp); else if (j.kind === 'find-transport') await transportJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
       catch (e) { log('  job FAILED:', e.message); await jp({ status: 'failed', message: String(e.message).slice(0, 200), finished_at: new Date().toISOString() }); }
     })();
     RUNNING.set(j.id, { guide: j.guide_id, kind: j.kind, work });
@@ -627,9 +687,18 @@ if (process.argv.includes('--refresh-events')) {
 // computer or server, or RESEARCH=api, without the queue (and alongside a running worker).
 if (process.argv.includes('--find')) {
   const kind = process.argv[process.argv.indexOf('--find') + 1], slug = (process.argv[process.argv.indexOf('--slug') + 1] || '').replace(/^--.*/, '');
-  if (!FIND[kind] || !slug) { console.error('Use: --find find-todo|find-markets|find-events --slug <slug>'); process.exit(1); }
+  if (!(FIND[kind] || kind === 'find-transport') || !slug) { console.error('Use: --find find-todo|find-markets|find-events --slug <slug>, or --find find-transport --slug <slug> --station <id>'); process.exit(1); }
   const g = (await rest(`/rest/v1/guides?select=id&slug=eq.${encodeURIComponent(slug)}`))[0];
   if (!g) { console.error(`No guide ${slug}.`); process.exit(1); }
+  if (kind === 'find-transport') {   // the lines through one station of the guide, as the editor's "Refresh the lines" finds them
+    const sid = process.argv[process.argv.indexOf('--station') + 1] || '';
+    log(`Getting around, ${slug}, station ${sid}. Research: ${RESEARCH === 'api' ? 'Claude API' : 'claude command'}. Nothing is written.`);
+    let res = null;
+    try { await transportJob({ id: '00000000-0000-0000-0000-000000000000', guide_id: g.id, kind, params: { id: sid } }, async b => { if (b.message) log(b.message); if (b.result) res = b.result; }, { dry: true }); }
+    catch (e) { log('did not work:', e.message); process.exit(1); }
+    console.log(JSON.stringify({ lines: res.badges.map(b => `${b.t} ${b.c}${b.ink ? ' (dark text)' : ''}`), to: res.to.map(d => `${d.dest.en} ${d.time}${d.note.en ? ' · ' + d.note.en : ''}`), link: res.link, operator: res.operator, name: res.name, sources: res.sources }, null, 1));
+    process.exit(0);
+  }
   log(`Find more, ${kind}, ${slug}. Research: ${RESEARCH === 'api' ? 'Claude API' : 'claude command'}. Nothing is written.`);
   let res = null;
   try { await findJob({ id: '00000000-0000-0000-0000-000000000000', guide_id: g.id, kind }, async b => { if (b.message) log(b.message); if (b.result) res = b.result; }); }

@@ -336,6 +336,23 @@ try {
     ok('editor, desktop: a saved change reloads the phone', !!field && (ctx.viewer || 0) > loads, `${before} -> ${loads} -> ${ctx.viewer}`);
     ok('editor, desktop phone: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // Getting around: the host types a station's name; Google places it, the worker finds its lines (mocked here), the card shows them.
+  { const { ctx, p, errors } = await open(browser, E, 360, 780), jobs = [];
+    await ctx.route(u => u.pathname === '/api/places', route => json(route, { ok: true, place: { name: 'Calafell station', lat: 41.19, lng: 1.57, maps: 'https://maps.google.com/?cid=1', km: 9 } }));
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), route => { const req = route.request();
+      if (req.method() === 'POST') { jobs.push(JSON.parse(req.postData() || '{}')); return json(route, [{ id: 'job-tr-1' }]); }
+      return json(route, [{ status: 'done', message: '1 line, 1 destination', result: { id: (jobs[0] || {}).params && jobs[0].params.id, badges: [{ t: 'R2 Sud', c: '#00A651', ink: false }], to: [{ dest: { en: 'Barcelona Sants' }, time: '50 min', note: { en: 'direct' } }], link: 'https://example.org/timetable', operator: 'Rodalies', checked: '2026-10-29' } }]); });
+    await p.goto('http://editor.test/#transport'); await ready(p); await p.waitForTimeout(300);
+    ok('Getting around: one field to add a station or stop (name or Google Maps link)', !!(await p.$('#c_stopq')) && !(await p.$('[data-tradd="train"]')));
+    await p.fill('#c_stopq', 'Calafell'); await p.click('[data-stopadd]');
+    await p.waitForFunction(() => [...document.querySelectorAll('details.cmi')].some(d => /Calafell station/.test(d.querySelector('summary').textContent) && /Found 1 line/.test(d.textContent)), null, { timeout: 15000 }).catch(() => {});
+    const job = jobs[0] || {}, card = await p.evaluate(() => { const c = [...document.querySelectorAll('details.cmi')].find(d => /Calafell station/.test(d.querySelector('summary').textContent)); return c ? { open: c.open, text: c.textContent.replace(/\s+/g, ' '), tag: !!c.querySelector('[data-p$="/tag"]'), what: !!c.querySelector('[data-p$="/what"]') } : null; });
+    ok('Getting around: Google places it and the lines are looked up for it', job.kind === 'find-transport' && (job.params || {}).name === 'Calafell station' && !!card, JSON.stringify(job.params || {}));
+    ok('Getting around: the card shows the lines and where they go, the host only adds their words', !!card && /R2 Sud/.test(card.text) && /Barcelona Sants 50 min/.test(card.text) && /Refresh the lines/.test(card.text) && card.tag && card.what, card && card.text.slice(0, 120));
+    ok('Getting around, 360 px: no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0);
+    await p.screenshot({ path: join(SHOTS, 'transport-360.png'), fullPage: true });
+    ok('Getting around: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // The look, Colours: the layout's own is chosen until another is picked, and the chosen one stays highlighted.
   { const { ctx, p, errors } = await open(browser, E, 360, 780);
     await ctx.route(/\.(jpe?g|png|webp)(\?.*)?$/i, route => route.fulfill({ status: 200, contentType: 'image/png', headers: { 'Access-Control-Allow-Origin': '*' }, body: PNG4 }));

@@ -375,21 +375,91 @@ function cTaxi(p, x) {
     <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this taxi</button></div>`);
 }
 function cStation(p, s) {
-  const placed = typeof s.lat === 'number' && !(s.lat === 0 && s.lng === 0);
-  return cCard(p, edShown(s.name) || 'New ' + cmMode(s), [s.mode === 'bus' ? 'Bus' : 'Train', s.min ? s.min + ' min by car' : '', placed ? '' : 'no pin yet'].filter(Boolean).join(' · '), `<div class="grid">
+  const placed = typeof s.lat === 'number' && !(s.lat === 0 && s.lng === 0), L = (CM.lines || {})[s.id] || {}, auto = s.auto || {}, more = p + '/more';
+  const badges = (s.badges || []).filter(b => b.t).map(b => `<span class="cm-badge" style="background:${esc(b.c || '#1D4FA0')};color:${b.ink ? '#121212' : '#fff'}">${esc(b.t)}</span>`).join('');
+  const to = (s.to || []).filter(d => edShown(d.dest)).map(d => `<li><b>${esc(edShown(d.dest))}</b>${d.time ? ' ' + esc(d.time) : ''}${edShown(d.note) ? ' · ' + esc(edShown(d.note)) : ''}</li>`).join('');
+  const found = `<div class="cm-found"><div class="cm-row cm-foundh"><b>Lines and where they go</b><button class="btn small" type="button" data-trlines="${esc(s.id)}"${L.busy || !placed ? ' disabled' : ''}>${L.busy ? 'Looking…' : badges ? 'Refresh the lines' : 'Find the lines'}</button></div>
+      <p class="hint" id="cmLines-${esc(s.id)}" role="status">${esc(L.msg || (!placed ? 'Set its pin first (below), then we look up its lines.' : auto.checked ? `Found on the web${auto.operator ? ' (' + auto.operator + ')' : ''}, checked ${auto.checked}. Refresh any time.` : badges ? 'Refresh to look them up again.' : 'We look up the lines through it and where they go. Nothing to type.'))}</p>
+      ${badges ? `<div class="cm-badges">${badges}</div>` : ''}${to ? `<ul class="cm-to">${to}</ul>` : ''}</div>`;
+  return cCard(p, edShown(s.name) || 'New ' + cmMode(s), [s.mode === 'bus' ? 'Bus' : 'Train', s.min ? s.min + ' min by car' : '', (s.badges || []).filter(b => b.t).map(b => b.t).slice(0, 4).join(' '), placed ? '' : 'no pin yet'].filter(Boolean).join(' · '), `${found}
+    <div class="grid">${cf('In a few words', p + '/tag', s.tag, { i18n: true, half: true, ph: 'Reliable, slow' })}${cf('Minutes by car from the house', p + '/min', s.min, { type: 'number', half: true })}
+    ${cf('What guests need to know', p + '/what', s.what, { i18n: true, long: true, ph: 'What only you know: is it reliable, is there internet on the way, where to park, which ticket to buy' })}</div>
+    <details class="cm-more" data-open="${esc(more)}"${CM.open.has(more) ? ' open' : ''}><summary>Change the name, the pin, the lines or the times by hand</summary><div class="grid">
     <div class="f"><label for="${cmId(p + '/mode')}">Kind</label><select id="${cmId(p + '/mode')}" data-p="${p}/mode" data-t="str"><option value="train"${s.mode !== 'bus' ? ' selected' : ''}>Train station</option><option value="bus"${s.mode === 'bus' ? ' selected' : ''}>Bus stop</option></select></div>
-    ${cf('Name', p + '/name', s.name, { i18n: true, half: true })}${cf('Minutes by car from the house', p + '/min', s.min, { type: 'number', half: true })}${cf('In a few words', p + '/tag', s.tag, { i18n: true, half: true, ph: 'Reliable, slow' })}
-    ${cf('What guests need to know', p + '/what', s.what, { i18n: true, long: true })}${cf('Timetable link', p + '/link', s.link || '', { type: 'url', half: true })}${cf('Google Maps link', p + '/gmaps', s.gmaps || '', { type: 'url', half: true })}
+    ${cf('Name', p + '/name', s.name, { i18n: true, half: true })}${cf('Timetable link', p + '/link', s.link || '', { type: 'url', half: true })}${cf('Google Maps link', p + '/gmaps', s.gmaps || '', { type: 'url', half: true })}
     <div class="f full"><label for="${cmId(p + '/gm')}">Move the pin: paste a Google Maps link</label><p class="hint">${placed ? `Now at ${(+s.lat).toFixed(4)}, ${(+s.lng).toFixed(4)}${s.km ? `, ${s.km} km from the house` : ''}.` : 'It shows in the guide once its pin is set.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div></div>
     <div class="f full"><span class="lab">Lines</span><p class="hint">Short names in the line's colour, like R4.</p>${(s.badges || []).map((b, j) => `<div class="cm-dayrow"><input type="text" data-p="${p}/badges/${j}/t" data-t="str" value="${esc(b.t || '')}" aria-label="Line name" placeholder="R4"><input type="color" class="cm-lc" data-p="${p}/badges/${j}/c" data-t="str" value="${esc(/^#[0-9a-f]{6}$/i.test(b.c || '') ? b.c : '#1D4FA0')}" aria-label="Line colour"><button class="cm-x" type="button" data-cdel="${p}/badges/${j}" data-now="1" aria-label="Remove this line">×</button></div>`).join('')}
       <button class="btn small cm-add" type="button" data-addbadge="${p}/badges">+ Add a line</button></div>
     <div class="f full"><span class="lab">Journey times</span>${(s.to || []).map((d, j) => `<div class="cm-sub"><div class="grid">${cf('To', `${p}/to/${j}/dest`, d.dest, { i18n: true, half: true, ph: 'Barcelona' })}${cf('Time', `${p}/to/${j}/time`, d.time || '', { half: true, ph: '1 h 30' })}${cf('Note', `${p}/to/${j}/note`, d.note, { i18n: true, ph: '1 change' })}</div><div><button class="btn small danger" type="button" data-cdel="${p}/to/${j}" data-now="1">Remove this destination</button></div></div>`).join('')}
       <button class="btn small cm-add" type="button" data-addto="${p}/to">+ Add a destination</button></div>
+    </details>
     <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${cmMode(s)}</button></div>`);
+}
+// Stations and stops (29 Oct 2026, Yohann: "the host only adds added-value data"): the host gives a name or a Google Maps
+// link; Google gives the place, and the guide worker looks up the lines through it and the main places they reach (job
+// "find-transport", worker/guide-worker.mjs transportJob), in the guide's languages. "Refresh the lines" asks again. The host
+// writes only what only they know; everything we found stays editable under "by hand".
+const cmStopWord = /station|estaci|gare|bahnhof|stazione|halt|stop|parada|arr[eê]t|\bbus\b|tren|train|metro|tram/i;
+const cmMin = km => km ? Math.max(2, Math.round(km * 1.1 + 1)) : 0;   // by car from the house: a first guess the host can change
+async function cmStopAdd(btn) {
+  const mode = (document.getElementById('c_stopmode') || {}).value === 'bus' ? 'bus' : 'train', v = ((document.getElementById('c_stopq') || {}).value || '').trim(), h = edF().house || {};
+  if (!v) { CM.stopMsg = 'Type its name, or paste its Google Maps link.'; return render(); }
+  CM.stopMsg = 'Looking it up on Google…'; if (btn) btn.disabled = true; render();
+  try {
+    const link = /^https?:\/\//.test(v), pos = link ? edParseMaps(v) : null;
+    const named = link ? decodeURIComponent((v.match(/\/place\/([^/@?]+)/) || [])[1] || '').replace(/\+/g, ' ') : v;
+    let place = null;
+    if (named && h.lat) {
+      const q = cmStopWord.test(named) ? named : `${named} ${mode === 'bus' ? 'bus stop' : 'train station'}`;
+      const d = await (await fetch(`/api/places?q=${encodeURIComponent(q)}&lat=${h.lat}&lng=${h.lng}`)).json();
+      place = d && d.place;
+      if (place && pos && edKm(pos.lat, pos.lng, place.lat, place.lng) > 1) place = null;   // the link wins over a namesake elsewhere
+    }
+    if (!place && pos) place = { name: named, lat: pos.lat, lng: pos.lng, maps: v, km: h.lat ? edKm(h.lat, h.lng, pos.lat, pos.lng) : 0 };
+    if (!place) throw new Error(link ? 'This link has no place in it. Use the long link from the browser bar, or type the name.' : 'Not found on Google. Try its full name, or paste its Google Maps link.');
+    if (!place.name) throw new Error('Found the spot, but not its name. Type its name instead.');
+    const T = cmTrEnsure(), id = mode + '-' + Date.now().toString(36);
+    (T.stations = T.stations || []).push({ id, mode, name: L6(place.name), lat: place.lat, lng: place.lng, km: place.km || 0, min: cmMin(place.km), tag: L6(''), what: L6(''), link: '', gmaps: place.maps || (link ? v : ''), badges: [], to: [] });
+    CM.open.add('files/transport/stations/' + (T.stations.length - 1));
+    CM.stopMsg = ''; cmQueue(); render(); cmLines(id);
+  } catch (e) { CM.stopMsg = /fetch/i.test(e.message) ? 'Google could not be reached. Try again.' : e.message; render(); }
+}
+async function cmLines(id) {
+  CM.lines = CM.lines || {};
+  const s = ((edF().transport || {}).stations || []).find(x => x.id === id); if (!s || (CM.lines[id] || {}).busy) return;
+  const st = CM.lines[id] = { busy: true, msg: 'Looking up the lines through it and where they go. About a minute.' }; render();
+  const end = msg => { st.busy = false; st.msg = msg; render(); };
+  try {
+    await cmSave();
+    const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'find-transport', langs: edLangs(), params: { id, mode: s.mode, name: edShown(s.name), lat: s.lat, lng: s.lng } } });
+    const jid = j && j[0] && j[0].id; if (!jid) throw new Error('Could not start');
+    for (let i = 0; i < 150; i++) {
+      await new Promise(r => setTimeout(r, 4000)); await ensureFresh();
+      const r = await sb('/rest/v1/guide_jobs?select=status,message,result&id=eq.' + jid), x = r && r[0]; if (!x) continue;
+      if (x.status === 'failed') return end('Did not work: ' + (x.message || 'try again later'));
+      if (x.status === 'done') { const n = cmLinesApply(x.result || {}); if (n) cmQueue(); return end(n ? `Found ${cmCount(n, 'line', 'lines')}${(x.result.to || []).length ? ' and ' + cmCount(x.result.to.length, 'destination', 'destinations') : ''}. Check them, add your own words, then publish.` : (x.message || 'No lines found on the web. Add them by hand below.')); }
+      if (x.message && x.message !== st.msg) { st.msg = x.message; const el = document.getElementById('cmLines-' + id); if (el) el.textContent = x.message; }
+    }
+    end('Still looking. Press Refresh in a while.');
+  } catch (e) { end('Did not work: ' + niceError(e)); }
+}
+// What the worker found goes into this open copy too (it also saved it in the draft), so nothing typed meanwhile is lost.
+function cmLinesApply(r) {
+  const s = ((edF().transport || {}).stations || []).find(x => x.id === r.id); if (!s) return 0;
+  if (Array.isArray(r.badges)) s.badges = r.badges;
+  if (Array.isArray(r.to)) s.to = r.to;
+  if (r.link && (!s.link || s.link === (s.auto || {}).link)) { s.link = r.link; s.linkKey = 'timetable'; }   // never over the host's own link
+  const ls = edLangs(), nm = s.name || {};
+  if (r.name && ls.every(l => (nm[l] || '') === (nm[ls[0]] || ''))) s.name = { ...nm, ...r.name };   // still the one name Google gave: now in each language
+  s.auto = { checked: r.checked, operator: r.operator || '', link: r.link || '', sources: r.sources || [] };
+  return (r.badges || []).length;
 }
 function cmTransport(c) {
   const T = (c.files || {}).transport, P = 'files/transport';
-  const adds = `<div class="cm-row"><button class="btn small" type="button" data-tradd="taxi">+ Add a taxi</button><button class="btn small" type="button" data-tradd="train">+ Add a train station</button><button class="btn small" type="button" data-tradd="bus">+ Add a bus stop</button></div>`;
+  const adds = `<div class="cm-find cm-stopadd"><b>Add a train station or bus stop</b><p class="hint">Its name, or its Google Maps link. We find it on the map, then look up its lines and where they go.</p>
+      <div class="cm-row"><select id="c_stopmode" aria-label="Train station or bus stop"><option value="train">Train station</option><option value="bus">Bus stop</option></select><input id="c_stopq" type="text" enterkeyhint="go" placeholder="Name or Google Maps link" aria-label="Its name, or its Google Maps link"><button class="btn small primary" type="button" data-stopadd>Add</button></div>
+      ${CM.stopMsg ? `<p class="hint" role="status">${esc(CM.stopMsg)}</p>` : ''}</div>
+    <div class="cm-row"><button class="btn small" type="button" data-tradd="taxi">+ Add a taxi</button></div>`;
   if (!T) return `<div class="note"><div>No taxis or stations yet. Add the ones you would tell a friend about.</div></div>${adds}`;
   return `${cSwitch('data-trtile', 'Show as a tile on the home page', !!T.tile, 'Getting around always has its own page. As a tile it also sits with your other Home tiles, one tap away.')}
     ${T.tile ? `<div class="grid">${cf('Tile title', P + '/tile/name', T.tile.name, { i18n: true, half: true, ph: 'Taxi & train' })}${cf('Line under it', P + '/tile/sub', T.tile.sub, { i18n: true, half: true, ph: 'Taxi in 30 min, 3 stations' })}</div>` : ''}
@@ -1012,6 +1082,7 @@ document.addEventListener('change', e => {
   else if (t.dataset.clang) { const s = edC().site = edC().site || {}; s.languages = [...(s.languages || ['en'])]; const l = t.dataset.clang, i = s.languages.indexOf(l); if (t.checked && i < 0) s.languages.push(l); else if (!t.checked && i > 0) s.languages.splice(i, 1); cmQueue(); render(); }
 });
 document.addEventListener('toggle', e => { const d = e.target; if (CM.on && d.matches && d.matches('details.cmi,details.cm-more[data-open]')) d.open ? CM.open.add(d.dataset.open) : CM.open.delete(d.dataset.open); }, true);
+document.addEventListener('keydown', e => { if (CM.on && e.key === 'Enter' && e.target && e.target.id === 'c_stopq') { e.preventDefault(); cmStopAdd(document.querySelector('[data-stopadd]')); } });
 document.addEventListener('click', e => {
   if (!CM.on) return;
   const t = e.target.closest && e.target.closest('button,a[data-cpreview]'); if (!t) return;
@@ -1048,6 +1119,8 @@ document.addEventListener('click', e => {
   if (d.evdel) { const k = d.evdel, cur = [...(evAuto()[k] || [])]; cur.splice(+d.i, 1); return cmEvAutoSet({ [k]: cur }); }
   if (d.evrun !== undefined) return cmEvBusy() ? undefined : evAuto().on ? cmEvRun() : cmFindStart(EV_PATH);
   if (d.tradd) { cmTrAdd(d.tradd); return done(); }
+  if (d.stopadd !== undefined) return cmStopAdd(t);
+  if (d.trlines) return cmLines(d.trlines);
   if (d.trtile !== undefined) { cmTrTile(); return done(); }
   if (d.cbool) { const q = edPath(d.cbool), o = edGet(edC(), q.slice(0, -1)); if (o) { o[q[q.length - 1]] = !o[q[q.length - 1]]; done(); } return; }
   if (d.addalt) { arr(d.addalt).push({ name: L6(''), phone: '' }); return done(); }
@@ -1159,6 +1232,13 @@ function cmInit() {
 .cm-artres img{width:100%;max-width:480px;aspect-ratio:3/2;object-fit:cover;border-radius:14px;display:block}
 .cm-err{color:var(--danger)}
 .cm-more{border-top:1.5px solid var(--line);padding-top:12px}
+.cm-found{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:var(--r-s);background:var(--sunk);margin-bottom:14px}
+.cm-foundh{justify-content:space-between}.cm-foundh b{flex:1 1 auto}
+.cm-found .hint{margin:0}
+.cm-badges{display:flex;flex-wrap:wrap;gap:6px}
+.cm-badge{font-weight:700;font-size:13px;line-height:1.2;padding:3px 9px;border-radius:6px}
+.cm-to{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
+.cm-stopadd .cm-row input{flex:3 1 180px}
 .cm-more>summary{cursor:pointer;font-weight:700;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;min-height:32px}
 .cm-more>summary small{font-weight:500;color:var(--muted);font-size:13.5px}
 .cm-more[open]>summary{margin-bottom:12px}
