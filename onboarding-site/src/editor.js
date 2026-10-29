@@ -236,7 +236,7 @@ function cmLook(c) {
         ${CM.artErr ? `<p class="hint cm-err">${esc(CM.artErr)}</p>` : ''}</div>` : ''}</div>
     <div class="f full"><span class="lab" id="l_cpreset">${n(3)}Layout</span><p class="hint">Each one shows the same sections in a different way.</p><div class="moods" role="radiogroup" aria-labelledby="l_cpreset">${ED_PRESETS.map(([id, nm, d, cls]) => `<label class="mood"><input type="radio" name="cpreset" data-design="preset" value="${id}"${preset === id ? ' checked' : ''}><div class="box"><div class="mock ${cls}">${'<i></i>'.repeat(6)}</div><b>${nm}</b><small>${d}</small></div></label>`).join('')}</div></div>
     <div class="f full"><span class="lab">${n(4)}Colours</span><p class="hint">Each layout has its own colours. You can take them from your cover picture or your logo instead${preset === 'bauhaus' ? '' : ' (in this layout the tiles keep their own colours: yours go to the accents)'}.</p>
-      <div class="cm-row"><button class="btn small" type="button" data-colorsfrom="look">The layout’s own</button>${h.photo ? '<button class="btn small" type="button" data-colorsfrom="cover">From my cover picture</button>' : ''}${s.logo ? '<button class="btn small" type="button" data-colorsfrom="logo">From my logo</button>' : ''}</div>
+      <div class="cm-row" role="group" aria-label="Colours">${[['look', 'The layout’s own', true], ['cover', 'From my cover picture', h.photo], ['logo', 'From my logo', s.logo]].filter(x => x[2]).map(([k, l]) => `<button class="btn small" type="button" data-colorsfrom="${k}" aria-pressed="${(th.colorsFrom || 'look') === k}">${l}</button>`).join('')}</div>
       ${CM.logoCol ? `<p class="hint" id="cmLogoCol">${esc(CM.logoCol)}</p>` : ''}
       <details class="cm-more" data-open="look-colours"${CM.open.has('look-colours') ? ' open' : ''}><summary>Fine-tune each colour</summary><div class="cm-colors">${ED_COLORS.map(([v, l, d]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></details></div>
     <details class="cm-more" data-open="look-fonts"${CM.open.has('look-fonts') ? ' open' : ''}><summary>Fonts <small>Optional: each layout comes with its own</small></summary>
@@ -868,11 +868,11 @@ async function edImageColours(src) {
 const ED_COLOR_VARS = /--(paper|white|ink|muted|faint|line|red|blue|yellow|orange|green|accent|k-sky)\s*:\s*[^;}]+;?/g;
 async function edColoursFrom(kind) {
   const th = CM.g.theme = CM.g.theme || {}, c = edC();
-  if (kind === 'look') { th.css = (th.css || '').replace(ED_COLOR_VARS, ''); CM.logoCol = 'Back to the layout’s own colours.'; cmQueue(); return render(); }
+  if (kind === 'look') { th.css = (th.css || '').replace(ED_COLOR_VARS, ''); delete th.colorsFrom; CM.logoCol = 'Back to the layout’s own colours.'; cmQueue(); return render(); }
   try {
     const vars = await edImageColours(edImg(kind === 'logo' ? c.site.logo : c.files.house.photo));
     th.css = (th.css || '').replace(ED_COLOR_VARS, '');   // each choice starts from the layout's own colours
-    edWriteVars(th, vars); CM.logoCol = `Done: ${Object.keys(vars).length} colours from your ${kind === 'logo' ? 'logo' : 'cover picture'}.`; cmQueue(); render();
+    edWriteVars(th, vars); th.colorsFrom = kind; CM.logoCol = `Done: ${Object.keys(vars).length} colours from your ${kind === 'logo' ? 'logo' : 'cover picture'}.`; cmQueue(); render();
   } catch (e) { CM.logoCol = e.message; render(); }
 }
 async function edPhotoInput(t) {

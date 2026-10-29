@@ -81,7 +81,7 @@ seg1=rep(seg1,""",
 seg1=rep(seg1,"const MOODS = [\n","const MOODS = [\n  {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},\n")
 seg1=rep(seg1,"  mood:{t:'mood',label:'Which feels closest?',hint:'This sets the layout, not only the colours.'},",
 """  mood:{t:'mood',label:'Layout',opt:true,hint:'Each one shows the same sections in a different way. Not sure? Leave it: we pick one that suits your listing.'},
-  colorsFrom:{t:'radio',label:'Colours',opt:true,opts:['The colours of the layout','From my logo','From my cover picture'],hint:'Each layout comes with its own colours. You can also take them from your logo or your cover picture.'},
+  colorsFrom:{t:'radio',label:'Colours',opt:true,def:'The colours of the layout',opts:['The colours of the layout','From my logo','From my cover picture'],hint:'Each layout comes with its own colours. You can also take them from your logo or your cover picture.'},
   slug:{t:'slug',label:'Web address of your guide',hint:'The first part is ours, the last part is yours. Short and easy to type works best.'},
   refLinks:{t:'area',rows:2,label:'Apps or websites you love using',opt:true,full:true,ph:'Airbnb, Citymapper, a hotel site, a magazine…',hint:'Names or links. We read them for the overall feel, like the fonts and how round or sharp the corners are. Your guide keeps its own sections.'},
   feelWords:{t:'chips',label:'Words for the feel',opt:true,opts:['Cosy','Elegant','Playful','Modern','Rustic','Calm','Local and authentic','Luxurious','Family friendly','Colourful']},

@@ -8,6 +8,7 @@
 // knows (Wi-Fi, rubbish, phone, arrival) and every Done and seen step taken out. Build the page first (src: python3 build.py).
 // Needs SUPABASE_SERVICE_KEY (worker/.env.local or the environment) and Playwright (npm i --no-save playwright).
 import { createRequire } from 'node:module';
+import { deflateSync } from 'node:zlib';
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -33,6 +34,14 @@ const listing = (route, body) => setTimeout(() => json(route, body.stage === 'pa
 const inPhone = (p, fn) => p.evaluate(fn => { const d = document.getElementById('phoneFrame') && document.getElementById('phoneFrame').contentDocument; return d ? new Function('d', 'return (' + fn + ')(d)')(d) : null; }, fn.toString());
 mkdirSync(SHOTS, { recursive: true });
 const results = [], ok = (name, pass, more = '') => results.push(`${pass ? 'PASS' : 'FAIL'}  ${name}${more ? '  (' + more + ')' : ''}`);
+// A 4x4 picture in four colours (blue, red, yellow, green), for the colour checks.
+const PNG4 = (() => { const W = 4, rows = [], C = [[29, 79, 160], [213, 43, 30], [245, 196, 0], [14, 124, 70]];
+  for (let y = 0; y < W; y++) { rows.push(0); for (let x = 0; x < W; x++) rows.push(...C[(x >> 1) + 2 * (y >> 1)]); }
+  const T = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; T[n] = c >>> 0; }
+  const crc = b => { let r = -1; for (const x of b) r = T[(r ^ x) & 255] ^ (r >>> 8); return (r ^ -1) >>> 0; };
+  const chunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([len, td, c]); };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(W, 4); ihdr[8] = 8; ihdr[9] = 2;
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(Buffer.from(rows))), chunk('IEND', Buffer.alloc(0))]); })();
 const json = (route, body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 
 async function open(browser, G, w, h, stored = {}, listing = null) {
@@ -88,19 +97,20 @@ try {
     await p.goto('http://editor.test/'); await p.waitForSelector('#acct .ac-card', { timeout: 15000 }).catch(() => {}); await p.waitForTimeout(400);
     return { ctx, p, errors, seen };
   };
-  const tileClash = p => p.$$eval('#acct .ac-tile', els => els.flatMap(el => { const s = getComputedStyle(el, '::before'), b = el.getBoundingClientRect();
+  const tileClash = p => p.$$eval('#acct .ex-tile', els => els.flatMap(el => { const s = getComputedStyle(el, '::before'), b = el.getBoundingClientRect();
     const w = parseFloat(s.width) + parseFloat(s.borderLeftWidth) + parseFloat(s.borderRightWidth), h = parseFloat(s.height) + parseFloat(s.borderTopWidth) + parseFloat(s.borderBottomWidth);
     const x2 = b.right - parseFloat(s.right), x1 = x2 - w, y1 = b.top + parseFloat(s.top), y2 = y1 + h;
-    const boxes = t => { if (t.matches('.ic, .ar')) return [t.getBoundingClientRect()]; const g = document.createRange(); g.selectNodeContents(t); return [...g.getClientRects()]; };   // text: the words, not the line
-    return [...el.querySelectorAll('b, small, .ic, .ar, .lv, .ac-chip')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent + ': ' + t.tagName); }));
+    const boxes = t => { if (t.matches('svg, .ex-ar, .ex-pill')) return [t.getBoundingClientRect()]; const g = document.createRange(); g.selectNodeContents(t); return [...g.getClientRects()]; };   // text: the words, not the line
+    return [...el.querySelectorAll('b, small, .ex-ic svg, .ex-ar, .ex-tag, .ex-pill')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent + ': ' + t.tagName); }));
   for (const [w, h, tag] of [[360, 780, '360 px'], [1280, 860, 'desktop']]) {
     const { ctx, p, errors } = await signedOut(w, h, false);
     ok(`signed out, ${tag}: the page in the guides' look, sign-up card shown`, !!(await p.$('#acct .ac-hero')) && !!(await p.$('#acct #acForm')));
     ok(`signed out, ${tag}: no Google button while Google is off`, !(await p.$('#acGoogle')));
     ok(`signed out, ${tag}: no sideways scroll`, (await p.evaluate(() => document.getElementById('acct').scrollWidth - window.innerWidth)) <= 0);
     const clash = await tileClash(p); ok(`signed out, ${tag}: no tile text under its corner shape`, !clash.length, clash.join('; '));
-    const ex = await p.evaluate(() => ({ tiles: document.querySelectorAll('#acct .ac-ex .ac-tile').length, live: [...document.querySelectorAll('#acct [data-live]')].map(x => x.textContent), wide: [...document.querySelectorAll('#acct .ac-ex b, #acct .ac-ex small, #acct .ac-ex .ac-chip')].filter(x => x.scrollWidth > x.clientWidth + 1 && getComputedStyle(x).display !== 'inline').length }));
-    ok(`signed out, ${tag}: the example guide has its 8 sections and live lines for today`, ex.tiles === 8 && ex.live.filter(Boolean).length >= 7 && /markets? (today|tomorrow)/.test(ex.live.join(' ')), ex.live.slice(0, 3).join(' | '));
+    const ex = await p.evaluate(() => { const x = document.querySelector('#acct .ac-ex'); return { tiles: x.querySelectorAll('.ex-tile').length, cards: x.querySelectorAll('.ex-card').length, items: x.querySelectorAll('.ex-on .ex-it').length, text: x.innerText.replace(/\s+/g, ' '),
+      wide: [...x.querySelectorAll('b, small, .ex-tx > span, .ex-when, .ex-pill')].filter(e => e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).display !== 'inline').length }; });
+    ok(`signed out, ${tag}: the example is Ca La Kimberly's home (tiles, cards, what's on) with today's lines`, ex.tiles === 6 && ex.cards === 4 && ex.items === 6 && /\d+ today/.test(ex.text) && /Tonight/i.test(ex.text) && /(Open|Closed)/.test(ex.text) && !/next train/i.test(ex.text), `${ex.tiles} tiles, ${ex.cards} cards, ${ex.items} items`);
     ok(`signed out, ${tag}: no word wider than its box in the example`, !ex.wide, ex.wide + ' too wide');
     ok(`signed out, ${tag}: no page errors`, !errors.length, errors.join(' | '));
     await p.screenshot({ path: join(SHOTS, `signed-out-${tag.replace(' ', '')}.png`), fullPage: false });
@@ -325,6 +335,20 @@ try {
     if (field) { await field.fill(((await field.inputValue()) || '') + ' '); await p.waitForTimeout(2200); }
     ok('editor, desktop: a saved change reloads the phone', !!field && (ctx.viewer || 0) > loads, `${before} -> ${loads} -> ${ctx.viewer}`);
     ok('editor, desktop phone: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // The look, Colours: the layout's own is chosen until another is picked, and the chosen one stays highlighted.
+  { const { ctx, p, errors } = await open(browser, E, 360, 780);
+    await ctx.route(/\.(jpe?g|png|webp)(\?.*)?$/i, route => route.fulfill({ status: 200, contentType: 'image/png', headers: { 'Access-Control-Allow-Origin': '*' }, body: PNG4 }));
+    await p.goto('http://editor.test/#look'); await ready(p); await p.waitForTimeout(300);
+    const pressed = () => p.$$eval('[data-colorsfrom]', bs => bs.filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.colorsfrom).join()).catch(() => '');
+    const first = await pressed();
+    await p.click('[data-colorsfrom="cover"]'); await p.waitForFunction(() => document.querySelector('[data-colorsfrom="cover"][aria-pressed="true"]') || /could not|not/i.test((document.getElementById('cmLogoCol') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+    const second = await pressed(), bg = await p.$eval('[data-colorsfrom="cover"]', b => getComputedStyle(b).backgroundColor).catch(() => '');
+    await p.click('[data-colorsfrom="look"]'); await p.waitForTimeout(300);
+    const third = await pressed();
+    ok('editor, Colours: "The layout\'s own" is highlighted at first, the picked one after, and back', first === 'look' && second === 'cover' && third === 'look' && bg !== 'rgba(0, 0, 0, 0)', `${first} -> ${second} (${bg}) -> ${third}`);
+    await p.click('[data-colorsfrom="cover"]'); await p.waitForTimeout(1500); await p.screenshot({ path: join(SHOTS, 'editor-colours-360.png') });
+    ok('editor, Colours: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const { ctx, p } = await open(browser, E, 360, 780);
     await p.goto('http://editor.test/#guide'); await ready(p); await p.waitForTimeout(400);
