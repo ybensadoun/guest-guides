@@ -92,13 +92,16 @@ try {
     const w = parseFloat(s.width) + parseFloat(s.borderLeftWidth) + parseFloat(s.borderRightWidth), h = parseFloat(s.height) + parseFloat(s.borderTopWidth) + parseFloat(s.borderBottomWidth);
     const x2 = b.right - parseFloat(s.right), x1 = x2 - w, y1 = b.top + parseFloat(s.top), y2 = y1 + h;
     const boxes = t => { if (t.matches('.ic, .ar')) return [t.getBoundingClientRect()]; const g = document.createRange(); g.selectNodeContents(t); return [...g.getClientRects()]; };   // text: the words, not the line
-    return [...el.querySelectorAll('b, small, .ic, .ar')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent + ': ' + t.tagName); }));
+    return [...el.querySelectorAll('b, small, .ic, .ar, .lv, .ac-chip')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent + ': ' + t.tagName); }));
   for (const [w, h, tag] of [[360, 780, '360 px'], [1280, 860, 'desktop']]) {
     const { ctx, p, errors } = await signedOut(w, h, false);
     ok(`signed out, ${tag}: the page in the guides' look, sign-up card shown`, !!(await p.$('#acct .ac-hero')) && !!(await p.$('#acct #acForm')));
     ok(`signed out, ${tag}: no Google button while Google is off`, !(await p.$('#acGoogle')));
     ok(`signed out, ${tag}: no sideways scroll`, (await p.evaluate(() => document.getElementById('acct').scrollWidth - window.innerWidth)) <= 0);
     const clash = await tileClash(p); ok(`signed out, ${tag}: no tile text under its corner shape`, !clash.length, clash.join('; '));
+    const ex = await p.evaluate(() => ({ tiles: document.querySelectorAll('#acct .ac-ex .ac-tile').length, live: [...document.querySelectorAll('#acct [data-live]')].map(x => x.textContent), wide: [...document.querySelectorAll('#acct .ac-ex b, #acct .ac-ex small, #acct .ac-ex .ac-chip')].filter(x => x.scrollWidth > x.clientWidth + 1 && getComputedStyle(x).display !== 'inline').length }));
+    ok(`signed out, ${tag}: the example guide has its 8 sections and live lines for today`, ex.tiles === 8 && ex.live.filter(Boolean).length >= 7 && /markets? (today|tomorrow)/.test(ex.live.join(' ')), ex.live.slice(0, 3).join(' | '));
+    ok(`signed out, ${tag}: no word wider than its box in the example`, !ex.wide, ex.wide + ' too wide');
     ok(`signed out, ${tag}: no page errors`, !errors.length, errors.join(' | '));
     await p.screenshot({ path: join(SHOTS, `signed-out-${tag.replace(' ', '')}.png`), fullPage: false });
     await ctx.close();

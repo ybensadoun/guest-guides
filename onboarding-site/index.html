@@ -1550,7 +1550,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 07:19 (Madrid time, after commit 8014885)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 07:34 (Madrid time, after commit 26bcf7a)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -1691,20 +1691,51 @@ function niceError(e){
 #acct .ac-facts div+div{border-left:1.5px solid var(--k-line)}
 #acct .ac-facts small{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--k-muted)}
 #acct .ac-facts b{font-weight:600;font-size:16px;color:var(--k-blue)}
-#acct .ac-tiles{grid-area:tiles;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-#acct .ac-tiles h2{grid-column:1/-1;margin:6px 0 0;font-size:24px;font-weight:700}
-#acct .ac-tile{position:relative;overflow:hidden;isolation:isolate;border-radius:20px;padding:16px;min-height:150px;display:flex;flex-direction:column;gap:6px;color:#fff}
+/* What your guests get: a generic Ca La Kimberly home, live for today (acToday) */
+#acct .ac-ex{grid-area:tiles;display:flex;flex-direction:column;gap:12px;min-width:0}
+#acct .ac-exh h2{margin:6px 0 2px;font-size:26px;line-height:1.1;font-weight:700}
+#acct .ac-exh p{margin:0;font-size:15px;line-height:1.4;color:var(--k-muted)}
+#acct .ac-exh p b{color:var(--k-ink);font-weight:600;white-space:nowrap}
+#acct .ac-welcome{background:#fff;border:2px solid var(--k-ink);border-radius:20px;overflow:hidden;cursor:pointer}
+#acct .ac-scene svg{display:block;width:100%;height:124px}
+#acct .ac-wrow{display:flex;align-items:center;gap:12px;padding:14px 16px}
+#acct .ac-logo{width:46px;height:46px;border-radius:12px;flex:none;background:var(--k-blue);position:relative;overflow:hidden}
+#acct .ac-logo::before{content:"";position:absolute;width:26px;height:26px;border-radius:50%;background:var(--k-yellow);right:-6px;top:-6px}
+#acct .ac-logo::after{content:"";position:absolute;width:24px;height:24px;border-radius:0 24px 0 0;background:var(--k-red);left:0;bottom:0}
+#acct .ac-wt{display:flex;flex-direction:column;min-width:0;flex:1}
+#acct .ac-wt small{font-size:13px;color:var(--k-muted)}
+#acct .ac-wt b{font-size:22px;line-height:1.1;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+#acct .ac-wt span{font-size:14px;color:var(--k-muted)}
+#acct .ac-wrow .ar{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--k-ink);color:var(--k-yellow);font-weight:700}
+#acct .ac-sg{margin:10px 0 0;font-size:22px;line-height:1.15;font-weight:700}
+#acct .ac-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#acct .ac-tile{position:relative;overflow:hidden;isolation:isolate;border-radius:20px;padding:16px;min-height:168px;display:flex;flex-direction:column;gap:6px;color:#fff;cursor:pointer}
+#acct .ac-tile.wide{grid-column:1/-1;min-height:0}
 #acct .ac-tile .ic{width:30px;height:30px;margin-bottom:18px}
 #acct .ac-tile .ic svg{width:28px;height:28px}
-#acct .ac-tile b{font-size:clamp(19px,5vw,22px);line-height:1.12;font-weight:700;margin-top:auto}
-#acct .ac-tile small{font-size:14px;opacity:.9;line-height:1.3}
-#acct .ac-tile .ar{align-self:flex-end;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#fff;color:var(--k-ink);font-weight:700}
+#acct .ac-tile b{font-size:clamp(19px,5vw,22px);line-height:1.12;font-weight:700}
+#acct .ac-tile small{font-size:14px;opacity:.92;line-height:1.3}
+#acct .ac-tile .ar{align-self:flex-end;margin-top:auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#fff;color:var(--k-ink);font-weight:700;flex:none}
 #acct .ac-tile::before{content:"";position:absolute;z-index:-1;top:0;right:0}
+#acct .lv{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+#acct .lv .dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none;animation:acPulse 2s ease-in-out infinite}
+@keyframes acPulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){#acct .lv .dot{animation:none}}
+#acct .ac-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+#acct .ac-chip{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;background:rgba(255,255,255,.16);font-size:14px;font-weight:600;line-height:1.25;max-width:100%}
+#acct .ac-chip:has(i){padding-left:6px}
+#acct .ac-chip:empty{display:none}
+#acct .ac-chip i{width:26px;height:26px;border-radius:50%;background:#fff;color:var(--k-red);display:grid;place-items:center;flex:none;font-style:normal}
+#acct .ac-chip i svg{width:16px;height:16px}
+#acct .t-b{background:var(--k-blue)}#acct .t-b::before{width:58px;height:58px;border-radius:0 0 0 58px;background:var(--k-yellow)}
 #acct .t-y{background:var(--k-yellow);color:var(--k-ink)}#acct .t-y .ar{background:var(--k-ink);color:#fff}
 #acct .t-y::before{width:60px;height:60px;border-radius:0 0 0 60px;background:var(--k-ink)}
 #acct .t-r{background:var(--k-red)}#acct .t-r::before{border-left:30px solid transparent;border-right:30px solid transparent;border-top:50px solid var(--k-ink);right:10px}
 #acct .t-k{background:var(--k-ink)}#acct .t-k::before{width:64px;height:64px;border-radius:0 0 0 64px;background:var(--k-red)}
 #acct .t-g{background:var(--k-green)}#acct .t-g::before{border-left:26px solid transparent;border-right:26px solid transparent;border-top:44px solid var(--k-yellow);right:14px}
+#acct .t-o{background:var(--k-orange);color:var(--k-ink)}#acct .t-o .ar{background:var(--k-ink);color:#fff}
+#acct .t-o::before{width:52px;height:52px;border-radius:50%;top:-14px;right:-14px;background:var(--k-ink)}
+#acct .ac-cta{align-self:stretch;margin-top:6px;font:inherit;font-weight:700;font-size:16px;padding:14px 18px;border-radius:999px;border:0;background:var(--k-ink);color:#fff;cursor:pointer}
 #acct .ac-card{grid-area:card;background:#fff;border:2px solid var(--k-ink);border-radius:20px;padding:22px 20px}
 #acct .ac-card h2{margin:0 0 6px;font-size:28px;line-height:1.08;font-weight:700}
 #acct p.lead{margin:0 0 16px;color:var(--k-muted);font-size:16px;line-height:1.45}
@@ -1771,6 +1802,51 @@ async function googleOn(){
   return window.__googleOn;
 }
 (function(){ if (document.getElementById('jostFont')) return; const l = document.createElement('link'); l.id = 'jostFont'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap'; document.head.appendChild(l); })();
+// "What your guests get": a generic version of Ca La Kimberly's home (Yohann, 29 Oct 2026: "make it seem live"). An example
+// house, its lines worked out for today on the visitor's clock: tonight's bin, today's markets (tomorrow's after 14:00), the
+// month's festival on the coming weekend, whether the restaurant is open, the next train.
+function acToday(){
+  const d = new Date(), wd = d.getDay(), mins = d.getHours() * 60 + d.getMinutes(), late = mins >= 14 * 60;
+  const MK = [2, 1, 3, 2, 3, 2, 4], n = MK[late ? (wd + 1) % 7 : wd];
+  const sat = new Date(d); sat.setDate(d.getDate() + (6 - wd));
+  const FEST = ['Winter jazz nights', 'Carnival parade', 'Spring flower fair', 'Easter procession', 'Wine and cheese fair', 'Midsummer bonfires', 'Open-air cinema', 'Summer festival', 'Harvest festival', 'Autumn food fair', 'Chestnut festival', 'Christmas market'];
+  const open = (mins >= 13 * 60 && mins < 16 * 60) || (mins >= 19 * 60 + 30 && mins < 23 * 60);
+  return {
+    date: d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }),
+    bin: ['Organic waste', 'Organic waste', 'Paper and cardboard', 'Plastic and cans', 'Glass', 'Organic waste', 'General waste'][wd],
+    markets: `${n} ${n === 1 ? 'market' : 'markets'} ${late ? 'tomorrow' : 'today'}`,
+    market1: late ? 'Old town, from 8:00' : 'Old town, until 13:00', market2: n < 2 ? '' : late ? 'Farmers\' market, from 8:30' : 'Farmers\' market, until 14:00',   // as many as the count says
+    event: `${FEST[d.getMonth()]} · ${wd === 0 || wd === 6 ? 'this weekend' : sat.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}`,
+    resto: 'Fish by the harbour · ' + (open ? 'open now' : mins < 13 * 60 ? 'opens at 13:00' : mins < 19 * 60 + 30 ? 'opens at 19:30' : 'opens tomorrow at 13:00'),
+    train: `Next train to the city in ${30 - (d.getMinutes() % 30)} min`
+  };
+}
+const AC_SCENE = '<svg viewBox="0 0 400 124" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="400" height="124" fill="#1D4FA0"/><circle cx="318" cy="40" r="24" fill="#F5C400"/><path d="M0 90C80 76 160 78 240 88S360 82 400 84V124H0z" fill="#0E7C46"/><path d="M150 64h72v42h-72z" fill="#fff"/><path d="M142 66l44-28 44 28z" fill="#D52B1E"/><path d="M160 76h12v12h-12zM198 84h12v22h-12z" fill="#121212"/><path d="M0 108C100 100 220 102 400 106V124H0z" fill="#F3EEE3"/></svg>';
+function acExample(){
+  const L = acToday(), live = (k, tag = 'span', cls = '') => `<${tag}${cls ? ` class="${cls}"` : ''} data-live="${k}">${esc(L[k])}</${tag}>`;
+  const tile = (cls, ic, title, body) => `<div class="ac-tile ${cls}"><span class="ic">${ic || ''}</span><b>${title}</b>${body}<span class="ar" aria-hidden="true">→</span></div>`;
+  return `<section class="ac-ex" aria-label="What your guests get">
+          <div class="ac-exh"><h2>What your guests get</h2><p>An example guide, as it looks today, ${live('date', 'b')}</p></div>
+          <div class="ac-welcome"><div class="ac-scene">${AC_SCENE}</div>
+            <div class="ac-wrow"><span class="ac-logo" aria-hidden="true"></span><span class="ac-wt"><small>Welcome to</small><b>Casa Sol</b><span>See the house</span></span><span class="ar" aria-hidden="true">→</span></div>
+            <div class="ac-facts"><div><small>Wi-Fi</small><b>Tap to connect</b></div><div><small>Check-out</small><b>Before 11:00</b></div></div></div>
+          <p class="ac-sg">At the house</p>
+          <div class="ac-grid">
+            ${tile('t-b wide', I.bin, 'Rubbish and recycling', `<span class="lv"><i class="dot"></i>Tonight</span><span class="ac-chips"><span class="ac-chip"><i>${I.bin}</i>${live('bin')}</span></span>`)}
+            ${tile('t-y', I.tool, 'House guide', '<small>How everything works, room by room</small>')}
+            ${tile('t-r', I.phone, 'Emergencies', '<small>112, the hospital, the pharmacy on duty tonight</small>')}
+          </div>
+          <p class="ac-sg">Around the house</p>
+          <div class="ac-grid">
+            ${tile('t-k wide', I.bag, 'Markets', `<span class="lv"><i class="dot"></i>${live('markets')}</span><span class="ac-chips"><span class="ac-chip">${live('market1')}</span>${live('market2', 'span', 'ac-chip')}</span>`)}
+            ${tile('t-g', I.kite, 'What\'s on', `<small>${live('event')}</small>`)}
+            ${tile('t-o', I.heart, 'Restaurants', `<small>${live('resto')}</small>`)}
+            ${tile('t-b', I.compass, 'Things to do', '<small>Beaches, walks and castles, picked near the house</small>')}
+            ${tile('t-y', I.train || I.car, 'Getting around', `<small>${live('train')}</small>`)}
+          </div>
+          <button class="ac-cta" type="button">Make this guide for your house →</button>
+        </section>`;
+}
 async function gate(mode0, notice, noticeOk){
   await googleOn();
   return new Promise(resolve => {
@@ -1785,7 +1861,7 @@ async function gate(mode0, notice, noticeOk){
         <section class="ac-hero"><div class="ac-art" aria-hidden="true"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i><i class="s5"></i></div>
           <div class="ac-name"><small>Guest guides for holiday homes</small><h1>Your guest guide, written for you.</h1>
             <p>Paste your Airbnb link: in about a minute you see your whole guide, with the house, the rules, the Wi-Fi and the best of the area, in your guests' languages. Then you make it yours.</p></div>
-          <div class="ac-facts"><div><small>Wi-Fi</small><b>Tap to connect</b></div><div><small>Check-out</small><b>Before 11:00</b></div></div></section>
+</section>
         <section class="ac-card">
           <h2>${reset ? 'Choose a new password' : rec ? 'Reset your password' : up ? 'Create your account' : 'Welcome back'}</h2>
           <p class="lead">${reset ? 'Pick a new password, then you are back in.' : rec ? 'We email you a link to choose a new password.' : up ? 'So you can come back any time and change your answers. It takes a minute.' : 'Log in to continue where you left off.'}</p>
@@ -1798,11 +1874,8 @@ async function gate(mode0, notice, noticeOk){
         </form>
           <div class="alt">${rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : 'New here? <button type="button" data-m="signup">Create an account</button> · <button type="button" data-m="recover">Forgot password?</button>'}</div>
         ${up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>' : ''}</section>
-        <section class="ac-tiles" aria-label="What your guests get"><h2>What your guests get</h2>
-          <div class="ac-tile t-y"><span class="ic">${I.tool}</span><b>House guide</b><small>How everything works, room by room</small><span class="ar" aria-hidden="true">→</span></div>
-          <div class="ac-tile t-r"><span class="ic">${I.phone}</span><b>Emergencies</b><small>112, the hospital, the pharmacy</small><span class="ar" aria-hidden="true">→</span></div>
-          <div class="ac-tile t-k"><span class="ic">${I.bag}</span><b>Markets</b><small>What is on today</small><span class="ar" aria-hidden="true">→</span></div>
-          <div class="ac-tile t-g"><span class="ic">${I.compass}</span><b>What to do</b><small>Picked near your house</small><span class="ar" aria-hidden="true">→</span></div></section></div>`;
+        ${acExample()}</div>`;
+      el.querySelector('.ac-ex').onclick = e => { if (!e.target.closest('.ac-tile, .ac-welcome, .ac-cta')) return; const c = el.querySelector('.ac-card'); c.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => { const i = c.querySelector('input'); if (i) i.focus({ preventScroll: true }); }, 450); };
       const gb = el.querySelector('#acGoogle'); if (gb) gb.onclick = () => { gb.disabled = true; location.href = `${SB.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + '/')}`; };
       el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; draw(); });
       const f = el.querySelector('#acForm'), m = el.querySelector('#acMsg');
@@ -1829,6 +1902,7 @@ async function gate(mode0, notice, noticeOk){
       setTimeout(() => { const i = el.querySelector('input'); if (i && (drawn++ || innerWidth >= 900)) i.focus(); }, 30);   // on a phone the page opens on the guide, not the keyboard
     };
     draw(notice, noticeOk);
+    const live = setInterval(() => { if (!el.isConnected) return clearInterval(live); const L = acToday(); el.querySelectorAll('[data-live]').forEach(x => { if (x.textContent !== L[x.dataset.live]) x.textContent = L[x.dataset.live]; }); }, 30000);
   });
 }
 
