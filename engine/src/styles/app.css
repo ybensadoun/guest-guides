@@ -189,7 +189,7 @@ a.gt:active{transform:scale(.98)}
 .mlist{display:flex;flex-direction:column;background:var(--white);border-radius:var(--r);overflow:hidden}
 .mrow{border-top:1.5px solid var(--line)}
 .mrow:first-child{border-top:0}
-.mrow summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:40px 1fr auto;column-gap:12px;row-gap:0;align-items:center;padding:14px 16px;-webkit-tap-highlight-color:transparent}
+.mrow summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:40px minmax(min-content,1fr) auto;column-gap:12px;row-gap:0;align-items:center;padding:14px 16px;-webkit-tap-highlight-color:transparent}
 .mrow summary::-webkit-details-marker{display:none}
 .mrow .dot{grid-row:1/span 2;align-self:center}
 .mrow .nm{font-size:18px;font-weight:600;line-height:1.25;min-width:0}
@@ -197,6 +197,11 @@ a.gt:active{transform:scale(.98)}
 .nm .nw{white-space:nowrap}
 .warn{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--yellow);color:var(--ink);font-style:normal;font-size:13px;font-weight:700;margin-left:6px;vertical-align:2px}
 .mrow .rt{display:flex;align-items:center;gap:10px}
+/* A row's name never gets narrower than its longest word (minmax(min-content, 1fr) above): the status on the right gives way
+   and wraps instead ("Gemüsemarkt", "donderdagmarkt" at 360 px). */
+/* For that, words in a row break only between words or at a soft hyphen in the content: the general hyphens:auto (below)
+   made the name's narrowest width one syllable, so the status kept the room and long words broke or overflowed. */
+.mrow summary .nm,.mrow summary .nm small,.mrow summary .rt,.mrow summary .rt small{hyphens:manual!important;-webkit-hyphens:manual!important;overflow-wrap:normal!important}
 .mrow[open] summary{background:var(--paper)}
 .tstrip{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .tstrip i{font-style:normal;font-size:14px;font-weight:500;line-height:1;color:var(--ink);background:var(--paper);padding:6px 9px;border-radius:8px;white-space:nowrap}
@@ -419,7 +424,8 @@ a.gt:active{transform:scale(.98)}
 .qcall.wide b{font-size:19px}
 .qt{display:flex;flex-direction:column;gap:2px;min-width:0}
 .dl{display:block}
-.dk{white-space:nowrap}
+/* The distance, rating and price lines wrap between words (only a number and its unit stay together, .nw): kept on one
+   line, a long one ran under the status on the right (French at 360 px). */
 .dk{display:block}
 
 /* Place page (#p/<id>): map, buttons, description, hours */

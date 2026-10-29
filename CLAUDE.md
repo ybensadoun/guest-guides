@@ -19,7 +19,7 @@ This repo is PUBLIC (ybensadoun/guest-guides). No keys, host data, Wi-Fi or busi
 | `npm run check -- <site>` | content check only (translations, em-dashes, typography, days and times) |
 | `npm run dev -- <site>` | local server |
 | `npm run preview-file -- <site>` | one self-contained HTML in `sites/<site>/preview/` (git-ignored) to send or open |
-| `node engine/scripts/ux-check.mjs <site>` | must print "UX check OK" (overlaps, words wider than their line, page wider than screen; Home + 5 pages, 360/390/430 px, all languages). One-time setup: `npm i --no-save playwright && npx playwright install chromium` |
+| `node engine/scripts/ux-check.mjs <site>` | must print "UX check OK" (overlaps, words wider than their line, a list row's name under its status, page wider than screen; Home + 5 pages, 360/390/430 px, all languages). One-time setup: `npm i --no-save playwright && npx playwright install chromium` |
 | `cd onboarding-site/src && python3 build.py` | rebuild the onboarding page, then copy `src/index.html` up one level |
 | `node onboarding-site/test/check.mjs [editor slug] [builder slug]` | the builder (just after a listing is read) and the editor as a host sees them, without signing in or writing anything: the path of steps, nothing overlaps at 360 px, de and fr; screenshots in `onboarding-site/test/shots/` |
 | `ssh guide-worker 'cd /opt/guest-guides && docker compose -f worker/compose.yaml logs -f --tail 50 worker'` | the worker's log on the server (it updates itself within 5 minutes of a push to main). Never start a worker on the Mac while the server's runs |

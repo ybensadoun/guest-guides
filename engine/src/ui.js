@@ -178,8 +178,9 @@ export function row(m, opts = {}) {
   const live = opts.date && opts.live ? statusLabel(m, opts.date) : null;
   const hrs = !live && opts.date ? runsOn(m, opts.date).map(x => (x.m ? t('morning') : `${x.o.replace(/^0/, '')}-${x.c.replace(/^0/, '')}`)).join(', ') : '';
   const me = kmMe(m);
-  const dist = [m.km != null ? `${m.km} km ${t('fromHouseShort')}` : null, me != null ? `${me} km ${t('fromYouShort')}` : null].filter(Boolean).map(x => `<span class="dk">${esc(x)}</span>`).join('');
-  const rate = m.rating ? `<span class="dk rating">★ ${m.rating.stars.toFixed(1)} · ${esc(t('gReviews', { n: m.rating.count.toLocaleString(locale()) }))}</span>` : '';
+  // A number stays with its unit (.nw); the rest of the line wraps between words.
+  const dist = [m.km != null ? `<span class="nw">${m.km} km</span> ${esc(t('fromHouseShort'))}` : null, me != null ? `<span class="nw">${me} km</span> ${esc(t('fromYouShort'))}` : null].filter(Boolean).map(x => `<span class="dk">${x}</span>`).join('');
+  const rate = m.rating ? `<span class="dk rating"><span class="nw">★ ${m.rating.stars.toFixed(1)}</span> · ${esc(t('gReviews', { n: m.rating.count.toLocaleString(locale()) }))}</span>` : '';
   const price = m.price ? `<span class="dk price">${esc(t('perPerson', { p: m.price }))}</span>` : '';
   const warn = false; // notes like "Book ahead" are shown as plain tags, not a warning sign
   const ht = hoursText(m);

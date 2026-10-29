@@ -11,7 +11,11 @@ They sit next to docs/TYPOGRAPHY.md (languages) and docs/CURATION.md (what we re
   overlap, change the layout (or shorten the words). Never just nudge one element away.
 - Enforced by `engine/scripts/ux-check.mjs` (Playwright). It opens Home, Markets, Restaurants, What to do and the
   House page at 360, 390 and 430 px in every language. It fails if a shape touches any text, icon or arrow, if a
-  word is wider than its line, or if a page is wider than the screen. Run it before every delivery.
+  word is wider than its line, if a list row's name or details run under its status on the right (open until,
+  reopens at: it depends on the time of day), or if a page is wider than the screen. Run it before every delivery.
+- List rows (29 Oct 2026): the name column never gets narrower than its longest word, and the status on the right
+  wraps between its words to make room. Inside a row, words break only between words or at a soft hyphen written in
+  the content (no automatic hyphenation there); a number stays with its unit ("10 km", "★ 4.7").
 
 ## 2. Tiles
 - One layout: icon top-left; shape in the top-right corner only; title across the full width; arrow on its own
