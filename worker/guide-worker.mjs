@@ -11,7 +11,7 @@ import { resolve, dirname, join, relative, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { spawnSync, spawn } from 'node:child_process';
-import { makeGoogle, hav, nameOf, sameName, sameMarket, schedule, hostPlace } from './places.mjs';   // Google check for Find more suggestions
+import { makeGoogle, hav, nameOf, sameName, sameMarket, schedule, hostPlace, hostPlaceById } from './places.mjs';   // Google check for Find more suggestions
 import { makeSweep } from './sweep-photos.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
@@ -177,8 +177,9 @@ const MARKETS_RULE = 'Find the weekly and notable local markets within the radiu
 const TODO_RULE = 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example. ' + HOURS_RULE;
 // A part already in outDir (areaResearch) is not searched again. id: the guide whose progress message follows the research
 // (none for an area or a research job). opt.meter adds up what it costs; opt.parts, opt.rules and opt.searches change which parts
-// are searched, how, and with how many web searches; opt.together asks them side by side (the quick search at the listing
-// link: small questions; the big ones stay one after the other, within the API's tokens per minute).
+// are searched, in what order, how, and with how many web searches; opt.together asks them side by side (the quick search at the
+// listing link: small questions; the big ones stay one after the other, within the API's tokens per minute). opt.onPart(kind)
+// runs as soon as a part is written.
 async function research(A, outDir, id, opt = {}) {
   mkdirSync(outDir, { recursive: true });
   const { clean, located, allowed, normSchedule } = researchTools();
@@ -187,14 +188,15 @@ async function research(A, outDir, id, opt = {}) {
     ['todo', TODO_RULE],
     ['emergency', 'Find the nearest hospital with an emergency department, the nearest pharmacy with its opening hours (and the local on-duty pharmacy service, if there is one), the national emergency number and the local health advice line. Same shape: {"groups":[...]}, with only two group ids: "urgent" for the emergency numbers and the hospital, "health" for the pharmacy and health centres.'],
   ];
+  const list = opt.parts ? opt.parts.map(p => jobs.find(j => j[0] === p)).filter(Boolean) : jobs;
   const one = async ([kind, rules0]) => {
-    if (existsSync(join(outDir, kind + '.json')) || (opt.parts && !opt.parts.includes(kind))) return;
+    if (existsSync(join(outDir, kind + '.json'))) return;
     if (id) say(id, `Researching: ${kind}`);
     const rules = (opt.rules || {})[kind] || rules0;
-    try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind, opt.meter, (opt.searches || {})[kind]))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); }
+    try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind, opt.meter, (opt.searches || {})[kind]))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); if (opt.onPart) await opt.onPart(kind); }
     catch (e) { log(`  research ${kind} skipped:`, e.message); }
   };
-  if (opt.together) await Promise.all(jobs.map(one)); else for (const j of jobs) await one(j);
+  if (opt.together) await Promise.all(list.map(one)); else for (const j of list) await one(j);
 }
 // Translation by Claude, 40 texts per question, returned as {"<source text>": {"es": "...", ...}}. A text that does not come back stays
 // as it is (Claude down, the day's budget spent): a search or a build is never lost for it. onPart(done, all) for progress.
@@ -257,9 +259,11 @@ async function build(g) {
   // town, opening hours and Maps link (src/geocode.json, read by the generator). Not found: the generator says less.
   const added = Array.isArray(A.favDo) ? A.favDo : String(A.favDo || '').split(/[,\n]+/).map(p => ({ p }));
   const fav = [...(A.favEat || []), ...(A.favNight || []), ...added].map(r => String((r && r.p) || '').trim()).filter(Boolean);   // Eat and drink, Nightlife, and what the host added to Attractions
-  if (fav.length && env.GOOGLE_PLACES_KEY) {
+  const cards = Object.values(A.swipes || {}).filter(s => s && s.d === 'yes' && s.cat === 'todo' && s.name && s.id && !String(s.id).startsWith('r:'));   // r: a researched card, which has all this already
+  if ((fav.length || cards.length) && env.GOOGLE_PLACES_KEY) {
     say(id, 'Finding your favourite places'); const geo = {};
     for (const p of fav) { try { const g = await hostPlace(env.GOOGLE_PLACES_KEY, p, { lat: A.lat, lng: A.lng }); if (g) geo[p]= g; else log('  favourite place not found on Google:', p.slice(0, 60)); } catch (e) { log('  favourite place lookup failed:', e.message); } }
+    for (const s of cards) { try { const g = await hostPlaceById(env.GOOGLE_PLACES_KEY, s.id, { lat: A.lat, lng: A.lng }); if (g) geo[String(s.name).trim()] = g; } catch (e) { log('  kept card lookup failed:', e.message); } }
     writeFileSync(join(job, 'src/geocode.json'), JSON.stringify(geo));
   }
   const srcLang = ['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(A.sourceLang) ? A.sourceLang : 'en';
@@ -283,6 +287,10 @@ async function build(g) {
   const row = JSON.parse(run('node', ['engine/scripts/guide-to-row.mjs', tmp, assetBase]).stdout);
   row.content.site.slug = g.slug; row.content.site.storageKey = g.slug;
   const n = await upload(id, resolve(siteDir, 'public'));
+  // What the research found and the host has not said yes or no to stays out of the guide (Yohann, 30 Oct 2026): it waits
+  // as cards in the editor, the ones Find more makes, for the host to keep or skip.
+  const moreFile = join(siteDir, 'docs/more-places.json'), more = existsSync(moreFile) ? JSON.parse(readFileSync(moreFile, 'utf8')) : [];
+  if (more.length) await rest('/rest/v1/guide_jobs', { method: 'POST', body: { guide_id: id, kind: 'find-todo', status: 'done', message: `${more.length} things to do found`, result: { kind: 'find-todo', items: more, categories: [] }, finished_at: new Date().toISOString() }, headers: { Prefer: 'return=minimal' } }).catch(e => log('  cards for the editor not saved:', e.message));
   const status = AUTO_PUBLISH ? 'published' : 'ready';
   await lastSay;
   await patch(id, { content: row.content, theme: row.theme, draft: null, status, message: null, finished_at: new Date().toISOString() });   // a new build replaces any unpublished editor changes
@@ -339,6 +347,33 @@ const FIND = {
 const CURATION = 'Pick like a local host would: places and events a guest would not easily find by searching Google themselves (local favourites, hidden gems, things for kids or dogs, the best of each kind nearby). No chains, no supermarkets or groceries, no golf courses. Each one must still exist or still run, confirmed by a source from the last two years. Each "description" says in one or two sentences why it is worth it and when to go.';
 const FIND_PER_DAY = 8;   // each search costs Claude time on this computer and a few Google requests
 const GOOGLE = env.GOOGLE_PLACES_KEY ? makeGoogle(env.GOOGLE_PLACES_KEY) : null;
+// Each place on Google (the existence rule, CLAUDE.md): gone, it is dropped; found, it gets its id, link and hours, and what
+// a card shows (_card). Not found, or Google not answering, it stays, marked. progress(i, n) before each one.
+async function checkOnGoogle(items, file, progress) {
+  if (!GOOGLE) return items;
+  const kept = [], today = new Date().toISOString().slice(0, 10);
+  for (const [i, it] of items.entries()) {
+    await progress(i + 1, items.length);
+    let p = null; try { p = await GOOGLE(it); } catch (e) { /* keep it, unchecked */ }
+    await new Promise(r => setTimeout(r, 300));
+    const far = p && p.location ? hav(it.lat, it.lng, p.location.latitude, p.location.longitude) : 99;
+    const ours = p && far <= 2 && (sameName(it, p) || (file === 'markets' && sameMarket(it, p, far)));
+    it.checked = today;
+    if (!ours) { it._google = 'Not found on Google: the web source is the only proof'; kept.push(it); continue; }
+    if (p.businessStatus === 'CLOSED_PERMANENTLY') continue;   // gone: never suggested
+    it.gid = p.id; if (!it.gmaps || /\/maps\/search\//.test(it.gmaps)) it.gmaps = p.googleMapsUri;
+    it._google = 'On Google';
+    it._card = { rating: p.rating || null, reviews: p.userRatingCount || null, photo: p.photos && p.photos[0] ? '/api/photo?name=' + encodeURIComponent(p.photos[0].name) : null };
+    if (p.businessStatus === 'CLOSED_TEMPORARILY') { it.flags = [...new Set([...(it.flags || []), 'check'])]; it._google = 'Temporarily closed on Google (off-season?)'; }
+    const gs = schedule(p.regularOpeningHours?.periods);
+    if (!(it.schedule && it.schedule.length) && !it.always && file !== 'markets') {
+      if (gs === 'always') it.always = true;
+      else if (Array.isArray(gs)) { it.schedule = gs; it.hoursSource = 'google'; if (it._google === 'On Google') it.flags = (it.flags || []).filter(f => f !== 'check'); }
+    }
+    kept.push(it);
+  }
+  return kept;
+}
 const slugOf = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'place';
 async function findJob(j, jp) {
   const F = FIND[j.kind], since = new Date(Date.now() - 864e5).toISOString();
@@ -359,34 +394,12 @@ async function findJob(j, jp) {
   const label = it => ({ displayName: { text: it.name_local || nameOf(it.name) } });
   (out[F.key] || []).forEach(normSchedule);
   let items = (out[F.key] || []).filter(it => !have.some(x => F.file === 'events' ? sameEvent(x, it) : sameName(x, label(it)) && (typeof x.lat !== 'number' || hav(x.lat, x.lng, it.lat, it.lng) < 1.5)));
-  const ids = new Set(have.map(x => x.id)), today = new Date().toISOString().slice(0, 10);
+  const ids = new Set(have.map(x => x.id));
   for (const it of items) {
     let id = slugOf(it.name_local || nameOf(it.name)); while (ids.has(id)) id += '-2'; ids.add(id); it.id = id;
     it.km_from_house = Math.round(hav(h.lat, h.lng, it.lat, it.lng) * 10) / 10;
   }
-  if (GOOGLE && F.file !== 'events') {
-    const kept = [];
-    for (const [i, it] of items.entries()) {
-      await jp({ message: `Checking on Google: ${i + 1} of ${items.length}` });
-      let p = null; try { p = await GOOGLE(it); } catch (e) { /* keep it, unchecked */ }
-      await new Promise(r => setTimeout(r, 300));
-      const far = p && p.location ? hav(it.lat, it.lng, p.location.latitude, p.location.longitude) : 99;
-      const ours = p && far <= 2 && (sameName(it, p) || (F.file === 'markets' && sameMarket(it, p, far)));
-      it.checked = today;
-      if (!ours) { it._google = 'Not found on Google: the web source is the only proof'; kept.push(it); continue; }
-      if (p.businessStatus === 'CLOSED_PERMANENTLY') continue;   // gone: never suggested
-      it.gid = p.id; if (!it.gmaps || /\/maps\/search\//.test(it.gmaps)) it.gmaps = p.googleMapsUri;
-      it._google = 'On Google';
-      if (p.businessStatus === 'CLOSED_TEMPORARILY') { it.flags = [...new Set([...(it.flags || []), 'check'])]; it._google = 'Temporarily closed on Google (off-season?)'; }
-      const gs = schedule(p.regularOpeningHours?.periods);
-      if (!(it.schedule && it.schedule.length) && !it.always && F.file !== 'markets') {
-        if (gs === 'always') it.always = true;
-        else if (Array.isArray(gs)) { it.schedule = gs; it.hoursSource = 'google'; if (it._google === 'On Google') it.flags = (it.flags || []).filter(f => f !== 'check'); }
-      }
-      kept.push(it);
-    }
-    items = kept;
-  }
+  if (F.file !== 'events') items = await checkOnGoogle(items, F.file, (i, n) => jp({ message: `Checking on Google: ${i} of ${n}` }));
   const langs = (site.languages || ['en']).filter(l => l !== 'en' && LANGS.includes(l)), objs = i18nOf(items);
   const texts = [...new Set(objs.map(o => o.en).filter(Boolean))];
   if (langs.length && texts.length) { await jp({ message: `Translating ${items.length} ${F.what}` }); fill(objs, await translate(texts, langs, 'en'), langs, 'en'); }
@@ -713,8 +726,14 @@ async function researchJob(j, jp) {
   const dir = join(HERE, 'jobs', 'research-' + j.id), meter = { usd: 0 };
   try {
     rmSync(dir, { recursive: true, force: true }); await jp({ message: 'Researching your area' });
-    await research(A, dir, null, { meter, parts: ['markets', 'todo'] });
-    const result = Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))]));
+    const read = () => Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))]));
+    // Things to do first: as soon as they are checked the host gets them as cards (start.js, researchCards), the rest goes on.
+    await research(A, dir, null, { meter, parts: ['todo', 'markets'], onPart: async kind => {
+      if (kind === 'todo') { const f = join(dir, 'todo.json'), o = JSON.parse(readFileSync(f, 'utf8')), ids = new Set();
+        for (const it of o.items || []) { let n = slugOf(it.name_local || nameOf(it.name)); while (ids.has(n)) n += '-2'; ids.add(n); it.id = n; }
+        o.items = await checkOnGoogle(o.items || [], 'todo', () => {}); writeFileSync(f, JSON.stringify(o, null, 1)); }
+      await jp({ result: read() }); } });
+    const result = read();
     const events = await firstEvents(A).catch(e => { log('  events search skipped:', e.message); return null; });
     if (events) result.events = events;
     if (!Object.keys(result).length) throw new Error('Nothing came back from the research. Try again later.');

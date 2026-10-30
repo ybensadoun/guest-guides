@@ -535,6 +535,9 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 @media (max-width:520px){.slugbox{flex-direction:column}.slugbox span{max-width:100%;padding:8px 12px 0;font-size:13.5px}.slugbox input{padding:2px 12px 8px!important}}
 .lk-artrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:10px;font-size:14.5px;font-weight:600}
 .lk-artrow span{flex:1 1 220px}
+.rv-more{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:18px;padding:16px 18px;border-radius:18px;background:var(--sunk)}
+.rv-more p{margin:0;font-size:15px;color:var(--muted)}
+.rv-more .btn{margin-top:6px}
 .rv-open{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
 .rv-links{display:flex;flex-wrap:wrap;gap:8px}
 .rv-links a{font-size:14.5px;font-weight:600;color:inherit;text-decoration:none;min-height:40px;display:inline-flex;align-items:center;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--sunk)}
@@ -875,6 +878,7 @@ function sendHTML(){
     <section class="mhead" style="--tc:var(--ink);--ti:var(--paper);--sh:var(--sun)">
       <h1>Review and send</h1><p>We build your guide from your answers. You can change anything afterwards.</p></section>
     <section class="card">
+      <div id="rvMore">${moreNote()}</div>
       ${open.length ? `<div class="rv-open"><b>Still worth a look</b><div class="rv-links">${open.map(m => `<a href="#${m.id}">${esc(m.title)}</a>`).join('')}</div></div>` : ''}
       <div class="grid">${field('slug')}
         <label class="f full" style="flex-direction:row;gap:10px;align-items:flex-start"><input type="checkbox" data-check="consent"${A.consent ? ' checked' : ''} style="width:20px;height:20px;margin-top:2px;flex:none"><span>I own these photos and texts or may use them, and I understand the guide is visible to anyone who has its link.</span></label></div>
@@ -1054,8 +1058,7 @@ function guideSections(){
   if (on('essentials')) S.push({ id: 'essentials', title: 'Shops and essentials', sub: 'Supermarket, bakery, pharmacy', icon: 'bag', kind: 'places', items: lines('essentials'), research: 'We add opening hours, distances and the ones you did not list.' });
   const picks = cats => Object.values(A.swipes || {}).filter(x => x.d === 'yes' && cats.includes(x.cat));
   if (on('eat')) S.push({ picks: picks(['eat', 'coffee', 'drinks']), id: 'eat', title: 'Eat and drink', sub: 'Our favourite places', icon: 'heart', kind: 'places', items: placeRows('favEat').map(r => r.p + (r.c ? ': ' + r.c : '')), research: !placeRows('favEat').length && 'Add the places you recommend, with a link or a name and a comment. We do not add restaurants of our own.' });
-  if (on('todo')) S.push({ picks: picks(['todo']), id: 'todo', title: 'Things to do', sub: (A.interests || []).slice(0, 3).join(', ') || 'Around you', icon: 'compass', kind: 'places', items: [...lines('favDo'), ...lines('favourites')], research: found('todo', 'items').length ? 'Found near you by our research. Details and directions are in your full guide.' : `We research ${(A.interests || ['beaches', 'walks', 'sights']).join(', ').toLowerCase()} within ${v('radius') || '30 min'}.` });
-  if (on('todo')) S[S.length - 1].items.push(...found('todo', 'items').map(t => `${nm(t.name)}${t.town ? ': ' + t.town : ''}`));
+  if (on('todo')) S.push({ picks: picks(['todo']), id: 'todo', title: 'Things to do', sub: (A.interests || []).slice(0, 3).join(', ') || 'Around you', icon: 'compass', kind: 'places', items: addedPlaces(), research: !picks(['todo']).length && !addedPlaces().length && 'Keep the places you like in Attractions: only those go in your guide.' });
   if (on('nightlife')) S.push({ id: 'nightlife', title: 'Nightlife', sub: 'Bars, clubs, live music', icon: 'moon', kind: 'places', items: placeRows('favNight').map(r => r.p + (r.c ? ': ' + r.c : '')), research: !placeRows('favNight').length && 'Add the late bars, clubs and live music you recommend. We add none of our own.' });
   if (on('markets')) S.push({ id: 'markets', title: 'Local markets', sub: 'What is on today', icon: 'bag', kind: 'places', items: found('markets', 'markets').map(m => `${nm(m.name)}${m.town ? ': ' + m.town : ''}`), research: found('markets', 'markets').length ? 'Found near you. Days and hours are in your full guide.' : 'We list every weekly market nearby, with what runs today.' });
   if (on('events')) S.push({ id: 'events', title: 'Local events', sub: 'During your stay', icon: 'kite', kind: 'places', items: [], research: 'We list festivals and fairs, with dates.' });
@@ -1114,7 +1117,6 @@ function pvStyle(p, preset){
 .pv-photos img{height:150px;border-radius:12px;scroll-snap-align:start;flex:none}
 .pv-research{padding:14px 16px;border-radius:14px;background:color-mix(in srgb,var(--a3) 22%,var(--pp));font-size:15px}
 .pv-research b{display:block;margin-bottom:2px}
-.pv-pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--a3);color:#111;margin-left:6px;vertical-align:2px}
 .pv-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:999px;background:var(--pi);color:var(--pp);font-weight:700;text-decoration:none;border:0;font:inherit;cursor:pointer}
 .pv-card{padding:16px;border-radius:16px;background:#fff;color:#111}
 .pv-bar{position:fixed;left:0;right:0;top:0;z-index:40;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px 12px;background:#111;color:#fff;font:600 13px/1.3 system-ui,sans-serif}
@@ -1267,7 +1269,7 @@ function pageHTML(x){
   if (x.kind === 'rooms') body = x.rooms.length ? x.rooms.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3>${r.photos.length ? `<div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${list(r.items)}</section>`).join('') : `<div class="pv-research"><b>Nothing here yet</b>Add how things work and photos by room in your answers.</div>`;
   else if (x.kind === 'wifi') body = `<section class="pv-card"><p style="margin:0 0 6px;opacity:.7">Network</p><h3 style="font-size:24px">${esc(v('wifiName'))}</h3><p style="margin:12px 0 6px;opacity:.7">Password</p><h3 style="font-size:24px">${esc(v('wifiPassword'))}</h3></section><div class="pv-research"><b>In your full guide</b>A QR code to join with one tap, and a copy button.</div>`;
   else if (x.kind === 'contacts') body = `<section class="pv-card"><div class="pv-list"><div class="pv-row"><b>Emergencies: 112</b>Police, ambulance, fire</div>${v('taxi') ? `<div class="pv-row"><b>Taxi</b>${esc(v('taxi'))}</div>` : ''}</div></section>${research}`;
-  else if (x.kind === 'places') body = `${(x.picks || []).length ? `<section class="pv-card"><div class="pv-list">${x.picks.map(p => `<div class="pv-row"><b>${esc(p.name)}<span class="pv-pill">Host\u2019s pick</span></b>${esc([p.type, p.rating ? '★ ' + p.rating.toFixed(1) : '', p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}${p.c ? `<br><i>“${esc(p.c)}”</i>` : ''}<br><a href="${esc(p.maps)}" target="_blank" rel="noopener">Directions</a></div>`).join('')}</div></section>` : ''}${x.items.length ? `<section class="pv-card"><div class="pv-list">${x.items.map(t => { const [a, ...b] = t.split(/,\s| - |:\s/); return `<div class="pv-row"><b>${esc(a)}<span class="pv-pill">Host’s pick</span></b>${esc(b.join(', '))}<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a + ', ' + v('town'))}" target="_blank" rel="noopener">Directions</a></div>`; }).join('')}</div></section>` : ''}${research}`;
+  else if (x.kind === 'places') body = `${(x.picks || []).length ? `<section class="pv-card"><div class="pv-list">${x.picks.map(p => `<div class="pv-row"><b>${esc(p.name)}</b>${esc([p.type, p.rating ? '★ ' + p.rating.toFixed(1) : '', p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}${p.c ? `<br><i>“${esc(p.c)}”</i>` : ''}<br><a href="${esc(p.maps)}" target="_blank" rel="noopener">Directions</a></div>`).join('')}</div></section>` : ''}${x.items.length ? `<section class="pv-card"><div class="pv-list">${x.items.map(t => { const [a, ...b] = t.split(/,\s| - |:\s/); return `<div class="pv-row"><b>${esc(a)}</b>${esc(b.join(', '))}<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a + ', ' + v('town'))}" target="_blank" rel="noopener">Directions</a></div>`; }).join('')}</div></section>` : ''}${research}`;
   else if (x.kind === 'map') body = `<section class="pv-card"><p style="margin:0">Every place in the guide on one map, centred near ${esc(v('town') || 'the house')} (never on the house itself).</p></section><a class="pv-btn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v('town'))}" target="_blank" rel="noopener">Open ${esc(v('town') || 'the area')} in Maps</a>`;
   else body = `${x.photos && x.photos.length ? `<div class="pv-photos">${x.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${x.items && x.items.length ? `<section class="pv-card">${list(x.items)}</section>` : ''}${x.extra ? `<section class="pv-card"><h3>${esc(x.extra.h)}</h3>${list(x.extra.items)}</section>` : ''}${research}`;
   return `<div class="pv-page"><h2>${esc(x.title)}</h2><p style="opacity:.75;margin:6px 0 0">${esc(x.sub)}</p></div>${body}`;
@@ -1382,7 +1384,7 @@ async function createDraft(fromStep){
    - once the guide has an account (at once for a host who is signed in): the full research in the background, a job of
      the guide (all the markets in reach, things to do). The build uses both: A._research and A._researchJob travel with
      the answers. What comes back shows in the phone, the full research first. ---------- */
-const AREA = { result: null, quick: null, full: null, timer: null, tries: 0 };
+const AREA = { result: null, quick: null, full: null, fullOpen: false, cards: 0, timer: null, tries: 0 };
 function researchStart(){
   if (!A.lat || !A.lng) return;
   const g = window.__acctGuide && window.__acctGuide();
@@ -1415,12 +1417,14 @@ async function areaWatch(){
   try {
     if (A._research && !AREA.quick) { const r = await sb('/rest/v1/rpc/area_research_status', { method: 'POST', token: SB.key, body: { p_id: A._research } });
       if (r && r.status === 'done' && r.result) AREA.quick = r.result; else if (r && ['queued', 'running'].includes(r.status)) wait = true; }
-    if (A._researchJob && AUTH && !AREA.full) { const r = ((await sb('/rest/v1/guide_jobs?select=status,result&id=eq.' + A._researchJob)) || [])[0];
-      if (r && r.status === 'done' && r.result) AREA.full = r.result; else if (r && ['queued', 'running'].includes(r.status)) wait = true; }
+    if (A._researchJob && AUTH && (!AREA.full || AREA.fullOpen)) { const r = ((await sb('/rest/v1/guide_jobs?select=status,result&id=eq.' + A._researchJob)) || [])[0];
+      if (r && r.result) AREA.full = r.result;   // things to do come first, while the rest goes on
+      AREA.fullOpen = !!r && ['queued', 'running'].includes(r.status); if (AREA.fullOpen) wait = true; }
   } catch (e) { wait = true; }   // no connection: try again
   const before = JSON.stringify(AREA.result);
   AREA.result = (AREA.quick || AREA.full) ? { ...(AREA.quick || {}), ...(AREA.full || {}) } : null;
   if (JSON.stringify(AREA.result) !== before) phoneSoon();
+  moreRefresh();
   if (wait && ++AREA.tries < 150) AREA.timer = setTimeout(areaWatch, AREA.tries < 30 ? 6000 : 20000);
 }
 // What the listing page says, before Claude: its name (for the phone only, Claude writes the real one), its photos,
@@ -1500,6 +1504,32 @@ const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {} };
 // Eating and drinking is the host's own list (see "Your places"): we only suggest things to do.
 const SW_CATS = [['todo', 'Attractions']];
 const swipes = () => A.swipes || (A.swipes = {});
+// What the research found becomes cards too, once there is an account (Yohann, 30 Oct 2026: nothing goes in the guide that
+// the host has not seen). First in the deck, without the places the host already decided on or added. A card from Google
+// that the research also found shows once, as the research's.
+const plainName = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+const samePlace = (a, b) => { const x = plainName(a), y = plainName(b); return x === y || (Math.min(x.length, y.length) >= 5 && (x.includes(y) || y.includes(x))); };
+const addedPlaces = () => (Array.isArray(A.favDo) ? placeRows('favDo').map(r => r.p) : String(A.favDo || '').split(/[,\n]+/)).map(x => x.trim()).filter(Boolean);
+const shownText = x => (typeof x === 'string' ? x : (x && (x.en || Object.values(x)[0])) || '');
+function researchCards(){
+  const S = swipes(), chosen = [...Object.values(S).filter(x => !String(x.id).startsWith('r:')).map(x => x.name), ...addedPlaces()];
+  return (((AREA.full || {}).todo || {}).items || []).filter(it => shownText(it.name) && !chosen.some(n => samePlace(n, shownText(it.name)))).map(it => { const name = shownText(it.name);
+    return { id: 'r:' + plainName(name), name, type: shownText(it.type), km: it.km_from_house, lat: it.lat, lng: it.lng, summary: shownText(it.description),
+      maps: it.gmaps || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([name, it.town].filter(Boolean).join(' ')), ...(it._card || {}) }; });
+}
+const moreLeft = () => researchCards().filter(p => !swipes()[p.id]).length;
+const swList = () => { const list = SW.lists[SW.cat]; if (!list || SW.cat !== 'todo') return list; const cards = researchCards(); return [...cards, ...list.filter(p => !cards.some(c => samePlace(c.name, p.name)))]; };
+// New cards: the deck takes them, Review says so, once.
+function moreRefresh(){
+  refreshSwipe(); const el = document.getElementById('rvMore'); if (el) el.innerHTML = moreNote();
+  const n = researchCards().length; if (n && !AREA.cards && moreLeft() && !['nearby', 'send'].includes(route())) toast(`${n} more ${n === 1 ? 'place' : 'places'} in Attractions`); AREA.cards = n;
+}
+function moreNote(){
+  if (!AUTH) return ''; const left = moreLeft();
+  if (left) return `<div class="rv-more"><b>${left} more ${left === 1 ? 'place' : 'places'} to look at</b><p>Our research found them near you. Keep the ones you like: only those go in your guide.</p><a class="btn small" href="#nearby">Look at them</a></div>`;
+  if (AREA.fullOpen && !researchCards().length) return `<div class="rv-more"><b>We are looking for more places near you</b><p>It takes about 2 minutes. Wait for them here, or send now: they will wait for you in your editor.</p></div>`;
+  return '';
+}
 async function loadPlaces(cat){
   if (SW.lists[cat] || SW.loading) return;
   SW.loading = true; SW.err = ''; refreshSwipe();
@@ -1519,7 +1549,7 @@ function swipeHTML(){
 // The deck (docs/plan-fast-builder.md, step 5): one big card at a time, the next ones showing behind it. Drag it right to
 // recommend, left to skip (it follows the finger), or use the buttons or the arrow keys. Each yes lands in the phone.
 function swipeInner(){
-  const list = SW.lists[SW.cat], S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
+  const list = swList(), S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
   const tabs = SW_CATS.length > 1 ? `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>` : '';
   if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<div class="sw-empty">${SW.err ? esc(SW.err) : '<span class="spin dark"></span> Finding the best-rated places near you…'}</div>`; }
   const left = list.filter(p => !S[p.id]), p = left[0], seen = list.length - left.length;
@@ -1530,11 +1560,11 @@ function swipeInner(){
         <div class="sw-ph" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : ''}">${p.photo ? '' : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
           <span class="sw-stamp yes" aria-hidden="true">Recommend</span><span class="sw-stamp no" aria-hidden="true">Not for us</span>
           <div class="sw-on"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
-            <p><b>★ ${p.rating ? p.rating.toFixed(1) : '?'}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · <a href="${esc(p.maps)}" target="_blank" rel="noopener">Google Maps</a></p></div></div>
+            <p>${p.rating ? `<b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · ` : ''}<a href="${esc(p.maps)}" target="_blank" rel="noopener">Google Maps</a></p></div></div>
         ${p.summary ? `<div class="sw-tx"><p>${esc(p.summary)}</p></div>` : ''}
       </article></div>
     <div class="sw-btns"><button type="button" class="sw-no" data-sw="no">${svg('<path d="M6 6l12 12M18 6L6 18"/>').replace('stroke-width="2.2"', 'stroke-width="2.4" width="16" height="16"')}Not for us</button><button type="button" class="sw-yes" data-sw="yes">${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>`
-    : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> Missing one? Add it below.</div>`;
+    : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> ${AUTH && AREA.fullOpen && !researchCards().length ? 'Our research is finding more: they will land here in about 2 minutes.' : 'Missing one? Add it below.'}</div>`;
   const picks = Object.values(S).filter(x => x.d === 'yes' && x.cat === SW.cat);
   return `${tabs}${count}${card}
     ${picks.length ? `<div class="sw-picks"><b>Your picks</b>${picks.map(x => `<div class="sw-pick"><span>${esc(x.name)} <small>★ ${x.rating ? (+x.rating).toFixed(1) : ''}</small></span>
@@ -1543,7 +1573,7 @@ function swipeInner(){
 function refreshSwipe(){ const el = document.getElementById('swipe'); if (el) el.innerHTML = swipeInner(); }
 // A decision: the card flies off the way it went, the next one comes up (with the focus, for keyboard users), the phone follows.
 function swDecide(d, c){
-  const id = c && c.dataset.pid, p = id && (SW.lists[SW.cat] || []).find(x => x.id === id); if (!p || c.dataset.gone) return;
+  const id = c && c.dataset.pid, p = id && (swList() || []).find(x => x.id === id); if (!p || c.dataset.gone) return;
   c.dataset.gone = '1';
   swipes()[id] = { id, d, cat: SW.cat, name: p.name, rating: p.rating, reviews: p.reviews, type: p.type, maps: p.maps, lat: p.lat, lng: p.lng, km: p.km, photo: p.photo, c: '' };
   SW.last = id; log('swipe', d); queueSave();
@@ -1726,7 +1756,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 30 Oct 2026, 12:23 (Madrid time, after commit 4d68b95)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 30 Oct 2026, 17:30 (Madrid time, after commit 3216af8)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -2513,7 +2543,12 @@ async function acctStatus(){
   if (r && r[0]) { GUIDE.status = r[0].status; GUIDE.message = r[0].message; return r[0]; }
   return null;
 }
-window.__acctQueueBuild = acctQueueBuild; window.__acctStatus = acctStatus; window.__acctSendOne = acctSendOne;
+// The places the research found that the host has not seen: cards in the editor (worker/guide-worker.mjs, build).
+async function acctMore(){
+  const r = await sb('/rest/v1/guide_jobs?select=result&kind=eq.find-todo&status=eq.done&order=created_at.desc&limit=1&guide_id=eq.' + GUIDE.id);
+  return (((r && r[0] && r[0].result) || {}).items || []).length;
+}
+window.__acctQueueBuild = acctQueueBuild; window.__acctStatus = acctStatus; window.__acctSendOne = acctSendOne; window.__acctMore = acctMore;
 window.__acctGuide = () => GUIDE;
 
 async function accountBoot(){
@@ -3172,7 +3207,7 @@ async function cmFindPoll(kind) {
 }
 function cmFindAdd(path, sid) {
   const kind = FIND_OF[path][0], f = CM.find[kind], it = f && (f.items || []).find(x => x.id === sid); if (!it) return;
-  const n = cmClone(it); delete n._google;
+  const n = cmClone(it); delete n._google; delete n._card;
   let a = edGet(edC(), edPath(path)); if (!Array.isArray(a)) { edSet(edC(), edPath(path), []); a = edGet(edC(), edPath(path)); }
   a.push(n);
   const sec = path.split('/')[1], fl = edF()[sec];
@@ -3707,6 +3742,8 @@ function cmInit() {
   CM.g = { id: g.id, slug: g.slug, status: g.status, origin: g.origin, content: cmClone(d ? d.content : g.content), theme: cmClone(d ? d.theme || {} : g.theme || {}) };
   CM.lang = edLangs().includes('en') ? 'en' : edLangs()[0];
   CM.on = true;
+  const step = new URLSearchParams(location.search).get('step');   // a link to one step (the finished screen): a #step alone does not survive the start of the page
+  if (step && cmIsPage(step)) history.replaceState(null, '', location.pathname + '#' + step);
 }
 (function () {
   const st = document.createElement('style');
@@ -4046,9 +4083,10 @@ const progressText = () => { const ms = visible(); return `${ms.filter(m => stat
 let buildTimer = null;
 function buildState(g){
   const slug = (g && g.slug) || v('slug'), st = (g && g.status) || 'queued', url = location.origin + '/g/' + slug;
-  if (st === 'ready' || st === 'approved' || st === 'published') return `<h1>Your guide is ready.</h1><p>${st === 'published' ? 'It is live. Share this link with your guests.' : 'Have a look. Only you can see it until it is published.'}</p>
+  if (st === 'ready' || st === 'approved' || st === 'published') { const n = window.__moreCards || 0; return `<h1>Your guide is ready.</h1><p>${st === 'published' ? 'It is live. Share this link with your guests.' : 'Have a look. Only you can see it until it is published.'}</p>
       <a class="go-next" href="/g/${esc(slug)}" target="_blank" rel="noopener"><span>Open my guide</span><span class="ar">${ARROW}</span></a>
-      <p style="margin:14px 0 0;color:#F4F1EA;opacity:.75;word-break:break-all">${esc(url)}</p>`;
+      <p style="margin:14px 0 0;color:#F4F1EA;opacity:.75;word-break:break-all">${esc(url)}</p>
+      ${n ? `<p style="margin:10px 0 0">We found ${n} more ${n === 1 ? 'place' : 'places'} near you. Only the ones you keep go in your guide.</p><a class="btn small" href="/?step=todo">Look at them</a>` : ''}`; }
   if (st === 'failed') return `<h1>This did not work.</h1><p>${esc((g && g.message) || 'Something went wrong while building your guide.')} We have been told. You can change an answer and send it again.</p>`;
   // The worker's step and the time left, on a bar (editor.js, progBar): set by watchBuild from the guide's status.
   const j = window.__buildJob = window.__buildJob || { since: Date.now() };
@@ -4062,7 +4100,7 @@ function buildingHTML(){
 function watchBuild(){
   clearInterval(buildTimer);
   const tick = async () => {
-    try { const g = await window.__acctStatus(); const el = document.getElementById('bstate'); if (el && g) { el.innerHTML = buildState(g); if (['ready', 'approved', 'published', 'failed'].includes(g.status)) clearInterval(buildTimer); } } catch (e) {}
+    try { const g = await window.__acctStatus(); const el = document.getElementById('bstate'); if (g && ['ready', 'approved', 'published'].includes(g.status)) window.__moreCards = await window.__acctMore().catch(() => 0); if (el && g) { el.innerHTML = buildState(g); if (['ready', 'approved', 'published', 'failed'].includes(g.status)) clearInterval(buildTimer); } } catch (e) {}
   };
   tick(); buildTimer = setInterval(tick, 4000);
 }

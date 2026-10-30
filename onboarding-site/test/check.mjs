@@ -169,7 +169,7 @@ try {
     ok('research from the link: it starts once the listing is read, for the listing\'s point, with no account', calls.includes('research ' + A0.lat), calls.join(', '));
     await inPhone(p, d => { const b = d.querySelector('[data-pv="todo"]'); b && b.click(); return 1; }); await p.waitForTimeout(500);
     const td = AREA_TODO.items[0].name.en;
-    ok('research from the link: what it found shows in the phone (Things to do)', ((await inPhone(p, d => d.body.textContent)) || '').includes(td), td);
+    ok('research from the link: a place the host has not chosen stays out of the phone', !((await inPhone(p, d => d.body.textContent)) || '').includes(td), td);
     ok('no account yet: the link opens the wow at once, the first page is gone, the top bar offers Log in', (await p.evaluate(() => location.hash)) === '#yours' && !(await p.$('#acct')) && !!(await p.$('.loginTop')) && !(await p.$('.logoutTop')));
     await go(p, '#known'); await p.fill('[data-k="wifiName"]', 'Visitor wifi'); await p.waitForTimeout(400);
     ok('no account yet: the steps work, answers saved on this device', /on this device/i.test(await p.textContent('#saveState').catch(() => '')) && !calls.some(c => !c.startsWith('research')), (await p.textContent('#saveState').catch(() => '')).trim());
@@ -186,6 +186,46 @@ try {
     ok('after the account: the answers from this device are the account\'s house, back on Review and send, with Send', Object.keys(rows).length === 1 && h.answers.wifiName === 'Visitor wifi' && h.answers._research === AREA_ID && h.answers.listingUrl === 'https://www.airbnb.com/rooms/12345678' && (await p.evaluate(() => location.hash)) === '#send' && !!(await p.$('#send')) && !!(await p.$('.logoutTop')), calls.join(', '));
     ok('after the account: the full research of the area starts in the background, for the house\'s point, and travels with the answers', calls.includes('job research ' + A0.lat) && h.answers._researchJob === JOB_ID, calls.join(', '));
     ok('no account until the end: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // ---- Cards after sign-up (Yohann, 30 Oct 2026): what the research found goes in the guide only if the host keeps it ----
+  { const items = AREA_TODO.items, en = i => items[i].name.en, added = en(items.length - 1), G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, swipes: {}, favDo: [{ p: added, c: '' }] } };
+    const { ctx, p, errors } = await open(browser, G, 360, 780); let job = { status: 'running', result: null };
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [job]));
+    await ctx.route('**/api/places**', r => json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: [{ id: 'g-twin', name: en(0), rating: 4.6, reviews: 90, type: 'Castle', maps: 'https://maps.google.com/?q=1', lat: A0.lat, lng: A0.lng, km: 3, photo: null }, { id: 'g-other', name: 'Otro Lugar Test', rating: 4.5, reviews: 80, type: 'Park', maps: 'https://maps.google.com/?q=2', lat: A0.lat, lng: A0.lng, km: 4, photo: null }] }));
+    await p.goto('http://editor.test/#send'); await ready(p);
+    await p.waitForFunction(() => /looking for more places/.test((document.getElementById('rvMore') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+    ok('cards after sign-up: while the research runs, Review says so and Send stays open', /looking for more places/.test(await p.textContent('#rvMore')) && !!(await p.$('#send')));
+    job = { status: 'running', result: { todo: AREA_TODO } };
+    await p.waitForFunction(() => /more places to look at/.test((document.getElementById('rvMore') || {}).textContent || ''), null, { timeout: 9000 }).catch(() => {});
+    const more = n => `${n} more places to look at`;
+    ok('cards after sign-up: as soon as things to do are found, before the rest of the research, Review counts them, without a place the host already added', (await p.textContent('#rvMore')).includes(more(items.length - 1)), await p.textContent('#rvMore'));
+    await p.screenshot({ path: join(SHOTS, 'cards-review-360.png') });
+    await p.click('#rvMore a'); await p.waitForSelector('.sw-card', { timeout: 5000 }).catch(() => {});
+    ok('cards after sign-up: the deck opens with the researched places', (await p.textContent('.sw-card h3').catch(() => '')) === en(0), await p.textContent('.sw-card h3').catch(() => ''));
+    ok('cards after sign-up: a card without a Google rating shows no empty star', !/★ \?/.test(await p.textContent('.sw-card')));
+    await p.screenshot({ path: join(SHOTS, 'cards-deck-360.png') });
+    await p.click('[data-sw="yes"]'); await p.waitForTimeout(450);
+    await p.click('[data-sw="no"]'); await p.waitForTimeout(450);
+    const names = [], left = items.length - 3;
+    while (names.length < left) { names.push(await p.textContent('.sw-card h3')); await p.click('[data-sw="no"]'); await p.waitForTimeout(450); }
+    ok('cards after sign-up: the Google card the research also found shows once, the others follow', (await p.textContent('.sw-card h3').catch(() => '')) === 'Otro Lugar Test' && !names.includes(en(0)) && !names.includes(added), names.join(', '));
+    const S = await p.evaluate(() => JSON.parse(Object.values(localStorage).find(x => /"swipes"/.test(x)) || '{}').swipes || null).catch(() => null);
+    await inPhone(p, d => { const b = d.querySelector('[data-pv="todo"]'); b && b.click(); return 1; }); await p.waitForTimeout(500);
+    const phone = (await inPhone(p, d => d.body.textContent)) || '';
+    ok('cards after sign-up: what the host keeps lands in the phone, what they skip does not', phone.includes(en(0)) && !phone.includes(en(1)), en(0));
+    ok('cards after sign-up: no "Host\u2019s pick" label in the phone', !/Host.s pick/.test(phone));
+    await go(p, '#send'); await p.waitForTimeout(300);
+    ok('cards after sign-up: all seen, Review says nothing more', !(await p.textContent('#rvMore')).trim(), await p.textContent('#rvMore'));
+    ok('cards after sign-up: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  { const G = { ...B, status: 'generating', slug: 'test-cards', answers: { ...B.answers, slug: 'test-cards' } };
+    const { ctx, p, errors } = await open(browser, G, 360, 780);
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ result: { items: [{ id: 'a' }, { id: 'b' }] } }]));
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guides') && /select=status/.test(u.search), r => json(r, [{ status: 'published', slug: 'test-cards', message: null }]));
+    await p.goto('http://editor.test/#building'); await p.waitForFunction(() => /We found 2 more places/.test((document.getElementById('bstate') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+    ok('cards after sign-up: the finished screen says how many wait, and links to them', /We found 2 more places/.test(await p.textContent('#bstate')) && (await p.getAttribute('#bstate a.btn', 'href').catch(() => '')) === '/?step=todo');
+    await p.screenshot({ path: join(SHOTS, 'cards-finished-360.png') });
+    ok('cards after sign-up, finished screen: no sideways scroll, no page errors', (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0 && !errors.length, errors.join(' | '));
     await ctx.close(); }
   // ---- Send: the guide is built from the account, so the copy to Netlify Forms can never stop it ----
   for (const [tag, down] of [['with a picture already in the account', false], ['with Netlify Forms failing', true]]) {
@@ -563,6 +603,19 @@ try {
     ok('Getting around, 360 px: no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0);
     await p.screenshot({ path: join(SHOTS, 'transport-360.png'), fullPage: true });
     ok('Getting around: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // A guide whose host kept no place: Attractions is empty, the research waits there as cards, and the first one kept makes the section live.
+  { const files = { ...E.content.files, todo: { ...E.content.files.todo, items: [] }, sections: { ...E.content.files.sections, sections: E.content.files.sections.sections.map(x => x.id === 'todo' ? { ...x, status: 'soon' } : x) } };
+    const { ctx, p, errors } = await open(browser, { ...E, draft: null, content: { ...E.content, files } }, 360, 780); const saved = [];
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ id: 'job-cards', status: 'done', message: '1 things to do found', created_at: new Date().toISOString(), result: { items: [{ id: 'cards-castle', name: { en: 'Cards Castle', es: 'Castillo Cartas' }, type: { en: 'Castle' }, town: 'Testville', lat: A0.lat, lng: A0.lng, km_from_house: 3, description: { en: 'A castle for the test.' }, _google: 'On Google' }] } }]));
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
+    await p.goto('http://editor.test/?step=todo'); await ready(p); await p.waitForSelector('.cm-fcard', { timeout: 6000 }).catch(() => {});
+    ok('editor: the finished screen\'s link opens Attractions, where the places the research found wait as cards', (await p.evaluate(() => location.hash)) === '#todo' && (await p.textContent('.cm-fcard h3').catch(() => '')) === 'Cards Castle', await p.evaluate(() => location.hash));
+    await p.screenshot({ path: join(SHOTS, 'cards-editor-360.png') });
+    await p.click('[data-cfadd]'); await p.waitForTimeout(2600);
+    const after = saved.join(' ');
+    ok('editor: a card kept goes in the guide and makes the section live, as a draft', /Cards Castle/.test(after) && /"id":"todo"[^}]*"status":"live"/.test(after), after.slice(0, 120));
+    ok('editor, cards: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // Nightlife (29 Oct 2026): optional and off in Ca La Kimberly; switched on in Guide sections, its first place makes its
   // section, right after Attractions.

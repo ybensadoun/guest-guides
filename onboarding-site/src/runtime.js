@@ -185,9 +185,10 @@ const progressText = () => { const ms = visible(); return `${ms.filter(m => stat
 let buildTimer = null;
 function buildState(g){
   const slug = (g && g.slug) || v('slug'), st = (g && g.status) || 'queued', url = location.origin + '/g/' + slug;
-  if (st === 'ready' || st === 'approved' || st === 'published') return `<h1>Your guide is ready.</h1><p>${st === 'published' ? 'It is live. Share this link with your guests.' : 'Have a look. Only you can see it until it is published.'}</p>
+  if (st === 'ready' || st === 'approved' || st === 'published') { const n = window.__moreCards || 0; return `<h1>Your guide is ready.</h1><p>${st === 'published' ? 'It is live. Share this link with your guests.' : 'Have a look. Only you can see it until it is published.'}</p>
       <a class="go-next" href="/g/${esc(slug)}" target="_blank" rel="noopener"><span>Open my guide</span><span class="ar">${ARROW}</span></a>
-      <p style="margin:14px 0 0;color:#F4F1EA;opacity:.75;word-break:break-all">${esc(url)}</p>`;
+      <p style="margin:14px 0 0;color:#F4F1EA;opacity:.75;word-break:break-all">${esc(url)}</p>
+      ${n ? `<p style="margin:10px 0 0">We found ${n} more ${n === 1 ? 'place' : 'places'} near you. Only the ones you keep go in your guide.</p><a class="btn small" href="/?step=todo">Look at them</a>` : ''}`; }
   if (st === 'failed') return `<h1>This did not work.</h1><p>${esc((g && g.message) || 'Something went wrong while building your guide.')} We have been told. You can change an answer and send it again.</p>`;
   // The worker's step and the time left, on a bar (editor.js, progBar): set by watchBuild from the guide's status.
   const j = window.__buildJob = window.__buildJob || { since: Date.now() };
@@ -201,7 +202,7 @@ function buildingHTML(){
 function watchBuild(){
   clearInterval(buildTimer);
   const tick = async () => {
-    try { const g = await window.__acctStatus(); const el = document.getElementById('bstate'); if (el && g) { el.innerHTML = buildState(g); if (['ready', 'approved', 'published', 'failed'].includes(g.status)) clearInterval(buildTimer); } } catch (e) {}
+    try { const g = await window.__acctStatus(); const el = document.getElementById('bstate'); if (g && ['ready', 'approved', 'published'].includes(g.status)) window.__moreCards = await window.__acctMore().catch(() => 0); if (el && g) { el.innerHTML = buildState(g); if (['ready', 'approved', 'published', 'failed'].includes(g.status)) clearInterval(buildTimer); } } catch (e) {}
   };
   tick(); buildTimer = setInterval(tick, 4000);
 }

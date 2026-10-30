@@ -94,7 +94,7 @@ async function createDraft(fromStep){
    - once the guide has an account (at once for a host who is signed in): the full research in the background, a job of
      the guide (all the markets in reach, things to do). The build uses both: A._research and A._researchJob travel with
      the answers. What comes back shows in the phone, the full research first. ---------- */
-const AREA = { result: null, quick: null, full: null, timer: null, tries: 0 };
+const AREA = { result: null, quick: null, full: null, fullOpen: false, cards: 0, timer: null, tries: 0 };
 function researchStart(){
   if (!A.lat || !A.lng) return;
   const g = window.__acctGuide && window.__acctGuide();
@@ -127,12 +127,14 @@ async function areaWatch(){
   try {
     if (A._research && !AREA.quick) { const r = await sb('/rest/v1/rpc/area_research_status', { method: 'POST', token: SB.key, body: { p_id: A._research } });
       if (r && r.status === 'done' && r.result) AREA.quick = r.result; else if (r && ['queued', 'running'].includes(r.status)) wait = true; }
-    if (A._researchJob && AUTH && !AREA.full) { const r = ((await sb('/rest/v1/guide_jobs?select=status,result&id=eq.' + A._researchJob)) || [])[0];
-      if (r && r.status === 'done' && r.result) AREA.full = r.result; else if (r && ['queued', 'running'].includes(r.status)) wait = true; }
+    if (A._researchJob && AUTH && (!AREA.full || AREA.fullOpen)) { const r = ((await sb('/rest/v1/guide_jobs?select=status,result&id=eq.' + A._researchJob)) || [])[0];
+      if (r && r.result) AREA.full = r.result;   // things to do come first, while the rest goes on
+      AREA.fullOpen = !!r && ['queued', 'running'].includes(r.status); if (AREA.fullOpen) wait = true; }
   } catch (e) { wait = true; }   // no connection: try again
   const before = JSON.stringify(AREA.result);
   AREA.result = (AREA.quick || AREA.full) ? { ...(AREA.quick || {}), ...(AREA.full || {}) } : null;
   if (JSON.stringify(AREA.result) !== before) phoneSoon();
+  moreRefresh();
   if (wait && ++AREA.tries < 150) AREA.timer = setTimeout(areaWatch, AREA.tries < 30 ? 6000 : 20000);
 }
 // What the listing page says, before Claude: its name (for the phone only, Claude writes the real one), its photos,
@@ -212,6 +214,32 @@ const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {} };
 // Eating and drinking is the host's own list (see "Your places"): we only suggest things to do.
 const SW_CATS = [['todo', 'Attractions']];
 const swipes = () => A.swipes || (A.swipes = {});
+// What the research found becomes cards too, once there is an account (Yohann, 30 Oct 2026: nothing goes in the guide that
+// the host has not seen). First in the deck, without the places the host already decided on or added. A card from Google
+// that the research also found shows once, as the research's.
+const plainName = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+const samePlace = (a, b) => { const x = plainName(a), y = plainName(b); return x === y || (Math.min(x.length, y.length) >= 5 && (x.includes(y) || y.includes(x))); };
+const addedPlaces = () => (Array.isArray(A.favDo) ? placeRows('favDo').map(r => r.p) : String(A.favDo || '').split(/[,\n]+/)).map(x => x.trim()).filter(Boolean);
+const shownText = x => (typeof x === 'string' ? x : (x && (x.en || Object.values(x)[0])) || '');
+function researchCards(){
+  const S = swipes(), chosen = [...Object.values(S).filter(x => !String(x.id).startsWith('r:')).map(x => x.name), ...addedPlaces()];
+  return (((AREA.full || {}).todo || {}).items || []).filter(it => shownText(it.name) && !chosen.some(n => samePlace(n, shownText(it.name)))).map(it => { const name = shownText(it.name);
+    return { id: 'r:' + plainName(name), name, type: shownText(it.type), km: it.km_from_house, lat: it.lat, lng: it.lng, summary: shownText(it.description),
+      maps: it.gmaps || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([name, it.town].filter(Boolean).join(' ')), ...(it._card || {}) }; });
+}
+const moreLeft = () => researchCards().filter(p => !swipes()[p.id]).length;
+const swList = () => { const list = SW.lists[SW.cat]; if (!list || SW.cat !== 'todo') return list; const cards = researchCards(); return [...cards, ...list.filter(p => !cards.some(c => samePlace(c.name, p.name)))]; };
+// New cards: the deck takes them, Review says so, once.
+function moreRefresh(){
+  refreshSwipe(); const el = document.getElementById('rvMore'); if (el) el.innerHTML = moreNote();
+  const n = researchCards().length; if (n && !AREA.cards && moreLeft() && !['nearby', 'send'].includes(route())) toast(`${n} more ${n === 1 ? 'place' : 'places'} in Attractions`); AREA.cards = n;
+}
+function moreNote(){
+  if (!AUTH) return ''; const left = moreLeft();
+  if (left) return `<div class="rv-more"><b>${left} more ${left === 1 ? 'place' : 'places'} to look at</b><p>Our research found them near you. Keep the ones you like: only those go in your guide.</p><a class="btn small" href="#nearby">Look at them</a></div>`;
+  if (AREA.fullOpen && !researchCards().length) return `<div class="rv-more"><b>We are looking for more places near you</b><p>It takes about 2 minutes. Wait for them here, or send now: they will wait for you in your editor.</p></div>`;
+  return '';
+}
 async function loadPlaces(cat){
   if (SW.lists[cat] || SW.loading) return;
   SW.loading = true; SW.err = ''; refreshSwipe();
@@ -231,7 +259,7 @@ function swipeHTML(){
 // The deck (docs/plan-fast-builder.md, step 5): one big card at a time, the next ones showing behind it. Drag it right to
 // recommend, left to skip (it follows the finger), or use the buttons or the arrow keys. Each yes lands in the phone.
 function swipeInner(){
-  const list = SW.lists[SW.cat], S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
+  const list = swList(), S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
   const tabs = SW_CATS.length > 1 ? `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>` : '';
   if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<div class="sw-empty">${SW.err ? esc(SW.err) : '<span class="spin dark"></span> Finding the best-rated places near you…'}</div>`; }
   const left = list.filter(p => !S[p.id]), p = left[0], seen = list.length - left.length;
@@ -242,11 +270,11 @@ function swipeInner(){
         <div class="sw-ph" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : ''}">${p.photo ? '' : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
           <span class="sw-stamp yes" aria-hidden="true">Recommend</span><span class="sw-stamp no" aria-hidden="true">Not for us</span>
           <div class="sw-on"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
-            <p><b>★ ${p.rating ? p.rating.toFixed(1) : '?'}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · <a href="${esc(p.maps)}" target="_blank" rel="noopener">Google Maps</a></p></div></div>
+            <p>${p.rating ? `<b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · ` : ''}<a href="${esc(p.maps)}" target="_blank" rel="noopener">Google Maps</a></p></div></div>
         ${p.summary ? `<div class="sw-tx"><p>${esc(p.summary)}</p></div>` : ''}
       </article></div>
     <div class="sw-btns"><button type="button" class="sw-no" data-sw="no">${svg('<path d="M6 6l12 12M18 6L6 18"/>').replace('stroke-width="2.2"', 'stroke-width="2.4" width="16" height="16"')}Not for us</button><button type="button" class="sw-yes" data-sw="yes">${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>`
-    : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> Missing one? Add it below.</div>`;
+    : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> ${AUTH && AREA.fullOpen && !researchCards().length ? 'Our research is finding more: they will land here in about 2 minutes.' : 'Missing one? Add it below.'}</div>`;
   const picks = Object.values(S).filter(x => x.d === 'yes' && x.cat === SW.cat);
   return `${tabs}${count}${card}
     ${picks.length ? `<div class="sw-picks"><b>Your picks</b>${picks.map(x => `<div class="sw-pick"><span>${esc(x.name)} <small>★ ${x.rating ? (+x.rating).toFixed(1) : ''}</small></span>
@@ -255,7 +283,7 @@ function swipeInner(){
 function refreshSwipe(){ const el = document.getElementById('swipe'); if (el) el.innerHTML = swipeInner(); }
 // A decision: the card flies off the way it went, the next one comes up (with the focus, for keyboard users), the phone follows.
 function swDecide(d, c){
-  const id = c && c.dataset.pid, p = id && (SW.lists[SW.cat] || []).find(x => x.id === id); if (!p || c.dataset.gone) return;
+  const id = c && c.dataset.pid, p = id && (swList() || []).find(x => x.id === id); if (!p || c.dataset.gone) return;
   c.dataset.gone = '1';
   swipes()[id] = { id, d, cat: SW.cat, name: p.name, rating: p.rating, reviews: p.reviews, type: p.type, maps: p.maps, lat: p.lat, lng: p.lng, km: p.km, photo: p.photo, c: '' };
   SW.last = id; log('swipe', d); queueSave();

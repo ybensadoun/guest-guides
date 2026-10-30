@@ -602,7 +602,7 @@ def resolve_short(url):
 # The host's own places (bars and restaurants, and Nightlife when they switched it on), each list into its own file.
 def host_list(key):
     return [r for r in (A.get(key) or []) if isinstance(r, dict) and (r.get('p') or '').strip()]
-def host_items(rows):
+def host_items(rows, filters=False):   # filters: the quick filters of Things to do, worked out from the kind of place
     items = []
     for r in rows:
         key = r['p'].strip(); g = GEO.get(key) or resolve_short(key)
@@ -614,7 +614,7 @@ def host_items(rows):
         it = {'id': re.sub(r'[^a-z0-9]+', '-', nm.lower()).strip('-')[:40] or 'place', 'name': {l: nm for l in LANGS},
               **({'type': L(g['type'])} if g.get('type') else {}), 'town': g.get('town') or town, 'place': g.get('place', ''),
               'lat': g.get('lat', args.lat), 'lng': g.get('lng', args.lng), 'km_from_house': g.get('km'),
-              'tags': g.get('tags', []),
+              'tags': g.get('tags', []) if filters else [], **({'group': g['group']} if filters and g.get('group') else {}),
               'flags': ['check'] if g.get('status') == 'CLOSED_TEMPORARILY' else [], 'hostPick': True,
               **({'gid': g['gid']} if g.get('gid') else {}), **({'always': True} if g.get('always') else {}), **({} if g.get('lat') else {'nomap': True}),
               'gmaps': g.get('gmaps') or (key if ismaps else 'https://www.google.com/maps/search/?api=1&query=' + __import__('urllib.parse').parse.quote_plus(nm + ' ' + (g.get('town') or town)))}
@@ -629,8 +629,10 @@ def write_host_places(rows, file):
 fav, night = host_list('favEat'), host_list('favNight')
 if fav: write_host_places(fav, 'restaurants')
 if night: write_host_places(night, 'nightlife')
-# Things to do: first what the host said (the cards they kept in the swipe game, the places they added), then the research
-# without the cards they turned down. A place the research found too keeps its description, with the host's comment if any.
+# Things to do: only what the host chose, the cards they kept in the swipe game and the places they added (Yohann, 30 Oct
+# 2026: nothing goes in that the host has not seen). A place the research found too keeps its description, with the host's
+# comment if any. The rest of the research goes to docs/more-places.json, without the cards they turned down: the worker
+# makes it cards in the editor, for them to keep or skip.
 plain = lambda x: re.sub(r'[^a-z0-9]+', '', unicodedata.normalize('NFD', str(x).lower()).encode('ascii', 'ignore').decode())
 en_name = lambda it: (lambda n: n.get('en') or next(iter(n.values()), '') if isinstance(n, dict) else n or '')(it.get('name'))
 swipes = [s for s in (A.get('swipes') or {}).values() if isinstance(s, dict) and s.get('cat', 'todo') == 'todo' and (s.get('name') or '').strip()]
@@ -641,18 +643,21 @@ for s in swipes:   # the card already has its position and link: no lookup
     if s.get('d') == 'yes' and s.get('lat') is not None:
         GEO.setdefault(s['name'].strip(), {'lat': s['lat'], 'lng': s['lng'], 'km': s.get('km'), 'gmaps': s.get('maps'), 'type': s.get('type')})
 turned_down = {plain(s['name']) for s in swipes if s.get('d') == 'no'}
-if kept or added or turned_down:
-    todo_file = SITE / 'content/todo.json'
-    todo_doc = json.loads(todo_file.read_text()) if todo_file.exists() else {'_doc': "The host's picks, written by generate-site.py."}
+todo_file = SITE / 'content/todo.json'
+if todo_file.exists() or kept or added:
+    todo_doc = json.loads(todo_file.read_text()) if todo_file.exists() else {'_doc': "The host's places, written by generate-site.py."}
     found, picks = [x for x in todo_doc.get('items') or [] if plain(en_name(x)) not in turned_down], []
-    for it in host_items(kept + added):
+    for it in host_items(kept + added, True):
         name = plain(en_name(it))
         twin = next((x for x in found if len(name) >= 5 and (name in plain(en_name(x)) or plain(en_name(x)) in name)), None)
         if twin:
             found.remove(twin); it = {**twin, 'hostPick': True, **({'description': it['description']} if it.get('description') else {})}
         if not any(plain(en_name(x)) == plain(en_name(it)) for x in picks): picks.append(it)
-    todo_doc['items'] = picks + found
+    todo_doc['items'] = [{k: v for k, v in x.items() if k not in ('_card', '_google')} for x in picks]
     todo_file.write_text(json.dumps(todo_doc, ensure_ascii=False, indent=1))
+    (SITE / 'docs').mkdir(parents=True, exist_ok=True)
+    for x in found: x.setdefault('id', re.sub(r'[^a-z0-9]+', '-', en_name(x).lower()).strip('-')[:40] or 'place'); x.pop('_card', None)
+    (SITE / 'docs/more-places.json').write_text(json.dumps(found, ensure_ascii=False, indent=1))
 
 # Sections, in Home order. Researched ones start as "soon" until their content file has items.
 def has_items(f):

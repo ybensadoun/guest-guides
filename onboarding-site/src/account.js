@@ -614,7 +614,12 @@ async function acctStatus(){
   if (r && r[0]) { GUIDE.status = r[0].status; GUIDE.message = r[0].message; return r[0]; }
   return null;
 }
-window.__acctQueueBuild = acctQueueBuild; window.__acctStatus = acctStatus; window.__acctSendOne = acctSendOne;
+// The places the research found that the host has not seen: cards in the editor (worker/guide-worker.mjs, build).
+async function acctMore(){
+  const r = await sb('/rest/v1/guide_jobs?select=result&kind=eq.find-todo&status=eq.done&order=created_at.desc&limit=1&guide_id=eq.' + GUIDE.id);
+  return (((r && r[0] && r[0].result) || {}).items || []).length;
+}
+window.__acctQueueBuild = acctQueueBuild; window.__acctStatus = acctStatus; window.__acctSendOne = acctSendOne; window.__acctMore = acctMore;
 window.__acctGuide = () => GUIDE;
 
 async function accountBoot(){

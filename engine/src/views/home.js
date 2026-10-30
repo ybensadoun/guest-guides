@@ -188,8 +188,8 @@ function sectionGrid(now, todayCount) {
     return tile(sec.id, t(sec.id === 'emergency' ? 'emergencyTile' : sec.labelKey), '#s/' + sec.id, '', false, cls);
   };
   const live = x => x.status === 'live';
-  // Order follows content/sections.json.
-  const group = g => SECTIONS.filter(x => x.group === g);
+  // Order follows content/sections.json. A section with nothing in it yet is not shown to guests (markets have their own tile).
+  const group = g => SECTIONS.filter(x => x.group === g && (live(x) || x.kind === 'markets'));
   // Getting around shown as a Home tile (its "tile") is not repeated as a section tile.
   const house = group('house').filter(x => x.kind !== 'house' && !(x.kind === 'transport' && TRANSPORT && TRANSPORT.tile)), area = group('area');
   // Garbage wide on top, then the other house tiles side by side.

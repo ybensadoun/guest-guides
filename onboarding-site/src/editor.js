@@ -632,7 +632,7 @@ async function cmFindPoll(kind) {
 }
 function cmFindAdd(path, sid) {
   const kind = FIND_OF[path][0], f = CM.find[kind], it = f && (f.items || []).find(x => x.id === sid); if (!it) return;
-  const n = cmClone(it); delete n._google;
+  const n = cmClone(it); delete n._google; delete n._card;
   let a = edGet(edC(), edPath(path)); if (!Array.isArray(a)) { edSet(edC(), edPath(path), []); a = edGet(edC(), edPath(path)); }
   a.push(n);
   const sec = path.split('/')[1], fl = edF()[sec];
@@ -1167,6 +1167,8 @@ function cmInit() {
   CM.g = { id: g.id, slug: g.slug, status: g.status, origin: g.origin, content: cmClone(d ? d.content : g.content), theme: cmClone(d ? d.theme || {} : g.theme || {}) };
   CM.lang = edLangs().includes('en') ? 'en' : edLangs()[0];
   CM.on = true;
+  const step = new URLSearchParams(location.search).get('step');   // a link to one step (the finished screen): a #step alone does not survive the start of the page
+  if (step && cmIsPage(step)) history.replaceState(null, '', location.pathname + '#' + step);
 }
 (function () {
   const st = document.createElement('style');
