@@ -35,10 +35,8 @@ export const SECTIONS = get('sections').sections.filter(s => MODULE_ON(s.id)).ma
 // Live sections with map points (restaurants, places... and the glass container from garbage)
 // share the map with markets. Points from non-"spots" sections are utilities: shown only when zoomed in.
 export const SPOT_SECTIONS = SECTIONS.filter(s => s.status === 'live' && s.kind !== 'markets' && s.kind !== 'events' && (s.data?.items || []).length);
-// "Host's pick" marks the host's own places among researched ones: in a list of only the host's places it says nothing.
-export const SPOTS = SPOT_SECTIONS.flatMap(sec => { const own = (sec.data?.items || []).every(x => x.hostPick); return (sec.data?.items || []).map(it => ({
+export const SPOTS = SPOT_SECTIONS.flatMap(sec => (sec.data?.items || []).map(it => ({
   ...it,
-  hostPick: it.hostPick && !own,
   id: sec.id + '-' + it.id,
   kind: 'spot',
   section: sec.id,
@@ -49,7 +47,7 @@ export const SPOTS = SPOT_SECTIONS.flatMap(sec => { const own = (sec.data?.items
   groupKey: it.mapGroup || it.town,
   groupSlug: slug(it.mapGroup || it.town),
   s: slots(it.schedule)
-})); });
+})));
 
 export const MAP_CATS = [...CATS, ...new Set(SPOTS.map(s => s.cat))];
 // The local bar & shop next door (a Home quick tile) also belongs on the map, under Eat.

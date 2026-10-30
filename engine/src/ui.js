@@ -155,8 +155,8 @@ export function card(m, opts = {}) {
 // All product tags as small text chips under the name.
 const tagStrip = m => {
   const tg = m.tags || [], sm = m.setMenus || [], fl = warnings(m).filter(f => f === 'book' || f === 'check' || f === 'older');
-  if (!tg.length && !sm.length && !m.topPick && !m.hostPick && !fl.length) return '';
-  return `<span class="tstrip">${m.topPick ? `<i class="top">${esc(t('topPick'))}</i>` : ''}${m.hostPick ? `<i class="top">${esc(t('hostPick'))}</i>` : ''}${fl.map(f => `<i class="note">${esc(t('f_' + f))}</i>`).join('')}${sm.map(s => `<i class="setm">${esc(t('sm_' + s.kind, { p: s.price }))}</i>`).join('')}${tg.map(g => `<i>${esc(t('t_' + g))}</i>`).join('')}</span>`;
+  if (!tg.length && !sm.length && !m.topPick && !fl.length) return '';
+  return `<span class="tstrip">${m.topPick ? `<i class="top">${esc(t('topPick'))}</i>` : ''}${fl.map(f => `<i class="note">${esc(t('f_' + f))}</i>`).join('')}${sm.map(s => `<i class="setm">${esc(t('sm_' + s.kind, { p: s.price }))}</i>`).join('')}${tg.map(g => `<i>${esc(t('t_' + g))}</i>`).join('')}</span>`;
 };
 
 // Keeps the "!" glued to the last word of the name so it never wraps onto its own line.
