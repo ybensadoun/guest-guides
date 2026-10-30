@@ -384,9 +384,10 @@ try {
   // ---- The builder, just after the listing was read ----
   { const { ctx, p, errors } = await open(browser, B, 360, 780);
     await p.goto('http://editor.test/'); await ready(p);
-    ok('builder: opens on the first step that needs the host (The look), no overview', (await p.evaluate(() => location.hash)) === '#look' && !(await p.$('.hero')), await p.evaluate(() => location.hash));
-    ok('builder: The look is one screen of four choices (cover, layout, colours, logo), the layout already picked',
-      (await p.$$eval('.lk-card .lk-row b[id], .lk-card .lk-row .lk-hd b', els => [...new Set(els.map(e => e.textContent))].join(' | '))) === 'Cover picture | Layout | Colours | Your logo' && (await p.$eval('.lk-moods input:checked', e => e.value).catch(() => '')) === 'bold',
+    ok('builder: opens on the first step that needs the host (name, address, languages), no overview', (await p.evaluate(() => location.hash)) === '#guide' && !(await p.$('.hero')), await p.evaluate(() => location.hash));
+    await go(p, '#look'); await p.waitForTimeout(300);
+    ok('builder: The look is one screen: cover, layout, colours, logo and what goes in the guide, the layout already picked',
+      (await p.$$eval('.lk-card .lk-row b[id], .lk-card .lk-row .lk-hd b', els => [...new Set(els.map(e => e.textContent))].join(' | '))) === 'Cover picture | Layout | Colours | Your logo | What goes in your guide' && (await p.$eval('.lk-moods input:checked', e => e.value).catch(() => '')) === 'bold',
       await p.$$eval('.lk-card .lk-hd b', els => els.map(e => e.textContent).join(' | ')));
     const pinned = async () => p.$eval('.look-page .side-phone', e => { const r = e.getBoundingClientRect(); return getComputedStyle(e).display !== 'none' && r.top >= -1 && r.bottom > 150; }).catch(() => false);
     const pinnedTop = await pinned();
@@ -470,12 +471,33 @@ try {
     const path = await p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent));
     ok('builder: Eat and drink is on the path, right after Attractions (hand-picked, never searched)', path.indexOf('Eat and drink') === path.indexOf('Attractions') + 1 && path.indexOf('Eat and drink') < path.indexOf('Only you know'), path.slice(0, 5).join(' > '));
     ok('builder: each Around you step says what goes in it (Attractions: museums; Eat and drink: restaurants, cafés)', /museums/i.test(await p.textContent('.mhead').catch(() => '')) && (await (async () => { await go(p, '#favourites'); return /restaurants, cafés/i.test(await p.textContent('.mhead p').catch(() => '')); })()));
-    await go(p, '#sections'); await p.waitForTimeout(300);
+    await go(p, '#look'); await p.waitForTimeout(300);
     const nb = await p.$('[data-sec="nightlife"]');
     ok('builder: Nightlife is a section of its own, off at first', !!nb && !(await nb.isChecked()));
     await p.$eval('[data-sec="nightlife"]', e => e.closest('label').scrollIntoView({ block: 'center' })); await p.click('[data-sec="nightlife"]', { force: true }); await p.waitForTimeout(400);   // in the middle: just into view, it is under the fixed bottom bar
     const path2 = await p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent));
     ok('builder: switched on, Nightlife is on the path right after Eat and drink', path2.indexOf('Nightlife') === path2.indexOf('Eat and drink') + 1, path2.slice(0, 7).join(' > '));
+    ok('builder: the path is the listing, the name and address, The look, Your area, then the places', path2.slice(0, 6).join(' > ') === 'Load your listing > Name, address, languages > The look > Your area > Attractions > Eat and drink', path2.slice(0, 6).join(' > '));
+    ok('builder: Guide sections and Your area are no longer under "Filled in for you"', !path2.includes('Guide sections') && path2.indexOf('Your area') < path2.indexOf('Only you know'));
+    const stepOff = async id => { await p.$eval(`[data-sec="${id}"]`, e => e.closest('label').scrollIntoView({ block: 'center' })); const y = await p.evaluate(() => scrollY); await p.click(`[data-sec="${id}"]`, { force: true }); await p.waitForTimeout(500); return Math.abs((await p.evaluate(() => scrollY)) - y) < 2; };
+    const steps = () => p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent)), tiles = () => inPhone(p, d => [...d.querySelectorAll('.pv-sec b')].map(e => e.textContent).join(' | '));
+    ok('builder: the phone Home has what the guide has, the two groups of tiles, and no tile for Wi-Fi or check-out', /Eat and drink/.test(await tiles()) && !/Wi-Fi|Check-in/.test(await tiles()) && /At the house.*Around the house/.test(((await inPhone(p, d => d.body.textContent)) || '').replace(/\s+/g, ' ')), await tiles());
+    ok('builder: the phone has no description under the cover, as in the guide, and always the Wi-Fi', !(await inPhone(p, d => !!d.querySelector('.pv-welcome'))) && /Wi-Fi/.test(await inPhone(p, d => d.querySelector('.pv-facts').textContent)));
+    await p.screenshot({ path: join(SHOTS, 'look-sections.png') });
+    const stays = await stepOff('eat');
+    ok('builder: switching Eat and drink off takes it off the steps and the phone, and the page stays where it is', !(await steps()).includes('Eat and drink') && !/Eat and drink/.test(await tiles()) && stays, (await steps()).slice(0, 8).join(' > '));
+    await stepOff('eat');
+    ok('builder: switched back on, it comes back in its place', (await steps()).indexOf('Eat and drink') === (await steps()).indexOf('Attractions') + 1);
+    await stepOff('todo');
+    ok('builder: Attractions goes the same way', !(await steps()).includes('Attractions') && !/Attractions|Things to do/.test(await tiles()), await tiles());
+    await stepOff('todo');
+    ok('builder: Check-out and the welcome page cannot be switched off, so they are not offered', !(await p.$('[data-sec="checkout"]')) && !(await p.$('[data-sec="welcome"]')));
+    { const asked = []; await ctx.route('**/api/places**', r => { const q = new URL(r.request().url()).searchParams; if (!q.get('probe')) asked.push(`${q.get('radius')} ${q.get('want')}`); return json(r, q.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places }); });
+      await go(p, '#area'); await p.waitForTimeout(300);
+      ok('Your area: it says what it steers, before the places', /swipe next/.test(await p.textContent('.mhead p').catch(() => '')));
+      await p.click('[data-radio="radius"][value="1 hour"]', { force: true }); await p.$$eval('[data-multi="guests"]', els => { const f = els.find(e => e.value === 'Families with kids'); if (!f.checked) f.click(); });
+      await go(p, '#nearby'); await p.waitForTimeout(600);
+      ok('Your area: the deck follows the distance and who the guests are', asked.some(a => a.startsWith('30000 ') && /Families with kids/.test(a)), asked.join(' / ')); }
     ok('Places nearby: no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
     const m = await deck(360, 780);
@@ -505,7 +527,7 @@ try {
     await inPhone(p, d => { const b = d.querySelector('.pv-sec'); b && b.click(); return 1; }); await p.waitForTimeout(400);
     ok('wow: tapping a tile opens that screen in the phone', !!(await inPhone(p, d => d.querySelector('.pv-page'))));
     await p.click('#yoursTx a.btn.primary'); await p.waitForTimeout(400);
-    ok('wow: "Make it yours" opens The look', (await p.evaluate(() => location.hash)) === '#look', await p.evaluate(() => location.hash));
+    ok('wow: "Make it yours" opens the name and web address', (await p.evaluate(() => location.hash)) === '#guide', await p.evaluate(() => location.hash));
     ok('wow: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const { ctx, p, errors } = await open(browser, N, 1280, 860, {}, listing);

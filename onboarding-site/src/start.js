@@ -174,7 +174,7 @@ function yoursText(){
   return `<small>Your guest guide</small><h1>${esc(name || 'Your guide')}</h1>
     <p class="yours-st" role="status" aria-live="polite">${st === 'done' ? CHECK : '<span class="spin dark" aria-hidden="true"></span>'}<span>${st === 'done' ? 'Your guide is written.' : esc(say[st])}</span></p>
     <p>${st === 'done' ? `We’ve prefilled your guide from your listing! ${todo ? `You now just need to ${todo} to make it yours.` : 'Tap around in the phone: this is what your guests get.'}` : 'Your photos and the details of your listing are going into it right now.'}</p>
-    <div class="row">${st === 'done' ? `<a class="btn primary" href="#look">Make it yours ${ARROW}</a>` : `<span class="btn primary" aria-disabled="true">Make it yours ${ARROW}</span>`}</div>`;
+    <div class="row">${st === 'done' ? `<a class="btn primary" href="#guide">Make it yours ${ARROW}</a>` : `<span class="btn primary" aria-disabled="true">Make it yours ${ARROW}</span>`}</div>`;
 }
 const yoursRefresh = () => { const el = document.getElementById('yoursTx'); if (el) el.innerHTML = yoursText(); };
 function applyDraft(d){
@@ -203,6 +203,7 @@ function applyDraft(d){
   if (d.cover) A.coverUrl = d.cover;
   if (d.report) A._report = d.report;
   addListingPhotos(d);
+  if (!A.radius) A.radius = '30 min';
   if (!A._slugTouched && (v('guideName') || v('placeName'))) slugAuto();
   A._draftAt = new Date().toISOString(); A._draftSource = d.source;
 }
@@ -244,7 +245,7 @@ async function loadPlaces(cat){
   if (SW.lists[cat] || SW.loading) return;
   SW.loading = true; SW.err = ''; refreshSwipe();
   try {
-    const q = new URLSearchParams({ cat, lang: (A.languages || ['en'])[0] || 'en', radius: String(({ '15 min': 6000, '30 min': 15000, '45 min': 25000, '1 hour': 30000 })[v('radius')] || 10000) });
+    const q = new URLSearchParams({ cat, lang: (A.languages || ['en'])[0] || 'en', radius: String(({ '15 min': 6000, '30 min': 15000, '45 min': 25000, '1 hour': 30000 })[v('radius')] || 10000), want: swWant().join('|') });
     if (A.lat && A.lng) { q.set('lat', A.lat); q.set('lng', A.lng); } else q.set('town', [v('town'), v('region')].filter(Boolean).join(', '));
     const r = await fetch('/api/places?' + q); const d = await r.json();
     if (!d.ok) SW.err = d.message || 'Could not load places.'; else { SW.lists[cat] = d.places; if (!A.lat && d.lat) { A.lat = d.lat; A.lng = d.lng; queueSave(); } }
@@ -258,7 +259,9 @@ function swipeHTML(){
 }
 // The deck (docs/plan-fast-builder.md, step 5): one big card at a time, the next ones showing behind it. Drag it right to
 // recommend, left to skip (it follows the finger), or use the buttons or the arrow keys. Each yes lands in the phone.
+const swWant = () => [...(Array.isArray(A.interests) ? A.interests : []), ...(Array.isArray(A.guests) ? A.guests : [])];
 function swipeInner(){
+  const key = [v('radius'), ...swWant()].join('|'); if (SW.key !== key) { SW.key = key; SW.lists = {}; }   // Your area changed: the deck follows, what the host decided stays
   const list = swList(), S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
   const tabs = SW_CATS.length > 1 ? `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>` : '';
   if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<div class="sw-empty">${SW.err ? esc(SW.err) : '<span class="spin dark"></span> Finding the best-rated places near you…'}</div>`; }
@@ -519,7 +522,8 @@ function lookHTML(m){
   setTimeout(() => { lookPaint(); const x = document.querySelector('.lk-strip [aria-pressed="true"]'); if (x) { const st = x.parentElement, r = x.getBoundingClientRect(), q = st.getBoundingClientRect(); if (r.right > q.right) st.scrollLeft += r.left - q.left - 8; } });   // the drawn cover's colours, once the phone knows them; the cover chosen in view
   return slimStep(m, 'Already chosen for you. Tap anything to change it.', `<section class="card lk-card" id="lookCard">${lookCardHTML()}</section>`, 'look-page');
 }
-const lookCardHTML = () => lookCoverHTML() + lookLayoutHTML() + lookColoursHTML() + lookLogoHTML()
+const lookSectionsHTML = () => `<div class="lk-row"><div class="lk-hd"><b>What goes in your guide</b></div><p class="hint">Switch off what you do not need: its step here and its tile in the guide go too.</p>${sectionPicker()}</div>`;
+const lookCardHTML = () => lookCoverHTML() + lookLayoutHTML() + lookColoursHTML() + lookLogoHTML() + lookSectionsHTML()
   + ((A._done || {}).look ? '<div class="row"><button class="btn small" type="button" data-undone="look">Mark as not done</button></div>' : '');
 // After a choice: the choices and the phone are drawn again, not the page, so the phone, the photo strip and the focus stay put.
 async function lookRefresh(){

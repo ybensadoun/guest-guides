@@ -4,6 +4,13 @@ const CATS = {
   eat: ['restaurant'], coffee: ['cafe', 'bakery', 'coffee_shop'], drinks: ['bar', 'wine_bar', 'pub'],
   todo: ['tourist_attraction', 'beach', 'park', 'museum', 'hiking_area', 'winery', 'historical_landmark']
 };
+// What the host said in Your area steers the deck: which kinds of place, never a fixed list of places. Activities have a
+// search of their own, with a lower bar: Google gives only its 20 most popular places, so monuments and wineries would leave
+// no room for them, and they score lower (a water park full of families, 3.5). Who the guests are decides which come first.
+const TODO_FOR = { Beaches: ['beach'], 'Wine and food': ['winery'], 'Hiking and nature': ['park', 'hiking_area', 'national_park'], 'Culture and history': ['museum', 'historical_landmark', 'art_gallery'], Wellness: ['spa'] };
+const ACTIVITIES = ['amusement_center', 'amusement_park', 'water_park', 'zoo', 'aquarium', 'bowling_alley', 'go_karting_venue', 'miniature_golf_course', 'adventure_sports_center'];
+const ACTIVE_GUESTS = ['Families with kids', 'Groups of friends', 'Sports'];
+const todoTypes = want => { const t = want.flatMap(w => TODO_FOR[w] || []); return t.length ? [...new Set(['tourist_attraction', ...t])] : CATS.todo; };
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=86400' } });
 const G = 'https://places.googleapis.com/v1/';
 async function g(path, body, mask, key){
@@ -43,17 +50,22 @@ export default async (req) => {
       if (loc) { lat = loc.latitude; lng = loc.longitude; }
     }
     if (!(lat && lng)) return json({ ok: false, message: 'We need the town first.' });
-    const d = await g('places:searchNearby', { includedTypes: CATS[cat], maxResultCount: 20, rankPreference: 'POPULARITY', languageCode: lang,
+    const search = types => g('places:searchNearby', { includedTypes: types, maxResultCount: 20, rankPreference: 'POPULARITY', languageCode: lang,
       locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius } } },
       'places.id,places.displayName,places.rating,places.userRatingCount,places.priceLevel,places.primaryTypeDisplayName,places.location,places.googleMapsUri,places.shortFormattedAddress,places.photos,places.editorialSummary', key);
-    const places = (d.places || [])
-      .filter(p => (p.rating || 0) >= 4.3 && (p.userRatingCount || 0) >= 40)
+    const best = (d, bar) => (d.places || [])
+      .filter(p => (p.rating || 0) >= bar && (p.userRatingCount || 0) >= 40)
       .map(p => ({ id: p.id, name: p.displayName && p.displayName.text, rating: p.rating, reviews: p.userRatingCount, price: p.priceLevel || null,
         type: p.primaryTypeDisplayName && p.primaryTypeDisplayName.text, address: p.shortFormattedAddress, maps: p.googleMapsUri,
         summary: p.editorialSummary && p.editorialSummary.text, lat: p.location.latitude, lng: p.location.longitude,
         km: Math.round(hav(lat, lng, p.location.latitude, p.location.longitude) * 13) / 10,
         photo: p.photos && p.photos[0] ? '/api/photo?name=' + encodeURIComponent(p.photos[0].name) : null }))
       .sort((a, b) => (b.rating * Math.log(b.reviews + 1)) - (a.rating * Math.log(a.reviews + 1)));
+    if (cat !== 'todo') return json({ ok: true, lat, lng, places: best(await search(CATS[cat]), 4.3) });
+    const want = (u.searchParams.get('want') || '').split('|'), [sights, fun] = await Promise.all([search(todoTypes(want)), search(ACTIVITIES).catch(() => ({}))]);
+    const lists = [best(sights, 4.3), best(fun, 3.5)]; if (ACTIVE_GUESTS.some(w => want.includes(w))) lists.reverse();
+    const seen = new Set(), places = [];   // one of each, turn about, so the deck is never all one kind
+    for (let i = 0; i < 20 && places.length < 24; i++) for (const l of lists) if (l[i] && !seen.has(l[i].id)) { seen.add(l[i].id); places.push(l[i]); }
     return json({ ok: true, lat, lng, places });
   } catch (e) { return json({ ok: false, message: 'Could not load places right now.' }); }
 };

@@ -12,19 +12,19 @@ const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k]
 // listing to Send; Next and the count follow it. Bars and restaurants are on it: they are hand-picked, never searched
 // (Yohann, 29 Oct 2026: too much noise on Google Maps to choose for the host). Every other step is filled in from the listing: ready without pressing
 // anything, there to check if they like.
-const FLOW = ['listing', 'look', 'nearby', 'favourites', 'nightlife', 'known'];   // Nightlife only when the host switched it on (visible)
+const FLOW = ['listing', 'guide', 'look', 'area', 'nearby', 'favourites', 'nightlife', 'known'];   // Nightlife only when the host switched it on (visible). Your area comes before the deck it steers (Yohann, 30 Oct 2026).
 const needsYou = m => FLOW.includes(m.id);
 const flowMods = () => FLOW.map(id => visible().find(m => m.id === id)).filter(Boolean);
 const readyMods = () => visible().filter(m => !needsYou(m));
 // A step that needs the host counts as done once they answered it (or pressed Done). The look has no answer of its own:
 // its defaults are good, but the host confirms it.
-const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || placeRows('favDo').length > 0,
+const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), guide: () => (A._seen || []).includes('guide') && !slugProblem(v('slug')) && filled('languages'), area: () => filled('interests'), nearby: () => Object.keys(A.swipes || {}).length > 0 || placeRows('favDo').length > 0,
   favourites: () => placeRows('favEat').length > 0 || filled('localTips'),
   nightlife: () => placeRows('favNight').length > 0,
   wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('taxi'),
   known: () => knownParts().every(p => p.id === 'contacts' || p.done()) };   // the taxi is optional
 // Something in this step came from the listing (or is there): only then is it "Ready". Sections are always chosen for them.
-const hasContent = m => m.id === 'sections' || preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));
+const hasContent = m => preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));
 function statusOf(m){
   const miss = missingOf(m).length, seen = (A._seen || []).includes(m.id), done = !!(A._done || {})[m.id];
   if (!needsYou(m)) {
@@ -302,7 +302,7 @@ document.addEventListener('change', e => {
   if (t.dataset.multi) { const k = t.dataset.multi, cur = new Set(A[k] || []); t.checked ? cur.add(t.value) : cur.delete(t.value); set(k, [...cur]); softRefresh(); }
   else if (t.dataset.radio) { set(t.dataset.radio, t.value); softRefresh(); refreshSend(); }
   else if (t.dataset.k && t.tagName === 'SELECT') { set(t.dataset.k, t.value); softRefresh(); }
-  else if (t.dataset.sec) { A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), [t.dataset.sec]: t.checked }; queueSave(); render(); }
+  else if (t.dataset.sec) { A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), [t.dataset.sec]: t.checked }; queueSave(); lookRefresh().then(refreshNav); }   // in The look: the steps and the phone follow, the page stays where it is
   else if (t.dataset.check) { set(t.dataset.check, t.checked); refreshSend(); }
   else if (t.dataset.file) { addFiles(t.dataset.file, t.files, +t.closest('[data-drop]').dataset.max); t.value = ''; }
   else if (t.dataset.room) { const u = uploads.find(x => x.id === t.dataset.room); if (u) setRoom(u, t.value); }

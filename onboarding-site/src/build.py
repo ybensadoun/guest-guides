@@ -64,7 +64,7 @@ seg1=rep(seg1,"need:['languages'],fields:['guideName','tagline','languages','gue
 seg1=rep(seg1,"title:'Name and languages',sub:'What guests see'","title:'Name, address, languages',sub:'What guests see'")
 seg1=rep(seg1,"need:['upload:inspiration','mood','upload:cover'],fields:['styleBrief','up:inspiration','lookLikes','mood','up:cover','lookAvoid']",
  "need:[],fields:['up:logo','up:cover','mood','colorsFrom']")
-seg1=rep(seg1,"title:'The look',sub:'Images and mood'","title:'The look',sub:'Logo, cover, layout, colours'")
+seg1=rep(seg1,"title:'The look',sub:'Images and mood'","title:'The look',sub:'Cover, colours, what goes in'")
 seg1=rep(seg1,"lead:'Upload one to three images: an artwork you love, a photo of the place, a poster, or a screenshot of a website whose style you like. Colours, shapes and layout are built from them.',",
  "lead:'Four steps: your logo, the cover picture, the layout and its colours. All optional, and you can change them later.',")
 seg1=rep(seg1,"""  {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},
@@ -117,7 +117,7 @@ import re as _re
 seg1=_re.sub(r"need:\[[^\]]*\]","need:[]",seg1)
 seg1=rep(seg1,"lead:'Paste your listing and we fill in most of the steps for you. You then only check them and approve.',","lead:'Your listing is where everything starts. With the link (or its text) and the town, we write the rest.',")
 seg1=rep(seg1,"need:[],fields:['listingUrl'","need:['source','town'],fields:['listingUrl'")
-seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'nearby',group:'area',title:'Attractions',sub:'Museums, parks, activities',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',
+seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'nearby',group:'area',title:'Attractions',sub:'Museums, parks, activities',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',sec:'todo',
    lead:'Places guests go to visit or to do something: museums, castles, theme parks, karting, nature. Keep the ones you would send a friend to, and add any we missed. Restaurants and bars go in Eat and drink.',need:[],fields:['swipe','favDo']},
   {id:'taste',group:'area'""")
 seg1=seg1.replace('family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700','family=Gloock&family=Onest:wght@400;500;600;700')

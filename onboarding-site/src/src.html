@@ -278,16 +278,16 @@ const SECTIONS = [
   {id:'welcome',name:'Welcome and photos',d:'Cover photo, name and a short welcome.',built:true,on:()=>true,fixed:true},
   {id:'houseguide',name:'House guide by room',d:'How everything works, room by room.',built:true,on:()=>true},
   {id:'wifi',name:'Wi-Fi card',d:'Network, password and a QR code to join.',built:true,on:()=>true},
-  {id:'checkout',name:'Check-out',d:'Time and the short list before leaving.',built:true,on:()=>true},
+  {id:'checkout',name:'Check-out',d:'Time and the short list before leaving.',built:true,on:()=>true,fixed:true},
   {id:'rubbish',name:'Rubbish and recycling',d:'Which bin goes out tonight.',built:true,on:()=>true},
-  {id:'emergency',name:'Emergency and health',d:'112, hospital, pharmacy, your number.',built:true,on:()=>true},
+  {id:'emergency',name:'Emergency and health',d:'112, hospital and pharmacy.',built:true,on:()=>true},
   {id:'markets',name:'Local markets',d:'Weekly markets, with what is on today.',built:true,on:a=>(a.interests||[]).includes('Local markets')},
   {id:'eat',name:'Eat and drink',d:'Restaurants, cafés and bars you recommend.',built:true,on:()=>true},
   {id:'todo',name:'Attractions',d:'Museums, parks, activities and sights nearby.',built:true,on:()=>true},
   {id:'nightlife',name:'Nightlife',d:'Late bars, clubs and live music you recommend.',built:true,on:()=>false},
   {id:'events',name:'Local events',d:'Festivals and fairs during the stay.',built:true,on:a=>(a.interests||[]).includes('Festivals')},
   {id:'map',name:'Map',d:'Every place in the guide on one map.',built:true,on:()=>true},
-  {id:'quick',name:'Quick calls',d:'One tap to call a taxi or you.',built:true,on:()=>true}
+  {id:'quick',name:'Quick calls',d:'The taxi you trust, one tap away.',built:true,on:()=>true}
 ];
 const secOn = id => { const m = A.modules || {}; const s = SECTIONS.find(x => x.id === id); return id in m ? !!m[id] : !!(s && s.on(A)); };
 
@@ -305,7 +305,7 @@ const MODULES = [
   {id:'look',group:'basics',title:'The look',sub:'Images and mood',icon:'eye',tc:'var(--tomato)',sh:'var(--ink)',shape:'tri',
    lead:'Upload one to three images: an artwork you love, a photo of the place, a poster, or a screenshot of a website whose style you like. Colours, shapes and layout are built from them.',
    need:['upload:inspiration','mood','upload:cover'],fields:['styleBrief','up:inspiration','lookLikes','mood','up:cover','lookAvoid']},
-  {id:'sections',group:'basics',title:'Guide sections',sub:'Pick what goes in',icon:'grid',tc:'var(--ink)',ti:'#fff',sh:'var(--sky)',shape:'square',
+  {id:'sections',group:'basics',title:'Guide sections',sub:'Pick what goes in',icon:'grid',tc:'var(--ink)',ti:'#fff',sh:'var(--sky)',shape:'square',part:'look',
    lead:'Each section you keep adds its own short set of questions to this page. Ticked ones fit your answers so far.',
    need:[],fields:['sectionPicker','moduleIdeas']},
   {id:'photos',group:'house',title:'Photos by room',sub:'Up to 16',icon:'cam',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'quarter',
@@ -320,18 +320,18 @@ const MODULES = [
    lead:'Written for guests who arrive in the dark. No door codes here: send those privately.',need:['arrival'],fields:['arrival','up:arrivalPhoto']},
   {id:'rubbish',group:'practical',title:'Rubbish',sub:'Bins and days',icon:'bin',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'circle',sec:'rubbish',part:'known',
    lead:'Only you know how this works at the house, so we do not look it up. Tell us how it is collected and, if bins go out at the house, which day each one is emptied.',need:[],fields:['rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto']},
-  {id:'contacts',group:'practical',title:'Getting around',sub:'A taxi you trust',icon:'car',tc:'var(--tomato)',ti:'#fff',sh:'var(--ink)',shape:'tri',part:'known',
+  {id:'contacts',group:'practical',title:'Getting around',sub:'A taxi you trust',icon:'car',tc:'var(--tomato)',ti:'#fff',sh:'var(--ink)',shape:'tri',sec:'quick',part:'known',
    lead:'Optional. The taxi you would call yourself: guests see it in the guide.',need:[],fields:['taxi']},
   {id:'known',group:'practical',title:'Only you know',sub:'Wi-Fi, arrival, rubbish, taxi',icon:'key',tc:'var(--pine)',ti:'#fff',sh:'var(--sun)',shape:'half',
    lead:'A few things we cannot find for you. Answer what you can: each one can wait.',need:[],fields:['wifiName','wifiPassword','arrival','up:arrivalPhoto','rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto','taxi']},
   {id:'taste',group:'area',title:'Your style',sub:'Outings and tone',icon:'heart',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',off:true,
    lead:'All optional. It tells us which things to do to look for and how to write to your guests.',need:[],fields:['doStyle','avoidTypes','tone','voiceNotes']},
-  {id:'favourites',group:'area',title:'Eat and drink',sub:'Restaurants, cafés, bars',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',
+  {id:'favourites',group:'area',title:'Eat and drink',sub:'Restaurants, cafés, bars',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',sec:'eat',
    lead:'The restaurants, cafés, bakeries and bars you send friends to. Guests see exactly this list, with your comments. We add none of our own.',need:[],fields:['favEat','localTips']},
   {id:'nightlife',group:'area',title:'Nightlife',sub:'Bars, clubs, live music',icon:'moon',tc:'var(--ink)',ti:'#fff',sh:'var(--sun)',shape:'half',sec:'nightlife',
    lead:'Late bars, cocktail bars, clubs and live music: where you send friends for the evening and the night. We add none of our own.',need:[],fields:['favNight']},
   {id:'area',group:'area',title:'Your area',sub:'Interests and distance',icon:'link',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'circle',
-   lead:'We research markets, things to do and events within the distance you pick.',need:[],fields:['interests','guests','radius']},
+   lead:'This steers the search: the places you swipe next, and the markets and events in your guide.',need:[],fields:['interests','guests','radius']},
 ];
 const GROUPS = [['basics','The basics'],['house','The house'],['practical','Practical'],['area','Around you']];
 
@@ -515,9 +515,7 @@ function drop(kind){
   </div></div>`;
 }
 function sectionPicker(){
-  const qmod = id => MODULES.find(m => m.sec === id);
-  return `<div class="f full"><span class="lab">Sections of your guide</span><div class="mods">${SECTIONS.map(s => { const on = secOn(s.id); const q = qmod(s.id);
-    return `<label class="mod"><input type="checkbox" data-sec="${s.id}"${on?' checked':''}${s.fixed?' disabled':''}${!s.built?' disabled':''}><div class="box"><span class="tick" aria-hidden="true">✓</span><div><b>${esc(s.name)}${!s.built?' <span class="tag">Coming</span>':''}${q && on?` <span class="tag q">+ ${esc(q.title)} questions</span>`:''}</b><small>${esc(s.d)}</small></div></div></label>`; }).join('')}</div></div>`;
+  return `<div class="mods">${SECTIONS.filter(s => !s.fixed).map(s => `<label class="mod"><input type="checkbox" id="sec_${s.id}" data-sec="${s.id}"${secOn(s.id) ? ' checked' : ''}><div class="box"><span class="tick" aria-hidden="true">✓</span><div><b>${esc(s.name)}</b><small>${esc(s.d)}</small></div></div></label>`).join('')}</div>`;
 }
 
 /* ---------- Views ---------- */

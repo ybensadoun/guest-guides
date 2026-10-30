@@ -108,7 +108,7 @@ function example(name, n = 2) {
   return JSON.stringify(cut(j), null, 1);
 }
 function researchPrompt(kind, A, rules) {
-  const area = `${A.town || ''}${A.region ? ', ' + A.region : ''}`, km = A.radius || 30;
+  const area = `${A.town || ''}${A.region ? ', ' + A.region : ''}`, km = ({ '15 min': 15, '30 min': 30, '45 min': 45, '1 hour': 60 })[A.radius] || +A.radius || 30;   // the builder's answer, or the guide's radius in km
   return `You research one module of a guest guide for a holiday home. Place: ${A.placeName || 'the house'}, ${area}. Approximate point: ${A.lat}, ${A.lng}. ${A.city ? `Guests get around on foot, by bike or by public transport, up to ${km} km.` : `Guests drive up to ${km} km.`} The host likes: ${[A.interests, A.feelWords, A.tone].flat().filter(Boolean).join('; ') || 'no preference given'}.
 Use web search. Only include things you confirmed exist from a web source. Never invent names, addresses, phone numbers, hours or distances. When unsure, leave the field out or set "verify": true. Write every text in English, as {"en": "..."}. No em-dashes.
 ${rules}

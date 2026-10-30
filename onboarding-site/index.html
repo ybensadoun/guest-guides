@@ -605,9 +605,9 @@ const SECTIONS = [
   {id:'welcome',name:'Welcome and photos',d:'Cover photo, name and a short welcome.',built:true,on:()=>true,fixed:true},
   {id:'houseguide',name:'House guide by room',d:'How everything works, room by room.',built:true,on:()=>true},
   {id:'wifi',name:'Wi-Fi card',d:'Network, password and a QR code to join.',built:true,on:()=>true},
-  {id:'checkout',name:'Check-out',d:'Time and the short list before leaving.',built:true,on:()=>true},
+  {id:'checkout',name:'Check-out',d:'Time and the short list before leaving.',built:true,on:()=>true,fixed:true},
   {id:'rubbish',name:'Rubbish and recycling',d:'Which bin goes out tonight.',built:true,on:()=>true},
-  {id:'emergency',name:'Emergency and health',d:'112, hospital, pharmacy, your number.',built:true,on:()=>true},
+  {id:'emergency',name:'Emergency and health',d:'112, hospital and pharmacy.',built:true,on:()=>true},
   {id:'markets',name:'Local markets',d:'Weekly markets, with what is on today.',built:true,on:a=>(a.interests||[]).includes('Local markets')},
   {id:'eat',name:'Eat and drink',d:'Restaurants, cafés and bars you recommend.',built:true,on:()=>true},
   {id:'todo',name:'Attractions',d:'Museums, parks, activities and sights nearby.',built:true,on:()=>true},
@@ -615,7 +615,7 @@ const SECTIONS = [
   {id:'events',name:'Local events',d:'Festivals and fairs during the stay.',built:true,on:a=>(a.interests||[]).includes('Festivals')},
   {id:'reviews',name:'Ratings and reviews',d:'Your listing rating and latest reviews, shown as they are.',built:true,on:()=>false},
   {id:'map',name:'Map',d:'Every place in the guide on one map.',built:true,on:()=>true},
-  {id:'quick',name:'Quick calls',d:'One tap to call a taxi or you.',built:true,on:()=>true}
+  {id:'quick',name:'Quick calls',d:'The taxi you trust, one tap away.',built:true,on:()=>true}
 ];
 const secOn = id => { const m = A.modules || {}; const s = SECTIONS.find(x => x.id === id); return id in m ? !!m[id] : !!(s && s.on(A)); };
 
@@ -630,13 +630,13 @@ const MODULES = [
   {id:'place',group:'basics',title:'About the place',sub:'Name, town, size',icon:'tag',tc:'var(--pine)',ti:'#fff',sh:'var(--sky)',shape:'half',
    lead:'What we found in your listing. Fix anything that is off.',
    need:['placeName','town'],fields:['placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','sleeping','privacyNote']},
-  {id:'sections',group:'basics',title:'Guide sections',sub:'Pick what goes in',icon:'grid',tc:'var(--ink)',ti:'#fff',sh:'var(--sky)',shape:'square',
+  {id:'sections',group:'basics',title:'Guide sections',sub:'Pick what goes in',icon:'grid',tc:'var(--ink)',ti:'#fff',sh:'var(--sky)',shape:'square',part:'look',
    lead:'Choose what goes into your guide. Each section you keep adds its questions to the steps that follow, and each one you remove takes them away. Ticked ones already fit your listing.',
    need:[],fields:['sectionPicker','moduleIdeas']},
   {id:'guide',group:'basics',title:'Name, address, languages',sub:'What guests see',icon:'tag',tc:'var(--sun)',ti:'#1b1407',sh:'var(--tomato)',shape:'half',
    lead:'Most hosts use the house name. It becomes the title of the guide and the app name on guests’ phones.',
    need:[],fields:['guideName','slug','tagline','languages']},
-  {id:'look',group:'basics',title:'The look',sub:'Logo, cover, layout, colours',icon:'eye',tc:'var(--tomato)',sh:'var(--ink)',shape:'tri',
+  {id:'look',group:'basics',title:'The look',sub:'Cover, colours, what goes in',icon:'eye',tc:'var(--tomato)',sh:'var(--ink)',shape:'tri',
    lead:'Four steps: your logo, the cover picture, the layout and its colours. All optional, and you can change them later.',
    need:[],fields:['up:logo','up:cover','mood','colorsFrom']},
   {id:'photos',group:'house',title:'Photos by room',sub:'Up to 16',icon:'cam',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'quarter',
@@ -651,22 +651,22 @@ const MODULES = [
    lead:'Written for guests who arrive in the dark. No door codes here: send those privately.',need:[],fields:['arrival','up:arrivalPhoto']},
   {id:'rubbish',group:'practical',title:'Rubbish',sub:'Bins and days',icon:'bin',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'circle',sec:'rubbish',part:'known',
    lead:'Only you know how this works at the house, so we do not look it up. Tell us how it is collected and, if bins go out at the house, which day each one is emptied.',need:[],fields:['rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto']},
-  {id:'contacts',group:'practical',title:'Getting around',sub:'A taxi you trust',icon:'car',tc:'var(--tomato)',ti:'#fff',sh:'var(--ink)',shape:'tri',part:'known',
+  {id:'contacts',group:'practical',title:'Getting around',sub:'A taxi you trust',icon:'car',tc:'var(--tomato)',ti:'#fff',sh:'var(--ink)',shape:'tri',sec:'quick',part:'known',
    lead:'Optional. The taxi you would call yourself: guests see it in the guide.',need:[],fields:['taxi']},
   {id:'known',group:'practical',title:'Only you know',sub:'Wi-Fi, arrival, rubbish, taxi',icon:'key',tc:'var(--pine)',ti:'#fff',sh:'var(--sun)',shape:'half',
    lead:'A few things we cannot find for you. Answer what you can: each one can wait.',need:[],fields:['wifiName','wifiPassword','arrival','up:arrivalPhoto','rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto','taxi']},
-  {id:'nearby',group:'area',title:'Attractions',sub:'Museums, parks, activities',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',
+  {id:'nearby',group:'area',title:'Attractions',sub:'Museums, parks, activities',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',sec:'todo',
    lead:'Places guests go to visit or to do something: museums, castles, theme parks, karting, nature. Keep the ones you would send a friend to, and add any we missed. Restaurants and bars go in Eat and drink.',need:[],fields:['swipe','favDo']},
   {id:'reviews',group:'area',title:'Ratings and reviews',sub:'Optional',icon:'heart',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'half',sec:'reviews',
    lead:'Show your listing rating and reviews at the end of the guide, as they are on your listing. We read them from your listing, you do not pick or type anything.',need:[],fields:['ratingAvg','ratingCount','reviewsNote']},
   {id:'taste',group:'area',title:'Your style',sub:'Outings and tone',icon:'heart',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',off:true,
    lead:'All optional. It tells us which things to do to look for and how to write to your guests.',need:[],fields:['doStyle','avoidTypes','tone','voiceNotes']},
-  {id:'favourites',group:'area',title:'Eat and drink',sub:'Restaurants, cafés, bars',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',
+  {id:'favourites',group:'area',title:'Eat and drink',sub:'Restaurants, cafés, bars',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',sec:'eat',
    lead:'The restaurants, cafés, bakeries and bars you send friends to. Guests see exactly this list, with your comments. We add none of our own.',need:[],fields:['favEat','localTips']},
   {id:'nightlife',group:'area',title:'Nightlife',sub:'Bars, clubs, live music',icon:'moon',tc:'var(--ink)',ti:'#fff',sh:'var(--sun)',shape:'half',sec:'nightlife',
    lead:'Late bars, cocktail bars, clubs and live music: where you send friends for the evening and the night. We add none of our own.',need:[],fields:['favNight']},
   {id:'area',group:'area',title:'Your area',sub:'Interests and distance',icon:'link',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'circle',
-   lead:'We research markets, things to do and events within the distance you pick.',need:[],fields:['interests','guests','radius']},
+   lead:'This steers the search: the places you swipe next, and the markets and events in your guide.',need:[],fields:['interests','guests','radius']},
 ];
 const GROUPS = [['basics','The basics'],['house','The house'],['practical','Practical'],['area','Around you']];
 
@@ -797,9 +797,7 @@ function drop(kind){
   </div></div>`;
 }
 function sectionPicker(){
-  const qmod = id => MODULES.find(m => m.sec === id);
-  return `<div class="f full"><span class="lab">Sections of your guide</span><div class="mods">${SECTIONS.map(s => { const on = secOn(s.id); const q = qmod(s.id);
-    return `<label class="mod"><input type="checkbox" data-sec="${s.id}"${on?' checked':''}${s.fixed?' disabled':''}${!s.built?' disabled':''}><div class="box"><span class="tick" aria-hidden="true">✓</span><div><b>${esc(s.name)}${!s.built?' <span class="tag">Coming</span>':''}${q && on?` <span class="tag q">+ ${esc(q.title)} questions</span>`:''}</b><small>${esc(s.d)}</small></div></div></label>`; }).join('')}</div></div>`;
+  return `<div class="mods">${SECTIONS.filter(s => !s.fixed).map(s => `<label class="mod"><input type="checkbox" id="sec_${s.id}" data-sec="${s.id}"${secOn(s.id) ? ' checked' : ''}><div class="box"><span class="tick" aria-hidden="true">✓</span><div><b>${esc(s.name)}</b><small>${esc(s.d)}</small></div></div></label>`).join('')}</div>`;
 }
 
 /* ---------- Views ---------- */
@@ -866,7 +864,7 @@ function moduleHTML(m){
     <section class="card"><div class="grid">${m.fields.map(field).join('')}</div>
       <div class="foot">
         <p class="todo">${miss.length ? `Still needed: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>`
-          : !needsYou(m) ? (A._draftAt ? 'Filled in from your listing. Change anything that is off: it saves as you type, nothing to press.' : 'Optional. Anything you add here saves as you type.')
+          : !needsYou(m) || (m.id === 'guide' && s.k !== 'done') ? (A._draftAt ? 'Filled in from your listing. Change anything that is off: it saves as you type, nothing to press.' : 'Optional. Anything you add here saves as you type.')
           : s.k === 'done' ? 'Done. You can still change anything.' : 'Only you know this. Answer it now or later: your guide works without it.'}</p>
         ${(A._done || {})[m.id] && needsYou(m) ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
       </div></section></div>
@@ -1047,14 +1045,14 @@ function guideSections(){
     uploads.filter(u => u.kind === 'photo').forEach(u => { const r = u.room || 'Other'; rooms[r] = rooms[r] || []; });
     S.push({ id: 'houseguide', title: 'House guide', sub: 'How everything works', icon: 'tool', kind: 'rooms', rooms: Object.entries(rooms).map(([r, items]) => ({ r, items, photos: photosOf(r) })) });
   }
-  if (on('wifi') && v('wifiName')) S.push({ id: 'wifi', title: 'Wi-Fi', sub: v('wifiName'), icon: 'wifi', kind: 'wifi' });
+  if (on('wifi')) S.push({ id: 'wifi', title: 'Wi-Fi', sub: v('wifiName'), icon: 'wifi', kind: 'wifi' });
   if (on('arrival') && v('arrival')) S.push({ id: 'arrival', title: 'Getting here', sub: 'Arrival and parking', icon: 'car', kind: 'text', items: lines('arrival'), photos: uploads.filter(u => u.kind === 'arrivalPhoto').map(u => u.url) });
   S.push({ id: 'stay', title: 'Check-in and check-out', sub: `In from ${v('checkIn') || '?'} · out by ${v('checkOut') || '?'}`, icon: 'key', kind: 'text', items: [v('checkIn') && `Check-in from ${v('checkIn')}.`, v('checkOut') && `Check-out by ${v('checkOut')}.`, ...lines('checkoutTasks')].filter(Boolean), extra: lines('houseRules').length ? { h: 'House rules', items: lines('houseRules') } : null });
   if (on('rubbish')) S.push({ id: 'rubbish', title: 'Rubbish and recycling', sub: 'Which bin, which day', icon: 'bin', kind: 'text', items: rubbishLines(), research: !rubbishLines().length && 'Tell us how rubbish works at the house and we write it here.' });
   // What the research from the link found (start.js areaWatch), shown as it arrives; the full guide has the details.
   const found = (k, list) => (((AREA.result || {})[k] || {})[list] || []).slice(0, 10), nm = x => typeof x === 'string' ? x : (x && (x.en || Object.values(x)[0])) || '';
   const help = found('emergency', 'groups').flatMap(g => g.items || []).map(x => nm(x.name)).filter(n => n && !/^emergenc/i.test(n));
-  if (on('emergency')) S.push({ id: 'emergency', title: 'Emergency and contacts', sub: '112, your number', icon: 'phone', kind: 'contacts', research: help.length ? `Found near you: ${help.slice(0, 3).join(', ')}. Hours and directions are in your full guide.` : 'We add the nearest hospital, pharmacy and on-call doctor, with hours.' });
+  if (on('emergency')) S.push({ id: 'emergency', title: 'Emergency and contacts', sub: '112, hospital, pharmacy', icon: 'phone', kind: 'contacts', research: help.length ? `Found near you: ${help.slice(0, 3).join(', ')}. Hours and directions are in your full guide.` : 'We add the nearest hospital, pharmacy and on-call doctor, with hours.' });
   if (on('essentials')) S.push({ id: 'essentials', title: 'Shops and essentials', sub: 'Supermarket, bakery, pharmacy', icon: 'bag', kind: 'places', items: lines('essentials'), research: 'We add opening hours, distances and the ones you did not list.' });
   const picks = cats => Object.values(A.swipes || {}).filter(x => x.d === 'yes' && cats.includes(x.cat));
   if (on('eat')) S.push({ picks: picks(['eat', 'coffee', 'drinks']), id: 'eat', title: 'Eat and drink', sub: 'Our favourite places', icon: 'heart', kind: 'places', items: placeRows('favEat').map(r => r.p + (r.c ? ': ' + r.c : '')), research: !placeRows('favEat').length && 'Add the places you recommend, with a link or a name and a comment. We do not add restaurants of our own.' });
@@ -1092,7 +1090,6 @@ function pvStyle(p, preset){
 .pv-logo{display:block;width:56px;height:56px;object-fit:contain;background:#fff;border-radius:12px;padding:5px;margin-bottom:10px}
 .pv-name small{display:block;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.9}
 .pv-name h1{font-size:clamp(34px,9vw,52px)}
-.pv-welcome{font-size:18px;margin:4px 0 0}
 .pv-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .pv-fact{display:flex;flex-direction:column;gap:2px;padding:12px 14px;text-decoration:none;cursor:pointer;border:0;font:inherit;text-align:left;color:inherit;background:none}
 .pv-fact small{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
@@ -1199,19 +1196,21 @@ async function pvParts(screen){
   const scr = screen, sec = S.find(x => x.id === scr);
   const facts = [];
   for (const f of (A.homeFirst && A.homeFirst.length ? A.homeFirst : ['Wi-Fi', 'Check-out time'])) {
-    if (f === 'Wi-Fi' && v('wifiName')) facts.push(['wifi', 'Wi-Fi', 'Tap to connect']);
+    if (f === 'Wi-Fi' && secOn('wifi')) facts.push(['wifi', 'Wi-Fi', 'Tap to connect']);
     if (f === 'Check-out time' && v('checkOut')) facts.push(['stay', 'Check-out', 'Before ' + v('checkOut')]);
     if (f === 'How to get in' && v('arrival')) facts.push(['arrival', 'Getting here', 'Directions']);
     if (f === 'House guide') facts.push(['houseguide', 'House guide', 'How things work']);
     if (f === 'Places to eat') facts.push(['eat', 'Eat', lines('favourites').length + ' favourites']);
   }
+  // As on the guide's Home: Wi-Fi and check-out are the two facts on top, arrival is inside the House guide; the tiles follow in two groups.
+  const atHouse = ['rubbish', 'houseguide', 'emergency'].map(id => S.find(x => x.id === id)).filter(Boolean), around = S.filter(x => !atHouse.includes(x) && !['wifi', 'stay', 'arrival'].includes(x.id));
+  const tile = (x, i, wide) => `<button type="button" class="pv-sec${wide ? ' wide' : ''}${light(colours[i % colours.length]) ? ' lt' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]};--ss:${shapes[i % shapes.length]};--st:${light(colours[i % colours.length]) ? p.ink : '#fff'}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span><span class="ar" aria-hidden="true">→</span></button>`;
+  const group = (list, title, from) => list.length ? `<h2 class="pv-h">${esc(title)}</h2><div class="pv-secs">${list.map((x, i) => tile(x, from + i, ['bold', 'soft', 'mediterranean', 'rural'].includes(preset) && i === list.length - 1 && list.length % 2 === 1)).join('')}</div>` : '';
   const ph = id => { const r = (S.find(x => x.id === 'houseguide') || {}).rooms || []; return id === 'houseguide' && r.find(x => x.photos.length) ? r.find(x => x.photos.length).photos[0] : null; };
   const home = `<div class="pv-cover${cover ? '' : ' pv-art'}"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}<div class="pv-name">${logo ? `<img class="pv-logo" src="${esc(logo)}" alt="">` : ''}<small>Welcome to</small><h1>${esc(name)}</h1></div></div>
-    ${v('tagline') ? `<p class="pv-welcome">${esc(v('tagline'))}</p>` : ''}${v('welcome') ? `<p style="margin:0;opacity:.85">${esc(v('welcome'))}</p>` : ''}
     ${/search/i.test(v('navStyle')) ? `<input class="pv-search" id="pvSearch" placeholder="Search the guide: wifi, bins, beach…" aria-label="Search the guide">` : ''}
     ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
-    <h2 class="pv-h">${/map/i.test(v('navStyle')) ? 'Around you' : 'Your guide'}</h2>
-    <div class="pv-secs" id="pvSecs">${S.map((x, i) => { const pic = false; return `<button type="button" class="pv-sec${['bold', 'soft', 'mediterranean', 'rural'].includes(preset) && (i === S.length - 1 && S.length % 2 === 1) ? ' wide' : ''}${light(colours[i % colours.length]) ? ' lt' : ''}${pic ? ' has-photo' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]};--ss:${shapes[i % shapes.length]};--st:${light(colours[i % colours.length]) ? p.ink : '#fff'}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span><span class="ar" aria-hidden="true">→</span>${pic ? `<img class="ph" src="${pic}" alt="">` : ''}</button>`; }).join('')}</div>`;
+    ${group(atHouse, 'At the house', 0)}${group(around, 'Around the house', atHouse.length)}`;
   return { name, style: pvStyle(p, preset), body: `<div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
       <div class="pv-in">${sec ? pageHTML(sec) : home}</div></div>` };
 }
@@ -1222,7 +1221,7 @@ async function renderPreview(){
     ${body}
     <div class="toast" id="toast" hidden></div>`;
   const q = document.getElementById('pvSearch');
-  if (q) q.addEventListener('input', () => { const t = q.value.toLowerCase().trim(); document.querySelectorAll('#pvSecs .pv-sec').forEach(b => { b.hidden = t && !b.dataset.q.includes(t); }); });
+  if (q) q.addEventListener('input', () => { const t = q.value.toLowerCase().trim(); document.querySelectorAll('.pv-sec').forEach(b => { b.hidden = t && !b.dataset.q.includes(t); }); });
 }
 
 /* ---------- The phone: the guide, live, inside the builder (docs/plan-fast-builder.md, step 3) ----------
@@ -1231,7 +1230,7 @@ async function renderPreview(){
 const PHONE = { screen: 'home', build: false, timer: null };
 const WOW = { stage: '', name: '' };   // the wow page: reading (the listing page), writing (Claude), done
 // The guide screen each step changes, shown next to it.
-const STEP_SCREEN = { nightlife: 'nightlife', known: 'wifi', wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'houseguide', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', area: 'todo', taste: 'todo' };
+const STEP_SCREEN = { nightlife: 'nightlife', known: 'wifi', wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'houseguide', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', taste: 'todo' };
 const phoneHTML = () => `<div class="phone"><div class="phone-scr"><iframe id="phoneFrame" title="Your guide, as guests will see it"></iframe></div></div>`;
 // Both phones (this one, and the editor's, which shows the guide itself) draw the guide at a real phone's width, then
 // scale it down to the frame: text and tiles keep their true sizes and wrap as they do on a phone.
@@ -1267,6 +1266,7 @@ function pageHTML(x){
   const list = items => items.length ? `<div class="pv-list">${items.map(t => { const [a, ...b] = t.split(/:\s|,\s| - /); return `<div class="pv-row"><b>${esc(a)}</b>${b.length ? esc(b.join(', ')) : ''}</div>`; }).join('')}</div>` : '';
   let body = '';
   if (x.kind === 'rooms') body = x.rooms.length ? x.rooms.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3>${r.photos.length ? `<div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${list(r.items)}</section>`).join('') : `<div class="pv-research"><b>Nothing here yet</b>Add how things work and photos by room in your answers.</div>`;
+  else if (x.kind === 'wifi' && !v('wifiName')) body = `<div class="pv-research"><b>Your Wi-Fi goes here</b>Add it in Only you know: guests join with one tap.</div>`;
   else if (x.kind === 'wifi') body = `<section class="pv-card"><p style="margin:0 0 6px;opacity:.7">Network</p><h3 style="font-size:24px">${esc(v('wifiName'))}</h3><p style="margin:12px 0 6px;opacity:.7">Password</p><h3 style="font-size:24px">${esc(v('wifiPassword'))}</h3></section><div class="pv-research"><b>In your full guide</b>A QR code to join with one tap, and a copy button.</div>`;
   else if (x.kind === 'contacts') body = `<section class="pv-card"><div class="pv-list"><div class="pv-row"><b>Emergencies: 112</b>Police, ambulance, fire</div>${v('taxi') ? `<div class="pv-row"><b>Taxi</b>${esc(v('taxi'))}</div>` : ''}</div></section>${research}`;
   else if (x.kind === 'places') body = `${(x.picks || []).length ? `<section class="pv-card"><div class="pv-list">${x.picks.map(p => `<div class="pv-row"><b>${esc(p.name)}</b>${esc([p.type, p.rating ? '★ ' + p.rating.toFixed(1) : '', p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}${p.c ? `<br><i>“${esc(p.c)}”</i>` : ''}<br><a href="${esc(p.maps)}" target="_blank" rel="noopener">Directions</a></div>`).join('')}</div></section>` : ''}${x.items.length ? `<section class="pv-card"><div class="pv-list">${x.items.map(t => { const [a, ...b] = t.split(/,\s| - |:\s/); return `<div class="pv-row"><b>${esc(a)}</b>${esc(b.join(', '))}<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a + ', ' + v('town'))}" target="_blank" rel="noopener">Directions</a></div>`; }).join('')}</div></section>` : ''}${research}`;
@@ -1464,7 +1464,7 @@ function yoursText(){
   return `<small>Your guest guide</small><h1>${esc(name || 'Your guide')}</h1>
     <p class="yours-st" role="status" aria-live="polite">${st === 'done' ? CHECK : '<span class="spin dark" aria-hidden="true"></span>'}<span>${st === 'done' ? 'Your guide is written.' : esc(say[st])}</span></p>
     <p>${st === 'done' ? `We’ve prefilled your guide from your listing! ${todo ? `You now just need to ${todo} to make it yours.` : 'Tap around in the phone: this is what your guests get.'}` : 'Your photos and the details of your listing are going into it right now.'}</p>
-    <div class="row">${st === 'done' ? `<a class="btn primary" href="#look">Make it yours ${ARROW}</a>` : `<span class="btn primary" aria-disabled="true">Make it yours ${ARROW}</span>`}</div>`;
+    <div class="row">${st === 'done' ? `<a class="btn primary" href="#guide">Make it yours ${ARROW}</a>` : `<span class="btn primary" aria-disabled="true">Make it yours ${ARROW}</span>`}</div>`;
 }
 const yoursRefresh = () => { const el = document.getElementById('yoursTx'); if (el) el.innerHTML = yoursText(); };
 function applyDraft(d){
@@ -1493,6 +1493,7 @@ function applyDraft(d){
   if (d.cover) A.coverUrl = d.cover;
   if (d.report) A._report = d.report;
   addListingPhotos(d);
+  if (!A.radius) A.radius = '30 min';
   if (!A._slugTouched && (v('guideName') || v('placeName'))) slugAuto();
   A._draftAt = new Date().toISOString(); A._draftSource = d.source;
 }
@@ -1534,7 +1535,7 @@ async function loadPlaces(cat){
   if (SW.lists[cat] || SW.loading) return;
   SW.loading = true; SW.err = ''; refreshSwipe();
   try {
-    const q = new URLSearchParams({ cat, lang: (A.languages || ['en'])[0] || 'en', radius: String(({ '15 min': 6000, '30 min': 15000, '45 min': 25000, '1 hour': 30000 })[v('radius')] || 10000) });
+    const q = new URLSearchParams({ cat, lang: (A.languages || ['en'])[0] || 'en', radius: String(({ '15 min': 6000, '30 min': 15000, '45 min': 25000, '1 hour': 30000 })[v('radius')] || 10000), want: swWant().join('|') });
     if (A.lat && A.lng) { q.set('lat', A.lat); q.set('lng', A.lng); } else q.set('town', [v('town'), v('region')].filter(Boolean).join(', '));
     const r = await fetch('/api/places?' + q); const d = await r.json();
     if (!d.ok) SW.err = d.message || 'Could not load places.'; else { SW.lists[cat] = d.places; if (!A.lat && d.lat) { A.lat = d.lat; A.lng = d.lng; queueSave(); } }
@@ -1548,7 +1549,9 @@ function swipeHTML(){
 }
 // The deck (docs/plan-fast-builder.md, step 5): one big card at a time, the next ones showing behind it. Drag it right to
 // recommend, left to skip (it follows the finger), or use the buttons or the arrow keys. Each yes lands in the phone.
+const swWant = () => [...(Array.isArray(A.interests) ? A.interests : []), ...(Array.isArray(A.guests) ? A.guests : [])];
 function swipeInner(){
+  const key = [v('radius'), ...swWant()].join('|'); if (SW.key !== key) { SW.key = key; SW.lists = {}; }   // Your area changed: the deck follows, what the host decided stays
   const list = swList(), S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
   const tabs = SW_CATS.length > 1 ? `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>` : '';
   if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<div class="sw-empty">${SW.err ? esc(SW.err) : '<span class="spin dark"></span> Finding the best-rated places near you…'}</div>`; }
@@ -1756,7 +1759,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 30 Oct 2026, 17:30 (Madrid time, after commit 3216af8)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 30 Oct 2026, 18:37 (Madrid time, after commit d3b8529)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -1809,7 +1812,8 @@ function lookHTML(m){
   setTimeout(() => { lookPaint(); const x = document.querySelector('.lk-strip [aria-pressed="true"]'); if (x) { const st = x.parentElement, r = x.getBoundingClientRect(), q = st.getBoundingClientRect(); if (r.right > q.right) st.scrollLeft += r.left - q.left - 8; } });   // the drawn cover's colours, once the phone knows them; the cover chosen in view
   return slimStep(m, 'Already chosen for you. Tap anything to change it.', `<section class="card lk-card" id="lookCard">${lookCardHTML()}</section>`, 'look-page');
 }
-const lookCardHTML = () => lookCoverHTML() + lookLayoutHTML() + lookColoursHTML() + lookLogoHTML()
+const lookSectionsHTML = () => `<div class="lk-row"><div class="lk-hd"><b>What goes in your guide</b></div><p class="hint">Switch off what you do not need: its step here and its tile in the guide go too.</p>${sectionPicker()}</div>`;
+const lookCardHTML = () => lookCoverHTML() + lookLayoutHTML() + lookColoursHTML() + lookLogoHTML() + lookSectionsHTML()
   + ((A._done || {}).look ? '<div class="row"><button class="btn small" type="button" data-undone="look">Mark as not done</button></div>' : '');
 // After a choice: the choices and the phone are drawn again, not the page, so the phone, the photo strip and the focus stay put.
 async function lookRefresh(){
@@ -3734,6 +3738,7 @@ document.addEventListener('click', e => {
 });
 
 /* --- Start: a guide that exists opens here instead of the questions --- */
+const CM_OPENED_ON = decodeURIComponent(location.hash.slice(1));
 function cmInit() {
   const g = GUIDE;
   if (!g || !g.content || !g.content.site || !(g.origin === 'imported' || ['ready', 'approved', 'published'].includes(g.status))) return;
@@ -3742,7 +3747,7 @@ function cmInit() {
   CM.g = { id: g.id, slug: g.slug, status: g.status, origin: g.origin, content: cmClone(d ? d.content : g.content), theme: cmClone(d ? d.theme || {} : g.theme || {}) };
   CM.lang = edLangs().includes('en') ? 'en' : edLangs()[0];
   CM.on = true;
-  const step = new URLSearchParams(location.search).get('step');   // a link to one step (the finished screen): a #step alone does not survive the start of the page
+  const step = new URLSearchParams(location.search).get('step') || CM_OPENED_ON;   // the page's first draw is the builder's, which may send an address it does not know elsewhere
   if (step && cmIsPage(step)) history.replaceState(null, '', location.pathname + '#' + step);
 }
 (function () {
@@ -3910,19 +3915,19 @@ const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k]
 // listing to Send; Next and the count follow it. Bars and restaurants are on it: they are hand-picked, never searched
 // (Yohann, 29 Oct 2026: too much noise on Google Maps to choose for the host). Every other step is filled in from the listing: ready without pressing
 // anything, there to check if they like.
-const FLOW = ['listing', 'look', 'nearby', 'favourites', 'nightlife', 'known'];   // Nightlife only when the host switched it on (visible)
+const FLOW = ['listing', 'guide', 'look', 'area', 'nearby', 'favourites', 'nightlife', 'known'];   // Nightlife only when the host switched it on (visible). Your area comes before the deck it steers (Yohann, 30 Oct 2026).
 const needsYou = m => FLOW.includes(m.id);
 const flowMods = () => FLOW.map(id => visible().find(m => m.id === id)).filter(Boolean);
 const readyMods = () => visible().filter(m => !needsYou(m));
 // A step that needs the host counts as done once they answered it (or pressed Done). The look has no answer of its own:
 // its defaults are good, but the host confirms it.
-const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || placeRows('favDo').length > 0,
+const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), guide: () => (A._seen || []).includes('guide') && !slugProblem(v('slug')) && filled('languages'), area: () => filled('interests'), nearby: () => Object.keys(A.swipes || {}).length > 0 || placeRows('favDo').length > 0,
   favourites: () => placeRows('favEat').length > 0 || filled('localTips'),
   nightlife: () => placeRows('favNight').length > 0,
   wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('taxi'),
   known: () => knownParts().every(p => p.id === 'contacts' || p.done()) };   // the taxi is optional
 // Something in this step came from the listing (or is there): only then is it "Ready". Sections are always chosen for them.
-const hasContent = m => m.id === 'sections' || preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));
+const hasContent = m => preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));
 function statusOf(m){
   const miss = missingOf(m).length, seen = (A._seen || []).includes(m.id), done = !!(A._done || {})[m.id];
   if (!needsYou(m)) {
@@ -4200,7 +4205,7 @@ document.addEventListener('change', e => {
   if (t.dataset.multi) { const k = t.dataset.multi, cur = new Set(A[k] || []); t.checked ? cur.add(t.value) : cur.delete(t.value); set(k, [...cur]); softRefresh(); }
   else if (t.dataset.radio) { set(t.dataset.radio, t.value); softRefresh(); refreshSend(); }
   else if (t.dataset.k && t.tagName === 'SELECT') { set(t.dataset.k, t.value); softRefresh(); }
-  else if (t.dataset.sec) { A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), [t.dataset.sec]: t.checked }; queueSave(); render(); }
+  else if (t.dataset.sec) { A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), [t.dataset.sec]: t.checked }; queueSave(); lookRefresh().then(refreshNav); }   // in The look: the steps and the phone follow, the page stays where it is
   else if (t.dataset.check) { set(t.dataset.check, t.checked); refreshSend(); }
   else if (t.dataset.file) { addFiles(t.dataset.file, t.files, +t.closest('[data-drop]').dataset.max); t.value = ''; }
   else if (t.dataset.room) { const u = uploads.find(x => x.id === t.dataset.room); if (u) setRoom(u, t.value); }

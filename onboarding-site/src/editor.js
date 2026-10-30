@@ -1159,6 +1159,7 @@ document.addEventListener('click', e => {
 });
 
 /* --- Start: a guide that exists opens here instead of the questions --- */
+const CM_OPENED_ON = decodeURIComponent(location.hash.slice(1));
 function cmInit() {
   const g = GUIDE;
   if (!g || !g.content || !g.content.site || !(g.origin === 'imported' || ['ready', 'approved', 'published'].includes(g.status))) return;
@@ -1167,7 +1168,7 @@ function cmInit() {
   CM.g = { id: g.id, slug: g.slug, status: g.status, origin: g.origin, content: cmClone(d ? d.content : g.content), theme: cmClone(d ? d.theme || {} : g.theme || {}) };
   CM.lang = edLangs().includes('en') ? 'en' : edLangs()[0];
   CM.on = true;
-  const step = new URLSearchParams(location.search).get('step');   // a link to one step (the finished screen): a #step alone does not survive the start of the page
+  const step = new URLSearchParams(location.search).get('step') || CM_OPENED_ON;   // the page's first draw is the builder's, which may send an address it does not know elsewhere
   if (step && cmIsPage(step)) history.replaceState(null, '', location.pathname + '#' + step);
 }
 (function () {
