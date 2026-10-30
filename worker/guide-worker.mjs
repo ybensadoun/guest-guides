@@ -196,17 +196,18 @@ async function research(A, outDir, id, opt = {}) {
   };
   if (opt.together) await Promise.all(jobs.map(one)); else for (const j of jobs) await one(j);
 }
-// Translation by Claude, 40 texts per question: {"<source text>": {"es": "...", ...}}. A text that does not come back stays
+// Translation by Claude, 40 texts per question, returned as {"<source text>": {"es": "...", ...}}. A text that does not come back stays
 // as it is (Claude down, the day's budget spent): a search or a build is never lost for it. onPart(done, all) for progress.
 async function translate(texts, langs, srcLang, onPart) {
   const map = {};
   for (let i = 0; langs.length && i < texts.length; i += 40) {
     if (onPart) await onPart(Math.min(i + 40, texts.length), texts.length);
-    const prompt = `Translate these texts into ${langs.join(', ')}. Most are in ${srcLang}, but one copied from a listing can be in another language: every text gets every language asked for, and a text already in one of them stays word for word in it. Keep names, numbers and times. No em-dashes. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else: {"<exact source text>": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(texts.slice(i, i + 40))}`;
+    const part = texts.slice(i, i + 40);   // by number, not by text: a text repeated with one character changed was lost
+    const prompt = `Translate these texts into ${langs.join(', ')}. Most are in ${srcLang}, but one copied from a listing can be in another language: every text gets every language asked for, and a text already in one of them stays word for word in it. Keep names, numbers and times. No em-dashes. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else, one entry per text, by its number: {"0": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(Object.fromEntries(part.map((x, n) => [n, x])))}`;
     let out = '';
     try { out = await claudeAsk(prompt, { what: 'translation' }); } catch (e) { log('  translation skipped:', e.message); break; }
     const a = out.indexOf('{'), b = out.lastIndexOf('}');
-    if (a >= 0 && b > a) { try { Object.assign(map, JSON.parse(out.slice(a, b + 1))); } catch (e) {} }
+    if (a >= 0 && b > a) { try { for (const [n, tr] of Object.entries(JSON.parse(out.slice(a, b + 1)))) if (part[+n] != null) map[part[+n]] = tr; } catch (e) {} }
   }
   return map;
 }
