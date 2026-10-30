@@ -648,8 +648,8 @@ if todo_file.exists() or kept or added:
     todo_doc = json.loads(todo_file.read_text()) if todo_file.exists() else {'_doc': "The host's places, written by generate-site.py."}
     found, picks = [x for x in todo_doc.get('items') or [] if plain(en_name(x)) not in turned_down], []
     for it in host_items(kept + added, True):
-        name = plain(en_name(it))
-        twin = next((x for x in found if len(name) >= 5 and (name in plain(en_name(x)) or plain(en_name(x)) in name)), None)
+        key = plain(en_name(it))
+        twin = next((x for x in found if len(key) >= 5 and (key in plain(en_name(x)) or plain(en_name(x)) in key)), None)
         if twin:
             found.remove(twin); it = {**twin, 'hostPick': True, **({'description': it['description']} if it.get('description') else {})}
         if not any(plain(en_name(x)) == plain(en_name(it)) for x in picks): picks.append(it)
