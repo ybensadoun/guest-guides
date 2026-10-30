@@ -713,23 +713,34 @@ async function researchJob(j, jp) {
     rmSync(dir, { recursive: true, force: true }); await jp({ message: 'Researching your area' });
     await research(A, dir, null, { meter, parts: ['markets', 'todo'] });
     const result = Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))]));
+    const events = await firstEvents(A).catch(e => { log('  events search skipped:', e.message); return null; });
+    if (events) result.events = events;
     if (!Object.keys(result).length) throw new Error('Nothing came back from the research. Try again later.');
     await jp({ status: 'done', result, message: Object.keys(result).join(', '), finished_at: new Date().toISOString() });
     log(`  guide area researched: ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
+// The first events of a new guide, found with the rest of its research (Yohann, 30 Oct 2026: a new guide opens with events,
+// about 0.95 USD). The same search as the monthly run; the build takes them like the markets.
+async function firstEvents(A) {
+  const R = evReach({}, { reach: A.city ? 'city' : 'car' }), today = dayStr(new Date());
+  const found = (await searchEvents({ ...A, radius: R.far }, { reach: R })).filter(f => (f.dates || []).some(d => (d.end || d.start) >= today));
+  for (const f of found) f.id = slugOf(f.name_local || nameOf(f.name));
+  const file = { items: [] }; mergeEvents(file, found, today, R);
+  return file.items.length ? { items: file.items } : null;
+}
 // For a build: the full research of this guide and the quick one from its link, when they are for this place (within
-// 5 km). Not finished yet: the build waits (up to 10 minutes; the jobs loop takes them within seconds) rather than paying
+// 5 km). Not finished yet: the build waits (up to 15 minutes; the jobs loop takes them within seconds) rather than paying
 // twice. Returns the quick research, for mergeQuick after the build's own research.
 async function areaResearch(A, dir, id) {
   mkdirSync(dir, { recursive: true });
   const near = r => !r || r.lat == null || !(A.lat && A.lng) || kmBetween(+r.lat, +r.lng, +A.lat, +A.lng) <= 5;
   const settled = async url => { let r = null;
-    for (let i = 0; i < 40; i++) { r = ((await rest(url).catch(() => [])) || [])[0]; if (!r || !['queued', 'running'].includes(r.status)) break; if (i === 0) say(id, 'Finishing the research of your area'); await new Promise(ok => setTimeout(ok, 15000)); }
+    for (let i = 0; i < 60; i++) { r = ((await rest(url).catch(() => [])) || [])[0]; if (!r || !['queued', 'running'].includes(r.status)) break; if (i === 0) say(id, 'Finishing the research of your area'); await new Promise(ok => setTimeout(ok, 15000)); }
     return r; };
   const used = [];
   const full = await settled(`/rest/v1/guide_jobs?select=status,result,params&guide_id=eq.${id}&kind=eq.research&order=created_at.desc&limit=1`);
-  if (full && full.status === 'done' && full.result && near(full.params)) for (const k of ['markets', 'todo']) if (full.result[k]) { writeFileSync(join(dir, k + '.json'), JSON.stringify(full.result[k], null, 1)); used.push(k); }
+  if (full && full.status === 'done' && full.result && near(full.params)) for (const k of ['markets', 'todo', 'events']) if (full.result[k]) { writeFileSync(join(dir, k + '.json'), JSON.stringify(full.result[k], null, 1)); used.push(k); }
   let quick = null;
   if (UUID.test(String(A._research || ''))) {
     const r = await settled('/rest/v1/area_research?select=status,lat,lng,result&id=eq.' + A._research);
