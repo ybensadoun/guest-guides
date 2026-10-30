@@ -76,7 +76,7 @@ function sendHTML(){
       <h1>Review and send</h1><p>We build your guide from your answers and email you a link to try it. Every round of changes is included.</p></section>
     <section class="card">
       <div class="sum">${mods.map(m => { const s = statusOf(m); return `<a href="#${m.id}" style="--tc:${m.tc}"><span class="sw"></span><span><b>${esc(m.title)}</b><p>${esc(summary(m))}</p></span><span class="pill ${s.k}" style="position:static">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></a>`; }).join('')}</div>
-      <div class="grid">${field('email')}${field('notes')}
+      <div class="grid">${field('slug')}${field('email')}${field('notes')}
         <div class="survey full"><h2>Five quick questions about this form</h2><div class="grid">${['sMinutes','sMissing','sIdeal','sUseNow','sPay'].map(field).join('')}</div></div>
         <label class="f full" style="flex-direction:row;gap:10px;align-items:flex-start"><input type="checkbox" data-check="consent"${A.consent ? ' checked' : ''} style="width:20px;height:20px;margin-top:2px;flex:none"><span>I own these photos and texts or may use them, and I understand the guide is visible to anyone who has its link.</span></label></div>
       <div class="foot">${miss.length ? `<p class="todo">Before sending: <b>${miss.map(esc).join(', ')}</b></p>` : '<p class="todo"></p>'}

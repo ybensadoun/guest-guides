@@ -45,7 +45,7 @@ function applyListing(){
     A[k] = r[k]; got.push(k);
     A._pre = { ...(A._pre || {}), [k]: mod };
   }
-  if (!A._slugTouched && (v('placeName'))) A.slug = cleanSlug(v('guideName') || v('placeName'));
+  if (!A._slugTouched && (v('placeName'))) slugAuto();
   if (r.amenities && r.amenities.includes('Cot or high chair')) A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), ...(A.modules || {}), kids: true };
   log('prefill', 'listing', { n: got.length }); queueSave();
   return got;

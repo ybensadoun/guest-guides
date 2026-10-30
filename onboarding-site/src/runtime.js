@@ -42,16 +42,43 @@ function statusOf(m){
 }
 // Where the builder opens: the first step that still needs the host, else Review and send.
 const obNext = () => (flowMods().find(m => statusOf(m).k !== 'done') || { id: 'send' }).id;
-// Only the listing and the town are needed to send. Everything else is a first version to review, or optional.
-const sendMissing = () => [...(hasSource() ? [] : ['Your listing link or text']), ...(v('town') ? [] : ['The town']), ...(A.consent ? [] : ['The consent box'])];
+// Only the listing, the town and a free web address are needed to send. Everything else is a first version to review, or optional.
+const sendMissing = () => [...(hasSource() ? [] : ['Your listing link or text']), ...(v('town') ? [] : ['The town']), ...(slugProblem(v('slug')) ? ['A free web address'] : []), ...(A.consent ? [] : ['The consent box'])];
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 /* ---------- The guide's web address: a common part (this site) plus the host's own part ---------- */
 const BASE = location.host || 'porta-guides.netlify.app';
-const RESERVED = ['feedback','admin','api','assets','g','new','www','porta','index','login','help','about'];
-const cleanSlug = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').slice(0, 40);
-const slugProblem = x => !x ? 'Choose an address' : x.length < 3 ? 'At least 3 letters' : RESERVED.includes(x.replace(/-$/, '')) ? 'This one is taken, try another' : /-$/.test(x) ? 'Cannot end with a dash' : '';
-function slugCheck(){ const e = document.getElementById('slugMsg'); if (!e) return; const pr = slugProblem(v('slug')); e.textContent = pr || `Your guests will open ${BASE}/${v('slug')}`; e.className = 'hint' + (pr ? ' err' : ' okc'); }
+const GUIDES_AT = BASE + '/g';   // where guests open a guide; BASE alone is the preview on this device
+const cleanSlug = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').slice(0, 40);
+const autoSlug = () => cleanSlug(v('guideName') || v('placeName')).replace(/-+$/, '');
+// Is it free? Other hosts' guides are private, so the database answers (slug_check, which also holds the reserved words):
+// free or not, with up to three free ones near it. An address the host did not type moves to the first of them by itself,
+// so they never meet the problem; one they typed stays theirs to change. The unique index keeps the last word at Publish.
+let SLUG = { for: '', free: null, options: [] }, slugTimer = null;
+const slugTaken = () => SLUG.for === v('slug') && SLUG.free === false;
+const slugProblem = x => !x ? 'Choose an address' : x.length < 3 ? 'At least 3 letters' : /-$/.test(x) ? 'Cannot end with a dash' : x === SLUG.for && SLUG.free === false ? 'Already taken' : '';
+function slugAuto(){ A.slug = autoSlug(); slugLater(); }
+function slugLater(){ clearTimeout(slugTimer); slugTimer = setTimeout(slugAsk, 350); }
+async function slugAsk(){
+  clearTimeout(slugTimer);
+  const s = v('slug'), auto = !A._slugTouched;
+  if (!s || /-$/.test(s) || (s.length < 3 && !auto)) return;
+  try {
+    const r = await sb('/rest/v1/rpc/slug_check', { method: 'POST', token: SB.key, body: { p_wanted: s, p_town: cleanSlug(v('town')).replace(/-+$/, '') || null, p_guide: GUIDE ? GUIDE.id : null } });
+    if (v('slug') !== s) return;   // they typed on: the newer question answers
+    SLUG = { for: s, free: !!r.free, options: r.options || [] };
+    if (!r.free && auto && SLUG.options[0]) { SLUG = { for: SLUG.options[0], free: true, options: [] }; set('slug', SLUG.for); }
+  } catch (e) { if (v('slug') === s) SLUG = { for: s, free: null, options: [] }; }   // no answer: Publish still refuses a taken address
+  slugCheck(); softRefresh(); refreshSend();
+}
+function slugNoteHTML(){
+  const s = v('slug'), pr = slugProblem(s);
+  if (slugTaken()) return `<p class="hint err">${SLUG.options.length ? 'Already taken. These are free:' : 'Already taken. Try another one.'}</p>${SLUG.options.length ? `<div class="slugopts">${SLUG.options.map(o => `<button class="slugopt" type="button" data-slug="${esc(o)}">${esc(o)}</button>`).join('')}</div>` : ''}`;
+  if (pr) return `<p class="hint err">${esc(pr)}</p>`;
+  if (s !== SLUG.for) return '<p class="hint">Checking that it is free…</p>';
+  return `<p class="hint okc">${!A._slugTouched && s !== autoSlug() ? `${esc(autoSlug())} was taken, so we chose this one. ` : ''}Your guests will open ${esc(GUIDES_AT)}/${esc(s)}</p>`;
+}
+function slugCheck(){ const e = document.getElementById('slugNote'); if (!e) return; e.innerHTML = slugNoteHTML(); const i = document.getElementById('f_slug'); if (i && i.value !== v('slug')) i.value = v('slug'); }
 
 /* ---------- Device and walkthrough (so each person can be compared by device) ---------- */
 function device(){
@@ -253,6 +280,7 @@ function render(){
   const stepView = CM.on ? cmIsPage(r) : r === 'send' || !!m;
   nb.hidden = !stepView || new URLSearchParams(location.search).has('feedback') || (r === 'thanks');
   if (!nb.hidden) nb.innerHTML = navbarHTML(r);
+  if (r !== lastRoute && document.getElementById('f_slug')) slugLater();
   if (r !== lastRoute) { window.scrollTo(0, 0); lastRoute = r; }
   fixRail(); setTimeout(fixRail, 60);
   if (fid) { const el = document.getElementById(fid); if (el && el !== document.activeElement) { el.focus({ preventScroll: true }); try { if (sel != null) el.setSelectionRange(sel, sel); } catch (e) {} } }
@@ -274,9 +302,9 @@ function refreshSend(){ if (route() !== 'send') return; refreshNav(); const miss
 /* ---------- Events ---------- */
 document.addEventListener('input', e => {
   const t = e.target;
-  if (t.dataset.k === 'slug') { const c = cleanSlug(t.value); if (c !== t.value) { const p0 = t.selectionStart; t.value = c; try { t.setSelectionRange(p0, p0); } catch (er) {} } set('slug', c); A._slugTouched = true; slugCheck(); softRefresh(); return; }
+  if (t.dataset.k === 'slug') { const c = cleanSlug(t.value); if (c !== t.value) { const p0 = t.selectionStart; t.value = c; try { t.setSelectionRange(p0, p0); } catch (er) {} } set('slug', c); A._slugTouched = true; slugCheck(); softRefresh(); refreshSend(); slugLater(); return; }
   if (t.dataset.k && A._pre && A._pre[t.dataset.k]) { const p = { ...A._pre }; delete p[t.dataset.k]; A._pre = p; }
-  if (t.dataset.k) { set(t.dataset.k, t.value); if ((t.dataset.k === 'guideName' || t.dataset.k === 'placeName') && !A._slugTouched) A.slug = cleanSlug(v('guideName') || v('placeName')); if (route() === 'send') refreshSend(); else softRefresh(); }
+  if (t.dataset.k) { set(t.dataset.k, t.value); if ((t.dataset.k === 'guideName' || t.dataset.k === 'placeName') && !A._slugTouched) slugAuto(); if (route() === 'send') refreshSend(); else softRefresh(); }
 });
 document.addEventListener('change', e => {
   const t = e.target;
@@ -305,6 +333,7 @@ document.addEventListener('click', async e => {
     catch (err) { toast('Could not send the note. Check your connection.'); b.disabled = false; }
   }
   else if (b.id === 'send') send(b);
+  else if (b.dataset.slug) { SLUG = { for: b.dataset.slug, free: true, options: [] }; set('slug', b.dataset.slug); A._slugTouched = true; slugCheck(); softRefresh(); refreshSend(); }
   else if (b.id === 'fillListing') { const got = applyListing(); const mods = [...new Set(got.map(k => FIELD_MODULE[k]))].map(id => (MODULES.find(m => m.id === id) || {}).title).filter(Boolean); render(); toast(got.length ? `Filled ${got.length} answers in ${mods.join(', ')}. Marked “Review”.` : 'Nothing new found. Try pasting more of the listing.'); }
   else if (b.id === 'openPreview') { flush(); location.href = '/' + (v('slug') || 'preview'); }
 });

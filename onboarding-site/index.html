@@ -531,6 +531,13 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
   .yours-tx .row{position:fixed;left:0;right:0;bottom:0;z-index:30;justify-content:center;background:var(--surface);border-top:1.5px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}}   /* Make it yours stays at hand */
 .btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
 @media (min-width:900px){.yours{grid-template-columns:minmax(0,1fr) auto;justify-items:start;gap:64px}.yours-tx{text-align:left;align-items:flex-start}}
+#slugNote{display:flex;flex-direction:column;gap:8px}
+.slugopts{display:flex;flex-wrap:wrap;gap:8px}
+.slugopt{font:inherit;font-size:14.5px;font-weight:600;color:inherit;text-align:left;max-width:100%;min-height:40px;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--sunk);cursor:pointer;overflow-wrap:anywhere}
+.slugopt:hover{border-color:var(--ink)}
+.slugopt:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+#slugNote p{overflow-wrap:anywhere}
+@media (max-width:520px){.slugbox{flex-direction:column}.slugbox span{max-width:100%;padding:8px 12px 0;font-size:13.5px}.slugbox input{padding:2px 12px 8px!important}}
 
 </style>
 </head>
@@ -754,7 +761,7 @@ const UP = {
 const NEEDED = new Set(MODULES.flatMap(m => m.need));
 function badge(k){ const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k; if (!NEEDED.has(key)) return '<span class="opt">optional</span>'; return filled(key) ? `<span class="req ok">${CHECK.replace('<svg','<svg width="11" height="11"')} Done</span>` : '<span class="req">Needed</span>'; }
 function field(k){
-  if (k === 'slug') { const pr = slugProblem(v('slug')); return `<div class="f full"><label for="f_slug">${esc(Q.slug.label)} ${badge('slug')}</label><p class="hint">${esc(Q.slug.hint)}</p><div class="slugbox"><span>${esc(BASE)}/</span><input id="f_slug" data-k="slug" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(v('slug'))}" placeholder="villa-mar" maxlength="40"></div><p id="slugMsg" class="hint${pr ? ' err' : ' okc'}">${esc(pr || `Your guests will open ${BASE}/${v('slug')}`)}</p></div>`; }
+  if (k === 'slug') return `<div class="f full"><label for="f_slug">${esc(Q.slug.label)}</label><p class="hint">${esc(Q.slug.hint)}</p><div class="slugbox"><span>${esc(GUIDES_AT)}/</span><input id="f_slug" data-k="slug" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(v('slug'))}" placeholder="villa-mar" maxlength="40"></div><div id="slugNote" aria-live="polite">${slugNoteHTML()}</div></div>`;
   if (k === 'fillBtn') return `<div class="full" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn sun" type="button" id="fillListing">Fill in from my listing</button><span class="hint">Fills the steps it can and marks them “Review”. Nothing you typed is replaced.</span></div>`;
   if (k === 'swipe') return swipeHTML();
   if (k === 'loadListing') return loadListingHTML();
@@ -882,7 +889,7 @@ function sendHTML(){
       <h1>Review and send</h1><p>We build your guide from your answers and email you a link to try it. Every round of changes is included.</p></section>
     <section class="card">
       <div class="sum">${mods.map(m => { const s = statusOf(m); return `<a href="#${m.id}" style="--tc:${m.tc}"><span class="sw"></span><span><b>${esc(m.title)}</b><p>${esc(summary(m))}</p></span><span class="pill ${s.k}" style="position:static">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></a>`; }).join('')}</div>
-      <div class="grid">${field('email')}${field('notes')}
+      <div class="grid">${field('slug')}${field('email')}${field('notes')}
         <div class="survey full"><h2>Five quick questions about this form</h2><div class="grid">${['sMinutes','sMissing','sIdeal','sUseNow','sPay'].map(field).join('')}</div></div>
         <label class="f full" style="flex-direction:row;gap:10px;align-items:flex-start"><input type="checkbox" data-check="consent"${A.consent ? ' checked' : ''} style="width:20px;height:20px;margin-top:2px;flex:none"><span>I own these photos and texts or may use them, and I understand the guide is visible to anyone who has its link.</span></label></div>
       <div class="foot">${miss.length ? `<p class="todo">Before sending: <b>${miss.map(esc).join(', ')}</b></p>` : '<p class="todo"></p>'}
@@ -947,7 +954,7 @@ function applyListing(){
     A[k] = r[k]; got.push(k);
     A._pre = { ...(A._pre || {}), [k]: mod };
   }
-  if (!A._slugTouched && (v('placeName'))) A.slug = cleanSlug(v('guideName') || v('placeName'));
+  if (!A._slugTouched && (v('placeName'))) slugAuto();
   if (r.amenities && r.amenities.includes('Cot or high chair')) A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), ...(A.modules || {}), kids: true };
   log('prefill', 'listing', { n: got.length }); queueSave();
   return got;
@@ -1525,7 +1532,7 @@ function applyDraft(d){
   if (d.cover) A.coverUrl = d.cover;
   if (d.report) A._report = d.report;
   addListingPhotos(d);
-  if (!A._slugTouched && (v('guideName') || v('placeName'))) A.slug = cleanSlug(v('guideName') || v('placeName'));
+  if (!A._slugTouched && (v('guideName') || v('placeName'))) slugAuto();
   A._draftAt = new Date().toISOString(); A._draftSource = d.source;
 }
 document.addEventListener('submit', e => { if (e.target.id === 'startForm') { e.preventDefault(); flush(); createDraft(); } });
@@ -1762,7 +1769,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 29 Oct 2026, 18:16 (Madrid time, after commit 88d411e)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 30 Oct 2026, 09:30 (Madrid time, after commit d293885)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -2398,9 +2405,9 @@ async function acctPush(){
   try {
     await ensureFresh();
     const body = { answers: cleanForAccount() };
-    if (A.slug && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(A.slug) && A.slug !== GUIDE.slug) body.slug = A.slug;
+    if (A.slug && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(A.slug) && A.slug !== GUIDE.slug && !slugTaken()) body.slug = A.slug;
     try { await sb('/rest/v1/guides?id=eq.' + GUIDE.id, { method: 'PATCH', body }); if (body.slug) GUIDE.slug = body.slug; }
-    catch (e) { if (e.status === 409 && body.slug) { delete body.slug; await sb('/rest/v1/guides?id=eq.' + GUIDE.id, { method: 'PATCH', body }); } else throw e; }
+    catch (e) { if (e.status === 409 && body.slug) { delete body.slug; await sb('/rest/v1/guides?id=eq.' + GUIDE.id, { method: 'PATCH', body }); slugLater(); } else throw e; }
     setSave('ok', 'Saved to your account');
   } catch (e) { setSave('err', 'Saved on this device, not yet to your account'); }
   pushing = false; if (pushAgain) { pushAgain = false; acctQueue(); }
@@ -2534,11 +2541,12 @@ async function acctQueueBuild(){
   clearTimeout(pushTimer);
   for (let i = 0; i < 40 && pushing; i++) await new Promise(r => setTimeout(r, 150));
   await acctSendUploads();
+  await slugAsk();   // the last word: someone may have taken it a minute ago
   await acctPush();
-  if (A.slug && A.slug !== GUIDE.slug) throw new Error('That web address is already taken. Pick another one in the first step.');
+  if (A.slug && A.slug !== GUIDE.slug) throw new Error('That web address is taken. Choose one of the free ones above.');
   await ensureFresh();
   try { const r = await sb('/rest/v1/guides?id=eq.' + GUIDE.id, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: { status: 'queued' } }); if (r && r[0]) { GUIDE.status = r[0].status; GUIDE.message = r[0].message; } }
-  catch (e) { throw new Error(/web address/i.test(e.message) ? 'Choose a web address for your guide in the first step.' : e.message); }
+  catch (e) { throw new Error(/web address/i.test(e.message) ? 'Choose a web address for your guide above.' : e.message); }
   return GUIDE.status;
 }
 async function acctStatus(){
@@ -3877,7 +3885,7 @@ function summary(m){
   switch (m.id) {
     case 'listing': return A._draftAt ? `Loaded: ${uploads.filter(u => u.remote).length} photos, details filled in` : 'Not loaded yet';
     case 'place': return [v('placeName'), v('propertyType'), [v('town'), v('region')].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'Not filled';
-    case 'guide': return [v('guideName') || v('placeName'), v('slug') ? BASE + '/' + v('slug') : '', (A.languages || []).map(l => l.toUpperCase()).join(' '), n('logo') ? 'logo' : 'no logo'].filter(Boolean).join(' · ');
+    case 'guide': return [v('guideName') || v('placeName'), v('slug') ? GUIDES_AT + '/' + v('slug') : '', (A.languages || []).map(l => l.toUpperCase()).join(' '), n('logo') ? 'logo' : 'no logo'].filter(Boolean).join(' · ');
     case 'look': return [n('logo') ? 'Logo' : '', n('cover') ? 'Own cover' : A.coverChoice === 'drawn' ? 'Drawn cover' : A.coverUrl ? 'Listing photo' : '', (MOODS.find(x => x.id === v('mood')) || {}).name || ''].filter(Boolean).join(' · ') || 'Not started';
     case 'sections': return SECTIONS.filter(s => secOn(s.id)).map(s => s.name).join(', ');
     case 'photos': return `${n('photo')} photos, ${uploads.filter(u => u.kind === 'photo' && u.room).length} tagged`;
@@ -3938,16 +3946,43 @@ function statusOf(m){
 }
 // Where the builder opens: the first step that still needs the host, else Review and send.
 const obNext = () => (flowMods().find(m => statusOf(m).k !== 'done') || { id: 'send' }).id;
-// Only the listing and the town are needed to send. Everything else is a first version to review, or optional.
-const sendMissing = () => [...(hasSource() ? [] : ['Your listing link or text']), ...(v('town') ? [] : ['The town']), ...(A.consent ? [] : ['The consent box'])];
+// Only the listing, the town and a free web address are needed to send. Everything else is a first version to review, or optional.
+const sendMissing = () => [...(hasSource() ? [] : ['Your listing link or text']), ...(v('town') ? [] : ['The town']), ...(slugProblem(v('slug')) ? ['A free web address'] : []), ...(A.consent ? [] : ['The consent box'])];
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 /* ---------- The guide's web address: a common part (this site) plus the host's own part ---------- */
 const BASE = location.host || 'porta-guides.netlify.app';
-const RESERVED = ['feedback','admin','api','assets','g','new','www','porta','index','login','help','about'];
-const cleanSlug = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').slice(0, 40);
-const slugProblem = x => !x ? 'Choose an address' : x.length < 3 ? 'At least 3 letters' : RESERVED.includes(x.replace(/-$/, '')) ? 'This one is taken, try another' : /-$/.test(x) ? 'Cannot end with a dash' : '';
-function slugCheck(){ const e = document.getElementById('slugMsg'); if (!e) return; const pr = slugProblem(v('slug')); e.textContent = pr || `Your guests will open ${BASE}/${v('slug')}`; e.className = 'hint' + (pr ? ' err' : ' okc'); }
+const GUIDES_AT = BASE + '/g';   // where guests open a guide; BASE alone is the preview on this device
+const cleanSlug = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').slice(0, 40);
+const autoSlug = () => cleanSlug(v('guideName') || v('placeName')).replace(/-+$/, '');
+// Is it free? Other hosts' guides are private, so the database answers (slug_check, which also holds the reserved words):
+// free or not, with up to three free ones near it. An address the host did not type moves to the first of them by itself,
+// so they never meet the problem; one they typed stays theirs to change. The unique index keeps the last word at Publish.
+let SLUG = { for: '', free: null, options: [] }, slugTimer = null;
+const slugTaken = () => SLUG.for === v('slug') && SLUG.free === false;
+const slugProblem = x => !x ? 'Choose an address' : x.length < 3 ? 'At least 3 letters' : /-$/.test(x) ? 'Cannot end with a dash' : x === SLUG.for && SLUG.free === false ? 'Already taken' : '';
+function slugAuto(){ A.slug = autoSlug(); slugLater(); }
+function slugLater(){ clearTimeout(slugTimer); slugTimer = setTimeout(slugAsk, 350); }
+async function slugAsk(){
+  clearTimeout(slugTimer);
+  const s = v('slug'), auto = !A._slugTouched;
+  if (!s || /-$/.test(s) || (s.length < 3 && !auto)) return;
+  try {
+    const r = await sb('/rest/v1/rpc/slug_check', { method: 'POST', token: SB.key, body: { p_wanted: s, p_town: cleanSlug(v('town')).replace(/-+$/, '') || null, p_guide: GUIDE ? GUIDE.id : null } });
+    if (v('slug') !== s) return;   // they typed on: the newer question answers
+    SLUG = { for: s, free: !!r.free, options: r.options || [] };
+    if (!r.free && auto && SLUG.options[0]) { SLUG = { for: SLUG.options[0], free: true, options: [] }; set('slug', SLUG.for); }
+  } catch (e) { if (v('slug') === s) SLUG = { for: s, free: null, options: [] }; }   // no answer: Publish still refuses a taken address
+  slugCheck(); softRefresh(); refreshSend();
+}
+function slugNoteHTML(){
+  const s = v('slug'), pr = slugProblem(s);
+  if (slugTaken()) return `<p class="hint err">${SLUG.options.length ? 'Already taken. These are free:' : 'Already taken. Try another one.'}</p>${SLUG.options.length ? `<div class="slugopts">${SLUG.options.map(o => `<button class="slugopt" type="button" data-slug="${esc(o)}">${esc(o)}</button>`).join('')}</div>` : ''}`;
+  if (pr) return `<p class="hint err">${esc(pr)}</p>`;
+  if (s !== SLUG.for) return '<p class="hint">Checking that it is free…</p>';
+  return `<p class="hint okc">${!A._slugTouched && s !== autoSlug() ? `${esc(autoSlug())} was taken, so we chose this one. ` : ''}Your guests will open ${esc(GUIDES_AT)}/${esc(s)}</p>`;
+}
+function slugCheck(){ const e = document.getElementById('slugNote'); if (!e) return; e.innerHTML = slugNoteHTML(); const i = document.getElementById('f_slug'); if (i && i.value !== v('slug')) i.value = v('slug'); }
 
 /* ---------- Device and walkthrough (so each person can be compared by device) ---------- */
 function device(){
@@ -4149,6 +4184,7 @@ function render(){
   const stepView = CM.on ? cmIsPage(r) : r === 'send' || !!m;
   nb.hidden = !stepView || new URLSearchParams(location.search).has('feedback') || (r === 'thanks');
   if (!nb.hidden) nb.innerHTML = navbarHTML(r);
+  if (r !== lastRoute && document.getElementById('f_slug')) slugLater();
   if (r !== lastRoute) { window.scrollTo(0, 0); lastRoute = r; }
   fixRail(); setTimeout(fixRail, 60);
   if (fid) { const el = document.getElementById(fid); if (el && el !== document.activeElement) { el.focus({ preventScroll: true }); try { if (sel != null) el.setSelectionRange(sel, sel); } catch (e) {} } }
@@ -4170,9 +4206,9 @@ function refreshSend(){ if (route() !== 'send') return; refreshNav(); const miss
 /* ---------- Events ---------- */
 document.addEventListener('input', e => {
   const t = e.target;
-  if (t.dataset.k === 'slug') { const c = cleanSlug(t.value); if (c !== t.value) { const p0 = t.selectionStart; t.value = c; try { t.setSelectionRange(p0, p0); } catch (er) {} } set('slug', c); A._slugTouched = true; slugCheck(); softRefresh(); return; }
+  if (t.dataset.k === 'slug') { const c = cleanSlug(t.value); if (c !== t.value) { const p0 = t.selectionStart; t.value = c; try { t.setSelectionRange(p0, p0); } catch (er) {} } set('slug', c); A._slugTouched = true; slugCheck(); softRefresh(); refreshSend(); slugLater(); return; }
   if (t.dataset.k && A._pre && A._pre[t.dataset.k]) { const p = { ...A._pre }; delete p[t.dataset.k]; A._pre = p; }
-  if (t.dataset.k) { set(t.dataset.k, t.value); if ((t.dataset.k === 'guideName' || t.dataset.k === 'placeName') && !A._slugTouched) A.slug = cleanSlug(v('guideName') || v('placeName')); if (route() === 'send') refreshSend(); else softRefresh(); }
+  if (t.dataset.k) { set(t.dataset.k, t.value); if ((t.dataset.k === 'guideName' || t.dataset.k === 'placeName') && !A._slugTouched) slugAuto(); if (route() === 'send') refreshSend(); else softRefresh(); }
 });
 document.addEventListener('change', e => {
   const t = e.target;
@@ -4201,6 +4237,7 @@ document.addEventListener('click', async e => {
     catch (err) { toast('Could not send the note. Check your connection.'); b.disabled = false; }
   }
   else if (b.id === 'send') send(b);
+  else if (b.dataset.slug) { SLUG = { for: b.dataset.slug, free: true, options: [] }; set('slug', b.dataset.slug); A._slugTouched = true; slugCheck(); softRefresh(); refreshSend(); }
   else if (b.id === 'fillListing') { const got = applyListing(); const mods = [...new Set(got.map(k => FIELD_MODULE[k]))].map(id => (MODULES.find(m => m.id === id) || {}).title).filter(Boolean); render(); toast(got.length ? `Filled ${got.length} answers in ${mods.join(', ')}. Marked “Review”.` : 'Nothing new found. Try pasting more of the listing.'); }
   else if (b.id === 'openPreview') { flush(); location.href = '/' + (v('slug') || 'preview'); }
 });

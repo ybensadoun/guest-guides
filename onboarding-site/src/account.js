@@ -463,9 +463,9 @@ async function acctPush(){
   try {
     await ensureFresh();
     const body = { answers: cleanForAccount() };
-    if (A.slug && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(A.slug) && A.slug !== GUIDE.slug) body.slug = A.slug;
+    if (A.slug && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(A.slug) && A.slug !== GUIDE.slug && !slugTaken()) body.slug = A.slug;
     try { await sb('/rest/v1/guides?id=eq.' + GUIDE.id, { method: 'PATCH', body }); if (body.slug) GUIDE.slug = body.slug; }
-    catch (e) { if (e.status === 409 && body.slug) { delete body.slug; await sb('/rest/v1/guides?id=eq.' + GUIDE.id, { method: 'PATCH', body }); } else throw e; }
+    catch (e) { if (e.status === 409 && body.slug) { delete body.slug; await sb('/rest/v1/guides?id=eq.' + GUIDE.id, { method: 'PATCH', body }); slugLater(); } else throw e; }
     setSave('ok', 'Saved to your account');
   } catch (e) { setSave('err', 'Saved on this device, not yet to your account'); }
   pushing = false; if (pushAgain) { pushAgain = false; acctQueue(); }
@@ -599,11 +599,12 @@ async function acctQueueBuild(){
   clearTimeout(pushTimer);
   for (let i = 0; i < 40 && pushing; i++) await new Promise(r => setTimeout(r, 150));
   await acctSendUploads();
+  await slugAsk();   // the last word: someone may have taken it a minute ago
   await acctPush();
-  if (A.slug && A.slug !== GUIDE.slug) throw new Error('That web address is already taken. Pick another one in the first step.');
+  if (A.slug && A.slug !== GUIDE.slug) throw new Error('That web address is taken. Choose one of the free ones above.');
   await ensureFresh();
   try { const r = await sb('/rest/v1/guides?id=eq.' + GUIDE.id, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: { status: 'queued' } }); if (r && r[0]) { GUIDE.status = r[0].status; GUIDE.message = r[0].message; } }
-  catch (e) { throw new Error(/web address/i.test(e.message) ? 'Choose a web address for your guide in the first step.' : e.message); }
+  catch (e) { throw new Error(/web address/i.test(e.message) ? 'Choose a web address for your guide above.' : e.message); }
   return GUIDE.status;
 }
 async function acctStatus(){

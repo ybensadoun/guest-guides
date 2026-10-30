@@ -44,9 +44,12 @@ const PNG4 = (() => { const W = 4, rows = [], C = [[29, 79, 160], [213, 43, 30],
   const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(W, 4); ihdr[8] = 8; ihdr[9] = 2;
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(Buffer.from(rows))), chunk('IEND', Buffer.alloc(0))]); })();
 const json = (route, body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+// The database on a web address: what slug_check answers (the real function is checked against real rows, not here).
+const slugAnswer = (route, b, taken) => { const free = !taken.has(b.p_wanted); return json(route, { free, options: free ? [] : [b.p_town ? `${b.p_wanted}-${b.p_town}` : `${b.p_wanted}-2`, `${b.p_wanted}-3`, `${b.p_wanted}-4`] }); };
+const slugOf = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 async function open(browser, G, w, h, stored = {}, listing = null) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+  const ctx = await browser.newContext({ viewport: { width: w, height: h } }); ctx.taken = new Set();
   await ctx.addInitScript(([g, stored]) => {
     if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', '1');
     localStorage.setItem('porta-auth-v1', JSON.stringify({ access_token: 'test', refresh_token: 'test', expires_at: Math.floor(Date.now() / 1000) + 86400, user: { id: g.owner, email: 'test@example.org' } }));
@@ -59,6 +62,7 @@ async function open(browser, G, w, h, stored = {}, listing = null) {
     if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
     if (u.origin !== SB) return route.continue();   // fonts, public pictures
     if (u.pathname.startsWith('/auth/v1/user')) return json(route, { id: G.owner, email: 'test@example.org' });
+    if (u.pathname === '/rest/v1/rpc/slug_check') return slugAnswer(route, JSON.parse(req.postData() || '{}'), ctx.taken);
     if (u.pathname.startsWith('/rest/v1/guides') && req.method() === 'GET')
       return json(route, /select=id(%2C|,)slug/.test(u.search) ? [{ id: G.id, slug: G.slug, status: G.status, origin: G.origin, name: G.content && G.content.site.name }] : [G]);
     return json(route, u.pathname.startsWith('/auth/') ? {} : []);   // saving, jobs: accepted, kept nowhere
@@ -129,8 +133,10 @@ try {
     await ctx.close(); }
   // ---- No account until the end (docs/plan-fast-builder.md, step 7): the link, the wow and the steps on this device, then the account ----
   const JOB_ID = '00000000-0000-0000-0000-00000000f011', AREA_ID = '00000000-0000-0000-0000-0000000a4ea1', AREA_MARKETS = JSON.parse(readFileSync(join(ROOT, 'worker/examples/markets.json'), 'utf8')), AREA_TODO = JSON.parse(readFileSync(join(ROOT, 'worker/examples/todo.json'), 'utf8'));
-  const visitor = async (w, h, existing) => {
-    const ctx = await browser.newContext({ viewport: { width: w, height: h } }), rows = {}, calls = [], uid = '00000000-0000-0000-0000-0000000070aa';
+  // The sheet puts the cursor in the email box just after it opens: type once it has, or the password lands there.
+  const signUp = async p => { await p.waitForFunction(() => (document.activeElement || {}).id === 'acEmail'); await p.fill('#acEmail', 'visitor@example.org'); await p.fill('#acPw', 'a-good-password'); await p.click('#acct .go'); };
+  const visitor = async (w, h, existing, taken = []) => {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } }), rows = {}, calls = [], uid = '00000000-0000-0000-0000-0000000070aa'; ctx.taken = new Set(taken);
     if (existing) rows[existing.id] = { ...existing, owner: uid };
     await ctx.route('**/*', route => { const req = route.request(), u = new URL(req.url());
       if (u.host === 'editor.test' && u.pathname === '/api/listing') return listing(route, JSON.parse(req.postData() || '{}'));
@@ -142,11 +148,12 @@ try {
       // the research from the link (step 8): started for the listing's point, found at once here
       if (u.pathname === '/rest/v1/rpc/start_area_research') { calls.push('research ' + JSON.parse(req.postData() || '{}').p_lat); return json(route, { ok: true, id: AREA_ID, status: 'queued' }); }
       if (u.pathname === '/rest/v1/rpc/area_research_status') return json(route, { status: 'done', result: { markets: AREA_MARKETS, todo: AREA_TODO } });
+      if (u.pathname === '/rest/v1/rpc/slug_check') return slugAnswer(route, JSON.parse(req.postData() || '{}'), ctx.taken);
       if (u.pathname.startsWith('/rest/v1/guide_jobs')) { if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'); calls.push('job ' + b.kind + ' ' + ((b.params || {}).lat || '')); return json(route, [{ id: JOB_ID, status: 'queued' }]); } return json(route, [{ status: 'running' }]); }
       if (u.pathname.startsWith('/rest/v1/guides')) {
         const id = (u.search.match(/id=eq\.([0-9a-f-]+)/) || [])[1];
         if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'), r = { id: '00000000-0000-0000-0000-00000000710' + Object.keys(rows).length, owner: uid, answers: b.answers || {}, status: 'draft', slug: null, origin: null, content: null, theme: null, draft: null }; rows[r.id] = r; calls.push('new house'); return json(route, [r]); }
-        if (req.method() === 'PATCH') { const b = JSON.parse(req.postData() || '{}'); if (rows[id] && b.answers) rows[id].answers = b.answers; return json(route, rows[id] ? [rows[id]] : []); }
+        if (req.method() === 'PATCH') { const b = JSON.parse(req.postData() || '{}'); if (b.slug && ctx.taken.has(b.slug)) return route.fulfill({ status: 409, contentType: 'application/json', body: '{"message":"duplicate key"}' }); if (rows[id]) Object.assign(rows[id], b); return json(route, rows[id] ? [rows[id]] : []); }
         if (/select=id(%2C|,)slug/.test(u.search)) return json(route, Object.values(rows).map(r => ({ id: r.id, slug: r.slug, status: r.status })));
         return json(route, rows[id] ? [rows[id]] : []);
       }
@@ -172,12 +179,53 @@ try {
     await p.screenshot({ path: join(SHOTS, 'save-sheet-360.png') });
     await p.keyboard.press('Escape'); await p.waitForTimeout(200);
     ok('Save my guide: Escape closes it, nothing lost', !(await p.$('#acct')) && (await p.evaluate(() => location.hash)) === '#send');
-    await p.click('[data-acctnow="signup"]'); await p.waitForSelector('#acEmail'); await p.fill('#acEmail', 'visitor@example.org'); await p.fill('#acPw', 'a-good-password'); await p.click('#acct .go');
+    await p.click('[data-acctnow="signup"]'); await signUp(p);
     await p.waitForLoadState('load'); await p.waitForTimeout(4500);
     const h = Object.values(rows)[0] || { answers: {} };
     ok('after the account: the answers from this device are the account\'s house, back on Review and send, with Send', Object.keys(rows).length === 1 && h.answers.wifiName === 'Visitor wifi' && h.answers._research === AREA_ID && h.answers.listingUrl === 'https://www.airbnb.com/rooms/12345678' && (await p.evaluate(() => location.hash)) === '#send' && !!(await p.$('#send')) && !!(await p.$('.logoutTop')), calls.join(', '));
     ok('after the account: the full research of the area starts in the background, for the house\'s point, and travels with the answers', calls.includes('job research ' + A0.lat) && h.answers._researchJob === JOB_ID, calls.join(', '));
     ok('no account until the end: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // ---- The web address: is it free? A name that is taken moves by itself; an address the host typed stays theirs to change ----
+  { const name = slugOf(A0.placeName), moved = `${name}-${slugOf(A0.town)}`, note = () => p.textContent('#slugNote').catch(() => '');
+    const { ctx, p, errors, rows } = await visitor(360, 780, null, [name, 'casa-cogida']);
+    await go(p, '#send'); await p.waitForTimeout(700);
+    ok('web address: a taken name moves to a free one by itself, no error, and says why', (await p.inputValue('#f_slug')) === moved && (await note()).includes(`${name} was taken, so we chose this one`) && !(await p.$('.slugopt')), await p.inputValue('#f_slug').catch(() => ''));
+    ok('web address: it shows where guests really open it, with /g/', (await note()).includes(`editor.test/g/${moved}`), await note());
+    await p.fill('#f_slug', 'casa-cogida'); ok('web address: "Checking" while the database answers', /Checking/.test(await note()), await note());
+    await p.waitForTimeout(700);
+    const opts = await p.$$eval('.slugopt', els => els.map(e => e.textContent));
+    ok('web address: a typed address that is taken says so, with three free ones to tap', /Already taken/.test(await note()) && opts.length === 3 && opts[0] === `casa-cogida-${slugOf(A0.town)}`, opts.join(', '));
+    ok('web address: Review and send waits for a free address', /A free web address/.test(await p.textContent('.foot .todo').catch(() => '')));
+    const wide = await p.evaluate(() => [...document.querySelectorAll('.slugopt, #slugNote p, .slugbox')].filter(e => e.getBoundingClientRect().right > innerWidth).length + Math.max(0, document.documentElement.scrollWidth - innerWidth));
+    ok('web address, 360 px: the suggestions fit, no sideways scroll', !wide, wide + ' too wide');
+    await p.locator('#slugNote').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'slug-taken-360.png') });
+    await p.fill('#f_slug', 'casa-cogida-'); await p.waitForTimeout(100);
+    ok('web address: a dash at the end still says so, no question to the database', /Cannot end with a dash/.test(await note()));
+    await p.fill('#f_slug', 'casa-cogida'); await p.waitForTimeout(700); await p.click('.slugopt >> nth=1'); await p.waitForTimeout(150);
+    ok('web address: tapping a suggestion uses it', (await p.inputValue('#f_slug')) === 'casa-cogida-3' && (await note()).includes('editor.test/g/casa-cogida-3') && !/A free web address/.test(await p.textContent('.foot .todo').catch(() => '')), await note());
+    await go(p, '#guide'); await p.waitForTimeout(100);
+    ok('web address: the same field in Name and languages', (await p.inputValue('#f_slug').catch(() => '')) === 'casa-cogida-3');
+    await go(p, '#send'); await p.click('[data-acctnow="signup"]'); await signUp(p);
+    await p.waitForLoadState('load'); await p.waitForTimeout(3000);
+    const h = Object.values(rows)[0] || {};
+    ok('web address: it goes to the account with the guide', h.slug === 'casa-cogida-3', h.slug);
+    await p.fill('#f_slug', 'casa-cogida'); await p.waitForTimeout(700);
+    const refused = await p.evaluate(() => window.__acctQueueBuild().then(() => 'queued', e => e.message));
+    ok('web address: Publish refuses a taken one and says where to fix it; the guide keeps its address', /Choose one of the free ones above/.test(refused) && h.status === 'draft' && h.slug === 'casa-cogida-3', refused);
+    await p.click('.slugopt >> nth=0'); await p.waitForTimeout(150);
+    const sent = await p.evaluate(() => window.__acctQueueBuild().then(() => 'queued', e => e.message));
+    ok('web address: with a free one, Publish goes on', sent === 'queued' && h.status === 'queued' && h.slug === `casa-cogida-${slugOf(A0.town)}`, `${sent}, ${h.slug}`);
+    ok('web address: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  { const { ctx, p, errors, rows } = await visitor(360, 780);   // someone takes it between the check and the account
+    await go(p, '#send'); await p.waitForTimeout(700);
+    const first = await p.inputValue('#f_slug'); ctx.taken.add(first);
+    await p.click('[data-acctnow="signup"]'); await signUp(p);
+    await p.waitForLoadState('load'); await p.waitForTimeout(5000);
+    const h = Object.values(rows)[0] || {};
+    ok('web address: taken a moment before the account, it still moves by itself', h.slug === `${first}-${slugOf(A0.town)}`, `${first} -> ${h.slug}`);
+    ok('web address, the moment before: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const existing = { id: '00000000-0000-0000-0000-0000000072ee', answers: { placeName: 'My published house', _savedAt: 1 }, status: 'published', slug: 'my-house', origin: null, content: null, theme: null, draft: null };
     const { ctx, p, errors, rows } = await visitor(1280, 860, existing);

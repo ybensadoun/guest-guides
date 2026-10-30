@@ -200,7 +200,7 @@ function applyDraft(d){
   if (d.cover) A.coverUrl = d.cover;
   if (d.report) A._report = d.report;
   addListingPhotos(d);
-  if (!A._slugTouched && (v('guideName') || v('placeName'))) A.slug = cleanSlug(v('guideName') || v('placeName'));
+  if (!A._slugTouched && (v('guideName') || v('placeName'))) slugAuto();
   A._draftAt = new Date().toISOString(); A._draftSource = d.source;
 }
 document.addEventListener('submit', e => { if (e.target.id === 'startForm') { e.preventDefault(); flush(); createDraft(); } });
