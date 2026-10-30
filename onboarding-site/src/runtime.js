@@ -362,15 +362,19 @@ async function send(b){
   try {
     log('send'); const d = device(), j = journey();
     const clean = { ...A }; delete clean._notes; delete clean._log;
-    const total = uploads.filter(x => !x.remote).length + 1; let n = 0;
+    const files = uploads.filter(x => !x.remote && x.blob), acct = window.__acctQueueBuild && window.__acctGuide && window.__acctGuide();   // a picture already in the account's storage has no file on this device
+    const total = files.length + 1; let n = 0;
     const tick = () => { n++; if (st) st.textContent = `Sending ${n} of ${total}…`; };
     tick();
-    await nf('onboarding', { sid, email: v('email'), place: v('placeName'), town: v('town'), slug: v('slug'), progress: progressText(), photos: String(uploads.length), listing_photos: JSON.stringify(uploads.filter(u => u.remote).map(u => ({ url: u.src, room: u.room || '', caption: u.name }))),
-      device: deviceLine(d), device_type: d.type, device_json: JSON.stringify(d), active_minutes: String(j.activeMinutes), journey: JSON.stringify(j), events: JSON.stringify(A._log || []),
-      sent_before: A._sentAt || '', answers: JSON.stringify(clean) });
-    for (const u of uploads.filter(x => !x.remote)) { tick(); await nf('file', { sid, kind: u.kind, room: u.room || '', name: u.name }, u); }
+    // With an account the guide is built from the account: this copy to us must never stop it.
+    try {
+      await nf('onboarding', { sid, email: v('email'), place: v('placeName'), town: v('town'), slug: v('slug'), progress: progressText(), photos: String(uploads.length), listing_photos: JSON.stringify(uploads.filter(u => u.remote).map(u => ({ url: u.src, room: u.room || '', caption: u.name }))),
+        device: deviceLine(d), device_type: d.type, device_json: JSON.stringify(d), active_minutes: String(j.activeMinutes), journey: JSON.stringify(j), events: JSON.stringify(A._log || []),
+        sent_before: A._sentAt || '', answers: JSON.stringify(clean) });
+      for (const u of files) { tick(); await nf('file', { sid, kind: u.kind, room: u.room || '', name: u.name }, u); }
+    } catch (e) { if (!acct) throw e; }
     A._sentAt = new Date().toISOString(); flush();
-    if (window.__acctQueueBuild && window.__acctGuide && window.__acctGuide()) {
+    if (acct) {
       try { st && (st.textContent = 'Starting your guide…'); await window.__acctQueueBuild(); location.hash = 'building'; render(); return; }
       catch (e) { b.disabled = false; if (st) st.textContent = e.message || 'Could not start your guide. Try again.'; return; }
     }

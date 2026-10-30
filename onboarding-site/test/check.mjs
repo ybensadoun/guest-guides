@@ -59,6 +59,7 @@ async function open(browser, G, w, h, stored = {}, listing = null) {
     const req = route.request(), u = new URL(req.url());
     if (u.host === 'editor.test' && u.pathname === '/api/listing' && listing) return listing(route, JSON.parse(req.postData() || '{}'));
     if (u.host === 'editor.test' && u.pathname.startsWith('/g/')) { ctx.viewer = (ctx.viewer || 0) + 1; return route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><meta charset="utf-8"><body style="margin:0;font:18px sans-serif"><div id="view" style="padding:24px">The guide itself</div><div style="height:3000px"></div>' }); }
+    if (u.host === 'editor.test' && req.method() === 'POST' && u.pathname === '/' && ctx.formsDown) return route.fulfill({ status: 500, body: '' });
     if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
     if (u.origin !== SB) return route.continue();   // fonts, public pictures
     if (u.pathname.startsWith('/auth/v1/user')) return json(route, { id: G.owner, email: 'test@example.org' });
@@ -186,6 +187,17 @@ try {
     ok('after the account: the full research of the area starts in the background, for the house\'s point, and travels with the answers', calls.includes('job research ' + A0.lat) && h.answers._researchJob === JOB_ID, calls.join(', '));
     ok('no account until the end: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // ---- Send: the guide is built from the account, so the copy to Netlify Forms can never stop it ----
+  for (const [tag, down] of [['with a picture already in the account', false], ['with Netlify Forms failing', true]]) {
+    const G = { ...B, slug: 'test-send', answers: { ...B.answers, slug: 'test-send', consent: true, _savedAt: Date.now(), _uploads: [{ kind: 'cover', path: B.id + '/host/abc.jpg', room: '', name: 'cover.jpg' }] } };
+    const { ctx, p, errors } = await open(browser, G, 1280, 860); ctx.formsDown = down;
+    let queued = 0; p.on('request', r => { if (r.method() === 'PATCH' && /"status":"queued"/.test(r.postData() || '')) queued++; });
+    await p.goto('http://editor.test/#send'); await p.waitForSelector('#send', { timeout: 15000 }).catch(() => {}); await p.waitForTimeout(900);
+    await p.click('#send'); await p.waitForTimeout(1500);
+    ok(`Send ${tag}: the guide starts building`, queued === 1 && (await p.evaluate(() => location.hash)) === '#building', await p.textContent('#sendState').catch(() => ''));
+    ok(`Send ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
   // ---- The web address: is it free? A name that is taken moves by itself; an address the host typed stays theirs to change ----
   { const name = slugOf(A0.placeName), moved = `${name}-${slugOf(A0.town)}`, note = () => p.textContent('#slugNote').catch(() => '');
     const { ctx, p, errors, rows } = await visitor(360, 780, null, [name, 'casa-cogida']);
