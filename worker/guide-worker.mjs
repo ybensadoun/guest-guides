@@ -185,7 +185,7 @@ async function research(A, outDir, id, opt = {}) {
   const jobs = [
     ['markets', MARKETS_RULE],
     ['todo', TODO_RULE],
-    ['emergency', 'Find the nearest hospital with an emergency department, the national emergency number and the local health advice line. Same shape: {"groups":[...]}.'],
+    ['emergency', 'Find the nearest hospital with an emergency department, the nearest pharmacy with its opening hours (and the local on-duty pharmacy service, if there is one), the national emergency number and the local health advice line. Same shape: {"groups":[...]}, with only two group ids: "urgent" for the emergency numbers and the hospital, "health" for the pharmacy and health centres.'],
   ];
   const one = async ([kind, rules0]) => {
     if (existsSync(join(outDir, kind + '.json')) || (opt.parts && !opt.parts.includes(kind))) return;
@@ -202,7 +202,7 @@ async function translate(texts, langs, srcLang, onPart) {
   const map = {};
   for (let i = 0; langs.length && i < texts.length; i += 40) {
     if (onPart) await onPart(Math.min(i + 40, texts.length), texts.length);
-    const prompt = `Translate these texts from ${srcLang} into ${langs.join(', ')}. Keep names, numbers and times. No em-dashes. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else: {"<exact source text>": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(texts.slice(i, i + 40))}`;
+    const prompt = `Translate these texts into ${langs.join(', ')}. Most are in ${srcLang}, but one copied from a listing can be in another language: every text gets every language asked for, and a text already in one of them stays word for word in it. Keep names, numbers and times. No em-dashes. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else: {"<exact source text>": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(texts.slice(i, i + 40))}`;
     let out = '';
     try { out = await claudeAsk(prompt, { what: 'translation' }); } catch (e) { log('  translation skipped:', e.message); break; }
     const a = out.indexOf('{'), b = out.lastIndexOf('}');
@@ -270,7 +270,8 @@ async function build(g) {
   if (RESEARCHING) {
     const need = existsSync(join(siteDir, 'docs/untranslated.json')) ? JSON.parse(readFileSync(join(siteDir, 'docs/untranslated.json'), 'utf8')) : [];
     const langs = (A.languages || []).filter(l => l !== srcLang && ['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(l));
-    if (need.length && langs.length) { say(id, 'Translating'); const map = await translate(need, langs, srcLang);
+    // Into the guide's own language too: a listing read from airbnb.es is in Spanish, whatever language the guide is in.
+    if (need.length) { say(id, 'Translating'); const map = await translate(need, [srcLang, ...langs], srcLang);
       if (Object.keys(map).length) { const tf = join(job, 'translations.json'); writeFileSync(tf, JSON.stringify(map, null, 1)); out = run('python3', [...gen, '--translations', tf]).stdout; } }
   }
   const checked = run('node', ['engine/scripts/run.js', 'check', tmp], { allowFail: true });

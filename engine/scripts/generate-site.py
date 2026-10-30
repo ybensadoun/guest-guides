@@ -49,6 +49,7 @@ def L(text):
     """A text in every language of the site: the host's words plus translations when given."""
     text = (text or '').strip()
     out = {args.src: TR.get(text, {}).get(args.src, text)}  # a host writing in another language can also translate the generator's own English lines into it
+    if text and text not in TR: untranslated.add(text)      # in the source language too: a listing's words can be in another one
     for l in LANGS:
         if l == args.src: continue
         t = TR.get(text, {}).get(l)
@@ -186,7 +187,7 @@ else:
     palette = {'paper': '#F7F5F0', 'ink': '#1E1E1E', 'accents': ['#2F5D8A', '#C2502E', '#E2A93B', '#3E7D4F']}
 
 # ---------- layout preset ----------
-mood = args.preset or A.get('mood') or 'auto'
+mood = args.preset or A.get('mood') or 'bold'   # none picked: Big colour tiles, as the builder shows it (preview.js choosePreset)
 MAP = {'bold': 'bauhaus', 'editorial': 'minimal', 'soft': 'soft', 'minimal': 'minimal', 'mediterranean': 'mediterranean', 'rural': 'rural'}   # editorial: an old answer, the look is gone
 if mood in MAP: preset = MAP[mood]
 elif mood in MAP.values(): preset = mood
@@ -214,7 +215,8 @@ KITS = {
  'magazine': dict(words='magazine editorial photo story journal design art gallery', preset='minimal',
                   fonts=W('instrument-serif', [400]) + W('geist', [400, 500, 600, 700]), display='"Instrument Serif",Georgia,serif', font='"Geist",system-ui,sans-serif', r='4px', rs='4px'),
 }
-style_text = ' '.join([A.get('styleBrief') or '', A.get('lookLikes') or '', A.get('refLinks') or '', ' '.join(A.get('feelWords') or [])]).lower()
+# The host's own words only: feelWords are written by the listing reader now, and the guide must be the look the builder showed.
+style_text = ' '.join([A.get('styleBrief') or '', A.get('lookLikes') or '', A.get('refLinks') or '']).lower()
 score = {k: sum(style_text.count(w) for w in v['words'].split()) for k, v in KITS.items()}
 kit_id = max(score, key=score.get) if any(score.values()) else None
 KIT = KITS.get(kit_id)
@@ -467,9 +469,11 @@ AM_KW = {'kitchen': KW['kitchen'] + r'|refrigerator|cooking basics|dishes|cutler
          'laundry': KW['laundry'] + r'|drying rack|clothes drying',
          'office': KW['office'] + r'|dedicated workspace'}
 SAFE = r'first aid|fire extinguisher|smoke alarm|carbon monoxide'
+JUST_ROOM = r'(kitchen|cocina|cuina|cuisine|pool|piscina|piscine)'   # the listing's "Kitchen" says nothing inside the Kitchen
 am_room = {k: [] for k in ROOM}
 for x in [str(v).strip() for v in (A.get('listingAmenities') or []) if str(v).strip()]:
     if re.search(r'^(wifi|wi-fi|essentials|tv)$|parking|wifi', x, re.I) and not re.search(r'smart tv', x, re.I): continue
+    if re.fullmatch(JUST_ROOM, x, re.I): continue
     k = next((r for r, rx in AM_KW.items() if re.search(rx, x, re.I)), 'other' if re.search(SAFE, x, re.I) else None)
     if k and x not in am_room[k]: am_room[k].append(x)
 low = lambda x: x[:1].lower() + x[1:] if x[1:2].islower() else x
@@ -481,7 +485,7 @@ for k, (icon, tone, title) in ROOM.items():
     b = {'id': k, 'icon': icon, 'tone': tone, 'title': L(title)}
     if am_room[k]:
         b['sub'] = L(', '.join([am_room[k][0]] + [low(x) for x in am_room[k][1:3]]))
-        b['body'] = L(f"{ALSO[k]}: {', '.join(low(x) for x in am_room[k])}.")
+        if len(am_room[k]) > 3: b['body'] = L(f"{ALSO[k]}: {', '.join(low(x) for x in am_room[k])}.")   # up to three are all in the line under the title
     if room_photos.get(k): b['photos'] = room_photos[k]
     if items[k]: b['items'] = [L(x) for x in items[k]]
     blocks.append(b)

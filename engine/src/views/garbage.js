@@ -37,8 +37,8 @@ export function renderGarbage(V) {
     <ol class="gsteps">${GARBAGE.steps.map(s => `<li>${esc(tx(s))}</li>`).join('')}</ol></section>`;
 
   // Containers guests can use (from the host): where they are, what each takes, a map link when there is one.
-  const cont = (GARBAGE.containers || []).filter(c => tx(c.where) || (c.takes || []).length);
   const maps = c => c.map || (c.lat != null ? `https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}` : '');
+  const cont = (GARBAGE.containers || []).filter(c => tx(c.where) || maps(c));   // what they take with no place to find them says nothing
   const containers = cont.length ? `<section class="gsec"><h3 class="section-h">${esc(t('gWhere'))}</h3>
     <div class="list">${cont.map(c => `<article class="card">
       ${(c.takes || []).length ? `<div class="gpills">${(c.takes || []).map(id => FRACTIONS.find(f => f.id === id)).filter(Boolean).map(pill).join('')}</div>` : ''}

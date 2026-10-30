@@ -112,7 +112,8 @@ export function renderSection(V, id) {
       const next = '';
       return `<div class="chours">${pill}<div class="when">${hoursText(m).map(h => `<span>${esc(h.days)} <span class="t">${esc(h.time)}</span></span>`).join('')}${next}</div></div>`;
     };
-    body = (sec.data?.groups || []).map(g => `<section class="cgroup" data-g="${esc(g.id)}"><h3 class="section-h">${esc(t('c_' + g.id))}</h3>
+    const groupName = id => { const k = 'c_' + ({ hospital: 'health', pharmacy: 'health', clinic: 'health', medical: 'health' }[id] || id), s = t(k); return s === k ? '' : s; };   // research can name a group its own way
+    body = (sec.data?.groups || []).map(g => `<section class="cgroup" data-g="${esc(g.id)}">${groupName(g.id) ? `<h3 class="section-h">${esc(groupName(g.id))}</h3>` : ''}
       <div class="clist">${g.items.map(it => `<div class="crow">
         <div class="ctx"><b>${esc(tx(it.name))}</b>${it.what ? `<span>${esc(tx(it.what))}</span>` : ''}${hours(it)}
           ${it.address || it.map || it.link || it.web ? `<span class="clinks">${it.address || it.map ? `<a class="cmap" href="${it.map || maps(it.address)}" target="_blank" rel="noopener">${ICON.pin}${esc(t('openMap'))}</a>` : ''}${it.web ? `<a class="cmap" href="${esc(it.web)}" target="_blank" rel="noopener">${esc(t('website'))}</a>` : ''}${it.link ? `<a class="cmap" href="${esc(it.link.url)}" target="_blank" rel="noopener">${esc(t(it.link.label))}</a>` : ''}</span>` : ''}</div>
@@ -203,7 +204,7 @@ export function renderSection(V, id) {
       <div class="mbody">
         ${b.photos ? `<div class="gphotos zg">${b.photos.map((f, i) => `<button type="button" data-zoom="${i}"><img src="${esc(f)}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}
         ${b.body ? tx(b.body).split(/\n\s*\n/).map(p => `<p class="note">${esc(p)}</p>`).join('') : ''}
-        ${b.items ? `<ul class="glist">${b.items.map(i => `<li>${esc(tx(i))}</li>`).join('')}</ul>` : ''}
+        ${b.items?.length === 1 ? `<p class="note">${esc(tx(b.items[0]))}</p>` : b.items ? `<ul class="glist">${b.items.map(i => `<li>${esc(tx(i))}</li>`).join('')}</ul>` : ''}
         ${b.links ? `<div class="actions">${b.links.map(link).join('')}</div>` : ''}
       </div></details>`).join('')}</div>${id === 'message' && !MODULE_ON('house') ? reviewsBlock() : ''}`;
   }
