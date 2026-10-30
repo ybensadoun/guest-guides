@@ -272,8 +272,8 @@ const MOODS = [
 ];
 
 /* ---------- Guide sections (what the finished guide contains) ---------- */
-// Same sections as the live Ca La Kimberly guide, plus Nightlife (part of the design since 29 Oct 2026: the step is there for
-// every host, guests see it once it has a place; Ca La Kimberly has none). Optional extra sections (arrival, extras, shops, kids corner, day trips) come later.
+// Same sections as the live Ca La Kimberly guide, plus Nightlife (part of the design since 29 Oct 2026, off unless the host
+// switches it on; Ca La Kimberly does not have it). Optional extra sections (arrival, extras, shops, kids corner, day trips) come later.
 const SECTIONS = [
   {id:'welcome',name:'Welcome and photos',d:'Cover photo, name and a short welcome.',built:true,on:()=>true,fixed:true},
   {id:'houseguide',name:'House guide by room',d:'How everything works, room by room.',built:true,on:()=>true},
@@ -284,7 +284,7 @@ const SECTIONS = [
   {id:'markets',name:'Local markets',d:'Weekly markets, with what is on today.',built:true,on:a=>(a.interests||[]).includes('Local markets')},
   {id:'eat',name:'Eat and drink',d:'Restaurants, cafés and bars you recommend.',built:true,on:()=>true},
   {id:'todo',name:'Attractions',d:'Museums, parks, activities and sights nearby.',built:true,on:()=>true},
-  {id:'nightlife',name:'Nightlife',d:'Late bars, clubs and live music. Guests see it once it has a place.',built:true,on:()=>true},
+  {id:'nightlife',name:'Nightlife',d:'Late bars, clubs and live music you recommend.',built:true,on:()=>false},
   {id:'events',name:'Local events',d:'Festivals and fairs during the stay.',built:true,on:a=>(a.interests||[]).includes('Festivals')},
   {id:'map',name:'Map',d:'Every place in the guide on one map.',built:true,on:()=>true},
   {id:'quick',name:'Quick calls',d:'One tap to call a taxi or you.',built:true,on:()=>true}
@@ -329,7 +329,7 @@ const MODULES = [
   {id:'favourites',group:'area',title:'Eat and drink',sub:'Restaurants, cafés, bars',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',
    lead:'Restaurants, cafés, bakeries and bars you send friends to, with a few words from you. We add none of our own.',need:[],fields:['favEat','localTips','avoidPlaces']},
   {id:'nightlife',group:'area',title:'Nightlife',sub:'Bars, clubs, live music',icon:'moon',tc:'var(--ink)',ti:'#fff',sh:'var(--sun)',shape:'half',sec:'nightlife',
-   lead:'Optional. Late bars, cocktail bars, clubs and live music: where you send friends for the evening and the night. We add none of our own, and guests see this section once it has a place.',need:[],fields:['favNight']},
+   lead:'Late bars, cocktail bars, clubs and live music: where you send friends for the evening and the night. We add none of our own.',need:[],fields:['favNight']},
   {id:'area',group:'area',title:'Your area',sub:'Interests and distance',icon:'link',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'circle',
    lead:'We research markets, things to do and events within the distance you pick.',need:[],fields:['interests','radius']},
 ];

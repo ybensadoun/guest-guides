@@ -351,12 +351,12 @@ try {
     const path = await p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent));
     ok('builder: Eat and drink is on the path, right after Attractions (hand-picked, never searched)', path.indexOf('Eat and drink') === path.indexOf('Attractions') + 1 && path.indexOf('Eat and drink') < path.indexOf('Only you know'), path.slice(0, 5).join(' > '));
     ok('builder: each Around you step says what goes in it (Attractions: museums; Eat and drink: restaurants, cafés)', /museums/i.test(await p.textContent('.mhead').catch(() => '')) && (await (async () => { await go(p, '#favourites'); return /Restaurants, cafés/.test(await p.textContent('.mhead p').catch(() => '')); })()));
-    const steps = () => p.$$eval('.rail a.si', as => as.map(a => [a.querySelector('.st').textContent, (a.querySelector('.sl') || {}).textContent || '']));
-    const s0 = await steps(), nl = s0.find(x => x[0] === 'Nightlife');
-    ok('builder: Nightlife is listed for every host, as optional, off the path', !!nl && /Optional/.test(nl[1]) && s0.findIndex(x => x[0] === 'Nightlife') > s0.findIndex(x => x[0] === 'Only you know'), s0.map(x => x[0]).join(' > '));
     await go(p, '#sections'); await p.waitForTimeout(300);
+    const nb = await p.$('[data-sec="nightlife"]');
+    ok('builder: Nightlife is a section of its own, off at first', !!nb && !(await nb.isChecked()));
     await p.$eval('[data-sec="nightlife"]', e => e.closest('label').scrollIntoView({ block: 'center' })); await p.click('[data-sec="nightlife"]', { force: true }); await p.waitForTimeout(400);   // in the middle: just into view, it is under the fixed bottom bar
-    ok('builder: a host can hide Nightlife in Guide sections', !(await steps()).some(x => x[0] === 'Nightlife'));
+    const path2 = await p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent));
+    ok('builder: switched on, Nightlife is on the path right after Eat and drink', path2.indexOf('Nightlife') === path2.indexOf('Eat and drink') + 1, path2.slice(0, 7).join(' > '));
     ok('Places nearby: no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
     const m = await deck(360, 780);
@@ -484,15 +484,17 @@ try {
     await p.screenshot({ path: join(SHOTS, 'transport-360.png'), fullPage: true });
     ok('Getting around: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
-  // Nightlife (29 Oct 2026): listed for every guide, last in Around you; guests see it once it has a place: the first one
-  // makes its section, right after Attractions in the guide.
+  // Nightlife (29 Oct 2026): optional and off in Ca La Kimberly; switched on in Guide sections, its first place makes its
+  // section, right after Attractions.
   { const { ctx, p, errors } = await open(browser, E, 1280, 860);
     const saved = []; await ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
     await p.goto('http://editor.test/#sections'); await ready(p); await p.waitForTimeout(400);
     const rail = () => p.$$eval('.rail a.si .st', els => els.map(e => e.textContent));
-    const box = await p.$('[data-cmod="nightlife"]'), r = await rail();
-    ok('editor: Nightlife is listed for every guide, last in Around you, and in Guide sections', !!box && (await box.isChecked()) && r.indexOf('Nightlife') === r.indexOf('Local events') + 1, r.join(' > '));
-    ok('editor: Ca La Kimberly has no Nightlife for guests until it has a place', !(E.content.files.sections.sections || []).some(x => x.id === 'nightlife') && !E.content.files.nightlife);
+    const box = await p.$('[data-cmod="nightlife"]');
+    ok('editor: Nightlife is in Guide sections, off for Ca La Kimberly, and not among its steps', !!box && !(await box.isChecked()) && !(await rail()).includes('Nightlife'));
+    await p.$eval('[data-cmod="nightlife"]', e => e.closest('label').scrollIntoView({ block: 'center' })); await p.click('[data-cmod="nightlife"]', { force: true }); await p.waitForTimeout(500);
+    const r = await rail();
+    ok('editor: switched on, the Nightlife step comes right after Eat and drink (as in the builder)', r.indexOf('Nightlife') === r.indexOf('Eat and drink') + 1, r.join(' > '));
     await go(p, '#nightlife'); await p.$eval('[data-addit="files/nightlife/items"]', e => e.scrollIntoView({ block: 'center' })).catch(() => {}); await p.click('[data-addit="files/nightlife/items"]').catch(() => {}); await p.waitForTimeout(3000);
     let ids = []; for (const b of saved.slice().reverse()) { try { const j = JSON.parse(b), c = (j.draft || {}).content || j.content || {}; ids = (((c.files || {}).sections || {}).sections || []).map(x => x.id); if (ids.length) break; } catch (e) { /* not a save */ } }
     ok('editor: the first place makes the Nightlife section, right after Attractions (things to do)', ids.indexOf('nightlife') === ids.indexOf('todo') + 1 && ids.indexOf('todo') >= 0, ids.join(', '));

@@ -12,7 +12,7 @@ const NAME = k => k.startsWith('upload:') ? (UP[k.slice(7)] || {}).label : (Q[k]
 // listing to Send; Next and the count follow it. Bars and restaurants are on it: they are hand-picked, never searched
 // (Yohann, 29 Oct 2026: too much noise on Google Maps to choose for the host). Every other step is filled in from the listing: ready without pressing
 // anything, there to check if they like.
-const FLOW = ['listing', 'look', 'nearby', 'favourites', 'known'];   // Nightlife is optional: listed with the other steps, not on the path
+const FLOW = ['listing', 'look', 'nearby', 'favourites', 'nightlife', 'known'];   // Nightlife only when the host switched it on (visible)
 const needsYou = m => FLOW.includes(m.id);
 const flowMods = () => FLOW.map(id => visible().find(m => m.id === id)).filter(Boolean);
 const readyMods = () => visible().filter(m => !needsYou(m));
@@ -20,6 +20,7 @@ const readyMods = () => visible().filter(m => !needsYou(m));
 // its defaults are good, but the host confirms it.
 const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || filled('favDo') || filled('favourites'),
   favourites: () => placeRows('favEat').length > 0 || filled('localTips'),
+  nightlife: () => placeRows('favNight').length > 0,
   wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('hostPhone'),
   known: () => knownParts().every(p => p.done()) };
 // Something in this step came from the listing (or is there): only then is it "Ready". Sections are always chosen for them.
