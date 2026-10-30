@@ -37,7 +37,7 @@ function loadTick(){
   if (b) b.style.width = Math.min(95, el / LOAD.est * 100) + '%';
 }
 const DRAFT_MAP = { placeName: 'place', propertyType: 'place', town: 'place', region: 'place', sleeps: 'place', sleeping: 'place', bedrooms: 'place', bathrooms: 'place', beds: 'place',
-  guideName: 'guide', tagline: 'guide', welcome: 'guide', guests: 'guide', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
+  guideName: 'guide', tagline: 'guide', welcome: 'guide', guests: 'area', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
   amenities: 'howto', howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
 
 function startHTML(){
@@ -163,14 +163,15 @@ function addListingPhotos(d){
 function yoursHTML(){
   return `<section class="yours"><div class="yours-tx" id="yoursTx">${yoursText()}</div><div class="yours-ph">${phoneHTML()}</div></section>`;
 }
+const WHAT_LEFT = { look: 'choose the look', nearby: 'pick the things to do', favourites: 'add your favourite places to eat', nightlife: 'add your nightlife spots', known: 'add what only you know' };
 function yoursText(){
   const st = WOW.stage || (A._draftAt ? 'done' : ''), name = v('guideName') || v('placeName') || WOW.name;
-  const ready = readyMods().filter(m => statusOf(m).k === 'done').length, left = flowMods().filter(m => statusOf(m).k !== 'done').length;
+  const left = flowMods().filter(m => statusOf(m).k !== 'done').map(m => WHAT_LEFT[m.id]).filter(Boolean), todo = left.length > 1 ? left.slice(0, -1).join(', ') + ' and ' + left[left.length - 1] : left[0];
   const say = { reading: 'Opening your listing…', writing: 'Writing your house guide, the rules and the times…' };
   if (!st) return `<small>Your guest guide</small><h1>Not started yet</h1><p>Paste your listing link first.</p><div class="row"><a class="btn primary" href="#start">Paste my link ${ARROW}</a></div>`;
   return `<small>Your guest guide</small><h1>${esc(name || 'Your guide')}</h1>
     <p class="yours-st" role="status" aria-live="polite">${st === 'done' ? CHECK : '<span class="spin dark" aria-hidden="true"></span>'}<span>${st === 'done' ? 'Your guide is written.' : esc(say[st])}</span></p>
-    <p>${st === 'done' ? `${ready} step${ready === 1 ? ' is' : 's are'} ready from your listing${left ? `, and ${left === 1 ? 'one needs' : left + ' need'} you` : ''}. Tap around in the phone: this is what your guests get.` : 'Your photos and the details of your listing are going into it right now.'}</p>
+    <p>${st === 'done' ? `We’ve prefilled your guide from your listing! ${todo ? `You now just need to ${todo} to make it yours.` : 'Tap around in the phone: this is what your guests get.'}` : 'Your photos and the details of your listing are going into it right now.'}</p>
     <div class="row">${st === 'done' ? `<a class="btn primary" href="#look">Make it yours ${ARROW}</a>` : `<span class="btn primary" aria-disabled="true">Make it yours ${ARROW}</span>`}</div>`;
 }
 const yoursRefresh = () => { const el = document.getElementById('yoursTx'); if (el) el.innerHTML = yoursText(); };
@@ -453,7 +454,7 @@ function slimStep(m, lead, card, cls){
       <p>${esc(lead)}</p></section>
     <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside>
     ${card}
-    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
+</div></div>`;
 }
 const nearbyHTML = m => slimStep(m, 'Museums, parks, karting, sights. Swipe right on the ones you recommend.', `<section class="card nb-card"><div class="grid">${m.fields.map(field).join('')}</div></section>`, 'nearby-page');
 
@@ -508,13 +509,13 @@ function lookCoverHTML(){
   const own = obOwnCover(), drawn = !own && A.coverChoice === 'drawn', cur = String(A.coverUrl || '').split('?')[0];
   const pics = [...new Set([cur, ...(A.listingPhotos || [])].filter(p => typeof p === 'string' && /^https:/.test(p)).map(p => p.split('?')[0]))].slice(0, 18);
   const shown = own ? srcOf(own) : !drawn && cur ? obSized(cur) : '';
-  return `<div class="lk-row"><div class="lk-hd"><b id="l_cover">Cover picture</b>${shown ? `<button class="btn small" type="button" id="lk_art" data-lkart="1" aria-expanded="${lookArtOpen()}">Make it artistic</button>` : ''}</div>
+  return `<div class="lk-row"><div class="lk-hd"><b id="l_cover">Cover picture</b></div><p class="hint">Use one of your photos as it is, or have a new one drawn from it.</p>
     <div class="lk-strip" role="group" aria-labelledby="l_cover">
       <label class="lk-pic lk-up"><input class="sr" type="file" accept="image/*" data-obcoverfile="1"><b aria-hidden="true">+</b><small>Your own</small></label>
       <button type="button" class="lk-pic lk-drawn" id="lk_drawn" data-coverchoice="drawn" aria-pressed="${drawn}" aria-label="A cover drawn from the colours" style="${lookPalVars(PRESET_PAL[choosePreset()])}">${PV_ART}<small>Drawn</small></button>
       ${own ? `<span class="lk-pic lk-own"><img src="${esc(srcOf(own))}" alt="Your own picture, the cover now"><button class="lk-x" type="button" data-del="${own.id}" aria-label="Remove your picture">×</button></span>` : ''}
       ${pics.map((p, i) => `<button type="button" class="lk-pic" id="lk_pic${i}" data-obcover="${esc(p)}" aria-pressed="${!own && !drawn && p === cur}" aria-label="Use this photo as the cover"><img src="${esc(obSized(p))}" alt="" loading="lazy"></button>`).join('')}
-    </div>${shown && lookArtOpen() ? lookArtHTML(shown) : ''}</div>`;
+    </div>${shown ? `<div class="lk-artrow"><span>Want something unique? We redraw the photo you picked as an artwork.</span><button class="btn small" type="button" id="lk_art" data-lkart="1" aria-expanded="${lookArtOpen()}">Make it artistic</button></div>` : ''}${shown && lookArtOpen() ? lookArtHTML(shown) : ''}</div>`;
 }
 function lookArtHTML(shown){
   const g = window.__acctGuide && window.__acctGuide(), busy = !!CM.artJob;

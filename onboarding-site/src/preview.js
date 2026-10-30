@@ -171,8 +171,6 @@ function pvStyle(p, preset){
 .pv-bar{position:fixed;left:0;right:0;top:0;z-index:40;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px 12px;background:#111;color:#fff;font:600 13px/1.3 system-ui,sans-serif}
 .pv-bar a{color:#F2B33D}
 .pv-shell{padding-top:32px}
-.pv-fb{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:45;display:inline-flex;align-items:center;gap:8px;padding:13px 18px;border-radius:999px;border:0;background:#F2B33D;color:#1b1407;font:700 15px system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer}
-.pv-fb svg{width:18px;height:18px}
 .fbs{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center}
 .fbs-card{width:100%;max-width:520px;max-height:90vh;overflow:auto;background:#fff;color:#151515;border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;font:16px/1.45 system-ui,sans-serif}
 .fbs-card h3{font:700 22px system-ui,sans-serif;margin:0}
@@ -252,7 +250,6 @@ async function pvParts(screen){
   for (const f of (A.homeFirst && A.homeFirst.length ? A.homeFirst : ['Wi-Fi', 'Check-out time'])) {
     if (f === 'Wi-Fi' && v('wifiName')) facts.push(['wifi', 'Wi-Fi', 'Tap to connect']);
     if (f === 'Check-out time' && v('checkOut')) facts.push(['stay', 'Check-out', 'Before ' + v('checkOut')]);
-    if (f === 'Your phone number' && v('hostPhone')) facts.push(['emergency', 'Call ' + (v('hostName') || 'us'), v('hostPhone')]);
     if (f === 'How to get in' && v('arrival')) facts.push(['arrival', 'Getting here', 'Directions']);
     if (f === 'House guide') facts.push(['houseguide', 'House guide', 'How things work']);
     if (f === 'Places to eat') facts.push(['eat', 'Eat', lines('favourites').length + ' favourites']);
@@ -272,7 +269,7 @@ async function renderPreview(){
   document.body.innerHTML = `${style}
     <div class="pv-bar">Preview of ${esc(name)} · ${esc(BASE)}/${esc(v('slug'))} · <a href="/#look">Back to my answers</a></div>
     ${body}
-    <button class="pv-fb" type="button" id="pvFb">${I.heart}Feedback</button><div class="toast" id="toast" hidden></div>`;
+    <div class="toast" id="toast" hidden></div>`;
   const q = document.getElementById('pvSearch');
   if (q) q.addEventListener('input', () => { const t = q.value.toLowerCase().trim(); document.querySelectorAll('#pvSecs .pv-sec').forEach(b => { b.hidden = t && !b.dataset.q.includes(t); }); });
 }
@@ -320,42 +317,15 @@ function pageHTML(x){
   let body = '';
   if (x.kind === 'rooms') body = x.rooms.length ? x.rooms.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3>${r.photos.length ? `<div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${list(r.items)}</section>`).join('') : `<div class="pv-research"><b>Nothing here yet</b>Add how things work and photos by room in your answers.</div>`;
   else if (x.kind === 'wifi') body = `<section class="pv-card"><p style="margin:0 0 6px;opacity:.7">Network</p><h3 style="font-size:24px">${esc(v('wifiName'))}</h3><p style="margin:12px 0 6px;opacity:.7">Password</p><h3 style="font-size:24px">${esc(v('wifiPassword'))}</h3></section><div class="pv-research"><b>In your full guide</b>A QR code to join with one tap, and a copy button.</div>`;
-  else if (x.kind === 'contacts') body = `<section class="pv-card"><div class="pv-list"><div class="pv-row"><b>Emergencies: 112</b>Police, ambulance, fire</div>${v('hostPhone') ? `<div class="pv-row"><b>${esc(v('hostName') || 'Your host')}</b>${esc(v('hostPhone'))}</div>` : ''}${v('backupContact') ? `<div class="pv-row"><b>Backup</b>${esc(v('backupContact'))}</div>` : ''}${v('taxi') ? `<div class="pv-row"><b>Taxi</b>${esc(v('taxi'))}</div>` : ''}</div></section>${research}`;
+  else if (x.kind === 'contacts') body = `<section class="pv-card"><div class="pv-list"><div class="pv-row"><b>Emergencies: 112</b>Police, ambulance, fire</div>${v('taxi') ? `<div class="pv-row"><b>Taxi</b>${esc(v('taxi'))}</div>` : ''}</div></section>${research}`;
   else if (x.kind === 'places') body = `${(x.picks || []).length ? `<section class="pv-card"><div class="pv-list">${x.picks.map(p => `<div class="pv-row"><b>${esc(p.name)}<span class="pv-pill">Host\u2019s pick</span></b>${esc([p.type, p.rating ? '★ ' + p.rating.toFixed(1) : '', p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}${p.c ? `<br><i>“${esc(p.c)}”</i>` : ''}<br><a href="${esc(p.maps)}" target="_blank" rel="noopener">Directions</a></div>`).join('')}</div></section>` : ''}${x.items.length ? `<section class="pv-card"><div class="pv-list">${x.items.map(t => { const [a, ...b] = t.split(/,\s| - |:\s/); return `<div class="pv-row"><b>${esc(a)}<span class="pv-pill">Host’s pick</span></b>${esc(b.join(', '))}<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a + ', ' + v('town'))}" target="_blank" rel="noopener">Directions</a></div>`; }).join('')}</div></section>` : ''}${research}`;
   else if (x.kind === 'map') body = `<section class="pv-card"><p style="margin:0">Every place in the guide on one map, centred near ${esc(v('town') || 'the house')} (never on the house itself).</p></section><a class="pv-btn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v('town'))}" target="_blank" rel="noopener">Open ${esc(v('town') || 'the area')} in Maps</a>`;
   else body = `${x.photos && x.photos.length ? `<div class="pv-photos">${x.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${x.items && x.items.length ? `<section class="pv-card">${list(x.items)}</section>` : ''}${x.extra ? `<section class="pv-card"><h3>${esc(x.extra.h)}</h3>${list(x.extra.items)}</section>` : ''}${research}`;
   return `<div class="pv-page"><h2>${esc(x.title)}</h2><p style="opacity:.75;margin:6px 0 0">${esc(x.sub)}</p></div>${body}`;
 }
-function openFeedback(){
-  const o = document.createElement('div'); o.className = 'fbs';
-  let mode = 'screen', rating = 0;
-  const screenName = PV.screen === 'home' ? 'Home' : (guideSections().find(x => x.id === PV.screen) || {}).title || PV.screen;
-  const draw = () => { o.innerHTML = `<div class="fbs-card" role="dialog" aria-modal="true" aria-label="Feedback">
-    <div class="row"><h3>Feedback</h3><button type="button" class="pv-back" data-x style="color:#151515">Close</button></div>
-    <div class="tabs"><button type="button" data-mode="screen" aria-pressed="${mode === 'screen'}">This screen</button><button type="button" data-mode="all" aria-pressed="${mode === 'all'}">The whole guide</button></div>
-    ${mode === 'screen' ? `<p class="hint">About “${esc(screenName)}”: what is missing, wrong or how should it look?</p><textarea id="fbt" placeholder="I would expect…"></textarea>`
-      : `<div class="stars">${[1,2,3,4,5].map(n => `<button type="button" data-star="${n}" aria-pressed="${n === rating}">${n}</button>`).join('')}</div>
-      <textarea id="fbr" placeholder="What feels right"></textarea><textarea id="fbw" placeholder="What is wrong or missing"></textarea><textarea id="fbu" placeholder="How would you like it to look or work instead?"></textarea>`}
-    <div class="row"><span class="hint">Goes straight to the Guest Guide Maker team.</span><button type="button" class="pv-btn" data-send style="background:#151515;color:#fff">Send</button></div></div>`; };
-  draw(); document.body.appendChild(o);
-  o.addEventListener('click', async e => {
-    if (e.target === o || e.target.closest('[data-x]')) { o.remove(); return; }
-    const m = e.target.closest('[data-mode]'); if (m) { mode = m.dataset.mode; draw(); return; }
-    const s = e.target.closest('[data-star]'); if (s) { rating = +s.dataset.star; draw(); return; }
-    if (e.target.closest('[data-send]')) {
-      const val = id => (o.querySelector('#' + id) || {}).value || '';
-      const d = device();
-      const fields = mode === 'screen' ? { kind: 'screen', screen: screenName, wrong: val('fbt') } : { kind: 'overall', screen: '', rating: rating || '', right: val('fbr'), wrong: val('fbw'), ux: val('fbu') };
-      if (!(fields.wrong || fields.right || fields.ux || fields.rating)) { toast('Write a few words first'); return; }
-      try { await nf('feedback', { sid, guide: v('slug'), round: 'preview', email: v('email'), preset: PV.preset || choosePreset(), device: deviceLine(d), device_json: JSON.stringify(d), ...fields }); log('feedback', PV.screen); flush(); o.remove(); toast('Thank you, sent!'); }
-      catch (err) { toast('Could not send. Check your connection.'); }
-    }
-  });
-}
 document.addEventListener('click', e => {
   if (!document.querySelector('.pv')) return;
   const b = e.target.closest('[data-pv]'); if (b) { PV.screen = b.dataset.pv; log('preview', PV.screen); queueSave(); renderPreview().then(() => window.scrollTo(0, 0)); return; }
-  if (e.target.closest('#pvFb')) openFeedback();
 });
 
 

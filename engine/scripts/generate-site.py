@@ -18,7 +18,7 @@ Texts are kept in the host's language; --translations adds the other languages
 ({"source text": {"es": "...", "fr": "..."}}). Re-running is safe: researched content files
 that already exist are never overwritten.
 """
-import argparse, base64, colorsys, io, json, math, os, re, sys
+import argparse, base64, colorsys, io, json, math, os, re, sys, unicodedata
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 import numpy as np
@@ -492,6 +492,8 @@ for k, (icon, tone, title) in ROOM.items():
 # No Wi-Fi block here: Wi-Fi is the first thing on Home (its card opens the network, password and QR code), as in Ca La Kimberly.
 if lines('arrival'):
     blocks.insert(0, {'id': 'arrival', 'icon': 'car', 'tone': 'blue', 'title': L('Getting here'), 'items': [L(x) for x in lines('arrival')]})
+if lines('localTips'):
+    blocks.append({'id': 'tips', 'icon': 'home', 'tone': 'green', 'title': L('Local tips'), 'items': [L(x) for x in lines('localTips')]})
 if lines('houseRules'):
     blocks.append({'id': 'rules', 'icon': 'home', 'tone': 'ink', 'title': L('House rules'), 'items': [L(x) for x in lines('houseRules')]})
 co = [f"Check-out by {house['checkout']}."] + lines('checkoutTasks')
@@ -600,7 +602,7 @@ def resolve_short(url):
 # The host's own places (bars and restaurants, and Nightlife when they switched it on), each list into its own file.
 def host_list(key):
     return [r for r in (A.get(key) or []) if isinstance(r, dict) and (r.get('p') or '').strip()]
-def write_host_places(rows, file):
+def host_items(rows):
     items = []
     for r in rows:
         key = r['p'].strip(); g = GEO.get(key) or resolve_short(key)
@@ -621,10 +623,36 @@ def write_host_places(rows, file):
         for k2 in ('phone', 'hours', 'schedule', 'price', 'priceNote', 'icon', 'wiki'):
             if g.get(k2): it[k2] = L(g[k2]) if k2 in ('hours', 'priceNote') else g[k2]
         items.append(it)
-    (SITE / f'content/{file}.json').write_text(json.dumps({'_doc': "The host's own list, written by generate-site.py. No researched places are added here.", 'items': items}, ensure_ascii=False, indent=1))
+    return items
+def write_host_places(rows, file):
+    (SITE / f'content/{file}.json').write_text(json.dumps({'_doc': "The host's own list, written by generate-site.py. No researched places are added here.", 'items': host_items(rows)}, ensure_ascii=False, indent=1))
 fav, night = host_list('favEat'), host_list('favNight')
 if fav: write_host_places(fav, 'restaurants')
 if night: write_host_places(night, 'nightlife')
+# Things to do: first what the host said (the cards they kept in the swipe game, the places they added), then the research
+# without the cards they turned down. A place the research found too keeps its description, with the host's comment if any.
+plain = lambda x: re.sub(r'[^a-z0-9]+', '', unicodedata.normalize('NFD', str(x).lower()).encode('ascii', 'ignore').decode())
+en_name = lambda it: (lambda n: n.get('en') or next(iter(n.values()), '') if isinstance(n, dict) else n or '')(it.get('name'))
+swipes = [s for s in (A.get('swipes') or {}).values() if isinstance(s, dict) and s.get('cat', 'todo') == 'todo' and (s.get('name') or '').strip()]
+raw_added = A.get('favDo')
+added = host_list('favDo') if isinstance(raw_added, list) else [{'p': x.strip()} for x in re.split(r'[,\n]+', raw_added or '') if x.strip()]
+kept = [{'p': s['name'].strip(), 'c': s.get('c') or ''} for s in swipes if s.get('d') == 'yes']
+for s in swipes:   # the card already has its position and link: no lookup
+    if s.get('d') == 'yes' and s.get('lat') is not None:
+        GEO.setdefault(s['name'].strip(), {'lat': s['lat'], 'lng': s['lng'], 'km': s.get('km'), 'gmaps': s.get('maps'), 'type': s.get('type')})
+turned_down = {plain(s['name']) for s in swipes if s.get('d') == 'no'}
+if kept or added or turned_down:
+    todo_file = SITE / 'content/todo.json'
+    todo_doc = json.loads(todo_file.read_text()) if todo_file.exists() else {'_doc': "The host's picks, written by generate-site.py."}
+    found, picks = [x for x in todo_doc.get('items') or [] if plain(en_name(x)) not in turned_down], []
+    for it in host_items(kept + added):
+        name = plain(en_name(it))
+        twin = next((x for x in found if len(name) >= 5 and (name in plain(en_name(x)) or plain(en_name(x)) in name)), None)
+        if twin:
+            found.remove(twin); it = {**twin, 'hostPick': True, **({'description': it['description']} if it.get('description') else {})}
+        if not any(plain(en_name(x)) == plain(en_name(it)) for x in picks): picks.append(it)
+    todo_doc['items'] = picks + found
+    todo_file.write_text(json.dumps(todo_doc, ensure_ascii=False, indent=1))
 
 # Sections, in Home order. Researched ones start as "soon" until their content file has items.
 def has_items(f):

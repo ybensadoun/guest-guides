@@ -18,11 +18,11 @@ const flowMods = () => FLOW.map(id => visible().find(m => m.id === id)).filter(B
 const readyMods = () => visible().filter(m => !needsYou(m));
 // A step that needs the host counts as done once they answered it (or pressed Done). The look has no answer of its own:
 // its defaults are good, but the host confirms it.
-const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || filled('favDo') || filled('favourites'),
+const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || placeRows('favDo').length > 0,
   favourites: () => placeRows('favEat').length > 0 || filled('localTips'),
   nightlife: () => placeRows('favNight').length > 0,
-  wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('hostPhone'),
-  known: () => knownParts().every(p => p.done()) };
+  wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('taxi'),
+  known: () => knownParts().every(p => p.id === 'contacts' || p.done()) };   // the taxi is optional
 // Something in this step came from the listing (or is there): only then is it "Ready". Sections are always chosen for them.
 const hasContent = m => m.id === 'sections' || preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));
 function statusOf(m){
@@ -31,7 +31,7 @@ function statusOf(m){
     if (miss) return { k: seen ? 'chk' : 'new', label: `${miss} to do`, miss };
     if (!A._draftAt && !done && !seen) return { k:'new', label:'Start', miss };   // filled step by step: nothing from a listing yet
     if (!done && !hasContent(m)) return { k:'new', label:'Optional', miss };      // the listing said nothing here
-    return { k:'done', label: done || seen ? 'Checked' : 'Ready', miss };
+    return done || seen ? { k:'done', label:'Checked', miss } : { k:'pre', label:'Review', miss };   // not looked at yet: not finished, however good it is
   }
   if (done && !miss) return { k:'done', label:'Done', miss };
   if (preKeys(m).length && !seen) return { k:'pre', label:'Check', miss };   // the listing said it: the host only checks
@@ -175,22 +175,11 @@ async function nf(form, fields, file){
   const r = await fetch('/', { method: 'POST', headers, body });
   if (!r.ok) throw new Error('http_' + r.status);
 }
-// "Missing something here?" notes go out straight away, so we learn even from people who never finish.
-async function sendNote(mod, text){
-  const d = device(); log('note', mod);
-  await nf('note', { sid, module: mod, note: text, place: v('placeName'), town: v('town'), email: v('email'), progress: progressText(), device: deviceLine(d), device_json: JSON.stringify(d) });
-}
 const progressText = () => { const ms = visible(); return `${ms.filter(m => statusOf(m).k === 'done').length}/${ms.length} done`; };
 
 /* ---------- After the first version: what to check ---------- */
 // Right after the listing is read, on the first step the host lands on: the guide is written, here is what is left.
 /* ---------- Extra questions for the public test ---------- */
-function noteBox(mod){
-  const sent = (A._notes || {})[mod] || [];
-  return `<div class="notebox"><label for="note_${mod}"><b>Missing a question here, or something unclear?</b><span>Tell us in a few words. It goes straight to the team, even if you don’t finish.</span></label>
-    <div class="nrow"><textarea id="note_${mod}" rows="2" placeholder="I expected a question about…"></textarea><button class="btn small" type="button" data-note="${mod}">Send note</button></div>
-    ${sent.length ? `<p class="hint">${sent.length} note${sent.length > 1 ? 's' : ''} sent from this page. Thank you!</p>` : ''}</div>`;
-}
 
 /* ---------- Building your guide ---------- */
 let buildTimer = null;
@@ -325,13 +314,6 @@ document.addEventListener('click', async e => {
   else if (b.dataset.done) { A._done = { ...(A._done || {}), [b.dataset.done]: true }; log('done', b.dataset.done); queueSave(); render(); toast('Done'); }
   else if (b.dataset.undone) { const d = { ...(A._done || {}) }; delete d[b.dataset.undone]; A._done = d; log('reopen', b.dataset.undone); queueSave(); render(); }
   else if (b.dataset.del) { uploads = uploads.filter(x => x.id !== b.dataset.del); try { await idb.del(b.dataset.del); } catch (err) {} render(); }
-  else if (b.dataset.note) {
-    const mod = b.dataset.note, ta = document.getElementById('note_' + mod), text = (ta.value || '').trim();
-    if (!text) { ta.focus(); return; }
-    b.disabled = true;
-    try { await sendNote(mod, text); A._notes = { ...(A._notes || {}), [mod]: [...((A._notes || {})[mod] || []), text] }; queueSave(); ta.value = ''; toast('Note sent. Thank you!'); render(); }
-    catch (err) { toast('Could not send the note. Check your connection.'); b.disabled = false; }
-  }
   else if (b.id === 'send') send(b);
   else if (b.dataset.slug) { SLUG = { for: b.dataset.slug, free: true, options: [] }; set('slug', b.dataset.slug); A._slugTouched = true; slugCheck(); softRefresh(); refreshSend(); }
   else if (b.id === 'fillListing') { const got = applyListing(); const mods = [...new Set(got.map(k => FIELD_MODULE[k]))].map(id => (MODULES.find(m => m.id === id) || {}).title).filter(Boolean); render(); toast(got.length ? `Filled ${got.length} answers in ${mods.join(', ')}. Marked “Review”.` : 'Nothing new found. Try pasting more of the listing.'); }
@@ -368,7 +350,7 @@ async function send(b){
     tick();
     // With an account the guide is built from the account: this copy to us must never stop it.
     try {
-      await nf('onboarding', { sid, email: v('email'), place: v('placeName'), town: v('town'), slug: v('slug'), progress: progressText(), photos: String(uploads.length), listing_photos: JSON.stringify(uploads.filter(u => u.remote).map(u => ({ url: u.src, room: u.room || '', caption: u.name }))),
+      await nf('onboarding', { sid, email: v('email') || (AUTH && AUTH.user && AUTH.user.email) || '', place: v('placeName'), town: v('town'), slug: v('slug'), progress: progressText(), photos: String(uploads.length), listing_photos: JSON.stringify(uploads.filter(u => u.remote).map(u => ({ url: u.src, room: u.room || '', caption: u.name }))),
         device: deviceLine(d), device_type: d.type, device_json: JSON.stringify(d), active_minutes: String(j.activeMinutes), journey: JSON.stringify(j), events: JSON.stringify(A._log || []),
         sent_before: A._sentAt || '', answers: JSON.stringify(clean) });
       for (const u of files) { tick(); await nf('file', { sid, kind: u.kind, room: u.room || '', name: u.name }, u); }

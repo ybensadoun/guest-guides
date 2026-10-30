@@ -5,11 +5,6 @@ def rep(s,a,b,n=1):
 seg1=rep(seg1,'<title>Guest Guide Maker</title>','<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<title>Guest Guide Maker · Build your guest guide</title>\n<meta name="description" content="Tell us about your place and we build a guest guide for your guests\' phones.">\n<meta name="robots" content="noindex">')
 seg1=rep(seg1,'*{box-sizing:border-box}','html{color-scheme:light}\n:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}\n*{box-sizing:border-box}\nimg{max-width:100%}\n[hidden]{display:none!important}\nbody{margin:0}')
 seg1=rep(seg1,'.loading{padding:40px;text-align:center;color:var(--muted)}','''.loading{padding:40px;text-align:center;color:var(--muted)}
-.notebox{display:flex;flex-direction:column;gap:8px;background:var(--sunk);border-radius:var(--r-s);padding:14px}
-.notebox label{display:flex;flex-direction:column;gap:2px}
-.notebox label span{font-size:13.5px;color:var(--muted)}
-.nrow{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
-.nrow textarea{flex:1 1 220px;min-height:52px}
 .survey{display:flex;flex-direction:column;gap:18px;border-top:1.5px solid var(--line);padding-top:18px}
 .survey h2{font-size:22px}
 #sendState{margin:0;font-size:14px;color:var(--muted)}
@@ -65,7 +60,7 @@ seg1=rep(seg1,'''</style>
 seg1=rep(seg1,'''    <span id="ownerSlot"></span>\n''','')
 seg1=rep(seg1,"need:['placeName','town'],fields:['listingUrl','listingText','autofill','placeName'","need:['placeName','town'],fields:['listingUrl','listingText','placeName'")
 seg1=rep(seg1,"lead:'Paste your listing link and description: we fill in what we can. Nothing is copied from Airbnb by us, only what you paste.',","lead:'Your listing link and the basics. Pasting your description helps us write the guide in your words.',")
-seg1=rep(seg1,"need:['languages'],fields:['guideName','tagline','languages','guests','up:logo']","need:['slug','languages'],fields:['guideName','slug','tagline','languages','guests']")
+seg1=rep(seg1,"need:['languages'],fields:['guideName','tagline','languages','guests','up:logo']","need:['slug','languages'],fields:['guideName','slug','tagline','languages']")
 seg1=rep(seg1,"title:'Name and languages',sub:'What guests see'","title:'Name, address, languages',sub:'What guests see'")
 seg1=rep(seg1,"need:['upload:inspiration','mood','upload:cover'],fields:['styleBrief','up:inspiration','lookLikes','mood','up:cover','lookAvoid']",
  "need:[],fields:['up:logo','up:cover','mood','colorsFrom']")
@@ -86,28 +81,15 @@ seg1=rep(seg1,"  mood:{t:'mood',label:'Which feels closest?',hint:'This sets the
   refLinks:{t:'area',rows:2,label:'Apps or websites you love using',opt:true,full:true,ph:'Airbnb, Citymapper, a hotel site, a magazine…',hint:'Names or links. We read them for the overall feel, like the fonts and how round or sharp the corners are. Your guide keeps its own sections.'},
   feelWords:{t:'chips',label:'Words for the feel',opt:true,opts:['Cosy','Elegant','Playful','Modern','Rustic','Calm','Local and authentic','Luxurious','Family friendly','Colourful']},
   navStyle:{t:'radio',label:'How should guests find things?',opts:['Big tiles, like an app','A simple list','Photo-led, like a magazine','Map first','Search first','Not sure']},
-  homeFirst:{t:'chips',label:'What should guests see first?',opt:true,hint:'Pick up to four.',opts:['Wi-Fi','Check-out time','House guide','How to get in','Places to eat','What\\u2019s on today','Beaches','Map','Your phone number','Rubbish tonight']},""")
+  homeFirst:{t:'chips',label:'What should guests see first?',opt:true,hint:'Pick up to four.',opts:['Wi-Fi','Check-out time','House guide','How to get in','Places to eat','What\\u2019s on today','Beaches','Map','Rubbish tonight']},""")
 seg1=rep(seg1,"  notes:{t:'area',rows:3,label:'Anything else?',opt:true,full:true}",
-"""  notes:{t:'area',rows:3,label:'Anything else?',opt:true,full:true},
-  sMinutes:{t:'radio',label:'How did filling this in feel?',opt:true,opts:['Quick and easy','About right','Too long','Confusing in places']},
-  sMissing:{t:'area',rows:3,label:'What did we not ask that we should have?',opt:true,full:true},
-  sIdeal:{t:'area',rows:3,label:'Describe your ideal guest guide in one or two sentences',opt:true,full:true,ph:'Guests open it and immediately see…'},
-  sUseNow:{t:'radio',label:'What do you use today for guests?',opt:true,opts:['Nothing, I answer messages','A printed folder','A PDF or Google Doc','Airbnb guidebook','Another app (Touch Stay, Hostfully…)']},
-  sPay:{t:'radio',label:'Would you pay for this?',opt:true,opts:['No','Up to 5 € a month','5 to 10 € a month','10 to 20 € a month','A one-off price']}""")
+"""  notes:{t:'area',rows:3,label:'Anything else?',opt:true,full:true}""")
 views=rep(views,"  if (k === 'autofill') return sample ? `<div class=\"full\"><button class=\"btn sun\" type=\"button\" id=\"autofill\"${v('listingText').length < 40 ? ' disabled' : ''}>Fill in from my listing</button> <span class=\"hint\" id=\"afState\"></span></div>` : '';\n",
 """  if (k === 'slug') return `<div class="f full"><label for="f_slug">${esc(Q.slug.label)}</label><p class="hint">${esc(Q.slug.hint)}</p><div class="slugbox"><span>${esc(GUIDES_AT)}/</span><input id="f_slug" data-k="slug" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(v('slug'))}" placeholder="villa-mar" maxlength="40"></div><div id="slugNote" aria-live="polite">${slugNoteHTML()}</div></div>`;
 """)
 views=rep(views,"      ${db && uid ? `<label class=\"btn small\">","      ${true ? `<label class=\"btn small\">")
 views=rep(views,"  const accept = o.doc && assets ? 'image/*,application/pdf' : 'image/*';","  const accept = 'image/*';")
 views=rep(views,"(o.doc && assets ? 'Photos or PDFs' : 'JPG or PNG')","'Photos or screenshots'")
-views=rep(views,"""        </div></div></section>`;
-}
-function sendHTML(){""","""        </div></div></section>
-    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section>`;
-}
-function sendHTML(){""")
-views=rep(views,"""      <div class="grid">${field('email')}${field('notes')}""","""      <div class="grid">${field('email')}${field('notes')}
-        <div class="survey full"><h2>Five quick questions about this form</h2><div class="grid">${['sMinutes','sMissing','sIdeal','sUseNow','sPay'].map(field).join('')}</div></div>""")
 views=rep(views,"""        <div class="row"><button class="btn primary" type="button" id="send\"""","""        <p id="sendState"></p>
         <div class="row"><button class="btn primary" type="button" id="send\"""")
 views=rep(views,"<p>We build your guide and send you a link to try it. Every round of changes is included.</p>","<p>We build your guide from your answers and email you a link to try it. Every round of changes is included.</p>")
@@ -136,19 +118,19 @@ seg1=_re.sub(r"need:\[[^\]]*\]","need:[]",seg1)
 seg1=rep(seg1,"lead:'Paste your listing and we fill in most of the steps for you. You then only check them and approve.',","lead:'Your listing is where everything starts. With the link (or its text) and the town, we write the rest.',")
 seg1=rep(seg1,"need:[],fields:['listingUrl'","need:['source','town'],fields:['listingUrl'")
 seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'nearby',group:'area',title:'Attractions',sub:'Museums, parks, activities',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',
-   lead:'Places guests go to visit or to do something: museums, castles, theme parks, karting, nature. Keep the ones you would send a friend to, and add any we missed. Restaurants and bars go in Eat and drink.',need:[],fields:['swipe','favDo','favourites']},
+   lead:'Places guests go to visit or to do something: museums, castles, theme parks, karting, nature. Keep the ones you would send a friend to, and add any we missed. Restaurants and bars go in Eat and drink.',need:[],fields:['swipe','favDo']},
   {id:'taste',group:'area'""")
 seg1=seg1.replace('family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700','family=Gloock&family=Onest:wght@400;500;600;700')
 seg1=rep(seg1,"</style>\n</head>","\n"+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'theme2.css')).read()+"\n</style>\n</head>")
 views=rep(views,"  if (k === 'privacyNote')","  if (k === 'swipe') return swipeHTML();\n  if (k === 'privacyNote')")
-views=rep(views,"    case 'taste':","    case 'nearby': { const y = Object.values(A.swipes || {}).filter(x => x.d === 'yes').length + lines('favDo').length; return y ? `${y} places` : 'Not started'; }\n    case 'taste':")
+views=rep(views,"    case 'taste':","    case 'nearby': { const y = Object.values(A.swipes || {}).filter(x => x.d === 'yes').length + placeRows('favDo').length; return y ? `${y} places` : 'Not started'; }\n    case 'taste':")
 # ---- v3: loading the listing is its own first step; the place details come right after ----
 seg1=rep(seg1,"{id:'listing',group:'basics',title:'Your listing',sub:'Link, name, town',icon:'link',tc:'var(--pine)',sh:'var(--sun)',shape:'circle',",
  "{id:'listing',group:'basics',title:'Load your listing',sub:'We read it for you',icon:'link',tc:'var(--pine)',sh:'var(--sun)',shape:'circle',")
 seg1=rep(seg1,"lead:'Your listing is where everything starts. With the link (or its text) and the town, we write the rest.',",
  "lead:'Paste your listing link and press the button. We read the listing: the photos, the rooms, the rules and the times. The next steps arrive already filled in, and you only check them.',")
 seg1=rep(seg1,"need:['source','town'],fields:['listingUrl','listingText','fillBtn','placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','hostName','privacyNote']},",
- "need:['source'],fields:['listingUrl','listingText','loadListing']},\n  {id:'place',group:'basics',title:'About the place',sub:'Name, town, size',icon:'tag',tc:'var(--pine)',ti:'#fff',sh:'var(--sky)',shape:'half',\n   lead:'What we found in your listing. Fix anything that is off.',\n   need:['placeName','town'],fields:['placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','hostName','privacyNote']},")
+ "need:['source'],fields:['listingUrl','listingText','loadListing']},\n  {id:'place',group:'basics',title:'About the place',sub:'Name, town, size',icon:'tag',tc:'var(--pine)',ti:'#fff',sh:'var(--sky)',shape:'half',\n   lead:'What we found in your listing. Fix anything that is off.',\n   need:['placeName','town'],fields:['placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','privacyNote']},")
 seg1=rep(seg1,"  town:{label:'Town or village',ph:'Where the place is'},","  town:{label:'Town or village',ph:'Where the place is'},\n  source:{label:'Your listing link or text'},")
 views=rep(views,"  if (k === 'privacyNote')","""  if (k === 'loadListing') return loadListingHTML();
   if (k === 'listingText' && !(START.need === 'text' || v('listingText'))) return '';
@@ -169,7 +151,7 @@ seg1=rep(seg1,"  source:{label:'Your listing link or text'},","""  source:{label
   ratingCount:{t:'number',label:'Number of reviews',ph:'89',opt:true},
   reviewQuotes:{t:'area',rows:5,label:'Reviews you would like to show',opt:true,full:true,ph:'Lovely house, we did not want to leave. - Marie\\nPerfect for a family weekend. - Jordi',hint:'Up to three short reviews, one per line, with the first name after a dash. Only add reviews you are happy to share.'},
   reviewsNote:{label:'Ratings and reviews'},""")
-seg1=rep(seg1,"'beds','hostName','privacyNote']}","'beds','sleeping','hostName','privacyNote']}")
+seg1=rep(seg1,"'beds','privacyNote']}","'beds','sleeping','privacyNote']}")
 seg1=rep(seg1,"  {id:'map',name:'Map'","  {id:'reviews',name:'Ratings and reviews',d:'Your listing rating and latest reviews, shown as they are.',built:true,on:()=>false},\n  {id:'map',name:'Map'")
 seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'reviews',group:'area',title:'Ratings and reviews',sub:'Optional',icon:'heart',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'half',sec:'reviews',
    lead:'Show your listing rating and reviews at the end of the guide, as they are on your listing. We read them from your listing, you do not pick or type anything.',need:[],fields:['ratingAvg','ratingCount','reviewsNote']},

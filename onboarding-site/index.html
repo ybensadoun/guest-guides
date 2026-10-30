@@ -234,11 +234,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 .si.s-pre .sl{color:var(--sky)}
 .frm{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--sky) 15%,transparent);color:var(--sky)}
 :root:not([data-theme="light"]) .pill.pre{color:#2c5aa0}
-.notebox{display:flex;flex-direction:column;gap:8px;background:var(--sunk);border-radius:var(--r-s);padding:14px}
-.notebox label{display:flex;flex-direction:column;gap:2px}
-.notebox label span{font-size:13.5px;color:var(--muted)}
-.nrow{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
-.nrow textarea{flex:1 1 220px;min-height:52px}
 .survey{display:flex;flex-direction:column;gap:18px;border-top:1.5px solid var(--line);padding-top:18px}
 .survey h2{font-size:22px}
 #sendState{margin:0;font-size:14px;color:var(--muted)}
@@ -538,6 +533,12 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .slugopt:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 #slugNote p{overflow-wrap:anywhere}
 @media (max-width:520px){.slugbox{flex-direction:column}.slugbox span{max-width:100%;padding:8px 12px 0;font-size:13.5px}.slugbox input{padding:2px 12px 8px!important}}
+.lk-artrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:10px;font-size:14.5px;font-weight:600}
+.lk-artrow span{flex:1 1 220px}
+.rv-open{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.rv-links{display:flex;flex-wrap:wrap;gap:8px}
+.rv-links a{font-size:14.5px;font-weight:600;color:inherit;text-decoration:none;min-height:40px;display:inline-flex;align-items:center;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--sunk)}
+.rv-links a:hover{border-color:var(--ink)}
 
 </style>
 </head>
@@ -625,13 +626,13 @@ const MODULES = [
    need:['source'],fields:['listingUrl','listingText','loadListing']},
   {id:'place',group:'basics',title:'About the place',sub:'Name, town, size',icon:'tag',tc:'var(--pine)',ti:'#fff',sh:'var(--sky)',shape:'half',
    lead:'What we found in your listing. Fix anything that is off.',
-   need:['placeName','town'],fields:['placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','sleeping','hostName','privacyNote']},
+   need:['placeName','town'],fields:['placeName','propertyType','town','region','sleeps','bedrooms','bathrooms','beds','sleeping','privacyNote']},
   {id:'sections',group:'basics',title:'Guide sections',sub:'Pick what goes in',icon:'grid',tc:'var(--ink)',ti:'#fff',sh:'var(--sky)',shape:'square',
    lead:'Choose what goes into your guide. Each section you keep adds its questions to the steps that follow, and each one you remove takes them away. Ticked ones already fit your listing.',
    need:[],fields:['sectionPicker','moduleIdeas']},
   {id:'guide',group:'basics',title:'Name, address, languages',sub:'What guests see',icon:'tag',tc:'var(--sun)',ti:'#1b1407',sh:'var(--tomato)',shape:'half',
    lead:'Most hosts use the house name. It becomes the title of the guide and the app name on guests’ phones.',
-   need:[],fields:['guideName','slug','tagline','languages','guests']},
+   need:[],fields:['guideName','slug','tagline','languages']},
   {id:'look',group:'basics',title:'The look',sub:'Logo, cover, layout, colours',icon:'eye',tc:'var(--tomato)',sh:'var(--ink)',shape:'tri',
    lead:'Four steps: your logo, the cover picture, the layout and its colours. All optional, and you can change them later.',
    need:[],fields:['up:logo','up:cover','mood','colorsFrom']},
@@ -647,22 +648,22 @@ const MODULES = [
    lead:'Written for guests who arrive in the dark. No door codes here: send those privately.',need:[],fields:['arrival','up:arrivalPhoto']},
   {id:'rubbish',group:'practical',title:'Rubbish',sub:'Bins and days',icon:'bin',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'circle',sec:'rubbish',part:'known',
    lead:'Only you know how this works at the house, so we do not look it up. Tell us how it is collected and, if bins go out at the house, which day each one is emptied.',need:[],fields:['rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto']},
-  {id:'contacts',group:'practical',title:'Contacts',sub:'You, backup, taxi',icon:'phone',tc:'var(--tomato)',ti:'#fff',sh:'var(--ink)',shape:'tri',part:'known',
-   lead:'Numbers guests can call. We add 112, the nearest hospital and pharmacy.',need:[],fields:['hostPhone','backupContact','taxi']},
-  {id:'known',group:'practical',title:'Only you know',sub:'Wi-Fi, arrival, rubbish, phone',icon:'key',tc:'var(--pine)',ti:'#fff',sh:'var(--sun)',shape:'half',
-   lead:'Four things we cannot find for you. Answer what you can: each one can wait.',need:[],fields:['wifiName','wifiPassword','arrival','up:arrivalPhoto','rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto','hostPhone','backupContact','taxi']},
+  {id:'contacts',group:'practical',title:'Getting around',sub:'A taxi you trust',icon:'car',tc:'var(--tomato)',ti:'#fff',sh:'var(--ink)',shape:'tri',part:'known',
+   lead:'Optional. The taxi you would call yourself: guests see it in the guide.',need:[],fields:['taxi']},
+  {id:'known',group:'practical',title:'Only you know',sub:'Wi-Fi, arrival, rubbish, taxi',icon:'key',tc:'var(--pine)',ti:'#fff',sh:'var(--sun)',shape:'half',
+   lead:'A few things we cannot find for you. Answer what you can: each one can wait.',need:[],fields:['wifiName','wifiPassword','arrival','up:arrivalPhoto','rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto','taxi']},
   {id:'nearby',group:'area',title:'Attractions',sub:'Museums, parks, activities',icon:'heart',tc:'var(--clay)',ti:'#fff',sh:'var(--sun)',shape:'circle',
-   lead:'Places guests go to visit or to do something: museums, castles, theme parks, karting, nature. Keep the ones you would send a friend to, and add any we missed. Restaurants and bars go in Eat and drink.',need:[],fields:['swipe','favDo','favourites']},
+   lead:'Places guests go to visit or to do something: museums, castles, theme parks, karting, nature. Keep the ones you would send a friend to, and add any we missed. Restaurants and bars go in Eat and drink.',need:[],fields:['swipe','favDo']},
   {id:'reviews',group:'area',title:'Ratings and reviews',sub:'Optional',icon:'heart',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'half',sec:'reviews',
    lead:'Show your listing rating and reviews at the end of the guide, as they are on your listing. We read them from your listing, you do not pick or type anything.',need:[],fields:['ratingAvg','ratingCount','reviewsNote']},
   {id:'taste',group:'area',title:'Your style',sub:'Outings and tone',icon:'heart',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',off:true,
    lead:'All optional. It tells us which things to do to look for and how to write to your guests.',need:[],fields:['doStyle','avoidTypes','tone','voiceNotes']},
   {id:'favourites',group:'area',title:'Eat and drink',sub:'Restaurants, cafés, bars',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',
-   lead:'Restaurants, cafés, bakeries and bars you send friends to, with a few words from you. We add none of our own.',need:[],fields:['favEat','localTips','avoidPlaces']},
+   lead:'The restaurants, cafés, bakeries and bars you send friends to. Guests see exactly this list, with your comments. We add none of our own.',need:[],fields:['favEat','localTips']},
   {id:'nightlife',group:'area',title:'Nightlife',sub:'Bars, clubs, live music',icon:'moon',tc:'var(--ink)',ti:'#fff',sh:'var(--sun)',shape:'half',sec:'nightlife',
    lead:'Late bars, cocktail bars, clubs and live music: where you send friends for the evening and the night. We add none of our own.',need:[],fields:['favNight']},
   {id:'area',group:'area',title:'Your area',sub:'Interests and distance',icon:'link',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'circle',
-   lead:'We research markets, things to do and events within the distance you pick.',need:[],fields:['interests','radius']},
+   lead:'We research markets, things to do and events within the distance you pick.',need:[],fields:['interests','guests','radius']},
 ];
 const GROUPS = [['basics','The basics'],['house','The house'],['practical','Practical'],['area','Around you']];
 
@@ -684,9 +685,8 @@ const Q = {
   bedrooms:{t:'number',label:'Bedrooms',ph:'3',opt:true},
   bathrooms:{t:'number',label:'Bathrooms',ph:'2',opt:true},
   beds:{t:'number',label:'Beds',ph:'5',opt:true},
-  hostName:{label:'Your first name',ph:'As guests know you',opt:true},
   guideName:{label:'Guide name',opt:true,hintFn:()=>v('placeName')?`Leave empty to use “${v('placeName')}”.`:''},
-  tagline:{label:'Welcome line',opt:true,ph:'Make yourself at home'},
+  tagline:{t:'area',rows:3,label:'Welcome line',opt:true,full:true,ph:'Make yourself at home'},
   languages:{t:'chips',label:'Languages',opts:LANGS,hint:'The guide opens in the guest’s phone language when it can.'},
   guests:{t:'chips',label:'Who usually stays',opts:GUESTS,opt:true},
   styleBrief:{t:'area',rows:4,label:'In your own words, what should your guide feel like?',full:true,ph:'Like a small hotel in Tuscany: warm, earthy, lots of white space. Or: bright and playful, like a children\u2019s picture book.',hint:'The more specific you are, the more different your guide looks. We design a look just for you, not from a template.'},
@@ -697,7 +697,7 @@ const Q = {
   refLinks:{t:'area',rows:2,label:'Apps or websites you love using',opt:true,full:true,ph:'Airbnb, Citymapper, a hotel site, a magazine…',hint:'Names or links. We read them for the overall feel, like the fonts and how round or sharp the corners are. Your guide keeps its own sections.'},
   feelWords:{t:'chips',label:'Words for the feel',opt:true,opts:['Cosy','Elegant','Playful','Modern','Rustic','Calm','Local and authentic','Luxurious','Family friendly','Colourful']},
   navStyle:{t:'radio',label:'How should guests find things?',opts:['Big tiles, like an app','A simple list','Photo-led, like a magazine','Map first','Search first','Not sure']},
-  homeFirst:{t:'chips',label:'What should guests see first?',opt:true,hint:'Pick up to four.',opts:['Wi-Fi','Check-out time','House guide','How to get in','Places to eat','What\u2019s on today','Beaches','Map','Your phone number','Rubbish tonight']},
+  homeFirst:{t:'chips',label:'What should guests see first?',opt:true,hint:'Pick up to four.',opts:['Wi-Fi','Check-out time','House guide','How to get in','Places to eat','What\u2019s on today','Beaches','Map','Rubbish tonight']},
   lookAvoid:{t:'area',rows:2,label:'Anything to avoid?',opt:true,full:true,ph:'No pink, nothing too corporate…'},
   moduleIdeas:{t:'area',rows:2,label:'An idea we don’t have yet?',opt:true,full:true,ph:'A page about the vineyard next door…',hint:'We build new ideas as new sections.'},
   amenities:{t:'chips',label:'What the place has',opts:AMEN,opt:true},
@@ -715,15 +715,12 @@ const Q = {
   rubbishPlan:{t:'plan',label:'Which bin is collected, and on which days?',opt:true,full:true,hint:'Tick the day the bin is collected, not the day it goes out. Guests are told to take it out the night before. Leave a row empty if it is not collected.',show:()=>/house|mix/i.test(v('rubbishMode'))},
   rubbishTime:{t:'time',label:'Bins must be out by',opt:true,show:()=>/house|mix/i.test(v('rubbishMode'))},
   rubbishNotes:{t:'area',rows:3,label:'Anything guests must know',opt:true,full:true,ph:'Organic goes in the small brown bin under the sink. Bring cardboard flat…'},
-  hostPhone:{t:'tel',label:'Your phone for guests',ph:'With the country code'},
-  backupContact:{label:'Backup contact',opt:true,ph:'Name and number'},
   taxi:{label:'Taxi you trust',opt:true,ph:'Name and number'},
   essentials:{t:'area',rows:4,label:'Shops you use',opt:true,full:true,ph:'The supermarket you use and why\nThe best bakery, the pharmacy that opens on Sundays…'},
   extras:{t:'area',rows:3,label:'Extras you offer',full:true,ph:'Late check-out, with the price\nAirport transfer, breakfast basket…'},
-  favEat:{t:'places',label:'Your places to eat and drink',add:'Add a place to eat or drink',opt:true,full:true,hint:'Paste a Google Maps link, a website, or just type the name. Then add your comment: what to order, when to go.'},
+  favEat:{t:'places',label:'Your places to eat and drink',add:'Add a place to eat or drink',opt:true,full:true,hint:'Type the name, or paste a Google Maps link or a website. We find it on Google and add the map and opening hours. Your comment shows too: what to order, when to go.'},
   favNight:{t:'places',label:'Your places for the evening and the night',add:'Add a place',opt:true,full:true,hint:'Paste a Google Maps link, a website, or just type the name. Then add your comment: what it is like, when to go.'},
-  favDo:{t:'area',rows:5,label:'Places we missed',opt:true,full:true,ph:'A walk, a beach, a view, a museum, with the best time to go…'},
-  favourites:{t:'area',rows:3,label:'Anything else you recommend',opt:true,full:true,ph:'Shops, a market, a local producer, a hidden spot…'},
+  favDo:{t:'places',label:'Add a place we missed',add:'Add another place',opt:true,full:true,hint:'Anything you recommend that was not in the cards. Just type the name: we find it on Google. It goes first in your guide.'},
   eatStyle:{t:'chips',label:'The food you recommend',opt:true,opts:['Local and traditional','Seafood','Grill and meat','Fine dining','Cheap and cheerful','Cafés and brunch','Vegetarian friendly','International','Wine and tapas bars','Street food','Bakeries and sweets']},
   eatPrice:{t:'radio',label:'Usual price level',opt:true,opts:['Budget','Mid-range','Special occasion','A mix']},
   eatVibe:{t:'chips',label:'The places you like',opt:true,opts:['Where locals go','Great views','Terrace or garden','Quiet','Lively','Kid friendly','Dog friendly','Open late','Walking distance']},
@@ -732,20 +729,14 @@ const Q = {
   avoidTypes:{t:'area',rows:2,label:'What you never recommend',opt:true,full:true,ph:'Tourist traps, chains, places that need a car…',hint:'Kept private. It just shapes our research.'},
   tone:{t:'radio',label:'How should the guide talk to guests?',opt:true,opts:['Warm and personal','Short and practical','Fun and playful','Elegant and calm']},
   voiceNotes:{t:'area',rows:3,label:'Anything about your style with guests?',opt:true,full:true,ph:'We use first names, we love dogs, we always leave a bottle of local wine…'},
-  localTips:{t:'area',rows:4,label:'Local tips only you know',opt:true,full:true,ph:'When the market is quietest, where to park for the old town, the best spot for sunset…'},
-  avoidPlaces:{t:'area',rows:2,label:'Places you would not recommend',opt:true,full:true,hint:'Kept private. We just leave them out.'},
+  localTips:{t:'area',rows:4,label:'Local tips only you know',opt:true,full:true,ph:'When the market is quietest, where to park for the old town, the best spot for sunset…',hint:'One per line. Guests see them in the House guide, under Local tips.'},
   interests:{t:'chips',label:'What your guests come for',opts:INTERESTS},
   radius:{t:'radio',label:'How far should we look?',opts:['15 min','30 min','45 min','1 hour'],suffix:' by car'},
   kidsAges:{t:'chips',label:'Kids who usually stay',opts:['Babies','Toddlers','4 to 8','9 to 12','Teenagers']},
   kidsGear:{t:'chips',label:'Kids gear at the house',opts:['Cot','High chair','Stair gate','Pool fence','Toys and games','Bike seats'],opt:true},
   kidsNotes:{t:'area',rows:2,label:'Anything for parents to know?',opt:true,full:true,ph:'The pool has no fence, the stairs are steep…'},
   email:{t:'email',label:'Email for your review link',ph:'you@example.com'},
-  notes:{t:'area',rows:3,label:'Anything else?',opt:true,full:true},
-  sMinutes:{t:'radio',label:'How did filling this in feel?',opt:true,opts:['Quick and easy','About right','Too long','Confusing in places']},
-  sMissing:{t:'area',rows:3,label:'What did we not ask that we should have?',opt:true,full:true},
-  sIdeal:{t:'area',rows:3,label:'Describe your ideal guest guide in one or two sentences',opt:true,full:true,ph:'Guests open it and immediately see…'},
-  sUseNow:{t:'radio',label:'What do you use today for guests?',opt:true,opts:['Nothing, I answer messages','A printed folder','A PDF or Google Doc','Airbnb guidebook','Another app (Touch Stay, Hostfully…)']},
-  sPay:{t:'radio',label:'Would you pay for this?',opt:true,opts:['No','Up to 5 € a month','5 to 10 € a month','10 to 20 € a month','A one-off price']}
+  notes:{t:'area',rows:3,label:'Anything else?',opt:true,full:true}
 };
 const UP = {
   logo:{label:'Your logo',opt:true,max:1,hint:'Optional. It shows on the welcome card and becomes the icon on guests’ phones. Without one, the guide shows no logo.'},
@@ -753,7 +744,7 @@ const UP = {
   cover:{label:'Your own cover picture',opt:true,max:1,hint:'A photo, or an artistic rendering of your house (made with an AI image tool or by an artist). It replaces the photo above. Landscape works best.'},
   photo:{label:'Photos of the place',max:16,rooms:true,what:'Up to 16 photos'},
   manual:{label:'Manuals or labels',opt:true,max:6,doc:true,hint:'Photos of labels or instructions are fine.'},
-  arrivalPhoto:{label:'Photos of the way in',opt:true,max:4,hint:'The gate, the turning, where to park.'},
+  arrivalPhoto:{label:'Photos to help find the place or the key',opt:true,max:4,hint:'The gate, the turning, where to park, where the key is.'},
   rubbishPhoto:{label:'Town collection calendar',opt:true,max:2,hint:'A photo of the leaflet is enough.'},
   feedback:{label:'Screenshots',opt:true,max:6,hint:'Circle the problem on a screenshot if that is easier.'}
 };
@@ -816,30 +807,27 @@ function tileVars(m){ return `--tc:${m.tc};--ti:${m.ti || '#fff'};--sh:${m.sh}`;
    Phone: a bottom bar with Back, "3 of 15" (opens the full list) and Done / Next.
    The browser back button works too: every step has its own address (#look, #known…). */
 const STATUS_ICON = { pre: '<i class="pre" aria-hidden="true"></i>', done: CHECK, chk: '<i class="half" aria-hidden="true"></i>', new: '<i class="ring" aria-hidden="true"></i>' };
-const stepsOrder = () => [...flowMods().map(m => m.id), 'send'];   // the path: only the steps that need the host
+const stepsOrder = () => [...flowMods(), ...readyMods()].map(m => m.id).concat('send');   // the path: what needs the host, then what we filled in, then Review
 const titleOf = id => id === 'send' ? 'Review and send' : (MODULES.find(m => m.id === id) || {}).title;
 function stepListHTML(cur){
   if (CM.on) return cmStepList(cur);   // once the guide exists, the steps edit the guide (editor.js)
   const mods = visible();
   const item = (m) => { const s = statusOf(m); return `<a class="si s-${s.k}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${STATUS_ICON[s.k]}</span><span class="st">${esc(m.title)}</span><span class="sl">${esc(s.k === 'new' && !needsYou(m) && s.label === 'Start' ? '' : s.label)}</span></a>`; };
   const miss = sendMissing().length;
-  const flow = flowMods(), left = flow.filter(m => statusOf(m).k !== 'done').length;
+  const flow = flowMods(), left = flow.filter(m => statusOf(m).k !== 'done').length, unread = readyMods().filter(m => statusOf(m).k === 'pre').length;
   return `<div class="si-guide"><b>${esc(v('guideName') || v('placeName') || 'Your guide')}</b><small>${A._draftAt ? '<a href="#yours">See your guide</a>' : 'Your listing is not loaded yet'}</small></div>
     <p class="sg">Needs you${left ? ` · ${left} left` : ''}</p>${flow.map(item).join('')}
-    <p class="sg">Ready: check if you like</p>${mods.filter(m => !needsYou(m)).map(item).join('')}
+    <p class="sg">Filled in for you: please review${unread ? ` · ${unread} left` : ''}</p>${mods.filter(m => !needsYou(m)).map(item).join('')}
     <p class="sg">Finish</p><a class="si s-${miss ? 'new' : 'done'} send" href="#send"${cur === 'send' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Review and send</span><span class="sl">${miss ? miss + ' left' : 'Ready'}</span></a>`;
 }
 function railHTML(cur){ return `<aside class="rail" aria-label="All steps"><nav>${stepListHTML(cur)}</nav></aside>`; }
 function navbarHTML(cur){
   if (CM.on) return cmNavbar(cur);
   const order = stepsOrder(), i = order.indexOf(cur), m = MODULES.find(x => x.id === cur);
-  // A step filled in from the listing is off the path: one button back to where the host was going.
-  if (m && !needsYou(m)) return `<div class="nbin"><span></span>
-    <button class="nb count" type="button" id="openSteps" aria-haspopup="dialog">All steps<i class="chev" aria-hidden="true"></i></button>
-    <a class="nb primary" href="#${obNext()}"><span>Continue</span>${ARROW}</a></div>`;
   const prev = order[i - 1], next = order[i + 1];
   let main = '';
-  if (m) {
+  if (m && !needsYou(m)) main = next ? `<a class="nb primary" href="#${next}"><span>Next</span>${ARROW}</a>` : '';   // filled in from the listing: nothing to press
+  else if (m) {
     const s = statusOf(m), miss = missingOf(m).length, answered = !ANSWERED[m.id] || ANSWERED[m.id]();
     if (s.k === 'done') main = next ? `<a class="nb primary" href="#${next}"><span>Next</span>${ARROW}</a>` : '';
     else if (!miss && (answered || s.k === 'pre')) main = `<button class="nb primary" type="button" data-donenext="${m.id}"><span>${s.k === 'pre' ? 'Looks right' : 'Done'}${next ? ', next' : ''}</span>${next ? ARROW : CHECK}</button>`;
@@ -878,19 +866,17 @@ function moduleHTML(m){
           : !needsYou(m) ? (A._draftAt ? 'Filled in from your listing. Change anything that is off: it saves as you type, nothing to press.' : 'Optional. Anything you add here saves as you type.')
           : s.k === 'done' ? 'Done. You can still change anything.' : 'Only you know this. Answer it now or later: your guide works without it.'}</p>
         ${(A._done || {})[m.id] && needsYou(m) ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
-      </div></section>
-    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div>
+      </div></section></div>
     <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>${A._draftAt || v('placeName') || v('guideName') ? 'Your guide, live, as guests see it' : 'An example for now: load your listing and it becomes your guide'}</p></aside></div>`;
 }
 function sendHTML(){
-  const mods = visible(), miss = sendMissing();
+  const miss = sendMissing(), open = visible().filter(m => ['pre', 'new', 'chk'].includes(statusOf(m).k) && statusOf(m).label !== 'Optional');
   return `<div class="split">${railHTML('send')}<div class="col">
     <section class="mhead" style="--tc:var(--ink);--ti:var(--paper);--sh:var(--sun)">
-      <h1>Review and send</h1><p>We build your guide from your answers and email you a link to try it. Every round of changes is included.</p></section>
+      <h1>Review and send</h1><p>We build your guide from your answers. You can change anything afterwards.</p></section>
     <section class="card">
-      <div class="sum">${mods.map(m => { const s = statusOf(m); return `<a href="#${m.id}" style="--tc:${m.tc}"><span class="sw"></span><span><b>${esc(m.title)}</b><p>${esc(summary(m))}</p></span><span class="pill ${s.k}" style="position:static">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></a>`; }).join('')}</div>
-      <div class="grid">${field('slug')}${field('email')}${field('notes')}
-        <div class="survey full"><h2>Five quick questions about this form</h2><div class="grid">${['sMinutes','sMissing','sIdeal','sUseNow','sPay'].map(field).join('')}</div></div>
+      ${open.length ? `<div class="rv-open"><b>Still worth a look</b><div class="rv-links">${open.map(m => `<a href="#${m.id}">${esc(m.title)}</a>`).join('')}</div></div>` : ''}
+      <div class="grid">${field('slug')}
         <label class="f full" style="flex-direction:row;gap:10px;align-items:flex-start"><input type="checkbox" data-check="consent"${A.consent ? ' checked' : ''} style="width:20px;height:20px;margin-top:2px;flex:none"><span>I own these photos and texts or may use them, and I understand the guide is visible to anyone who has its link.</span></label></div>
       <div class="foot">${miss.length ? `<p class="todo">Before sending: <b>${miss.map(esc).join(', ')}</b></p>` : '<p class="todo"></p>'}
         <p id="sendState"></p>
@@ -1134,8 +1120,6 @@ function pvStyle(p, preset){
 .pv-bar{position:fixed;left:0;right:0;top:0;z-index:40;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px 12px;background:#111;color:#fff;font:600 13px/1.3 system-ui,sans-serif}
 .pv-bar a{color:#F2B33D}
 .pv-shell{padding-top:32px}
-.pv-fb{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:45;display:inline-flex;align-items:center;gap:8px;padding:13px 18px;border-radius:999px;border:0;background:#F2B33D;color:#1b1407;font:700 15px system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer}
-.pv-fb svg{width:18px;height:18px}
 .fbs{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center}
 .fbs-card{width:100%;max-width:520px;max-height:90vh;overflow:auto;background:#fff;color:#151515;border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;font:16px/1.45 system-ui,sans-serif}
 .fbs-card h3{font:700 22px system-ui,sans-serif;margin:0}
@@ -1215,7 +1199,6 @@ async function pvParts(screen){
   for (const f of (A.homeFirst && A.homeFirst.length ? A.homeFirst : ['Wi-Fi', 'Check-out time'])) {
     if (f === 'Wi-Fi' && v('wifiName')) facts.push(['wifi', 'Wi-Fi', 'Tap to connect']);
     if (f === 'Check-out time' && v('checkOut')) facts.push(['stay', 'Check-out', 'Before ' + v('checkOut')]);
-    if (f === 'Your phone number' && v('hostPhone')) facts.push(['emergency', 'Call ' + (v('hostName') || 'us'), v('hostPhone')]);
     if (f === 'How to get in' && v('arrival')) facts.push(['arrival', 'Getting here', 'Directions']);
     if (f === 'House guide') facts.push(['houseguide', 'House guide', 'How things work']);
     if (f === 'Places to eat') facts.push(['eat', 'Eat', lines('favourites').length + ' favourites']);
@@ -1235,7 +1218,7 @@ async function renderPreview(){
   document.body.innerHTML = `${style}
     <div class="pv-bar">Preview of ${esc(name)} · ${esc(BASE)}/${esc(v('slug'))} · <a href="/#look">Back to my answers</a></div>
     ${body}
-    <button class="pv-fb" type="button" id="pvFb">${I.heart}Feedback</button><div class="toast" id="toast" hidden></div>`;
+    <div class="toast" id="toast" hidden></div>`;
   const q = document.getElementById('pvSearch');
   if (q) q.addEventListener('input', () => { const t = q.value.toLowerCase().trim(); document.querySelectorAll('#pvSecs .pv-sec').forEach(b => { b.hidden = t && !b.dataset.q.includes(t); }); });
 }
@@ -1283,42 +1266,15 @@ function pageHTML(x){
   let body = '';
   if (x.kind === 'rooms') body = x.rooms.length ? x.rooms.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3>${r.photos.length ? `<div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${list(r.items)}</section>`).join('') : `<div class="pv-research"><b>Nothing here yet</b>Add how things work and photos by room in your answers.</div>`;
   else if (x.kind === 'wifi') body = `<section class="pv-card"><p style="margin:0 0 6px;opacity:.7">Network</p><h3 style="font-size:24px">${esc(v('wifiName'))}</h3><p style="margin:12px 0 6px;opacity:.7">Password</p><h3 style="font-size:24px">${esc(v('wifiPassword'))}</h3></section><div class="pv-research"><b>In your full guide</b>A QR code to join with one tap, and a copy button.</div>`;
-  else if (x.kind === 'contacts') body = `<section class="pv-card"><div class="pv-list"><div class="pv-row"><b>Emergencies: 112</b>Police, ambulance, fire</div>${v('hostPhone') ? `<div class="pv-row"><b>${esc(v('hostName') || 'Your host')}</b>${esc(v('hostPhone'))}</div>` : ''}${v('backupContact') ? `<div class="pv-row"><b>Backup</b>${esc(v('backupContact'))}</div>` : ''}${v('taxi') ? `<div class="pv-row"><b>Taxi</b>${esc(v('taxi'))}</div>` : ''}</div></section>${research}`;
+  else if (x.kind === 'contacts') body = `<section class="pv-card"><div class="pv-list"><div class="pv-row"><b>Emergencies: 112</b>Police, ambulance, fire</div>${v('taxi') ? `<div class="pv-row"><b>Taxi</b>${esc(v('taxi'))}</div>` : ''}</div></section>${research}`;
   else if (x.kind === 'places') body = `${(x.picks || []).length ? `<section class="pv-card"><div class="pv-list">${x.picks.map(p => `<div class="pv-row"><b>${esc(p.name)}<span class="pv-pill">Host\u2019s pick</span></b>${esc([p.type, p.rating ? '★ ' + p.rating.toFixed(1) : '', p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}${p.c ? `<br><i>“${esc(p.c)}”</i>` : ''}<br><a href="${esc(p.maps)}" target="_blank" rel="noopener">Directions</a></div>`).join('')}</div></section>` : ''}${x.items.length ? `<section class="pv-card"><div class="pv-list">${x.items.map(t => { const [a, ...b] = t.split(/,\s| - |:\s/); return `<div class="pv-row"><b>${esc(a)}<span class="pv-pill">Host’s pick</span></b>${esc(b.join(', '))}<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a + ', ' + v('town'))}" target="_blank" rel="noopener">Directions</a></div>`; }).join('')}</div></section>` : ''}${research}`;
   else if (x.kind === 'map') body = `<section class="pv-card"><p style="margin:0">Every place in the guide on one map, centred near ${esc(v('town') || 'the house')} (never on the house itself).</p></section><a class="pv-btn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v('town'))}" target="_blank" rel="noopener">Open ${esc(v('town') || 'the area')} in Maps</a>`;
   else body = `${x.photos && x.photos.length ? `<div class="pv-photos">${x.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${x.items && x.items.length ? `<section class="pv-card">${list(x.items)}</section>` : ''}${x.extra ? `<section class="pv-card"><h3>${esc(x.extra.h)}</h3>${list(x.extra.items)}</section>` : ''}${research}`;
   return `<div class="pv-page"><h2>${esc(x.title)}</h2><p style="opacity:.75;margin:6px 0 0">${esc(x.sub)}</p></div>${body}`;
 }
-function openFeedback(){
-  const o = document.createElement('div'); o.className = 'fbs';
-  let mode = 'screen', rating = 0;
-  const screenName = PV.screen === 'home' ? 'Home' : (guideSections().find(x => x.id === PV.screen) || {}).title || PV.screen;
-  const draw = () => { o.innerHTML = `<div class="fbs-card" role="dialog" aria-modal="true" aria-label="Feedback">
-    <div class="row"><h3>Feedback</h3><button type="button" class="pv-back" data-x style="color:#151515">Close</button></div>
-    <div class="tabs"><button type="button" data-mode="screen" aria-pressed="${mode === 'screen'}">This screen</button><button type="button" data-mode="all" aria-pressed="${mode === 'all'}">The whole guide</button></div>
-    ${mode === 'screen' ? `<p class="hint">About “${esc(screenName)}”: what is missing, wrong or how should it look?</p><textarea id="fbt" placeholder="I would expect…"></textarea>`
-      : `<div class="stars">${[1,2,3,4,5].map(n => `<button type="button" data-star="${n}" aria-pressed="${n === rating}">${n}</button>`).join('')}</div>
-      <textarea id="fbr" placeholder="What feels right"></textarea><textarea id="fbw" placeholder="What is wrong or missing"></textarea><textarea id="fbu" placeholder="How would you like it to look or work instead?"></textarea>`}
-    <div class="row"><span class="hint">Goes straight to the Guest Guide Maker team.</span><button type="button" class="pv-btn" data-send style="background:#151515;color:#fff">Send</button></div></div>`; };
-  draw(); document.body.appendChild(o);
-  o.addEventListener('click', async e => {
-    if (e.target === o || e.target.closest('[data-x]')) { o.remove(); return; }
-    const m = e.target.closest('[data-mode]'); if (m) { mode = m.dataset.mode; draw(); return; }
-    const s = e.target.closest('[data-star]'); if (s) { rating = +s.dataset.star; draw(); return; }
-    if (e.target.closest('[data-send]')) {
-      const val = id => (o.querySelector('#' + id) || {}).value || '';
-      const d = device();
-      const fields = mode === 'screen' ? { kind: 'screen', screen: screenName, wrong: val('fbt') } : { kind: 'overall', screen: '', rating: rating || '', right: val('fbr'), wrong: val('fbw'), ux: val('fbu') };
-      if (!(fields.wrong || fields.right || fields.ux || fields.rating)) { toast('Write a few words first'); return; }
-      try { await nf('feedback', { sid, guide: v('slug'), round: 'preview', email: v('email'), preset: PV.preset || choosePreset(), device: deviceLine(d), device_json: JSON.stringify(d), ...fields }); log('feedback', PV.screen); flush(); o.remove(); toast('Thank you, sent!'); }
-      catch (err) { toast('Could not send. Check your connection.'); }
-    }
-  });
-}
 document.addEventListener('click', e => {
   if (!document.querySelector('.pv')) return;
   const b = e.target.closest('[data-pv]'); if (b) { PV.screen = b.dataset.pv; log('preview', PV.screen); queueSave(); renderPreview().then(() => window.scrollTo(0, 0)); return; }
-  if (e.target.closest('#pvFb')) openFeedback();
 });
 
 
@@ -1369,7 +1325,7 @@ function loadTick(){
   if (b) b.style.width = Math.min(95, el / LOAD.est * 100) + '%';
 }
 const DRAFT_MAP = { placeName: 'place', propertyType: 'place', town: 'place', region: 'place', sleeps: 'place', sleeping: 'place', bedrooms: 'place', bathrooms: 'place', beds: 'place',
-  guideName: 'guide', tagline: 'guide', welcome: 'guide', guests: 'guide', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
+  guideName: 'guide', tagline: 'guide', welcome: 'guide', guests: 'area', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
   amenities: 'howto', howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
 
 function startHTML(){
@@ -1495,14 +1451,15 @@ function addListingPhotos(d){
 function yoursHTML(){
   return `<section class="yours"><div class="yours-tx" id="yoursTx">${yoursText()}</div><div class="yours-ph">${phoneHTML()}</div></section>`;
 }
+const WHAT_LEFT = { look: 'choose the look', nearby: 'pick the things to do', favourites: 'add your favourite places to eat', nightlife: 'add your nightlife spots', known: 'add what only you know' };
 function yoursText(){
   const st = WOW.stage || (A._draftAt ? 'done' : ''), name = v('guideName') || v('placeName') || WOW.name;
-  const ready = readyMods().filter(m => statusOf(m).k === 'done').length, left = flowMods().filter(m => statusOf(m).k !== 'done').length;
+  const left = flowMods().filter(m => statusOf(m).k !== 'done').map(m => WHAT_LEFT[m.id]).filter(Boolean), todo = left.length > 1 ? left.slice(0, -1).join(', ') + ' and ' + left[left.length - 1] : left[0];
   const say = { reading: 'Opening your listing…', writing: 'Writing your house guide, the rules and the times…' };
   if (!st) return `<small>Your guest guide</small><h1>Not started yet</h1><p>Paste your listing link first.</p><div class="row"><a class="btn primary" href="#start">Paste my link ${ARROW}</a></div>`;
   return `<small>Your guest guide</small><h1>${esc(name || 'Your guide')}</h1>
     <p class="yours-st" role="status" aria-live="polite">${st === 'done' ? CHECK : '<span class="spin dark" aria-hidden="true"></span>'}<span>${st === 'done' ? 'Your guide is written.' : esc(say[st])}</span></p>
-    <p>${st === 'done' ? `${ready} step${ready === 1 ? ' is' : 's are'} ready from your listing${left ? `, and ${left === 1 ? 'one needs' : left + ' need'} you` : ''}. Tap around in the phone: this is what your guests get.` : 'Your photos and the details of your listing are going into it right now.'}</p>
+    <p>${st === 'done' ? `We’ve prefilled your guide from your listing! ${todo ? `You now just need to ${todo} to make it yours.` : 'Tap around in the phone: this is what your guests get.'}` : 'Your photos and the details of your listing are going into it right now.'}</p>
     <div class="row">${st === 'done' ? `<a class="btn primary" href="#look">Make it yours ${ARROW}</a>` : `<span class="btn primary" aria-disabled="true">Make it yours ${ARROW}</span>`}</div>`;
 }
 const yoursRefresh = () => { const el = document.getElementById('yoursTx'); if (el) el.innerHTML = yoursText(); };
@@ -1769,7 +1726,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 30 Oct 2026, 10:34 (Madrid time, after commit 4610872)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 30 Oct 2026, 12:23 (Madrid time, after commit 4d68b95)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -1785,7 +1742,7 @@ function slimStep(m, lead, card, cls){
       <p>${esc(lead)}</p></section>
     <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside>
     ${card}
-    <section class="card" style="padding-block:16px">${noteBox(m.id)}</section></div></div>`;
+</div></div>`;
 }
 const nearbyHTML = m => slimStep(m, 'Museums, parks, karting, sights. Swipe right on the ones you recommend.', `<section class="card nb-card"><div class="grid">${m.fields.map(field).join('')}</div></section>`, 'nearby-page');
 
@@ -1840,13 +1797,13 @@ function lookCoverHTML(){
   const own = obOwnCover(), drawn = !own && A.coverChoice === 'drawn', cur = String(A.coverUrl || '').split('?')[0];
   const pics = [...new Set([cur, ...(A.listingPhotos || [])].filter(p => typeof p === 'string' && /^https:/.test(p)).map(p => p.split('?')[0]))].slice(0, 18);
   const shown = own ? srcOf(own) : !drawn && cur ? obSized(cur) : '';
-  return `<div class="lk-row"><div class="lk-hd"><b id="l_cover">Cover picture</b>${shown ? `<button class="btn small" type="button" id="lk_art" data-lkart="1" aria-expanded="${lookArtOpen()}">Make it artistic</button>` : ''}</div>
+  return `<div class="lk-row"><div class="lk-hd"><b id="l_cover">Cover picture</b></div><p class="hint">Use one of your photos as it is, or have a new one drawn from it.</p>
     <div class="lk-strip" role="group" aria-labelledby="l_cover">
       <label class="lk-pic lk-up"><input class="sr" type="file" accept="image/*" data-obcoverfile="1"><b aria-hidden="true">+</b><small>Your own</small></label>
       <button type="button" class="lk-pic lk-drawn" id="lk_drawn" data-coverchoice="drawn" aria-pressed="${drawn}" aria-label="A cover drawn from the colours" style="${lookPalVars(PRESET_PAL[choosePreset()])}">${PV_ART}<small>Drawn</small></button>
       ${own ? `<span class="lk-pic lk-own"><img src="${esc(srcOf(own))}" alt="Your own picture, the cover now"><button class="lk-x" type="button" data-del="${own.id}" aria-label="Remove your picture">×</button></span>` : ''}
       ${pics.map((p, i) => `<button type="button" class="lk-pic" id="lk_pic${i}" data-obcover="${esc(p)}" aria-pressed="${!own && !drawn && p === cur}" aria-label="Use this photo as the cover"><img src="${esc(obSized(p))}" alt="" loading="lazy"></button>`).join('')}
-    </div>${shown && lookArtOpen() ? lookArtHTML(shown) : ''}</div>`;
+    </div>${shown ? `<div class="lk-artrow"><span>Want something unique? We redraw the photo you picked as an artwork.</span><button class="btn small" type="button" id="lk_art" data-lkart="1" aria-expanded="${lookArtOpen()}">Make it artistic</button></div>` : ''}${shown && lookArtOpen() ? lookArtHTML(shown) : ''}</div>`;
 }
 function lookArtHTML(shown){
   const g = window.__acctGuide && window.__acctGuide(), busy = !!CM.artJob;
@@ -3895,7 +3852,7 @@ function summary(m){
     case 'known': return knownParts().map(p => p.done() ? p.title : p.title + ' later').join(' · ');
     case 'favourites': return `${placeRows('favEat').length} places to eat and drink${v('localTips') ? ' · local tips' : ''}`;
     case 'nightlife': return `${placeRows('favNight').length} places for the night`;
-    case 'nearby': { const y = Object.values(A.swipes || {}).filter(x => x.d === 'yes').length + lines('favDo').length; return y ? `${y} places` : 'Not started'; }
+    case 'nearby': { const y = Object.values(A.swipes || {}).filter(x => x.d === 'yes').length + placeRows('favDo').length; return y ? `${y} places` : 'Not started'; }
     case 'taste': return [(A.doStyle || []).slice(0, 3).join(', '), v('tone')].filter(Boolean).join(' · ') || 'Not filled';
     case 'area': return [(A.interests || []).join(', '), v('radius')].filter(Boolean).join(' · ') || 'Not filled';
     case 'kids': return (A.kidsAges || []).join(', ') || 'Not filled';
@@ -3922,11 +3879,11 @@ const flowMods = () => FLOW.map(id => visible().find(m => m.id === id)).filter(B
 const readyMods = () => visible().filter(m => !needsYou(m));
 // A step that needs the host counts as done once they answered it (or pressed Done). The look has no answer of its own:
 // its defaults are good, but the host confirms it.
-const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || filled('favDo') || filled('favourites'),
+const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), nearby: () => Object.keys(A.swipes || {}).length > 0 || placeRows('favDo').length > 0,
   favourites: () => placeRows('favEat').length > 0 || filled('localTips'),
   nightlife: () => placeRows('favNight').length > 0,
-  wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('hostPhone'),
-  known: () => knownParts().every(p => p.done()) };
+  wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('taxi'),
+  known: () => knownParts().every(p => p.id === 'contacts' || p.done()) };   // the taxi is optional
 // Something in this step came from the listing (or is there): only then is it "Ready". Sections are always chosen for them.
 const hasContent = m => m.id === 'sections' || preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));
 function statusOf(m){
@@ -3935,7 +3892,7 @@ function statusOf(m){
     if (miss) return { k: seen ? 'chk' : 'new', label: `${miss} to do`, miss };
     if (!A._draftAt && !done && !seen) return { k:'new', label:'Start', miss };   // filled step by step: nothing from a listing yet
     if (!done && !hasContent(m)) return { k:'new', label:'Optional', miss };      // the listing said nothing here
-    return { k:'done', label: done || seen ? 'Checked' : 'Ready', miss };
+    return done || seen ? { k:'done', label:'Checked', miss } : { k:'pre', label:'Review', miss };   // not looked at yet: not finished, however good it is
   }
   if (done && !miss) return { k:'done', label:'Done', miss };
   if (preKeys(m).length && !seen) return { k:'pre', label:'Check', miss };   // the listing said it: the host only checks
@@ -4079,22 +4036,11 @@ async function nf(form, fields, file){
   const r = await fetch('/', { method: 'POST', headers, body });
   if (!r.ok) throw new Error('http_' + r.status);
 }
-// "Missing something here?" notes go out straight away, so we learn even from people who never finish.
-async function sendNote(mod, text){
-  const d = device(); log('note', mod);
-  await nf('note', { sid, module: mod, note: text, place: v('placeName'), town: v('town'), email: v('email'), progress: progressText(), device: deviceLine(d), device_json: JSON.stringify(d) });
-}
 const progressText = () => { const ms = visible(); return `${ms.filter(m => statusOf(m).k === 'done').length}/${ms.length} done`; };
 
 /* ---------- After the first version: what to check ---------- */
 // Right after the listing is read, on the first step the host lands on: the guide is written, here is what is left.
 /* ---------- Extra questions for the public test ---------- */
-function noteBox(mod){
-  const sent = (A._notes || {})[mod] || [];
-  return `<div class="notebox"><label for="note_${mod}"><b>Missing a question here, or something unclear?</b><span>Tell us in a few words. It goes straight to the team, even if you don’t finish.</span></label>
-    <div class="nrow"><textarea id="note_${mod}" rows="2" placeholder="I expected a question about…"></textarea><button class="btn small" type="button" data-note="${mod}">Send note</button></div>
-    ${sent.length ? `<p class="hint">${sent.length} note${sent.length > 1 ? 's' : ''} sent from this page. Thank you!</p>` : ''}</div>`;
-}
 
 /* ---------- Building your guide ---------- */
 let buildTimer = null;
@@ -4229,13 +4175,6 @@ document.addEventListener('click', async e => {
   else if (b.dataset.done) { A._done = { ...(A._done || {}), [b.dataset.done]: true }; log('done', b.dataset.done); queueSave(); render(); toast('Done'); }
   else if (b.dataset.undone) { const d = { ...(A._done || {}) }; delete d[b.dataset.undone]; A._done = d; log('reopen', b.dataset.undone); queueSave(); render(); }
   else if (b.dataset.del) { uploads = uploads.filter(x => x.id !== b.dataset.del); try { await idb.del(b.dataset.del); } catch (err) {} render(); }
-  else if (b.dataset.note) {
-    const mod = b.dataset.note, ta = document.getElementById('note_' + mod), text = (ta.value || '').trim();
-    if (!text) { ta.focus(); return; }
-    b.disabled = true;
-    try { await sendNote(mod, text); A._notes = { ...(A._notes || {}), [mod]: [...((A._notes || {})[mod] || []), text] }; queueSave(); ta.value = ''; toast('Note sent. Thank you!'); render(); }
-    catch (err) { toast('Could not send the note. Check your connection.'); b.disabled = false; }
-  }
   else if (b.id === 'send') send(b);
   else if (b.dataset.slug) { SLUG = { for: b.dataset.slug, free: true, options: [] }; set('slug', b.dataset.slug); A._slugTouched = true; slugCheck(); softRefresh(); refreshSend(); }
   else if (b.id === 'fillListing') { const got = applyListing(); const mods = [...new Set(got.map(k => FIELD_MODULE[k]))].map(id => (MODULES.find(m => m.id === id) || {}).title).filter(Boolean); render(); toast(got.length ? `Filled ${got.length} answers in ${mods.join(', ')}. Marked “Review”.` : 'Nothing new found. Try pasting more of the listing.'); }
@@ -4272,7 +4211,7 @@ async function send(b){
     tick();
     // With an account the guide is built from the account: this copy to us must never stop it.
     try {
-      await nf('onboarding', { sid, email: v('email'), place: v('placeName'), town: v('town'), slug: v('slug'), progress: progressText(), photos: String(uploads.length), listing_photos: JSON.stringify(uploads.filter(u => u.remote).map(u => ({ url: u.src, room: u.room || '', caption: u.name }))),
+      await nf('onboarding', { sid, email: v('email') || (AUTH && AUTH.user && AUTH.user.email) || '', place: v('placeName'), town: v('town'), slug: v('slug'), progress: progressText(), photos: String(uploads.length), listing_photos: JSON.stringify(uploads.filter(u => u.remote).map(u => ({ url: u.src, room: u.room || '', caption: u.name }))),
         device: deviceLine(d), device_type: d.type, device_json: JSON.stringify(d), active_minutes: String(j.activeMinutes), journey: JSON.stringify(j), events: JSON.stringify(A._log || []),
         sent_before: A._sentAt || '', answers: JSON.stringify(clean) });
       for (const u of files) { tick(); await nf('file', { sid, kind: u.kind, room: u.room || '', name: u.name }, u); }

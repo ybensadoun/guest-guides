@@ -358,29 +358,48 @@ try {
     await p.screenshot({ path: join(SHOTS, 'builder-look-360.png') });
     await p.click('#openSteps'); await p.waitForSelector('.sheet .si-guide', { timeout: 3000 }).catch(() => {});
     const groups = await p.$$eval('.sheet .sg', els => els.map(e => e.textContent.trim()));
-    ok('builder: step list has "Needs you", then "Ready: check if you like"', /^Needs you/.test(groups[0] || '') && /^Ready/.test(groups[1] || ''), groups.join(' | '));
+    ok('builder: step list has "Needs you", then what we filled in, to review', /^Needs you/.test(groups[0] || '') && /^Filled in for you: please review/.test(groups[1] || ''), groups.join(' | '));
     const readyLabels = await p.$$eval('.sheet .si', els => els.map(e => [e.querySelector('.st')?.textContent, e.querySelector('.sl')?.textContent]));
     await p.screenshot({ path: join(SHOTS, 'builder-steps-360.png') });
     await p.click('.sheet-x');
     await go(p, '#known');
     const parts = await p.$$eval('.kn-part h2', els => els.map(e => e.textContent).join(' | '));
-    ok('builder: "Only you know" is one step for Wi-Fi, arrival, rubbish and contacts, and the four steps are gone from the list', parts === 'Wi-Fi | Arrival and parking | Rubbish | Contacts'
-      && !(await p.$$eval('.rail a.si .st', els => els.map(e => e.textContent))).some(t => /^(Wi-Fi|Arrival and parking|Rubbish|Contacts|Your style)$/.test(t)), parts);
+    ok('builder: "Only you know" is one step for Wi-Fi, arrival, rubbish and the taxi, and the four steps are gone from the list', parts === 'Wi-Fi | Arrival and parking | Rubbish | Getting around'
+      && !(await p.$$eval('.rail a.si .st', els => els.map(e => e.textContent))).some(t => /^(Wi-Fi|Arrival and parking|Rubbish|Getting around|Contacts|Your style)$/.test(t)), parts);
+    ok('builder: no host phone, first name or backup contact is asked for', !(await p.$('[data-k="hostPhone"], [data-k="hostName"], [data-k="backupContact"]')) && !!(await p.$('[data-part="contacts"] [data-k="taxi"]')));
     ok('builder: an empty "Only you know" offers Later, not Done', /Later/.test(await barText(p)) && !/Done/.test(await barText(p)), await barText(p));
     ok('builder: Rubbish asks how it is collected before anything else', (await p.$$eval('[data-part="rubbish"] .f', els => els.length)) === 1);
     await p.fill('[data-k="wifiName"]', 'Test network').catch(() => {}); await p.fill('[data-k="wifiPassword"]', 'test-password').catch(() => {}); await p.waitForTimeout(600);
     ok('builder: an answered part is ticked and counted, the step still offers Later', !!(await p.$('#kn_wifi .kn-ok')) && /1 of 4 done/.test(await p.textContent('.rail a.si[href="#known"]')) && /Later/.test(await barText(p)));
     await p.fill('[data-k="arrival"]', 'Park under the pine tree.'); await p.click('input[name="rubbishMode"][value="Bins collected at the house"]', { force: true }); await p.waitForTimeout(500);
     ok('builder: choosing how rubbish is collected keeps the choice and opens its questions', (await p.$eval('input[name="rubbishMode"]:checked', e => e.value).catch(() => '')) === 'Bins collected at the house' && (await p.$$eval('[data-part="rubbish"] .f', els => els.length)) > 2);
-    await p.fill('[data-k="hostPhone"]', '+34 600 000 000'); await p.waitForTimeout(600);
-    ok('builder: all four answered, the step is done and offers Next', /Next/.test(await barText(p)) && !/Later/.test(await barText(p)) && (await p.$$eval('.kn-ok', els => els.length)) === 4, await barText(p));
+    await p.waitForTimeout(600);
+    ok('builder: the three that matter answered, the step is done and offers Next (the taxi is optional)', /Next/.test(await barText(p)) && !/Later/.test(await barText(p)) && (await p.$$eval('.kn-ok', els => els.length)) === 3, await barText(p));
     ok('builder, 360 px: "Only you know" has no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0);
     await p.screenshot({ path: join(SHOTS, 'known-360.png'), fullPage: true });
     await go(p, '#stay');
     const stay = await barText(p);
-    ok('builder: a ready step needs no Done, offers Continue', /Continue/.test(stay) && !/Done/.test(stay), stay);
+    ok('builder: a filled-in step needs no Done, offers Next', /Next/.test(stay) && !/Done/.test(stay), stay);
     const st = readyLabels.find(([t]) => /Check-in/.test(t || ''));
-    ok('builder: ready steps say Ready', !!st && /Ready|Checked/.test(st[1] || ''), st ? st.join(': ') : 'no Check-in step');
+    ok('builder: a filled-in step not looked at yet says Review, not finished', !!st && st[1] === 'Review', st ? st.join(': ') : 'no Check-in step');
+    // The whole path: Needs you, then every filled-in step in order, then Review, one Next at a time.
+    await go(p, '#known');
+    ok('builder: once looked at, it says Checked', /Checked/.test(await p.textContent('.rail a.si[href="#stay"]').catch(() => '')));
+    const path = []; for (let i = 0; i < 16; i++) { const a = await p.$('#navbar a.nb.primary'); if (!a) break; const h = await a.getAttribute('href'); path.push(h); await go(p, h); if (h === '#send') break; }
+    const filled = await p.$$eval('.rail a.si', els => els.map(e => e.getAttribute('href')));
+    ok('builder: after the last "Needs you" step comes the first filled-in step, not Review', path[0] === filled[filled.indexOf('#known') + 1] && path[0] !== '#send', path.join(' '));
+    ok('builder: Next goes through every filled-in step, then to Review', path[path.length - 1] === '#send' && path.length === filled.length - filled.indexOf('#known') - 1, path.join(' '));
+    ok('builder: Review has no survey, email or notes, and nothing asks for feedback', !(await p.$('.survey, [data-k="email"], [data-k="notes"], .sum')) && !(await p.$('.notebox')), '');
+    ok('builder: Review shows the web address and what is still worth a look', !!(await p.$('#f_slug')) && !!(await p.$('.rv-open a')));
+    ok('builder, 360 px: Review has no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0);
+    await p.screenshot({ path: join(SHOTS, 'review-360.png'), fullPage: true });
+    await go(p, '#nearby');
+    ok('builder: Attractions has one way to add a place, as rows, and no second box', !!(await p.$('#pl_favDo .pl-row input')) && !(await p.$('[data-k="favourites"]')));
+    await go(p, '#favourites');
+    ok('builder: Eat and drink says what happens, with no "would not recommend" box', !(await p.$('[data-k="avoidPlaces"]')) && /House guide/.test(await p.textContent('.card').catch(() => '')));
+    await go(p, '#guide');
+    ok('builder: the welcome line has room for the whole text, and "Who usually stays" moved to Your area', (await p.$eval('[data-k="tagline"]', e => e.tagName).catch(() => '')) === 'TEXTAREA' && !(await p.$('[data-multi="guests"]')));
+    await p.screenshot({ path: join(SHOTS, 'guide-step-360.png'), fullPage: true });
     await p.screenshot({ path: join(SHOTS, 'builder-ready-step-360.png') });
     await everyPage(p, 'builder');
     ok('builder: no page errors', !errors.length, errors.join(' | '));
@@ -410,7 +429,7 @@ try {
     ok('Places nearby, desktop: the card and its buttons above the bottom bar', await p.evaluate(() => document.querySelector('.sw-btns').getBoundingClientRect().bottom <= document.getElementById('navbar').getBoundingClientRect().top));
     const path = await p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent));
     ok('builder: Eat and drink is on the path, right after Attractions (hand-picked, never searched)', path.indexOf('Eat and drink') === path.indexOf('Attractions') + 1 && path.indexOf('Eat and drink') < path.indexOf('Only you know'), path.slice(0, 5).join(' > '));
-    ok('builder: each Around you step says what goes in it (Attractions: museums; Eat and drink: restaurants, cafés)', /museums/i.test(await p.textContent('.mhead').catch(() => '')) && (await (async () => { await go(p, '#favourites'); return /Restaurants, cafés/.test(await p.textContent('.mhead p').catch(() => '')); })()));
+    ok('builder: each Around you step says what goes in it (Attractions: museums; Eat and drink: restaurants, cafés)', /museums/i.test(await p.textContent('.mhead').catch(() => '')) && (await (async () => { await go(p, '#favourites'); return /restaurants, cafés/i.test(await p.textContent('.mhead p').catch(() => '')); })()));
     await go(p, '#sections'); await p.waitForTimeout(300);
     const nb = await p.$('[data-sec="nightlife"]');
     ok('builder: Nightlife is a section of its own, off at first', !!nb && !(await nb.isChecked()));
@@ -438,6 +457,7 @@ try {
     await p.waitForTimeout(2600);   // the tiles pop in one after another
     const tiles = await inPhone(p, d => d.querySelectorAll('.pv-sec').length);
     ok('wow: Claude done, the guide is written and its sections are in the phone', /Your guide is written/.test(await p.textContent('#yoursTx')) && tiles >= 3, `${tiles} sections`);
+    ok('wow: a warm message that says what is left to do', /We’ve prefilled your guide from your listing! You now just need to .* to make it yours\./.test(await p.textContent('#yoursTx')), await p.textContent('#yoursTx'));
     ok('wow: 360 px, no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0);
     const cta = await p.$eval('#yoursTx a.btn.primary', e => { const r = e.getBoundingClientRect(); return r.bottom <= innerHeight && r.top >= 0; }).catch(() => false);
     ok('wow: on a phone, Make it yours is on screen without scrolling', cta);
@@ -458,8 +478,8 @@ try {
     await p.fill('[data-k="wifiName"]', 'Casa Test Wifi'); await p.fill('[data-k="wifiPassword"]', 'pass-1234'); await p.waitForTimeout(900);
     const shown = await inPhone(p, d => d.body.textContent);
     ok('desktop: typing the Wi-Fi updates the phone', /Casa Test Wifi/.test(shown || ''), (shown || '').slice(0, 60));
-    await p.focus('[data-k="hostPhone"]'); await p.waitForTimeout(600);
-    ok('desktop: the phone shows the part being filled in (Contacts: the numbers)', /Emergency and contacts/.test((await inPhone(p, d => (d.querySelector('.pv-page h2') || {}).textContent)) || ''));
+    await p.focus('[data-k="taxi"]'); await p.waitForTimeout(600);
+    ok('desktop: the phone shows the part being filled in (Getting around: the numbers)', /Emergency and contacts/.test((await inPhone(p, d => (d.querySelector('.pv-page h2') || {}).textContent)) || ''));
     await p.screenshot({ path: join(SHOTS, 'step-with-phone-desktop.png') });
     const arrows = () => inPhone(p, d => { const a = d.querySelector('.pv-sec .ar'); return a ? getComputedStyle(a).display !== 'none' : null; });
     await go(p, '#look'); await p.waitForTimeout(700);   // The look shows the guide's home in the phone
@@ -546,7 +566,8 @@ try {
     await ctx.close(); }
   // Nightlife (29 Oct 2026): optional and off in Ca La Kimberly; switched on in Guide sections, its first place makes its
   // section, right after Attractions.
-  { const { ctx, p, errors } = await open(browser, E, 1280, 860);
+  { const off = { ...E, content: { ...E.content, site: { ...E.content.site, modules: { ...E.content.site.modules, nightlife: false } } } };   // whatever the live guide has switched on today
+    const { ctx, p, errors } = await open(browser, off, 1280, 860);
     const saved = []; await ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
     await p.goto('http://editor.test/#sections'); await ready(p); await p.waitForTimeout(400);
     const rail = () => p.$$eval('.rail a.si .st', els => els.map(e => e.textContent));

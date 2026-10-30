@@ -109,10 +109,10 @@ function fallbackDraft(src){
 }
 
 const SYSTEM = `You turn a holiday-rental listing into the first version of a guest guide, for the host to review.
-Write in the language of the listing. Be accurate: only state what the listing says or what is obviously true for this kind of place.
+Write everything in English, whatever the language of the listing: translate what it says, and keep the names of the house and of places. Be accurate: only state what the listing says or what is obviously true for this kind of place.
 When something is likely but not stated, phrase it as something for the host to confirm, ending with " (please confirm)".
 Never include a street address, door code or key-box code. Keep the host's tone if the listing has one.
-Copy what the listing says, in its own wording: house rules, check-in and out, rooms, beds, amenities, rating. Do NOT guess or invent. When the listing is silent on a point, return null for it. The only things you write yourself are the tagline and the welcome text, from facts in the listing. The host will edit every line.
+Copy what the listing says, in its own wording (translated into English when it is in another language): house rules, check-in and out, rooms, beds, amenities, rating. Do NOT guess or invent. When the listing is silent on a point, return null for it. The only things you write yourself are the tagline and the welcome text, from facts in the listing. The host will edit every line.
 Return ONLY a JSON object, no prose.`;
 function prompt(src, town){
   return `Listing link: ${src.url || 'none'}
@@ -138,7 +138,8 @@ Return this JSON (null when unknown):
  "guideName": string (usually the place name), "tagline": string (one warm welcome line, max 70 characters),
  "welcome": string (2 or 3 sentences welcoming guests, in the host's voice),
  "houseRules": string (one rule per line, copied from the house rules section: pets, smoking, parties, quiet hours, max guests, other rules. Not the check-in and check-out times),
- "sleeping": string (one line per bedroom or sleeping space with its beds, exactly as the page says, for example "Bedroom 1: 2 single beds"; null when the page gives no arrangement),
+ "sleeping": string (one line per bedroom or sleeping space with its beds, as the page says, in English, for example "Bedroom 1: 2 single beds"; null when the page gives no arrangement),
+ "listingAmenities": array of strings (every item of "Amenities listed", in English, in the same order; empty when the page lists none),
  "rating": number (the overall rating shown, null if none), "reviewCount": number,
  "checkoutTasks": string (one task per line, ONLY if the listing states check-out instructions; otherwise null),
  "howTos": string (one line per instruction the listing itself gives about how something works, "Thing: how it works"; otherwise null. Never invent instructions),
@@ -159,7 +160,7 @@ async function askClaude(src, town){
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST', signal: AbortSignal.timeout(24000),
     headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', ...(process.env.ANTHROPIC_WORKSPACE_ID ? { 'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID } : {}) },
-    body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001', max_tokens: 3000, system: SYSTEM,
+    body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001', max_tokens: 4000, system: SYSTEM,
       messages: [{ role: 'user', content: prompt(src, town) }] })
   });
   if (!r.ok) { let body = ''; try { body = (await r.text()).slice(0, 160); } catch (e) {} throw new Error('claude_' + r.status + ' ' + body); }
@@ -209,14 +210,14 @@ export default async (req) => {
     if (assistant === 'failed' && !(src.pics || []).length && !(src.overview || []).length && !draft.houseRules) {
       return json({ ok: false, need: 'retry', code, message: code.startsWith('no_key') ? 'The writing assistant is not set up yet. You can still fill in the steps by hand.' : 'The writing assistant did not answer, so we could not read your listing this time. Press the button again, or fill in the steps by hand.' });
     }
-    // What the page states exactly is copied as is, not left to the model.
-    if (src.sleeping && src.sleeping.length) draft.sleeping = src.sleeping.join('\n');
+    // What the page states exactly is kept when the model gave none; it comes back in English otherwise.
+    if (src.sleeping && src.sleeping.length && !draft.sleeping) draft.sleeping = src.sleeping.join('\n');
     if (src.rating) { draft.rating = src.rating.avg; draft.reviewCount = src.rating.count; }
     const photoRooms = (src.pics || []).map((x, i) => x.room || (draft.photoRooms || [])[i] || null);
     const has = k => draft[k] != null && String(draft[k]).trim() !== '' && !(Array.isArray(draft[k]) && !draft[k].length);
     const report = { assistant, code, via: src.via, photos: (src.photos || []).length, roomsFromPage: !!src.tourRooms,
       found: { counts: has('bedrooms') || has('bathrooms') || has('beds'), rules: has('houseRules'), times: has('checkIn') && has('checkOut'), amenities: has('amenities'), sleeping: has('sleeping'), rating: has('rating') } };
-    return json({ ok: true, report, source: src.title ? 'page' : 'text', site, draft, amenities: src.amenities || [], photos: src.photos || [], photoRooms, photoCaps: (src.pics || []).map(x => x.caption), cover: src.image || (src.photos || [])[0] || null, lat: src.lat, lng: src.lng });
+    return json({ ok: true, report, source: src.title ? 'page' : 'text', site, draft, amenities: (draft.listingAmenities || []).length ? draft.listingAmenities : src.amenities || [], photos: src.photos || [], photoRooms, photoCaps: (src.pics || []).map(x => x.caption), cover: src.image || (src.photos || [])[0] || null, lat: src.lat, lng: src.lng });
   }
 };
 export const config = { path: '/api/listing' };
