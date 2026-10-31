@@ -136,10 +136,13 @@ function cItem(base, it, i, what) {
   const keys = Object.keys(it).filter(k => !C_SKIP.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'))).sort((a, b) => ord(a) - ord(b));
   const km = it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
   const meta = [typeof it.town === 'string' ? it.town : '', km, (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
-  const pos = typeof it.lat === 'number' ? `<div class="f full"><div class="cm-row"><button class="btn small" type="button" data-gfind="${p}">Find it on Google</button><span class="hint" id="${cmId(p + '/gf')}">${esc((CM.gfind || {})[p] || (it.nomap ? 'Not on the map yet: we look it up by its name.' : ''))}</span></div><label for="${cmId(p + '/gm')}">Or move the pin: paste a Google Maps link</label><p class="hint">${it.lat && !it.nomap ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
+  const said = (CM.gfind || {})[p], has = typeof it.lat === 'number';
+  const find = has ? `<div class="f full"><label for="${cmId(p + '/gs')}">Find it on Google</label><input id="${cmId(p + '/gs')}" type="text" ${psAttrs(cmId(p + '/sug'))} data-gsp="${p}" placeholder="Start typing the name"><div class="pl-sug" id="${cmId(p + '/sug')}" role="listbox" aria-label="Places on Google" hidden></div><p class="hint">${esc(said || (it.nomap ? 'Not on the map yet: pick it from the list to get its name, pin, distance and hours.' : 'Pick it from the list to update its pin, distance and hours.'))}</p></div>` : '';
+  const pin = has ? `<div class="f full"><label for="${cmId(p + '/gm')}">Or move the pin: paste a Google Maps link</label><p class="hint">${it.lat && !it.nomap ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
+  const first = it.nomap || said;   // a place with no pin yet starts here: finding it fills in the rest
   const check = Array.isArray(it.flags) || what !== 'contact' ? cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.') : '';
-  return cCard(p, cName(it), meta, `<div class="grid">${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], { long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' })).join('')}
-    ${'stalls_approx' in it ? cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx, { type: 'number', half: true }) : ''}${pos}
+  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], { long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' })).join('')}
+    ${'stalls_approx' in it ? cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx, { type: 'number', half: true }) : ''}${first ? '' : find}${pin}
     ${'schedule' in it || base.includes('markets') ? cSchedule(`${p}/schedule`, it.schedule) : ''}${'dates' in it || base.includes('events') ? cDates(`${p}/dates`, it.dates) : ''}</div>
     ${what === 'contact' ? '' : check}${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`);
 }
@@ -170,29 +173,29 @@ function edNewItem(arr) {
 }
 const edKm = (a, b, c, d) => { const R = 6371, r = x => x * Math.PI / 180, dl = r(c - a), dg = r(d - b), x = Math.sin(dl / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dg / 2) ** 2; return Math.round(2 * R * Math.asin(Math.sqrt(x))); };
 function edUpdateKm(ip) { const it = edGet(edC(), ip), h = edF().house || {}; if (!it || !h.lat || !it.lat) return; if ('km_from_house' in it) it.km_from_house = edKm(h.lat, h.lng, it.lat, it.lng); if ('km' in it) it.km = edKm(h.lat, h.lng, it.lat, it.lng); }
-// "Find it on Google": the place's name looked up near the house (/api/places?q=); its position, distance, town, Maps
-// link, Google id and, when it has none, its opening hours and kind. The answer is shown, so the host can tell.
+// "Find it on Google": the place picked from what Google suggests as the host types (psPick in start.js), read by its id
+// (/api/places?id=): its position, distance, town, Maps link, Google id and, when it has none, its name, opening hours and
+// kind. The answer is shown, so the host can tell.
 const ED_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'], ED_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], edP2 = n => String(n).padStart(2, '0');
 function edSchedule(periods) {
   if (!periods || !periods.length || (periods.length === 1 && !periods[0].close)) return null;
   const g = new Map(); for (const x of periods) { if (!x.close) continue; const k = `${edP2(x.open.hour)}:${edP2(x.open.minute)}-${edP2(x.close.hour)}:${edP2(x.close.minute)}`; g.set(k, [...(g.get(k) || []), ED_DAY[x.open.day]]); }
   return [...g].map(([k, d]) => ({ days: [...new Set(d)].sort((a, b) => ED_ORDER.indexOf(a) - ED_ORDER.indexOf(b)), open: k.slice(0, 5), close: k.slice(6) }));
 }
-async function cmFindOnGoogle(p, btn) {
-  const it = edGet(edC(), edPath(p)), h = edF().house || {}, nm = (it.name_local || edShown(it.name) || '').trim();
-  CM.gfind = CM.gfind || {};
-  if (!nm) { CM.gfind[p] = 'Give it a name first.'; return render(); }
-  btn.disabled = true; CM.gfind[p] = 'Looking it up…'; render();
+async function cmFindById(p, id) {
+  const it = edGet(edC(), edPath(p)), h = edF().house || {};
+  CM.gfind = CM.gfind || {}; CM.gfind[p] = 'Looking it up…'; render();
   try {
-    const d = await fetch(`/api/places?q=${encodeURIComponent(nm + (it.town ? ', ' + it.town : ''))}&lat=${h.lat}&lng=${h.lng}`).then(r => r.json());
+    const d = await fetch(`/api/places?id=${encodeURIComponent(id)}&lat=${h.lat}&lng=${h.lng}`).then(r => r.json());
     const f = d.ok && d.place;
     if (!f) { CM.gfind[p] = d.ok ? 'Not found on Google. Paste its Google Maps link below.' : d.message || 'Google could not be reached.'; return render(); }
     Object.assign(it, { lat: f.lat, lng: f.lng, km_from_house: f.km, gmaps: f.maps, gid: f.id }); delete it.nomap;
     if (f.town) it.town = f.town;
+    if (f.name && !edShown(it.name || {})) it.name = L6(f.name);
     if (!(it.schedule && it.schedule.length)) { const s = edSchedule(f.periods); if (s) it.schedule = s; }
     if (f.type && !(it.type && edShown(it.type))) it.type = { en: f.type };   // Google's kind, in English: "Translate missing texts" does the rest
     it.flags = (it.flags || []).filter(x => x !== 'check'); if (f.status === 'CLOSED_TEMPORARILY') it.flags.push('check');
-    CM.gfind[p] = `Found: ${f.name}${f.town ? ', ' + f.town : ''}, ${f.km} km from the house. Not the right one? Paste its Google Maps link below.`;
+    CM.gfind[p] = `Found: ${f.name}${f.town ? ', ' + f.town : ''}, ${f.km} km from the house. Not the right one? Search again, or paste its Google Maps link below.`;
     cmQueue(); render();
   } catch (e) { CM.gfind[p] = 'Google could not be reached. Try again.'; render(); }
 }
@@ -349,7 +352,7 @@ function cmPlaces(path, what) {
   return `${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
     <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
-    <p class="hint">A new ${esc(what)} starts at the house: move its pin with a Google Maps link. The distance from the house follows the pin.</p>`;
+    <p class="hint">A new ${esc(what)} has no pin yet: find it on Google, or paste its Google Maps link. The distance from the house follows the pin.</p>`;
 }
 
 /* --- Getting around: taxis, then stations and stops, on their own page (content/transport.json, section kind "transport") ---
@@ -1144,7 +1147,6 @@ document.addEventListener('click', e => {
   if (d.cfstop !== undefined) { const path = t.closest('[data-fpath]').dataset.fpath, kind = FIND_OF[path][0]; findMark(CM.find[kind].id, cmFindItems(kind, path).map(x => x.id)); return cmFindRefresh(); }
   if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
   if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
-  if (d.gfind) return cmFindOnGoogle(d.gfind, t);
   if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); const a = arr(d.addit); a.push(edNewItem(a)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
   if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }] }; return done(); }
   if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }); return done(); }

@@ -152,6 +152,19 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .pl-row{display:grid;grid-template-columns:minmax(0,1fr) 36px;gap:8px;align-items:start;padding:12px;background:var(--sunk);border-radius:var(--r-s)}
 .pl-row input,.pl-row textarea{grid-column:1}
 .pl-row .x{grid-column:2;grid-row:1;width:36px;height:36px;border-radius:50%;border:0;background:var(--surface);cursor:pointer;font-size:20px;color:var(--ink)}
+/* What Google suggests as the host types: in the page, under the field, so it covers nothing */
+.pl-sug{grid-column:1/-1;display:flex;flex-direction:column;margin-top:6px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-s);overflow:hidden}
+.pl-row .pl-sug{margin-top:0}
+.pl-sug[hidden]{display:none}
+.pl-sug button{display:block;width:100%;min-height:48px;padding:8px 12px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.pl-sug button:first-child{border-top:0}
+.pl-sug button:hover,.pl-sug button[aria-selected="true"]{background:var(--sunk)}
+.pl-sug b,.pl-sug small{display:block;overflow-wrap:break-word}
+.pl-sug small{margin-top:1px;color:var(--muted);font-size:13px}
+.pl-at{grid-column:1/-1;margin:0;font-size:13px;line-height:1.4;color:var(--muted)}
+.pl-at:empty{display:none}
+.pl-at a{white-space:nowrap}
+.pl-row input:focus~.pl-at.miss{display:none}
 .plan{display:flex;flex-direction:column;gap:12px}
 .plan-row{display:flex;flex-direction:column;gap:6px;padding:12px;background:var(--sunk);border-radius:var(--r-s)}
 

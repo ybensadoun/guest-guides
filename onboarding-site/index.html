@@ -435,6 +435,19 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .pl-row{display:grid;grid-template-columns:minmax(0,1fr) 36px;gap:8px;align-items:start;padding:12px;background:var(--sunk);border-radius:var(--r-s)}
 .pl-row input,.pl-row textarea{grid-column:1}
 .pl-row .x{grid-column:2;grid-row:1;width:36px;height:36px;border-radius:50%;border:0;background:var(--surface);cursor:pointer;font-size:20px;color:var(--ink)}
+/* What Google suggests as the host types: in the page, under the field, so it covers nothing */
+.pl-sug{grid-column:1/-1;display:flex;flex-direction:column;margin-top:6px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-s);overflow:hidden}
+.pl-row .pl-sug{margin-top:0}
+.pl-sug[hidden]{display:none}
+.pl-sug button{display:block;width:100%;min-height:48px;padding:8px 12px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.pl-sug button:first-child{border-top:0}
+.pl-sug button:hover,.pl-sug button[aria-selected="true"]{background:var(--sunk)}
+.pl-sug b,.pl-sug small{display:block;overflow-wrap:break-word}
+.pl-sug small{margin-top:1px;color:var(--muted);font-size:13px}
+.pl-at{grid-column:1/-1;margin:0;font-size:13px;line-height:1.4;color:var(--muted)}
+.pl-at:empty{display:none}
+.pl-at a{white-space:nowrap}
+.pl-row input:focus~.pl-at.miss{display:none}
 .plan{display:flex;flex-direction:column;gap:12px}
 .plan-row{display:flex;flex-direction:column;gap:6px;padding:12px;background:var(--sunk);border-radius:var(--r-s)}
 
@@ -721,9 +734,9 @@ const Q = {
   taxi:{label:'Taxi you trust',opt:true,ph:'Name and number'},
   essentials:{t:'area',rows:4,label:'Shops you use',opt:true,full:true,ph:'The supermarket you use and why\nThe best bakery, the pharmacy that opens on Sundays…'},
   extras:{t:'area',rows:3,label:'Extras you offer',full:true,ph:'Late check-out, with the price\nAirport transfer, breakfast basket…'},
-  favEat:{t:'places',label:'Your places to eat and drink',add:'Add a place to eat or drink',opt:true,full:true,hint:'Type the name, or paste a Google Maps link or a website. We find it on Google and add the map and opening hours. Your comment shows too: what to order, when to go.'},
-  favNight:{t:'places',label:'Your places for the evening and the night',add:'Add a place',opt:true,full:true,hint:'Paste a Google Maps link, a website, or just type the name. Then add your comment: what it is like, when to go.'},
-  favDo:{t:'places',label:'Add a place we missed',add:'Add another place',opt:true,full:true,hint:'Anything you recommend that was not in the cards. Just type the name: we find it on Google. It goes first in your guide.'},
+  favEat:{t:'places',label:'Your places to eat and drink',add:'Add a place to eat or drink',opt:true,full:true,hint:'Start typing the name and pick it from the list: we add the map and the opening hours. A website or a Google Maps link works too. Your comment shows in the guide: what to order, when to go.'},
+  favNight:{t:'places',label:'Your places for the evening and the night',add:'Add a place',opt:true,full:true,hint:'Start typing the name and pick it from the list. A website or a Google Maps link works too. Then add your comment: what it is like, when to go.'},
+  favDo:{t:'places',label:'Add a place we missed',add:'Add another place',opt:true,full:true,hint:'Anything you recommend that was not in the cards. Start typing the name and pick it from the list.'},
   eatStyle:{t:'chips',label:'The food you recommend',opt:true,opts:['Local and traditional','Seafood','Grill and meat','Fine dining','Cheap and cheerful','Cafés and brunch','Vegetarian friendly','International','Wine and tapas bars','Street food','Bakeries and sweets']},
   eatPrice:{t:'radio',label:'Usual price level',opt:true,opts:['Budget','Mid-range','Special occasion','A mix']},
   eatVibe:{t:'chips',label:'The places you like',opt:true,opts:['Where locals go','Great views','Terrace or garden','Quiet','Lively','Kid friendly','Dog friendly','Open late','Walking distance']},
@@ -775,7 +788,7 @@ function field(k){
   if (t === 'radio') return `<div class="f full"><span class="lab" id="l_${k}">${head}</span>${q.hint ? `<p class="hint">${esc(q.hint)}</p>` : ''}<div class="chips" role="radiogroup" aria-labelledby="l_${k}">${q.opts.map(x => `<label class="chip"><input type="radio" name="${k}" data-radio="${k}" value="${esc(x)}"${(v(k)||q.def)===x?' checked':''}><span>${esc(x + (q.suffix||''))}</span></label>`).join('')}</div></div>`;
   if (t === 'plan') { const cur = A[k] || {}; return `<div class="f full"><span class="lab" id="l_${k}">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="plan">${BIN_ROWS.map(([id, lab]) => `<div class="plan-row"><b>${esc(lab)}</b><div class="chips" role="group" aria-label="${esc(lab)}">${DAYS7.map(([d, dl]) => `<label class="chip"><input type="checkbox" data-plan="${k}" data-bin="${id}" value="${d}"${(cur[id] || []).includes(d) ? ' checked' : ''}><span>${dl}</span></label>`).join('')}</div></div>`).join('')}</div></div>`; }
   if (t === 'containers') return containersHTML(k, head, hint);
-  if (t === 'places') { const rows = placeRowsRaw(k); return `<div class="f full" id="pl_${k}"><span class="lab">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="pl">${rows.map((r, i) => `<div class="pl-row"><input data-pl="${k}" data-i="${i}" data-f="p" value="${esc(r.p)}" placeholder="Name, Google Maps link or website" aria-label="Place ${i + 1}"><textarea data-pl="${k}" data-i="${i}" data-f="c" rows="2" placeholder="Your comment: what to order, when to go…" aria-label="Comment on place ${i + 1}">${esc(r.c)}</textarea><button type="button" class="x" data-plrm="${k}" data-i="${i}" aria-label="Remove place ${i + 1}">×</button></div>`).join('')}</div><button type="button" class="btn small" data-pladd="${k}">+ ${esc(q.add || 'Add a place')}</button></div>`; }
+  if (t === 'places') { const rows = placeRowsRaw(k); return `<div class="f full" id="pl_${k}"><span class="lab">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="pl">${rows.map((r, i) => `<div class="pl-row"><input type="text" data-pl="${k}" data-i="${i}" data-f="p" ${psAttrs(`sug_${k}_${i}`)} value="${esc(r.p)}" placeholder="Start typing the name" aria-label="Place ${i + 1}"><div class="pl-sug" id="sug_${k}_${i}" role="listbox" aria-label="Places on Google" hidden></div>${plAt(r)}<textarea data-pl="${k}" data-i="${i}" data-f="c" rows="2" placeholder="Your comment: what to order, when to go…" aria-label="Comment on place ${i + 1}">${esc(r.c)}</textarea><button type="button" class="x" data-plrm="${k}" data-i="${i}" aria-label="Remove place ${i + 1}">×</button></div>`).join('')}</div><button type="button" class="btn small" data-pladd="${k}">+ ${esc(q.add || 'Add a place')}</button></div>`; }
   if (t === 'mood') return `<div class="f full"><span class="lab" id="l_${k}">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="moods" role="radiogroup" aria-labelledby="l_${k}">${MOODS.map(m => `<label class="mood"><input type="radio" name="mood" data-radio="mood" value="${m.id}"${v('mood')===m.id?' checked':''}><div class="box"><div class="mock ${m.cls}">${m.n?'<i></i>'.repeat(m.n):'?'}</div><b>${m.name}</b><small>${m.d}</small></div></label>`).join('')}</div></div>`;
   if (t === 'select') return `<div class="f${q.full?' full':''}"><label for="f_${k}">${head}</label><select id="f_${k}" data-k="${k}"><option value="">Choose…</option>${q.opts.map(x => `<option${v(k)===x?' selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
   const inp = t === 'area' ? `<textarea id="f_${k}" data-k="${k}" rows="${q.rows||4}" placeholder="${esc(q.ph||'')}">${esc(v(k))}</textarea>`
@@ -1624,11 +1637,64 @@ const placeRowsRaw = k => (Array.isArray(A[k]) && A[k].length ? A[k] : [{ p: '',
 const placeRows = k => (Array.isArray(A[k]) ? A[k] : []).filter(r => r && String(r.p || '').trim());
 document.addEventListener('input', e => {
   const t = e.target; if (!t.dataset || !t.dataset.pl) return;
-  const k = t.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })); rows[+t.dataset.i][t.dataset.f] = t.value; set(k, rows);
+  const k = t.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+t.dataset.i]; r[t.dataset.f] = t.value;
+  if (t.dataset.f === 'p') { delete r.gid; delete r.at; delete r.km; plShow(t, r); }   // another name: no longer the place picked
+  set(k, rows);
 });
 document.addEventListener('click', e => {
   const add = e.target.closest('[data-pladd]'); if (add) { const k = add.dataset.pladd; set(k, [...placeRowsRaw(k), { p: '', c: '' }]); render(); return; }
   const rm = e.target.closest('[data-plrm]'); if (rm) { const k = rm.dataset.plrm, rows = placeRowsRaw(k).filter((_, i) => i !== +rm.dataset.i); set(k, rows.length ? rows : [{ p: '', c: '' }]); render(); }
+});
+
+/* ---------- A place's name, looked up on Google as the host types (the host's lists, and the places in the editor) ---------- */
+// What Google suggests near the house, listed under the field so nothing is covered. Tapping one says which place it is, so a
+// misspelt name still lands on the right one (Yohann, 30 Oct 2026: "llul de llebre" was not found at the build). A row keeps the
+// place's Google id and the worker reads the rest from it; a name typed and not picked, or a link, the worker searches as before.
+const PS = { el: null, list: [], on: -1, timer: 0, turn: 0 };
+const psAttrs = id => `data-gs role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}" autocomplete="off"`;
+const psIsLink = x => /^(https?:|www\.)/i.test(String(x || '').trim());
+const psHouse = () => (CM.on ? edF().house : A) || {};
+function psDraw(){
+  const el = PS.el, box = el && document.getElementById(el.getAttribute('aria-controls')); if (!box) return;
+  box.innerHTML = PS.list.map((s, i) => `<button type="button" role="option" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}"><b>${esc(s.name)}</b><small>${esc([s.where, s.km ? s.km + ' km' : ''].filter(Boolean).join(' · '))}</small></button>`).join('');
+  box.hidden = !PS.list.length; el.setAttribute('aria-expanded', String(!!PS.list.length));
+  if (PS.on >= 0) el.setAttribute('aria-activedescendant', `${box.id}_${PS.on}`); else el.removeAttribute('aria-activedescendant');
+}
+function psClose(){ clearTimeout(PS.timer); PS.turn++; PS.list = []; PS.on = -1; psDraw(); PS.el = null; }
+async function psAsk(el){
+  const turn = ++PS.turn, h = psHouse(), text = el.value.trim(), q = new URLSearchParams({ suggest: h.lat ? text : [text, v('town')].filter(Boolean).join(', ') });
+  if (h.lat) { q.set('lat', h.lat); q.set('lng', h.lng); }
+  const d = await fetch('/api/places?' + q).then(r => r.json()).catch(() => ({}));   // no answer, no list: the host just goes on typing
+  if (turn === PS.turn) { PS.list = d.ok ? d.places || [] : []; PS.on = -1; psDraw(); }
+}
+function psType(el){
+  clearTimeout(PS.timer); if (PS.el && PS.el !== el) psClose(); PS.el = el;
+  if (el.value.trim().length < 3 || psIsLink(el.value) || window.__placesOff) { PS.turn++; PS.list = []; return psDraw(); }
+  PS.timer = setTimeout(() => psAsk(el), 300);
+}
+function psPick(i){
+  const s = PS.list[i], el = PS.el; if (!s) return; psClose();
+  if (el.dataset.gsp) return cmFindById(el.dataset.gsp, s.id);
+  const k = el.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+el.dataset.i]; Object.assign(r, { p: s.name, gid: s.id, at: s.where, km: s.km });
+  set(k, rows); el.value = s.name; plShow(el, r); softRefresh(); phoneSoon();
+  el.closest('.pl-row').querySelector('textarea').focus();
+}
+// Under the name: which place it is, with a link to check, or that it is not matched yet (not while typing: see theme2.css).
+function plAt(r){
+  const none = !String(r.p || '').trim() || psIsLink(r.p) || window.__placesOff;
+  return `<p class="pl-at${r.gid ? ' ok' : none ? '' : ' miss'}">${r.gid ? `✓ ${esc([r.at, r.km ? r.km + ' km' : ''].filter(Boolean).join(' · '))} <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.p)}&query_place_id=${encodeURIComponent(r.gid)}" target="_blank" rel="noopener">Check on Google Maps</a>` : none ? '' : 'Not matched on Google. Pick it from the list, or keep it as typed: it may have no map pin.'}</p>`;
+}
+function plShow(el, r){ el.parentElement.querySelector('.pl-at').outerHTML = plAt(r); }
+document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.gs !== undefined) psType(e.target); });
+document.addEventListener('focusin', e => { const t = e.target; if (t.dataset && t.dataset.gs !== undefined && t.value.trim() && !(placeRowsRaw(t.dataset.pl)[+t.dataset.i] || {}).gid) psType(t); });
+document.addEventListener('focusout', e => { if (e.target === PS.el) setTimeout(() => { if (PS.el && document.activeElement !== PS.el) psClose(); }, 200); });
+document.addEventListener('mousedown', e => { if (e.target.closest && e.target.closest('.pl-sug')) e.preventDefault(); });   // the field keeps the focus, so the list stays for the click
+document.addEventListener('click', e => { const o = e.target.closest && e.target.closest('[data-psi]'); if (o) psPick(+o.dataset.psi); });
+document.addEventListener('keydown', e => {
+  if (e.target !== PS.el) return; const n = PS.list.length;
+  if (e.key === 'Escape' && n) { e.preventDefault(); e.stopPropagation(); PS.turn++; PS.list = []; psDraw(); }
+  else if (e.key === 'Enter' && PS.on >= 0) { e.preventDefault(); psPick(PS.on); }
+  else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && n) { e.preventDefault(); PS.on = (PS.on + (e.key === 'ArrowDown' ? 1 : n)) % n; psDraw(); }
 });
 document.addEventListener('change', e => {
   const t = e.target; if (!t.dataset || !t.dataset.plan) return;
@@ -1759,7 +1825,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 30 Oct 2026, 18:37 (Madrid time, after commit d3b8529)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 31 Oct 2026, 19:57 (Madrid time, after commit 1724a04)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -2715,10 +2781,13 @@ function cItem(base, it, i, what) {
   const keys = Object.keys(it).filter(k => !C_SKIP.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'))).sort((a, b) => ord(a) - ord(b));
   const km = it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
   const meta = [typeof it.town === 'string' ? it.town : '', km, (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
-  const pos = typeof it.lat === 'number' ? `<div class="f full"><div class="cm-row"><button class="btn small" type="button" data-gfind="${p}">Find it on Google</button><span class="hint" id="${cmId(p + '/gf')}">${esc((CM.gfind || {})[p] || (it.nomap ? 'Not on the map yet: we look it up by its name.' : ''))}</span></div><label for="${cmId(p + '/gm')}">Or move the pin: paste a Google Maps link</label><p class="hint">${it.lat && !it.nomap ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
+  const said = (CM.gfind || {})[p], has = typeof it.lat === 'number';
+  const find = has ? `<div class="f full"><label for="${cmId(p + '/gs')}">Find it on Google</label><input id="${cmId(p + '/gs')}" type="text" ${psAttrs(cmId(p + '/sug'))} data-gsp="${p}" placeholder="Start typing the name"><div class="pl-sug" id="${cmId(p + '/sug')}" role="listbox" aria-label="Places on Google" hidden></div><p class="hint">${esc(said || (it.nomap ? 'Not on the map yet: pick it from the list to get its name, pin, distance and hours.' : 'Pick it from the list to update its pin, distance and hours.'))}</p></div>` : '';
+  const pin = has ? `<div class="f full"><label for="${cmId(p + '/gm')}">Or move the pin: paste a Google Maps link</label><p class="hint">${it.lat && !it.nomap ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
+  const first = it.nomap || said;   // a place with no pin yet starts here: finding it fills in the rest
   const check = Array.isArray(it.flags) || what !== 'contact' ? cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.') : '';
-  return cCard(p, cName(it), meta, `<div class="grid">${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], { long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' })).join('')}
-    ${'stalls_approx' in it ? cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx, { type: 'number', half: true }) : ''}${pos}
+  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], { long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' })).join('')}
+    ${'stalls_approx' in it ? cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx, { type: 'number', half: true }) : ''}${first ? '' : find}${pin}
     ${'schedule' in it || base.includes('markets') ? cSchedule(`${p}/schedule`, it.schedule) : ''}${'dates' in it || base.includes('events') ? cDates(`${p}/dates`, it.dates) : ''}</div>
     ${what === 'contact' ? '' : check}${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`);
 }
@@ -2749,29 +2818,29 @@ function edNewItem(arr) {
 }
 const edKm = (a, b, c, d) => { const R = 6371, r = x => x * Math.PI / 180, dl = r(c - a), dg = r(d - b), x = Math.sin(dl / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dg / 2) ** 2; return Math.round(2 * R * Math.asin(Math.sqrt(x))); };
 function edUpdateKm(ip) { const it = edGet(edC(), ip), h = edF().house || {}; if (!it || !h.lat || !it.lat) return; if ('km_from_house' in it) it.km_from_house = edKm(h.lat, h.lng, it.lat, it.lng); if ('km' in it) it.km = edKm(h.lat, h.lng, it.lat, it.lng); }
-// "Find it on Google": the place's name looked up near the house (/api/places?q=); its position, distance, town, Maps
-// link, Google id and, when it has none, its opening hours and kind. The answer is shown, so the host can tell.
+// "Find it on Google": the place picked from what Google suggests as the host types (psPick in start.js), read by its id
+// (/api/places?id=): its position, distance, town, Maps link, Google id and, when it has none, its name, opening hours and
+// kind. The answer is shown, so the host can tell.
 const ED_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'], ED_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], edP2 = n => String(n).padStart(2, '0');
 function edSchedule(periods) {
   if (!periods || !periods.length || (periods.length === 1 && !periods[0].close)) return null;
   const g = new Map(); for (const x of periods) { if (!x.close) continue; const k = `${edP2(x.open.hour)}:${edP2(x.open.minute)}-${edP2(x.close.hour)}:${edP2(x.close.minute)}`; g.set(k, [...(g.get(k) || []), ED_DAY[x.open.day]]); }
   return [...g].map(([k, d]) => ({ days: [...new Set(d)].sort((a, b) => ED_ORDER.indexOf(a) - ED_ORDER.indexOf(b)), open: k.slice(0, 5), close: k.slice(6) }));
 }
-async function cmFindOnGoogle(p, btn) {
-  const it = edGet(edC(), edPath(p)), h = edF().house || {}, nm = (it.name_local || edShown(it.name) || '').trim();
-  CM.gfind = CM.gfind || {};
-  if (!nm) { CM.gfind[p] = 'Give it a name first.'; return render(); }
-  btn.disabled = true; CM.gfind[p] = 'Looking it up…'; render();
+async function cmFindById(p, id) {
+  const it = edGet(edC(), edPath(p)), h = edF().house || {};
+  CM.gfind = CM.gfind || {}; CM.gfind[p] = 'Looking it up…'; render();
   try {
-    const d = await fetch(`/api/places?q=${encodeURIComponent(nm + (it.town ? ', ' + it.town : ''))}&lat=${h.lat}&lng=${h.lng}`).then(r => r.json());
+    const d = await fetch(`/api/places?id=${encodeURIComponent(id)}&lat=${h.lat}&lng=${h.lng}`).then(r => r.json());
     const f = d.ok && d.place;
     if (!f) { CM.gfind[p] = d.ok ? 'Not found on Google. Paste its Google Maps link below.' : d.message || 'Google could not be reached.'; return render(); }
     Object.assign(it, { lat: f.lat, lng: f.lng, km_from_house: f.km, gmaps: f.maps, gid: f.id }); delete it.nomap;
     if (f.town) it.town = f.town;
+    if (f.name && !edShown(it.name || {})) it.name = L6(f.name);
     if (!(it.schedule && it.schedule.length)) { const s = edSchedule(f.periods); if (s) it.schedule = s; }
     if (f.type && !(it.type && edShown(it.type))) it.type = { en: f.type };   // Google's kind, in English: "Translate missing texts" does the rest
     it.flags = (it.flags || []).filter(x => x !== 'check'); if (f.status === 'CLOSED_TEMPORARILY') it.flags.push('check');
-    CM.gfind[p] = `Found: ${f.name}${f.town ? ', ' + f.town : ''}, ${f.km} km from the house. Not the right one? Paste its Google Maps link below.`;
+    CM.gfind[p] = `Found: ${f.name}${f.town ? ', ' + f.town : ''}, ${f.km} km from the house. Not the right one? Search again, or paste its Google Maps link below.`;
     cmQueue(); render();
   } catch (e) { CM.gfind[p] = 'Google could not be reached. Try again.'; render(); }
 }
@@ -2928,7 +2997,7 @@ function cmPlaces(path, what) {
   return `${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
     <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
-    <p class="hint">A new ${esc(what)} starts at the house: move its pin with a Google Maps link. The distance from the house follows the pin.</p>`;
+    <p class="hint">A new ${esc(what)} has no pin yet: find it on Google, or paste its Google Maps link. The distance from the house follows the pin.</p>`;
 }
 
 /* --- Getting around: taxis, then stations and stops, on their own page (content/transport.json, section kind "transport") ---
@@ -3723,7 +3792,6 @@ document.addEventListener('click', e => {
   if (d.cfstop !== undefined) { const path = t.closest('[data-fpath]').dataset.fpath, kind = FIND_OF[path][0]; findMark(CM.find[kind].id, cmFindItems(kind, path).map(x => x.id)); return cmFindRefresh(); }
   if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
   if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
-  if (d.gfind) return cmFindOnGoogle(d.gfind, t);
   if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); const a = arr(d.addit); a.push(edNewItem(a)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
   if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }] }; return done(); }
   if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }); return done(); }

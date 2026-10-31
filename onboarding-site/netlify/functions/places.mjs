@@ -1,5 +1,6 @@
 // GET /api/places?lat=..&lng=..&cat=eat|coffee|drinks|todo&town=..
 // Top-rated places near the house from Google Places (New). Without lat/lng, the town is geocoded first.
+// ?suggest=<text>: what Google suggests as a host types a place's name. ?id=<google id>: one place by its id. ?q=<name>: one place by its name.
 const CATS = {
   eat: ['restaurant'], coffee: ['cafe', 'bakery', 'coffee_shop'], drinks: ['bar', 'wine_bar', 'pub'],
   todo: ['tourist_attraction', 'beach', 'park', 'museum', 'hiking_area', 'winery', 'historical_landmark']
@@ -12,6 +13,7 @@ const ACTIVITIES = ['amusement_center', 'amusement_park', 'water_park', 'zoo', '
 const ACTIVE_GUESTS = ['Families with kids', 'Groups of friends', 'Sports'];
 const todoTypes = want => { const t = want.flatMap(w => TODO_FOR[w] || []); return t.length ? [...new Set(['tourist_attraction', ...t])] : CATS.todo; };
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=86400' } });
+const fresh = o => new Response(JSON.stringify(o), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });   // a failure must not be remembered for a day
 const G = 'https://places.googleapis.com/v1/';
 async function g(path, body, mask, key){
   const r = await fetch(G + path, { method: 'POST', signal: AbortSignal.timeout(8000), headers: { 'content-type': 'application/json', 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': mask }, body: JSON.stringify(body) });
@@ -19,25 +21,52 @@ async function g(path, body, mask, key){
   return r.json();
 }
 const hav = (a, b, c, d) => { const R = 6371, t = Math.PI / 180, x = (c - a) * t, y = (d - b) * t; const h = Math.sin(x / 2) ** 2 + Math.cos(a * t) * Math.cos(c * t) * Math.sin(y / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+// One place, as the editor keeps it.
+const PLACE = ['id', 'displayName', 'location', 'googleMapsUri', 'formattedAddress', 'primaryTypeDisplayName', 'businessStatus', 'regularOpeningHours'];
+const placeFacts = (p, la, ln) => { const parts = String(p.formattedAddress || '').split(',').map(x => x.trim()), coded = parts.find(x => /\b\d{4,5}\b/.test(x));
+  return { id: p.id, name: p.displayName && p.displayName.text, lat: p.location.latitude, lng: p.location.longitude, maps: p.googleMapsUri,
+    km: Math.max(1, Math.round(hav(la, ln, p.location.latitude, p.location.longitude) * 1.3)), town: ((coded || parts[parts.length - 2] || '').replace(/\b\d{4,5}\b\s*([A-Z]{2}\b)?/, '').trim()) || null,
+    type: p.primaryTypeDisplayName && p.primaryTypeDisplayName.text, status: p.businessStatus || null, periods: (p.regularOpeningHours && p.regularOpeningHours.periods) || null }; };
 export default async (req) => {
   const key = process.env.GOOGLE_MAPS_API_KEY;
-  if (!key) return new Response(JSON.stringify({ ok: false, message: 'Places are not set up yet.' }), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
-  if (new URL(req.url).searchParams.get('probe')) return new Response(JSON.stringify({ ok: true, enabled: true }), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+  if (!key) return fresh({ ok: false, message: 'Places are not set up yet.' });
+  if (new URL(req.url).searchParams.get('probe')) return fresh({ ok: true, enabled: true });
   const u = new URL(req.url), cat = CATS[u.searchParams.get('cat')] ? u.searchParams.get('cat') : 'eat';
-  // ?q=<name>&lat=..&lng=..: one place by its name near the house (the editor's "Find it on Google" for a host's place).
+  const la = parseFloat(u.searchParams.get('lat')), ln = parseFloat(u.searchParams.get('lng'));
+  // ?suggest=<text>&lat=..&lng=..: as a host types a place's name (builder and editor). Places and sights within 50 km of the
+  // house, no streets or towns, so a misspelt name still finds the place: "llul de llebre" gives Restaurant Ull de Llebre. A
+  // bias instead of a limit wanders off ("bowling vend" gave the Vendée, in France). Without a position, the text alone.
+  // Priced per request: 10,000 free a month, then 2.83 USD per 1,000. Session tokens would save nothing: they need a paid Details call.
+  if (u.searchParams.get('suggest')) {
+    const around = la && ln ? { locationRestriction: { circle: { center: { latitude: la, longitude: ln }, radius: 50000 } }, origin: { latitude: la, longitude: ln } } : {};
+    try {
+      const d = await g('places:autocomplete', { input: u.searchParams.get('suggest').slice(0, 120), languageCode: 'en', includedPrimaryTypes: ['establishment'], ...around },
+        'suggestions.placePrediction.placeId,suggestions.placePrediction.structuredFormat,suggestions.placePrediction.distanceMeters', key);
+      return json({ ok: true, places: (d.suggestions || []).map(s => s.placePrediction).filter(p => p && p.structuredFormat).map(p => ({ id: p.placeId, name: p.structuredFormat.mainText.text,
+        where: (p.structuredFormat.secondaryText || {}).text || '', km: p.distanceMeters ? Math.max(1, Math.round(p.distanceMeters * 1.3 / 1000)) : null })) });
+    } catch (e) { return fresh({ ok: false, message: 'Could not reach Google right now.' }); }
+  }
+  // ?id=<google id>&lat=..&lng=..: the place a host picked from those suggestions, in the editor.
+  if (u.searchParams.get('id')) {
+    if (!(la && ln)) return json({ ok: false, message: 'The guide does not know where the house is.' });
+    try {
+      const r = await fetch(G + 'places/' + encodeURIComponent(u.searchParams.get('id').slice(0, 300)) + '?languageCode=en', { signal: AbortSignal.timeout(8000), headers: { 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': PLACE.join(',') } });
+      if (!r.ok) throw new Error('google_' + r.status);
+      const p = await r.json();
+      return json({ ok: true, place: p.location ? placeFacts(p, la, ln) : null });
+    } catch (e) { return fresh({ ok: false, message: 'Could not reach Google right now.' }); }
+  }
+  // ?q=<name>&lat=..&lng=..: one place by its name near the house (a station or a stop in Getting around).
   // The host sees the answer and keeps it or not: no name check here.
   if (u.searchParams.get('q')) {
-    const q = u.searchParams.get('q').slice(0, 160), la = parseFloat(u.searchParams.get('lat')), ln = parseFloat(u.searchParams.get('lng'));
+    const q = u.searchParams.get('q').slice(0, 160);
     if (!(la && ln)) return json({ ok: false, message: 'The guide does not know where the house is.' });
     try {
       const d = await g('places:searchText', { textQuery: q, maxResultCount: 1, languageCode: 'en', locationBias: { circle: { center: { latitude: la, longitude: ln }, radius: 50000 } } },
-        'places.id,places.displayName,places.location,places.googleMapsUri,places.formattedAddress,places.primaryTypeDisplayName,places.businessStatus,places.regularOpeningHours', key);
+        PLACE.map(f => 'places.' + f).join(','), key);
       const p = (d.places || [])[0];
       if (!p || !p.location || hav(la, ln, p.location.latitude, p.location.longitude) > 60) return json({ ok: true, place: null });
-      const parts = String(p.formattedAddress || '').split(',').map(x => x.trim()), coded = parts.find(x => /\b\d{4,5}\b/.test(x));
-      return json({ ok: true, place: { id: p.id, name: p.displayName && p.displayName.text, lat: p.location.latitude, lng: p.location.longitude, maps: p.googleMapsUri,
-        km: Math.max(1, Math.round(hav(la, ln, p.location.latitude, p.location.longitude) * 1.3)), town: ((coded || parts[parts.length - 2] || '').replace(/\b\d{4,5}\b\s*([A-Z]{2}\b)?/, '').trim()) || null,
-        type: p.primaryTypeDisplayName && p.primaryTypeDisplayName.text, status: p.businessStatus || null, periods: (p.regularOpeningHours && p.regularOpeningHours.periods) || null } });
+      return json({ ok: true, place: placeFacts(p, la, ln) });
     } catch (e) { return json({ ok: false, message: 'Could not reach Google right now.' }); }
   }
   let lat = parseFloat(u.searchParams.get('lat')), lng = parseFloat(u.searchParams.get('lng'));

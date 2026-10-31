@@ -445,6 +445,42 @@ try {
     await everyPage(p, 'builder');
     ok('builder: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // ---- A place's name, looked up as the host types (Yohann, 30 Oct 2026): the host sees which place it is, the row keeps Google's id ----
+  { const found = [{ id: 'g-ull', name: 'Restaurant Ull de Llebre', where: 'Carrer Santa Cristina, La Bisbal del Penedès, Spain', km: 3 }, { id: 'g-long', name: 'Restaurant amb un nom molt llarg per provar la pantalla petita de tres-cents seixanta', where: 'Avinguda del Mediterrani amb un nom molt llarg, Vilafranca del Penedès, Spain', km: 30 }];
+    const { ctx, p, errors } = await open(browser, B, 360, 780), asked = [];
+    await ctx.route('**/api/places**', r => { const q = new URL(r.request().url()).searchParams, t = q.get('suggest'); if (t) asked.push(t); return json(r, q.get('probe') ? { ok: true, enabled: true } : { ok: true, places: t === 'nowhere' ? [] : found }); });
+    await p.goto('http://editor.test/#favourites'); await ready(p);
+    await p.click('[data-pladd="favEat"]'); await p.waitForTimeout(150);
+    const row = '#pl_favEat .pl-row:last-child', field = row + ' input', list = row + ' .pl-sug button', hidden = async sel => !(await p.isVisible(sel));
+    await p.locator(field).pressSequentially('llul de llebre', { delay: 30 });
+    await p.waitForSelector(list, { timeout: 3000 }).catch(() => {});
+    ok('place lookup: the name field looks like the comment under it', (await p.$eval(field, e => getComputedStyle(e).borderRadius)) === (await p.$eval(row + ' textarea', e => getComputedStyle(e).borderRadius)));
+    ok('place lookup: as the host types, Google\'s places show under the field, with where they are', (await p.$$(list)).length === 2 && /La Bisbal del Penedès, Spain · 3 km/.test(await p.textContent(row + ' .pl-sug').catch(() => '')));
+    ok('place lookup: a burst of typing is one request', asked.length === 1 && asked[0] === 'llul de llebre', asked.join(' | '));
+    const box = await p.evaluate(sel => { const r = document.querySelector(sel), b = x => r.querySelector(x).getBoundingClientRect(); return { list: b('.pl-sug').bottom, comment: b('textarea').top, fits: [...r.querySelectorAll('.pl-sug button')].every(x => x.scrollWidth <= x.clientWidth), page: document.documentElement.scrollWidth - innerWidth }; }, row);
+    ok('place lookup, 360 px: the list pushes the comment down, covers nothing, and long names fit', box.list <= box.comment && box.fits && box.page <= 0, JSON.stringify(box));
+    await p.locator(row).scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'place-lookup-360.png') });
+    await p.click(list); await p.waitForTimeout(150);
+    ok('place lookup: a tap fills the name, says which place it is with a link to check, and moves on to the comment', (await p.inputValue(field)) === found[0].name && /La Bisbal/.test(await p.textContent(row + ' .pl-at.ok').catch(() => '')) && /query_place_id=g-ull/.test(await p.getAttribute(row + ' .pl-at a', 'href').catch(() => '')) && (await p.evaluate(() => document.activeElement.tagName)) === 'TEXTAREA' && await hidden(row + ' .pl-sug'));
+    await p.locator(row).scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'place-picked-360.png') });
+    await go(p, '#nearby'); await go(p, '#favourites');
+    ok('place lookup: the row keeps the place it picked', !!(await p.$(row + ' .pl-at.ok')));
+    await p.click(field); await p.keyboard.press('End'); await p.keyboard.type('x'); await p.waitForTimeout(100);
+    ok('place lookup: another name is no longer the place picked, and nothing nags while typing', !(await p.$(row + ' .pl-at.ok')) && await hidden(row + ' .pl-at.miss'));
+    await p.waitForSelector(list, { timeout: 3000 }).catch(() => {});
+    await p.keyboard.press('Escape'); await p.waitForTimeout(100);
+    ok('place lookup: Escape closes the list and stays on the page', await hidden(row + ' .pl-sug') && (await p.evaluate(() => location.hash)) === '#favourites');
+    await p.click(row + ' textarea'); await p.waitForTimeout(300);
+    ok('place lookup: a name that was not picked says so once the host moves on, and what it means', /may have no map pin/.test(await p.textContent(row + ' .pl-at.miss').catch(() => '')) && await p.isVisible(row + ' .pl-at.miss'));
+    await p.click(field); await p.waitForSelector(list, { timeout: 3000 }).catch(() => {});
+    await p.keyboard.press('ArrowDown'); await p.keyboard.press('ArrowDown'); await p.keyboard.press('ArrowDown'); await p.keyboard.press('Enter'); await p.waitForTimeout(150);
+    ok('place lookup: the list works with the keyboard, and a name left unpicked offers it again on coming back', (await p.inputValue(field)) === found[0].name && !!(await p.$(row + ' .pl-at.ok')));
+    const before = asked.length; await p.fill(field, 'https://maps.app.goo.gl/abc123'); await p.waitForTimeout(500);
+    ok('place lookup: a link is kept as it is: no search, no list, no warning', asked.length === before && await hidden(row + ' .pl-sug') && !(await p.$(row + ' .pl-at.ok')) && !(await p.$(row + ' .pl-at.miss')));
+    await p.fill(field, 'nowhere'); await p.waitForTimeout(500); await p.click(row + ' textarea'); await p.waitForTimeout(300);
+    ok('place lookup: nothing found on Google: no empty list, the name stays and says what it means', await hidden(row + ' .pl-sug') && (await p.inputValue(field)) === 'nowhere' && await p.isVisible(row + ' .pl-at.miss'));
+    ok('place lookup: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // ---- Places nearby: one card at a time, dragged with a finger or the arrow keys; each yes lands in the phone ----
   { const places = ['Cala Test', 'Castell Test', 'Camí Test', 'Jardins Test'].map((name, i) => ({ id: 'tp' + i, name, rating: 4.5, reviews: 200, type: 'Beach', maps: 'https://maps.google.com/?q=' + i, summary: 'A test place.', lat: A0.lat, lng: A0.lng, km: 2 + i, photo: photos[i] || null }));
     const deck = async (w, h) => { const o = await open(browser, B, w, h);
@@ -608,6 +644,26 @@ try {
     if (field) { await field.fill(((await field.inputValue()) || '') + ' '); await p.waitForTimeout(2200); }
     ok('editor, desktop: a saved change reloads the phone', !!field && (ctx.viewer || 0) > loads, `${before} -> ${loads} -> ${ctx.viewer}`);
     ok('editor, desktop phone: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // The editor finds a place the same way: the host picks it as they type, and the place takes its pin, distance, town and name from Google.
+  { const { ctx, p, errors } = await open(browser, E, 360, 780), read = [];
+    await ctx.route(u => u.pathname === '/api/places', route => { const q = new URL(route.request().url()).searchParams; if (q.get('id')) read.push(q.get('id'));
+      return json(route, q.get('id') ? { ok: true, place: { id: 'g-ull', name: 'Restaurant Ull de Llebre', lat: 41.28, lng: 1.48, maps: 'https://maps.google.com/?cid=7', km: 3, town: 'La Bisbal del Penedès', type: 'Restaurant', status: 'OPERATIONAL', periods: [{ open: { day: 4, hour: 13, minute: 0 }, close: { day: 4, hour: 16, minute: 0 } }] } } : q.get('suggest') ? { ok: true, places: [{ id: 'g-ull', name: 'Restaurant Ull de Llebre', where: 'La Bisbal del Penedès, Spain', km: 3 }] } : { ok: true, enabled: true }); });
+    await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(300);
+    await p.click('[data-addit="files/restaurants/items"]'); await p.waitForTimeout(250);
+    const card = 'details.cmi[open]:has([data-gsp])', field = card + ' [data-gsp]';
+    ok('editor, finding a place: one search field, no second button', !!(await p.$(field)) && !(await p.$('[data-gfind]')));
+    ok('editor, finding a place: a new place starts with it, above the name it will fill in', await p.evaluate(sel => { const f = document.querySelector(sel), n = f.closest('details').querySelector('input[data-p$="/name"]'); return !!n && f.getBoundingClientRect().top < n.getBoundingClientRect().top; }, field));
+    await p.locator(field).pressSequentially('llul de ll', { delay: 20 });
+    await p.waitForSelector(card + ' .pl-sug button', { timeout: 3000 }).catch(() => {});
+    await p.locator(card + ' .pl-sug').scrollIntoViewIfNeeded().catch(() => {}); await p.screenshot({ path: join(SHOTS, 'editor-place-lookup-360.png') });
+    await p.click(card + ' .pl-sug button').catch(() => {});
+    await p.waitForFunction(() => [...document.querySelectorAll('details.cmi')].some(d => /Restaurant Ull de Llebre/.test(d.querySelector('summary').textContent)), null, { timeout: 5000 }).catch(() => {});
+    const got = await p.evaluate(() => { const d = [...document.querySelectorAll('details.cmi')].find(x => /Restaurant Ull de Llebre/.test(x.querySelector('summary').textContent)); return d ? { head: d.querySelector('summary').textContent, text: d.textContent, name: d.querySelector('input[data-p$="/name"]') && d.querySelector('input[data-p$="/name"]').value } : {}; });
+    ok('editor, finding a place: the pick is read by its id and fills the empty name, town and distance', read[0] === 'g-ull' && got.name === 'Restaurant Ull de Llebre' && /La Bisbal del Penedès/.test(got.head || '') && /3 km/.test(got.head || ''), JSON.stringify({ read, ...got, text: undefined }));
+    ok('editor, finding a place: it says what it found, so the host can tell', /Found: Restaurant Ull de Llebre, La Bisbal del Penedès, 3 km from the house/.test(got.text || ''));
+    ok('editor, finding a place, 360 px: no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0);
+    ok('editor, finding a place: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // Getting around: the host types a station's name; Google places it, the worker finds its lines (mocked here), the card shows them.
   { const { ctx, p, errors } = await open(browser, E, 360, 780), jobs = [];

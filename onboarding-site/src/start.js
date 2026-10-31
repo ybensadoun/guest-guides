@@ -334,11 +334,64 @@ const placeRowsRaw = k => (Array.isArray(A[k]) && A[k].length ? A[k] : [{ p: '',
 const placeRows = k => (Array.isArray(A[k]) ? A[k] : []).filter(r => r && String(r.p || '').trim());
 document.addEventListener('input', e => {
   const t = e.target; if (!t.dataset || !t.dataset.pl) return;
-  const k = t.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })); rows[+t.dataset.i][t.dataset.f] = t.value; set(k, rows);
+  const k = t.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+t.dataset.i]; r[t.dataset.f] = t.value;
+  if (t.dataset.f === 'p') { delete r.gid; delete r.at; delete r.km; plShow(t, r); }   // another name: no longer the place picked
+  set(k, rows);
 });
 document.addEventListener('click', e => {
   const add = e.target.closest('[data-pladd]'); if (add) { const k = add.dataset.pladd; set(k, [...placeRowsRaw(k), { p: '', c: '' }]); render(); return; }
   const rm = e.target.closest('[data-plrm]'); if (rm) { const k = rm.dataset.plrm, rows = placeRowsRaw(k).filter((_, i) => i !== +rm.dataset.i); set(k, rows.length ? rows : [{ p: '', c: '' }]); render(); }
+});
+
+/* ---------- A place's name, looked up on Google as the host types (the host's lists, and the places in the editor) ---------- */
+// What Google suggests near the house, listed under the field so nothing is covered. Tapping one says which place it is, so a
+// misspelt name still lands on the right one (Yohann, 30 Oct 2026: "llul de llebre" was not found at the build). A row keeps the
+// place's Google id and the worker reads the rest from it; a name typed and not picked, or a link, the worker searches as before.
+const PS = { el: null, list: [], on: -1, timer: 0, turn: 0 };
+const psAttrs = id => `data-gs role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}" autocomplete="off"`;
+const psIsLink = x => /^(https?:|www\.)/i.test(String(x || '').trim());
+const psHouse = () => (CM.on ? edF().house : A) || {};
+function psDraw(){
+  const el = PS.el, box = el && document.getElementById(el.getAttribute('aria-controls')); if (!box) return;
+  box.innerHTML = PS.list.map((s, i) => `<button type="button" role="option" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}"><b>${esc(s.name)}</b><small>${esc([s.where, s.km ? s.km + ' km' : ''].filter(Boolean).join(' · '))}</small></button>`).join('');
+  box.hidden = !PS.list.length; el.setAttribute('aria-expanded', String(!!PS.list.length));
+  if (PS.on >= 0) el.setAttribute('aria-activedescendant', `${box.id}_${PS.on}`); else el.removeAttribute('aria-activedescendant');
+}
+function psClose(){ clearTimeout(PS.timer); PS.turn++; PS.list = []; PS.on = -1; psDraw(); PS.el = null; }
+async function psAsk(el){
+  const turn = ++PS.turn, h = psHouse(), text = el.value.trim(), q = new URLSearchParams({ suggest: h.lat ? text : [text, v('town')].filter(Boolean).join(', ') });
+  if (h.lat) { q.set('lat', h.lat); q.set('lng', h.lng); }
+  const d = await fetch('/api/places?' + q).then(r => r.json()).catch(() => ({}));   // no answer, no list: the host just goes on typing
+  if (turn === PS.turn) { PS.list = d.ok ? d.places || [] : []; PS.on = -1; psDraw(); }
+}
+function psType(el){
+  clearTimeout(PS.timer); if (PS.el && PS.el !== el) psClose(); PS.el = el;
+  if (el.value.trim().length < 3 || psIsLink(el.value) || window.__placesOff) { PS.turn++; PS.list = []; return psDraw(); }
+  PS.timer = setTimeout(() => psAsk(el), 300);
+}
+function psPick(i){
+  const s = PS.list[i], el = PS.el; if (!s) return; psClose();
+  if (el.dataset.gsp) return cmFindById(el.dataset.gsp, s.id);
+  const k = el.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+el.dataset.i]; Object.assign(r, { p: s.name, gid: s.id, at: s.where, km: s.km });
+  set(k, rows); el.value = s.name; plShow(el, r); softRefresh(); phoneSoon();
+  el.closest('.pl-row').querySelector('textarea').focus();
+}
+// Under the name: which place it is, with a link to check, or that it is not matched yet (not while typing: see theme2.css).
+function plAt(r){
+  const none = !String(r.p || '').trim() || psIsLink(r.p) || window.__placesOff;
+  return `<p class="pl-at${r.gid ? ' ok' : none ? '' : ' miss'}">${r.gid ? `✓ ${esc([r.at, r.km ? r.km + ' km' : ''].filter(Boolean).join(' · '))} <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.p)}&query_place_id=${encodeURIComponent(r.gid)}" target="_blank" rel="noopener">Check on Google Maps</a>` : none ? '' : 'Not matched on Google. Pick it from the list, or keep it as typed: it may have no map pin.'}</p>`;
+}
+function plShow(el, r){ el.parentElement.querySelector('.pl-at').outerHTML = plAt(r); }
+document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.gs !== undefined) psType(e.target); });
+document.addEventListener('focusin', e => { const t = e.target; if (t.dataset && t.dataset.gs !== undefined && t.value.trim() && !(placeRowsRaw(t.dataset.pl)[+t.dataset.i] || {}).gid) psType(t); });
+document.addEventListener('focusout', e => { if (e.target === PS.el) setTimeout(() => { if (PS.el && document.activeElement !== PS.el) psClose(); }, 200); });
+document.addEventListener('mousedown', e => { if (e.target.closest && e.target.closest('.pl-sug')) e.preventDefault(); });   // the field keeps the focus, so the list stays for the click
+document.addEventListener('click', e => { const o = e.target.closest && e.target.closest('[data-psi]'); if (o) psPick(+o.dataset.psi); });
+document.addEventListener('keydown', e => {
+  if (e.target !== PS.el) return; const n = PS.list.length;
+  if (e.key === 'Escape' && n) { e.preventDefault(); e.stopPropagation(); PS.turn++; PS.list = []; psDraw(); }
+  else if (e.key === 'Enter' && PS.on >= 0) { e.preventDefault(); psPick(PS.on); }
+  else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && n) { e.preventDefault(); PS.on = (PS.on + (e.key === 'ArrowDown' ? 1 : n)) % n; psDraw(); }
 });
 document.addEventListener('change', e => {
   const t = e.target; if (!t.dataset || !t.dataset.plan) return;

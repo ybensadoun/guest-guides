@@ -258,10 +258,12 @@ async function build(g) {
   // The host's favourite places, as they typed them: looked up on Google, so each one gets its real position, distance,
   // town, opening hours and Maps link (src/geocode.json, read by the generator). Not found: the generator says less.
   const added = Array.isArray(A.favDo) ? A.favDo : String(A.favDo || '').split(/[,\n]+/).map(p => ({ p }));
-  const fav = [...(A.favEat || []), ...(A.favNight || []), ...added].map(r => String((r && r.p) || '').trim()).filter(Boolean);   // Eat and drink, Nightlife, and what the host added to Attractions
+  const rows = [...(A.favEat || []), ...(A.favNight || []), ...added].filter(r => r && String(r.p || '').trim());   // Eat and drink, Nightlife, and what the host added to Attractions
+  const picked = rows.filter(r => r.gid), fav = rows.filter(r => !r.gid).map(r => r.p.trim());   // picked: chosen from Google's suggestions as they typed, so no search
   const cards = Object.values(A.swipes || {}).filter(s => s && s.d === 'yes' && s.cat === 'todo' && s.name && s.id && !String(s.id).startsWith('r:'));   // r: a researched card, which has all this already
-  if ((fav.length || cards.length) && env.GOOGLE_PLACES_KEY) {
+  if ((rows.length || cards.length) && env.GOOGLE_PLACES_KEY) {
     say(id, 'Finding your favourite places'); const geo = {};
+    for (const r of picked) { try { const g = await hostPlaceById(env.GOOGLE_PLACES_KEY, r.gid, { lat: A.lat, lng: A.lng }); if (g) geo[r.p.trim()] = g; } catch (e) { log('  picked place lookup failed:', e.message); } }
     for (const p of fav) { try { const g = await hostPlace(env.GOOGLE_PLACES_KEY, p, { lat: A.lat, lng: A.lng }); if (g) geo[p]= g; else log('  favourite place not found on Google:', p.slice(0, 60)); } catch (e) { log('  favourite place lookup failed:', e.message); } }
     for (const s of cards) { try { const g = await hostPlaceById(env.GOOGLE_PLACES_KEY, s.id, { lat: A.lat, lng: A.lng }); if (g) geo[String(s.name).trim()] = g; } catch (e) { log('  kept card lookup failed:', e.message); } }
     writeFileSync(join(job, 'src/geocode.json'), JSON.stringify(geo));
