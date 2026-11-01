@@ -119,8 +119,9 @@ function cPhotos(path, arr) {
   return `${(arr || []).length ? `<div class="thumbs">${arr.map((n, i) => `<div class="thumb"><img src="${esc(edImg(n))}" alt="" loading="lazy"><div class="cm-phb"><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="-1" aria-label="Move earlier">‹</button><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="1" aria-label="Move later">›</button></div><button class="x" type="button" data-cdel="${path}/${i}" data-now="1" aria-label="Remove photo ${i + 1}">×</button></div>`).join('')}</div>` : ''}
     <label class="btn small cm-file"><input class="sr" type="file" accept="image/*" multiple data-phadd="${path}">+ Add photos</label>`;
 }
-function cCard(p, title, meta, inner) {
-  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary><span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}</span><i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
+function cCard(p, title, meta, inner, order) {   // order: [this card's place, how many there are], for a list the host can put in order
+  const mv = order ? `<div class="cm-ord"><button type="button" data-cardmove="${esc(p)}" data-dir="-1" aria-label="Move ${esc(title)} up"${order[0] ? '' : ' disabled'}>↑</button><button type="button" data-cardmove="${esc(p)}" data-dir="1" aria-label="Move ${esc(title)} down"${order[0] < order[1] - 1 ? '' : ' disabled'}>↓</button></div>` : '';
+  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary><span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}</span>${mv}<i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
 }
 
 /* --- One place, contact or tile: its texts, links, position, hours or dates --- */
@@ -294,7 +295,7 @@ function cmHousePage(c) {
     ${hp.beds ? `<h3 class="cm-h">Beds</h3>${cLines(P + '/beds', hp.beds, 'Add a bed')}` : ''}
     <h3 class="cm-h">Amenities</h3><div class="cm-list">${(hp.amenities || []).map((g, i) => cCard(`${P}/amenities/${i}`, edShown(g.t), cmCount((g.items || []).length, 'item', 'items'), `<div class="grid">${cf('Group title', `${P}/amenities/${i}/t`, g.t, { i18n: true })}</div>${cLines(`${P}/amenities/${i}/items`, g.items, 'Add an item')}`)).join('')}</div>
     <h3 class="cm-h">Photos</h3>${cPhotos(P + '/photos', hp.photos)}
-    ${(hp.tour || []).length ? `<h3 class="cm-h">Photos by room</h3><div class="cm-list">${hp.tour.map((r, i) => cCard(`${P}/tour/${i}`, edShown(r.room), cmCount((r.photos || []).length, 'photo', 'photos'), `<div class="grid">${cf('Room name', `${P}/tour/${i}/room`, r.room, { i18n: true })}</div>${cPhotos(`${P}/tour/${i}/photos`, r.photos)}`)).join('')}</div>` : ''}`;
+    ${(hp.tour || []).length ? `<h3 class="cm-h">Photos by room</h3><div class="cm-list">${hp.tour.map((r, i) => cCard(`${P}/tour/${i}`, edShown(r.room), cmCount((r.photos || []).length, 'photo', 'photos'), `<div class="grid">${cf('Room name', `${P}/tour/${i}/room`, r.room, { i18n: true })}</div>${cPhotos(`${P}/tour/${i}/photos`, r.photos)}`, [i, hp.tour.length])).join('')}</div>` : ''}`;
 }
 function cmHouseGuide(c) {
   const h = (c.files || {}).house || {}, blocks = ((c.files || {}).message || {}).blocks || [];
@@ -302,7 +303,7 @@ function cmHouseGuide(c) {
     <h3 class="cm-h">Parts of the house guide</h3><div class="cm-list">${blocks.map((b, i) => { const P = `files/message/blocks/${i}`;
       return cCard(P, edShown(b.title) || b.id, `${cmCount((b.items || []).length, 'line', 'lines')} · ${cmCount((b.photos || []).length, 'photo', 'photos')}`,
         `<div class="grid">${cf('Title', P + '/title', b.title, { i18n: true })}${b.sub ? cf('Line under the title', P + '/sub', b.sub) : ''}</div>
-        <div class="f full"><span class="lab">Photos</span>${cPhotos(P + '/photos', b.photos)}</div><div class="f full"><span class="lab">What guests need to know</span>${cLines(P + '/items', b.items, 'Add a line')}</div>`); }).join('')}</div>`;
+        <div class="f full"><span class="lab">Photos</span>${cPhotos(P + '/photos', b.photos)}</div><div class="f full"><span class="lab">What guests need to know</span>${cLines(P + '/items', b.items, 'Add a line')}</div>`, [i, blocks.length]); }).join('')}</div>`;
 }
 function cmWifi(c) {
   const w = (c.private || {}).wifi;
@@ -1125,6 +1126,10 @@ document.addEventListener('click', e => {
   if (d.addsch) { arr(d.addsch).push({ days: [], open: '09:00', close: '14:00' }); return done(); }
   if (d.adddate) { arr(d.adddate).push({ start: '', end: '', status: 'expected' }); return done(); }
   if (d.translate !== undefined) return cmTranslate();
+  if (d.cardmove) { e.preventDefault();   // the arrows sit in the card's title: they must not open it
+    const p = edPath(d.cardmove), i = p[p.length - 1], a = edGet(edC(), p.slice(0, -1)), j = i + Number(d.dir); if (!Array.isArray(a) || j < 0 || j >= a.length) return;
+    [a[i], a[j]] = [a[j], a[i]]; const there = d.cardmove.replace(/\d+$/, j), was = CM.open.has(d.cardmove), other = CM.open.has(there);
+    was ? CM.open.add(there) : CM.open.delete(there); other ? CM.open.add(d.cardmove) : CM.open.delete(d.cardmove); return done(); }
   if (d.phmove) { const p = edPath(d.phmove), i = p[p.length - 1], a = edGet(edC(), p.slice(0, -1)), j = i + Number(d.dir); if (Array.isArray(a) && j >= 0 && j < a.length) { [a[i], a[j]] = [a[j], a[i]]; done(); } return; }
   if (d.addtile) { edAddTile(d.addtile); return done(); }
   if (d.cpin) { cmPin(d.cpin); return done(); }
@@ -1186,6 +1191,10 @@ function cmInit() {
 .cmi>summary span{display:flex;flex-direction:column;min-width:0}
 .cmi>summary b{overflow-wrap:break-word}
 .cmi>summary small{color:var(--muted);font-size:13px}
+.cm-ord{display:flex;gap:4px;margin-left:auto;flex:none}
+.cm-ord button{width:40px;height:40px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);font-size:18px;line-height:1;cursor:pointer}
+.cmi[open] .cm-ord button{background:var(--sunk)}
+.cm-ord button:disabled{opacity:.35;cursor:default}
 .cmi>summary .chev{flex:none;width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 4px 4px}
 .cmi[open]>summary .chev{transform:rotate(-135deg);margin:4px 4px 0}
 .cmb{display:flex;flex-direction:column;gap:16px;padding:4px 14px 16px}

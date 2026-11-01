@@ -146,21 +146,21 @@ _k=seg1.index("  {id:'guide',"); seg1=seg1[:_k]+_blk+seg1[_k:]
 
 # ---- v4: sleeping arrangements, optional ratings and reviews ----
 seg1=rep(seg1,"  source:{label:'Your listing link or text'},","""  source:{label:'Your listing link or text'},
-  sleeping:{t:'area',rows:4,label:'Sleeping arrangements',opt:true,full:true,ph:'Bedroom 1: double bed\\nBedroom 2: two single beds\\nLiving room: sofa bed',hint:'One line per bedroom, as your listing says. Guests see it in the Bedrooms part of the house guide.'},
+  sleeping:{t:'area',rows:4,label:'Sleeping arrangements',opt:true,full:true,ph:'Bedroom 1: double bed\\nBedroom 2: two single beds\\nLiving room: sofa bed',hint:'One line per bedroom, as your listing says. Guests see it on the house page.'},
+  welcome:{t:'area',rows:5,label:'About the house',opt:true,full:true,hint:'Guests read this on the house page.'},
   ratingAvg:{t:'number',label:'Your rating',ph:'4.9',opt:true,hint:'Out of 5, as shown on your listing.'},
   ratingCount:{t:'number',label:'Number of reviews',ph:'89',opt:true},
   reviewQuotes:{t:'area',rows:5,label:'Reviews you would like to show',opt:true,full:true,ph:'Lovely house, we did not want to leave. - Marie\\nPerfect for a family weekend. - Jordi',hint:'Up to three short reviews, one per line, with the first name after a dash. Only add reviews you are happy to share.'},
   reviewsNote:{label:'Ratings and reviews'},""")
-seg1=rep(seg1,"'beds','privacyNote']}","'beds','sleeping','privacyNote']}")
+seg1=rep(seg1,"'beds','privacyNote']}","'beds','sleeping','welcome','privacyNote']}")
 seg1=rep(seg1,"  {id:'map',name:'Map'","  {id:'reviews',name:'Ratings and reviews',d:'Your listing rating and latest reviews, shown as they are.',built:true,on:()=>false},\n  {id:'map',name:'Map'")
 seg1=rep(seg1,"  {id:'taste',group:'area'","""  {id:'reviews',group:'area',title:'Ratings and reviews',sub:'Optional',icon:'heart',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'half',sec:'reviews',
-   lead:'Show your listing rating and reviews at the end of the guide, as they are on your listing. We read them from your listing, you do not pick or type anything.',need:[],fields:['ratingAvg','ratingCount','reviewsNote']},
+   lead:'Show your listing rating and reviews on the house page, as they are on your listing. We read them from your listing, you do not pick or type anything.',need:[],fields:['ratingAvg','ratingCount','reviewsNote']},
   {id:'taste',group:'area'""")
 views=rep(views,"  if (k === 'privacyNote')","  if (k === 'reviewsNote') return `<div class=\"note full\"><div>Guests see your rating and your latest reviews as they are on your listing, with a link to read the rest. We do not choose or edit them.</div></div>`;\n  if (k === 'privacyNote')")
 
 # ---- v5: photos show their image, room names match the tiles, start over ----
 views=rep(views,"${/^image\\//.test(u.type) || u.dataUrl ?","${/^image\\//.test(u.type) || u.dataUrl || u.remote ?")
-views=rep(views,"${ROOMS.map(r => `<option${u.room===r?' selected':''}>${r}</option>`).join('')}","${roomChoices(u).map(r => `<option${(u.roomLabel||u.room)===r?' selected':''}>${esc(r)}</option>`).join('')}")
 forms=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'forms.html')).read()
 html=seg1+'\n'+views+'\n'+runtime+'\n})();\n</script>\n'+forms+'</body>\n</html>\n'
 import subprocess,datetime

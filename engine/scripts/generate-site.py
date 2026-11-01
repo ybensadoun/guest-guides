@@ -57,8 +57,9 @@ def L(text):
         elif text: untranslated.add(text); out[l] = out[args.src]   # shown in the host's words until translated: never an empty text
     return out
 
-def lines(k):
-    return [re.sub(r'^\s*[-*•]\s*', '', x).strip() for x in (A.get(k) or '').splitlines() if x.strip()]
+def text_lines(t):
+    return [re.sub(r'^\s*[-*•]\s*', '', x).strip() for x in (t or '').splitlines() if x.strip()]
+def lines(k): return text_lines(A.get(k))
 
 # ---------- images ----------
 def load_upload(u):
@@ -324,15 +325,19 @@ if own_cover: save_jpg(im, SITE / 'public/house.jpg', 1800)
 
 ROOM_KEY = {'Living room': 'living', 'Kitchen': 'kitchen', 'Bedroom': 'bedrooms', 'Bathroom': 'bathrooms', 'Pool': 'pool', 'Garden': 'outside',
             'Terrace': 'outside', 'Outside': 'outside', 'Office': 'office', 'Laundry': 'laundry', 'View': 'outside', 'Other': 'other', '': 'other'}
-room_photos = {}
-for i, u in enumerate(by_kind.get('photo', [])):
-    im = load_upload(u)
-    if not im: continue
+room_photos, tour = {}, {}   # by kind of room, for the house guide; by the room's own name ("Bedroom 2"), for the house page
+def keep_room_photo(im, u):
     key = ROOM_KEY.get(u.get('room', ''), 'other')
     n = len(room_photos.setdefault(key, [])) + 1
     f = f'guide/{key}-{n}.jpg'
     save_jpg(im, SITE / 'public' / f)
     room_photos[key].append(f)
+    label = str(u.get('label') or u.get('room') or '').strip()
+    if label and label != 'Other': tour.setdefault(label.lower(), {'n': label, 'c': u.get('room', ''), 'photos': []})['photos'].append(f)
+for i, u in enumerate(by_kind.get('photo', [])):
+    im = load_upload(u)
+    if not im: continue
+    keep_room_photo(im, u)
 
 # Photos taken from the host's listing arrive as links (the listing_photos form field), with the room the host confirmed.
 def _listing_photos():
@@ -356,11 +361,7 @@ for idx, x in enumerate(_listing_photos()):
     except Exception as e:
         print('listing photo not downloaded:', x['url'], e); continue
     if not cover and str(A.get('coverUrl', '')).split('?')[0] == x['url']: save_jpg(im, SITE / 'public/house.jpg', 1800)   # the listing's own cover photo
-    key = ROOM_KEY.get(x.get('room', ''), 'other')
-    n = len(room_photos.setdefault(key, [])) + 1
-    f = f'guide/{key}-{n}.jpg'
-    save_jpg(im, SITE / 'public' / f)
-    room_photos[key].append(f)
+    keep_room_photo(im, x)
 
 # The cover the host picked among the listing photos, when it is not one of the photos kept for the house guide
 _cu = str(A.get('coverUrl') or '').split('?')[0]
@@ -432,6 +433,7 @@ house = {'_doc': 'lat/lng: an approximate area point, never the address.', 'name
          'photoPos': '50% 55%', 'checkout': (A.get('checkOut') or '11:00')[:5]}
 HAS_PHOTO = (SITE / 'public/house.jpg').exists()
 if HAS_PHOTO: house['photo'] = 'house.jpg'
+elif first_room: house['photo'] = str(first_room.relative_to(SITE / 'public'))
 # Cover: the host's own photo, else the listing's cover photo (the default, shown in the Look step), else drawn from the colours.
 house['cover'] = 'photo' if own_cover or (HAS_PHOTO and A.get('coverChoice') != 'drawn') else 'themed'
 if wifi:   # the Wi-Fi password never goes in tracked files: private/wifi.json is git-ignored (the engine merges it into house.wifi)
@@ -439,6 +441,15 @@ if wifi:   # the Wi-Fi password never goes in tracked files: private/wifi.json i
     (SITE / 'private/wifi.json').write_text(json.dumps(wifi, ensure_ascii=False, indent=2))
 if A.get('listingUrl'): house['listing'] = A['listingUrl']
 (SITE / 'content/house.json').write_text(json.dumps(house, ensure_ascii=False, indent=1))
+
+# The rooms as the host ordered them (answers.rooms: [{n: name, c: kind of room, t: what guests should know there}]), then
+# any other room a photo names. This one order is the house page's and the house guide's.
+rooms = [r for r in (A.get('rooms') or []) if isinstance(r, dict) and str(r.get('n') or '').strip()]
+rooms += [{'n': d['n'], 'c': d['c']} for k, d in tour.items() if k not in {str(r['n']).strip().lower() for r in rooms}]
+room_kind = lambda r: ROOM_KEY.get(r.get('c') or '', 'other')
+HOUSE_PAGE = bool(on('house') and (HAS_PHOTO or room_photos))
+LISTING_URL = (A.get('listingUrl') or '').strip()
+LISTING_SRC = next((n for k, n in (('airbnb', 'Airbnb'), ('booking.com', 'Booking.com'), ('vrbo', 'Vrbo')) if k in LISTING_URL.lower()), '')
 
 # House guide: rooms from the photos, each how-to line in the room it talks about.
 KW = {'kitchen': r'coffee|oven|hob|stove|dishwasher|fridge|freezer|kettle|microwave|kitchen|cocina|cuina|nespresso|toaster',
@@ -456,7 +467,11 @@ items = {k: [] for k in ROOM}
 for ln in lines('howTos'):
     k = next((r for r, rx in KW.items() if re.search(rx, ln, re.I)), 'other')
     items[k].append(ln)
-items['bedrooms'] = lines('sleeping') + items['bedrooms']   # sleeping arrangements as the listing states them
+# What the host wrote in a room's own card goes with that room; a kitchen has one card, bedrooms may have several.
+for r in rooms:
+    for ln in text_lines(r.get('t')):
+        items[room_kind(r)].append(f"{r['n'].strip()}: {ln}" if sum(room_kind(x) == room_kind(r) for x in rooms) > 1 else ln)
+if not HOUSE_PAGE: items['bedrooms'] = lines('sleeping') + items['bedrooms']   # sleeping arrangements as the listing states them; the house page has them otherwise
 # The listing's own equipment list (answers.listingAmenities, as the page states it), sorted into the rooms: each room
 # gets a short line under its title and "Also in the kitchen: ...", like Ca La Kimberly's house guide. Safety items go
 # to "Good to know"; Wi-Fi, parking and generic lines are left out (they have their own places).
@@ -480,7 +495,9 @@ low = lambda x: x[:1].lower() + x[1:] if x[1:2].islower() else x
 ALSO = {'living': 'Also in the living room', 'kitchen': 'Also in the kitchen', 'bedrooms': 'Also in the bedrooms', 'bathrooms': 'Also in the bathrooms',
         'pool': 'Also by the pool', 'outside': 'Also outside', 'laundry': 'Also in the laundry', 'office': 'Also in the office', 'other': 'Also in the house'}
 blocks = []
-for k, (icon, tone, title) in ROOM.items():
+first = [k for k in dict.fromkeys(room_kind(r) for r in rooms) if k != 'other']   # "Good to know" stays last
+for k in first + [k for k in ROOM if k not in first]:
+    icon, tone, title = ROOM[k]
     if not items[k] and not room_photos.get(k) and not am_room[k]: continue
     b = {'id': k, 'icon': icon, 'tone': tone, 'title': L(title)}
     if am_room[k]:
@@ -501,17 +518,50 @@ if A.get('checkIn'): co.insert(0, f"Check-in from {A['checkIn'][:5]}.")
 blocks.append({'id': 'checkout', 'icon': 'key', 'tone': 'ink', 'title': L('Check-in and check-out'), 'items': [L(x) for x in co]})
 (SITE / 'content/message.json').write_text(json.dumps({'_doc': 'House guide by room, from the host’s onboarding answers.', 'blocks': blocks}, ensure_ascii=False, indent=1))
 
+def _num(x):
+    try: return float(str(x).replace(',', '.'))
+    except Exception: return None
+# The house page (#s/house), the same page as Ca La Kimberly's: photos, the key facts, the description, the rooms in the
+# host's order, the beds, what the place offers, the reviews.
+if HOUSE_PAGE:
+    in_en = lambda x: TR.get(x, {}).get('en', x).lower()
+    facts = [str(A.get('propertyType') or '').strip()]
+    for k, one, many in (('sleeps', 'guest', 'guests'), ('bedrooms', 'bedroom', 'bedrooms'), ('beds', 'bed', 'beds'), ('bathrooms', 'bathroom', 'bathrooms')):
+        n = str(A.get(k) or '').strip()
+        if n and n != '0': facts.append(f'{n} {one if n == "1" else many}')
+    # In the host's order: each room with its photos; the gallery on top starts with the cover, then one photo of each room.
+    by_name = [tour[str(r['n']).strip().lower()] for r in rooms if str(r['n']).strip().lower() in tour]
+    leads, rest = [d['photos'][0] for d in by_name], [f for d in by_name for f in d['photos'][1:]]
+    leads += [f for fs in room_photos.values() for f in fs if f not in leads and f not in rest]
+    # A few big things on top, in the listing's own words when it says them ("Private pool: open all year"), else the host's tick.
+    said = [str(x).strip() for x in (A.get('listingAmenities') or []) if str(x).strip()]
+    ticked = [str(x).strip() for x in (A.get('amenities') or []) if str(x).strip()]
+    highlights = []
+    for icon, rx in (('pool', r'pool|piscin'), ('flame', r'bbq|barbecue|barbacoa|grill'), ('view', r'\bviews?\b|vistas?\b|\bvues?\b'), ('desk', r'workspace|work area|zona para trabajar')):
+        x = next((v for v in said + ticked if re.search(rx, v, re.I)), None)
+        if x:
+            t, _, more = x.partition(':')
+            highlights.append({'icon': icon, 't': L(t), **({'s': L(more)} if more.strip() else {})})
+    offers = ticked + [x.split(':')[0].strip() for x in said if not any(re.search(r'\b' + re.escape(c.lower()) + r'\b', in_en(x)) for c in ticked)]
+    page = {'_doc': 'The house page (#s/house), from the listing and the host\'s rooms. photos: the gallery on top. tour: the rooms in the host\'s order. amenFirst: how many amenities show before "Show all".',
+            'summary': L(' · '.join(x for x in facts if x)), 'photos': (['house.jpg'] if HAS_PHOTO else []) + (leads + rest)[:16], 'highlights': highlights, 'beds': [L(x) for x in lines('sleeping')]}
+    if A.get('welcome'): page['description'] = L(A['welcome'])
+    if _num(A.get('ratingAvg')): page['rating'] = {'stars': _num(A.get('ratingAvg')), 'count': int(_num(A.get('ratingCount')) or 0) or None}
+    if by_name: page['tour'] = [{'room': L(d['n']), 'photos': d['photos']} for d in by_name]
+    if offers: page.update({'amenities': [{'t': L('What this place offers'), 'items': [L(x) for x in dict.fromkeys(offers)]}], 'amenFirst': 8})
+    if LISTING_URL: page['url'] = LISTING_URL
+    m = re.match(r'(https?://[^/]*airbnb\.[^/]+/rooms/\d+)', LISTING_URL)
+    if m: page['photosUrl'] = m.group(1) + '/photos'
+    (SITE / 'content/house-page.json').write_text(json.dumps(page, ensure_ascii=False, indent=1))
+
 # Ratings and reviews (optional section the host switched on). Data contract for the guide: content/reviews.json.
 # Live, not curated: the guide shows the listing's own rating and latest reviews as they are, with a link. The values here are a
 # snapshot taken at onboarding (the fallback). The engine shows it on the house page, or at the end of the house guide when there is no house page.
 if M.get('reviews') and (A.get('listingUrl') or A.get('ratingAvg')):
-    def _num(x):
-        try: return float(str(x).replace(',', '.'))
-        except Exception: return None
     (SITE / 'content/reviews.json').write_text(json.dumps({
         '_doc': 'Ratings and reviews. Live from the listing, never curated by hand. rating and count: a snapshot from onboarding. quotes: the listing latest reviews as they are, [{name, date: YYYY-MM, text, lang}]. updated: YYYY-MM-DD last read, or null.',
         'mode': 'live', 'rating': _num(A.get('ratingAvg')), 'count': int(_num(A.get('ratingCount')) or 0) or None,
-        'source': 'Airbnb' if 'airbnb' in (A.get('listingUrl') or '').lower() else '', 'url': A.get('listingUrl') or '', 'quotes': [], 'updated': None}, ensure_ascii=False, indent=1))
+        'source': LISTING_SRC or 'the listing', 'url': LISTING_URL, 'quotes': [], 'updated': None}, ensure_ascii=False, indent=1))
 
 def info(fid, title_key_text, paras, icon='car', tone='blue'):
     (SITE / f'content/{fid}.json').write_text(json.dumps({'blocks': [
@@ -680,7 +730,8 @@ SEC = [
     ('nightlife', 'area', 'spots', 'nightlife', {'color': 'nightlife'}, 'nightlife'),   # optional (off unless the host switched it on); not in Ca La Kimberly
     ('events', 'area', 'events', 'events', {'color': 'events'}, 'events'),
 ]
-sections, modules, research = [], {'house': False, 'quick': bool(quick) and on('quick'), 'map': on('map')}, []
+sections, modules, research = [], {'house': HOUSE_PAGE, 'quick': bool(quick) and on('quick'), 'map': on('map')}, []
+if HOUSE_PAGE: sections.append({'id': 'house', 'group': 'house', 'kind': 'house', 'labelKey': 'theHouse', 'status': 'live', 'file': 'house-page'})
 for sid, grp, kind, label, extra, mod in SEC:
     want = on(mod, mod in ('houseguide', 'emergency', 'todo', 'rubbish', 'markets'))   # rubbish needs the host's answer, markets need researched content: both checked below
     if sid == 'garbage': want = want and bool(rmode)   # only the host can tell us: no answer, no section
@@ -698,9 +749,15 @@ if 'markets' not in modules or not modules['markets'] or not (SITE / 'content/ma
 
 # Site-specific strings: the place name and area.
 area = ', '.join(x for x in [town, A.get('region', '')] if x)
+LISTING_WORDS = {'housePhotosSub': 'Photos, rooms and description', 'airbnbReviews': '{n} reviews',
+                 'bookAirbnb': f'Book on {LISTING_SRC}' if LISTING_SRC else 'See the listing',
+                 'bookAirbnbLead': f'Not staying with us yet? Check dates and book on {LISTING_SRC}.' if LISTING_SRC else 'Not staying with us yet? See the listing.',
+                 'allPhotosAirbnb': f'All photos on {LISTING_SRC}' if LISTING_SRC else 'All photos'}
 for l in LANGS:
     o = {'appName': name, 'houseName': place, 'brandSub': area}
     if A.get('tagline'): o['welcome'] = L(A['tagline']).get(l, A['tagline'])
+    if LISTING_SRC != 'Airbnb':   # the house page's strings name Airbnb; another listing, or none, gets its own
+        for k, x in LISTING_WORDS.items(): o[k] = L(x).get(l, x)
     (SITE / f'i18n/{l}.json').write_text(json.dumps(o, ensure_ascii=False, indent=2))
 
 site = {

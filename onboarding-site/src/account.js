@@ -413,7 +413,7 @@ const startedHere = () => !!(A._draftAt || A.listingUrl || A._skipStart);
 const cleanForAccount = () => {
   const p = { ...A }; delete p._log; delete p._sessions;
   p._remote = uploads.filter(u => u.remote).map(u => { const r = { ...u }; delete r.blob; return r; });
-  p._uploads = uploads.filter(u => !u.remote && u.path).map(u => ({ kind: u.kind, path: u.path, room: u.room || '', name: u.name || '' }));
+  p._uploads = uploads.filter(u => !u.remote && u.path).map(u => ({ kind: u.kind, path: u.path, room: u.room || '', label: u.roomLabel || '', name: u.name || '' }));
   return p;
 };
 async function wipeLocal(){

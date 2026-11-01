@@ -481,6 +481,60 @@ try {
     ok('place lookup: nothing found on Google: no empty list, the name stays and says what it means', await hidden(row + ' .pl-sug') && (await p.inputValue(field)) === 'nowhere' && await p.isVisible(row + ' .pl-at.miss'));
     ok('place lookup: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // ---- Rooms and photos: each room its own card, as guests see it, in the host's order; the phone follows (Yohann, 30 Oct 2026) ----
+  { const rooms = [['Salón', 'Living room'], ['Salón', 'Living room'], ['Cocina completa', 'Kitchen'], ['Dormitorio 1', 'Bedroom'], ['Dormitorio 2', 'Bedroom'], ['Zona para hacer la colada muy larga', 'Laundry'], ['Piscina', 'Pool']];
+    const G = { ...B, answers: { ...B.answers, rooms: undefined, welcome: 'A bright house with a pool.', sleeping: 'Bedroom 1: king bed\nBedroom 2: double bed',
+      _remote: [...rooms, ['', '']].map(([roomLabel, room], i) => { const src = `https://a0.muscache.com/im/pictures/room-test-${i}.jpg`; return { id: 'rp' + i, kind: 'photo', remote: true, src, url: src + '?im_w=720', name: roomLabel || 'Listing photo ' + i, room, roomLabel }; }) } };
+    const { ctx, p, errors } = await open(browser, G, 360, 780);
+    await p.goto('http://editor.test/'); await ready(p); await go(p, '#photos'); await p.waitForSelector('.rm .thumb', { timeout: 5000 }).catch(() => {});
+    const names = () => p.$$eval('.rm [data-rmname]', els => els.map(e => e.value)), wide = () => p.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+    const inGuide = () => inPhone(p, `d => [...d.querySelectorAll('.pv-card h3')].map(h => h.textContent)`);
+    const n0 = await names();
+    ok('rooms: one card per room, in the order of the listing, the two photos of a room together', n0.join() === 'Salón,Cocina completa,Dormitorio 1,Dormitorio 2,Zona para hacer la colada muy larga,Piscina' && (await p.$$('.rm[data-rmi="0"] .thumb')).length === 2, n0.join());
+    ok('rooms: a photo with no room waits in its own card, and nothing is lost', /Not in a room yet/.test(await p.textContent('#roomsBox')) && (await p.$$('.rm:not([data-rmi]) .thumb')).length === 1);
+    ok('rooms: nothing wider than the screen at 360 px', !(await wide()));
+    await p.screenshot({ path: join(SHOTS, 'rooms-360.png'), fullPage: true });
+    await p.waitForTimeout(500);
+    ok('rooms: the phone shows the house page, the rooms in the same order', ((await inGuide()) || []).slice(0, 2).join() === 'Salón,Cocina completa', ((await inGuide()) || []).join());
+    ok('rooms: the first room cannot go further up, the last further down', await p.$eval('.rm[data-rmi="0"] [data-dir="-1"]', e => e.disabled) && await p.$eval('.rm[data-rmi="5"] [data-dir="1"]', e => e.disabled));
+    await p.click('.rm[data-rmi="5"] [data-dir="-1"]'); await p.waitForTimeout(100);
+    await p.keyboard.press('Enter'); await p.waitForTimeout(100); await p.keyboard.press('Enter'); await p.waitForTimeout(100); await p.keyboard.press('Enter'); await p.waitForTimeout(100); await p.keyboard.press('Enter'); await p.waitForTimeout(600);
+    const n1 = await names(), a1 = () => p.evaluate(() => JSON.parse(localStorage.getItem('porta-onboarding-v1')).A.rooms.map(r => r.n));
+    ok('rooms: the arrow moves a room, and keeps moving it with the keyboard', n1[0] === 'Piscina' && n1[1] === 'Salón', n1.join());
+    ok('rooms: the phone follows at once', ((await inGuide()) || [])[0] === 'Piscina', ((await inGuide()) || []).join());
+    await p.waitForTimeout(700);
+    ok('rooms: the order is kept for the build', (await a1())[0] === 'Piscina', (await a1()).join());
+    await p.fill('.rm[data-rmi="1"] [data-rmname]', 'Living room'); await p.keyboard.press('Tab'); await p.waitForTimeout(150);
+    ok('rooms: a new name goes with its photos', (await p.$$('.rm[data-rmi="1"] .thumb')).length === 2 && (await names())[1] === 'Living room', (await names()).join());
+    await p.fill('.rm[data-rmi="2"] [data-rmname]', 'Piscina'); await p.keyboard.press('Tab'); await p.waitForTimeout(150);
+    ok('rooms: two rooms cannot share a name', (await names())[2] === 'Cocina completa', (await names()).join());
+    await p.fill('.rm[data-rmi="2"] textarea', 'Coffee capsules are in the top drawer'); await p.waitForTimeout(600);
+    ok('rooms: what the host wrote in a room stays with the room', (await p.evaluate(() => JSON.parse(localStorage.getItem('porta-onboarding-v1')).A.rooms.find(r => r.n === 'Cocina completa').t)) === 'Coffee capsules are in the top drawer');
+    await p.fill('#rmNew', 'Wine cellar'); await p.press('#rmNew', 'Enter'); await p.waitForTimeout(150);
+    const last = '.rm[data-rmi="6"]';
+    ok('rooms: a host can add a room, empty, ready for photos', (await names())[6] === 'Wine cellar' && !!(await p.$(last + ' .rm-add input')) && !!(await p.$(last + ' .rm-del')));
+    await p.click(last + ' .rm-del'); await p.waitForTimeout(150);
+    ok('rooms: an empty room can be removed; a room with photos has no such button', (await names()).length === 6 && !(await p.$('.rm[data-rmi="0"] .rm-del')));
+    await p.click('.rm[data-rmi="0"] .thumb img'); await p.waitForSelector('#lb select', { timeout: 2000 }).catch(() => {});
+    await p.screenshot({ path: join(SHOTS, 'rooms-photo-360.png') });
+    await p.selectOption('#lb select', 'Dormitorio 1'); await p.waitForTimeout(200); await p.click('#lb .lbx'); await p.waitForTimeout(200);
+    ok('rooms: moving the only photo of a room to another leaves the room there, empty, in its place', (await names())[0] === 'Piscina' && !(await p.$$('.rm[data-rmi="0"] .thumb')).length && (await p.$$('.rm[data-rmi="3"] .thumb')).length === 2, (await names()).join());
+    await p.setInputFiles('.rm[data-rmi="0"] .rm-add input', { name: 'pool.png', mimeType: 'image/png', buffer: PNG4 }); await p.waitForFunction(() => document.querySelectorAll('.rm[data-rmi="0"] .thumb:not(.pending)').length === 1, null, { timeout: 4000 }).catch(() => {});
+    ok('rooms: a photo added to a room lands in that room', (await p.$$('.rm[data-rmi="0"] .thumb:not(.pending)')).length === 1);
+    ok('rooms: nothing wider than the screen after all that', !(await wide()));
+    ok('rooms: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+    const wide2 = await open(browser, G, 1280, 860);
+    await wide2.p.goto('http://editor.test/'); await ready(wide2.p); await go(wide2.p, '#photos'); await wide2.p.waitForSelector('.rm .thumb', { timeout: 5000 }).catch(() => {}); await wide2.p.waitForTimeout(600);
+    ok('rooms, desktop: the phone beside the cards shows the house page', ((await inPhone(wide2.p, `d => [...d.querySelectorAll('.pv-card h3')].map(h => h.textContent)`)) || [])[0] === 'Salón');
+    await wide2.p.screenshot({ path: join(SHOTS, 'rooms-1280.png') });
+    await wide2.ctx.close();
+    // A product guide's house page in the editor: what the build writes, with the parts Ca La Kimberly has and it does not.
+    const made = { ...E, content: { ...E.content, files: { ...E.content.files, 'house-page': { summary: { en: 'Villa · 8 guests' }, photos: ['house.jpg'], highlights: [{ icon: 'pool', t: { en: 'Pool' } }], beds: [], tour: [{ room: { en: 'Kitchen' }, photos: ['guide/kitchen-1.jpg'] }, { room: { en: 'Pool' }, photos: ['guide/pool-1.jpg'] }], amenities: [{ t: { en: 'What this place offers' }, items: [{ en: 'Pool' }] }], amenFirst: 8 } } } };
+    const ed = await open(browser, made, 360, 780);
+    await ed.p.goto('http://editor.test/'); await ready(ed.p); await go(ed.p, '#housepage'); await ed.p.waitForTimeout(300);
+    ok('editor: the house page a build writes opens, with its rooms in order', (await ed.p.$$('[data-cardmove="files/house-page/tour/1"]')).length === 2 && !ed.errors.length, ed.errors.join(' | '));
+    await ed.ctx.close(); }
   // ---- Places nearby: one card at a time, dragged with a finger or the arrow keys; each yes lands in the phone ----
   { const places = ['Cala Test', 'Castell Test', 'Camí Test', 'Jardins Test'].map((name, i) => ({ id: 'tp' + i, name, rating: 4.5, reviews: 200, type: 'Beach', maps: 'https://maps.google.com/?q=' + i, summary: 'A test place.', lat: A0.lat, lng: A0.lng, km: 2 + i, photo: photos[i] || null }));
     const deck = async (w, h) => { const o = await open(browser, B, w, h);
@@ -623,6 +677,16 @@ try {
     await p.screenshot({ path: join(SHOTS, 'editor-steps-360.png') });
     await p.click('.sheet-x');
     await everyPage(p, 'editor');
+    await go(p, '#housepage'); await p.waitForTimeout(200);
+    const tourNames = () => p.$$eval('[data-open^="files/house-page/tour/"] > summary b', els => els.map(e => e.textContent)), up = n => `[data-cardmove="files/house-page/tour/${n}"][data-dir="-1"]`, down = n => `[data-cardmove="files/house-page/tour/${n}"][data-dir="1"]`, t0 = await tourNames();
+    ok('editor: the rooms of the house page have arrows; the first cannot go up', t0.length > 2 && await p.$eval(up(0), e => e.disabled) && !(await p.$eval(down(0), e => e.disabled)), t0.slice(0, 3).join());
+    await p.$eval(down(0), e => e.scrollIntoView({ block: 'center' })); await p.screenshot({ path: join(SHOTS, 'editor-rooms-360.png') });
+    await p.click(down(0)); await p.waitForTimeout(200);
+    const t1 = await tourNames();
+    ok('editor: an arrow moves the room and does not open it', t1[0] === t0[1] && t1[1] === t0[0] && !(await p.$('details[data-open^="files/house-page/tour/"][open]')), t1.slice(0, 3).join());
+    await p.click(up(1)); await p.waitForTimeout(200);
+    await go(p, '#howto'); await p.waitForTimeout(200);
+    ok('editor: the parts of the house guide can be put in order too', !!(await p.$('[data-cardmove="files/message/blocks/1"][data-dir="-1"]')));
     ok('editor: no page errors (phone)', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const { ctx, p } = await open(browser, E, 360, 780, { 'porta-editor-step-v1': JSON.stringify({ [E.id]: 'look' }) });

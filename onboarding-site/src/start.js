@@ -37,7 +37,7 @@ function loadTick(){
   if (b) b.style.width = Math.min(95, el / LOAD.est * 100) + '%';
 }
 const DRAFT_MAP = { placeName: 'place', propertyType: 'place', town: 'place', region: 'place', sleeps: 'place', sleeping: 'place', bedrooms: 'place', bathrooms: 'place', beds: 'place',
-  guideName: 'guide', tagline: 'guide', welcome: 'guide', guests: 'area', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
+  guideName: 'guide', tagline: 'guide', welcome: 'place', guests: 'area', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
   amenities: 'howto', howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
 
 function startHTML(){
@@ -154,10 +154,11 @@ function addListingPhotos(d){
   // The listing's own photos become the first photos of the house guide, each with the room we could tell from its caption.
   const have = uploads.filter(u => u.kind === 'photo');
   if (have.some(u => u.remote)) return;
-  const room = r => ROOMS.includes(r) ? r : '';
+  const room = (r, cap) => { const c = ROOMS.includes(r) ? r : ''; return (!c || c === 'Other') && cap ? catOf(cap) : c; }, names = (d.draft || {}).roomNames || {};
   d.photos.slice(0, Math.max(0, 16 - have.length)).forEach((src, i) => {
     const cap = (d.photoCaps || [])[i] || '';
-    const rec = { id: newId(), kind: 'photo', remote: true, src, name: cap || 'Listing photo ' + (i + 1), room: room((d.photoRooms || [])[i]), roomLabel: (cap && cap.length <= 30) ? cap : '', url: src + '?im_w=720', createdAt: new Date(Date.now() + i).toISOString() };
+    const label = String(names[cap] || cap);   // the listing's own name for the room, in English when its page is not
+    const rec = { id: newId(), kind: 'photo', remote: true, src, name: cap || 'Listing photo ' + (i + 1), room: room((d.photoRooms || [])[i], cap), roomLabel: label.length <= 30 ? label : '', url: src + '?im_w=720', createdAt: new Date(Date.now() + i).toISOString() };
     uploads.push(rec); saveUpload(rec);
   });
 }
@@ -420,7 +421,7 @@ function reportHTML(){
   const row = (ok, yes, no) => `<li style="margin:3px 0"><b style="color:${ok ? '#1f7a4a' : '#a14b1f'}">${ok ? '✓' : '✕'}</b> ${esc(ok ? yes : no)}</li>`;
   return `<div class="note" style="margin-top:12px;display:block"><div><b>Loaded.</b> ${esc(VIA[R.via] || '')} ${warn}Here is what we found and what we did not:
     <ul style="list-style:none;padding:0;margin:8px 0 0">
-      ${row(n > 0, `${n} photos${R.roomsFromPage ? ', already sorted by room as on your listing' : ''}`, 'Photos: none came through. Add yours in “Photos by room”.')}
+      ${row(n > 0, `${n} photos${R.roomsFromPage ? ', already sorted by room as on your listing' : ''}`, 'Photos: none came through. Add yours in “Rooms and photos”.')}
       ${row(!!f.counts, 'Bedrooms, bathrooms and beds', 'Bedrooms, bathrooms and beds: not found. Fill them in “About the place”.')}
       ${row(!!f.sleeping, 'Sleeping arrangements', 'Sleeping arrangements: not on your listing page. Add them in “About the place”.')}
       ${row(!!f.times, 'Check-in and check-out times', 'Check-in and check-out times: not found. Add them in “Check-in and rules”.')}
@@ -444,22 +445,77 @@ async function classifyPhotos(){
 }
 
 
-/* ---------- Photos by room: names that match the tiles, a viewer, and a way to start over ---------- */
+/* ---------- Rooms and photos: one card per room, a viewer, and a way to start over ---------- */
 function catOf(n){
   n = String(n || '').trim(); if (ROOMS.includes(n)) return n;
-  const t = [[/bed/i, 'Bedroom'], [/bath|shower|toilet|wc|restroom/i, 'Bathroom'], [/living|lounge|sitting|salon/i, 'Living room'], [/kitchen|dining/i, 'Kitchen'], [/pool/i, 'Pool'], [/garden|yard|lawn/i, 'Garden'], [/terrace|balcon|patio|porch/i, 'Terrace'], [/office|study|work/i, 'Office'], [/laundry|utility/i, 'Laundry'], [/view/i, 'View'], [/exterior|outside|entrance|facade|front|parking/i, 'Outside']].find(x => x[0].test(n));
+  const t = [[/bed|dormit|habitaci|chambre|cambra|schlafzimmer|slaapkamer/i, 'Bedroom'], [/bath|ba[ñn]o|\bbany|salle de bain|shower|toilet|\bwc\b|restroom/i, 'Bathroom'], [/kitchen|cocina|cuina|cuisine|k[üu]che|keuken/i, 'Kitchen'], [/living|lounge|sitting|sal[oó]n|\bsala\b|dining|comedor|menjador|wohnzimmer|woonkamer/i, 'Living room'], [/pool|piscin/i, 'Pool'], [/garden|yard|lawn|jard[ií]/i, 'Garden'], [/terrace|terraza|terrassa|balc[oó]n|patio|porch/i, 'Terrace'], [/office|study|work|despacho/i, 'Office'], [/laundry|utility|colada|lavander/i, 'Laundry'], [/view|vistas?\b/i, 'View'], [/exterior|outside|entrance|facade|fachada|front|parking|garaje|garage/i, 'Outside']].find(x => x[0].test(n));
   return t ? t[1] : 'Other';
 }
-function roomChoices(cur){
-  const num = (k, label) => { const c = parseInt(v(k), 10); return c > 1 && c <= 12 ? Array.from({ length: c }, (_, i) => label + ' ' + (i + 1)) : [label]; };
-  const base = [];
-  ROOMS.forEach(r => { if (r === 'Bedroom') base.push(...num('bedrooms', 'Bedroom')); else if (r === 'Bathroom') base.push(...num('bathrooms', 'Bathroom')); else if (r !== 'Other') base.push(r); });
-  uploads.filter(u => u.remote && u.roomLabel).forEach(u => { if (!base.some(b => b.toLowerCase() === u.roomLabel.toLowerCase())) base.push(u.roomLabel); });
-  const c = cur && (cur.roomLabel || cur.room);
-  if (c && c !== 'Other' && !base.some(b => b.toLowerCase() === c.toLowerCase())) base.push(c);
-  base.push('Other'); return base;
+// A.rooms keeps the order, the names and what the host wrote: [{ n: name, c: kind of room (ROOMS), t: what guests should
+// know there }]. A photo belongs to a room by its name (roomLabel). A room no photo is in stays once it is in A.rooms.
+const sameRoom = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+const photoRoom = u => String(u.roomLabel || u.room || '').trim();
+const noRoom = n => !n || n === 'Other';
+const photosIn = n => uploads.filter(u => u.kind === 'photo' && sameRoom(photoRoom(u), n));
+function roomsNow(){
+  const out = (Array.isArray(A.rooms) ? A.rooms : []).filter(r => r && r.n).map(r => ({ ...r }));
+  uploads.filter(u => u.kind === 'photo').forEach(u => { const n = photoRoom(u); if (!noRoom(n) && !out.some(r => sameRoom(r.n, n))) out.push({ n, c: u.room && u.room !== 'Other' ? u.room : catOf(n), t: '' }); });
+  if (!out.length && !Array.isArray(A.rooms)) {   // no listing to read them from: the usual rooms, to start from
+    const num = (k, label) => { const c = parseInt(v(k), 10); return c > 1 && c <= 12 ? Array.from({ length: c }, (_, i) => label + ' ' + (i + 1)) : [label]; };
+    ['Living room', 'Kitchen', ...num('bedrooms', 'Bedroom'), ...num('bathrooms', 'Bathroom')].forEach(n => out.push({ n, c: catOf(n), t: '' }));
+  }
+  return out;
 }
-function setRoom(u, val){ u.roomLabel = val; u.room = val ? catOf(val) : ''; saveUpload(u); queueSave(); }
+const roomsKeep = () => { A.rooms = roomsNow(); };   // before a photo leaves a room: the room stays, with its place in the order
+const roomKind = n => (roomsNow().find(r => sameRoom(r.n, n)) || { c: catOf(n) }).c;
+function roomChoices(){ return roomsNow().map(r => r.n); }
+function setRoom(u, val){ roomsKeep(); u.roomLabel = val; u.room = val ? roomKind(val) : ''; saveUpload(u); queueSave(); }
+const roomThumb = u => `<div class="thumb"><img src="${esc(srcOf(u))}" alt="${esc(u.name)}" loading="lazy" data-lbid="${u.id}"><button class="x" type="button" data-del="${u.id}" aria-label="Remove this photo">×</button></div>`;
+function roomCard(r, i, all){
+  const nm = esc(r.n), ph = photosIn(r.n), pend = [...pending.values()].filter(p => p.kind === 'photo' && sameRoom(p.into, r.n));
+  return `<section class="rm" data-rmi="${i}" data-drop="photo" data-max="${UP.photo.max}" data-rmto="${nm}">
+    <div class="rm-top"><input type="text" value="${nm}" data-rmname="${i}" aria-label="Name of this room">
+      <button class="rm-mv" type="button" data-rmmove="${i}" data-dir="-1" aria-label="Move ${nm} up"${i ? '' : ' disabled'}>↑</button>
+      <button class="rm-mv" type="button" data-rmmove="${i}" data-dir="1" aria-label="Move ${nm} down"${i < all - 1 ? '' : ' disabled'}>↓</button></div>
+    <div class="thumbs rm-ph">${ph.map(roomThumb).join('')}${pend.map(p => `<div class="thumb pending">${p.preview ? `<img src="${p.preview}" alt="">` : ''}</div>`).join('')}
+      <label class="rm-add"><input class="sr" type="file" accept="image/*" multiple data-file="photo"><span>+ Add photos</span></label></div>
+    <textarea rows="2" data-rmnote="${i}" aria-label="What guests should know in ${nm}" placeholder="What guests should know here (optional)">${esc(r.t || '')}</textarea>
+    ${ph.length || pend.length ? '' : `<button class="rm-del" type="button" data-rmdel="${i}">Remove this room</button>`}
+  </section>`;
+}
+function roomsInner(){
+  const list = roomsNow(), loose = uploads.filter(u => u.kind === 'photo' && noRoom(photoRoom(u)));
+  return `${list.map((r, i) => roomCard(r, i, list.length)).join('')}
+    ${loose.length ? `<section class="rm"><h3 class="rm-h">Not in a room yet</h3><p class="hint">Tap a photo to choose its room. Guests still see it with the photos of the house.</p><div class="thumbs rm-ph">${loose.map(roomThumb).join('')}</div></section>` : ''}
+    <div class="rm-new"><input type="text" id="rmNew" placeholder="Wine cellar, attic…" aria-label="Name of a new room"><button class="btn small" type="button" id="rmAdd">Add a room</button></div>`;
+}
+const roomsHTML = () => `<div class="f full"><div class="rm-list" id="roomsBox">${roomsInner()}</div></div>`;
+function roomsPut(list){ A.rooms = list; queueSave(); const b = document.getElementById('roomsBox'); if (b) b.innerHTML = roomsInner(); softRefresh(); phoneSoon(); }
+function roomAdd(){
+  const el = document.getElementById('rmNew'), n = el ? el.value.trim() : '', list = roomsNow(); if (!n) return;
+  if (list.some(r => sameRoom(r.n, n))) { toast('You already have a room with that name'); return; }
+  roomsPut([...list, { n, c: catOf(n), t: '' }]); const again = document.getElementById('rmNew'); if (again) again.focus();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-rmmove],[data-rmdel],#rmAdd'); if (!b) return;
+  if (b.id === 'rmAdd') return roomAdd();
+  const list = roomsNow();
+  if (b.dataset.rmdel) { list.splice(+b.dataset.rmdel, 1); return roomsPut(list); }
+  const i = +b.dataset.rmmove, j = i + Number(b.dataset.dir); if (j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]]; roomsPut(list);
+  const card = document.querySelector(`[data-rmi="${j}"]`); if (!card) return;
+  card.scrollIntoView({ block: 'nearest' });   // the room follows the arrow, so it can go on moving
+  const again = card.querySelector(`[data-rmmove][data-dir="${b.dataset.dir}"]`); if (again && !again.disabled) again.focus();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'rmNew') { e.preventDefault(); roomAdd(); } });
+document.addEventListener('input', e => { const i = e.target.dataset && e.target.dataset.rmnote; if (i === undefined) return; const list = roomsNow(); list[+i].t = e.target.value; A.rooms = list; queueSave(); });
+document.addEventListener('change', e => {
+  const t = e.target, i = t.dataset && t.dataset.rmname; if (i === undefined) return;
+  const list = roomsNow(), r = list[+i], n = t.value.trim();
+  if (!n || list.some((x, k) => k !== +i && sameRoom(x.n, n))) { t.value = r.n; toast(n ? 'You already have a room with that name' : 'A room needs a name'); return; }
+  photosIn(r.n).forEach(u => { u.roomLabel = n; saveUpload(u); });
+  r.n = n; if (r.c === 'Other') r.c = catOf(n); roomsPut(list);
+});
 
 let LB = null;
 function lbList(){ return uploads.filter(u => u.kind === 'photo'); }
@@ -472,7 +528,7 @@ function lbShow(i){
   el.innerHTML = `<div class="lbin"><button type="button" class="lbx" data-lb="close" aria-label="Close">×</button>
     <div class="lbimg"><button type="button" class="lbn" data-lb="prev" aria-label="Previous photo">‹</button><img src="${esc(big)}" alt="${esc(u.name)}"><button type="button" class="lbn" data-lb="next" aria-label="Next photo">›</button></div>
     <div class="lbbar"><span>${LB.i + 1} of ${L.length}</span>
-    <select data-room="${u.id}" aria-label="Room for this photo"><option value="">Room…</option>${roomChoices(u).map(r => `<option${(u.roomLabel || u.room) === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>
+    <select data-room="${u.id}" aria-label="Room for this photo"><option value="">No room</option>${roomChoices().map(r => `<option${sameRoom(photoRoom(u), r) ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>
     <button type="button" class="btn small" data-lb="del">Remove this photo</button></div></div>`;
 }
 function lbClose(){ const el = document.getElementById('lb'); if (el) el.remove(); LB = null; }
@@ -492,7 +548,7 @@ function lbClose(){ const el = document.getElementById('lb'); if (el) el.remove(
 })();
 document.addEventListener('click', e => {
   const im = e.target.closest && e.target.closest('.thumb img');
-  if (im) { const th = im.closest('.thumb'), sel = th && th.querySelector('select[data-room]'); const L = lbList(); const i = sel ? L.findIndex(u => u.id === sel.dataset.room) : -1; if (i >= 0) lbShow(i); return; }
+  if (im) { const i = lbList().findIndex(u => u.id === im.dataset.lbid); if (i >= 0) lbShow(i); return; }
   const b = e.target.closest && e.target.closest('[data-lb]');
   if (b && LB) {
     const a = b.dataset.lb, L = lbList();

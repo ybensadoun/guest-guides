@@ -252,9 +252,9 @@ async function build(g) {
     if (!r.ok) { log('  host image not downloaded:', u.path, r.status); continue; }
     const aid = 'host-' + String(i).padStart(2, '0');
     writeFileSync(join(job, 'src/assets', aid + '.jpg'), Buffer.from(await r.arrayBuffer()));
-    writeFileSync(join(job, 'src/uploads', aid + '.json'), JSON.stringify({ kind: u.kind, assetId: aid, room: u.room || '', name: u.name || '' }));
+    writeFileSync(join(job, 'src/uploads', aid + '.json'), JSON.stringify({ kind: u.kind, assetId: aid, room: u.room || '', label: u.label || '', name: u.name || '' }));
   }
-  writeFileSync(join(job, 'src/listing_photos.json'), JSON.stringify(remote.map(u => ({ url: u.src, room: u.room || '', caption: u.name || '' }))));
+  writeFileSync(join(job, 'src/listing_photos.json'), JSON.stringify(remote.map(u => ({ url: u.src, room: u.room || '', label: u.roomLabel || '', caption: u.name || '' }))));
   // The host's favourite places, as they typed them: looked up on Google, so each one gets its real position, distance,
   // town, opening hours and Maps link (src/geocode.json, read by the generator). Not found: the generator says less.
   const added = Array.isArray(A.favDo) ? A.favDo : String(A.favDo || '').split(/[,\n]+/).map(p => ({ p }));

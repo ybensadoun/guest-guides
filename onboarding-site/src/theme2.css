@@ -149,6 +149,19 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 
 /* Host lists */
 .pl{display:flex;flex-direction:column;gap:12px;margin-bottom:10px}
+.rm-list{display:flex;flex-direction:column;gap:14px}
+.rm{display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--sunk);border-radius:var(--r-s)}
+.rm.over{outline:2px dashed var(--ink);outline-offset:2px}
+.rm-top{display:grid;grid-template-columns:minmax(0,1fr) 44px 44px;gap:6px;align-items:center}
+.rm-top input{width:100%;font-weight:700}
+.rm-mv{width:44px;height:44px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
+.rm-mv:disabled{opacity:.35;cursor:default}
+.rm-h{margin:0;font-size:17px}
+.rm .hint{margin:0}
+.rm-ph{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.rm-add{display:grid;place-items:center;min-height:69px;padding:6px;border:1.5px dashed var(--line);border-radius:var(--r-s);background:var(--surface);font-size:14px;font-weight:700;line-height:1.2;text-align:center;cursor:pointer}
+.rm-del{align-self:flex-start;min-height:44px;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-size:14px;font-weight:600;text-decoration:underline;cursor:pointer}
+.rm-new{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
 .pl-row{display:grid;grid-template-columns:minmax(0,1fr) 36px;gap:8px;align-items:start;padding:12px;background:var(--sunk);border-radius:var(--r-s)}
 .pl-row input,.pl-row textarea{grid-column:1}
 .pl-row .x{grid-column:2;grid-row:1;width:36px;height:36px;border-radius:50%;border:0;background:var(--surface);cursor:pointer;font-size:20px;color:var(--ink)}

@@ -148,17 +148,17 @@ async function shrink(file, max, limitBytes){
   }
   throw new Error('too_big');
 }
-async function addFiles(kind, files, max){
+async function addFiles(kind, files, max, into){   // into: the room these photos go in
   const have = uploads.filter(u => u.kind === kind).length + [...pending.values()].filter(p => p.kind === kind).length;
   const list = [...files].slice(0, Math.max(0, max - have));
   if (files.length > list.length) toast(`Up to ${max} here`);
   for (const f of list) {
     const tmp = 'p' + newId();
-    pending.set(tmp, { kind, name: f.name, preview: /^image\//.test(f.type) ? URL.createObjectURL(f) : null }); render();
+    pending.set(tmp, { kind, into, name: f.name, preview: /^image\//.test(f.type) ? URL.createObjectURL(f) : null }); render();
     try {
       if (!/^image\//.test(f.type)) throw new Error('not_image');
       const blob = await shrink(f, 2000, 1.5e6);
-      const rec = { id: newId(), kind, name: f.name.replace(/\.[^.]+$/, '') + '.jpg', room: '', blob, createdAt: new Date().toISOString() };
+      const rec = { id: newId(), kind, name: f.name.replace(/\.[^.]+$/, '') + '.jpg', room: into ? roomKind(into) : '', roomLabel: into || '', blob, createdAt: new Date().toISOString() };
       rec.url = URL.createObjectURL(blob);
       uploads.push(rec); await saveUpload(rec); log('upload', kind); queueSave();
     } catch (e) { toast(e && e.message === 'not_image' ? `${f.name}: please send a photo or screenshot` : `${f.name} could not be added`); }
@@ -304,7 +304,7 @@ document.addEventListener('change', e => {
   else if (t.dataset.k && t.tagName === 'SELECT') { set(t.dataset.k, t.value); softRefresh(); }
   else if (t.dataset.sec) { A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), [t.dataset.sec]: t.checked }; queueSave(); lookRefresh().then(refreshNav); }   // in The look: the steps and the phone follow, the page stays where it is
   else if (t.dataset.check) { set(t.dataset.check, t.checked); refreshSend(); }
-  else if (t.dataset.file) { addFiles(t.dataset.file, t.files, +t.closest('[data-drop]').dataset.max); t.value = ''; }
+  else if (t.dataset.file) { const d = t.closest('[data-drop]'); addFiles(t.dataset.file, t.files, +d.dataset.max, d.dataset.rmto); t.value = ''; }
   else if (t.dataset.room) { const u = uploads.find(x => x.id === t.dataset.room); if (u) setRoom(u, t.value); }
 });
 document.addEventListener('click', async e => {
@@ -314,7 +314,7 @@ document.addEventListener('click', async e => {
   else if (b.id === 'skipStart') { A._skipStart = true; queueSave(); location.hash = '#listing'; render(); }
   else if (b.dataset.done) { A._done = { ...(A._done || {}), [b.dataset.done]: true }; log('done', b.dataset.done); queueSave(); render(); toast('Done'); }
   else if (b.dataset.undone) { const d = { ...(A._done || {}) }; delete d[b.dataset.undone]; A._done = d; log('reopen', b.dataset.undone); queueSave(); render(); }
-  else if (b.dataset.del) { uploads = uploads.filter(x => x.id !== b.dataset.del); try { await idb.del(b.dataset.del); } catch (err) {} render(); }
+  else if (b.dataset.del) { roomsKeep(); uploads = uploads.filter(x => x.id !== b.dataset.del); try { await idb.del(b.dataset.del); } catch (err) {} render(); }
   else if (b.id === 'send') send(b);
   else if (b.dataset.slug) { SLUG = { for: b.dataset.slug, free: true, options: [] }; set('slug', b.dataset.slug); A._slugTouched = true; slugCheck(); softRefresh(); refreshSend(); }
   else if (b.id === 'fillListing') { const got = applyListing(); const mods = [...new Set(got.map(k => FIELD_MODULE[k]))].map(id => (MODULES.find(m => m.id === id) || {}).title).filter(Boolean); render(); toast(got.length ? `Filled ${got.length} answers in ${mods.join(', ')}. Marked “Review”.` : 'Nothing new found. Try pasting more of the listing.'); }
@@ -337,7 +337,7 @@ document.addEventListener('submit', async e => {
 ['dragover','dragleave','drop'].forEach(ev => document.addEventListener(ev, e => {
   const d = e.target.closest && e.target.closest('[data-drop]'); if (!d) return; e.preventDefault();
   d.classList.toggle('over', ev === 'dragover');
-  if (ev === 'drop' && e.dataTransfer.files.length) addFiles(d.dataset.drop, e.dataTransfer.files, +d.dataset.max);
+  if (ev === 'drop' && e.dataTransfer.files.length) addFiles(d.dataset.drop, e.dataTransfer.files, +d.dataset.max, d.dataset.rmto);
 }));
 async function send(b){
   b.disabled = true;

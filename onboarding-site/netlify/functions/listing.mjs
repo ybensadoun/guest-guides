@@ -131,6 +131,7 @@ Return this JSON (null when unknown):
 {
  "placeName": string, "propertyType": one of ["House","Villa","Apartment","Cottage","Farmhouse","Room","Other"],
  "bedrooms": number, "bathrooms": number, "beds": number (only what the page says, else null),
+ "roomNames": object with one entry per different caption of the photos above: the caption as it is, then its name in English ({"Salón": "Living room", "Dormitorio 2": "Bedroom 2", "Cocina completa": "Full kitchen"}; an English caption stays as it is). Only captions that name a room or part of the house,
  "photoRooms": array with one entry per numbered photo, in order: the room it shows, chosen from ${JSON.stringify(ROOMS)}, judged from its caption ("Fachada", "Jardín" = Outside or Garden, "Salón", "Comedor" = Living room, "Habitación" = Bedroom). null when the caption does not tell,
  "town": string, "region": string ("Region, Country"), "sleeps": number,
  "checkIn": "HH:MM", "checkOut": "HH:MM",

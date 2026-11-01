@@ -83,17 +83,25 @@ const PRESET_FONTS = {
 
 // The guide's sections, built from what the host chose and wrote.
 const lines = k => (v(k) || '').split('\n').map(x => x.replace(/^\s*[-*•]\s*/, '').trim()).filter(Boolean);
+const PV_ROOM = { 'Living room': 'Living room', Kitchen: 'Kitchen', Bedroom: 'Bedrooms', Bathroom: 'Bathrooms', Pool: 'Pool', Garden: 'Outside', Terrace: 'Outside', Outside: 'Outside', View: 'Outside', Office: 'Office', Laundry: 'Laundry' };
+// The parts of the house guide, as the build makes them: in the order of the host's rooms, each kind of room one part.
+function houseParts(){
+  const out = new Map(), rooms = roomsNow(), part = c => PV_ROOM[c] || 'Good to know', at = t => out.get(t) || out.set(t, { r: t, items: [], photos: [] }).get(t);
+  rooms.forEach(r => { if (part(r.c) !== 'Good to know') at(part(r.c)); });
+  lines('howTos').forEach(l => at(part(Object.keys(ROOMKW).find(k => ROOMKW[k].test(l)))).items.push(l));
+  rooms.forEach(r => String(r.t || '').split('\n').map(x => x.trim()).filter(Boolean).forEach(l => at(part(r.c)).items.push(rooms.filter(x => part(x.c) === part(r.c)).length > 1 ? `${r.n}: ${l}` : l)));
+  uploads.filter(u => u.kind === 'photo').forEach(u => at(part(u.room)).photos.push(u.url));
+  const parts = [...out.values()].filter(p => p.items.length || p.photos.length);
+  return [...parts.filter(p => p.r !== 'Good to know'), ...parts.filter(p => p.r === 'Good to know')];
+}
 const ROOMKW = { Kitchen: /coffee|oven|hob|stove|dishwasher|fridge|kettle|microwave|kitchen|nespresso|toaster/i, 'Living room': /\btv\b|television|sofa|living|netflix|speaker|fireplace|heating/i,
   Bedroom: /bed|sheet|linen|blanket|pillow|wardrobe/i, Bathroom: /shower|bath|towel|hot water|boiler|toilet|hairdryer/i, Pool: /pool|swim|sunbed/i,
   Outside: /bbq|barbecue|garden|terrace|patio|hammock|outdoor|grill|shutter|awning/i, Laundry: /wash|dryer|iron|laundry|detergent/i, Office: /desk|office|printer|monitor/i };
+const houseFacts = () => [v('propertyType'), ...[['sleeps', 'guest', 'guests'], ['bedrooms', 'bedroom', 'bedrooms'], ['beds', 'bed', 'beds'], ['bathrooms', 'bathroom', 'bathrooms']].map(([k, one, many]) => v(k) && v(k) !== '0' ? `${v(k)} ${String(v(k)) === '1' ? one : many}` : '')].filter(Boolean).join(' · ');
 function guideSections(){
   const S = [], on = id => secOn(id);
-  const photosOf = room => uploads.filter(u => u.kind === 'photo' && (u.room || 'Other') === room).map(u => u.url);
-  if (on('houseguide')) {
-    const rooms = {}; lines('howTos').forEach(l => { const r = Object.keys(ROOMKW).find(k => ROOMKW[k].test(l)) || 'Good to know'; (rooms[r] = rooms[r] || []).push(l); });
-    uploads.filter(u => u.kind === 'photo').forEach(u => { const r = u.room || 'Other'; rooms[r] = rooms[r] || []; });
-    S.push({ id: 'houseguide', title: 'House guide', sub: 'How everything works', icon: 'tool', kind: 'rooms', rooms: Object.entries(rooms).map(([r, items]) => ({ r, items, photos: photosOf(r) })) });
-  }
+  S.push({ id: 'house', title: 'The house', sub: houseFacts(), icon: 'cam', kind: 'house' });
+  if (on('houseguide')) S.push({ id: 'houseguide', title: 'House guide', sub: 'How everything works', icon: 'tool', kind: 'rooms', rooms: houseParts() });
   if (on('wifi')) S.push({ id: 'wifi', title: 'Wi-Fi', sub: v('wifiName'), icon: 'wifi', kind: 'wifi' });
   if (on('arrival') && v('arrival')) S.push({ id: 'arrival', title: 'Getting here', sub: 'Arrival and parking', icon: 'car', kind: 'text', items: lines('arrival'), photos: uploads.filter(u => u.kind === 'arrivalPhoto').map(u => u.url) });
   S.push({ id: 'stay', title: 'Check-in and check-out', sub: `In from ${v('checkIn') || '?'} · out by ${v('checkOut') || '?'}`, icon: 'key', kind: 'text', items: [v('checkIn') && `Check-in from ${v('checkIn')}.`, v('checkOut') && `Check-out by ${v('checkOut')}.`, ...lines('checkoutTasks')].filter(Boolean), extra: lines('houseRules').length ? { h: 'House rules', items: lines('houseRules') } : null });
@@ -252,11 +260,11 @@ async function pvParts(screen){
     if (f === 'Places to eat') facts.push(['eat', 'Eat', lines('favourites').length + ' favourites']);
   }
   // As on the guide's Home: Wi-Fi and check-out are the two facts on top, arrival is inside the House guide; the tiles follow in two groups.
-  const atHouse = ['rubbish', 'houseguide', 'emergency'].map(id => S.find(x => x.id === id)).filter(Boolean), around = S.filter(x => !atHouse.includes(x) && !['wifi', 'stay', 'arrival'].includes(x.id));
+  const atHouse = ['rubbish', 'houseguide', 'emergency'].map(id => S.find(x => x.id === id)).filter(Boolean), around = S.filter(x => !atHouse.includes(x) && !['house', 'wifi', 'stay', 'arrival'].includes(x.id));
   const tile = (x, i, wide) => `<button type="button" class="pv-sec${wide ? ' wide' : ''}${light(colours[i % colours.length]) ? ' lt' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]};--ss:${shapes[i % shapes.length]};--st:${light(colours[i % colours.length]) ? p.ink : '#fff'}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span><span class="ar" aria-hidden="true">→</span></button>`;
   const group = (list, title, from) => list.length ? `<h2 class="pv-h">${esc(title)}</h2><div class="pv-secs">${list.map((x, i) => tile(x, from + i, ['bold', 'soft', 'mediterranean', 'rural'].includes(preset) && i === list.length - 1 && list.length % 2 === 1)).join('')}</div>` : '';
   const ph = id => { const r = (S.find(x => x.id === 'houseguide') || {}).rooms || []; return id === 'houseguide' && r.find(x => x.photos.length) ? r.find(x => x.photos.length).photos[0] : null; };
-  const home = `<div class="pv-cover${cover ? '' : ' pv-art'}"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}<div class="pv-name">${logo ? `<img class="pv-logo" src="${esc(logo)}" alt="">` : ''}<small>Welcome to</small><h1>${esc(name)}</h1></div></div>
+  const home = `<div class="pv-cover${cover ? '' : ' pv-art'}" data-pv="house"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}<div class="pv-name">${logo ? `<img class="pv-logo" src="${esc(logo)}" alt="">` : ''}<small>Welcome to</small><h1>${esc(name)}</h1></div></div>
     ${/search/i.test(v('navStyle')) ? `<input class="pv-search" id="pvSearch" placeholder="Search the guide: wifi, bins, beach…" aria-label="Search the guide">` : ''}
     ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
     ${group(atHouse, 'At the house', 0)}${group(around, 'Around the house', atHouse.length)}`;
@@ -279,7 +287,7 @@ async function renderPreview(){
 const PHONE = { screen: 'home', build: false, timer: null };
 const WOW = { stage: '', name: '' };   // the wow page: reading (the listing page), writing (Claude), done
 // The guide screen each step changes, shown next to it.
-const STEP_SCREEN = { nightlife: 'nightlife', known: 'wifi', wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'houseguide', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', taste: 'todo' };
+const STEP_SCREEN = { place: 'house', nightlife: 'nightlife', known: 'wifi', wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'house', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', taste: 'todo' };
 const phoneHTML = () => `<div class="phone"><div class="phone-scr"><iframe id="phoneFrame" title="Your guide, as guests will see it"></iframe></div></div>`;
 // Both phones (this one, and the editor's, which shows the guide itself) draw the guide at a real phone's width, then
 // scale it down to the frame: text and tiles keep their true sizes and wrap as they do on a phone.
@@ -314,7 +322,15 @@ function pageHTML(x){
   const research = x.research ? `<div class="pv-research"><b>In your full guide</b>${esc(x.research)}</div>` : '';
   const list = items => items.length ? `<div class="pv-list">${items.map(t => { const [a, ...b] = t.split(/:\s|,\s| - /); return `<div class="pv-row"><b>${esc(a)}</b>${b.length ? esc(b.join(', ')) : ''}</div>`; }).join('')}</div>` : '';
   let body = '';
-  if (x.kind === 'rooms') body = x.rooms.length ? x.rooms.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3>${r.photos.length ? `<div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${list(r.items)}</section>`).join('') : `<div class="pv-research"><b>Nothing here yet</b>Add how things work and photos by room in your answers.</div>`;
+  if (x.kind === 'house') {
+    const tour = roomsNow().map(r => ({ r: r.n, photos: photosIn(r.n).map(u => u.url) })).filter(r => r.photos.length);
+    const offers = [...(A.amenities || []), ...(A.listingAmenities || []).map(a => String(a).split(':')[0])].filter((a, i, l) => l.indexOf(a) === i);
+    body = `${tour.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3><div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div></section>`).join('')}
+      ${v('welcome') ? `<section class="pv-card"><h3>About the house</h3><p style="margin:8px 0 0">${esc(v('welcome'))}</p></section>` : ''}
+      ${lines('sleeping').length ? `<section class="pv-card"><h3>Where you'll sleep</h3>${list(lines('sleeping'))}</section>` : ''}
+      ${offers.length ? `<section class="pv-card"><h3>What this place offers</h3><p style="margin:8px 0 0">${esc(offers.slice(0, 8).join(', '))}</p></section>` : ''}`;
+  }
+  else if (x.kind === 'rooms') body = x.rooms.length ? x.rooms.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3>${r.photos.length ? `<div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${list(r.items)}</section>`).join('') : `<div class="pv-research"><b>Nothing here yet</b>Add how things work and photos by room in your answers.</div>`;
   else if (x.kind === 'wifi' && !v('wifiName')) body = `<div class="pv-research"><b>Your Wi-Fi goes here</b>Add it in Only you know: guests join with one tap.</div>`;
   else if (x.kind === 'wifi') body = `<section class="pv-card"><p style="margin:0 0 6px;opacity:.7">Network</p><h3 style="font-size:24px">${esc(v('wifiName'))}</h3><p style="margin:12px 0 6px;opacity:.7">Password</p><h3 style="font-size:24px">${esc(v('wifiPassword'))}</h3></section><div class="pv-research"><b>In your full guide</b>A QR code to join with one tap, and a copy button.</div>`;
   else if (x.kind === 'contacts') body = `<section class="pv-card"><div class="pv-list"><div class="pv-row"><b>Emergencies: 112</b>Police, ambulance, fire</div>${v('taxi') ? `<div class="pv-row"><b>Taxi</b>${esc(v('taxi'))}</div>` : ''}</div></section>${research}`;

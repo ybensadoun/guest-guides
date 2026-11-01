@@ -308,10 +308,10 @@ const MODULES = [
   {id:'sections',group:'basics',title:'Guide sections',sub:'Pick what goes in',icon:'grid',tc:'var(--ink)',ti:'#fff',sh:'var(--sky)',shape:'square',part:'look',
    lead:'Each section you keep adds its own short set of questions to this page. Ticked ones fit your answers so far.',
    need:[],fields:['sectionPicker','moduleIdeas']},
-  {id:'photos',group:'house',title:'Photos by room',sub:'Up to 16',icon:'cam',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'quarter',
-   lead:'Tag each photo with its room: it lands in the right part of the house guide. Photos from your listing are already here: check the room on each one, remove any you do not want and add your own.',need:['upload:photo'],fields:['up:photo']},
+  {id:'photos',group:'house',title:'Rooms and photos',sub:'The rooms, in your order',icon:'cam',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'quarter',
+   lead:'Guests see your rooms in this order, on the house page and in the house guide. Use the arrows to change it. Tap a photo to see it big, move it to another room or remove it.',need:['upload:photo'],fields:['up:photo']},
   {id:'howto',group:'house',title:'How things work',sub:'Boiler, pool, TV…',icon:'tool',tc:'var(--clay)',ti:'#fff',sh:'var(--ink)',shape:'bar',sec:'houseguide',
-   lead:'One line per thing guests get stuck on. We put each line in the right room.',need:['howTos'],fields:['amenities','howTos','up:manual']},
+   lead:'What the place has, and anything guests get stuck on that belongs to no room in particular. Each room has its own notes in Rooms and photos.',need:[],fields:['amenities','howTos','up:manual']},
   {id:'stay',group:'house',title:'Check-in and rules',sub:'Times, rules, leaving',icon:'key',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
    lead:'The times and the few rules that matter.',need:['checkIn','checkOut'],fields:['checkIn','checkOut','houseRules','checkoutTasks']},
   {id:'wifi',group:'house',title:'Wi-Fi',sub:'Name and password',icon:'wifi',tc:'var(--pine)',ti:'#fff',sh:'var(--tomato)',shape:'half',sec:'wifi',part:'known',
@@ -357,7 +357,7 @@ const Q = {
   lookAvoid:{t:'area',rows:2,label:'Anything to avoid?',opt:true,full:true,ph:'No pink, nothing too corporate…'},
   moduleIdeas:{t:'area',rows:2,label:'An idea we don’t have yet?',opt:true,full:true,ph:'A page about the vineyard next door…',hint:'We build new ideas as new sections.'},
   amenities:{t:'chips',label:'What the place has',opts:AMEN,opt:true},
-  howTos:{t:'area',rows:8,label:'How things work',full:true,hint:'One tip per line. Say the room if it is not obvious: each line goes into its room in the guide.',ph:'Cleaning products and dishwasher tablets are under the kitchen sink\nSpare batteries are in the TV unit\nOne bath towel per person; beach towels are in the hall cupboard\nThe pool is not heated; the cover key hangs by the door\nThe heating is set on the thermostat by the front door'},
+  howTos:{t:'area',rows:8,label:'How things work',opt:true,full:true,hint:'One tip per line. Say the room if it is not obvious: we put each line in the room it talks about.',ph:'Cleaning products and dishwasher tablets are under the kitchen sink\nSpare batteries are in the TV unit\nOne bath towel per person; beach towels are in the hall cupboard\nThe pool is not heated; the cover key hangs by the door\nThe heating is set on the thermostat by the front door'},
   checkIn:{t:'time',label:'Check-in from'},
   checkOut:{t:'time',label:'Check-out by'},
   houseRules:{t:'area',rows:4,label:'House rules',opt:true,full:true,ph:'Quiet after 23:00\nNo parties\nNo smoking inside'},
@@ -398,7 +398,7 @@ const UP = {
   logo:{label:'Your logo',opt:true,max:1,hint:'Optional. It shows on the welcome card and becomes the icon on guests’ phones. Without one, the guide shows no logo.'},
   inspiration:{label:'Images for the colours',max:3,what:'1 to 3 images',hint:'Artwork, a poster, a photo or a website screenshot. We only take their colours for your guide: the images themselves are not shown in it.'},
   cover:{label:'Your own cover picture',opt:true,max:1,hint:'A photo, or an artistic rendering of your house (made with an AI image tool or by an artist). It replaces the photo above. Landscape works best.'},
-  photo:{label:'Photos of the place',max:16,rooms:true,what:'Up to 16 photos'},
+  photo:{label:'Photos of the place',max:16},
   manual:{label:'Manuals or labels',opt:true,max:6,doc:true,hint:'Photos of labels or instructions are fine.'},
   arrivalPhoto:{label:'Photos to help find the place or the key',opt:true,max:4,hint:'The gate, the turning, where to park, where the key is.'},
   rubbishPhoto:{label:'Town collection calendar',opt:true,max:2,hint:'A photo of the leaflet is enough.'},
@@ -483,6 +483,7 @@ function field(k){
   if (k === 'wifiNote') return `<div class="note full"><div>Guests see the password in the guide, so use your guest network if you have one.</div></div>`;
   if (k === 'sectionPicker') return sectionPicker();
   if (k === 'up:cover' && typeof coverChoiceHTML === 'function') return coverChoiceHTML();
+  if (k === 'up:photo' && typeof roomsHTML === 'function') return roomsHTML();
   if (k.startsWith('up:')) return drop(k.slice(3));
   const q = Q[k]; if (!q) return '';
   if (q.show && !q.show()) return '';
@@ -508,7 +509,6 @@ function drop(kind){
     <div class="row"><p>${mine.length} of ${o.max} · ${esc(o.what || (o.doc && assets ? 'Photos or PDFs' : 'JPG or PNG'))}</p>
       ${db && uid ? `<label class="btn small"><input class="sr" type="file" data-file="${kind}" accept="${accept}"${o.max > 1 ? ' multiple' : ''}>${mine.length ? 'Add more' : 'Choose files'}</label>` : '<p class="err">Open in Claude to upload</p>'}</div>
     ${mine.length || pend.length ? `<div class="thumbs">${mine.map(u => `<div class="thumb">${/^image\//.test(u.type) || u.dataUrl ? `<img src="${esc(srcOf(u))}" alt="${esc(u.name)}" loading="lazy">` : `<div class="doc">${esc(u.name)}</div>`}
-      ${o.rooms ? `<select data-room="${u.id}" aria-label="Room for ${esc(u.name)}"><option value="">Room…</option>${ROOMS.map(r => `<option${u.room===r?' selected':''}>${r}</option>`).join('')}</select>` : ''}
       ${u.remote ? '<span class="fl">From your listing</span>' : ''}
       <button class="x" type="button" data-del="${u.id}" aria-label="Remove ${esc(u.name)}">×</button></div>`).join('')}
       ${pend.map(p => `<div class="thumb pending">${p.preview ? `<img src="${p.preview}" alt="">` : `<div class="doc">${esc(p.name)}</div>`}</div>`).join('')}</div>` : ''}
@@ -557,7 +557,7 @@ function summary(m){
     case 'guide': return [v('guideName') || v('placeName'), (A.languages || []).map(l => l.toUpperCase()).join(' '), n('logo') ? 'logo' : 'no logo'].filter(Boolean).join(' · ');
     case 'look': return [n('logo') ? 'Logo' : '', n('cover') ? 'Own cover' : A.coverChoice === 'drawn' ? 'Drawn cover' : A.coverUrl ? 'Listing photo' : '', (MOODS.find(x => x.id === v('mood')) || {}).name || ''].filter(Boolean).join(' · ') || 'Not started';
     case 'sections': return SECTIONS.filter(s => secOn(s.id)).map(s => s.name).join(', ');
-    case 'photos': return `${n('photo')} photos, ${uploads.filter(u => u.kind === 'photo' && u.room).length} tagged`;
+    case 'photos': return `${roomsNow().length} rooms, ${n('photo')} photos`;
     case 'howto': return `${lines('howTos')} how-tos · ${(A.amenities || []).length} amenities`;
     case 'stay': return `In ${v('checkIn') || '?'} · out ${v('checkOut') || '?'} · ${lines('houseRules')} rules`;
     case 'wifi': return v('wifiName') || 'Not filled';
