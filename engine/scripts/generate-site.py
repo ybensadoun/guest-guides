@@ -57,6 +57,19 @@ def L(text):
         elif text: untranslated.add(text); out[l] = out[args.src]   # shown in the host's words until translated: never an empty text
     return out
 
+# What a place offers (engine/src/amenities.json, the builder's list): items named in six languages. am_ids turns answers
+# into ids: ids stay, words the list knows (a listing's English, the builder's former chips) become ids, the rest stays
+# as the host wrote it. The same rules as the builder (onboarding-site/src/amen.js).
+AM = json.loads((ROOT / 'engine/src/amenities.json').read_text())
+AM_BY = {x['id']: x for x in AM['items']}
+am_fold = lambda s: re.sub(r'\s+', ' ', ''.join(c for c in unicodedata.normalize('NFD', str(s or '')) if unicodedata.category(c) != 'Mn').lower().replace('’', "'")).strip()
+AM_WORDS = {am_fold(w): x['id'] for x in AM['items'] for w in [x['t']['en']] + ([] if x.get('k', '-') == '-' else x['k'].split(','))}
+def am_match(s):
+    full = am_fold(s); head = re.split(r':|\s[–-]\s|\(|,', full)[0].strip()
+    return next((AM_WORDS[w] for w in (full, head, re.sub(r'^((free|private|shared|indoor|outdoor|in-unit|heated) )+', '', head)) if w in AM_WORDS), '')
+am_ids = lambda xs: list(dict.fromkeys(x if x in AM_BY else (am_match(x) or x) for x in xs if x))
+am_t = lambda x: {l: x['t'][l] for l in LANGS if l in x['t']}
+
 def text_lines(t):
     return [re.sub(r'^\s*[-*•]\s*', '', x).strip() for x in (t or '').splitlines() if x.strip()]
 def lines(k): return text_lines(A.get(k))
@@ -535,20 +548,26 @@ if HOUSE_PAGE:
     leads += [f for fs in room_photos.values() for f in fs if f not in leads and f not in rest]
     # A few big things on top, in the listing's own words when it says them ("Private pool: open all year"), else the host's tick.
     said = [str(x).strip() for x in (A.get('listingAmenities') or []) if str(x).strip()]
+    # What the place offers: ids of engine/src/amenities.json (named in six languages), plus the host's own words. Older
+    # answers held the builder's English chips and the listing's words apart: those are matched to the list too.
     ticked = [str(x).strip() for x in (A.get('amenities') or []) if str(x).strip()]
+    offers = am_ids(ticked if any(x in AM_BY for x in ticked) else ticked + said)
     highlights = []
-    for icon, rx in (('pool', r'pool|piscin'), ('flame', r'bbq|barbecue|barbacoa|grill'), ('view', r'\bviews?\b|vistas?\b|\bvues?\b'), ('desk', r'workspace|work area|zona para trabajar')):
-        x = next((v for v in said + ticked if re.search(rx, v, re.I)), None)
-        if x:
-            t, _, more = x.partition(':')
-            highlights.append({'icon': icon, 't': L(t), **({'s': L(more)} if more.strip() else {})})
-    offers = ticked + [x.split(':')[0].strip() for x in said if not any(re.search(r'\b' + re.escape(c.lower()) + r'\b', in_en(x)) for c in ticked)]
-    page = {'_doc': 'The house page (#s/house), from the listing and the host\'s rooms. photos: the gallery on top. tour: the rooms in the host\'s order. amenFirst: how many amenities show before "Show all".',
+    for icon, rx, ids in (('pool', r'pool|piscin', ['pool']), ('flame', r'bbq|barbecue|barbacoa|grill', ['bbq']), ('view', r'\bviews?\b|vistas?\b|\bvues?\b', [i for i in offers if AM_BY.get(i, {}).get('g') == 'views']), ('desk', r'workspace|work area|zona para trabajar', ['workspace'])):
+        x, own = next((v for v in said if re.search(rx, v, re.I)), None), next((i for i in ids if i in offers), None)
+        parts = re.split(r':|\s[–-]\s', x or '', maxsplit=1); t, more = parts[0].strip(), (parts[1:] or [''])[0]
+        if x and ((own and more.strip()) or not any(i in AM_BY for i in offers)):   # the listing's words say more ("Private pool: open all year"), if the host kept it
+            highlights.append({'icon': icon, 't': L(t), **({'s': L(more.strip())} if more.strip() else {})})
+        elif own: highlights.append({'icon': icon, 't': am_t(AM_BY[own])})
+    page = {'_doc': 'The house page (#s/house), from the listing and the host\'s rooms. photos: the gallery on top. tour: the rooms in the host\'s order. amenities: by group of engine/src/amenities.json. amenFirst: how many show before "Show all"; amenTop: the most asked for, shown first while still in the list.',
             'summary': L(' · '.join(x for x in facts if x)), 'photos': (['house.jpg'] if HAS_PHOTO else []) + (leads + rest)[:16], 'highlights': highlights, 'beds': [L(x) for x in lines('sleeping')]}
     if A.get('welcome'): page['description'] = L(A['welcome'])
     if _num(A.get('ratingAvg')): page['rating'] = {'stars': _num(A.get('ratingAvg')), 'count': int(_num(A.get('ratingCount')) or 0) or None}
     if by_name: page['tour'] = [{'room': L(d['n']), 'photos': d['photos']} for d in by_name]
-    if offers: page.update({'amenities': [{'t': L('What this place offers'), 'items': [L(x) for x in dict.fromkeys(offers)]}], 'amenFirst': 8})
+    if offers:   # by group, in the list's order; the host's own at the end; the most asked for shown first (amenTop)
+        groups = [{'t': am_t(g), 'items': [am_t(x) for x in AM['items'] if x['g'] == g['id'] and x['id'] in offers] + ([L(x) for x in offers if x not in AM_BY] if g['id'] == 'other' else [])} for g in AM['groups']]
+        top = sorted((AM_BY[x] for x in offers if AM_BY.get(x, {}).get('top')), key=lambda x: x['top'])
+        page.update({'amenities': [g for g in groups if g['items']], 'amenFirst': 8, 'amenTop': [am_t(x) for x in top[:8]]})
     if LISTING_URL: page['url'] = LISTING_URL
     m = re.match(r'(https?://[^/]*airbnb\.[^/]+/rooms/\d+)', LISTING_URL)
     if m: page['photosUrl'] = m.group(1) + '/photos'

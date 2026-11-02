@@ -38,7 +38,7 @@ function loadTick(){
 }
 const DRAFT_MAP = { placeName: 'place', propertyType: 'place', town: 'place', region: 'place', sleeps: 'place', sleeping: 'place', bedrooms: 'place', bathrooms: 'place', beds: 'place',
   guideName: 'guide', tagline: 'guide', welcome: 'place', guests: 'area', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
-  amenities: 'howto', howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
+  howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
 
 function startHTML(){
   const lp = linkProblem(v('listingUrl'));
@@ -183,11 +183,12 @@ function applyDraft(d){
   for (const [k, mod] of Object.entries(DRAFT_MAP)) {
     let val = D[k]; if (val == null || val === '' || (Array.isArray(val) && !val.length)) continue;
     if (k === 'sleeps' || k === 'bedrooms' || k === 'bathrooms' || k === 'beds') val = String(val);
-    if (k === 'amenities') val = val.filter(x => AMEN.includes(x));
     const empty = Array.isArray(A[k]) ? !A[k].length : !String(A[k] ?? '').trim();
     if (!empty) continue;
     A[k] = val; pre[k] = mod;
   }
+  // Every amenity the listing has (all of them, by Airbnb's codes, when its page was read): ticked in What the place offers.
+  const am = amenFromListing(d); if (am.length && !amenNow().length) { A.amenities = am; pre.amenities = 'offers'; }
   A._pre = pre;
   // The listing's own equipment list as the page states it (fridge, hair dryer...): the guide sorts it into the rooms.
   if (Array.isArray(d.amenities) && d.amenities.length) A.listingAmenities = d.amenities.slice(0, 120);

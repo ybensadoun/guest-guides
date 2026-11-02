@@ -29,7 +29,7 @@ const B = { id: B0.id, owner: B0.owner, answers: a, status: 'draft', slug: B0.sl
 const N = { id: B0.id, owner: B0.owner, answers: { _savedAt: Date.now(), _acct: B0.owner }, status: 'draft', slug: null, origin: null, content: null, theme: null, draft: null };
 const photos = (B0.answers._remote || []).map(u => u.src).filter(Boolean).slice(0, 12), A0 = B0.answers;
 const PAGE = { ok: true, stage: 'page', site: 'airbnb', source: 'page', title: 'Home in ' + (A0.town || 'town'), pageTitle: (A0.placeName || 'Test house') + ' - Houses for Rent - Airbnb', cover: photos[0], photos, photoRooms: photos.map(() => null), photoCaps: photos.map(() => ''), rating: { avg: 4.9, count: 31 }, lat: A0.lat, lng: A0.lng, src: { text: 'listing text', title: 'x', photos } };
-const WRITE = { ok: true, source: 'page', site: 'airbnb', draft: { placeName: A0.placeName, town: A0.town, region: A0.region, propertyType: A0.propertyType, bedrooms: A0.bedrooms, checkIn: A0.checkIn || '16:00', checkOut: A0.checkOut || '11:00', houseRules: A0.houseRules, amenities: A0.amenities, tagline: A0.tagline, welcome: A0.welcome, toConfirm: ['Your Wi-Fi'] }, photos, cover: photos[0], lat: A0.lat, lng: A0.lng, report: { assistant: 'ok' } };
+const WRITE = { ok: true, source: 'page', site: 'airbnb', draft: { placeName: A0.placeName, town: A0.town, region: A0.region, propertyType: A0.propertyType, bedrooms: A0.bedrooms, checkIn: A0.checkIn || '16:00', checkOut: A0.checkOut || '11:00', houseRules: A0.houseRules, amenities: A0.amenities, tagline: A0.tagline, welcome: A0.welcome, toConfirm: ['Your Wi-Fi'] }, amenityItems: [{ c: '7', t: 'Piscina descubierta privada' }, { c: '33', t: 'Lavadora' }, { c: 'sv12', t: 'Vistas a la montaña' }, { c: '', t: 'Trampolín' }], photos, cover: photos[0], lat: A0.lat, lng: A0.lng, report: { assistant: 'ok' } };
 const listing = (route, body) => setTimeout(() => json(route, body.stage === 'page' ? PAGE : WRITE), body.stage === 'page' ? 400 : 1500);
 const inPhone = (p, fn) => p.evaluate(fn => { const d = document.getElementById('phoneFrame') && document.getElementById('phoneFrame').contentDocument; return d ? new Function('d', 'return (' + fn + ')(d)')(d) : null; }, fn.toString());
 mkdirSync(SHOTS, { recursive: true });
@@ -534,7 +534,44 @@ try {
     const ed = await open(browser, made, 360, 780);
     await ed.p.goto('http://editor.test/'); await ready(ed.p); await go(ed.p, '#housepage'); await ed.p.waitForTimeout(300);
     ok('editor: the house page a build writes opens, with its rooms in order', (await ed.p.$$('[data-cardmove="files/house-page/tour/1"]')).length === 2 && !ed.errors.length, ed.errors.join(' | '));
+    await ed.p.fill('#cmAmQ', 'dish'); await ed.p.waitForTimeout(150); await ed.p.click('[data-amput="dishwasher"]'); await ed.p.waitForTimeout(300);
+    ok('editor: an amenity from the list goes into its group, already in every language', (await ed.p.$$eval('.cmi summary b', els => els.map(e => e.textContent))).includes('Kitchen and dining') && !ed.errors.length, ed.errors.join(' | '));
+    await ed.p.fill('#cmAmQ', 'dish'); await ed.p.waitForTimeout(150);
+    ok('editor: an amenity already in the guide is not offered again', !(await ed.p.$('[data-amput="dishwasher"]')));
     await ed.ctx.close(); }
+  // ---- What the place offers: the most asked for, a search, every group, the host's own (Yohann, 2 Nov 2026: its own step, as Airbnb does) ----
+  { const G = { ...B, answers: { ...B.answers, amenities: ['Pool', 'BBQ', 'Washing machine', 'Cot or high chair'] } };
+    const { ctx, p, errors } = await open(browser, G, 360, 780);
+    await p.goto('http://editor.test/'); await ready(p); await go(p, '#offers'); await p.waitForSelector('#amQ', { timeout: 5000 }).catch(() => {});
+    const saved = () => p.evaluate(() => JSON.parse(localStorage.getItem('porta-onboarding-v1')).A.amenities), wide = () => p.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+    const ticked = () => p.$$eval('.am [data-amen]:checked', els => [...new Set(els.map(e => e.dataset.amen))]);
+    ok('amenities: its own step, after Rooms and photos', !!(await p.$('#amQ')) && /What the place offers/.test(await p.textContent('main')));
+    ok('amenities: old answers are ticked in the new list', (await ticked()).sort().join() === 'bbq,pool,washer', (await ticked()).join());
+    ok('amenities: an old choice the list no longer offers stays, as the host\'s own', /Cot or high chair/.test(await p.textContent('.am-own')));
+    await p.fill('#amQ', 'dish'); await p.waitForTimeout(150);
+    ok('amenities: typing finds it', (await p.$$eval('#amRes [data-amen]', els => els.map(e => e.dataset.amen))).includes('dishwasher'));
+    await p.check('#amRes [data-amen="dishwasher"]'); await p.waitForTimeout(700);
+    ok('amenities: ticking from the search keeps it, and the group counts it', (await saved()).includes('dishwasher') && /1 ticked/.test(await p.textContent('[data-amc="kitchen"]')), JSON.stringify(await saved()));
+    await p.fill('#amQ', 'lavavaj'); await p.waitForTimeout(150);
+    ok('amenities: the search knows the other languages too', (await p.$$eval('#amRes [data-amen]', els => els.map(e => e.dataset.amen))).join() === 'dishwasher');
+    await p.fill('#amQ', 'trampoline'); await p.waitForTimeout(150);
+    await p.click('#amRes [data-amadd]'); await p.waitForTimeout(400);
+    ok('amenities: something not in the list can be added as written', /trampoline/.test(await p.textContent('.am-own')) && (await saved()).includes('trampoline'), JSON.stringify(await saved()));
+    await p.fill('#amOwn', 'jacuzzi'); await p.press('#amOwn', 'Enter'); await p.waitForTimeout(400);
+    ok('amenities: typed words the list knows become the list\'s own item', (await saved()).includes('hot_tub') && !/jacuzzi/i.test(await p.textContent('.am-own')), JSON.stringify(await saved()));
+    await p.click('.am-own [data-amdel="trampoline"]'); await p.waitForTimeout(400);
+    ok('amenities: the host\'s own can be removed', !(await saved()).includes('trampoline'));
+    await p.click('.am-g:has([data-amc="outdoor"]) summary'); await p.waitForTimeout(150);
+    await p.uncheck('.am-g [data-amen="bbq"]'); await p.waitForTimeout(600);
+    ok('amenities: unticking in a group unticks it everywhere', !(await saved()).includes('bbq') && !(await p.$eval('.chips [data-amen="bbq"]', e => e.checked)));
+    ok('amenities: nothing wider than the screen at 360 px', !(await wide()));
+    await p.screenshot({ path: join(SHOTS, 'amenities-360.png'), fullPage: true });
+    await p.waitForTimeout(400);
+    const offers = await inPhone(p, `d => { const h = [...d.querySelectorAll('.pv-card h3')].find(x => x.textContent === 'What this place offers'); return h ? h.nextElementSibling.textContent : ''; }`);
+    ok('amenities: the phone shows them on the house page, the most asked for first', /^Pool, Hot tub/.test(offers || ''), offers);
+    ok('amenities: How things work no longer asks for them', await (async () => { await go(p, '#howto'); await p.waitForTimeout(200); return !(await p.$('#amQ')); })());
+    ok('amenities: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // ---- Places nearby: one card at a time, dragged with a finger or the arrow keys; each yes lands in the phone ----
   { const places = ['Cala Test', 'Castell Test', 'Camí Test', 'Jardins Test'].map((name, i) => ({ id: 'tp' + i, name, rating: 4.5, reviews: 200, type: 'Beach', maps: 'https://maps.google.com/?q=' + i, summary: 'A test place.', lat: A0.lat, lng: A0.lng, km: 2 + i, photo: photos[i] || null }));
     const deck = async (w, h) => { const o = await open(browser, B, w, h);
@@ -618,6 +655,9 @@ try {
     ok('wow: tapping a tile opens that screen in the phone', !!(await inPhone(p, d => d.querySelector('.pv-page'))));
     await p.click('#yoursTx a.btn.primary'); await p.waitForTimeout(400);
     ok('wow: "Make it yours" opens the name and web address', (await p.evaluate(() => location.hash)) === '#guide', await p.evaluate(() => location.hash));
+    await p.waitForTimeout(800);
+    const am = await p.evaluate(() => JSON.parse(localStorage.getItem('porta-onboarding-v1')).A.amenities);
+    ok('wow: every amenity of the listing, by Airbnb\'s codes, and one it does not know kept as the listing says it', JSON.stringify(am) === JSON.stringify(['pool', 'washer', 'mountain_view', 'Trampolín']), JSON.stringify(am));
     ok('wow: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const { ctx, p, errors } = await open(browser, N, 1280, 860, {}, listing);

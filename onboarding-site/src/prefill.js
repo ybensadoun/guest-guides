@@ -2,15 +2,15 @@
    The host pastes their listing text (Airbnb or other). We read the facts out of it here, in the browser,
    and mark those answers "From your listing". Steps that got answers this way show "Review": the host only
    checks and approves them. We never fetch Airbnb ourselves. */
-const AMEN_RX = {
-  'Pool': /\bpool\b|piscina|piscine/i, 'Garden': /garden|jard[ií]n|jardin/i, 'BBQ': /\bbbq\b|barbecue|\bgrill\b|barbacoa/i,
-  'Air conditioning': /air ?condition|aire acondicionado|climatisation/i, 'Heating or fireplace': /heating|fireplace|calefacci[oó]n|chimenea|chauffage|chemin[ée]e/i,
-  'Washing machine': /\bwasher\b|washing machine|lavadora|lave-linge/i, 'Dishwasher': /dishwasher|lavavajillas|lave-vaisselle/i,
-  'Coffee machine': /coffee maker|coffee machine|nespresso|espresso|cafetera|machine [àa] caf/i, 'Smart TV': /\btv\b|television|televisi[oó]n|t[ée]l[ée]/i,
-  'Cot or high chair': /\bcrib\b|\bcot\b|high chair|cuna|trona|lit pour b[ée]b[ée]|chaise haute/i, 'Pets allowed': /pets allowed|se admiten mascotas|animaux accept/i,
-  'Free parking': /free parking|aparcamiento gratuito|parking gratuit/i, 'EV charger': /\bev charger|cargador|borne de recharge/i, 'Hot tub': /hot tub|jacuzzi|bain [àa] remous/i,
-  'Bikes': /\bbikes?\b|bicicleta|v[ée]lo/i, 'Workspace': /workspace|espacio de trabajo|espace de travail/i, 'Sea view': /(sea|ocean|beach) view|vistas al mar|vue sur (la )?mer/i,
-  'Lift': /elevator|\blift\b|ascensor|ascenseur/i
+const AMEN_RX = {   // by the ids of engine/src/amenities.json
+  pool: /\bpool\b|piscina|piscine/i, garden: /garden|jard[ií]n|jardin/i, bbq: /\bbbq\b|barbecue|\bgrill\b|barbacoa/i,
+  ac: /air ?condition|aire acondicionado|climatisation/i, heating: /heating|calefacci[oó]n|chauffage/i, fireplace: /fireplace|chimenea|chemin[ée]e/i,
+  washer: /\bwasher\b|washing machine|lavadora|lave-linge/i, dishwasher: /dishwasher|lavavajillas|lave-vaisselle/i,
+  coffee_maker: /coffee maker|coffee machine|nespresso|espresso|cafetera|machine [àa] caf/i, tv: /\btv\b|television|televisi[oó]n|t[ée]l[ée]/i,
+  cot: /\bcrib\b|\bcot\b|cuna|lit pour b[ée]b[ée]/i, high_chair: /high chair|trona|chaise haute/i, pets: /pets allowed|se admiten mascotas|animaux accept/i,
+  free_parking: /free parking|aparcamiento gratuito|parking gratuit/i, ev_charger: /\bev charger|cargador|borne de recharge/i, hot_tub: /hot tub|jacuzzi|bain [àa] remous/i,
+  bikes: /\bbikes?\b|bicicleta|v[ée]lo/i, workspace: /workspace|espacio de trabajo|espace de travail/i, sea_view: /(sea|ocean|beach) view|vistas al mar|vue sur (la )?mer/i,
+  lift: /elevator|\blift\b|ascensor|ascenseur/i
 };
 const TYPE_RX = [[/villa/i, 'Villa'], [/cottage|casa rural|g[iî]te/i, 'Cottage'], [/farm|masia|finca|ferme/i, 'Farmhouse'],
   [/apartment|rental unit|condo|loft|flat|apartamento|piso|appartement|logement/i, 'Apartment'], [/private room|room in|habitaci[oó]n|chambre/i, 'Room'],
@@ -35,7 +35,7 @@ function parseListing(text){
   out._wifi = /wi-?fi/i.test(t);
   return out;
 }
-const FIELD_MODULE = { placeName: 'place', town: 'place', region: 'place', propertyType: 'place', sleeps: 'place', bedrooms: 'place', bathrooms: 'place', beds: 'place', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', amenities: 'howto' };
+const FIELD_MODULE = { placeName: 'place', town: 'place', region: 'place', propertyType: 'place', sleeps: 'place', bedrooms: 'place', bathrooms: 'place', beds: 'place', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', amenities: 'offers' };
 function applyListing(){
   const r = parseListing(v('listingText')), got = [];
   for (const [k, mod] of Object.entries(FIELD_MODULE)) {
@@ -46,7 +46,7 @@ function applyListing(){
     A._pre = { ...(A._pre || {}), [k]: mod };
   }
   if (!A._slugTouched && (v('placeName'))) slugAuto();
-  if (r.amenities && r.amenities.includes('Cot or high chair')) A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), ...(A.modules || {}), kids: true };
+  if (r.amenities && r.amenities.some(x => ['cot', 'travel_cot', 'high_chair', 'cot_or_chair'].includes(x))) A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), ...(A.modules || {}), kids: true };
   log('prefill', 'listing', { n: got.length }); queueSave();
   return got;
 }

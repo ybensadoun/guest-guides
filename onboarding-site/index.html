@@ -568,6 +568,23 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .rv-links{display:flex;flex-wrap:wrap;gap:8px}
 .rv-links a{font-size:14.5px;font-weight:600;color:inherit;text-decoration:none;min-height:40px;display:inline-flex;align-items:center;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--sunk)}
 .rv-links a:hover{border-color:var(--ink)}
+/* What the place offers: search, the most asked for, every group to open, the host's own */
+.am .am-h{margin:14px 0 2px;font-size:16px}
+.am-res{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.am-res:empty{display:none}
+.am-gs{display:flex;flex-direction:column;gap:8px}
+.am-g{background:var(--sunk);border-radius:var(--r-s);padding:0 14px}
+.am-g summary{display:flex;align-items:center;gap:10px;min-height:50px;cursor:pointer;font-weight:700;list-style:none}
+.am-g summary::-webkit-details-marker{display:none}
+.am-g summary span{flex:1;min-width:0}
+.am-g summary small{color:var(--muted);font-weight:600;white-space:nowrap}
+.am-g summary::after{content:'';flex:none;width:8px;height:8px;margin:0 4px 4px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg)}
+.am-g[open] summary::after{margin-top:6px;margin-bottom:0;transform:rotate(-135deg)}
+.am-g .chips{padding:2px 0 14px}
+.am-g .chip span{background:var(--surface)}
+.am-x{display:inline-flex;align-items:center;gap:2px;max-width:100%;padding:3px 3px 3px 14px;border-radius:999px;background:var(--ink);color:var(--paper);font-weight:600;font-size:14.5px}
+.am-x>span{min-width:0;overflow-wrap:break-word}
+.am-x button{flex:none;width:34px;height:34px;border:0;border-radius:50%;background:none;color:inherit;font-size:20px;line-height:1;cursor:pointer}
 
 </style>
 </head>
@@ -607,13 +624,13 @@ const I = {
   kite: svg('<path d="M12 3l7 7-7 7-7-7z"/><path d="M12 17v4M9 21h6"/>'),
   send: svg('<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>'),
   bag: svg('<path d="M5 8h14l-1.5 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>'),
-  moon: svg('<path d="M20 14.6A8.2 8.2 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6z"/>')
+  moon: svg('<path d="M20 14.6A8.2 8.2 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6z"/>'),
+  star: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>')
 };
 
 /* ---------- Answer options ---------- */
 const LANGS = [['en','English'],['es','Español'],['fr','Français'],['ca','Català'],['de','Deutsch'],['nl','Nederlands'],['it','Italiano'],['pt','Português']];
 const GUESTS = ['Families with kids','Couples','Groups of friends','Remote workers','Older guests','Guests with pets','Wedding or event guests'];
-const AMEN = ['Pool','Garden','BBQ','Air conditioning','Heating or fireplace','Washing machine','Dishwasher','Coffee machine','Smart TV','Cot or high chair','Pets allowed','Free parking','EV charger','Hot tub','Bikes','Workspace','Sea view','Lift'];
 const ROOMS = ['Outside','Living room','Kitchen','Bedroom','Bathroom','Pool','Garden','Terrace','Office','Laundry','View','Other'];
 const INTERESTS = ['Beaches','Wine and food','Hiking and nature','Culture and history','Local markets','Nightlife','Festivals','Sports','Shopping','Wellness'];
 const MOODS = [
@@ -667,8 +684,10 @@ const MODULES = [
    need:[],fields:['up:logo','up:cover','mood','colorsFrom']},
   {id:'photos',group:'house',title:'Rooms and photos',sub:'The rooms, in your order',icon:'cam',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'quarter',
    lead:'Guests see your rooms in this order, on the house page and in the house guide. Use the arrows to change it. Tap a photo to see it big, move it to another room or remove it.',need:[],fields:['up:photo']},
+  {id:'offers',group:'house',title:'What the place offers',sub:'Amenities, by group',icon:'star',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'circle',
+   lead:'Guests see these on the house page, the most asked for first. What your listing says is already ticked. Search for anything else, or open a group.',need:[],fields:['amenities']},
   {id:'howto',group:'house',title:'How things work',sub:'Boiler, pool, TV…',icon:'tool',tc:'var(--clay)',ti:'#fff',sh:'var(--ink)',shape:'bar',sec:'houseguide',
-   lead:'What the place has, and anything guests get stuck on that belongs to no room in particular. Each room has its own notes in Rooms and photos.',need:[],fields:['amenities','howTos','up:manual']},
+   lead:'Anything guests get stuck on that belongs to no room in particular: the boiler, the shutters, the pool pump. Each room has its own notes in Rooms and photos.',need:[],fields:['howTos','up:manual']},
   {id:'stay',group:'house',title:'Check-in and rules',sub:'Times, rules, leaving',icon:'key',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
    lead:'The times and the few rules that matter.',need:[],fields:['checkIn','checkOut','houseRules','checkoutTasks']},
   {id:'wifi',group:'house',title:'Wi-Fi',sub:'Name and password',icon:'wifi',tc:'var(--pine)',ti:'#fff',sh:'var(--tomato)',shape:'half',sec:'wifi',part:'known',
@@ -730,7 +749,7 @@ const Q = {
   homeFirst:{t:'chips',label:'What should guests see first?',opt:true,hint:'Pick up to four.',opts:['Wi-Fi','Check-out time','House guide','How to get in','Places to eat','What\u2019s on today','Beaches','Map','Rubbish tonight']},
   lookAvoid:{t:'area',rows:2,label:'Anything to avoid?',opt:true,full:true,ph:'No pink, nothing too corporate…'},
   moduleIdeas:{t:'area',rows:2,label:'An idea we don’t have yet?',opt:true,full:true,ph:'A page about the vineyard next door…',hint:'We build new ideas as new sections.'},
-  amenities:{t:'chips',label:'What the place has',opts:AMEN,opt:true},
+  amenities:{t:'amen',label:'What the place offers',opt:true},
   howTos:{t:'area',rows:8,label:'How things work',opt:true,full:true,hint:'One tip per line. Say the room if it is not obvious: we put each line in the room it talks about.',ph:'Cleaning products and dishwasher tablets are under the kitchen sink\nSpare batteries are in the TV unit\nOne bath towel per person; beach towels are in the hall cupboard\nThe pool is not heated; the cover key hangs by the door\nThe heating is set on the thermostat by the front door'},
   checkIn:{t:'time',label:'Check-in from'},
   checkOut:{t:'time',label:'Check-out by'},
@@ -782,6 +801,7 @@ const UP = {
 const NEEDED = new Set(MODULES.flatMap(m => m.need));
 function badge(k){ const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k; if (!NEEDED.has(key)) return '<span class="opt">optional</span>'; return filled(key) ? `<span class="req ok">${CHECK.replace('<svg','<svg width="11" height="11"')} Done</span>` : '<span class="req">Needed</span>'; }
 function field(k){
+  if (k === 'amenities') return amenHTML();
   if (k === 'slug') return `<div class="f full"><label for="f_slug">${esc(Q.slug.label)}</label><p class="hint">${esc(Q.slug.hint)}</p><div class="slugbox"><span>${esc(GUIDES_AT)}/</span><input id="f_slug" data-k="slug" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(v('slug'))}" placeholder="villa-mar" maxlength="40"></div><div id="slugNote" aria-live="polite">${slugNoteHTML()}</div></div>`;
   if (k === 'fillBtn') return `<div class="full" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn sun" type="button" id="fillListing">Fill in from my listing</button><span class="hint">Fills the steps it can and marks them “Review”. Nothing you typed is replaced.</span></div>`;
   if (k === 'swipe') return swipeHTML();
@@ -922,19 +942,248 @@ function fixRail(){
   if (cr.top < rr.top + 8 || cr.bottom > rr.bottom - 8) rail.scrollTop += (cr.top - rr.top) - (rail.clientHeight - cur.clientHeight) / 2;
 }
 
+const AMENS = {
+ "_doc": "Amenities a guide can list, for the builder (search, groups), the listing read (Airbnb codes: pdp_v3_<group>_<n> gives n, sv<n> for scenic views) and the House page. id: kept in answers.amenities. g: group. ab: Airbnb codes. top: rank among the first ones on the House page (1 first, 0 not). t: the name in six languages. k: other words, as phrases separated by commas, for search and for matching a listing in English; \"-\" marks an old builder choice that is not offered any more.",
+ "groups": [
+  {"id": "views", "t": {"en": "Scenic views", "es": "Vistas", "fr": "Vues", "ca": "Vistes", "de": "Aussicht", "nl": "Uitzicht"}},
+  {"id": "bathroom", "t": {"en": "Bathroom", "es": "Baño", "fr": "Salle de bain", "ca": "Bany", "de": "Bad", "nl": "Badkamer"}},
+  {"id": "bedroom", "t": {"en": "Bedroom and laundry", "es": "Dormitorio y lavandería", "fr": "Chambre et linge", "ca": "Dormitori i bugaderia", "de": "Schlafzimmer und Wäsche", "nl": "Slaapkamer en was"}},
+  {"id": "fun", "t": {"en": "Entertainment", "es": "Entretenimiento", "fr": "Divertissement", "ca": "Entreteniment", "de": "Unterhaltung", "nl": "Entertainment"}},
+  {"id": "family", "t": {"en": "Family", "es": "Familia", "fr": "Famille", "ca": "Família", "de": "Familie", "nl": "Gezin"}},
+  {"id": "climate", "t": {"en": "Heating and cooling", "es": "Calefacción y aire", "fr": "Chauffage et climatisation", "ca": "Calefacció i aire", "de": "Heizung und Kühlung", "nl": "Verwarming en koeling"}},
+  {"id": "safety", "t": {"en": "Home safety", "es": "Seguridad", "fr": "Sécurité", "ca": "Seguretat", "de": "Sicherheit", "nl": "Veiligheid"}},
+  {"id": "office", "t": {"en": "Internet and office", "es": "Internet y oficina", "fr": "Internet et bureau", "ca": "Internet i oficina", "de": "Internet und Büro", "nl": "Internet en kantoor"}},
+  {"id": "kitchen", "t": {"en": "Kitchen and dining", "es": "Cocina y comedor", "fr": "Cuisine et repas", "ca": "Cuina i menjador", "de": "Küche und Essen", "nl": "Keuken en eten"}},
+  {"id": "location", "t": {"en": "Location", "es": "Ubicación", "fr": "Emplacement", "ca": "Ubicació", "de": "Lage", "nl": "Ligging"}},
+  {"id": "outdoor", "t": {"en": "Outdoor", "es": "Exterior", "fr": "Extérieur", "ca": "Exterior", "de": "Draußen", "nl": "Buiten"}},
+  {"id": "parking", "t": {"en": "Parking and facilities", "es": "Aparcamiento e instalaciones", "fr": "Parking et équipements", "ca": "Aparcament i instal·lacions", "de": "Parken und Einrichtungen", "nl": "Parkeren en voorzieningen"}},
+  {"id": "services", "t": {"en": "Services", "es": "Servicios", "fr": "Services", "ca": "Serveis", "de": "Service", "nl": "Service"}},
+  {"id": "other", "t": {"en": "Also", "es": "Además", "fr": "Et aussi", "ca": "A més", "de": "Außerdem", "nl": "Verder"}}
+ ],
+ "items": [
+  {"id": "pool_view", "g": "views", "ab": ["sv18"], "t": {"en": "Pool view", "es": "Vista a la piscina", "fr": "Vue sur la piscine", "ca": "Vista a la piscina", "de": "Poolblick", "nl": "Uitzicht op het zwembad"}},
+  {"id": "mountain_view", "g": "views", "ab": ["sv12"], "top": 22, "t": {"en": "Mountain view", "es": "Vista a la montaña", "fr": "Vue sur la montagne", "ca": "Vista a la muntanya", "de": "Bergblick", "nl": "Uitzicht op de bergen"}, "k": "mountains"},
+  {"id": "sea_view", "g": "views", "top": 3, "t": {"en": "Sea view", "es": "Vista al mar", "fr": "Vue sur la mer", "ca": "Vista al mar", "de": "Meerblick", "nl": "Uitzicht op zee"}, "k": "ocean view"},
+  {"id": "beach_view", "g": "views", "t": {"en": "Beach view", "es": "Vista a la playa", "fr": "Vue sur la plage", "ca": "Vista a la platja", "de": "Strandblick", "nl": "Uitzicht op het strand"}},
+  {"id": "garden_view", "g": "views", "t": {"en": "Garden view", "es": "Vista al jardín", "fr": "Vue sur le jardin", "ca": "Vista al jardí", "de": "Gartenblick", "nl": "Uitzicht op de tuin"}},
+  {"id": "city_view", "g": "views", "t": {"en": "City view", "es": "Vista a la ciudad", "fr": "Vue sur la ville", "ca": "Vista a la ciutat", "de": "Stadtblick", "nl": "Uitzicht op de stad"}, "k": "skyline"},
+  {"id": "vineyard_view", "g": "views", "t": {"en": "Vineyard view", "es": "Vista a los viñedos", "fr": "Vue sur les vignes", "ca": "Vista a les vinyes", "de": "Blick auf die Weinberge", "nl": "Uitzicht op de wijngaarden"}, "k": "vines"},
+  {"id": "lake_view", "g": "views", "t": {"en": "Lake view", "es": "Vista al lago", "fr": "Vue sur le lac", "ca": "Vista al llac", "de": "Seeblick", "nl": "Uitzicht op het meer"}},
+  {"id": "valley_view", "g": "views", "t": {"en": "Valley view", "es": "Vista al valle", "fr": "Vue sur la vallée", "ca": "Vista a la vall", "de": "Talblick", "nl": "Uitzicht op het dal"}},
+  {"id": "hair_dryer", "g": "bathroom", "ab": ["45"], "t": {"en": "Hair dryer", "es": "Secador de pelo", "fr": "Sèche-cheveux", "ca": "Assecador de cabells", "de": "Haartrockner", "nl": "Föhn"}, "k": "hairdryer"},
+  {"id": "shampoo", "g": "bathroom", "ab": ["41"], "t": {"en": "Shampoo", "es": "Champú", "fr": "Shampooing", "ca": "Xampú", "de": "Shampoo", "nl": "Shampoo"}},
+  {"id": "conditioner", "g": "bathroom", "t": {"en": "Conditioner", "es": "Acondicionador", "fr": "Après-shampooing", "ca": "Condicionador", "de": "Spülung", "nl": "Conditioner"}},
+  {"id": "body_soap", "g": "bathroom", "ab": ["79"], "t": {"en": "Body soap", "es": "Jabón", "fr": "Savon", "ca": "Sabó", "de": "Seife", "nl": "Zeep"}, "k": "soap"},
+  {"id": "shower_gel", "g": "bathroom", "ab": ["611"], "t": {"en": "Shower gel", "es": "Gel de ducha", "fr": "Gel douche", "ca": "Gel de dutxa", "de": "Duschgel", "nl": "Douchegel"}},
+  {"id": "essentials", "g": "bathroom", "ab": ["40"], "t": {"en": "Towels, sheets, soap and toilet paper", "es": "Toallas, sábanas, jabón y papel higiénico", "fr": "Serviettes, draps, savon et papier toilette", "ca": "Tovalloles, llençols, sabó i paper higiènic", "de": "Handtücher, Bettlaken, Seife und Toilettenpapier", "nl": "Handdoeken, lakens, zeep en wc-papier"}, "k": "essentials, towels"},
+  {"id": "beach_towels", "g": "bathroom", "t": {"en": "Beach towels", "es": "Toallas de playa", "fr": "Serviettes de plage", "ca": "Tovalloles de platja", "de": "Strandtücher", "nl": "Strandlakens"}, "k": "beach essentials"},
+  {"id": "cleaning_products", "g": "bathroom", "ab": ["665"], "t": {"en": "Cleaning products", "es": "Productos de limpieza", "fr": "Produits ménagers", "ca": "Productes de neteja", "de": "Reinigungsmittel", "nl": "Schoonmaakmiddelen"}},
+  {"id": "hot_water", "g": "bathroom", "ab": ["77"], "t": {"en": "Hot water", "es": "Agua caliente", "fr": "Eau chaude", "ca": "Aigua calenta", "de": "Warmwasser", "nl": "Warm water"}},
+  {"id": "bathtub", "g": "bathroom", "t": {"en": "Bathtub", "es": "Bañera", "fr": "Baignoire", "ca": "Banyera", "de": "Badewanne", "nl": "Ligbad"}, "k": "bath"},
+  {"id": "bidet", "g": "bathroom", "t": {"en": "Bidet", "es": "Bidé", "fr": "Bidet", "ca": "Bidet", "de": "Bidet", "nl": "Bidet"}},
+  {"id": "outdoor_shower", "g": "bathroom", "ab": ["210"], "t": {"en": "Outdoor shower", "es": "Ducha exterior", "fr": "Douche extérieure", "ca": "Dutxa exterior", "de": "Außendusche", "nl": "Buitendouche"}},
+  {"id": "washer", "g": "bedroom", "ab": ["33"], "top": 10, "t": {"en": "Washing machine", "es": "Lavadora", "fr": "Lave-linge", "ca": "Rentadora", "de": "Waschmaschine", "nl": "Wasmachine"}, "k": "washer, laundry"},
+  {"id": "dryer", "g": "bedroom", "ab": ["34"], "t": {"en": "Tumble dryer", "es": "Secadora", "fr": "Sèche-linge", "ca": "Assecadora", "de": "Wäschetrockner", "nl": "Droger"}, "k": "dryer"},
+  {"id": "drying_rack", "g": "bedroom", "ab": ["667"], "t": {"en": "Drying rack", "es": "Tendedero", "fr": "Étendoir", "ca": "Estenedor", "de": "Wäscheständer", "nl": "Droogrek"}, "k": "clothes drying rack, clothesline"},
+  {"id": "iron", "g": "bedroom", "ab": ["46"], "t": {"en": "Iron", "es": "Plancha", "fr": "Fer à repasser", "ca": "Planxa", "de": "Bügeleisen", "nl": "Strijkijzer"}, "k": "ironing board"},
+  {"id": "bed_linen", "g": "bedroom", "ab": ["85"], "t": {"en": "Bed linen", "es": "Ropa de cama", "fr": "Linge de lit", "ca": "Roba de llit", "de": "Bettwäsche", "nl": "Beddengoed"}, "k": "sheets, linen"},
+  {"id": "extra_pillows", "g": "bedroom", "ab": ["86"], "t": {"en": "Extra pillows and blankets", "es": "Almohadas y mantas extra", "fr": "Oreillers et couvertures en plus", "ca": "Coixins i mantes extra", "de": "Extra Kissen und Decken", "nl": "Extra kussens en dekens"}},
+  {"id": "blackout", "g": "bedroom", "ab": ["73"], "t": {"en": "Room-darkening blinds", "es": "Persianas opacas", "fr": "Volets occultants", "ca": "Persianes opaques", "de": "Verdunkelung", "nl": "Verduisterende rolluiken"}, "k": "room-darkening shades, blackout curtains, blackout blinds"},
+  {"id": "mosquito_net", "g": "bedroom", "ab": ["211"], "t": {"en": "Mosquito nets", "es": "Mosquiteras", "fr": "Moustiquaires", "ca": "Mosquiteres", "de": "Moskitonetze", "nl": "Horren"}, "k": "mosquito net"},
+  {"id": "hangers", "g": "bedroom", "ab": ["44"], "t": {"en": "Hangers", "es": "Perchas", "fr": "Cintres", "ca": "Penjadors", "de": "Kleiderbügel", "nl": "Kleerhangers"}},
+  {"id": "clothes_storage", "g": "bedroom", "ab": ["671"], "t": {"en": "Wardrobe and drawers", "es": "Armario y cómoda", "fr": "Armoire et commode", "ca": "Armari i calaixera", "de": "Kleiderschrank und Kommode", "nl": "Kledingkast en ladekast"}, "k": "clothes storage, closet, dresser"},
+  {"id": "safe", "g": "bedroom", "ab": ["232"], "t": {"en": "Safe", "es": "Caja fuerte", "fr": "Coffre-fort", "ca": "Caixa forta", "de": "Safe", "nl": "Kluis"}},
+  {"id": "tv", "g": "fun", "ab": ["1"], "top": 16, "t": {"en": "TV", "es": "Televisión", "fr": "Télévision", "ca": "Televisió", "de": "Fernseher", "nl": "Tv"}, "k": "television, smart tv, hdtv"},
+  {"id": "streaming", "g": "fun", "t": {"en": "Streaming services", "es": "Plataformas de streaming", "fr": "Services de streaming", "ca": "Plataformes de streaming", "de": "Streamingdienste", "nl": "Streamingdiensten"}, "k": "netflix"},
+  {"id": "sound_system", "g": "fun", "ab": ["185"], "t": {"en": "Sound system", "es": "Equipo de sonido", "fr": "Système audio", "ca": "Equip de so", "de": "Soundsystem", "nl": "Geluidssysteem"}, "k": "speaker, bluetooth speaker"},
+  {"id": "books", "g": "fun", "ab": ["394"], "t": {"en": "Books and reading material", "es": "Libros y lectura", "fr": "Livres et lectures", "ca": "Llibres i lectura", "de": "Bücher und Lesestoff", "nl": "Boeken en leesmateriaal"}},
+  {"id": "games_console", "g": "fun", "t": {"en": "Games console", "es": "Videoconsola", "fr": "Console de jeux", "ca": "Videoconsola", "de": "Spielkonsole", "nl": "Spelcomputer"}, "k": "game console, playstation, xbox"},
+  {"id": "piano", "g": "fun", "t": {"en": "Piano", "es": "Piano", "fr": "Piano", "ca": "Piano", "de": "Klavier", "nl": "Piano"}},
+  {"id": "ping_pong", "g": "fun", "t": {"en": "Table tennis", "es": "Ping-pong", "fr": "Ping-pong", "ca": "Ping-pong", "de": "Tischtennis", "nl": "Tafeltennis"}, "k": "ping pong table, ping pong"},
+  {"id": "pool_table", "g": "fun", "t": {"en": "Pool table", "es": "Billar", "fr": "Billard", "ca": "Billar", "de": "Billardtisch", "nl": "Pooltafel"}, "k": "billiards"},
+  {"id": "ethernet", "g": "office", "ab": ["87"], "t": {"en": "Ethernet connection", "es": "Conexión por cable", "fr": "Prise Ethernet", "ca": "Connexió per cable", "de": "Ethernet-Anschluss", "nl": "Ethernetaansluiting"}, "k": "ethernet"},
+  {"id": "travel_cot", "g": "family", "ab": ["72"], "top": 18, "t": {"en": "Travel cot", "es": "Cuna de viaje", "fr": "Lit parapluie", "ca": "Bressol de viatge", "de": "Reisebett", "nl": "Campingbedje"}, "k": "pack n play, travel crib, pack ’n play/travel crib"},
+  {"id": "cot", "g": "family", "t": {"en": "Cot", "es": "Cuna", "fr": "Lit bébé", "ca": "Bressol", "de": "Babybett", "nl": "Babybedje"}, "k": "crib"},
+  {"id": "high_chair", "g": "family", "ab": ["64"], "top": 19, "t": {"en": "High chair", "es": "Trona", "fr": "Chaise haute", "ca": "Cadira alta", "de": "Hochstuhl", "nl": "Kinderstoel"}},
+  {"id": "baby_bath", "g": "family", "t": {"en": "Baby bath", "es": "Bañera para bebés", "fr": "Baignoire bébé", "ca": "Banyera per a nadons", "de": "Babybadewanne", "nl": "Babybadje"}},
+  {"id": "changing_table", "g": "family", "t": {"en": "Changing table", "es": "Cambiador", "fr": "Table à langer", "ca": "Canviador", "de": "Wickeltisch", "nl": "Verschoontafel"}},
+  {"id": "toys", "g": "family", "t": {"en": "Children's books and toys", "es": "Libros y juguetes infantiles", "fr": "Livres et jouets pour enfants", "ca": "Llibres i joguines infantils", "de": "Kinderbücher und Spielzeug", "nl": "Kinderboeken en speelgoed"}, "k": "kids, toys"},
+  {"id": "board_games", "g": "family", "ab": ["392"], "t": {"en": "Board games", "es": "Juegos de mesa", "fr": "Jeux de société", "ca": "Jocs de taula", "de": "Brettspiele", "nl": "Bordspellen"}},
+  {"id": "baby_gates", "g": "family", "t": {"en": "Baby safety gates", "es": "Barreras de seguridad para bebés", "fr": "Barrières de sécurité", "ca": "Barreres de seguretat per a nadons", "de": "Treppenschutzgitter", "nl": "Traphekjes"}, "k": "stair gates, baby gates"},
+  {"id": "pool_fence", "g": "family", "t": {"en": "Pool fence", "es": "Valla de piscina", "fr": "Barrière de piscine", "ca": "Tanca de piscina", "de": "Poolzaun", "nl": "Zwembadhek"}},
+  {"id": "cot_or_chair", "g": "family", "t": {"en": "Cot or high chair", "es": "Cuna o trona", "fr": "Lit bébé ou chaise haute", "ca": "Bressol o cadira alta", "de": "Babybett oder Hochstuhl", "nl": "Babybedje of kinderstoel"}, "k": "-"},
+  {"id": "ac", "g": "climate", "ab": ["5"], "top": 4, "t": {"en": "Air conditioning", "es": "Aire acondicionado", "fr": "Climatisation", "ca": "Aire condicionat", "de": "Klimaanlage", "nl": "Airco"}, "k": "aircon, a/c, ac, cooling, ac - split-type ductless system"},
+  {"id": "ceiling_fan", "g": "climate", "ab": ["139"], "t": {"en": "Ceiling fan", "es": "Ventilador de techo", "fr": "Ventilateur de plafond", "ca": "Ventilador de sostre", "de": "Deckenventilator", "nl": "Plafondventilator"}},
+  {"id": "portable_fans", "g": "climate", "ab": ["522"], "t": {"en": "Portable fans", "es": "Ventiladores portátiles", "fr": "Ventilateurs portables", "ca": "Ventiladors portàtils", "de": "Standventilatoren", "nl": "Losse ventilatoren"}, "k": "fan"},
+  {"id": "heating", "g": "climate", "ab": ["30"], "top": 17, "t": {"en": "Heating", "es": "Calefacción", "fr": "Chauffage", "ca": "Calefacció", "de": "Heizung", "nl": "Verwarming"}, "k": "central heating, radiators"},
+  {"id": "fireplace", "g": "climate", "top": 14, "t": {"en": "Fireplace", "es": "Chimenea", "fr": "Cheminée", "ca": "Llar de foc", "de": "Kamin", "nl": "Open haard"}, "k": "indoor fireplace, wood stove, log burner"},
+  {"id": "floor_heating", "g": "climate", "t": {"en": "Underfloor heating", "es": "Suelo radiante", "fr": "Chauffage au sol", "ca": "Terra radiant", "de": "Fußbodenheizung", "nl": "Vloerverwarming"}, "k": "heated floors"},
+  {"id": "heat_or_fire", "g": "climate", "t": {"en": "Heating or fireplace", "es": "Calefacción o chimenea", "fr": "Chauffage ou cheminée", "ca": "Calefacció o llar de foc", "de": "Heizung oder Kamin", "nl": "Verwarming of open haard"}, "k": "-"},
+  {"id": "smoke_alarm", "g": "safety", "ab": ["35"], "t": {"en": "Smoke alarm", "es": "Detector de humo", "fr": "Détecteur de fumée", "ca": "Detector de fum", "de": "Rauchmelder", "nl": "Rookmelder"}, "k": "smoke detector"},
+  {"id": "co_alarm", "g": "safety", "ab": ["36"], "t": {"en": "Carbon monoxide alarm", "es": "Detector de monóxido de carbono", "fr": "Détecteur de monoxyde de carbone", "ca": "Detector de monòxid de carboni", "de": "Kohlenmonoxidmelder", "nl": "Koolmonoxidemelder"}, "k": "co detector, carbon monoxide detector"},
+  {"id": "first_aid", "g": "safety", "ab": ["37"], "t": {"en": "First aid kit", "es": "Botiquín", "fr": "Trousse de premiers secours", "ca": "Farmaciola", "de": "Erste-Hilfe-Set", "nl": "EHBO-doos"}},
+  {"id": "fire_extinguisher", "g": "safety", "t": {"en": "Fire extinguisher", "es": "Extintor", "fr": "Extincteur", "ca": "Extintor", "de": "Feuerlöscher", "nl": "Brandblusser"}},
+  {"id": "wifi", "g": "office", "ab": ["4"], "top": 5, "t": {"en": "Wifi", "es": "Wifi", "fr": "Wifi", "ca": "Wifi", "de": "WLAN", "nl": "Wifi"}, "k": "wi-fi, internet"},
+  {"id": "workspace", "g": "office", "ab": ["47"], "top": 6, "t": {"en": "Dedicated workspace", "es": "Espacio de trabajo", "fr": "Espace de travail", "ca": "Espai de treball", "de": "Arbeitsplatz", "nl": "Werkplek"}, "k": "workspace, desk, office, work area"},
+  {"id": "printer", "g": "office", "t": {"en": "Printer", "es": "Impresora", "fr": "Imprimante", "ca": "Impressora", "de": "Drucker", "nl": "Printer"}},
+  {"id": "kitchen", "g": "kitchen", "ab": ["8"], "top": 7, "t": {"en": "Kitchen", "es": "Cocina", "fr": "Cuisine", "ca": "Cuina", "de": "Küche", "nl": "Keuken"}},
+  {"id": "fridge", "g": "kitchen", "ab": ["91"], "t": {"en": "Fridge", "es": "Nevera", "fr": "Réfrigérateur", "ca": "Nevera", "de": "Kühlschrank", "nl": "Koelkast"}, "k": "refrigerator"},
+  {"id": "freezer", "g": "kitchen", "ab": ["308"], "t": {"en": "Freezer", "es": "Congelador", "fr": "Congélateur", "ca": "Congelador", "de": "Gefrierschrank", "nl": "Vriezer"}},
+  {"id": "dishwasher", "g": "kitchen", "ab": ["92"], "top": 11, "t": {"en": "Dishwasher", "es": "Lavavajillas", "fr": "Lave-vaisselle", "ca": "Rentaplats", "de": "Geschirrspüler", "nl": "Vaatwasser"}},
+  {"id": "hob", "g": "kitchen", "ab": ["96"], "t": {"en": "Hob", "es": "Placa de cocina", "fr": "Plaques de cuisson", "ca": "Placa de cuina", "de": "Kochfeld", "nl": "Kookplaat"}, "k": "stove, cooker, induction hob"},
+  {"id": "oven", "g": "kitchen", "ab": ["95"], "t": {"en": "Oven", "es": "Horno", "fr": "Four", "ca": "Forn", "de": "Backofen", "nl": "Oven"}},
+  {"id": "microwave", "g": "kitchen", "ab": ["89"], "t": {"en": "Microwave", "es": "Microondas", "fr": "Micro-ondes", "ca": "Microones", "de": "Mikrowelle", "nl": "Magnetron"}},
+  {"id": "kettle", "g": "kitchen", "ab": ["137"], "t": {"en": "Kettle", "es": "Hervidor de agua", "fr": "Bouilloire", "ca": "Bullidor d’aigua", "de": "Wasserkocher", "nl": "Waterkoker"}, "k": "hot water kettle"},
+  {"id": "coffee_maker", "g": "kitchen", "ab": ["90"], "top": 23, "t": {"en": "Coffee maker", "es": "Cafetera", "fr": "Cafetière", "ca": "Cafetera", "de": "Kaffeemaschine", "nl": "Koffiezetapparaat"}, "k": "coffee machine, espresso machine, nespresso"},
+  {"id": "coffee", "g": "kitchen", "ab": ["415"], "t": {"en": "Coffee", "es": "Café", "fr": "Café", "ca": "Cafè", "de": "Kaffee", "nl": "Koffie"}},
+  {"id": "toaster", "g": "kitchen", "ab": ["251"], "t": {"en": "Toaster", "es": "Tostadora", "fr": "Grille-pain", "ca": "Torradora", "de": "Toaster", "nl": "Broodrooster"}},
+  {"id": "blender", "g": "kitchen", "ab": ["322"], "t": {"en": "Blender", "es": "Batidora", "fr": "Mixeur", "ca": "Batedora", "de": "Mixer", "nl": "Blender"}},
+  {"id": "cooking_basics", "g": "kitchen", "ab": ["94"], "t": {"en": "Pots and pans, oil, salt and pepper", "es": "Ollas y sartenes, aceite, sal y pimienta", "fr": "Casseroles et poêles, huile, sel et poivre", "ca": "Olles i paelles, oli, sal i pebre", "de": "Töpfe und Pfannen, Öl, Salz und Pfeffer", "nl": "Pannen, olie, peper en zout"}, "k": "cooking basics"},
+  {"id": "dishes", "g": "kitchen", "ab": ["93"], "t": {"en": "Plates, bowls, cups and cutlery", "es": "Platos, cuencos, tazas y cubiertos", "fr": "Assiettes, bols, tasses et couverts", "ca": "Plats, bols, tasses i coberts", "de": "Teller, Schüsseln, Tassen und Besteck", "nl": "Borden, kommen, kopjes en bestek"}, "k": "dishes and silverware, crockery and cutlery"},
+  {"id": "wine_glasses", "g": "kitchen", "ab": ["672"], "t": {"en": "Wine glasses", "es": "Copas de vino", "fr": "Verres à vin", "ca": "Copes de vi", "de": "Weingläser", "nl": "Wijnglazen"}},
+  {"id": "baking_tray", "g": "kitchen", "ab": ["625"], "t": {"en": "Baking tray", "es": "Bandeja de horno", "fr": "Plaque de cuisson", "ca": "Safata de forn", "de": "Backblech", "nl": "Bakplaat"}, "k": "baking sheet"},
+  {"id": "bbq_utensils", "g": "kitchen", "ab": ["626"], "t": {"en": "Barbecue utensils", "es": "Utensilios de barbacoa", "fr": "Ustensiles de barbecue", "ca": "Estris de barbacoa", "de": "Grillzubehör", "nl": "Barbecuegerei"}},
+  {"id": "dining_table", "g": "kitchen", "ab": ["236"], "t": {"en": "Dining table", "es": "Mesa de comedor", "fr": "Table à manger", "ca": "Taula de menjador", "de": "Esstisch", "nl": "Eettafel"}},
+  {"id": "laundromat", "g": "location", "ab": ["663"], "t": {"en": "Laundromat nearby", "es": "Lavandería cerca", "fr": "Laverie à proximité", "ca": "Bugaderia a prop", "de": "Waschsalon in der Nähe", "nl": "Wasserette in de buurt"}, "k": "launderette, laundromat nearby, launderette nearby"},
+  {"id": "beach_access", "g": "location", "t": {"en": "Beach access", "es": "Acceso a la playa", "fr": "Accès à la plage", "ca": "Accés a la platja", "de": "Strandzugang", "nl": "Toegang tot het strand"}, "k": "beachfront, beach access"},
+  {"id": "lake_access", "g": "location", "t": {"en": "Lake access", "es": "Acceso al lago", "fr": "Accès au lac", "ca": "Accés al llac", "de": "Seezugang", "nl": "Toegang tot het meer"}},
+  {"id": "private_entrance", "g": "location", "t": {"en": "Private entrance", "es": "Entrada privada", "fr": "Entrée privée", "ca": "Entrada privada", "de": "Eigener Eingang", "nl": "Eigen ingang"}},
+  {"id": "pool", "g": "outdoor", "ab": ["7"], "top": 1, "t": {"en": "Pool", "es": "Piscina", "fr": "Piscine", "ca": "Piscina", "de": "Pool", "nl": "Zwembad"}, "k": "swimming pool"},
+  {"id": "hot_tub", "g": "outdoor", "top": 2, "t": {"en": "Hot tub", "es": "Jacuzzi", "fr": "Jacuzzi", "ca": "Jacuzzi", "de": "Whirlpool", "nl": "Bubbelbad"}, "k": "jacuzzi, spa, whirlpool"},
+  {"id": "garden", "g": "outdoor", "ab": ["101"], "top": 13, "t": {"en": "Garden", "es": "Jardín", "fr": "Jardin", "ca": "Jardí", "de": "Garten", "nl": "Tuin"}, "k": "backyard, back garden, yard"},
+  {"id": "patio", "g": "outdoor", "ab": ["100"], "t": {"en": "Patio or balcony", "es": "Patio o balcón", "fr": "Patio ou balcon", "ca": "Pati o balcó", "de": "Terrasse oder Balkon", "nl": "Terras of balkon"}, "k": "terrace, balcony, patio or balcony, private patio or balcony"},
+  {"id": "bbq", "g": "outdoor", "ab": ["99"], "top": 12, "t": {"en": "Barbecue", "es": "Barbacoa", "fr": "Barbecue", "ca": "Barbacoa", "de": "Grill", "nl": "Barbecue"}, "k": "bbq, grill, bbq grill"},
+  {"id": "outdoor_dining", "g": "outdoor", "ab": ["179"], "t": {"en": "Outdoor dining area", "es": "Comedor exterior", "fr": "Coin repas extérieur", "ca": "Menjador exterior", "de": "Essbereich im Freien", "nl": "Buiten eten"}},
+  {"id": "outdoor_kitchen", "g": "outdoor", "ab": ["184"], "t": {"en": "Outdoor kitchen", "es": "Cocina exterior", "fr": "Cuisine extérieure", "ca": "Cuina exterior", "de": "Außenküche", "nl": "Buitenkeuken"}},
+  {"id": "outdoor_furniture", "g": "outdoor", "ab": ["280"], "t": {"en": "Outdoor furniture", "es": "Muebles de exterior", "fr": "Mobilier d’extérieur", "ca": "Mobles d’exterior", "de": "Gartenmöbel", "nl": "Tuinmeubels"}, "k": "garden furniture"},
+  {"id": "sun_loungers", "g": "outdoor", "ab": ["248"], "t": {"en": "Sun loungers", "es": "Tumbonas", "fr": "Transats", "ca": "Gandules", "de": "Sonnenliegen", "nl": "Ligbedden"}, "k": "deck chairs"},
+  {"id": "hammock", "g": "outdoor", "ab": ["153"], "t": {"en": "Hammock", "es": "Hamaca", "fr": "Hamac", "ca": "Hamaca", "de": "Hängematte", "nl": "Hangmat"}},
+  {"id": "fire_pit", "g": "outdoor", "t": {"en": "Fire pit", "es": "Brasero exterior", "fr": "Brasero", "ca": "Foguera exterior", "de": "Feuerstelle", "nl": "Vuurkorf"}, "k": "firepit"},
+  {"id": "bikes", "g": "outdoor", "top": 20, "t": {"en": "Bikes", "es": "Bicicletas", "fr": "Vélos", "ca": "Bicicletes", "de": "Fahrräder", "nl": "Fietsen"}, "k": "bicycles"},
+  {"id": "kayak", "g": "outdoor", "t": {"en": "Kayak", "es": "Kayak", "fr": "Kayak", "ca": "Caiac", "de": "Kajak", "nl": "Kajak"}, "k": "canoe"},
+  {"id": "free_parking", "g": "parking", "ab": ["9"], "top": 8, "t": {"en": "Free parking on the property", "es": "Aparcamiento gratuito en la propiedad", "fr": "Parking gratuit sur place", "ca": "Aparcament gratuït a la propietat", "de": "Kostenloser Parkplatz auf dem Grundstück", "nl": "Gratis parkeren op het terrein"}, "k": "free parking, free parking on premises, garage, driveway"},
+  {"id": "street_parking", "g": "parking", "ab": ["23"], "t": {"en": "Free street parking", "es": "Aparcamiento gratuito en la calle", "fr": "Stationnement gratuit dans la rue", "ca": "Aparcament gratuït al carrer", "de": "Kostenloses Parken an der Straße", "nl": "Gratis parkeren op straat"}, "k": "free on-street parking, free street parking"},
+  {"id": "paid_parking", "g": "parking", "t": {"en": "Paid parking", "es": "Aparcamiento de pago", "fr": "Parking payant", "ca": "Aparcament de pagament", "de": "Kostenpflichtiger Parkplatz", "nl": "Betaald parkeren"}, "k": "paid parking on premises, paid parking off premises"},
+  {"id": "ev_charger", "g": "parking", "top": 9, "t": {"en": "EV charger", "es": "Cargador para coche eléctrico", "fr": "Borne de recharge", "ca": "Carregador per a cotxe elèctric", "de": "Ladestation für E-Autos", "nl": "Laadpaal"}, "k": "electric car charging, ev charging"},
+  {"id": "lift", "g": "parking", "top": 21, "t": {"en": "Lift", "es": "Ascensor", "fr": "Ascenseur", "ca": "Ascensor", "de": "Aufzug", "nl": "Lift"}, "k": "elevator"},
+  {"id": "gym", "g": "parking", "t": {"en": "Gym", "es": "Gimnasio", "fr": "Salle de sport", "ca": "Gimnàs", "de": "Fitnessraum", "nl": "Fitnessruimte"}, "k": "fitness, exercise equipment"},
+  {"id": "sauna", "g": "parking", "t": {"en": "Sauna", "es": "Sauna", "fr": "Sauna", "ca": "Sauna", "de": "Sauna", "nl": "Sauna"}},
+  {"id": "pets", "g": "services", "ab": ["12"], "top": 15, "t": {"en": "Pets allowed", "es": "Se admiten mascotas", "fr": "Animaux acceptés", "ca": "S’admeten mascotes", "de": "Haustiere erlaubt", "nl": "Huisdieren toegestaan"}, "k": "dogs, dog-friendly, pets"},
+  {"id": "self_checkin", "g": "services", "ab": ["51"], "top": 24, "t": {"en": "Self check-in", "es": "Entrada autónoma", "fr": "Arrivée autonome", "ca": "Entrada autònoma", "de": "Self-Check-in", "nl": "Zelf inchecken"}, "k": "lockbox, key box"},
+  {"id": "smart_lock", "g": "services", "ab": ["52"], "t": {"en": "Smart lock", "es": "Cerradura inteligente", "fr": "Serrure connectée", "ca": "Pany intel·ligent", "de": "Smart Lock", "nl": "Slim slot"}},
+  {"id": "keypad", "g": "services", "t": {"en": "Keypad", "es": "Teclado con código", "fr": "Digicode", "ca": "Teclat amb codi", "de": "Tastenfeld", "nl": "Codeslot"}},
+  {"id": "luggage", "g": "services", "ab": ["103"], "t": {"en": "Luggage drop-off allowed", "es": "Se puede dejar el equipaje", "fr": "Dépôt de bagages possible", "ca": "Es pot deixar l’equipatge", "de": "Gepäckaufbewahrung möglich", "nl": "Bagage achterlaten mogelijk"}, "k": "luggage dropoff"},
+  {"id": "long_stays", "g": "services", "ab": ["104"], "t": {"en": "Long stays allowed (28 nights or more)", "es": "Estancias largas (28 noches o más)", "fr": "Longs séjours possibles (28 nuits ou plus)", "ca": "Estades llargues (28 nits o més)", "de": "Langzeitaufenthalte möglich (ab 28 Nächten)", "nl": "Lang verblijf mogelijk (28 nachten of meer)"}, "k": "long-term stays allowed, long term stays allowed"},
+  {"id": "cleaning", "g": "services", "ab": ["107"], "t": {"en": "Cleaning available during your stay", "es": "Limpieza disponible durante la estancia", "fr": "Ménage possible pendant le séjour", "ca": "Neteja disponible durant l’estada", "de": "Reinigung während des Aufenthalts möglich", "nl": "Schoonmaak mogelijk tijdens het verblijf"}, "k": "cleaning available during stay, housekeeping"},
+  {"id": "breakfast", "g": "services", "t": {"en": "Breakfast", "es": "Desayuno", "fr": "Petit-déjeuner", "ca": "Esmorzar", "de": "Frühstück", "nl": "Ontbijt"}},
+  {"id": "smoking", "g": "services", "t": {"en": "Smoking allowed", "es": "Se permite fumar", "fr": "Fumeurs acceptés", "ca": "Es permet fumar", "de": "Rauchen erlaubt", "nl": "Roken toegestaan"}}
+ ]
+};
+/* ---------- What the place offers (amenities): one list for the builder, the listing read and the House page ----------
+   AMENS is engine/src/amenities.json (build.py puts it in): groups and items, each named in six languages, with Airbnb's
+   own codes. A.amenities holds item ids, plus the host's own words for anything the list does not have. Old answers held
+   the builder's former English chips ("BBQ", "Washing machine"): amenIds turns those into ids too. */
+const AM_BY = Object.fromEntries(AMENS.items.map(x => [x.id, x]));
+const AM_CODE = Object.fromEntries(AMENS.items.flatMap(x => (x.ab || []).map(c => [c, x.id])));
+const amFold = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[’`]/g, "'").replace(/\s+/g, ' ').trim();
+const AM_WORDS = new Map(AMENS.items.flatMap(x => [x.t.en, ...(x.k && x.k !== '-' ? x.k.split(',') : [])].map(w => [amFold(w), x.id])));
+const amOld = x => x.k === '-';   // an old builder choice: kept when chosen, never offered
+// A listing's English words ("Free washer – In unit", "Private hot tub") or an old choice ("BBQ") to an item, else ''.
+function amenMatch(s){
+  const full = amFold(s), head = full.split(/:|\s[–-]\s|\(|,/)[0].trim();
+  for (const w of [full, head, head.replace(/^((free|private|shared|indoor|outdoor|in-unit|heated) )+/, '')]) if (AM_WORDS.has(w)) return AM_WORDS.get(w);
+  return '';
+}
+const amenIds = list => [...new Set((Array.isArray(list) ? list : []).map(x => AM_BY[x] ? x : amenMatch(x) || String(x || '').trim()).filter(Boolean))];
+const amenNow = () => amenIds(A.amenities);
+const amenName = x => AM_BY[x] ? AM_BY[x].t.en : x;
+// The first ones guests see on the House page: the most asked for, then the rest in list order.
+const amenKey = ids => [...ids.filter(x => (AM_BY[x] || {}).top).sort((a, b) => AM_BY[a].top - AM_BY[b].top), ...ids.filter(x => !(AM_BY[x] || {}).top)];
+// From the listing read: every amenity by Airbnb's code when the page gave them (any language), else Claude's picks and
+// the listing's own words (English), matched where the list knows them and kept as written where it does not.
+function amenFromListing(d){
+  const items = Array.isArray(d.amenityItems) ? d.amenityItems : [];
+  if (items.length) return amenIds(items.map(i => AM_CODE[i.c] || amenMatch(i.t) || i.t));
+  return amenIds([...((d.draft || {}).amenities || []), ...(Array.isArray(d.amenities) ? d.amenities : [])]);
+}
+
+const amCount = (items, on) => { const n = items.filter(x => on.has(x.id)).length; return n ? `${n} ticked` : ''; };
+const amChip = on => x => `<label class="chip"><input type="checkbox" data-amen="${esc(x.id)}"${on.has(x.id) ? ' checked' : ''}><span>${esc(x.t.en)}</span></label>`;
+function amenHTML(){
+  const now = amenNow(), on = new Set(now), own = now.filter(x => !AM_BY[x] || amOld(AM_BY[x]));
+  const pop = AMENS.items.filter(x => x.top).sort((a, b) => a.top - b.top);
+  const groups = AMENS.groups.map(g => ({ g, items: AMENS.items.filter(x => x.g === g.id && !amOld(x)) })).filter(x => x.items.length);
+  return `<div class="f full am">
+    <label class="lab" for="amQ">Find an amenity</label>
+    <input type="search" id="amQ" autocomplete="off" enterkeyhint="search" placeholder="Dishwasher, cot, sea view…">
+    <p class="hint" id="amHint">${amHint(now)}</p>
+    <div class="am-res" id="amRes" aria-live="polite"></div>
+    <h3 class="am-h">Most asked for</h3><div class="chips">${pop.map(amChip(on)).join('')}</div>
+    <h3 class="am-h">Everything, by group</h3>
+    <div class="am-gs">${groups.map(({ g, items }) => `<details class="am-g"><summary><span>${esc(g.t.en)}</span><small data-amc="${esc(g.id)}">${amCount(items, on)}</small></summary><div class="chips">${items.map(amChip(on)).join('')}</div></details>`).join('')}</div>
+    <h3 class="am-h">Your own</h3>
+    ${own.length ? `<div class="chips am-own">${own.map(x => `<span class="am-x"><span>${esc(amenName(x))}</span><button type="button" data-amdel="${esc(x)}" aria-label="Remove ${esc(amenName(x))}">×</button></span>`).join('')}</div>` : ''}
+    <div class="rm-new"><input type="text" id="amOwn" maxlength="80" placeholder="Something not in the list" aria-label="Add something not in the list"><button class="btn small" type="button" id="amOwnAdd">Add</button></div>
+  </div>`;
+}
+const amHint = now => `${now.length ? `${now.length} in your guide.` : 'Nothing ticked yet.'} Search, or open a group below.`;
+function amenSet(ids){
+  if (A._pre && A._pre.amenities) { const p = { ...A._pre }; delete p.amenities; A._pre = p; }   // the host's own choice now, not the listing's
+  A.amenities = ids; queueSave(); phoneSoon(); softRefresh();
+  const on = new Set(ids);
+  document.querySelectorAll('[data-amen]').forEach(c => { c.checked = on.has(c.dataset.amen); });
+  document.querySelectorAll('[data-amc]').forEach(s => { s.textContent = amCount(AMENS.items.filter(x => x.g === s.dataset.amc && !amOld(x)), on); });
+  const h = document.getElementById('amHint'); if (h) h.textContent = amHint(ids);
+}
+function amenSearch(){
+  const box = document.getElementById('amRes'), inp = document.getElementById('amQ'); if (!box || !inp) return;
+  const q = amFold(inp.value), on = new Set(amenNow());
+  if (q.length < 2) { box.innerHTML = ''; return; }
+  const hits = AMENS.items.filter(x => !amOld(x) && [...Object.values(x.t), ...(x.k ? x.k.split(',') : [])].some(w => amFold(w).includes(q))).slice(0, 12);
+  const exact = hits.some(x => amFold(x.t.en) === q);
+  box.innerHTML = `${hits.length ? `<div class="chips">${hits.map(amChip(on)).join('')}</div>` : '<p class="hint">Not in the list.</p>'}
+    ${exact ? '' : `<button class="btn small" type="button" data-amadd="${esc(inp.value.trim())}">+ Add “${esc(inp.value.trim())}” as you wrote it</button>`}`;
+}
+function amenAdd(text){
+  const t = String(text || '').trim().slice(0, 80); if (!t) return;
+  const now = amenNow(), id = amenMatch(t) || t;
+  if (!now.includes(id)) now.push(id);
+  amenSet(now);
+  if (!AM_BY[id] || amOld(AM_BY[id])) { const y = scrollY; render(); scrollTo(0, y); }   // the host's own words: the list below changes
+}
+document.addEventListener('input', e => { if (e.target.id === 'amQ') amenSearch(); });
+document.addEventListener('change', e => {
+  const id = e.target.dataset && e.target.dataset.amen; if (!id) return;
+  const now = amenNow().filter(x => x !== id);
+  amenSet(e.target.checked ? [...now, id] : now);
+});
+document.addEventListener('click', e => {
+  const add = e.target.closest && e.target.closest('[data-amadd]');
+  if (add) { amenAdd(add.dataset.amadd); const q = document.getElementById('amQ'); if (q) { q.value = ''; amenSearch(); } return; }
+  const del = e.target.closest && e.target.closest('[data-amdel]');
+  if (del) { amenSet(amenNow().filter(x => x !== del.dataset.amdel)); const y = scrollY; render(); scrollTo(0, y); return; }
+  if (e.target.closest && e.target.closest('#amOwnAdd')) { const i = document.getElementById('amOwn'); if (i) amenAdd(i.value); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !['amOwn', 'amQ'].includes(e.target.id)) return;
+  e.preventDefault();
+  if (e.target.id === 'amOwn') return amenAdd(e.target.value);
+  const first = document.querySelector('#amRes [data-amen]:not(:checked)'); if (first) { first.checked = true; first.dispatchEvent(new Event('change', { bubbles: true })); }
+});
+
 /* ---------- Pre-fill from the host's listing ----------
    The host pastes their listing text (Airbnb or other). We read the facts out of it here, in the browser,
    and mark those answers "From your listing". Steps that got answers this way show "Review": the host only
    checks and approves them. We never fetch Airbnb ourselves. */
-const AMEN_RX = {
-  'Pool': /\bpool\b|piscina|piscine/i, 'Garden': /garden|jard[ií]n|jardin/i, 'BBQ': /\bbbq\b|barbecue|\bgrill\b|barbacoa/i,
-  'Air conditioning': /air ?condition|aire acondicionado|climatisation/i, 'Heating or fireplace': /heating|fireplace|calefacci[oó]n|chimenea|chauffage|chemin[ée]e/i,
-  'Washing machine': /\bwasher\b|washing machine|lavadora|lave-linge/i, 'Dishwasher': /dishwasher|lavavajillas|lave-vaisselle/i,
-  'Coffee machine': /coffee maker|coffee machine|nespresso|espresso|cafetera|machine [àa] caf/i, 'Smart TV': /\btv\b|television|televisi[oó]n|t[ée]l[ée]/i,
-  'Cot or high chair': /\bcrib\b|\bcot\b|high chair|cuna|trona|lit pour b[ée]b[ée]|chaise haute/i, 'Pets allowed': /pets allowed|se admiten mascotas|animaux accept/i,
-  'Free parking': /free parking|aparcamiento gratuito|parking gratuit/i, 'EV charger': /\bev charger|cargador|borne de recharge/i, 'Hot tub': /hot tub|jacuzzi|bain [àa] remous/i,
-  'Bikes': /\bbikes?\b|bicicleta|v[ée]lo/i, 'Workspace': /workspace|espacio de trabajo|espace de travail/i, 'Sea view': /(sea|ocean|beach) view|vistas al mar|vue sur (la )?mer/i,
-  'Lift': /elevator|\blift\b|ascensor|ascenseur/i
+const AMEN_RX = {   // by the ids of engine/src/amenities.json
+  pool: /\bpool\b|piscina|piscine/i, garden: /garden|jard[ií]n|jardin/i, bbq: /\bbbq\b|barbecue|\bgrill\b|barbacoa/i,
+  ac: /air ?condition|aire acondicionado|climatisation/i, heating: /heating|calefacci[oó]n|chauffage/i, fireplace: /fireplace|chimenea|chemin[ée]e/i,
+  washer: /\bwasher\b|washing machine|lavadora|lave-linge/i, dishwasher: /dishwasher|lavavajillas|lave-vaisselle/i,
+  coffee_maker: /coffee maker|coffee machine|nespresso|espresso|cafetera|machine [àa] caf/i, tv: /\btv\b|television|televisi[oó]n|t[ée]l[ée]/i,
+  cot: /\bcrib\b|\bcot\b|cuna|lit pour b[ée]b[ée]/i, high_chair: /high chair|trona|chaise haute/i, pets: /pets allowed|se admiten mascotas|animaux accept/i,
+  free_parking: /free parking|aparcamiento gratuito|parking gratuit/i, ev_charger: /\bev charger|cargador|borne de recharge/i, hot_tub: /hot tub|jacuzzi|bain [àa] remous/i,
+  bikes: /\bbikes?\b|bicicleta|v[ée]lo/i, workspace: /workspace|espacio de trabajo|espace de travail/i, sea_view: /(sea|ocean|beach) view|vistas al mar|vue sur (la )?mer/i,
+  lift: /elevator|\blift\b|ascensor|ascenseur/i
 };
 const TYPE_RX = [[/villa/i, 'Villa'], [/cottage|casa rural|g[iî]te/i, 'Cottage'], [/farm|masia|finca|ferme/i, 'Farmhouse'],
   [/apartment|rental unit|condo|loft|flat|apartamento|piso|appartement|logement/i, 'Apartment'], [/private room|room in|habitaci[oó]n|chambre/i, 'Room'],
@@ -959,7 +1208,7 @@ function parseListing(text){
   out._wifi = /wi-?fi/i.test(t);
   return out;
 }
-const FIELD_MODULE = { placeName: 'place', town: 'place', region: 'place', propertyType: 'place', sleeps: 'place', bedrooms: 'place', bathrooms: 'place', beds: 'place', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', amenities: 'howto' };
+const FIELD_MODULE = { placeName: 'place', town: 'place', region: 'place', propertyType: 'place', sleeps: 'place', bedrooms: 'place', bathrooms: 'place', beds: 'place', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', amenities: 'offers' };
 function applyListing(){
   const r = parseListing(v('listingText')), got = [];
   for (const [k, mod] of Object.entries(FIELD_MODULE)) {
@@ -970,7 +1219,7 @@ function applyListing(){
     A._pre = { ...(A._pre || {}), [k]: mod };
   }
   if (!A._slugTouched && (v('placeName'))) slugAuto();
-  if (r.amenities && r.amenities.includes('Cot or high chair')) A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), ...(A.modules || {}), kids: true };
+  if (r.amenities && r.amenities.some(x => ['cot', 'travel_cot', 'high_chair', 'cot_or_chair'].includes(x))) A.modules = { ...Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)])), ...(A.modules || {}), kids: true };
   log('prefill', 'listing', { n: got.length }); queueSave();
   return got;
 }
@@ -1265,7 +1514,7 @@ async function renderPreview(){
 const PHONE = { screen: 'home', build: false, timer: null };
 const WOW = { stage: '', name: '' };   // the wow page: reading (the listing page), writing (Claude), done
 // The guide screen each step changes, shown next to it.
-const STEP_SCREEN = { place: 'house', nightlife: 'nightlife', known: 'wifi', wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'house', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', taste: 'todo' };
+const STEP_SCREEN = { place: 'house', nightlife: 'nightlife', known: 'wifi', wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'house', offers: 'house', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', taste: 'todo' };
 const phoneHTML = () => `<div class="phone"><div class="phone-scr"><iframe id="phoneFrame" title="Your guide, as guests will see it"></iframe></div></div>`;
 // Both phones (this one, and the editor's, which shows the guide itself) draw the guide at a real phone's width, then
 // scale it down to the frame: text and tiles keep their true sizes and wrap as they do on a phone.
@@ -1302,11 +1551,11 @@ function pageHTML(x){
   let body = '';
   if (x.kind === 'house') {
     const tour = roomsNow().map(r => ({ r: r.n, photos: photosIn(r.n).map(u => u.url) })).filter(r => r.photos.length);
-    const offers = [...(A.amenities || []), ...(A.listingAmenities || []).map(a => String(a).split(':')[0])].filter((a, i, l) => l.indexOf(a) === i);
+    const offers = amenKey(amenNow()).map(amenName);
     body = `${tour.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3><div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div></section>`).join('')}
       ${v('welcome') ? `<section class="pv-card"><h3>About the house</h3><p style="margin:8px 0 0">${esc(v('welcome'))}</p></section>` : ''}
       ${lines('sleeping').length ? `<section class="pv-card"><h3>Where you'll sleep</h3>${list(lines('sleeping'))}</section>` : ''}
-      ${offers.length ? `<section class="pv-card"><h3>What this place offers</h3><p style="margin:8px 0 0">${esc(offers.slice(0, 8).join(', '))}</p></section>` : ''}`;
+      ${offers.length ? `<section class="pv-card"><h3>What this place offers</h3><p style="margin:8px 0 0">${esc(offers.slice(0, 8).join(', '))}${offers.length > 8 ? ` and ${offers.length - 8} more` : ''}</p></section>` : ''}`;
   }
   else if (x.kind === 'rooms') body = x.rooms.length ? x.rooms.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3>${r.photos.length ? `<div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${list(r.items)}</section>`).join('') : `<div class="pv-research"><b>Nothing here yet</b>Add how things work and photos by room in your answers.</div>`;
   else if (x.kind === 'wifi' && !v('wifiName')) body = `<div class="pv-research"><b>Your Wi-Fi goes here</b>Add it in Only you know: guests join with one tap.</div>`;
@@ -1371,7 +1620,7 @@ function loadTick(){
 }
 const DRAFT_MAP = { placeName: 'place', propertyType: 'place', town: 'place', region: 'place', sleeps: 'place', sleeping: 'place', bedrooms: 'place', bathrooms: 'place', beds: 'place',
   guideName: 'guide', tagline: 'guide', welcome: 'place', guests: 'area', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
-  amenities: 'howto', howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
+  howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
 
 function startHTML(){
   const lp = linkProblem(v('listingUrl'));
@@ -1516,11 +1765,12 @@ function applyDraft(d){
   for (const [k, mod] of Object.entries(DRAFT_MAP)) {
     let val = D[k]; if (val == null || val === '' || (Array.isArray(val) && !val.length)) continue;
     if (k === 'sleeps' || k === 'bedrooms' || k === 'bathrooms' || k === 'beds') val = String(val);
-    if (k === 'amenities') val = val.filter(x => AMEN.includes(x));
     const empty = Array.isArray(A[k]) ? !A[k].length : !String(A[k] ?? '').trim();
     if (!empty) continue;
     A[k] = val; pre[k] = mod;
   }
+  // Every amenity the listing has (all of them, by Airbnb's codes, when its page was read): ticked in What the place offers.
+  const am = amenFromListing(d); if (am.length && !amenNow().length) { A.amenities = am; pre.amenities = 'offers'; }
   A._pre = pre;
   // The listing's own equipment list as the page states it (fridge, hair dryer...): the guide sorts it into the rooms.
   if (Array.isArray(d.amenities) && d.amenities.length) A.listingAmenities = d.amenities.slice(0, 120);
@@ -1911,7 +2161,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 01 Nov 2026, 12:11 (Madrid time, after commit f72fd31)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 02 Nov 2026, 12:16 (Madrid time, after commit aa4ad92)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -3025,9 +3275,27 @@ function cmHousePage(c) {
     <button class="btn small cm-add" type="button" data-addit="${P}/highlights">+ Add a highlight</button>
     ${hp.beds ? `<h3 class="cm-h">Beds</h3>${cLines(P + '/beds', hp.beds, 'Add a bed')}` : ''}
     <h3 class="cm-h">Amenities</h3><div class="cm-list">${(hp.amenities || []).map((g, i) => cCard(`${P}/amenities/${i}`, edShown(g.t), cmCount((g.items || []).length, 'item', 'items'), `<div class="grid">${cf('Group title', `${P}/amenities/${i}/t`, g.t, { i18n: true })}</div>${cLines(`${P}/amenities/${i}/items`, g.items, 'Add an item')}`)).join('')}</div>
+    <div class="f full cm-amfind"><label class="lab" for="cmAmQ">Add an amenity</label><input type="search" id="cmAmQ" autocomplete="off" placeholder="Dishwasher, cot, sea view…"><p class="hint">It goes into its group, in every language of the guide.</p><div class="am-res" id="cmAmRes" aria-live="polite"></div></div>
     <h3 class="cm-h">Photos</h3>${cPhotos(P + '/photos', hp.photos)}
     ${(hp.tour || []).length ? `<h3 class="cm-h">Photos by room</h3><div class="cm-list">${hp.tour.map((r, i) => cCard(`${P}/tour/${i}`, edShown(r.room), cmCount((r.photos || []).length, 'photo', 'photos'), `<div class="grid">${cf('Room name', `${P}/tour/${i}/room`, r.room, { i18n: true })}</div>${cPhotos(`${P}/tour/${i}/photos`, r.photos)}`, [i, hp.tour.length])).join('')}</div>` : ''}`;
 }
+// Amenities from the builder's list (engine/src/amenities.json), already named in every language: into the group of the
+// same name (Ca La Kimberly's own groups too), or a new group at its place in the list's order.
+const cmAmHas = (hp, x) => (hp.amenities || []).some(g => (g.items || []).some(i => Object.values(x.t).includes(edShown(i))));
+function cmAmSearch() {
+  const box = document.getElementById('cmAmRes'), inp = document.getElementById('cmAmQ'), hp = (edF() || {})['house-page']; if (!box || !inp || !hp) return;
+  const q = amFold(inp.value); if (q.length < 2) { box.innerHTML = ''; return; }
+  const hits = AMENS.items.filter(x => !amOld(x) && !cmAmHas(hp, x) && [...Object.values(x.t), ...(x.k ? x.k.split(',') : [])].some(w => amFold(w).includes(q))).slice(0, 10);
+  box.innerHTML = hits.length ? hits.map(x => `<button class="btn small" type="button" data-amput="${esc(x.id)}">+ ${esc(x.t.en)}</button>`).join('') : '<p class="hint">Not in the list: add it as a line in one of the groups above.</p>';
+}
+function cmAmPut(id) {
+  const x = AM_BY[id], hp = (edF() || {})['house-page']; if (!x || !hp || cmAmHas(hp, x)) return;
+  const L = o => Object.fromEntries(edLangs().map(l => [l, o.t[l] || o.t.en])), G = AMENS.groups.find(g => g.id === x.g), list = hp.amenities = hp.amenities || [];
+  let gi = list.findIndex(g => Object.values(G.t).includes(edShown(g.t)));
+  if (gi < 0) { const order = AMENS.groups.map(g => g.id), at = list.findIndex(g => order.indexOf((AMENS.groups.find(o => Object.values(o.t).includes(edShown(g.t))) || {}).id) > order.indexOf(G.id)); gi = at < 0 ? list.length : at; list.splice(gi, 0, { t: L(G), items: [] }); }
+  list[gi].items.push(L(x)); CM.open.add(`files/house-page/amenities/${gi}`);
+}
+document.addEventListener('input', e => { if (e.target.id === 'cmAmQ') cmAmSearch(); });
 function cmHouseGuide(c) {
   const h = (c.files || {}).house || {}, blocks = ((c.files || {}).message || {}).blocks || [];
   return `<div class="grid">${cf('Check-out time', 'files/house/checkout', h.checkout || '', { type: 'time', half: true })}</div>
@@ -3883,6 +4151,7 @@ document.addEventListener('click', e => {
   if (d.cfstop !== undefined) { const path = t.closest('[data-fpath]').dataset.fpath, kind = FIND_OF[path][0]; findMark(CM.find[kind].id, cmFindItems(kind, path).map(x => x.id)); return cmFindRefresh(); }
   if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
   if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
+  if (d.amput) { cmAmPut(d.amput); return done(); }
   if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); const a = arr(d.addit); a.push(edNewItem(a)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
   if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }] }; return done(); }
   if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }); return done(); }
@@ -4051,7 +4320,8 @@ function summary(m){
     case 'look': return [n('logo') ? 'Logo' : '', n('cover') ? 'Own cover' : A.coverChoice === 'drawn' ? 'Drawn cover' : A.coverUrl ? 'Listing photo' : '', (MOODS.find(x => x.id === v('mood')) || {}).name || ''].filter(Boolean).join(' · ') || 'Not started';
     case 'sections': return SECTIONS.filter(s => secOn(s.id)).map(s => s.name).join(', ');
     case 'photos': return `${roomsNow().length} rooms, ${n('photo')} photos`;
-    case 'howto': return `${lines('howTos')} how-tos · ${(A.amenities || []).length} amenities`;
+    case 'howto': return `${lines('howTos')} how-tos`;
+    case 'offers': return `${amenNow().length} amenities`;
     case 'stay': return `In ${v('checkIn') || '?'} · out ${v('checkOut') || '?'} · ${lines('houseRules')} rules`;
     case 'wifi': return v('wifiName') || 'Not filled';
     case 'known': return knownParts().map(p => p.done() ? p.title : p.title + ' later').join(' · ');

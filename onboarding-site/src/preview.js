@@ -287,7 +287,7 @@ async function renderPreview(){
 const PHONE = { screen: 'home', build: false, timer: null };
 const WOW = { stage: '', name: '' };   // the wow page: reading (the listing page), writing (Claude), done
 // The guide screen each step changes, shown next to it.
-const STEP_SCREEN = { place: 'house', nightlife: 'nightlife', known: 'wifi', wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'house', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', taste: 'todo' };
+const STEP_SCREEN = { place: 'house', nightlife: 'nightlife', known: 'wifi', wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'house', offers: 'house', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', taste: 'todo' };
 const phoneHTML = () => `<div class="phone"><div class="phone-scr"><iframe id="phoneFrame" title="Your guide, as guests will see it"></iframe></div></div>`;
 // Both phones (this one, and the editor's, which shows the guide itself) draw the guide at a real phone's width, then
 // scale it down to the frame: text and tiles keep their true sizes and wrap as they do on a phone.
@@ -324,11 +324,11 @@ function pageHTML(x){
   let body = '';
   if (x.kind === 'house') {
     const tour = roomsNow().map(r => ({ r: r.n, photos: photosIn(r.n).map(u => u.url) })).filter(r => r.photos.length);
-    const offers = [...(A.amenities || []), ...(A.listingAmenities || []).map(a => String(a).split(':')[0])].filter((a, i, l) => l.indexOf(a) === i);
+    const offers = amenKey(amenNow()).map(amenName);
     body = `${tour.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3><div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div></section>`).join('')}
       ${v('welcome') ? `<section class="pv-card"><h3>About the house</h3><p style="margin:8px 0 0">${esc(v('welcome'))}</p></section>` : ''}
       ${lines('sleeping').length ? `<section class="pv-card"><h3>Where you'll sleep</h3>${list(lines('sleeping'))}</section>` : ''}
-      ${offers.length ? `<section class="pv-card"><h3>What this place offers</h3><p style="margin:8px 0 0">${esc(offers.slice(0, 8).join(', '))}</p></section>` : ''}`;
+      ${offers.length ? `<section class="pv-card"><h3>What this place offers</h3><p style="margin:8px 0 0">${esc(offers.slice(0, 8).join(', '))}${offers.length > 8 ? ` and ${offers.length - 8} more` : ''}</p></section>` : ''}`;
   }
   else if (x.kind === 'rooms') body = x.rooms.length ? x.rooms.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3>${r.photos.length ? `<div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${list(r.items)}</section>`).join('') : `<div class="pv-research"><b>Nothing here yet</b>Add how things work and photos by room in your answers.</div>`;
   else if (x.kind === 'wifi' && !v('wifiName')) body = `<div class="pv-research"><b>Your Wi-Fi goes here</b>Add it in Only you know: guests join with one tap.</div>`;

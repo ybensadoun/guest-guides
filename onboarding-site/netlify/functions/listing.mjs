@@ -59,18 +59,35 @@ async function readPage(url){
     const overview = (iv('"overview":{"__typename":"StaysPdpOverview"', 700).match(/"items":\[([^\]]*)\]/) || [, ''])[1].replace(/"/g, '').split(',').map(x => x.trim()).filter(Boolean);
     const rules = strs(iv('"rules":{"__typename":"StaysPdpRuleDetails"', 6000).split('"__typename":"StaysPdpSection"')[0]).filter(x => !/^Normas de la casa$|trátala como/i.test(x));
     const amenities = [...new Set([...html.matchAll(/"__typename":"AmenityItem","available":true,"title":"([^"]+)"/g)].map(m => cl(m[1])))];
+    const amenityItems = amenGroups(html);
     const sleeping = sleepLines;
     const rt = html.match(/"ratingAverage":([\d.]+),"ratingCount":"?(\d+)/);
     const facts = [overview.length && 'Overview: ' + overview.join(' · '), rules.length && 'House rules section: ' + rules.join(' | '), amenities.length && 'Amenities listed: ' + amenities.join(', '),
       sleeping.length && 'Sleeping arrangements: ' + sleeping.join(' | '), tour.length && 'Photo tour rooms: ' + tour.map(x => x.name + ' (' + x.imgs.length + ' photos)').join(', '), rt && 'Rating: ' + rt[1] + ' from ' + rt[2] + ' reviews'].filter(Boolean).join('\n');
     const text = (facts ? 'FACTS READ FROM THE PAGE DATA:\n' + facts + '\n\n' : '') + htmlToText(html);
-    const out = { overview, rules, amenities, sleeping: sleepLines, tourRooms: tour.length, rating: rt ? { avg: +rt[1], count: +rt[2] } : null, title: meta(html, 'og:title'), pageTitle: ((html.match(/<title[^>]*>([^<]+)<\/title>/i) || [])[1] || '').replace(/&amp;/g, '&').trim(), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, facts, text: text.slice(0, 40000),
+    const out = { overview, rules, amenities, amenityItems, sleeping: sleepLines, tourRooms: tour.length, rating: rt ? { avg: +rt[1], count: +rt[2] } : null, title: meta(html, 'og:title'), pageTitle: ((html.match(/<title[^>]*>([^<]+)<\/title>/i) || [])[1] || '').replace(/&amp;/g, '&').trim(), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, facts, text: text.slice(0, 40000),
       lat: coords ? +coords[1] : null, lng: coords ? +coords[2] : null };
     // A blocked or empty page has almost no text and no title.
     if (!out.title && out.text.length < 1500) return null;
     out.via = 'page';
     return out;
   } catch (e) { return null; }
+}
+
+// Every amenity the listing has, not only the 10 its page shows: the "Show all" list is in the page data, by Airbnb's groups.
+// The id pdp_v3_<group>_<n>_<listing> carries Airbnb's own code n, the same in every language (scenic views count apart:
+// sv<n>). The builder turns codes into its own list (engine/src/amenities.json); the title is kept for any it does not know.
+function amenGroups(html){
+  const key = '"seeAllAmenitiesGroups":', i = html.indexOf(key + '[');
+  if (i < 0) return [];
+  let d = 0, k = i + key.length;
+  for (; k < html.length && k < i + 400000; k++) { if (html[k] === '[') d++; else if (html[k] === ']' && !--d) break; }
+  try {
+    return JSON.parse(html.slice(i + key.length, k + 1)).flatMap(g => (g.amenities || []).filter(a => a.available).map(a => {
+      const m = /^pdp_v3_(.+?)_(\d+)_\d{6,}/.exec(a.id || '');
+      return { c: m ? (m[1] === 'scenic_view' ? 'sv' : '') + m[2] : '', t: String(a.title || '').trim() };
+    })).filter(x => x.t).slice(0, 200);
+  } catch (e) { return []; }
 }
 
 // Airbnb often refuses servers. A public page reader (r.jina.ai) opens the page like a browser and hands back text with the photo links.
@@ -204,7 +221,7 @@ export default async (req) => {
   src.url = url;
   if (stage === 'page') return json({ ok: true, stage, site, source: src.title ? 'page' : 'text', title: src.title || '', pageTitle: src.pageTitle || '',
     cover: src.image || (src.photos || [])[0] || null, photos: src.photos || [], photoRooms: (src.pics || []).map(x => x.room || null), photoCaps: (src.pics || []).map(x => x.caption),
-    rating: src.rating || null, sleeping: src.sleeping || [], lat: src.lat, lng: src.lng, src });
+    rating: src.rating || null, sleeping: src.sleeping || [], amenityItems: src.amenityItems || [], lat: src.lat, lng: src.lng, src });
   {
     let draft, assistant = 'ok', code = '';
     try { draft = await askClaude(src, town); } catch (e) { assistant = 'failed'; code = String((e && e.message) || e).slice(0, 220); draft = fallbackDraft(src); console.error('askClaude failed:', code); }
@@ -217,8 +234,8 @@ export default async (req) => {
     const photoRooms = (src.pics || []).map((x, i) => x.room || (draft.photoRooms || [])[i] || null);
     const has = k => draft[k] != null && String(draft[k]).trim() !== '' && !(Array.isArray(draft[k]) && !draft[k].length);
     const report = { assistant, code, via: src.via, photos: (src.photos || []).length, roomsFromPage: !!src.tourRooms,
-      found: { counts: has('bedrooms') || has('bathrooms') || has('beds'), rules: has('houseRules'), times: has('checkIn') && has('checkOut'), amenities: has('amenities'), sleeping: has('sleeping'), rating: has('rating') } };
-    return json({ ok: true, report, source: src.title ? 'page' : 'text', site, draft, amenities: (draft.listingAmenities || []).length ? draft.listingAmenities : src.amenities || [], photos: src.photos || [], photoRooms, photoCaps: (src.pics || []).map(x => x.caption), cover: src.image || (src.photos || [])[0] || null, lat: src.lat, lng: src.lng });
+      found: { counts: has('bedrooms') || has('bathrooms') || has('beds'), rules: has('houseRules'), times: has('checkIn') && has('checkOut'), amenities: has('amenities') || !!(src.amenityItems || []).length, sleeping: has('sleeping'), rating: has('rating') } };
+    return json({ ok: true, report, source: src.title ? 'page' : 'text', site, draft, amenities: (draft.listingAmenities || []).length ? draft.listingAmenities : src.amenities || [], amenityItems: src.amenityItems || [], photos: src.photos || [], photoRooms, photoCaps: (src.pics || []).map(x => x.caption), cover: src.image || (src.photos || [])[0] || null, lat: src.lat, lng: src.lng });
   }
 };
 export const config = { path: '/api/listing' };

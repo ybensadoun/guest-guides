@@ -253,13 +253,13 @@ const I = {
   kite: svg('<path d="M12 3l7 7-7 7-7-7z"/><path d="M12 17v4M9 21h6"/>'),
   send: svg('<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>'),
   bag: svg('<path d="M5 8h14l-1.5 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>'),
-  moon: svg('<path d="M20 14.6A8.2 8.2 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6z"/>')
+  moon: svg('<path d="M20 14.6A8.2 8.2 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6z"/>'),
+  star: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>')
 };
 
 /* ---------- Answer options ---------- */
 const LANGS = [['en','English'],['es','Español'],['fr','Français'],['ca','Català'],['de','Deutsch'],['nl','Nederlands'],['it','Italiano'],['pt','Português']];
 const GUESTS = ['Families with kids','Couples','Groups of friends','Remote workers','Older guests','Guests with pets','Wedding or event guests'];
-const AMEN = ['Pool','Garden','BBQ','Air conditioning','Heating or fireplace','Washing machine','Dishwasher','Coffee machine','Smart TV','Cot or high chair','Pets allowed','Free parking','EV charger','Hot tub','Bikes','Workspace','Sea view','Lift'];
 const ROOMS = ['Outside','Living room','Kitchen','Bedroom','Bathroom','Pool','Garden','Terrace','Office','Laundry','View','Other'];
 const INTERESTS = ['Beaches','Wine and food','Hiking and nature','Culture and history','Local markets','Nightlife','Festivals','Sports','Shopping','Wellness'];
 const MOODS = [
@@ -310,8 +310,10 @@ const MODULES = [
    need:[],fields:['sectionPicker','moduleIdeas']},
   {id:'photos',group:'house',title:'Rooms and photos',sub:'The rooms, in your order',icon:'cam',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'quarter',
    lead:'Guests see your rooms in this order, on the house page and in the house guide. Use the arrows to change it. Tap a photo to see it big, move it to another room or remove it.',need:['upload:photo'],fields:['up:photo']},
+  {id:'offers',group:'house',title:'What the place offers',sub:'Amenities, by group',icon:'star',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'circle',
+   lead:'Guests see these on the house page, the most asked for first. What your listing says is already ticked. Search for anything else, or open a group.',need:[],fields:['amenities']},
   {id:'howto',group:'house',title:'How things work',sub:'Boiler, pool, TV…',icon:'tool',tc:'var(--clay)',ti:'#fff',sh:'var(--ink)',shape:'bar',sec:'houseguide',
-   lead:'What the place has, and anything guests get stuck on that belongs to no room in particular. Each room has its own notes in Rooms and photos.',need:[],fields:['amenities','howTos','up:manual']},
+   lead:'Anything guests get stuck on that belongs to no room in particular: the boiler, the shutters, the pool pump. Each room has its own notes in Rooms and photos.',need:[],fields:['howTos','up:manual']},
   {id:'stay',group:'house',title:'Check-in and rules',sub:'Times, rules, leaving',icon:'key',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
    lead:'The times and the few rules that matter.',need:['checkIn','checkOut'],fields:['checkIn','checkOut','houseRules','checkoutTasks']},
   {id:'wifi',group:'house',title:'Wi-Fi',sub:'Name and password',icon:'wifi',tc:'var(--pine)',ti:'#fff',sh:'var(--tomato)',shape:'half',sec:'wifi',part:'known',
@@ -356,7 +358,7 @@ const Q = {
   mood:{t:'mood',label:'Which feels closest?',hint:'This sets the layout, not only the colours.'},
   lookAvoid:{t:'area',rows:2,label:'Anything to avoid?',opt:true,full:true,ph:'No pink, nothing too corporate…'},
   moduleIdeas:{t:'area',rows:2,label:'An idea we don’t have yet?',opt:true,full:true,ph:'A page about the vineyard next door…',hint:'We build new ideas as new sections.'},
-  amenities:{t:'chips',label:'What the place has',opts:AMEN,opt:true},
+  amenities:{t:'amen',label:'What the place offers',opt:true},
   howTos:{t:'area',rows:8,label:'How things work',opt:true,full:true,hint:'One tip per line. Say the room if it is not obvious: we put each line in the room it talks about.',ph:'Cleaning products and dishwasher tablets are under the kitchen sink\nSpare batteries are in the TV unit\nOne bath towel per person; beach towels are in the hall cupboard\nThe pool is not heated; the cover key hangs by the door\nThe heating is set on the thermostat by the front door'},
   checkIn:{t:'time',label:'Check-in from'},
   checkOut:{t:'time',label:'Check-out by'},
@@ -478,6 +480,7 @@ const srcOf = u => u.url || (u.assetId ? '/_blob/' + u.assetId : u.dataUrl);
 /* ---------- Field rendering ---------- */
 function badge(k){ const q = k.startsWith('up:') ? UP[k.slice(3)] : Q[k]; if (!q || q.opt) return '<span class="opt">optional</span>'; const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k; return filled(key) ? `<span class="req ok">${CHECK.replace('<svg','<svg width="11" height="11"')} Done</span>` : '<span class="req">Needed</span>'; }
 function field(k){
+  if (k === 'amenities') return amenHTML();
   if (k === 'autofill') return sample ? `<div class="full"><button class="btn sun" type="button" id="autofill"${v('listingText').length < 40 ? ' disabled' : ''}>Fill in from my listing</button> <span class="hint" id="afState"></span></div>` : '';
   if (k === 'privacyNote') return `<div class="note full"><span aria-hidden="true">⌂</span><div>We never show your street address. The map uses a point near the house.</div></div>`;
   if (k === 'wifiNote') return `<div class="note full"><div>Guests see the password in the guide, so use your guest network if you have one.</div></div>`;
@@ -558,7 +561,8 @@ function summary(m){
     case 'look': return [n('logo') ? 'Logo' : '', n('cover') ? 'Own cover' : A.coverChoice === 'drawn' ? 'Drawn cover' : A.coverUrl ? 'Listing photo' : '', (MOODS.find(x => x.id === v('mood')) || {}).name || ''].filter(Boolean).join(' · ') || 'Not started';
     case 'sections': return SECTIONS.filter(s => secOn(s.id)).map(s => s.name).join(', ');
     case 'photos': return `${roomsNow().length} rooms, ${n('photo')} photos`;
-    case 'howto': return `${lines('howTos')} how-tos · ${(A.amenities || []).length} amenities`;
+    case 'howto': return `${lines('howTos')} how-tos`;
+    case 'offers': return `${amenNow().length} amenities`;
     case 'stay': return `In ${v('checkIn') || '?'} · out ${v('checkOut') || '?'} · ${lines('houseRules')} rules`;
     case 'wifi': return v('wifiName') || 'Not filled';
     case 'known': return knownParts().map(p => p.done() ? p.title : p.title + ' later').join(' · ');
@@ -684,12 +688,12 @@ async function autofill(b){
   try {
     const r = await sample.json('You extract facts from a holiday-rental listing that its host pasted. Return ONLY a JSON object with these keys, null when the text does not say: ' +
       '{"placeName": string, "propertyType": one of ["House","Villa","Apartment","Cottage","Farmhouse","Room","Other"], "town": string, "region": string (region and country), "sleeps": number, ' +
-      '"checkIn": "HH:MM", "checkOut": "HH:MM", "amenities": array chosen only from ' + JSON.stringify(AMEN) + ', "houseRules": string (one rule per line), "tagline": string (one warm welcome line under 60 characters, in English)}. ' +
+      '"checkIn": "HH:MM", "checkOut": "HH:MM", "amenities": array chosen only from ' + JSON.stringify(AMENS.items.filter(x => x.top).map(x => x.t.en)) + ', "houseRules": string (one rule per line), "tagline": string (one warm welcome line under 60 characters, in English)}. ' +
       'Never invent a street address. Listing link: ' + (v('listingUrl') || 'none') + '\n\nListing text:\n' + v('listingText').slice(0, 8000), { modelTier: 'quick' });
     const got = [];
     for (const k of ['placeName','propertyType','town','region','checkIn','checkOut','houseRules','tagline']) if (r && r[k] && !v(k)) { A[k] = String(r[k]); got.push(k); }
     if (r && r.sleeps && !v('sleeps')) { A.sleeps = String(r.sleeps); got.push('sleeps'); }
-    if (r && Array.isArray(r.amenities) && r.amenities.length) { A.amenities = [...new Set([...(A.amenities || []), ...r.amenities.filter(x => AMEN.includes(x))])]; got.push('amenities'); }
+    if (r && Array.isArray(r.amenities) && r.amenities.length) { A.amenities = amenIds([...(A.amenities || []), ...r.amenities.filter(x => amenMatch(x))]); got.push('amenities'); }
     queueSave(); render();
     const s2 = $('#afState'); if (s2) s2.textContent = got.length ? `Filled ${got.length} answers, here and in other steps. Check them.` : 'Nothing new found in that text.';
   } catch (err) {

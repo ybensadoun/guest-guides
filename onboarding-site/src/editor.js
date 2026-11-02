@@ -294,9 +294,27 @@ function cmHousePage(c) {
     <button class="btn small cm-add" type="button" data-addit="${P}/highlights">+ Add a highlight</button>
     ${hp.beds ? `<h3 class="cm-h">Beds</h3>${cLines(P + '/beds', hp.beds, 'Add a bed')}` : ''}
     <h3 class="cm-h">Amenities</h3><div class="cm-list">${(hp.amenities || []).map((g, i) => cCard(`${P}/amenities/${i}`, edShown(g.t), cmCount((g.items || []).length, 'item', 'items'), `<div class="grid">${cf('Group title', `${P}/amenities/${i}/t`, g.t, { i18n: true })}</div>${cLines(`${P}/amenities/${i}/items`, g.items, 'Add an item')}`)).join('')}</div>
+    <div class="f full cm-amfind"><label class="lab" for="cmAmQ">Add an amenity</label><input type="search" id="cmAmQ" autocomplete="off" placeholder="Dishwasher, cot, sea view…"><p class="hint">It goes into its group, in every language of the guide.</p><div class="am-res" id="cmAmRes" aria-live="polite"></div></div>
     <h3 class="cm-h">Photos</h3>${cPhotos(P + '/photos', hp.photos)}
     ${(hp.tour || []).length ? `<h3 class="cm-h">Photos by room</h3><div class="cm-list">${hp.tour.map((r, i) => cCard(`${P}/tour/${i}`, edShown(r.room), cmCount((r.photos || []).length, 'photo', 'photos'), `<div class="grid">${cf('Room name', `${P}/tour/${i}/room`, r.room, { i18n: true })}</div>${cPhotos(`${P}/tour/${i}/photos`, r.photos)}`, [i, hp.tour.length])).join('')}</div>` : ''}`;
 }
+// Amenities from the builder's list (engine/src/amenities.json), already named in every language: into the group of the
+// same name (Ca La Kimberly's own groups too), or a new group at its place in the list's order.
+const cmAmHas = (hp, x) => (hp.amenities || []).some(g => (g.items || []).some(i => Object.values(x.t).includes(edShown(i))));
+function cmAmSearch() {
+  const box = document.getElementById('cmAmRes'), inp = document.getElementById('cmAmQ'), hp = (edF() || {})['house-page']; if (!box || !inp || !hp) return;
+  const q = amFold(inp.value); if (q.length < 2) { box.innerHTML = ''; return; }
+  const hits = AMENS.items.filter(x => !amOld(x) && !cmAmHas(hp, x) && [...Object.values(x.t), ...(x.k ? x.k.split(',') : [])].some(w => amFold(w).includes(q))).slice(0, 10);
+  box.innerHTML = hits.length ? hits.map(x => `<button class="btn small" type="button" data-amput="${esc(x.id)}">+ ${esc(x.t.en)}</button>`).join('') : '<p class="hint">Not in the list: add it as a line in one of the groups above.</p>';
+}
+function cmAmPut(id) {
+  const x = AM_BY[id], hp = (edF() || {})['house-page']; if (!x || !hp || cmAmHas(hp, x)) return;
+  const L = o => Object.fromEntries(edLangs().map(l => [l, o.t[l] || o.t.en])), G = AMENS.groups.find(g => g.id === x.g), list = hp.amenities = hp.amenities || [];
+  let gi = list.findIndex(g => Object.values(G.t).includes(edShown(g.t)));
+  if (gi < 0) { const order = AMENS.groups.map(g => g.id), at = list.findIndex(g => order.indexOf((AMENS.groups.find(o => Object.values(o.t).includes(edShown(g.t))) || {}).id) > order.indexOf(G.id)); gi = at < 0 ? list.length : at; list.splice(gi, 0, { t: L(G), items: [] }); }
+  list[gi].items.push(L(x)); CM.open.add(`files/house-page/amenities/${gi}`);
+}
+document.addEventListener('input', e => { if (e.target.id === 'cmAmQ') cmAmSearch(); });
 function cmHouseGuide(c) {
   const h = (c.files || {}).house || {}, blocks = ((c.files || {}).message || {}).blocks || [];
   return `<div class="grid">${cf('Check-out time', 'files/house/checkout', h.checkout || '', { type: 'time', half: true })}</div>
@@ -1152,6 +1170,7 @@ document.addEventListener('click', e => {
   if (d.cfstop !== undefined) { const path = t.closest('[data-fpath]').dataset.fpath, kind = FIND_OF[path][0]; findMark(CM.find[kind].id, cmFindItems(kind, path).map(x => x.id)); return cmFindRefresh(); }
   if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
   if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
+  if (d.amput) { cmAmPut(d.amput); return done(); }
   if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); const a = arr(d.addit); a.push(edNewItem(a)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
   if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }] }; return done(); }
   if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }); return done(); }
