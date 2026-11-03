@@ -58,15 +58,18 @@ def L(text):
     return out
 
 # What a place offers (engine/src/amenities.json, the builder's list): items named in six languages. am_ids turns answers
-# into ids: ids stay, words the list knows (a listing's English, the builder's former chips) become ids, the rest stays
-# as the host wrote it. The same rules as the builder (onboarding-site/src/amen.js).
+# into ids: ids stay, words the list knows (a listing's words in any of the six languages, Airbnb's own titles, the
+# builder's former chips) become ids, the rest stays as the host wrote it. The same rules as the builder (onboarding-site/src/amen.js).
 AM = json.loads((ROOT / 'engine/src/amenities.json').read_text())
 AM_BY = {x['id']: x for x in AM['items']}
 am_fold = lambda s: re.sub(r'\s+', ' ', ''.join(c for c in unicodedata.normalize('NFD', str(s or '')) if unicodedata.category(c) != 'Mn').lower().replace('’', "'")).strip()
-AM_WORDS = {am_fold(w): x['id'] for x in AM['items'] for w in [x['t']['en']] + ([] if x.get('k', '-') == '-' else x['k'].split(','))}
-def am_match(s):
+AM_WORDS = {}
+for x in AM['items']:
+    for w in [*x['t'].values()] + ([] if x.get('k', '-') == '-' else x['k'].split(',')): AM_WORDS.setdefault(am_fold(w), x['id'])
+def am_match(s):   # "Free washer – In unit", "Lavadora en el alojamiento (Gratis)", "50-inch HDTV": the words before the details
     full = am_fold(s); head = re.split(r':|\s[–-]\s|\(|,', full)[0].strip()
-    return next((AM_WORDS[w] for w in (full, head, re.sub(r'^((free|private|shared|indoor|outdoor|in-unit|heated) )+', '', head)) if w in AM_WORDS), '')
+    loose = re.sub(r' (de \d+ pulgadas|en el (alojamiento|edificio))$', '', re.sub(r'^\d+[- ]?inch ', '', re.sub(r'^((free|private|shared|indoor|outdoor|in-unit|heated) )+', '', head)))
+    return next((AM_WORDS[w] for w in (full, head, loose) if w in AM_WORDS), '')
 am_ids = lambda xs: list(dict.fromkeys(x if x in AM_BY else (am_match(x) or x) for x in xs if x))
 am_t = lambda x: {l: x['t'][l] for l in LANGS if l in x['t']}
 
@@ -549,9 +552,10 @@ if HOUSE_PAGE:
     # A few big things on top, in the listing's own words when it says them ("Private pool: open all year"), else the host's tick.
     said = [str(x).strip() for x in (A.get('listingAmenities') or []) if str(x).strip()]
     # What the place offers: ids of engine/src/amenities.json (named in six languages), plus the host's own words. Older
-    # answers held the builder's English chips and the listing's words apart: those are matched to the list too.
+    # answers held the builder's English chips and the listing's words apart: those are matched to the list too, and a
+    # listing word the list does not know is left out (it would repeat a ticked one in other words).
     ticked = [str(x).strip() for x in (A.get('amenities') or []) if str(x).strip()]
-    offers = am_ids(ticked if any(x in AM_BY for x in ticked) else ticked + said)
+    offers = am_ids(ticked if any(x in AM_BY for x in ticked) else ticked + [x for x in said if am_match(x)])
     highlights = []
     for icon, rx, ids in (('pool', r'pool|piscin', ['pool']), ('flame', r'bbq|barbecue|barbacoa|grill', ['bbq']), ('view', r'\bviews?\b|vistas?\b|\bvues?\b', [i for i in offers if AM_BY.get(i, {}).get('g') == 'views']), ('desk', r'workspace|work area|zona para trabajar', ['workspace'])):
         x, own = next((v for v in said if re.search(rx, v, re.I)), None), next((i for i in ids if i in offers), None)

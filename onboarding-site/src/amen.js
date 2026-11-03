@@ -5,12 +5,15 @@
 const AM_BY = Object.fromEntries(AMENS.items.map(x => [x.id, x]));
 const AM_CODE = Object.fromEntries(AMENS.items.flatMap(x => (x.ab || []).map(c => [c, x.id])));
 const amFold = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[’`]/g, "'").replace(/\s+/g, ' ').trim();
-const AM_WORDS = new Map(AMENS.items.flatMap(x => [x.t.en, ...(x.k && x.k !== '-' ? x.k.split(',') : [])].map(w => [amFold(w), x.id])));
+const AM_WORDS = new Map();
+for (const x of AMENS.items) for (const w of [...Object.values(x.t), ...(x.k && x.k !== '-' ? x.k.split(',') : [])]) if (!AM_WORDS.has(amFold(w))) AM_WORDS.set(amFold(w), x.id);
 const amOld = x => x.k === '-';   // an old builder choice: kept when chosen, never offered
-// A listing's English words ("Free washer – In unit", "Private hot tub") or an old choice ("BBQ") to an item, else ''.
+// A listing's words in any of the six languages ("Free washer – In unit", "Lavadora en el alojamiento (Gratis)", "50-inch
+// HDTV") or an old choice ("BBQ") to an item, else ''.
 function amenMatch(s){
   const full = amFold(s), head = full.split(/:|\s[–-]\s|\(|,/)[0].trim();
-  for (const w of [full, head, head.replace(/^((free|private|shared|indoor|outdoor|in-unit|heated) )+/, '')]) if (AM_WORDS.has(w)) return AM_WORDS.get(w);
+  const loose = head.replace(/^((free|private|shared|indoor|outdoor|in-unit|heated) )+/, '').replace(/^\d+[- ]?inch /, '').replace(/ (de \d+ pulgadas|en el (alojamiento|edificio))$/, '');
+  for (const w of [full, head, loose]) if (AM_WORDS.has(w)) return AM_WORDS.get(w);
   return '';
 }
 const amenIds = list => [...new Set((Array.isArray(list) ? list : []).map(x => AM_BY[x] ? x : amenMatch(x) || String(x || '').trim()).filter(Boolean))];
@@ -19,7 +22,7 @@ const amenName = x => AM_BY[x] ? AM_BY[x].t.en : x;
 // The first ones guests see on the House page: the most asked for, then the rest in list order.
 const amenKey = ids => [...ids.filter(x => (AM_BY[x] || {}).top).sort((a, b) => AM_BY[a].top - AM_BY[b].top), ...ids.filter(x => !(AM_BY[x] || {}).top)];
 // From the listing read: every amenity by Airbnb's code when the page gave them (any language), else Claude's picks and
-// the listing's own words (English), matched where the list knows them and kept as written where it does not.
+// the listing's own words (the page's language), matched where the list knows them and kept as written where it does not.
 function amenFromListing(d){
   const items = Array.isArray(d.amenityItems) ? d.amenityItems : [];
   if (items.length) return amenIds(items.map(i => AM_CODE[i.c] || amenMatch(i.t) || i.t));

@@ -548,6 +548,10 @@ try {
     ok('amenities: its own step, after Rooms and photos', !!(await p.$('#amQ')) && /What the place offers/.test(await p.textContent('main')));
     ok('amenities: old answers are ticked in the new list', (await ticked()).sort().join() === 'bbq,pool,washer', (await ticked()).join());
     ok('amenities: an old choice the list no longer offers stays, as the host\'s own', /Cot or high chair/.test(await p.textContent('.am-own')));
+    for (const w of ['Lavadora en el alojamiento (Gratis)', 'Admite mascotas', 'Televisión de alta definición de 50 pulgadas', 'Free dryer – In unit', 'Lave-linge']) { await p.fill('#amOwn', w); await p.press('#amOwn', 'Enter'); await p.waitForTimeout(300); }
+    await p.waitForTimeout(600);   // the save waits 400 ms after the last change
+    const s1 = await saved(), own1 = await p.textContent('.am-own');
+    ok('amenities: a listing\'s own words in any language are matched to the list, nothing twice', ['pets', 'tv', 'dryer'].every(x => s1.includes(x)) && s1.filter(x => x === 'washer').length === 1 && !/lavadora|mascotas|pulgadas|dryer|lave/i.test(own1), JSON.stringify(s1));
     await p.fill('#amQ', 'dish'); await p.waitForTimeout(150);
     ok('amenities: typing finds it', (await p.$$eval('#amRes [data-amen]', els => els.map(e => e.dataset.amen))).includes('dishwasher'));
     await p.check('#amRes [data-amen="dishwasher"]'); await p.waitForTimeout(700);
