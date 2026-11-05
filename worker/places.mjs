@@ -82,7 +82,8 @@ const hostFacts = (p, name, house) => {
 // link is read for the name and pin it points to). Searched on Google near the house; kept only when Google's answer
 // shares a real word with the name and lies within reach. Gives what the guide needs: position, distance, town,
 // opening hours, its Maps link, its id for the monthly check and what kind of place it is.
-const townOf = addr => { const parts = String(addr || '').split(',').map(x => x.trim()).filter(Boolean); const withCode = parts.find(x => /\b\d{4,5}\b/.test(x));
+// The town is the part that starts with the postal code ("43700 El Vendrell"), never a road's kilometre ("Crta. N-340, Km 1185").
+const townOf = addr => { const parts = String(addr || '').split(',').map(x => x.trim()).filter(Boolean); const withCode = parts.find(x => /^\d{4,5}\b/.test(x)) || parts.find(x => /\b\d{4,5}\b/.test(x) && !/\bkm\b/i.test(x));
   return (withCode || parts[parts.length - 2] || '').replace(/\b\d{4,5}\b\s*([A-Z]{2}\b)?/, '').trim() || null; };
 export async function hostPlace(GK, raw, house, reachKm = 50) {
   let q = String(raw || '').trim(), pin = null;

@@ -94,10 +94,10 @@ export function renderHome(V) {
      <div class="hcard">
      ${COVER_PHOTO ? `<a class="hc-ph" href="${HOUSE_LINK}"><img src="${esc(HOUSE.photo)}" style="object-position:${esc(HOUSE.photoPos || '50% 60%')}" alt="" loading="eager" decoding="async" onerror="this.remove()"></a>` : `<a class="hc-ph hc-art" href="${HOUSE_LINK}" aria-hidden="true" tabindex="-1">${THEMED_COVER}</a>`}
      <a class="hc-id" href="${HOUSE_LINK}">${SITE.logo ? `<img src="${esc(SITE.logo)}" alt="">` : ''}<span class="hc-nm"><small class="hc-w">${esc(t('welcomeTo'))}</small><b>${esc(SITE.name)}</b><small>${esc(t('seeHouse'))}</small></span><span class="go" aria-hidden="true">${ARROW}</span></a>
-     <div class="keyfacts">
+     ${HOUSE.wifi || HOUSE.checkout ? `<div class="keyfacts">
        ${HOUSE.wifi ? `<button type="button" class="kf-wifi" id="wifiBtn"><small>${esc(t('qWifi'))}</small><b>${esc(t('qWifiV'))}</b></button>` : ''}
-       <a href="#s/message" data-open="checkout"><small>${esc(t('qCheckout'))}</small><b>${esc(t('qCheckoutV', { time: HOUSE.checkout }))}</b></a>
-     </div>
+       ${HOUSE.checkout ? `<a href="#s/message" data-open="checkout"><small>${esc(t('qCheckout'))}</small><b>${esc(t('qCheckoutV', { time: HOUSE.checkout }))}</b></a>` : ''}
+     </div>` : ''}
      </div>
    </section>`;
   V.innerHTML = `<div class="wrap" style="gap:14px">

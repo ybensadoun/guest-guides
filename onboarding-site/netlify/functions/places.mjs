@@ -10,7 +10,9 @@ const CATS = {
 // no room for them, and they score lower (a water park full of families, 3.5). Who the guests are decides which come first.
 const TODO_FOR = { Beaches: ['beach'], 'Wine and food': ['winery'], 'Hiking and nature': ['park', 'hiking_area', 'national_park'], 'Culture and history': ['museum', 'historical_landmark', 'art_gallery'], Wellness: ['spa'] };
 const ACTIVITIES = ['amusement_center', 'amusement_park', 'water_park', 'zoo', 'aquarium', 'bowling_alley', 'go_karting_venue', 'miniature_golf_course', 'adventure_sports_center'];
-const ACTIVE_GUESTS = ['Families with kids', 'Groups of friends', 'Sports'];
+// Markets have their own section (Local markets): never a card in the Attractions deck. Whole words only, so not "Supermarket".
+const MARKET = /(?<!\p{L})(markets?|mercados?|mercats?|mercadillos?|mercadets?|march[ée]s?|m[äa]rkte?|mercato|mercati|markthal)(?!\p{L})/iu;
+const ACTIVE_GUESTS =['Families with kids', 'Groups of friends', 'Sports'];
 const todoTypes = want => { const t = want.flatMap(w => TODO_FOR[w] || []); return t.length ? [...new Set(['tourist_attraction', ...t])] : CATS.todo; };
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=86400' } });
 const fresh = o => new Response(JSON.stringify(o), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });   // a failure must not be remembered for a day
@@ -23,7 +25,7 @@ async function g(path, body, mask, key){
 const hav = (a, b, c, d) => { const R = 6371, t = Math.PI / 180, x = (c - a) * t, y = (d - b) * t; const h = Math.sin(x / 2) ** 2 + Math.cos(a * t) * Math.cos(c * t) * Math.sin(y / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
 // One place, as the editor keeps it.
 const PLACE = ['id', 'displayName', 'location', 'googleMapsUri', 'formattedAddress', 'primaryTypeDisplayName', 'businessStatus', 'regularOpeningHours'];
-const placeFacts = (p, la, ln) => { const parts = String(p.formattedAddress || '').split(',').map(x => x.trim()), coded = parts.find(x => /\b\d{4,5}\b/.test(x));
+const placeFacts = (p, la, ln) => { const parts = String(p.formattedAddress || '').split(',').map(x => x.trim()), coded = parts.find(x => /^\d{4,5}\b/.test(x)) || parts.find(x => /\b\d{4,5}\b/.test(x) && !/\bkm\b/i.test(x));   // the postal code's part, never a road's kilometre
   return { id: p.id, name: p.displayName && p.displayName.text, lat: p.location.latitude, lng: p.location.longitude, maps: p.googleMapsUri,
     km: Math.max(1, Math.round(hav(la, ln, p.location.latitude, p.location.longitude) * 1.3)), town: ((coded || parts[parts.length - 2] || '').replace(/\b\d{4,5}\b\s*([A-Z]{2}\b)?/, '').trim()) || null,
     type: p.primaryTypeDisplayName && p.primaryTypeDisplayName.text, status: p.businessStatus || null, periods: (p.regularOpeningHours && p.regularOpeningHours.periods) || null }; };
@@ -82,8 +84,9 @@ export default async (req) => {
     const search = types => g('places:searchNearby', { includedTypes: types, maxResultCount: 20, rankPreference: 'POPULARITY', languageCode: lang,
       locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius } } },
       'places.id,places.displayName,places.rating,places.userRatingCount,places.priceLevel,places.primaryTypeDisplayName,places.location,places.googleMapsUri,places.shortFormattedAddress,places.photos,places.editorialSummary', key);
+    const market = p => MARKET.test([p.displayName && p.displayName.text, p.primaryTypeDisplayName && p.primaryTypeDisplayName.text].join(' '));
     const best = (d, bar) => (d.places || [])
-      .filter(p => (p.rating || 0) >= bar && (p.userRatingCount || 0) >= 40)
+      .filter(p => (p.rating || 0) >= bar && (p.userRatingCount || 0) >= 40 && !(cat === 'todo' && market(p)))
       .map(p => ({ id: p.id, name: p.displayName && p.displayName.text, rating: p.rating, reviews: p.userRatingCount, price: p.priceLevel || null,
         type: p.primaryTypeDisplayName && p.primaryTypeDisplayName.text, address: p.shortFormattedAddress, maps: p.googleMapsUri,
         summary: p.editorialSummary && p.editorialSummary.text, lat: p.location.latitude, lng: p.location.longitude,

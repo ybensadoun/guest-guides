@@ -31,6 +31,10 @@ const photos = (B0.answers._remote || []).map(u => u.src).filter(Boolean).slice(
 const PAGE = { ok: true, stage: 'page', site: 'airbnb', source: 'page', title: 'Home in ' + (A0.town || 'town'), pageTitle: (A0.placeName || 'Test house') + ' - Houses for Rent - Airbnb', cover: photos[0], photos, photoRooms: photos.map(() => null), photoCaps: photos.map(() => ''), rating: { avg: 4.9, count: 31 }, lat: A0.lat, lng: A0.lng, src: { text: 'listing text', title: 'x', photos } };
 const WRITE = { ok: true, source: 'page', site: 'airbnb', draft: { placeName: A0.placeName, town: A0.town, region: A0.region, propertyType: A0.propertyType, bedrooms: A0.bedrooms, checkIn: A0.checkIn || '16:00', checkOut: A0.checkOut || '11:00', houseRules: A0.houseRules, amenities: A0.amenities, tagline: A0.tagline, welcome: A0.welcome, toConfirm: ['Your Wi-Fi'] }, amenityItems: [{ c: '7', t: 'Piscina descubierta privada' }, { c: '33', t: 'Lavadora' }, { c: 'sv12', t: 'Vistas a la montaña' }, { c: '', t: 'Trampolín' }], photos, cover: photos[0], lat: A0.lat, lng: A0.lng, report: { assistant: 'ok' } };
 const listing = (route, body) => setTimeout(() => json(route, body.stage === 'page' ? PAGE : WRITE), body.stage === 'page' ? 400 : 1500);
+// A Spanish listing whose writer said no to every section (seen 4 Nov 2026): the sections stay on, the rooms get their English names.
+const capsEs = photos.map((x, i) => i < 2 ? 'Salón' : i < 4 ? 'Dormitorio 1' : '');
+const PAGE_ES = { ...PAGE, photoCaps: capsEs }, WRITE_ES = { ...WRITE, photoCaps: capsEs, draft: { ...WRITE.draft, roomNames: { 'Salón': 'Living room', 'Dormitorio 1': 'Bedroom 1' }, sections: { wifi: false, rubbish: false, markets: false, eat: false, todo: false, events: false } } };
+const listingEs = (route, body) => setTimeout(() => json(route, body.stage === 'page' ? PAGE_ES : WRITE_ES), body.stage === 'page' ? 400 : 1500);
 const inPhone = (p, fn) => p.evaluate(fn => { const d = document.getElementById('phoneFrame') && document.getElementById('phoneFrame').contentDocument; return d ? new Function('d', 'return (' + fn + ')(d)')(d) : null; }, fn.toString());
 mkdirSync(SHOTS, { recursive: true });
 // CHECK_LIVE=1: each result is printed as it comes, to see where a run is stuck.
@@ -635,10 +639,20 @@ try {
     ok('Places nearby, 360 px: the whole card and its buttons on screen, above the bottom bar, no sideways scroll', await m.p.evaluate(() => document.querySelector('.sw-btns').getBoundingClientRect().bottom <= document.getElementById('navbar').getBoundingClientRect().top && document.documentElement.scrollWidth <= innerWidth));
     await m.p.screenshot({ path: join(SHOTS, 'nearby-360.png') });
     await m.ctx.close(); }
+  // ---- A second device, signed in, opened straight at a step (backlog 48): the account's answers come in, and the
+  // device's near empty ones (only the step it opened) never go over them ----
+  { const { ctx, p, errors } = await open(browser, B, 360, 780);
+    const pushed = []; await ctx.route(SB + '/rest/v1/guides**', r => { if (r.request().method() === 'PATCH') pushed.push(r.request().postData() || ''); return r.fallback(); });
+    await p.goto('http://editor.test/#photos'); await ready(p); await p.waitForTimeout(2500);
+    const here = await p.evaluate(() => (JSON.parse(localStorage.getItem('porta-onboarding-v1') || '{}').A || {}));
+    const empty = pushed.filter(b => { try { return !(JSON.parse(b).answers || {}).placeName; } catch (e) { return false; } });
+    ok('second device opened at a step: the account\'s answers come in, nothing near empty is saved over them', here.placeName === B.answers.placeName && !empty.length, `${here.placeName} / ${empty.length} of ${pushed.length} saves without the answers`);
+    ok('second device: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // ---- The wow: a new host pastes their link ----
-  { const { ctx, p, errors } = await open(browser, N, 360, 780, {}, listing);
+  { const { ctx, p, errors } = await open(browser, N, 360, 780, {}, listingEs);
     await p.goto('http://editor.test/'); await p.waitForSelector('#st_url', { timeout: 15000 });
-    await p.fill('#st_url', 'https://www.airbnb.com/rooms/12345678'); await p.click('#startGo');
+    await p.fill('#st_url', 'Check out this home on Airbnb! https://www.airbnb.com/slink/Ab12Cd34'); await p.click('#startGo');   // what a phone's share button copies
     await p.waitForTimeout(150);
     ok('wow: the link opens "This is your guide" at once', (await p.evaluate(() => location.hash)) === '#yours' && !!(await p.$('#phoneFrame')), await p.evaluate(() => location.hash));
     await p.waitForFunction(() => /Writing/.test((document.getElementById('yoursTx') || {}).textContent || ''), null, { timeout: 5000 }).catch(() => {});
@@ -662,6 +676,12 @@ try {
     await p.waitForTimeout(800);
     const am = await p.evaluate(() => JSON.parse(localStorage.getItem('porta-onboarding-v1')).A.amenities);
     ok('wow: every amenity of the listing, by Airbnb\'s codes, and one it does not know kept as the listing says it', JSON.stringify(am) === JSON.stringify(['pool', 'washer', 'mountain_view', 'Trampolín']), JSON.stringify(am));
+    const saved = await p.evaluate(() => JSON.parse(localStorage.getItem('porta-onboarding-v1')).A);
+    ok('wow: the link from a phone\'s share button is kept as the link alone', saved.listingUrl === 'https://www.airbnb.com/slink/Ab12Cd34', saved.listingUrl);
+    ok('wow: the listing never switches a section off, even when its writer said no to all of them', !Object.entries(saved.modules || {}).some(([k, on]) => on === false && k !== 'nightlife'), JSON.stringify(saved.modules));
+    await go(p, '#photos'); await p.waitForTimeout(500);
+    const rooms = await p.$$eval('[data-rmname]', els => els.map(e => e.value));
+    ok('wow: rooms named from Spanish captions get their English names once the listing is written', rooms.includes('Living room') && rooms.includes('Bedroom 1') && !rooms.some(r => /Salón|Dormitorio/.test(r)), rooms.join(', '));
     ok('wow: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const { ctx, p, errors } = await open(browser, N, 1280, 860, {}, listing);

@@ -347,7 +347,7 @@ async function gate(mode0, notice, noticeOk, sheet){
       f.onsubmit = async ev => {
         ev.preventDefault();
         if (start) {   // the link: the wow starts at once, no account yet
-          const url = el.querySelector('#acUrl').value.trim(), p = url ? linkProblem(url) : 'Paste the link of your listing first.';
+          const url = cleanLink(el.querySelector('#acUrl').value), p = url ? linkProblem(url) : 'Paste the link of your listing first.';
           if (p) { m.className = 'acmsg'; m.textContent = p; return; }
           A.listingUrl = url; flush(); done('link'); setTimeout(() => createDraft()); return;
         }
@@ -436,7 +436,10 @@ async function acctAttach(){
   const user = AUTH.user || {};
   if (A._acct && A._acct !== user.id) await wipeLocal();     // someone else used this device before: never mix their answers in
   HOUSES = (await sb('/rest/v1/guides?select=id,slug,status,origin,name:content->site->>name,guideName:answers->>guideName,place:answers->>placeName&order=created_at.asc')) || [];
-  const local = !!((A._seen && A._seen.length) || A.listingUrl);
+  // Only real answers make this device's guide: the steps opened before the account's answers came (a step's own address
+  // on a second device) date the answers too, and must never put a near empty guide over the account's.
+  const real = x => Array.isArray(x) ? x.length > 0 : x && typeof x === 'object' ? Object.keys(x).length > 0 : !!String(x ?? '').trim();
+  const local = startedHere() || Object.entries(A).some(([k, x]) => !k.startsWith('_') && real(x));
   // A guide started on this device before signing in (no account yet, docs/plan-fast-builder.md step 7) becomes a house
   // of its own: never put on top of a house the account already has.
   const pick = startedHere() && !A._acct ? null : HOUSES.find(h => h.id === houseSaved(user.id)) || HOUSES[0];
@@ -445,7 +448,7 @@ async function acctAttach(){
   if (rows && rows[0]) {
     GUIDE = rows[0];
     const rT = (GUIDE.answers || {})._savedAt || 0, lT = A._savedAt || 0;
-    if (rT && (rT > lT || !local)) { await adoptRemote(GUIDE.answers); }
+    if (GUIDE.answers && (!local || (rT && rT > lT))) { await adoptRemote(GUIDE.answers); }
   } else {
     const made = await sb('/rest/v1/guides', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { owner: user.id, answers: cleanForAccount() } });
     GUIDE = made && made[0]; if (GUIDE) HOUSES.push({ id: GUIDE.id, status: GUIDE.status, guideName: A.guideName, place: A.placeName });

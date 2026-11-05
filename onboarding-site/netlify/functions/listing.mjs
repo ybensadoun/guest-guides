@@ -3,7 +3,7 @@
 // 3. Asks Claude to turn the listing into a first version of every onboarding answer.
 // Answer: { ok, draft, source } or { ok:false, need:'text'|'link', message }
 const LINK_RX = [
-  { site: 'airbnb', rx: /^https?:\/\/([a-z]{2,3}\.)?(www\.)?airbnb\.[a-z.]+\/(rooms\/(plus\/)?\d+|h\/[\w-]+)/i },
+  { site: 'airbnb', rx: /^https?:\/\/([a-z]{2,3}\.)?(www\.)?airbnb\.[a-z.]+\/(rooms\/(plus\/)?\d+|h\/[\w-]+|slink\/\w+)/i },   // slink: the app's share button
   { site: 'airbnb', rx: /^https?:\/\/(www\.)?abnb\.me\/\S+/i },
   { site: 'booking', rx: /^https?:\/\/(www\.)?booking\.com\/hotel\/[a-z]{2}\/[\w-]+/i },
   { site: 'vrbo', rx: /^https?:\/\/(www\.)?vrbo\.com\/(\d+|[\w-]+\/\d+)/i }
@@ -63,6 +63,7 @@ async function readPage(url){
     const sleeping = sleepLines;
     const rt = html.match(/"ratingAverage":([\d.]+),"ratingCount":"?(\d+)/);
     const facts = [overview.length && 'Overview: ' + overview.join(' · '), rules.length && 'House rules section: ' + rules.join(' | '), amenities.length && 'Amenities listed: ' + amenities.join(', '),
+      amenityItems.length > amenities.length && 'Every amenity (the page\'s "Show all" list): ' + amenityItems.map(x => x.t).join(', '),
       sleeping.length && 'Sleeping arrangements: ' + sleeping.join(' | '), tour.length && 'Photo tour rooms: ' + tour.map(x => x.name + ' (' + x.imgs.length + ' photos)').join(', '), rt && 'Rating: ' + rt[1] + ' from ' + rt[2] + ' reviews'].filter(Boolean).join('\n');
     const text = (facts ? 'FACTS READ FROM THE PAGE DATA:\n' + facts + '\n\n' : '') + htmlToText(html);
     const out = { overview, rules, amenities, amenityItems, sleeping: sleepLines, tourRooms: tour.length, rating: rt ? { avg: +rt[1], count: +rt[2] } : null, title: meta(html, 'og:title'), pageTitle: ((html.match(/<title[^>]*>([^<]+)<\/title>/i) || [])[1] || '').replace(/&amp;/g, '&').trim(), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, facts, text: text.slice(0, 40000),
@@ -91,9 +92,10 @@ function amenGroups(html){
 }
 
 // Airbnb often refuses servers. A public page reader (r.jina.ai) opens the page like a browser and hands back text with the photo links.
-async function readViaReader(url){
+const hasTimes = t => /(check-?in|check-?out|llegada|salida|arriv|d[ée]part)[^\n]{0,40}?\d{1,2}(\s?[:.h]\s?\d{2}|\s?[ap]\.?m)/i.test(t || '');
+async function readViaReader(url, fresh = false){
   try {
-    const r = await fetch('https://r.jina.ai/' + url, { signal: AbortSignal.timeout(14000), headers: { accept: 'text/plain', 'x-return-format': 'markdown' } });
+    const r = await fetch('https://r.jina.ai/' + url, { signal: AbortSignal.timeout(14000), headers: { accept: 'text/plain', 'x-return-format': 'markdown', ...(fresh ? { 'x-no-cache': 'true' } : {}) } });
     if (!r.ok) return null;
     const md = await r.text();
     const seen = new Set(), pics = [];
@@ -167,9 +169,8 @@ Return this JSON (null when unknown):
  "guests": array chosen from ["Families with kids","Couples","Groups of friends","Remote workers","Older guests","Guests with pets","Wedding or event guests"],
  "navStyle": one of ["Big tiles, like an app","A simple list","Photo-led, like a magazine"] that fits the listing's style,
  "feelWords": array of up to 3 from ["Cosy","Elegant","Playful","Modern","Rustic","Calm","Local and authentic","Luxurious","Family friendly","Colourful"],
- "sections": object with true/false for ["wifi","rubbish","markets","eat","todo","events"],
  "basis": object saying, for each of "houseRules","sleeping","arrival","checkIn","checkOut","welcome","tagline": "listing" when the listing itself says it, "suggested" when you wrote it (only welcome and tagline),
- "toConfirm": array of short questions the host should answer that the listing does not cover (max 6)
+ "toConfirm": array of short questions the host should answer that the listing does not cover (max 6). Never ask about something the listing states: an amenity in "Amenities listed" or "Every amenity", the rules, the times, the rooms or the beds
 }`;
 }
 async function askClaude(src, town){
@@ -205,7 +206,9 @@ export default async (req) => {
     if (site) {
       src = await readPage(url);
       if (!src || src.text.length < 6000) {
-        const alt = await readViaReader(url);
+        // The reader sometimes hands back the page before its times are there (2,800 characters instead of 15,000): two reads
+        // side by side, the one with the check-in and check-out times kept, else the longer.
+        const alt = (await Promise.all([readViaReader(url), readViaReader(url, true)])).filter(Boolean).sort((a, b) => hasTimes(b.text) - hasTimes(a.text) || b.text.length - a.text.length)[0] || null;
         if (alt && !src) src = alt;
         else if (alt && src) { src.via = 'page + reader'; src.text = (src.facts ? src.text.split('\n\n')[0] + '\n\n' : '') + alt.text; src.counts = src.counts || alt.counts; if (!src.pics.length) { src.pics = alt.pics; src.photos = alt.photos; src.image = src.image || alt.image; } }
       }

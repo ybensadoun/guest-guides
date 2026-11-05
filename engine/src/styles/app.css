@@ -979,6 +979,10 @@ body:not(.is-home) #view h2.title{min-height:44px;display:flex;align-items:cente
 .gt[data-k="garbage"]::before{width:96px;height:96px;right:-40px;bottom:-40px;top:auto}
 .gt[data-k="garbage"] .go{top:14px!important;bottom:auto!important}
 .gt-tonight{margin-right:64px!important}
+/* Rubbish without bins to show (street containers, no collection days): a short wide tile, laid out like Events and the map */
+.gt.wide[data-k="garbage"]:not(.has-bins){padding-right:96px!important}
+.gt.wide[data-k="garbage"]:not(.has-bins) .go{top:50%!important;bottom:auto!important;margin-top:-18px;right:52px}
+.gt.wide[data-k="garbage"]:not(.has-bins)::before{width:80px;height:80px;right:-44px;top:50%;margin-top:-40px;bottom:auto}
 .gt[data-k="events"] .go{top:50%!important;bottom:auto!important;margin-top:-18px;right:52px}
 .gt[data-k="events"]{padding-right:96px!important}
 .gt[data-k="events"]::before{width:80px;height:80px;border-radius:50%;right:-44px;top:50%;margin-top:-40px;bottom:auto}

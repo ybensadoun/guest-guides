@@ -446,7 +446,7 @@ if A.get('wifiName') and on('wifi'):
     wifi = {'password': pw, 'networks': [{'ssid': ssid, 'label': L('Wi-Fi'), 'qr': svg}]}
 
 house = {'_doc': 'lat/lng: an approximate area point, never the address.', 'name': place, 'lat': args.lat, 'lng': args.lng,
-         'photoPos': '50% 55%', 'checkout': (A.get('checkOut') or '11:00')[:5]}
+         'photoPos': '50% 55%', 'checkout': (A.get('checkOut') or '')[:5]}   # no time given: none shown, never one we made up
 HAS_PHOTO = (SITE / 'public/house.jpg').exists()
 if HAS_PHOTO: house['photo'] = 'house.jpg'
 elif first_room: house['photo'] = str(first_room.relative_to(SITE / 'public'))
@@ -529,9 +529,9 @@ if lines('localTips'):
     blocks.append({'id': 'tips', 'icon': 'home', 'tone': 'green', 'title': L('Local tips'), 'items': [L(x) for x in lines('localTips')]})
 if lines('houseRules'):
     blocks.append({'id': 'rules', 'icon': 'home', 'tone': 'ink', 'title': L('House rules'), 'items': [L(x) for x in lines('houseRules')]})
-co = [f"Check-out by {house['checkout']}."] + lines('checkoutTasks')
+co = ([f"Check-out by {house['checkout']}."] if house['checkout'] else []) + lines('checkoutTasks')
 if A.get('checkIn'): co.insert(0, f"Check-in from {A['checkIn'][:5]}.")
-blocks.append({'id': 'checkout', 'icon': 'key', 'tone': 'ink', 'title': L('Check-in and check-out'), 'items': [L(x) for x in co]})
+if co: blocks.append({'id': 'checkout', 'icon': 'key', 'tone': 'ink', 'title': L('Check-in and check-out'), 'items': [L(x) for x in co]})
 (SITE / 'content/message.json').write_text(json.dumps({'_doc': 'House guide by room, from the host’s onboarding answers.', 'blocks': blocks}, ensure_ascii=False, indent=1))
 
 def _num(x):
@@ -756,7 +756,7 @@ SEC = [
 sections, modules, research = [], {'house': HOUSE_PAGE, 'quick': bool(quick) and on('quick'), 'map': on('map')}, []
 if HOUSE_PAGE: sections.append({'id': 'house', 'group': 'house', 'kind': 'house', 'labelKey': 'theHouse', 'status': 'live', 'file': 'house-page'})
 for sid, grp, kind, label, extra, mod in SEC:
-    want = on(mod, mod in ('houseguide', 'emergency', 'todo', 'rubbish', 'markets'))   # rubbish needs the host's answer, markets need researched content: both checked below
+    want = on(mod, mod in ('houseguide', 'emergency', 'todo', 'rubbish', 'markets', 'events', 'eat', 'quick'))   # on unless the host switched it off, as in the builder; rubbish and eat need the host's answer, markets need researched content: checked below
     if sid == 'garbage': want = want and bool(rmode)   # only the host can tell us: no answer, no section
     if sid == 'restaurants': want = want and bool(fav)
     if sid == 'nightlife': want = on('nightlife', False) and bool(night)

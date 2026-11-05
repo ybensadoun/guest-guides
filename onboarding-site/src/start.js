@@ -2,9 +2,12 @@
    The host pastes their listing link (and the town if we cannot read it). The site's assistant writes
    a first version of every step; the host then only reviews. If the link is wrong or unreadable,
    we say exactly what to do instead. */
-const LINK_OK = [/^https?:\/\/([a-z]{2,3}\.)?(www\.)?airbnb\.[a-z.]+\/(rooms\/(plus\/)?\d+|h\/[\w-]+)/i, /^https?:\/\/(www\.)?abnb\.me\/\S+/i,
+const LINK_OK = [/^https?:\/\/([a-z]{2,3}\.)?(www\.)?airbnb\.[a-z.]+\/(rooms\/(plus\/)?\d+|h\/[\w-]+|slink\/\w+)/i, /^https?:\/\/(www\.)?abnb\.me\/\S+/i,
   /^https?:\/\/(www\.)?booking\.com\/hotel\/[a-z]{2}\/[\w-]+/i, /^https?:\/\/(www\.)?vrbo\.com\/(\d+|[\w-]+\/\d+)/i];
-const linkProblem = u => { u = (u || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) return 'Paste the full address, starting with https://'; return LINK_OK.some(rx => rx.test(u)) ? '' : 'This is not a listing page. Open your listing and copy the address from the browser bar: it looks like airbnb.com/rooms/12345678.'; };
+// What a phone's share button gives ("Check out this home on Airbnb! https://…"), or a link without https://: the link alone.
+const cleanLink = u => { u = String(u || '').trim(); const m = u.match(/https?:\/\/[^\s<>"]+/i); if (m) return m[0].replace(/[).,;:!?»"']+$/, '');
+  return /^(www\.|[a-z]{2,3}\.)?(airbnb|abnb|booking|vrbo)\.[a-z.]+\//i.test(u) ? 'https://' + u : u; };
+const linkProblem = u => { u = cleanLink(u); if (!u) return ''; if (!/^https?:\/\//i.test(u)) return 'Paste the full address, starting with https://'; return LINK_OK.some(rx => rx.test(u)) ? '' : 'This is not a listing page. Open your listing and copy the address from the browser bar: it looks like airbnb.com/rooms/12345678.'; };
 const hasSource = () => !!A._draftAt || (!!v('listingUrl') && !linkProblem(v('listingUrl'))) || v('listingText').length > 200;
 const START = { busy: false, need: '', msg: '', step: 0 };
 const STEPS_MSG = ['Opening your listing…', 'Reading the house, the rules and what it offers…', 'Writing your house guide…', 'Choosing sections for your guests…', 'Almost there…'];
@@ -67,7 +70,8 @@ function startHTML(){
 // house as soon as its listing page is read (a few seconds), and fills in when Claude has written the rest.
 const listingAsk = body => fetch('/api/listing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
 async function createDraft(fromStep){
-  const url = v('listingUrl').trim(), text = v('listingText').trim(), town = v('town').trim();
+  const url = cleanLink(v('listingUrl')), text = v('listingText').trim(), town = v('town').trim();
+  if (url !== v('listingUrl')) A.listingUrl = url;
   const lp = linkProblem(url);
   if (lp) { START.msg = lp; START.need = 'link'; render(); return; }
   if (!url && text.length < 200) { START.msg = 'Paste your listing link, or the text of your listing.'; START.need = url ? 'text' : 'link'; render(); return; }
@@ -153,13 +157,29 @@ function addListingPhotos(d){
   A.listingPhotos = d.photos;
   // The listing's own photos become the first photos of the house guide, each with the room we could tell from its caption.
   const have = uploads.filter(u => u.kind === 'photo');
-  if (have.some(u => u.remote)) return;
+  if (have.some(u => u.remote)) return nameListingRooms(d);
   const room = (r, cap) => { const c = ROOMS.includes(r) ? r : ''; return (!c || c === 'Other') && cap ? catOf(cap) : c; }, names = (d.draft || {}).roomNames || {};
   d.photos.slice(0, Math.max(0, 16 - have.length)).forEach((src, i) => {
     const cap = (d.photoCaps || [])[i] || '';
     const label = String(names[cap] || cap);   // the listing's own name for the room, in English when its page is not
     const rec = { id: newId(), kind: 'photo', remote: true, src, name: cap || 'Listing photo ' + (i + 1), room: room((d.photoRooms || [])[i], cap), roomLabel: label.length <= 30 ? label : '', url: src + '?im_w=720', createdAt: new Date(Date.now() + i).toISOString() };
     uploads.push(rec); saveUpload(rec);
+  });
+}
+// The photos come with the page, Claude's English names for their rooms ("Salón": "Living room") a little later: a room still
+// named by its caption takes its English name. A room the host renamed or a photo they moved stays as they made it.
+function nameListingRooms(d){
+  const names = (d.draft || {}).roomNames || {}, caps = d.photoCaps || [], kinds = d.photoRooms || [];
+  uploads.filter(u => u.remote && u.kind === 'photo').forEach(u => {
+    const i = d.photos.indexOf(u.src), cap = String(caps[i] || ''), label = String(names[cap] || '').trim();
+    if (i < 0 || !cap || !(sameRoom(u.roomLabel, cap) || (!u.roomLabel && cap.length > 30))) return;
+    if (ROOMS.includes(kinds[i]) && kinds[i] !== 'Other' && (!u.room || u.room === 'Other')) u.room = kinds[i];
+    if (label && label.length <= 30 && !sameRoom(label, cap)) {
+      const r = Array.isArray(A.rooms) && A.rooms.find(x => sameRoom(x.n, cap));
+      if (r && A.rooms.some(x => sameRoom(x.n, label))) { if (!r.t) A.rooms = A.rooms.filter(x => x !== r); } else if (r) r.n = label;
+      u.roomLabel = label;
+    }
+    saveUpload(u);
   });
 }
 // The wow page.
@@ -193,12 +213,7 @@ function applyDraft(d){
   // The listing's own equipment list as the page states it (fridge, hair dryer...): the guide sorts it into the rooms.
   if (Array.isArray(d.amenities) && d.amenities.length) A.listingAmenities = d.amenities.slice(0, 120);
   if (D.basis && typeof D.basis === 'object') A._basis = { ...(A._basis || {}), ...D.basis };
-  if (D.sections && typeof D.sections === 'object') {
-    const map = { wifi: 'wifi', rubbish: 'rubbish', markets: 'markets', eat: 'eat', todo: 'todo', events: 'events' };
-    const cur = Object.fromEntries(SECTIONS.map(s => [s.id, secOn(s.id)]));
-    for (const [k, id] of Object.entries(map)) if (typeof D.sections[k] === 'boolean' && !(A.modules && id in A.modules)) cur[id] = D.sections[k];
-    A.modules = { ...cur, ...(A.modules || {}) };
-  }
+  // No section is switched by the listing: every guide starts with Ca La Kimberly's sections, and only the host switches one off.
   if (D.rating && !A.ratingAvg) { A.ratingAvg = String(D.rating); A._pre = { ...(A._pre || {}), ratingAvg: 'reviews' }; if (D.reviewCount) A.ratingCount = String(D.reviewCount); }
   if (Array.isArray(D.toConfirm)) A.toConfirm = D.toConfirm.slice(0, 6);
   if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
@@ -223,10 +238,12 @@ const swipes = () => A.swipes || (A.swipes = {});
 const plainName = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 const samePlace = (a, b) => { const x = plainName(a), y = plainName(b); return x === y || (Math.min(x.length, y.length) >= 5 && (x.includes(y) || y.includes(x))); };
 const addedPlaces = () => (Array.isArray(A.favDo) ? placeRows('favDo').map(r => r.p) : String(A.favDo || '').split(/[,\n]+/)).map(x => x.trim()).filter(Boolean);
+// Markets have their own section: never a card among the attractions (the same words as /api/places).
+const MARKET = /(?<!\p{L})(markets?|mercados?|mercats?|mercadillos?|mercadets?|march[ée]s?|m[äa]rkte?|mercato|mercati|markthal)(?!\p{L})/iu;
 const shownText = x => (typeof x === 'string' ? x : (x && (x.en || Object.values(x)[0])) || '');
 function researchCards(){
   const S = swipes(), chosen = [...Object.values(S).filter(x => !String(x.id).startsWith('r:')).map(x => x.name), ...addedPlaces()];
-  return (((AREA.full || {}).todo || {}).items || []).filter(it => shownText(it.name) && !chosen.some(n => samePlace(n, shownText(it.name)))).map(it => { const name = shownText(it.name);
+  return (((AREA.full || {}).todo || {}).items || []).filter(it => shownText(it.name) && !MARKET.test(shownText(it.name) + ' ' + shownText(it.type)) && !chosen.some(n => samePlace(n, shownText(it.name)))).map(it => { const name = shownText(it.name);
     return { id: 'r:' + plainName(name), name, type: shownText(it.type), km: it.km_from_house, lat: it.lat, lng: it.lng, summary: shownText(it.description),
       maps: it.gmaps || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([name, it.town].filter(Boolean).join(' ')), ...(it._card || {}) }; });
 }

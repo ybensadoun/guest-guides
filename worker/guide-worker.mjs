@@ -174,7 +174,7 @@ function normSchedule(it) {
   return it;
 }
 const MARKETS_RULE = 'Find the weekly and notable local markets within the radius (street markets, covered markets, fairs). Same shape as the example: {"categories":[...],"markets":[...]} with schedule days as mon..sun. Every market MUST have numeric lat and lng: use the exact spot if a source gives it, otherwise the centre of the town or the market square from Wikipedia or OpenStreetMap, and add "verify": true when approximate. Its "category" must be one of: covered, street, flea, antiques, events. ' + HOURS_RULE;
-const TODO_RULE = 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example. ' + HOURS_RULE;
+const TODO_RULE = 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. No markets (they have their own section) and no restaurants, cafés or bars (the host\'s own list). Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example. ' + HOURS_RULE;
 // A part already in outDir (areaResearch) is not searched again. id: the guide whose progress message follows the research
 // (none for an area or a research job). opt.meter adds up what it costs; opt.parts, opt.rules and opt.searches change which parts
 // are searched, in what order, how, and with how many web searches; opt.together asks them side by side (the quick search at the
@@ -205,7 +205,7 @@ async function translate(texts, langs, srcLang, onPart) {
   for (let i = 0; langs.length && i < texts.length; i += 40) {
     if (onPart) await onPart(Math.min(i + 40, texts.length), texts.length);
     const part = texts.slice(i, i + 40);   // by number, not by text: a text repeated with one character changed was lost
-    const prompt = `Translate these texts into ${langs.join(', ')}. Most are in ${srcLang}, but one copied from a listing can be in another language: every text gets every language asked for, and a text already in one of them stays word for word in it. Keep names, numbers and times. No em-dashes. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else, one entry per text, by its number: {"0": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(Object.fromEntries(part.map((x, n) => [n, x])))}`;
+    const prompt = `Translate these texts into ${langs.join(', ')}. Most are in ${srcLang}, but one copied from a listing can be in another language: every text gets every language asked for, and a text already in one of them stays word for word in it. Keep names, numbers and times. No em-dashes. Speak to the guest informally: German du (dich, dein, euch for a group), never Sie; Dutch je and jij, never u. German quotes „like this“; Spanish opens questions and exclamations with ¿ and ¡; Catalan keeps l·l. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else, one entry per text, by its number: {"0": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(Object.fromEntries(part.map((x, n) => [n, x])))}`;
     let out = '';
     try { out = await claudeAsk(prompt, { what: 'translation' }); } catch (e) { log('  translation skipped:', e.message); break; }
     const a = out.indexOf('{'), b = out.lastIndexOf('}');
@@ -487,7 +487,7 @@ function eventsLive(content) {
 // One general search (the area's own traditions) and, side by side, one focused search per topic the host wants
 // (up to three): a topic like "Castellers" gets every diada in the window, not a share of ten events. Same event found
 // twice: kept once.
-async function searchEvents(A, { exclude = [], update = [], want = [], skip = [], reach } = {}) {
+async function searchEvents(A, { exclude = [], update = [], want = [], skip = [], reach, meter = null } = {}) {
   const { clean, located, allowed } = researchTools();
   const R = reach || { near: 10, far: A.radius || 30 }, win = `${windowRule()} ${reachRule(R)}`;
   const skipRule = skip.length ? ` Never include events about: ${skip.join('; ')} (topics, maybe written in another language: leave them out whatever the language of the source).` : '';
@@ -497,7 +497,7 @@ async function searchEvents(A, { exclude = [], update = [], want = [], skip = []
     ...want.slice(0, 3).map(w => `The host specifically wants events about "${w}". It is a topic, maybe written in another language: say it in the local language(s) yourself and search with those words too. Find every event about it with a date in this window (the small ones only close to the house, as below), up to 20, town by town, starting with the closest towns: the schedules of the groups or bodies that organise it, the town halls' agendas, the local press. ${win} ${EVENT_SHAPE} ${LOCAL_EVENTS.split('. ').slice(-1)[0]}${known}${skipRule}`)
   ];
   let failed = null;
-  const outs = await Promise.all(passes.map(r => claudeJson(researchPrompt('events', A, `${r} ${CURATION} ${allowed}`), 'events').then(o => located(clean(o)).items || []).catch(e => { failed = e; log('  an events search did not work:', e.message); return []; })));
+  const outs = await Promise.all(passes.map(r => claudeJson(researchPrompt('events', A, `${r} ${CURATION} ${allowed}`), 'events', meter).then(o => located(clean(o)).items || []).catch(e => { failed = e; log('  an events search did not work:', e.message); return []; })));
   if (failed && outs.every(o => !o.length)) throw failed;
   const all = [];
   for (const it of outs.flat()) {
@@ -736,7 +736,7 @@ async function researchJob(j, jp) {
         o.items = await checkOnGoogle(o.items || [], 'todo', () => {}); writeFileSync(f, JSON.stringify(o, null, 1)); }
       await jp({ result: read() }); } });
     const result = read();
-    const events = await firstEvents(A).catch(e => { log('  events search skipped:', e.message); return null; });
+    const events = await firstEvents(A, meter).catch(e => { log('  events search skipped:', e.message); return null; });
     if (events) result.events = events;
     if (!Object.keys(result).length) throw new Error('Nothing came back from the research. Try again later.');
     await jp({ status: 'done', result, message: Object.keys(result).join(', '), finished_at: new Date().toISOString() });
@@ -745,9 +745,9 @@ async function researchJob(j, jp) {
 }
 // The first events of a new guide, found with the rest of its research (Yohann, 30 Oct 2026: a new guide opens with events,
 // about 0.95 USD). The same search as the monthly run; the build takes them like the markets.
-async function firstEvents(A) {
+async function firstEvents(A, meter = null) {
   const R = evReach({}, { reach: A.city ? 'city' : 'car' }), today = dayStr(new Date());
-  const found = (await searchEvents({ ...A, radius: R.far }, { reach: R })).filter(f => (f.dates || []).some(d => (d.end || d.start) >= today));
+  const found = (await searchEvents({ ...A, radius: R.far }, { reach: R, meter })).filter(f => (f.dates || []).some(d => (d.end || d.start) >= today));
   for (const f of found) f.id = slugOf(f.name_local || nameOf(f.name));
   const file = { items: [] }; mergeEvents(file, found, today, R);
   return file.items.length ? { items: file.items } : null;

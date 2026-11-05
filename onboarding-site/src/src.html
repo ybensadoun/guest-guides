@@ -281,11 +281,11 @@ const SECTIONS = [
   {id:'checkout',name:'Check-out',d:'Time and the short list before leaving.',built:true,on:()=>true,fixed:true},
   {id:'rubbish',name:'Rubbish and recycling',d:'Which bin goes out tonight.',built:true,on:()=>true},
   {id:'emergency',name:'Emergency and health',d:'112, hospital and pharmacy.',built:true,on:()=>true},
-  {id:'markets',name:'Local markets',d:'Weekly markets, with what is on today.',built:true,on:a=>(a.interests||[]).includes('Local markets')},
+  {id:'markets',name:'Local markets',d:'Weekly markets, with what is on today.',built:true,on:()=>true},
   {id:'eat',name:'Eat and drink',d:'Restaurants, cafés and bars you recommend.',built:true,on:()=>true},
   {id:'todo',name:'Attractions',d:'Museums, parks, activities and sights nearby.',built:true,on:()=>true},
   {id:'nightlife',name:'Nightlife',d:'Late bars, clubs and live music you recommend.',built:true,on:()=>false},
-  {id:'events',name:'Local events',d:'Festivals and fairs during the stay.',built:true,on:a=>(a.interests||[]).includes('Festivals')},
+  {id:'events',name:'Local events',d:'Festivals and fairs during the stay.',built:true,on:()=>true},
   {id:'map',name:'Map',d:'Every place in the guide on one map.',built:true,on:()=>true},
   {id:'quick',name:'Quick calls',d:'The taxi you trust, one tap away.',built:true,on:()=>true}
 ];
