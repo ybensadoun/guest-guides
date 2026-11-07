@@ -305,7 +305,7 @@ function cmAmSearch() {
   const box = document.getElementById('cmAmRes'), inp = document.getElementById('cmAmQ'), hp = (edF() || {})['house-page']; if (!box || !inp || !hp) return;
   const q = amFold(inp.value); if (q.length < 2) { box.innerHTML = ''; return; }
   const hits = AMENS.items.filter(x => !amOld(x) && !cmAmHas(hp, x) && [...Object.values(x.t), ...(x.k ? x.k.split(',') : [])].some(w => amFold(w).includes(q))).slice(0, 10);
-  box.innerHTML = hits.length ? hits.map(x => `<button class="btn small" type="button" data-amput="${esc(x.id)}">+ ${esc(x.t.en)}</button>`).join('') : '<p class="hint">Not in the list: add it as a line in one of the groups above.</p>';
+  box.innerHTML = hits.length ? hits.map(x => `<button class="btn small" type="button" data-amput="${esc(x.id)}" translate="no">+ ${esc(amT(x.t))}</button>`).join('') : '<p class="hint">Not in the list: add it as a line in one of the groups above.</p>';
 }
 function cmAmPut(id) {
   const x = AM_BY[id], hp = (edF() || {})['house-page']; if (!x || !hp || cmAmHas(hp, x)) return;
@@ -766,7 +766,7 @@ function cmTile(m) {
 const cmPillText = (ch, m) => ch ? 'Changed' : m && cmNeeds(m) ? 'Needs you' : cmLive() ? 'Live' : 'Not published yet';
 const cmFootText = () => cmDirty() ? 'Saved as a draft. Guests see it once you publish.' : 'Changes save as you type, as a draft only you see until you publish.';
 function cmLangBar(langs) {
-  return `<div class="cm-lang"><label for="c_lang">You are editing in</label><select id="c_lang" data-cmlang>${langs.map(l => `<option value="${l}"${CM.lang === l ? ' selected' : ''}>${ED_LANGS[l]}</option>`).join('')}</select></div>
+  return `<div class="cm-lang"><label for="c_lang">You are editing in</label><select id="c_lang" data-cmlang translate="no">${langs.map(l => `<option value="${l}"${CM.lang === l ? ' selected' : ''}>${ED_LANGS[l]}</option>`).join('')}</select></div>
     <p class="hint cm-langhint">A text you change here changes in the other languages too while they still had the same words. Translated texts stay as they are.</p>`;
 }
 function cmStepHTML(m) {
@@ -1192,7 +1192,7 @@ function cmInit() {
   const d = g.draft && g.draft.content ? g.draft : null;
   CM.live = { content: g.content, theme: g.theme || {} };
   CM.g = { id: g.id, slug: g.slug, status: g.status, origin: g.origin, content: cmClone(d ? d.content : g.content), theme: cmClone(d ? d.theme || {} : g.theme || {}) };
-  CM.lang = edLangs().includes('en') ? 'en' : edLangs()[0];
+  CM.lang = [A.sourceLang, 'en'].find(l => l && edLangs().includes(l)) || edLangs()[0];   // the language the guide was written in (answers.sourceLang), else English as before
   CM.on = true;
   const step = new URLSearchParams(location.search).get('step') || CM_OPENED_ON;   // the page's first draw is the builder's, which may send an address it does not know elsewhere
   if (step && cmIsPage(step)) history.replaceState(null, '', location.pathname + '#' + step);

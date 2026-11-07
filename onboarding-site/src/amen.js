@@ -18,7 +18,11 @@ function amenMatch(s){
 }
 const amenIds = list => [...new Set((Array.isArray(list) ? list : []).map(x => AM_BY[x] ? x : amenMatch(x) || String(x || '').trim()).filter(Boolean))];
 const amenNow = () => amenIds(A.amenities);
-const amenName = x => AM_BY[x] ? AM_BY[x].t.en : x;
+// Names in the maker's language (i18n.js), straight from the list: the page's translator leaves them alone.
+const amT = t => t[UIL] || t.en;
+const amenName = x => AM_BY[x] ? amT(AM_BY[x].t) : x;
+// In the phone, the guide's own language.
+const amenGuideName = x => AM_BY[x] ? AM_BY[x].t[A.sourceLang || UIL] || AM_BY[x].t.en : x;
 // The first ones guests see on the House page: the most asked for, then the rest in list order.
 const amenKey = ids => [...ids.filter(x => (AM_BY[x] || {}).top).sort((a, b) => AM_BY[a].top - AM_BY[b].top), ...ids.filter(x => !(AM_BY[x] || {}).top)];
 // From the listing read: every amenity by Airbnb's code when the page gave them (any language), else Claude's picks and
@@ -30,7 +34,7 @@ function amenFromListing(d){
 }
 
 const amCount = (items, on) => { const n = items.filter(x => on.has(x.id)).length; return n ? `${n} ticked` : ''; };
-const amChip = on => x => `<label class="chip"><input type="checkbox" data-amen="${esc(x.id)}"${on.has(x.id) ? ' checked' : ''}><span>${esc(x.t.en)}</span></label>`;
+const amChip = on => x => `<label class="chip"><input type="checkbox" data-amen="${esc(x.id)}"${on.has(x.id) ? ' checked' : ''}><span translate="no">${esc(amT(x.t))}</span></label>`;
 function amenHTML(){
   const now = amenNow(), on = new Set(now), own = now.filter(x => !AM_BY[x] || amOld(AM_BY[x]));
   const pop = AMENS.items.filter(x => x.top).sort((a, b) => a.top - b.top);
@@ -42,9 +46,9 @@ function amenHTML(){
     <div class="am-res" id="amRes" aria-live="polite"></div>
     <h3 class="am-h">Most asked for</h3><div class="chips">${pop.map(amChip(on)).join('')}</div>
     <h3 class="am-h">Everything, by group</h3>
-    <div class="am-gs">${groups.map(({ g, items }) => `<details class="am-g"><summary><span>${esc(g.t.en)}</span><small data-amc="${esc(g.id)}">${amCount(items, on)}</small></summary><div class="chips">${items.map(amChip(on)).join('')}</div></details>`).join('')}</div>
+    <div class="am-gs">${groups.map(({ g, items }) => `<details class="am-g"><summary><span translate="no">${esc(amT(g.t))}</span><small data-amc="${esc(g.id)}">${amCount(items, on)}</small></summary><div class="chips">${items.map(amChip(on)).join('')}</div></details>`).join('')}</div>
     <h3 class="am-h">Your own</h3>
-    ${own.length ? `<div class="chips am-own">${own.map(x => `<span class="am-x"><span>${esc(amenName(x))}</span><button type="button" data-amdel="${esc(x)}" aria-label="Remove ${esc(amenName(x))}">×</button></span>`).join('')}</div>` : ''}
+    ${own.length ? `<div class="chips am-own">${own.map(x => `<span class="am-x"><span translate="no">${esc(amenName(x))}</span><button type="button" data-amdel="${esc(x)}" aria-label="Remove ${esc(amenName(x))}">×</button></span>`).join('')}</div>` : ''}
     <div class="rm-new"><input type="text" id="amOwn" maxlength="80" placeholder="Something not in the list" aria-label="Add something not in the list"><button class="btn small" type="button" id="amOwnAdd">Add</button></div>
   </div>`;
 }
@@ -62,7 +66,7 @@ function amenSearch(){
   const q = amFold(inp.value), on = new Set(amenNow());
   if (q.length < 2) { box.innerHTML = ''; return; }
   const hits = AMENS.items.filter(x => !amOld(x) && [...Object.values(x.t), ...(x.k ? x.k.split(',') : [])].some(w => amFold(w).includes(q))).slice(0, 12);
-  const exact = hits.some(x => amFold(x.t.en) === q);
+  const exact = hits.some(x => Object.values(x.t).some(w => amFold(w) === q));
   box.innerHTML = `${hits.length ? `<div class="chips">${hits.map(amChip(on)).join('')}</div>` : '<p class="hint">Not in the list.</p>'}
     ${exact ? '' : `<button class="btn small" type="button" data-amadd="${esc(inp.value.trim())}">+ Add “${esc(inp.value.trim())}” as you wrote it</button>`}`;
 }

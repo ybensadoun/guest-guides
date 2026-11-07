@@ -107,7 +107,7 @@ function guideSections(){
   S.push({ id: 'stay', title: 'Check-in and check-out', sub: `In from ${v('checkIn') || '?'} · out by ${v('checkOut') || '?'}`, icon: 'key', kind: 'text', items: [v('checkIn') && `Check-in from ${v('checkIn')}.`, v('checkOut') && `Check-out by ${v('checkOut')}.`, ...lines('checkoutTasks')].filter(Boolean), extra: lines('houseRules').length ? { h: 'House rules', items: lines('houseRules') } : null });
   if (on('rubbish')) S.push({ id: 'rubbish', title: 'Rubbish and recycling', sub: 'Which bin, which day', icon: 'bin', kind: 'text', items: rubbishLines(), research: !rubbishLines().length && 'Tell us how rubbish works at the house and we write it here.' });
   // What the research from the link found (start.js areaWatch), shown as it arrives; the full guide has the details.
-  const found = (k, list) => (((AREA.result || {})[k] || {})[list] || []).slice(0, 10), nm = x => typeof x === 'string' ? x : (x && (x.en || Object.values(x)[0])) || '';
+  const found = (k, list) => (((AREA.result || {})[k] || {})[list] || []).slice(0, 10), nm = x => typeof x === 'string' ? x : (x && (x[A.sourceLang || UIL] || x.en || Object.values(x)[0])) || '';
   const help = found('emergency', 'groups').flatMap(g => g.items || []).map(x => nm(x.name)).filter(n => n && !/^emergenc/i.test(n));
   if (on('emergency')) S.push({ id: 'emergency', title: 'Emergency and contacts', sub: '112, hospital, pharmacy', icon: 'phone', kind: 'contacts', research: help.length ? `Found near you: ${help.slice(0, 3).join(', ')}. Hours and directions are in your full guide.` : 'We add the nearest hospital, pharmacy and on-call doctor, with hours.' });
   if (on('essentials')) S.push({ id: 'essentials', title: 'Shops and essentials', sub: 'Supermarket, bakery, pharmacy', icon: 'bag', kind: 'places', items: lines('essentials'), research: 'We add opening hours, distances and the ones you did not list.' });
@@ -309,7 +309,8 @@ async function phoneRender(){
   const { style, body } = await pvParts(scr);
   const doc = f.contentDocument; if (!doc) return;
   if (!doc.getElementById('pvBody')) {
-    doc.open(); doc.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="pvStyle"></div><div id="pvBody"></div></body></html>`); doc.close();
+    doc.open(); doc.write(`<!doctype html><html lang="${A.sourceLang || UIL}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="pvStyle"></div><div id="pvBody"></div></body></html>`); doc.close();
+    uiAttach(doc);   // the phone's own words in the maker's language (i18n.js); the host's texts stay as written
     doc.addEventListener('click', e => { const b = e.target.closest('[data-pv]'); if (b) { PHONE.screen = b.dataset.pv; PHONE.build = false; phoneRender().then(() => { try { f.contentWindow.scrollTo(0, 0); } catch (er) {} }); return; } if (e.target.closest('a')) e.preventDefault(); });
   }
   const st = doc.getElementById('pvStyle'), html = style + PHONE_CSS; if (st.innerHTML !== html) st.innerHTML = html;
@@ -324,7 +325,7 @@ function pageHTML(x){
   let body = '';
   if (x.kind === 'house') {
     const tour = roomsNow().map(r => ({ r: r.n, photos: photosIn(r.n).map(u => u.url) })).filter(r => r.photos.length);
-    const offers = amenKey(amenNow()).map(amenName);
+    const offers = amenKey(amenNow()).map(amenGuideName);
     body = `${tour.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3><div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div></section>`).join('')}
       ${v('welcome') ? `<section class="pv-card"><h3>About the house</h3><p style="margin:8px 0 0">${esc(v('welcome'))}</p></section>` : ''}
       ${lines('sleeping').length ? `<section class="pv-card"><h3>Where you'll sleep</h3>${list(lines('sleeping'))}</section>` : ''}

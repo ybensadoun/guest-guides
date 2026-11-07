@@ -42,6 +42,7 @@ function niceError(e){
 #acct .ac-x{position:absolute;top:12px;right:12px;z-index:1;width:40px;height:40px;border-radius:50%;border:0;background:#F3EEE3;color:var(--k-ink);font-size:24px;line-height:1;cursor:pointer}
 #acct .ac2{max-width:1120px;margin:0 auto;padding:18px 16px 48px;display:grid;gap:18px;grid-template-areas:"top" "hero" "card" "tiles"}
 #acct .ac-top{grid-area:top;display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px}
+#acct .ac-top .lpick{display:inline-flex;margin:0 0 0 auto;font-size:13px;font-weight:700;line-height:1;font-family:inherit}   /* a label: not the form's labels */
 #acct .ac-door{width:22px;height:28px;border-radius:11px 11px 3px 3px;background:var(--k-ink);position:relative;flex:none}
 #acct .ac-door::after{content:"";position:absolute;left:6px;top:14px;width:5px;height:5px;border-radius:50%;background:var(--k-yellow)}
 #acct .ac-hero{grid-area:hero;background:#fff;border:2px solid var(--k-ink);border-radius:20px;overflow:hidden;display:flex;flex-direction:column}
@@ -217,7 +218,7 @@ async function googleOn(){
 function acToday(){
   const d = new Date(), wd = d.getDay(), mins = d.getHours() * 60 + d.getMinutes();
   const tm = x => { const [h, m] = x.split(':').map(Number); return h * 60 + m; };
-  const fmt = (x, o) => x.toLocaleDateString('en-GB', o), plus = n => { const x = new Date(d); x.setDate(d.getDate() + n); return x; };
+  const fmt = (x, o) => x.toLocaleDateString(UIL === 'en' ? 'en-GB' : UIL, o), plus = n => { const x = new Date(d); x.setDate(d.getDate() + n); return x; };
   // Open or closed, the way the guides say it: "Open until 15:00 · Reopens at 18:00", "Closed · Opens at 19:00".
   const hours = (spans, after) => {
     for (let i = 0; i < spans.length; i++) {
@@ -331,7 +332,7 @@ async function gate(mode0, notice, noticeOk, sheet){
       el.className = sheet ? 'only' : '';
       el.innerHTML = sheet ? `<div class="ac-sheet" role="dialog" aria-modal="true" aria-label="Your account"><button type="button" class="ac-x" aria-label="Close">×</button>${card}</div>`
         : `<div class="ac2">
-        <div class="ac-top"><span class="ac-door" aria-hidden="true"></span>Guest Guide Maker</div>
+        <div class="ac-top"><span class="ac-door" aria-hidden="true"></span><span translate="no">Guest Guide Maker</span>${langPick()}</div>
         <section class="ac-hero"><div class="ac-art" aria-hidden="true"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i><i class="s5"></i></div>
           <div class="ac-name"><small>Guest guides for holiday homes</small><h1>Your guest guide, written for you.</h1>
             <p>Paste your Airbnb link: in about a minute you see your whole guide, with the house, the rules, the Wi-Fi and the best of the area, in your guests' languages. Then you make it yours.</p></div>
@@ -375,6 +376,9 @@ async function gate(mode0, notice, noticeOk, sheet){
     if (sheet) return;
     el.addEventListener('click', e => { if (!e.target.closest('.ac-ex [data-ex], .ac-ex .ac-cta')) return; const c = el.querySelector('.ac-card'); c.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => { const i = c.querySelector('input'); if (i) i.focus({ preventScroll: true }); }, 450); });
     let shown = '';
+    // Another language: the example's dates and day names are written again in it.
+    const relang = () => { if (!el.isConnected) return removeEventListener('porta-lang', relang); const x = el.querySelector('.ac-ex'); if (x) { shown = acExample(); x.outerHTML = shown; } };
+    addEventListener('porta-lang', relang);
     const live = setInterval(() => { if (!el.isConnected) return clearInterval(live); const x = el.querySelector('.ac-ex'), h = acExample(); if (x && h !== shown) { shown = h; x.outerHTML = h; } }, 30000);
   });
 }
@@ -601,6 +605,7 @@ async function acctQueueBuild(){
   if (!AUTH || !GUIDE) throw new Error('Log in to publish your guide.');
   clearTimeout(pushTimer);
   for (let i = 0; i < 40 && pushing; i++) await new Promise(r => setTimeout(r, 150));
+  if (!A.sourceLang && GUIDE.status === 'draft') A.sourceLang = UIL;   // a new guide filled in by hand is in the language the host wrote it in; one built before keeps English
   await acctSendUploads();
   await slugAsk();   // the last word: someone may have taken it a minute ago
   await acctPush();

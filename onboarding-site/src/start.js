@@ -68,13 +68,15 @@ function startHTML(){
 }
 // The link, then the wow (docs/plan-fast-builder.md, step 3): "This is your guide" opens at once, the phone shows the
 // house as soon as its listing page is read (a few seconds), and fills in when Claude has written the rest.
-const listingAsk = body => fetch('/api/listing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+// Claude writes the guide in the maker's language (i18n.js): that language is the guide's own, the others are translations of it.
+const listingAsk = body => fetch('/api/listing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...body, lang: UIL }) }).then(r => r.json());
 async function createDraft(fromStep){
   const url = cleanLink(v('listingUrl')), text = v('listingText').trim(), town = v('town').trim();
   if (url !== v('listingUrl')) A.listingUrl = url;
   const lp = linkProblem(url);
   if (lp) { START.msg = lp; START.need = 'link'; render(); return; }
   if (!url && text.length < 200) { START.msg = 'Paste your listing link, or the text of your listing.'; START.need = url ? 'text' : 'link'; render(); return; }
+  A.sourceLang = UIL;
   START.busy = true; START.msg = ''; START.step = 0; LOAD.t0 = Date.now(); LOAD.est = 60; log('draft_start', 'start');
   WOW.stage = 'reading'; WOW.name = ''; PHONE.screen = 'home'; PHONE.build = true; location.hash = '#yours'; render();
   const back = (need, msg) => { START.need = need; START.msg = msg; WOW.stage = ''; location.hash = fromStep ? '#listing' : '#start'; };
@@ -240,7 +242,7 @@ const samePlace = (a, b) => { const x = plainName(a), y = plainName(b); return x
 const addedPlaces = () => (Array.isArray(A.favDo) ? placeRows('favDo').map(r => r.p) : String(A.favDo || '').split(/[,\n]+/)).map(x => x.trim()).filter(Boolean);
 // Markets have their own section: never a card among the attractions (the same words as /api/places).
 const MARKET = /(?<!\p{L})(markets?|mercados?|mercats?|mercadillos?|mercadets?|march[ée]s?|m[äa]rkte?|mercato|mercati|markthal)(?!\p{L})/iu;
-const shownText = x => (typeof x === 'string' ? x : (x && (x.en || Object.values(x)[0])) || '');
+const shownText = x => (typeof x === 'string' ? x : (x && (x[UIL] || x.en || Object.values(x)[0])) || '');
 function researchCards(){
   const S = swipes(), chosen = [...Object.values(S).filter(x => !String(x.id).startsWith('r:')).map(x => x.name), ...addedPlaces()];
   return (((AREA.full || {}).todo || {}).items || []).filter(it => shownText(it.name) && !MARKET.test(shownText(it.name) + ' ' + shownText(it.type)) && !chosen.some(n => samePlace(n, shownText(it.name)))).map(it => { const name = shownText(it.name);

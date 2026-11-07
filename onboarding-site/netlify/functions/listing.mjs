@@ -127,13 +127,23 @@ function fallbackDraft(src){
   return d;
 }
 
-const SYSTEM = `You turn a holiday-rental listing into the first version of a guest guide, for the host to review.
-Write everything in English, whatever the language of the listing: translate what it says, and keep the names of the house and of places. Be accurate: only state what the listing says or what is obviously true for this kind of place.
-When something is likely but not stated, phrase it as something for the host to confirm, ending with " (please confirm)".
-Never include a street address, door code or key-box code. Keep the host's tone if the listing has one.
-Copy what the listing says, in its own wording (translated into English when it is in another language): house rules, check-in and out, rooms, beds, amenities, rating. Do NOT guess or invent. When the listing is silent on a point, return null for it. The only things you write yourself are the tagline and the welcome text, from facts in the listing. The host will edit every line.
+// The guide is written in the maker's language (the builder sends it: en, es, fr, ca); the lists to choose from stay in English.
+const LANG_NAME = { en: 'English', es: 'Spanish', fr: 'French', ca: 'Catalan' };
+// The language's own words for the examples, so the model has nothing in another language to copy.
+const LANG_EX = {
+  en: { confirm: '(please confirm)', rooms: '{"Salón": "Living room", "Dormitorio 2": "Bedroom 2", "Cocina completa": "Full kitchen"}', bed: 'Bedroom 1: 2 single beds' },
+  es: { confirm: '(por confirmar)', rooms: '{"Living room": "Salón", "Bedroom 2": "Dormitorio 2", "Dormitori 3": "Dormitorio 3", "Cocina completa": "Cocina completa"}', bed: 'Dormitorio 1: 2 camas individuales' },
+  ca: { confirm: '(per confirmar)', rooms: '{"Salón": "Sala d’estar", "Dormitorio 2": "Dormitori 2", "Cocina completa": "Cuina completa", "Baño completo 1": "Bany complet 1", "Living room": "Sala d’estar"}', bed: 'Dormitori 1: 2 llits individuals' },
+  fr: { confirm: '(à confirmer)', rooms: '{"Salón": "Salon", "Dormitorio 2": "Chambre 2", "Cocina completa": "Cuisine équipée", "Living room": "Salon"}', bed: 'Chambre 1 : 2 lits simples' }
+};
+const system = lang => `You turn a holiday-rental listing into the first version of a guest guide, for the host to review.
+LANGUAGE: write every text value in ${LANG_NAME[lang]}${lang === 'en' ? '' : ` (${{ es: 'español', ca: 'català', fr: 'français' }[lang]})`}, whatever the language of the listing: translate what it says${lang === 'ca' ? ', Spanish included' : lang === 'es' ? ', Catalan and English included' : ''}, and keep only the names of the house and of places as they are. Never mix two languages in one text. Only the values chosen from the lists given below stay exactly as they are written there, in English. Be accurate: only state what the listing says or what is obviously true for this kind of place.
+When something is likely but not stated, phrase it as something for the host to confirm, ending with " ${LANG_EX[lang].confirm}".
+Never include a street address, door code or key-box code, and never tell guests to contact, call or message the host. Keep the host's tone if the listing has one.
+Copy what the listing says, in its own wording (translated into ${LANG_NAME[lang]} when it is in another language): house rules, check-in and out, rooms, beds, amenities, rating. Do NOT guess or invent. When the listing is silent on a point, return null for it. The only things you write yourself are the tagline and the welcome text, from facts in the listing. The host will edit every line.
+Before answering, check every text value: each one in ${LANG_NAME[lang]} only, the house rules and the sleeping arrangements too.
 Return ONLY a JSON object, no prose.`;
-function prompt(src, town){
+function prompt(src, town, lang){
   return `Listing link: ${src.url || 'none'}
 Town given by the host: ${town || 'not given'}
 Page title: ${src.title || ''}
@@ -150,20 +160,20 @@ Return this JSON (null when unknown):
 {
  "placeName": string, "propertyType": one of ["House","Villa","Apartment","Cottage","Farmhouse","Room","Other"],
  "bedrooms": number, "bathrooms": number, "beds": number (only what the page says, else null),
- "roomNames": object with one entry per different caption of the photos above: the caption as it is, then its name in English ({"Salón": "Living room", "Dormitorio 2": "Bedroom 2", "Cocina completa": "Full kitchen"}; an English caption stays as it is). Only captions that name a room or part of the house,
+ "roomNames": object with one entry per different caption of the photos above: the caption as it is, then its name in ${LANG_NAME[lang]} (${LANG_EX[lang].rooms}; a caption already in ${LANG_NAME[lang]} stays as it is). Only captions that name a room or part of the house,
  "photoRooms": array with one entry per numbered photo, in order: the room it shows, chosen from ${JSON.stringify(ROOMS)}, judged from its caption ("Fachada", "Jardín" = Outside or Garden, "Salón", "Comedor" = Living room, "Habitación" = Bedroom). null when the caption does not tell,
  "town": string, "region": string ("Region, Country"), "sleeps": number,
  "checkIn": "HH:MM", "checkOut": "HH:MM",
  "amenities": array chosen only from ${JSON.stringify(AMEN)},
- "guideName": string (usually the place name), "tagline": string (one warm welcome line, max 70 characters),
- "welcome": string (2 or 3 sentences welcoming guests, in the host's voice),
- "houseRules": string (one rule per line, copied from the house rules section: pets, smoking, parties, quiet hours, max guests, other rules. Not the check-in and check-out times),
- "sleeping": string (one line per bedroom or sleeping space with its beds, as the page says, in English, for example "Bedroom 1: 2 single beds"; null when the page gives no arrangement),
- "listingAmenities": array of strings (every item of "Amenities listed", in English, in the same order; empty when the page lists none),
+ "guideName": string (usually the place name), "tagline": string (one warm welcome line in ${LANG_NAME[lang]}, max 70 characters),
+ "welcome": string (2 or 3 sentences in ${LANG_NAME[lang]} welcoming guests, in the host's voice),
+ "houseRules": string (one rule per line, from the house rules section, in ${LANG_NAME[lang]}: pets, smoking, parties, quiet hours, max guests, other rules. Not the check-in and check-out times),
+ "sleeping": string (one line per bedroom or sleeping space with its beds, as the page says, in ${LANG_NAME[lang]}, shaped like "${LANG_EX[lang].bed}"; null when the page gives no arrangement),
+ "listingAmenities": array of strings (every item of "Amenities listed", in English whatever the language asked above, in the same order; empty when the page lists none),
  "rating": number (the overall rating shown, null if none), "reviewCount": number,
  "checkoutTasks": string (one task per line, ONLY if the listing states check-out instructions; otherwise null),
  "howTos": string (one line per instruction the listing itself gives about how something works, "Thing: how it works"; otherwise null. Never invent instructions),
- "arrival": string (how to arrive and park, only if the listing says so; null if not said),
+ "arrival": string (how to arrive and park, in ${LANG_NAME[lang]}, only if the listing says so; null if not said),
  "rubbish": null,
  "interests": array chosen from ["Beaches","Wine and food","Hiking and nature","Culture and history","Local markets","Nightlife","Festivals","Sports","Shopping","Wellness"] that fit the area,
  "guests": array chosen from ["Families with kids","Couples","Groups of friends","Remote workers","Older guests","Guests with pets","Wedding or event guests"],
@@ -173,18 +183,21 @@ Return this JSON (null when unknown):
  "toConfirm": array of short questions the host should answer that the listing does not cover (max 6). Never ask about something the listing states: an amenity in "Amenities listed" or "Every amenity", the rules, the times, the rooms or the beds
 }`;
 }
-async function askClaude(src, town){
+async function askClaude(src, town, lang){
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error('no_key');
+  // A 5.x model thinks first: room for that, and a low effort so the answer comes within the function's time.
+  const model = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001', v5 = /^claude-\w+-5/.test(model);
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST', signal: AbortSignal.timeout(24000),
     headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', ...(process.env.ANTHROPIC_WORKSPACE_ID ? { 'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID } : {}) },
-    body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001', max_tokens: 4000, system: SYSTEM,
-      messages: [{ role: 'user', content: prompt(src, town) }] })
+    body: JSON.stringify({ model, max_tokens: v5 ? 16000 : 4000, ...(v5 ? { output_config: { effort: 'low' } } : {}), system: system(lang),
+      messages: [{ role: 'user', content: prompt(src, town, lang) }] })
   });
   if (!r.ok) { let body = ''; try { body = (await r.text()).slice(0, 160); } catch (e) {} throw new Error('claude_' + r.status + ' ' + body); }
   const d = await r.json();
-  const t = (d.content || []).map(c => c.text || '').join('');
+  const t = (d.content || []).filter(c => c.type === 'text').map(c => c.text || '').join('');
+  if (!t.includes('{')) throw new Error('no_json ' + (d.stop_reason || ''));
   const j = t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1);
   return JSON.parse(j);
 }
@@ -192,7 +205,7 @@ async function askClaude(src, town){
 export default async (req) => {
   if (req.method !== 'POST') return json({ ok: false, message: 'POST only' }, 405);
   let body; try { body = await req.json(); } catch (e) { return json({ ok: false, message: 'Bad request' }, 400); }
-  const url = String(body.url || '').trim(), text = String(body.text || '').trim(), town = String(body.town || '').trim();
+  const url = String(body.url || '').trim(), text = String(body.text || '').trim(), town = String(body.town || '').trim(), lang = LANG_NAME[body.lang] ? body.lang : 'en';
   let src = null, site = null;
   // Two stages, so the builder shows the guide while Claude writes it (docs/plan-fast-builder.md, step 3): "page" answers
   // at once with what the listing page itself says, plus what was read; "write" gets that back and only asks Claude, so the
@@ -227,7 +240,7 @@ export default async (req) => {
     rating: src.rating || null, sleeping: src.sleeping || [], amenityItems: src.amenityItems || [], lat: src.lat, lng: src.lng, src });
   {
     let draft, assistant = 'ok', code = '';
-    try { draft = await askClaude(src, town); } catch (e) { assistant = 'failed'; code = String((e && e.message) || e).slice(0, 220); draft = fallbackDraft(src); console.error('askClaude failed:', code); }
+    try { draft = await askClaude(src, town, lang); } catch (e) { assistant = 'failed'; code = String((e && e.message) || e).slice(0, 220); draft = fallbackDraft(src); console.error('askClaude failed:', code); }
     if (assistant === 'failed' && !(src.pics || []).length && !(src.overview || []).length && !draft.houseRules) {
       return json({ ok: false, need: 'retry', code, message: code.startsWith('no_key') ? 'The writing assistant is not set up yet. You can still fill in the steps by hand.' : 'The writing assistant did not answer, so we could not read your listing this time. Press the button again, or fill in the steps by hand.' });
     }

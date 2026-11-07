@@ -161,6 +161,32 @@ views=rep(views,"  if (k === 'privacyNote')","  if (k === 'reviewsNote') return 
 
 # ---- v5: photos show their image, room names match the tiles, start over ----
 views=rep(views,"${/^image\\//.test(u.type) || u.dataUrl ?","${/^image\\//.test(u.type) || u.dataUrl || u.remote ?")
+# ---- the maker's languages (i18n.js, i18n/ui.json): the table checked, French spaces added, first thing in the script ----
+import json as _json
+_D=__import__('os').path.dirname(__file__)
+_T=_json.load(open(__import__('os').path.join(_D,'i18n','ui.json'),encoding='utf-8'))
+_NB,_NN=' ',' '
+def _typo(s,l):
+    s=_re.sub(r'(\d)[  ](km|m|cm|mm|min|h|kg|g|%|€|°C|°)(?=$|[\s.,;:!?)\]»”“])',r'\1'+_NB+r'\2',s)
+    if l=='fr':
+        s=_re.sub(r'[   ]*([?!;]+)(?=$|[\s)»”.,<])',_NN+r'\1',s)
+        s=_re.sub(r'[   ]*:(?=$|\s)',_NB+':',s)
+        s=_re.sub(r'«[   ]*','«'+_NB,s); s=_re.sub(r'[   ]*»',_NB+'»',s)
+    return s
+_bad=[]; _out={_s:{'ca':_s,'es':_s,'fr':_s} for _s in _T.get('_keep',[])}   # names that stay as they are in every language
+for _k,_e in _T.items():
+    if _k.startswith('_'): continue
+    _ph=sorted(_re.findall(r'\{\w+\}',_k)); _o={}
+    for _l in ('ca','es','fr'):
+        _s=(_e or {}).get(_l)
+        if not _s: _bad.append(f'{_l} missing: {_k}'); continue
+        if '—' in _s or '– ' in _s: _bad.append(f'{_l} dash: {_s}')
+        if sorted(_re.findall(r'\{\w+\}',_s))!=_ph: _bad.append(f'{_l} gaps differ: {_k} / {_s}')
+        _o[_l]=_typo(_s,_l)
+    _out[_k]=_o
+if _bad: raise SystemExit('i18n/ui.json:\n  '+'\n  '.join(_bad[:40])+(f'\n  … {len(_bad)-40} more' if len(_bad)>40 else ''))
+_i18n=open(__import__('os').path.join(_D,'i18n.js'),encoding='utf-8').read().replace('__UI_TABLE__',_json.dumps(_out,ensure_ascii=False,separators=(',',':')))
+seg1=rep(seg1,"(() => {\n'use strict';\n","(() => {\n'use strict';\n"+_i18n+"\n")
 forms=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'forms.html')).read()
 html=seg1+'\n'+views+'\n'+runtime+'\n})();\n</script>\n'+forms+'</body>\n</html>\n'
 import subprocess,datetime

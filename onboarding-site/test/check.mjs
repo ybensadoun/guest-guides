@@ -9,7 +9,7 @@
 // Needs SUPABASE_SERVICE_KEY (worker/.env.local or the environment) and Playwright (npm i --no-save playwright).
 import { createRequire } from 'node:module';
 import { deflateSync } from 'node:zlib';
-import { readFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '../..'), SHOTS = join(HERE, 'shots');
@@ -93,6 +93,12 @@ const everyPage = async (p, tag) => { const pages = [...new Set(await p.$$eval('
   ok(`${tag}: nothing overlaps on any of the ${pages.length} pages`, !bad.length, bad.join('; ')); };
 
 const browser = await chromium.launch();
+// Every sentence the maker shows that its translation table (src/i18n/ui.json) does not have: shots/i18n-missing.json.
+const MISSING = new Map();
+{ const nc = browser.newContext.bind(browser);
+  browser.newContext = async (...x) => { const c = await nc(...x); await c.exposeBinding('__i18nReport', (_, s, where) => { if (!MISSING.has(s)) MISSING.set(s, where); });
+    if (env.CHECK_LANG) await c.addInitScript(l => { try { localStorage.setItem('porta-lang-v1', l); } catch (e) {} }, env.CHECK_LANG);   // CHECK_LANG=fr: the maker in French (texts the checks look for stay English, so some fail)
+    return c; }; }
 try {
   // ---- Signed out: the first page, in the guides' look, with Google when it is switched on ----
   const signedOut = async (w, h, googleOn) => {
@@ -880,5 +886,7 @@ try {
     await ctx.close();
   }
 } finally { await browser.close(); }
+writeFileSync(join(SHOTS, `i18n-missing${env.CHECK_LANG ? '-' + env.CHECK_LANG : ''}.json`), JSON.stringify(Object.fromEntries([...MISSING].sort()), null, 1));
 console.log(results.join('\n'));
+if (MISSING.size) console.log(`${MISSING.size} sentences shown that src/i18n/ui.json does not have: shots/i18n-missing.json`);
 process.exit(results.some(r => r.startsWith('FAIL')) ? 1 : 0);
