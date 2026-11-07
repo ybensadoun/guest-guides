@@ -4,13 +4,16 @@
    the way (a MutationObserver), so no screen needs code of its own. Sentences with a number or a name in them are
    patterns: "{n} places". The phone with the guide is watched too (uiAttach). Left as they are: anything inside
    translate="no" (amenity names, already in the language; the product name), what is typed in a field, and what the
-   table does not have (the host's words, place names). The language is remembered on this device (porta-lang-v1); the
-   first time it follows the browser. It is also the language Claude writes a new guide in: A.sourceLang is set when the
+   table does not have (the host's words, place names). The language is in the address (?lang=es, to share the maker in
+   one language; a link's language wins) and remembered on this device (porta-lang-v1); the first time it follows the
+   browser. It is also the language Claude writes a new guide in: A.sourceLang is set when the
    listing is read (start.js) or on Publish (account.js), never by switching here, so a guide keeps its own language.
    Collecting (the builder checks): every sentence shown that is not in the table goes to window.__i18nReport. */
 const UI_LANGS = [['ca', 'Català'], ['es', 'Español'], ['fr', 'Français'], ['en', 'English']];
 const UI_KEY = 'porta-lang-v1', UI_WORD = { ca: 'Idioma', es: 'Idioma', fr: 'Langue', en: 'Language' };
 let UIL = (() => {
+  const q = new URLSearchParams(location.search).get('lang');
+  if (UI_LANGS.some(l => l[0] === q)) { try { localStorage.setItem(UI_KEY, q); } catch (e) {} return q; }
   try { const s = localStorage.getItem(UI_KEY); if (UI_LANGS.some(l => l[0] === s)) return s; } catch (e) {}
   const n = (navigator.languages || [navigator.language || 'en']).map(x => String(x).slice(0, 2).toLowerCase()).find(x => UI_LANGS.some(l => l[0] === x));
   return n || 'en';
@@ -127,8 +130,18 @@ function fitTop(){
 }
 addEventListener('resize', fitTop);
 new MutationObserver(() => requestAnimationFrame(fitTop)).observe(document.getElementById('saveState') || document.body, { childList: true, subtree: true, characterData: true });
+// The address keeps ?lang= whenever the page changes it (steps, sign-in), so it can be copied and shared at any time.
+function uiUrl(u){
+  try {
+    const x = new URL(u == null ? location.href : u, location.href);
+    if (x.origin !== location.origin || x.searchParams.get('lang') === UIL) return u;
+    x.searchParams.set('lang', UIL); return x.pathname + x.search + x.hash;
+  } catch (e) { return u; }
+}
+for (const f of ['pushState', 'replaceState']) { const o = history[f].bind(history); history[f] = (s, t, u) => o(s, t, uiUrl(u)); }
 function uiApply(){
   document.documentElement.lang = UIL;
+  history.replaceState(history.state, '');
   document.title = tr(uiTitle);
   requestAnimationFrame(fitTop);
   document.querySelectorAll('.lpick').forEach(p => { p.querySelector('span').textContent = UIL.toUpperCase(); const s = p.querySelector('select'); s.value = UIL; s.setAttribute('aria-label', UI_WORD[UIL]); });
