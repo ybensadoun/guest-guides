@@ -4,15 +4,19 @@
 # Research and translation use the Claude API (RESEARCH=api, key WORKER_ANTHROPIC_KEY), never the `claude` command.
 FROM node:22-bookworm-slim
 
-# Python 3 with the generator's packages (engine/scripts/generate-site.py), the same versions as on Yohann's Mac.
+# Python 3 with the generator's packages (engine/scripts/generate-site.py), the same versions as on Yohann's Mac, and
+# Overture's reader for a place's facts (worker/overture.py; pyarrow as overturemaps 2.1.0 resolved it on 10 Nov 2026).
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv ca-certificates \
  && rm -rf /var/lib/apt/lists/* \
- && python3 -m venv /opt/py && /opt/py/bin/pip install --no-cache-dir pillow==11.3.0 numpy==2.0.2 segno==1.6.6
+ && python3 -m venv /opt/py && /opt/py/bin/pip install --no-cache-dir pillow==11.3.0 numpy==2.0.2 segno==1.6.6 overturemaps==2.1.0 pyarrow==26.0.1
 ENV PATH=/opt/py/bin:$PATH NODE_ENV=production RESEARCH=api
 
 WORKDIR /app
 RUN chown node:node /app
 USER node
+# Overture's places around each house are kept here (worker/overture.py); made now so the volume that worker/compose.yaml
+# mounts on it belongs to node and survives an update.
+RUN mkdir -p /home/node/.cache/guest-guides
 # The engine's packages without the build tools (the generator copies fonts from node_modules/@fontsource), then the
 # worker's own (the Claude SDK). Copied first, so a code change does not reinstall them.
 COPY --chown=node:node package.json package-lock.json ./

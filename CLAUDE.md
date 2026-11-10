@@ -24,7 +24,7 @@ This repo is PUBLIC (ybensadoun/guest-guides). No keys, host data, Wi-Fi or busi
 | `node onboarding-site/test/check.mjs [editor slug] [builder slug]` | the builder (just after a listing is read) and the editor as a host sees them, without signing in or writing anything: the path of steps, nothing overlaps at 360 px, de and fr; screenshots in `onboarding-site/test/shots/` |
 | `ssh guide-worker 'cd /opt/guest-guides && docker compose -f worker/compose.yaml logs -f --tail 50 worker'` | the worker's log on the server (it updates itself within 5 minutes of a push to main). Never start a worker on the Mac while the server's runs |
 | `node worker/guide-worker.mjs --find find-todo --slug <slug>` | one Find more search, printed, nothing written (safe next to the running worker; `RESEARCH=api` tries the Claude API and prints the cost) |
-| `node worker/place-facts.mjs --site <slug> [--only id,id]` | a place's facts from sources we may keep (Overture's records near the pin, its own website read by Claude), printed beside the guide's values, nothing written (about 0.02 USD a place; `OVERTURE_PYTHON` on the Mac: see `worker/README.md`) |
+| `node worker/place-facts.mjs --site <slug> [--only id,id] [--save]` | a place's facts from sources we may keep (Overture's records near the pin, its own website read by Claude), printed beside the guide's values, nothing written; `--save` keeps them in the table place_facts (about 0.02 USD a place; `OVERTURE_PYTHON` on the Mac: see `worker/README.md`) |
 | `python3 engine/scripts/generate-site.py` | generator from host answers (used by the worker) |
 
 A local build without `sites/<site>/private/wifi.json` simply has no Wi-Fi sheet; `WIFI_JSON='{...}'` can stand in for tests.

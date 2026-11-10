@@ -9,6 +9,10 @@ services:
     restart: unless-stopped       # starts again after a crash or a reboot
     init: true                    # passes the stop signal on to the worker
     stop_grace_period: 15m        # a stop lets running searches and builds finish
+    volumes:
+      - overture:/home/node/.cache/guest-guides   # Overture's places around each house, kept across updates
     logging:
       driver: json-file
       options: { max-size: 10m, max-file: "5" }
+volumes:
+  overture:

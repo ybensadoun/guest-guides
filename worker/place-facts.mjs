@@ -3,9 +3,13 @@
 // "Where a place's facts may come from"). Google only locates a place. Its phone, website and Facebook link come from
 // Overture Maps (open data, worker/overture.py); its opening hours, price and "book ahead" from its own website, read by
 // Claude; with no usable website, one short web search. A doubtful match fills nothing. Measured on 10 Nov 2026: about
-// 18 s and 0.02 USD a place with Haiku 5.5 at low effort.
-// Run alone it is a dry run over a guide's folder: it prints what it finds beside the guide's own values, writes nothing.
-//   node worker/place-facts.mjs --site <slug> [--only id,id] [--effort low|medium]
+// 18 s and 0.02 USD a place with Haiku 5.5 at low effort. A place that gives nothing is asked once more with more
+// effort (step 2), when the caller passes a second ask.
+// Run alone it goes over a guide's folder and prints what it finds beside the guide's own values. Without --save it
+// writes nothing. With --save each place with a Google id is kept in the table place_facts (worker/place-store.mjs: a
+// later weak read never loses an earlier good one), and a place looked at less than 30 days ago is skipped (--fresh: not
+// skipped). The worker does not use any of this yet.
+//   node worker/place-facts.mjs --site <slug> [--only id,id] [--effort low|medium] [--no-retry] [--save [--fresh]]
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -98,105 +102,161 @@ export const showPhone = t => { const s = cleanText(t); if (!s) return null; con
 
 // One place: place = { name, town, about? (the host's own words, they help the match), country? (default Spain) },
 // cands = Overture's records near its pin (nearby()), ask = makeClaude(...) from worker/claude-api.mjs.
-export async function placeFacts(place, cands, ask, { meter } = {}) {
+// again (optional): a second ask, with more effort. Reading a site does not always work the first time, so a place that
+// gives nothing is asked once more: at most one more match question and one more site read, never more.
+export async function placeFacts(place, cands, ask, { meter, again } = {}) {
   const m = meter || {}, before = m.usd || 0, errors = [];
-  const q = (prompt, o) => ask(prompt, { ...o, meter: m }).catch(e => { errors.push(e.message); return ''; });
+  const asker = f => (prompt, o) => f(prompt, { ...o, meter: m }).catch(e => { errors.push(e.message); return ''; });
+  const q = asker(ask), q2 = again ? asker(again) : null;
   cands = Array.isArray(cands) ? cands : [];
+  // The record as kept: its own position too (Overture's, which may be kept for good, unlike Google's).
+  const pos = c => c ? { id: c.id, name: c.name, kind: c.kind, lat: typeof c.lat === 'number' ? c.lat : null, lng: typeof c.lng === 'number' ? c.lng : null } : null;
+  const cost = () => +((m.usd || 0) - before).toFixed(4);
+
   // a. Which record is this place, and is it a place with a door at all: Claude without the web. Not sure, or none: no
   // record (a doubtful match fills nothing). A town, a beach or a natural spot has no phone, website or hours to look
   // for: nothing is searched for it (measured 10 Nov 2026: a third of the cost went into searching for towns' websites).
-  let entry = null, venue = true;
-  {
-    const list = cands.map((c, i) => `${i + 1}. ${c.name} | ${String(c.kind || 'kind unknown').replace(/_/g, ' ')}${c.status && c.status !== 'open' ? ' | ' + String(c.status).replace(/_/g, ' ') : ''}${c.town ? ' | ' + c.town : ''} | ${c.metres} m away | ${(c.websites || []).map(host).filter(Boolean)[0] || 'no website'}`).join('\n');
-    const a = json(await q(`A host recommends ${where(place)}${place.about ? ` (in the host's words: ${place.about})` : ''}. ${cands.length ? `An open directory lists these entries within 150 m of it:\n${list}` : 'An open directory lists nothing within 150 m of it.'}\nFirst: is the host's place a venue, that is a business or a visitor site with a door, a phone and opening hours of its own (a restaurant, a bar, a shop, a museum, a monument, a park with a gate, a winery, a spa)? A town, a village, a city, a beach, a mountain, a spring or any open natural spot is not a venue.\nThen: which entry is the same place as the host's (the same business or the same site, even if spelt or named a little differently)? Another business that only shares a word with it, or sits next door, is not it. The entry must carry the word that sets the host's name apart (for "La Fàbrica del Pernil" that word is Pernil, not Fàbrica): without it you are not sure. A town, a village, a beach or a natural spot is never matched to a business or building that carries its name (a school, a hotel, a shop, a restaurant). Answer with JSON only: {"venue": true or false, "entry": the number, or null if none is it, "sure": true if you are sure, else false}`, { web: false, what: 'place match' }));
-    const n = a && Number.isInteger(a.entry) ? a.entry : 0;
-    if (a && a.sure === true && n >= 1 && n <= cands.length) entry = cands[n - 1];
-    if (a && a.venue === false) venue = false;
-  }
-  if (!venue) return { entry: entry ? { id: entry.id, name: entry.name, kind: entry.kind } : null, venue: false, phone: null, phoneFrom: null, website: null, websiteFrom: null, facebook: null, instagram: null,
-    town: entry && entry.town || null, kind: entry && entry.kind || null, hours: null, price: null, book: null, page: null, read: new Date().toISOString().slice(0, 10), usd: +((m.usd || 0) - before).toFixed(4), ...(errors.length ? { error: errors[0] } : {}) };
+  const list = cands.map((c, i) => `${i + 1}. ${c.name} | ${String(c.kind || 'kind unknown').replace(/_/g, ' ')}${c.status && c.status !== 'open' ? ' | ' + String(c.status).replace(/_/g, ' ') : ''}${c.town ? ' | ' + c.town : ''} | ${c.metres} m away | ${(c.websites || []).map(host).filter(Boolean)[0] || 'no website'}`).join('\n');
+  const MATCH = `A host recommends ${where(place)}${place.about ? ` (in the host's words: ${place.about})` : ''}. ${cands.length ? `An open directory lists these entries within 150 m of it:\n${list}` : 'An open directory lists nothing within 150 m of it.'}\nFirst: is the host's place a venue, that is a business or a visitor site with a door, a phone and opening hours of its own (a restaurant, a bar, a shop, a museum, a monument, a park with a gate, a winery, a spa)? A town, a village, a city, a beach, a mountain, a spring or any open natural spot is not a venue.\nThen: which entry is the same place as the host's (the same business or the same site, even if spelt or named a little differently)? Another business that only shares a word with it, or sits next door, is not it. The entry must carry the word that sets the host's name apart (for "La Fàbrica del Pernil" that word is Pernil, not Fàbrica): without it you are not sure. A town, a village, a beach or a natural spot is never matched to a business or building that carries its name (a school, a hotel, a shop, a restaurant). Answer with JSON only: {"venue": true or false, "entry": the number, or null if none is it, "sure": true if you are sure, else false}`;
+  const decide = a => { const n = a && Number.isInteger(a.entry) ? a.entry : 0;
+    return { usable: !!a && typeof a.venue === 'boolean', entry: a && a.sure === true && n >= 1 && n <= cands.length ? cands[n - 1] : null, venue: !(a && a.venue === false) }; };
+  const match = async () => {
+    let d = decide(json(await q(MATCH, { web: false, what: 'place match' }))), tries = 1;
+    // A venue with candidates but no sure record: once more with more effort, the second answer wins when usable.
+    if (q2 && cands.length && !d.entry && (!d.usable || d.venue)) { tries = 2; const d2 = decide(json(await q2(MATCH, { web: false, what: 'place match' }))); if (d2.usable) d = d2; }
+    return { ...d, tries };
+  };
+  const a = await match(), entry = a.entry;
+  if (!a.venue) return { entry: pos(entry), venue: false, phone: null, phoneFrom: null, website: null, websiteFrom: null, facebook: null, instagram: null,
+    town: entry && entry.town || null, kind: entry && entry.kind || null, hours: null, price: null, book: null, page: null, read: new Date().toISOString().slice(0, 10),
+    usd: cost(), tries: 1, matchTries: a.tries, gained: [], ...(errors.length ? { error: errors[0] } : {}) };
+
   // b. From the record: phone, social links, a website to check, town and Overture's own kind (raw).
   const links = entry ? [...(entry.socials || []), ...(entry.websites || [])] : [];
   const social = re => links.map(webUrl).find(u => u && re.test(host(u))) || null;
   const own = entry ? (entry.websites || []).map(u => webUrl(/^https?:/i.test(u) ? u : 'http://' + u)).find(u => u && !denied(u)) || null : null;
+
   // c. Its website: Overture's, if it answers on its own address, read by Claude; else, or if that read finds nothing of
-  // its own, one web search.
-  let r = null, websiteFrom = null, page = null;
+  // its own, one web search. A pass that ends with no site, or a site with neither hours nor price, is read once more
+  // with more effort; the second read fills what it holds, the first keeps the rest.
   const alive = own ? await siteAlive(own) : null;
-  if (alive) {
-    r = json(await q(`Open ${alive} : it should be the website of ${where(place)}. From it, ${READ}\nAnswer with JSON only: ${SHAPE}`, { web: true, what: 'site facts', searches: 3 }));
-    websiteFrom = 'overture';
-  }
   const ok = x => x && x.about === true && webUrl(x.website) && !denied(x.website);
-  if (!ok(r)) {
-    r = json(await q(`Search the web for the official website of ${where(place)}. Open it and ${READ}\nAnswer with JSON only: ${SHAPE}`, { web: true, what: 'site facts', searches: 3 }));
-    websiteFrom = 'search';
-  }
+  const read = (f, url) => f(url ? `Open ${url} : it should be the website of ${where(place)}. From it, ${READ}\nAnswer with JSON only: ${SHAPE}`
+    : `Search the web for the official website of ${where(place)}. Open it and ${READ}\nAnswer with JSON only: ${SHAPE}`, { web: true, what: 'site facts', searches: 3 }).then(json);
+  const thin = x => !ok(x) || (!cleanHours(x.hours) && !cleanPrice(x.price));
+  const siteStep = async () => {
+    let r = null, from = null;
+    if (alive) { r = await read(q, alive); from = 'overture'; }
+    if (!ok(r)) { r = await read(q, null); from = 'search'; }
+    const first = ok(r) ? r : null;
+    if (!q2 || !thin(r)) return { site: first, from: first ? from : null, tries: 1, gained: [] };
+    const r2 = await read(q2, alive);
+    if (!ok(r2)) return { site: first, from: first ? from : null, tries: 2, gained: [] };
+    const pick = (k, clean) => clean(r2[k]) ? r2[k] : first ? first[k] : null;
+    const site = first ? { ...first, phone: pick('phone', cleanText), hours: pick('hours', cleanHours), price: pick('price', cleanPrice), book: r2.book === true ? true : first.book } : r2;
+    const gained = [!first && 'site', cleanHours(site.hours) && !(first && cleanHours(first.hours)) && 'hours', cleanPrice(site.price) && !(first && cleanPrice(first.price)) && 'price'].filter(Boolean);
+    return { site, from: first ? from : alive ? 'overture' : 'search', tries: 2, gained };
+  };
+  const { site, from: websiteFrom, tries, gained } = await siteStep();
+
   // d, e. Kept only when Claude read the place's own site, and only what is in the expected shape.
-  const site = ok(r) ? r : null;
-  if (site) page = webUrl(site.website); else websiteFrom = null;
+  const page = site ? webUrl(site.website) : null;
   const sitePhone = site ? cleanText(site.phone) : null, ovPhone = entry ? cleanText((entry.phones || [])[0]) : null;
-  const res = { entry: entry ? { id: entry.id, name: entry.name, kind: entry.kind } : null, venue: true,
+  const res = { entry: pos(entry), venue: true,
     phone: showPhone(ovPhone || sitePhone), phoneFrom: ovPhone ? 'overture' : sitePhone ? 'site' : null,   // Overture's matched the hand-checked phone more often
     website: site ? (websiteFrom === 'overture' ? alive : page) : null, websiteFrom,
     facebook: social(/(^|\.)(facebook\.com|fb\.com|fb\.me)$/), instagram: social(/(^|\.)instagram\.com$/),
     town: entry && entry.town || null, kind: entry && entry.kind || null,
     hours: site ? cleanHours(site.hours) : null, price: site ? cleanPrice(site.price) : null, book: site && site.book === true ? true : null,
-    page, read: new Date().toISOString().slice(0, 10), usd: +((m.usd || 0) - before).toFixed(4) };
+    page, read: new Date().toISOString().slice(0, 10), usd: cost(), tries, matchTries: a.tries, gained };
   if (errors.length) res.error = errors[0];
   return res;
 }
 
-/* ---------- Dry run over a guide's folder: printed, written nowhere ---------- */
+/* ---------- Run over a guide's folder: printed; with --save, kept in the database (place_facts), nothing else ---------- */
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const arg = k => { const i = process.argv.indexOf(k); return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : ''; };
+  const flag = k => process.argv.includes(k);
   const slug = arg('--site'), only = arg('--only').split(',').filter(Boolean), effort = arg('--effort') || 'low';
-  if (!slug || !['low', 'medium'].includes(effort)) { console.error('Use: node worker/place-facts.mjs --site <slug> [--only id,id] [--effort low|medium]'); process.exit(1); }
+  const save = flag('--save'), fresh = flag('--fresh'), retry = effort === 'low' && !flag('--no-retry');
+  if (!slug || !['low', 'medium'].includes(effort)) { console.error('Use: node worker/place-facts.mjs --site <slug> [--only id,id] [--effort low|medium] [--no-retry] [--save [--fresh]]'); process.exit(1); }
   const dir = resolve(ROOT, 'sites', slug), read = f => existsSync(resolve(dir, f)) ? JSON.parse(readFileSync(resolve(dir, f), 'utf8')) : null;
   // The worker's own settings file, as the prototype read it (never printed).
   const env = {}, envFile = resolve(HERE, '.env.local');
   if (existsSync(envFile)) for (const l of readFileSync(envFile, 'utf8').split('\n')) { const m = l.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/); if (m) env[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); }
   if (!env.WORKER_ANTHROPIC_KEY) { console.error('Needs WORKER_ANTHROPIC_KEY in worker/.env.local.'); process.exit(1); }
+  if (save && !env.SUPABASE_SERVICE_KEY) { console.error('--save needs SUPABASE_SERVICE_KEY in worker/.env.local.'); process.exit(1); }
   // The house's position: content/house.json (approximate on purpose), or site.json if a guide keeps it there.
   const h = read('content/house.json') || {}, s = read('site.json') || {}, house = typeof h.lat === 'number' ? h : typeof (s.house || {}).lat === 'number' ? s.house : null;
   if (!house) { console.error(`No house position in sites/${slug}/content/house.json.`); process.exit(1); }
-  const places = [];
+  let places = [];
   for (const f of ['content/restaurants.json', 'content/todo.json', 'content/nightlife.json']) for (const x of (read(f) || {}).items || []) {
     if (only.length && !only.includes(x.id)) continue;
     const n = x.name, names = [...new Set([x.name_local, ...(typeof n === 'string' ? [n] : [n && n.ca, n && n.es, n && n.en])].filter(Boolean))];
     places.push({ it: x, file: f.split('/')[1], place: { name: x.name_local || nameOf(n), town: x.town || null, about: x.type && typeof x.type === 'object' && x.type.en || undefined }, names });
   }
   if (!places.length) { console.error('No places to look at.'); process.exit(1); }
+  // With --save: the table, through Supabase's REST API as the worker reaches it (same errors), read before any Claude
+  // call so a place kept less than 30 days ago costs nothing.
+  let store = null, kept = {}, skipped = 0, saved = 0, noGid = 0;
+  if (save) {
+    const { makeStore, isGid, due } = await import('./place-store.mjs');
+    const URL_ = (env.SUPABASE_URL || 'https://dmoxszfwulolqkgxtxcp.supabase.co').replace(/\/$/, ''), KEY = env.SUPABASE_SERVICE_KEY;
+    const rest = async (path, o = {}) => {
+      const r = await fetch(URL_ + path, { method: o.method || 'GET', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json', ...(o.headers || {}) }, body: o.body === undefined ? undefined : (typeof o.body === 'string' ? o.body : JSON.stringify(o.body)) });
+      const t = await r.text(); let j = null; try { j = t ? JSON.parse(t) : null; } catch (e) { j = t; }
+      if (!r.ok) throw new Error(`${o.method || 'GET'} ${path.split('?')[0]} -> ${r.status} ${typeof j === 'string' ? j : JSON.stringify(j)}`.slice(0, 400));
+      return j;
+    };
+    store = makeStore(rest);
+    for (const p of places) p.gid = isGid(p.it.gid) ? p.it.gid : null;
+    try { kept = await store.get(places.map(p => p.gid).filter(Boolean)); } catch (e) { console.error(`Could not read place_facts: ${e.message}`); process.exit(1); }
+    if (!fresh) places = places.filter(p => {
+      if (!p.gid || due(kept[p.gid])) return true;
+      console.log(`${p.it.id.padEnd(16)} kept on ${String(kept[p.gid].tried_at).slice(0, 10)}, not looked at again`); skipped++; return false;
+    });
+    if (!places.length) { console.log(`Nothing to look at: ${skipped} places kept less than 30 days ago (--fresh looks at them anyway).`); process.exit(0); }
+  }
   const { makeClaude } = await import('./claude-api.mjs');
-  const ask = makeClaude({ ...env, RESEARCH_MODEL: 'claude-haiku-5-5', TRANSLATE_MODEL: 'claude-haiku-5-5', RESEARCH_EFFORT: effort, RESEARCH_MAX_SEARCHES: '3', RESEARCH_USD_PER_DAY: '2' },
-    (...a) => { const t = a.join(' '); if (!/^\s*claude api, /.test(t)) console.error(t); });   // each call's cost is in the place's line
-  console.log(`${places.length} places of ${slug}, Haiku 5.5, effort ${effort}. Nothing is written.`);
+  const quiet = (...a) => { const t = a.join(' '); if (!/^\s*claude api, /.test(t)) console.error(t); };   // each call's cost is in the place's line
+  const ask = makeClaude({ ...env, RESEARCH_MODEL: 'claude-haiku-5-5', TRANSLATE_MODEL: 'claude-haiku-5-5', RESEARCH_EFFORT: effort, RESEARCH_MAX_SEARCHES: '3', RESEARCH_USD_PER_DAY: '2' }, quiet);
+  // The second try, for a place that gave nothing at low effort: medium effort, its own limit of 1 USD a run.
+  const again = retry ? makeClaude({ ...env, RESEARCH_MODEL: 'claude-haiku-5-5', TRANSLATE_MODEL: 'claude-haiku-5-5', RESEARCH_EFFORT: 'medium', RESEARCH_MAX_SEARCHES: '3', RESEARCH_USD_PER_DAY: '1' }, quiet) : null;
+  console.log(`${places.length} places of ${slug}, Haiku 5.5, effort ${effort}${again ? ', a second try at medium effort' : ''}. ${save ? 'What is found is kept in the database (place_facts), nothing else is written.' : 'Nothing is written.'}`);
   const ov = await nearby(house, places.filter(p => typeof p.it.lat === 'number').map(p => ({ id: p.it.id, lat: p.it.lat, lng: p.it.lng, names: p.names })), { python: process.env.OVERTURE_PYTHON || env.OVERTURE_PYTHON || 'python3' });
   console.log(`Overture release ${ov.release || 'none'}.\n`);
   const digits = t => String(t || '').replace(/\D/g, '').replace(/^(00)?34(?=\d{9}$)/, '');
   const lines = sch => JSON.stringify((sch || []).map(s => [[...(s.days || [])].join(), s.open, s.close, s.from || '', s.to || '']).sort());
   const span = d => { const i = d.map(x => DAYS.indexOf(x)); return d.length > 2 && i.every((v, k) => !k || v === i[k - 1] + 1) ? `${d[0]}-${d[d.length - 1]}` : d.join(','); };
-  const n = { entry: 0, overture: 0, search: 0, phone: 0, phoneSame: 0, phoneGuide: 0, site: 0, siteSame: 0, siteGuide: 0, hours: 0, hoursSame: 0, hoursGuide: 0, price: 0, book: 0, fb: 0 };
+  const n = { entry: 0, overture: 0, search: 0, phone: 0, phoneSame: 0, phoneGuide: 0, site: 0, siteSame: 0, siteGuide: 0, hours: 0, hoursSame: 0, hoursGuide: 0, price: 0, book: 0, fb: 0,
+    twice: 0, matchTwice: 0, gotSite: 0, gotHours: 0, gotPrice: 0 };
   let total = 0, secs = 0;
   for (const p of places) {
     const t0 = Date.now(), meter = {}, cands = ov.pins[p.it.id] || [];
-    const r = await placeFacts(p.place, cands, ask, { meter });
+    const r = await placeFacts(p.place, cands, ask, { meter, again });
     const sec = Math.round((Date.now() - t0) / 1000), g = p.it;
     total += r.usd; secs += sec;
     const phoneSame = r.phone && g.phone && digits(r.phone) === digits(g.phone), siteSame = r.website && g.url && host(r.website) === host(g.url), hoursSame = r.hours && g.schedule && lines(r.hours) === lines(g.schedule);
     n.entry += !!r.entry; n.overture += r.websiteFrom === 'overture'; n.search += r.websiteFrom === 'search'; n.fb += !!r.facebook; n.price += !!r.price; n.book += !!r.book;
     n.phone += !!r.phone; n.phoneSame += !!phoneSame; n.phoneGuide += !!g.phone; n.site += !!r.website; n.siteSame += !!siteSame; n.siteGuide += !!g.url; n.hours += !!r.hours; n.hoursSame += !!hoursSame; n.hoursGuide += !!g.schedule;
+    n.twice += r.tries === 2; n.matchTwice += r.matchTries === 2; n.gotSite += r.gained.includes('site'); n.gotHours += r.gained.includes('hours'); n.gotPrice += r.gained.includes('price');
+    // Kept only with --save and a Google id; a failed write is said on the line, the run goes on.
+    let note = '';
+    if (store && !p.gid) { note = ' | no Google id, not kept'; noGid++; }
+    else if (store) { try { await store.save(p.gid, p.place, r, { release: ov.release }); saved++; } catch (e) { note = ` | not kept: ${e.message}`; } }
     console.log(`${g.id.padEnd(16)} [${r.entry ? r.entry.name.slice(0, 30) + (r.entry.kind ? ', ' + r.entry.kind : '') : 'no entry, ' + cands.length + ' near'}${r.venue ? '' : ', not a venue'}]`
       + ` | site ${r.website ? host(r.website) + ' (' + r.websiteFrom + ')' : '-'}${g.url ? (siteSame ? ' =' : ` (guide: ${host(g.url)})`) : ''}`
       + ` | phone ${r.phone ? r.phone + ' (' + r.phoneFrom + ')' : '-'}${g.phone ? (phoneSame ? ' =' : ` (guide: ${g.phone})`) : ''}`
       + ` | hours ${r.hours ? r.hours.length + ' lines' : '-'}${g.schedule ? (hoursSame ? ' =' : ` (guide: ${g.schedule.length} lines)`) : ''}`
       + ` | price ${r.price || '-'}${g.price ? ` (guide ${g.price})` : ''} | book ${r.book ? 'yes' : '-'}${r.facebook ? ' | facebook' : ''}${r.instagram ? ' | instagram' : ''}`
-      + ` | ${sec} s, ${r.usd.toFixed(3)} USD${r.error ? ' | ' + r.error : ''}`);
+      + ` | ${sec} s, ${r.usd.toFixed(3)} USD${r.tries === 2 ? ' | 2 tries' : ''}${r.matchTries === 2 ? ' | match asked twice' : ''}${r.error ? ' | ' + r.error : ''}${note}`);
     for (const s of r.hours || []) console.log(`${' '.repeat(19)}${span(s.days)} ${s.open}-${s.close}${s.from ? ` (${s.from} to ${s.to})` : ''}`);
   }
   const k = places.length;
   console.log(`\n${k} places, ${total.toFixed(3)} USD in all (${(total / k).toFixed(3)} a place), ${Math.round(secs / k)} s a place.`);
   console.log(`Entry chosen ${n.entry}; website from Overture ${n.overture}, by search ${n.search}, none ${k - n.overture - n.search}; Facebook link ${n.fb}.`);
   console.log(`Website ${n.site} (same host as the guide's ${n.siteSame} of ${n.siteGuide}); phone ${n.phone} (same as the guide's ${n.phoneSame} of ${n.phoneGuide}); hours ${n.hours} (exactly the guide's ${n.hoursSame} of ${n.hoursGuide}); price ${n.price}; book ahead ${n.book}.`);
+  if (again) console.log(`Site read twice ${n.twice} (only thanks to the second try: a site ${n.gotSite}, hours ${n.gotHours}, price ${n.gotPrice}); match asked twice ${n.matchTwice}.`);
+  if (store) console.log(`Kept ${saved} rows in place_facts; ${skipped} kept less than 30 days ago, not looked at again; ${noGid} with no Google id, not kept.`);
   process.exit(0);
 }
