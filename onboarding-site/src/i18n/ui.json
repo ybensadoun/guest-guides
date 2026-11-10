@@ -7160,5 +7160,35 @@
 "ca": "{n} bany",
 "es": "{n} baño",
 "fr": "{n} salle de bain"
+},
+"Not published: 1 entry in {x} has no name. Name it or delete it.": {
+"ca": "No s’ha publicat: 1 element de {x} no té nom. Posa-li un nom o esborra’l.",
+"es": "No se ha publicado: 1 elemento de {x} no tiene nombre. Ponle un nombre o bórralo.",
+"fr": "Non publié : 1 élément dans {x} n’a pas de nom. Nommez-le ou supprimez-le."
+},
+"Not published: {n} entries in {x} have no name. Name them or delete them.": {
+"ca": "No s’ha publicat: {n} elements de {x} no tenen nom. Posa’ls un nom o esborra’ls.",
+"es": "No se ha publicado: {n} elementos de {x} no tienen nombre. Ponles un nombre o bórralos.",
+"fr": "Non publié : {n} éléments dans {x} n’ont pas de nom. Nommez-les ou supprimez-les."
+},
+"Not published: {n} entries have no name. Name them or delete them.": {
+"ca": "No s’ha publicat: {n} elements no tenen nom. Posa’ls un nom o esborra’ls.",
+"es": "No se ha publicado: {n} elementos no tienen nombre. Ponles un nombre o bórralos.",
+"fr": "Non publié : {n} éléments n’ont pas de nom. Nommez-les ou supprimez-les."
+},
+"Give these a name before you publish, or delete them.": {
+"ca": "Posa’ls un nom abans de publicar, o esborra’ls.",
+"es": "Ponles un nombre antes de publicar, o bórralos.",
+"fr": "Donnez-leur un nom avant de publier, ou supprimez-les."
+},
+"1 entry with no name": {
+"ca": "1 element sense nom",
+"es": "1 elemento sin nombre",
+"fr": "1 élément sans nom"
+},
+"{n} entries with no name": {
+"ca": "{n} elements sense nom",
+"es": "{n} elementos sin nombre",
+"fr": "{n} éléments sans nom"
 }
 }

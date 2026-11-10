@@ -816,6 +816,41 @@ try {
     await p.screenshot({ path: join(SHOTS, 'transport-360.png'), fullPage: true });
     ok('Getting around: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // The editor never publishes an empty thing (10 Nov 2026). A new place starts blank (no icon, quick filter or marks of the
+  // first one). On Publish, what nobody filled in is dropped (a line with no name on a station, a station with nothing in
+  // it, a new place left as it came); a place with words but no name stops Publish and says where.
+  { const L = x => Object.fromEntries(E.content.site.languages.map(l => [l, x])), c2 = JSON.parse(JSON.stringify(E.content)), T2 = c2.files.transport;
+    const real = s => (s.badges || []).filter(b => String(b.t || '').trim()).length, st0 = T2.stations[0], lines0 = real(st0), n0 = T2.stations.length;
+    st0.badges = [...(st0.badges || []), { t: '', c: '#1D4FA0' }];
+    T2.stations.push({ id: 'train-empty', mode: 'train', name: L(''), lat: 0, lng: 0, km: 0, min: 0, tag: L(''), what: L(''), link: '', badges: [], to: [] });
+    const run = async () => { const o = await open(browser, { ...E, draft: { content: c2, theme: E.theme } }, 360, 780); o.saved = [];
+      await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { const req = route.request(); if (req.method() !== 'PATCH') return route.fallback(); o.saved.push(req.postData() || ''); return json(route, [{ status: 'published' }]); });
+      await o.p.goto('http://editor.test/#todo'); await ready(o.p); await o.p.waitForTimeout(300);
+      await o.p.$eval('[data-addit="files/todo/items"]', e => e.scrollIntoView({ block: 'center' })); await o.p.click('[data-addit="files/todo/items"]'); await o.p.waitForTimeout(1600); return o; };
+    const lastDraft = saved => { for (const b of saved.slice().reverse()) { try { const j = JSON.parse(b); if (j.draft && j.draft.content) return j.draft.content; } catch (e) { /* not a save */ } } return null; };
+    const published = saved => { for (const b of saved) { try { const j = JSON.parse(b); if (j.content && j.draft === null) return j.content; } catch (e) { /* not JSON */ } } return null; };
+    { const { ctx, p, errors, saved } = await run();
+      const it = ((((lastDraft(saved) || {}).files || {}).todo || {}).items || []).slice(-1)[0] || {};
+      ok('editor: a new place in Attractions starts blank (no icon, quick filter or marks of the first place)', /^custom-/.test(it.id || '') && !('icon' in it) && !('group' in it) && !('tone' in it) && !(it.tags || []).length, JSON.stringify(it).slice(0, 160));
+      await go(p, '#publish'); await p.click('.card [data-cpublish]'); await p.waitForTimeout(1500);
+      const pub = published(saved), T = ((pub || {}).files || {}).transport || {}, s0 = (T.stations || []).find(x => x.id === st0.id) || {};
+      ok('editor, Publish: an empty line on a station, an empty station and a new place left untouched are not sent', !!pub && !(T.stations || []).some(x => x.id === 'train-empty') && (T.stations || []).length <= n0 && real(s0) === lines0 && (s0.badges || []).length === lines0 && !(((pub.files || {}).todo || {}).items || []).some(x => /^custom-/.test(x.id || '')), pub ? `${(T.stations || []).length} stations, ${(s0.badges || []).length} lines` : 'nothing published');
+      ok('editor, Publish: afterwards nothing shows as waiting (the draft lost them too)', !(await p.$('[data-cdiscard]')) && !(await p.$('.card [data-cpublish]')));
+      ok('editor, Publish (empty entries): no page errors', !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    { const { ctx, p, errors, saved } = await run();
+      const box = '[data-p^="files/todo/items/"][data-p$="/description"]', all = await p.$$(box);
+      if (all.length) { await all[all.length - 1].fill('A walk we love, but we forgot its name.'); await p.waitForTimeout(1500); }
+      await go(p, '#publish'); await p.click('.card [data-cpublish]'); await p.waitForTimeout(400);
+      const said = await p.textContent('#toast').catch(() => ''), sum = await p.$$eval('.sum a[href="#todo"]', as => as.map(a => a.textContent.replace(/\s+/g, ' ').trim())).catch(() => []);
+      await p.waitForTimeout(1200);
+      ok('editor, Publish: a place with a description but no name stops it, and says where', !published(saved) && /Not published: 1 entry in Attractions has no name\. Name it or delete it\./.test(said || ''), said);
+      ok('editor, Publish: the page lists it with a link to Attractions', sum.some(t => /Attractions/.test(t) && /1 entry with no name/.test(t)), sum.join(' | '));
+      const rail = await p.$$eval('.rail p.sg, .rail a.si .st', els => els.map(e => (e.matches('.sg') ? '#' : '') + e.textContent.trim())).catch(() => []), ni = rail.indexOf('#Needs you'), nx = rail.findIndex((x, i) => i > ni && x[0] === '#');
+      ok('editor, Publish: Attractions is under "Needs you" while the place has no name', ni >= 0 && rail.slice(ni, nx < 0 ? undefined : nx).includes('Attractions'), rail.slice(0, 6).join(' > '));
+      await p.screenshot({ path: join(SHOTS, 'editor-publish-noname-360.png'), fullPage: true });
+      ok('editor, Publish (no name): no page errors', !errors.length, errors.join(' | '));
+      await ctx.close(); } }
   // A guide whose host kept no place: Attractions is empty, the research waits there as cards, and the first one kept makes the section live.
   { const files = { ...E.content.files, todo: { ...E.content.files.todo, items: [] }, sections: { ...E.content.files.sections, sections: E.content.files.sections.sections.map(x => x.id === 'todo' ? { ...x, status: 'soon' } : x) } };
     const { ctx, p, errors } = await open(browser, { ...E, draft: null, content: { ...E.content, files } }, 360, 780); const saved = [];

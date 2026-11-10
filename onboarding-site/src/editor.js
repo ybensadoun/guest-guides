@@ -163,13 +163,22 @@ function cmPin(p) {
     ...pick('phone'), ...pick('lat'), ...pick('lng'), ...pick('gmaps'), ...pick('schedule'), ...pick('hours'), ...pick('price'), ...pick('priceNote') });
   const s = edC().site = edC().site || {}; s.modules = { ...(s.modules || {}), quick: true };
 }
-function edNewItem(arr) {
+// A new entry starts blank (Yohann, 10 Nov 2026): it takes the first entry's shape (which fields, so its card asks for the
+// same things) and none of its values. No icon, quick filter (group), colour (tone), marks (tags) or width: a new attraction
+// used to copy the first one's (a water park, "fun", "kidsfun") and nothing in the editor changes them. An event's type
+// only picks its colour and icon, and the guide has a default for both: left out. A market needs a category (the Markets
+// page filters by it and the content check refuses one without): one neutral default per list, never the first market's.
+const ED_NEW_DEFAULT = { 'files/markets/markets': { category: 'street' } };
+function edNewItem(arr, path) {
   const clone = arr && arr[0] ? cmClone(arr[0]) : { name: { en: '' }, description: { en: '' }, lat: 0, lng: 0 };
   const h = edF().house || {};
-  const clear = o => { for (const k of Object.keys(o)) { const x = o[k]; if (['icon', 'group', 'tone', 'category', 'type', 'tags', 'wide'].includes(k) && !edIs18(x)) continue; if (edIs18(x)) o[k] = Object.fromEntries(Object.keys(x).map(l => [l, ''])); else if (typeof x === 'string') o[k] = ''; else if (Array.isArray(x)) o[k] = []; else if (typeof x === 'number' && k !== 'lat' && k !== 'lng') o[k] = 0; } return o; };
+  const clear = o => { for (const k of Object.keys(o)) { const x = o[k]; if (['icon', 'group', 'tone', 'category', 'type', 'wide'].includes(k) && !edIs18(x)) { delete o[k]; continue; } if (edIs18(x)) o[k] = Object.fromEntries(Object.keys(x).map(l => [l, ''])); else if (typeof x === 'string') o[k] = ''; else if (Array.isArray(x)) o[k] = []; else if (typeof x === 'number' && k !== 'lat' && k !== 'lng') o[k] = 0; else if (typeof x === 'boolean') delete o[k]; } return o; };   // switches too: a new event is not "added automatically" because the first one was
   const n = clear(clone); n.id = 'custom-' + Date.now().toString(36);
   if ('lat' in n) { n.lat = h.lat || 0; n.lng = h.lng || 0; n.km_from_house = null; n.nomap = true; }   // no position yet: never "0 km", never a pin at the house
   for (const k of ['verify', 'always', 'gid', 'checked', 'hoursSource', 'rating', 'topPick', 'wiki', 'sources', 'setMenus']) delete n[k];
+  Object.assign(n, cmClone(ED_NEW_DEFAULT[path] || {}));
+  const fl = path && n.category ? edGet(edC(), edPath(path).slice(0, -1)) : null;   // the market's category is one of the file's, as in cmFindAdd
+  if (fl) { fl.categories = fl.categories || []; if (!fl.categories.includes(n.category)) fl.categories.push(n.category); }
   return n;
 }
 const edKm = (a, b, c, d) => { const R = 6371, r = x => x * Math.PI / 180, dl = r(c - a), dg = r(d - b), x = Math.sin(dl / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dg / 2) ** 2; return Math.round(2 * R * Math.asin(Math.sqrt(x))); };
@@ -777,10 +786,11 @@ function cmStepHTML(m) {
       <div class="foot"><p class="todo" id="cmFoot">${esc(cmFootText())}</p><div class="row"><a class="btn small" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${I.eye}Preview</a><a class="btn small primary" href="#publish" id="cmGoPub"${cmDirty() ? '' : ' hidden'}>Review and publish</a></div></div></section></div>${cmPhoneHTML(m.id)}</div>`;
 }
 function cmPublishHTML() {
-  const ch = cmSteps().filter(cmChanged), dirty = cmDirty(), url = cmLiveUrl();
+  const ch = cmSteps().filter(cmChanged), dirty = cmDirty(), url = cmLiveUrl(), miss = cmNameless(edC());
   return `<div class="split has-phone">${railHTML('publish')}<div class="col">
     <section class="mhead" style="--tc:var(--ink);--ti:var(--paper);--sh:var(--sun)"><h1>${cmLive() ? 'Publish changes' : 'Publish your guide'}</h1>
       <p>${dirty ? 'Look at your changes in the preview, then publish: guests see them straight away.' : cmLive() ? 'Nothing is waiting: guests see the guide as it is here.' : 'Your guide is ready. Publish it to share it with your guests.'}</p></section>
+    ${miss.length ? `<section class="card"><div class="note"><div>Give these a name before you publish, or delete them.</div></div><div class="sum">${miss.map(({ m, n }) => `<a href="#${m.id}" style="--tc:${m.tc}"><span class="sw"></span><span><b>${esc(m.title)}</b><p>${n === 1 ? '1 entry with no name' : `${n} entries with no name`}</p></span><span class="pill new" style="position:static">Needs you</span></a>`).join('')}</div></section>` : ''}
     <section class="card">
       ${ch.length ? `<div class="sum">${ch.map(m => `<a href="#${m.id}" style="--tc:${m.tc}"><span class="sw"></span><span><b>${esc(m.title)}</b><p>${esc(cmSub(m))}</p></span><span class="pill chk" style="position:static">Changed</span></a>`).join('')}</div>` : dirty ? '<p class="hint">Translations and other small changes are waiting.</p>' : ''}
       <p class="hint">${cmLive() ? 'Guests open' : 'Once it is published, guests open'} <a href="${esc(url)}" target="_blank" rel="noopener" style="white-space:nowrap">${esc(url.replace(/^https?:\/\//, ''))}</a></p>
@@ -821,7 +831,9 @@ function cmRemember(r) { try { const o = JSON.parse(localStorage.getItem(CM_LAST
 // Rail and bottom bar (nav.js asks for these while CM.on)
 // What only the host can tell us and the guide still lacks: listed first, as "Needs you" (docs/plan-fast-builder.md).
 // For a guide that exists this is the Wi-Fi: rubbish and contacts pages only exist once they are filled.
+// A step with an entry that has words but no name needs the host too: Publish waits for it (cmNameless).
 const CM_NEEDS = { wifi: c => { const w = (c.private || {}).wifi || {}; return !w.password || !(w.networks || []).some(n => n.ssid); } };
+for (const id of ['todo', 'restaurants', 'nightlife', 'markets', 'events', 'tiles', 'contacts', 'transport', 'housepage']) CM_NEEDS[id] = c => cmNameless(c, id).length > 0;
 const cmNeeds = m => !!(CM_NEEDS[m.id] && CM_NEEDS[m.id](edC()));
 function cmStepList(cur) {
   const item = m => { const ch = cmChanged(m); return `<a class="si s-${ch ? 'chk' : 'new'}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${ch ? STATUS_ICON.chk : I[m.icon] || ''}</span><span class="st">${esc(m.title)}</span><span class="sl">${ch ? 'Changed' : cmNeeds(m) ? 'Needs you' : ''}</span></a>`; };
@@ -868,10 +880,62 @@ async function cmSave() {
   try { await CM.saving; } finally { CM.saving = null; }
   if (CM.again) { CM.again = false; return cmSave(); }
 }
+/* --- Publish never sends an empty thing (Yohann, 10 Nov 2026) ---
+   The Add buttons put an empty entry in at once; one never filled in reached guests (30 Oct: an empty train line and an
+   empty station in Ca La Kimberly). Before Publish, cmTidy takes out of the content what is still as its Add button made
+   it, or means nothing without its main field. Something a host typed is never dropped: a place with words but no name
+   stops Publish instead and says where (cmNameless, listed on the Publish page and under "Needs you"). */
+const edBlank = x => x == null || x === 0 || (typeof x === 'string' ? !x.trim() : Array.isArray(x) ? x.every(edBlank) : typeof x === 'object' ? Object.values(x).every(edBlank) : false);
+// The rows inside an entry, and when one is empty
+const CM_ROWS = {
+  badges: b => edBlank(b.t),                                            // a station's line with no name ("R4"): its colour alone says nothing
+  to: d => edBlank(d.dest) && edBlank(d.time),                          // a journey time with no destination and no time
+  alt: a => edBlank(a.phone),                                           // a taxi's other number with no phone
+  schedule: r => !(r.days || []).length && (edBlank(r.open) && edBlank(r.close) || r.open === '09:00' && r.close === '14:00'),   // opening hours with no day, and no time or the times Add puts in
+  dates: d => edBlank(d.start)                                          // dates with no start
+};
+// The entries a host adds one by one, by step: places, markets, events, nightlife, Home tiles, contacts, taxis, stations
+// and stops, house page highlights.
+const cmEntries = c => { const f = c.files || {}, T = f.transport || {};
+  return [['todo', (f.todo || {}).items], ['restaurants', (f.restaurants || {}).items], ['nightlife', (f.nightlife || {}).items], ['markets', (f.markets || {}).markets], ['events', (f.events || {}).items], ['tiles', (f.quick || {}).items],
+    ...((f.emergency || {}).groups || []).map(g => ['contacts', g.items]), ['transport', T.taxis], ['transport', T.stations], ['housepage', (f['house-page'] || {}).highlights]].filter(x => Array.isArray(x[1])); };
+// Untouched: nothing typed (what the editor puts in by itself does not count: id, icon, kind, category, distance, flags,
+// switches) and no pin of its own (none yet, 0,0 or the house's). A new Home tile is named after its kind ("Restaurant")
+// until the host names it.
+const CM_BY_ITSELF = new Set(['id', 'icon', 'kind', 'mode', 'category', 'flags', 'tags', 'lat', 'lng', 'km_from_house', 'km', 'min', 'nomap']);
+function cmUntouched(it, h) {
+  const pin = !it.nomap && typeof it.lat === 'number' && typeof it.lng === 'number' && !(it.lat === 0 && it.lng === 0) && !(it.lat === h.lat && it.lng === h.lng);
+  return !pin && Object.entries(it).every(([k, v]) => CM_BY_ITSELF.has(k) || typeof v === 'boolean' || (k === 'name' && it.kind && cmSame(v, it.kind))
+    || edBlank(CM_ROWS[k] && Array.isArray(v) ? v.filter(r => !CM_ROWS[k](r)) : v));
+}
+const cmNoName = it => edBlank(it.name) && edBlank(it.title) && edBlank(it.t);
+function cmTidy(c) {
+  const f = c.files || {}, h = f.house || {}; let n = 0;
+  const drop = (a, empty) => { if (Array.isArray(a)) for (let i = a.length - 1; i >= 0; i--) if (empty(a[i])) { a.splice(i, 1); n++; } };
+  for (const [, a] of cmEntries(c)) for (const it of a) for (const k of Object.keys(CM_ROWS)) drop(it[k], CM_ROWS[k]);   // rows inside entries first
+  for (const b of (f.message || {}).blocks || []) drop(b.items, edBlank);                 // a line of text empty in every language: house guide,
+  drop((f.garbage || {}).steps, edBlank); drop((f['house-page'] || {}).beds, edBlank);    // how to sort, beds,
+  for (const g of (f['house-page'] || {}).amenities || []) drop(g.items, edBlank);        // amenities
+  drop((f.garbage || {}).containers, ct => edBlank(ct.where) && edBlank(ct.takes) && edBlank(ct.map));   // containers: no "where", nothing ticked, no link
+  drop(((c.private || {}).wifi || {}).networks, w => edBlank(w.ssid));                   // a Wi-Fi network with no name
+  for (const [, a] of cmEntries(c)) drop(a, it => cmUntouched(it, h));                   // entries nobody filled in
+  return n;
+}
+// What stops Publish: entries with words but no name, by step (only steps the editor shows, so the host can get there).
+function cmNameless(c, only) {
+  const h = (c.files || {}).house || {}, on = new Set(cmSteps().map(m => m.id)), out = new Map();
+  for (const [id, a] of cmEntries(c)) if (on.has(id) && (!only || id === only)) for (const it of a) if (cmNoName(it) && !cmUntouched(it, h)) out.set(id, (out.get(id) || 0) + 1);
+  return [...out].map(([id, n]) => ({ m: cmSteps().find(x => x.id === id), n }));
+}
+const cmNamelessText = miss => { const n = miss.reduce((s, x) => s + x.n, 0);
+  return miss.length > 1 ? `Not published: ${n} entries have no name. Name them or delete them.` : n === 1 ? `Not published: 1 entry in ${miss[0].m.title} has no name. Name it or delete it.` : `Not published: ${n} entries in ${miss[0].m.title} have no name. Name them or delete them.`; };
 async function cmPublish(btn) {
   if (btn) btn.disabled = true;
   try {
     clearTimeout(CM.timer); while (CM.saving) await CM.saving;
+    if (cmTidy(CM.g.content)) CM.open.clear();   // empty entries never go live (and leave the draft too)
+    const miss = cmNameless(CM.g.content);
+    if (miss.length) { if (btn) btn.disabled = false; cmQueue(); toast(cmNamelessText(miss)); render(); return; }
     await ensureFresh();
     const body = { content: CM.g.content, theme: CM.g.theme, draft: null }; if (!cmLive()) body.status = 'published';
     const r = await sb('/rest/v1/guides?id=eq.' + CM.g.id + '&select=status', { method: 'PATCH', headers: { Prefer: 'return=representation' }, body });
@@ -1171,7 +1235,7 @@ document.addEventListener('click', e => {
   if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
   if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
   if (d.amput) { cmAmPut(d.amput); return done(); }
-  if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); const a = arr(d.addit); a.push(edNewItem(a)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
+  if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); const a = arr(d.addit); a.push(edNewItem(a, d.addit)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
   if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }] }; return done(); }
   if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }); return done(); }
   if (d.add) { const o = {}; for (const l of edLangs()) o[l] = ''; arr(d.add).push(o); done(); setTimeout(() => { const x = document.getElementById(cmId(d.add + '/' + (arr(d.add).length - 1))); if (x) x.focus(); }, 0); return; }

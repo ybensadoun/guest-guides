@@ -213,7 +213,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 .tbl table{border-collapse:collapse;width:100%;font-size:14px}
 .tbl th,.tbl td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
 .tbl th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+/* A message of one or two sentences: as wide as the screen allows, above the bottom bar, never cut. */
+.toast{position:fixed;left:16px;right:16px;margin-inline:auto;width:fit-content;max-width:520px;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:18px;font-weight:600;font-size:14px;line-height:1.35;text-align:center;z-index:60}
 .loading{padding:40px;text-align:center;color:var(--muted)}
 </style>
 
@@ -232,7 +233,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 'use strict';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const toast = t => { const e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => e.hidden = true, 2600); };
+const toast = t => { const e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => e.hidden = true, Math.max(2600, String(t).length * 60)); };   // long enough to read
 const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ARROW = svg('<path d="M5 12h13M13 6l6 6-6 6"/>'), BACK = svg('<path d="M15 5l-7 7 7 7"/>'), CHECK = svg('<path d="M4 12.5l5 5L20 6"/>');
 const I = {
