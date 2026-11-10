@@ -224,6 +224,20 @@ Drawn in the maker's own styles with the guide's own icons, at 360 px in English
 - To tidy in the build: the menu's name is cut in its small box, and the season's two dates should sit on one line.
 - Later, with the countries (phase 2): kinds and marks that depend on the country ("Menú del día", human towers as an event kind) come from the country's profile.
 
+## The places work, the build (Yohann, 10 Nov 2026: "let's keep going")
+Proposals 2a, 2b, 2c, 2d and 3 as one piece of work, built in steps that each leave the product working. Nothing is pushed until a step is checked; steps 3 to 6 go live together, so no guide is ever left without hours. Opus builds each step from a brief, Fable reviews the diff and runs the checks.
+
+| Step | What | Touches | State |
+|---|---|---|---|
+| 1 | **A place's facts from open sources**, as its own module with a dry run: Overture's records near the pin, Claude picks the one that is the place (an unsure match fills nothing), phone and Facebook link from Overture, its website opened and read for hours (with seasons), price and "book ahead", one web search when there is no usable website. Printed for a guide's places, written nowhere. | `worker/` only, new files | in progress |
+| 2 | **Our own table of place facts**, by Google place id, with the page read and the date: the same place in another guide costs nothing. | database, `worker/` | to do |
+| 3 | **Google only locates**: the id and the position, nothing else asked or kept; the Google Maps button built from the id; the position renewed inside 30 days or taken from Overture when the place is matched. Ratings go from the engine and the data. | `worker/places.mjs`, the maker's `/api/places`, generator, engine | to do |
+| 4 | **"Filled in for you"** in the builder and the editor: the card as mocked up, "Change" opens the form, a host can paste a website. Kind and marks (proposal 3). | `onboarding-site/` | to do |
+| 5 | **Google's card on a place's page** for live hours, in the guest's language, never stored. "Open now" in the lists from hours we keep. | engine, viewer, Netlify variable for the browser key | to do, after Yohann's choice of how it appears |
+| 6 | **Today's guides brought in line** (2d): what they keep from Google is removed and refilled by steps 1 to 3; the monthly check and "still exists" within the terms. | `worker/check-guides.mjs`, `worker/monthly.mjs`, a one-time run per guide | to do |
+
+Open points carried into the steps: a place's town when Overture has no record (step 3); the swipe deck of suggestions, which shows Google's names and photos to the host (step 3, with the terms pass); what the "still exists" check may do (step 6, proposal 19).
+
 ## Not gaps
 The look and its colours and fonts; languages and translation; Wi-Fi with several networks; Getting around (taxis with other numbers, stations, lines, journey times, the Home tile); automatic events and their settings; photos and their order; pinning a restaurant to Home; switching sections on and off; drafts, Preview and Publish.
 
