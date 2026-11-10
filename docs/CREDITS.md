@@ -18,7 +18,7 @@ Rule (Yohann, 10 Nov 2026): every source is credited as its terms ask, and the c
 | Fonts (Jost, Outfit, Inter and the others, from Fontsource) | the guide's letters | SIL Open Font Licence 1.1: the licence and each font's copyright line go with the font files | the licences file shipped with each guide; named on the credits page |
 | MapLibre GL JS and the libraries inside it | drawing the map | BSD, ISC and MIT notices kept with the shipped code | the licences file |
 | qrcode-generator | the Wi-Fi QR code | MIT notice; "QR Code is a registered trademark of DENSO WAVE INCORPORATED" | the licences file; the trademark line on the credits page |
-| Workbox, Vite's helpers | offline use, loading | MIT notices | the licences file |
+| Workbox, Vite's helpers | offline use, loading, in guides built as their own site (the live guides are shown by the shared viewer, which has its own small service worker and no Workbox) | MIT notices | the licences file of those builds |
 | jsDelivr | serves the fonts of guides shown by the shared viewer | none; a processor to name | the maker's privacy page |
 | Jina AI reader | reads a listing page that refuses our server | none; a processor to name; its use to read in the terms pass | the maker's privacy page |
 | Supabase, Netlify, Hetzner, Resend | accounts, hosting, the worker, the monthly email | none; processors | the maker's privacy page (already there) |
@@ -31,7 +31,12 @@ Drawn by us, nothing to credit: the icons of the guide and the maker, the drawn 
 - **Each guide's files:** `licenses.txt`, written at the build from the packages' own licence files (fonts used, MapLibre and what it carries, qrcode-generator, Workbox).
 - **The maker:** "Google Maps" beside Google's content (done in part 3b), the photo's author on a deck card, and on the privacy page the processors missing until now (OpenAI, Jina AI, jsDelivr) and where a place's facts come from (Overture, GeoNames, its own website).
 
+## Built (10 Nov 2026, branch `places-work`)
+The page `#credits` ("Sources and credits", six languages, a quiet link at the foot of Home, checked by `ux-check.mjs`), `licenses.txt` written by `engine/scripts/licenses.mjs` at every build (67 KB for Ca La Kimberly, 113 KB for the shared viewer, kept for offline use), the photo's author on a deck card, and OpenAI, Jina AI and jsDelivr on the maker's privacy page with where a place's facts come from. The guide's own sentence about an AI cover shows when `site.theme.coverMade` is `"ai"`; nothing sets it yet.
+
 ## Still to settle
+- On the small maps of the list pages the whole map is a link to the big map, so a tap on the credit's "i" may open the map and not the credit: to check with the map's look (proposal 6).
+- Researched cards in the maker showed Google's rating and photo from kept job results; the worker no longer writes them (part 3d), so those cards have no photo until the maker asks Google live for it, with its author.
 - The listing sites' terms (reading a listing, copying its photos): proposal 19.
 - Hours kept from Google in today's guides (`hoursSource: 'google'`) and Google's positions shown on our map: removed in step 6 of the places work.
 - Whether the worker marks a guide whose cover was made with AI, so the credits page can say so by itself.
