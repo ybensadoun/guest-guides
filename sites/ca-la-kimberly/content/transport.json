@@ -36,19 +36,6 @@
         "de": "Praktisch für einen Abend in El Vendrell ohne Auto oder für die Fahrt zum Bahnhof. Es holt dich am Haus ab, meist in etwa 30 Minuten oder etwas weniger, zu Stoßzeiten länger, also vorher anrufen, besonders für einen frühen Zug. Sagen Sie: Can Gordei, La Bisbal del Penedès.",
         "nl": "Handig voor een avondje uit in El Vendrell zonder te rijden, of om naar het station te gaan. Hij haalt je op bij het huis, meestal binnen 30 minuten of iets sneller, op drukke momenten later, dus bel vooraf, zeker voor een vroege trein. Zeg dat je in Can Gordei, La Bisbal del Penedès bent."
       },
-      "alt": [
-        {
-          "phone": "977 66 20 42",
-          "name": {
-            "en": "Radio Taxi Baix Penedès",
-            "es": "Radio Taxi Baix Penedès",
-            "fr": "Radio Taxi Baix Penedès",
-            "ca": "Ràdio Taxi Baix Penedès",
-            "de": "Radio Taxi Baix Penedès",
-            "nl": "Radio Taxi Baix Penedès"
-          }
-        }
-      ],
       "always": true,
       "web": "https://www.elvendrellturisme.com/en/telephone-numbers-of-interest/",
       "verify": true

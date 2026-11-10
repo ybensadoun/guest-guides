@@ -7,11 +7,23 @@
   "manifestDescription": "Guest guide for Can Gordei, La Bisbal del Penedès: markets, map and local tips.",
   "logo": "logo-head.png",
   "shareImage": "kimberly-art.jpg",
-  "languages": ["en", "es", "fr", "ca", "de", "nl"],
+  "languages": [
+    "en",
+    "es",
+    "fr",
+    "ca",
+    "de",
+    "nl"
+  ],
   "storageKey": "clk",
   "area": {
     "radiusKm": 40,
-    "searchBbox": [-0.5, 40.3, 3.4, 43.0]
+    "searchBbox": [
+      -0.5,
+      40.3,
+      3.4,
+      43
+    ]
   },
   "modules": {
     "house": true,
@@ -24,16 +36,30 @@
     "events": true,
     "quick": true,
     "map": true,
-    "reviews": true
+    "reviews": true,
+    "nightlife": true,
+    "transport": true
   },
   "theme": {
     "preset": "bauhaus",
-    "fonts": ["jost/400.css", "jost/500.css", "jost/600.css", "jost/700.css"],
+    "fonts": [
+      "jost/400.css",
+      "jost/500.css",
+      "jost/600.css",
+      "jost/700.css"
+    ],
     "paper": "#F3EEE3",
     "manifestBackground": "#FAF7F0",
     "manifestTheme": "#005DAA",
     "darkMode": false
   },
-  "previewImages": ["logo-head.png", "kimberly-banner.jpg", "favicon.png", "house.jpg"],
-  "netlify": { "project": "ca-la-kimberly" }
+  "previewImages": [
+    "logo-head.png",
+    "kimberly-banner.jpg",
+    "favicon.png",
+    "house.jpg"
+  ],
+  "netlify": {
+    "project": "ca-la-kimberly"
+  }
 }

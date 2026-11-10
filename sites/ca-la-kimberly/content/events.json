@@ -1466,6 +1466,141 @@
       "venue": "Bosc de Can Pau"
     },
     {
+      "id": "santa-llucia-fair-and-bobbin-lace-gather",
+      "lat": 41.265,
+      "lng": 1.602,
+      "url": "http://www.arbocenc.org/",
+      "name": {
+        "ca": "Fira de Santa Llúcia i Trobada de Puntaires",
+        "de": "Santa-Llúcia-Markt und Klöppel­treffen",
+        "en": "Santa Llúcia Fair and Bobbin Lace Gathering",
+        "es": "Feria de Santa Llúcia y Encuentro de Encaje de Bolillos",
+        "fr": "Foire de Santa Llúcia et rencontre de dentelle aux fuseaux",
+        "nl": "Santa Llúcia-markt en ont­moe­ting van kant­klos­sers"
+      },
+      "town": "L'Arboç",
+      "type": "fair",
+      "dates": [
+        {
+          "end": "2026-12-13",
+          "start": "2026-12-12",
+          "status": "expected"
+        }
+      ],
+      "venue": "Streets and squares of the centre",
+      "sources": [
+        "https://surtdecasa.cat/penedes/agenda/2025/813a-fira-de-santa-llucia-de-larboc/255767",
+        "https://www.festivalesdeespana.com/festival/fira-de-santa-llucia-de-l-arboc-l-arboc",
+        "https://www.diaridetarragona.com/camp/201041/la-fira-de-santa-llucia-de-l-arboc-porta-parades-nadalenques-i-l-exhibicio-de-puntaires-oa22333397.html"
+      ],
+      "description": {
+        "ca": "Aquesta fira de Nadal se celebra des de fa més de 800 anys. El diumenge, centenars de puntaires s’asseuen i treballen juntes als carrers, amb un concurs nacional de puntes i parades de Nadal. A deu minuts de casa, gratuïta, i un matí fàcil amb nens.",
+        "de": "Dieser Weih­nachts­markt findet seit über 800 Jahren statt. Am Sonntag sitzen Hunderte Klöpp­le­rin­nen gemeinsam in den Straßen und arbeiten, dazu gibt es einen nationalen Spitzen­wett­bewerb und Weih­nachts­stände. Zehn Minuten vom Haus, kostenlos und ein ent­spann­ter Vormittag mit Kindern.",
+        "en": "This Christmas fair has run for more than 800 years. On the Sunday, hundreds of bobbin lace makers sit and work together in the streets, alongside a national lace competition and Christmas stalls. Ten minutes from the house, free, and an easy morning out with kids.",
+        "es": "Esta feria de Navidad se celebra desde hace más de 800 años. El domingo, cientos de encajeras de bolillos trabajan juntas sentadas en las calles, junto a un concurso nacional de encaje y puestos navideños. A diez minutos de la casa, gratis y una mañana fácil con niños.",
+        "fr": "Cette foire de Noël existe depuis plus de 800 ans. Le dimanche, des centaines de dentellières aux fuseaux s’installent et travaillent ensemble dans les rues, avec un concours national de dentelle et des stands de Noël. À dix minutes de la maison, gratuit, et une matinée facile avec les enfants.",
+        "nl": "Deze kerst­markt bestaat al meer dan 800 jaar. Op zondag zitten honderden kant­klos­sers samen in de straten te werken, naast een nationale kant­wed­strijd en kerst­kraam­pjes. Tien minuten van het huis, gratis en een mak­ke­lij­ke ochtend uit met kinderen."
+      },
+      "km_from_house": 10.4,
+      "tags": [
+        "crafts",
+        "free",
+        "kids",
+        "food"
+      ],
+      "flags": [
+        "closest"
+      ]
+    },
+    {
+      "id": "new-olive-oil-fair-dop-siurana",
+      "lat": 41.1153,
+      "lng": 1.2525,
+      "url": "https://dopsiurana.com",
+      "name": {
+        "ca": "Fira de l’Oli Nou, DOP Siurana",
+        "de": "Markt des neuen Oliven­öls, DOP Siurana",
+        "en": "New Olive Oil Fair, DOP Siurana",
+        "es": "Feria del Aceite Nuevo, DOP Siurana",
+        "fr": "Foire de l’huile nouvelle, DOP Siurana",
+        "nl": "Beurs van de nieuwe olijfolie, DOP Siurana"
+      },
+      "town": "Tarragona",
+      "type": "food",
+      "dates": [
+        {
+          "end": "2026-11-28",
+          "start": "2026-11-27",
+          "status": "expected"
+        }
+      ],
+      "venue": "Plaça Corsini, by the Mercat Central",
+      "sources": [
+        "https://dopsiurana.com",
+        "https://surtdecasa.cat/camp/agenda/2025/25a-fira-de-loli-nou-dop-siurana-tarragona/255141"
+      ],
+      "description": {
+        "ca": "Els molins de la zona porten el primer oli de la temporada, verd i picant, per tastar-lo i comprar-lo directament als productors. És gratuït i es pot combinar amb el mercat del costat. Hi ha una edició a Reus el 13 de novembre, si us va millor.",
+        "de": "Ölmühlen aus der Gegend bringen das erste Öl der Saison, grün und pfeffrig, zum Probieren und Kaufen direkt beim Erzeuger. Der Eintritt ist frei, und du kannst es mit der Markt­halle nebenan verbinden. Am 13. November gibt es auch eine Ausgabe in Reus, falls dir das besser passt.",
+        "en": "Local mills bring the first oil of the season, green and peppery, to taste and buy straight from the producers. It is free, and you can combine it with the market hall next door. There is a Reus edition on 13 November if that suits you better.",
+        "es": "Las almazaras de la zona traen el primer aceite de la temporada, verde y picante, para probarlo y comprarlo directamente a los productores. Es gratis y puedes combinarlo con el mercado municipal de al lado. Hay una edición en Reus el 13 de noviembre si te va mejor.",
+        "fr": "Les moulins du coin apportent la première huile de la saison, verte et poivrée, à goûter et à acheter directement aux producteurs. C’est gratuit, et vous pouvez combiner avec les halles juste à côté. Une édition a lieu à Reus le 13 novembre si cela vous convient mieux.",
+        "nl": "Molens uit de streek brengen de eerste olie van het seizoen, groen en peperig, om te proeven en direct bij de pro­ducen­ten te kopen. Het is gratis, en je kunt het com­bi­ne­ren met de markthal ernaast. Op 13 november is er ook een editie in Reus, als dat beter uitkomt."
+      },
+      "km_from_house": 25.3,
+      "tags": [
+        "food",
+        "free",
+        "deli"
+      ]
+    },
+    {
+      "id": "tarragona-christmas-fair-and-craft-marke",
+      "lat": 41.1165,
+      "lng": 1.254,
+      "url": "https://mercatsdetarragona.cat/mercat-de-nadal",
+      "name": {
+        "ca": "Fira de Nadal i Mercat d’Artesania de Tarragona",
+        "de": "Weih­nachts­markt und Kunst­hand­werker­markt in Tarragona",
+        "en": "Tarragona Christmas Fair and Craft Market",
+        "es": "Feria de Navidad y Mercado de Artesanía de Tarragona",
+        "fr": "Foire de Noël et marché artisanal de Tarragona",
+        "nl": "Kerst­markt en am­bachts­markt in Tarragona"
+      },
+      "tags": [
+        "crafts",
+        "free",
+        "kids"
+      ],
+      "town": "Tarragona",
+      "type": "fair",
+      "dates": [
+        {
+          "end": "2026-12-23",
+          "start": "2026-11-28",
+          "status": "expected"
+        },
+        {
+          "end": "2027-01-06",
+          "start": "2026-12-05",
+          "status": "expected"
+        }
+      ],
+      "venue": "Rambla Nova",
+      "sources": [
+        "https://www.festivalesdeespana.com/festival/fira-de-nadal-i-mercat-de-l-artesania-de-tarragona-tarragona"
+      ],
+      "description": {
+        "ca": "Les parades de la Rambla Nova venen figures de pessebre, caga tiós i flors de Nadal, i després hi ha un mercat d’artesans locals. És gratuït i obert tot el dia, així que s’hi pot passar després d’una passejada fins al Balcó del Mediterrani.",
+        "de": "Die Stände an der Rambla Nova verkaufen Krippen­figuren, Caga Tiós (der kata­la­nische Weih­nachts­klotz) und Weih­nachts­sterne, danach folgt ein Markt mit Kunst­hand­werk aus der Region. Der Markt ist kostenlos und den ganzen Tag offen, du kannst also nach einem Spazier­gang zum Balcó del Medi­terrani vorbei­schauen.",
+        "en": "Stalls along the Rambla Nova sell nativity figures, caga tiós (the Catalan Christmas log) and poinsettias, followed by a craft market of local makers. It is free and open all day, so you can stop by after a walk to the Balcó del Mediterrani.",
+        "es": "Los puestos de la Rambla Nova venden figuras de belén, caga tiós (el tronco de Navidad catalán) y flores de Pascua, seguidos de un mercado de artesanía local. Es gratis y abre todo el día, así que puedes pasar después de un paseo hasta el Balcó del Mediterrani.",
+        "fr": "Les stands de la Rambla Nova vendent des santons, des caga tiós (la bûche de Noël catalane) et des poinsettias, suivis d’un marché d’artisans locaux. C’est gratuit et ouvert toute la journée, vous pouvez donc passer après une balade jusqu’au Balcó del Mediterrani.",
+        "nl": "Kraampjes langs de Rambla Nova verkopen kerst­stal­figu­ren, caga tiós (het Cata­laan­se kerstblok) en kerst­ster­ren, gevolgd door een markt van lokale makers. Het is gratis en de hele dag open, dus je kunt langsgaan na een wandeling naar de Balcó del Medi­ter­rani."
+      },
+      "km_from_house": 25.1
+    },
+    {
       "id": "castells-2026-12-13-la-bisbal-del-penedè",
       "lat": 41.28086,
       "lng": 1.48788,
