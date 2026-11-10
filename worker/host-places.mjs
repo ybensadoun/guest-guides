@@ -12,7 +12,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { hav, locateById, locateByWords } from './places.mjs';
+import { hav, locateById, locateByWords, nameById } from './places.mjs';
 import { nearby, placeFacts } from './place-facts.mjs';
 import { tidyName, due, lookedFor, mergeFacts, makeStore } from './place-store.mjs';
 
@@ -39,14 +39,29 @@ async function each(list, n, f) {
 const today = () => new Date().toISOString().slice(0, 10);
 const num = v => typeof v === 'number' && Number.isFinite(v);
 
+// The record that carries a name, among Overture's records around a pin: every word of the name (small and generic words
+// aside) is in the record's name, or, failing that, at least half of them in one record only. Ties: the record whose own
+// words are most in the name, then the nearest. Used for a kept card (see hostPlaces).
+const GENERIC = new Set('el la els les l d de del dels the of i y and a en al restaurant restaurante bar platja playa beach parc parque park museu museo museum'.split(' '));
+const wordsOf = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w && !GENERIC.has(w));
+const share = (a, b) => { const x = wordsOf(a), y = wordsOf(b); return x.length && y.length ? x.filter(w => y.some(v => v === w || (w.length > 4 && v.length > 4 && (v.startsWith(w) || w.startsWith(v))))).length / x.length : 0; };
+export function sameNamed(name, cands) {
+  const scored = (cands || []).map(c => ({ c, s: share(name, c.name), back: share(c.name, name) })).filter(x => x.s >= 0.5)
+    .sort((a, b) => b.s - a.s || b.back - a.back || (a.c.metres || 0) - (b.c.metres || 0));
+  if (!scored.length) return null;
+  return scored[0].s >= 0.99 || scored.length === 1 ? scored[0].c : null;
+}
+
 // rows: [{ p, gid?, list, c? }], cards: [{ id, list, c? }] (c: the host's comment, which helps the kind), house: { lat, lng },
 // town: the house's town (the generator's fallback for a place with no town; not asked for here). GK: the Google key;
 // store: makeStore(rest); ask, again: makeClaude(...) at low and medium effort.
 // Without store: located only, nothing filled. Without ask: filled from what is already kept, nothing asked. locate (tests): { byId(id), byWords(words, house) } instead of Google;
 // near (tests): in place of nearby(), Overture's records.
 // meter (optional): { usd } that the chain's cost is added to. Returns the geocode map.
-export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { GK, store = null, ask = null, again = null, python, log = console.error, locate = null, near = nearby, meter = null } = {}) {
-  const L = locate || (GK ? { byId: id => locateById(GK, id), byWords: (w, h) => locateByWords(GK, w, h) } : null);
+// nameMatch: a kept card is named by comparing Google's name with Overture's names, in memory (below). false: it is not,
+// and a card our sources cannot name from its spot waits for the host to name it.
+export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { GK, store = null, ask = null, again = null, python, log = console.error, locate = null, near = nearby, meter = null, nameMatch = true } = {}) {
+  const L = locate || (GK ? { byId: id => locateById(GK, id), byWords: (w, h) => locateByWords(GK, w, h), name: id => nameById(GK, id) } : null);
   if (!L || !house) return {};
   // 1. Located by Google: the id and the position, nothing else. The same place typed twice is located once.
   const want = [], seen = new Set();
@@ -68,14 +83,28 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
   if (store && found.length) {
     let kept = {};
     try { kept = await store.get([...new Set(found.map(p => p.gid))]); } catch (e) { log(`place_facts not read: ${e.message}`); }
-    const ov = ask ? await near(house, found.map(p => ({ id: p.gid, lat: p.lat, lng: p.lng, names: p.words ? [p.words] : [] })), { python, log }) : { release: null, pins: {}, towns: {} };
+    // A kept card has no words of the host. Its name on Google is read here for one comparison, in memory: it picks the
+    // record of the same name in Overture, and that record's own name becomes the place's. Google's name is not kept, not
+    // logged and goes to no other service, Claude included (Yohann, 10 Nov 2026, after the measure: 22 of 25 cards named
+    // this way, 7 from the spot alone). A card we already have a name for is not asked.
+    const theirs = new Map();
+    if (ask && nameMatch && L.name) await each(found.filter(p => p.card && !(kept[p.gid] && kept[p.gid].facts && kept[p.gid].facts.name)), 4, async p => {
+      try { const n = await L.name(p.gid); if (n) theirs.set(p.gid, n); } catch (e) { log(`kept card's name not read: ${e.message}`); } });
+    const ov = ask ? await near(house, found.map(p => ({ id: p.gid, lat: p.lat, lng: p.lng, names: p.words ? [p.words] : theirs.has(p.gid) ? [theirs.get(p.gid)] : [] })), { python, log }) : { release: null, pins: {}, towns: {} };
+    for (const p of found) if (theirs.has(p.gid)) {
+      const rec = sameNamed(theirs.get(p.gid), ov.pins[p.gid] || []);
+      if (rec) { p.words = rec.name; p.record = true; }   // from here on the card has words: our record's own name
+      else p.unnamed = true;         // no record of that name: picking one from the spot alone would more likely be wrong
+    }
+    theirs.clear();
     Object.assign(towns, ov.towns || {});
     const lanes = new Map();   // one place in two lists: its two looks one after the other, the second on the row the first kept
     await each(found, 4, p => {
       const run = (lanes.get(p.gid) || Promise.resolve()).then(async () => {
         const row = kept[p.gid] || null;
         const fresh = !!row && !due(row);
-        if (!ask || (fresh && lookedFor(row, p.list))) { facts[p.key] = row && row.facts || {}; return; }   // without Claude: what is kept, nothing asked
+        const named = !p.card || !p.words || !!(row && row.facts && row.facts.name);   // a card that has just found its record still needs its name written
+        if (!ask || p.unnamed || (fresh && lookedFor(row, p.list) && named)) { facts[p.key] = row && row.facts || {}; return; }   // without Claude, or a card no record names: what is kept, nothing asked
         try {
           const place = { name: p.words, town: towns[p.gid] || undefined, about: p.about || undefined, list: p.list };
           // Its site was read lately but never for this list (or before names and kinds were kept): only the match is asked.
@@ -98,7 +127,8 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
   for (const p of found) {
     const f = facts[p.key] || {}, ours = num(f.lat) && num(f.lng);
     const lat = ours ? f.lat : p.lat, lng = ours ? f.lng : p.lng;
-    const name = p.card ? (typeof f.name === 'string' && f.name.trim() ? f.name.trim() : null) : tidyName(p.words, f.name, [f.town, towns[p.gid], town].filter(Boolean));
+    // A card: the name the chain wrote for its record, else the record's own name as Overture has it.
+    const name = p.card ? (typeof f.name === 'string' && f.name.trim() ? f.name.trim() : p.record ? p.words : null) : tidyName(p.words, f.name, [f.town, towns[p.gid], town].filter(Boolean));
     const e = { ...(name ? { name } : { noname: true }), lat, lng, km: Math.max(1, Math.round(hav(house.lat, house.lng, lat, lng) * 1.3)) };
     const t = f.town || towns[p.gid];
     if (t) e.town = t;
@@ -154,7 +184,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   console.error(`${rows.length} typed places, ${cards.length} kept cards. ${ask ? (save ? 'Facts found are kept in place_facts.' : 'Nothing is written.') : 'No Claude key or no database key: located only.'}`);
   const meter = {};
   const geo = await hostPlaces({ rows, cards, house: { lat: A.lat, lng: A.lng }, town: A.town || '' },
-    { GK: env.GOOGLE_PLACES_KEY, store, ask, again, python: env.OVERTURE_PYTHON || 'python3', meter });
+    { GK: env.GOOGLE_PLACES_KEY, store, ask, again, python: env.OVERTURE_PYTHON || 'python3', meter, nameMatch: env.GOOGLE_NAME_MATCH !== '0' });
   console.log(JSON.stringify(geo, null, 1));
   console.error(`${Object.keys(geo).length} entries; Claude about ${(meter.usd || 0).toFixed(3)} USD.`);
   process.exit(0);

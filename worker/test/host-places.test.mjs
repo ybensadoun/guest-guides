@@ -191,3 +191,24 @@ test('hostPlaces: a place read lately but never for this list gets only the matc
   assert.equal(geo['ull de llebre'].kind, 'fish'); assert.equal(geo['ull de llebre'].phone, '977 00 00 00');   // what was kept stays
   assert.equal(rows.G1aaaaaaaaaa.tried_at, fresh); assert.equal(rows.G1aaaaaaaaaa.tries, 1);
 });
+
+test('hostPlaces: a kept card is named by comparing Google\'s name with our records, and that name goes nowhere', async () => {
+  const GOOGLE = 'Aqualeón Parc Aquàtic';   // what Google calls it: read, compared, dropped
+  const rows = {}, saved = [], prompts = [], logs = [], asked = [];
+  const ask = async (prompt, o) => { prompts.push(prompt);
+    return o.what === 'place match' ? (/"Aqualeon Water Park"/.test(prompt) ? '{"venue": true, "entry": 1, "sure": true, "name": "Aqualeon", "kind": "waterpark"}' : '{"venue": true, "entry": null, "sure": false, "name": null, "kind": null}') : '{"website": null, "about": false}'; };
+  const loc2 = { ...locate, name: async id => { asked.push(id); return id === 'G2aaaaaaaaaa' ? GOOGLE : 'A Place Nobody Lists'; } };
+  const pins = [];
+  const near2 = async (h, p) => { pins.push(...p); return { release: 'r', towns: {}, pins: { G2aaaaaaaaaa: [{ id: 'ov9', name: 'Bar Pepe', kind: 'bar', metres: 5, lat: 41.25, lng: 1.55 }, { id: 'ov2', name: 'Aqualeon Water Park', kind: 'water_park', metres: 60, lat: 41.2502, lng: 1.5502, phones: [], websites: [], socials: [] }], G3aaaaaaaaaa: [{ id: 'ov7', name: 'Hotel Sol', kind: 'hotel', metres: 20, lat: 41.1, lng: 1.4 }] } }; };
+  const geo = await hostPlaces({ cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }, { id: 'G3aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore(rows, saved), ask, locate: loc2, near: near2, log: m => logs.push(m) });
+  assert.equal(geo['gid:G2aaaaaaaaaa'].name, 'Aqualeon'); assert.equal(geo['gid:G2aaaaaaaaaa'].kind, 'waterpark'); assert.equal(geo['gid:G2aaaaaaaaaa'].pos, undefined);
+  assert.equal(geo['gid:G3aaaaaaaaaa'].noname, true);   // no record of that name: not guessed from the spot
+  assert.equal(pins.find(p => p.id === 'G2aaaaaaaaaa').names[0], GOOGLE);   // our own reader of Overture may see it, in memory
+  for (const kept of [geo, rows, saved, prompts, logs]) assert.ok(!/Parc Aqu|Nobody Lists/.test(JSON.stringify(kept)));   // not kept, not logged, not sent to Claude
+  // A card we already have a name for is not asked again; switched off, nothing is asked at all.
+  asked.length = 0;
+  await hostPlaces({ cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore(rows), ask, locate: loc2, near: near2, log: () => {} });
+  assert.deepEqual(asked, []);
+  await hostPlaces({ cards: [{ id: 'G3aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore({}), ask, locate: loc2, near: near2, log: () => {}, nameMatch: false });
+  assert.deepEqual(asked, []);
+});

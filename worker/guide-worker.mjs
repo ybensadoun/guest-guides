@@ -271,7 +271,7 @@ async function build(g) {
     say(id, 'Finding your favourite places');
     try {
       const geo = await hostPlaces({ rows, cards, house: { lat: A.lat, lng: A.lng }, town: A.town || '' },
-        { GK: env.GOOGLE_PLACES_KEY, store: makeStore(rest), ask: placeAsk, again: placeAgain, python: env.OVERTURE_PYTHON || 'python3', log: (...a) => log(' ', ...a) });
+        { GK: env.GOOGLE_PLACES_KEY, store: makeStore(rest), ask: placeAsk, again: placeAgain, python: env.OVERTURE_PYTHON || 'python3', log: (...a) => log(' ', ...a), nameMatch: env.GOOGLE_NAME_MATCH !== '0' });
       writeFileSync(join(job, 'src/geocode.json'), JSON.stringify(geo));
     } catch (e) { log('  favourite places not looked up:', e.message); }
   }

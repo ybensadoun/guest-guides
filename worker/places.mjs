@@ -71,6 +71,13 @@ export async function locateById(GK, id) {
   const p = await r.json(); if (p.error) throw new Error(p.error.message);
   return at(p);
 }
+// The name Google gives a place, for a card the host kept in the swipe deck (it comes with no words of the host). Read for
+// one comparison in memory (worker/host-places.mjs): never kept, never logged, never passed on.
+export async function nameById(GK, id) {
+  const r = await get(`https://places.googleapis.com/v1/places/${encodeURIComponent(id)}`, { headers: { 'X-Goog-Api-Key': GK, 'X-Goog-FieldMask': 'displayName' } });
+  const p = await r.json(); if (p.error) throw new Error(p.error.message);
+  return p.displayName && p.displayName.text || '';
+}
 // What the host typed: a name, or a Google Maps link (a short maps.app.goo.gl link is read for the name and pin it points
 // to). Searched near the house; kept only when Google's answer shares a real word with the words and lies within reach.
 // For a link, words: the name read from it, the host's words for the place.
