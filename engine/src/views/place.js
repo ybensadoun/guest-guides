@@ -23,6 +23,8 @@ export function renderPlace(V, id, icons) {
   const near = raw != null && raw < 0.8;
   const mapsUrl = p.gmaps || p.map || (p.name && p.town ? gSearch(p) : hasPt ? `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}` : '');
   const dirUrl = hasPt ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}` : p.map || '';
+  // The map opens Google Maps when tapped but carries no button of its own: the Google Maps button is in the actions
+  // under it, and a button on the map hid its names.
 
   let hours = '';
   if (p.always) hours = `<span class="st open">${esc(t('open24'))}</span>`;
@@ -37,7 +39,7 @@ export function renderPlace(V, id, icons) {
   V.innerHTML = `<div class="wrap place" style="gap:16px" data-q="${esc(p.id)}">
     <div class="pl-head"><span class="qi">${icons(p)}</span>
       <div><h2 class="title">${esc(tx(p.title || p.name))}</h2><p class="lead">${esc(tx(p.kind || p.sub))}</p><p class="pl-dist">${km != null ? `<span>${km} km ${esc(t('fromHouseShort'))}</span>` : ''}${near ? `<span>${esc(t('minWalk'))}</span>` : ''}${hasPt && kmMe(p) != null ? `<span>${kmMe(p)} km ${esc(t('fromYouShort'))}</span>` : ''}</p></div></div>
-    ${hasPt ? `<a class="pl-map" href="${esc(mapsUrl)}" target="_blank" rel="noopener" aria-label="${esc(t('openInMaps'))}"><div id="plmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openInMaps'))}</span></a>` : ''}
+    ${hasPt ? `<a class="pl-map" href="${esc(mapsUrl)}" target="_blank" rel="noopener" aria-label="${esc(t('openInMaps'))}"><div id="plmap"></div></a>` : ''}
     <div class="pl-actions">
       ${p.phone ? `<a class="ccall" href="${tel(p.phone)}">${PHONE}<span>${esc(t('callNow'))} ${esc(p.phone)}</span></a>` : ''}
       ${dirUrl ? `<a class="btn primary" href="${esc(dirUrl)}" target="_blank" rel="noopener">${ICON.dir}${esc(t(hasPt ? 'directions' : 'openInMaps'))}</a>` : ''}
@@ -65,8 +67,9 @@ export function renderTransport(V, g, icons) {
     `${x.what ? `<div class="note">${esc(tx(x.what))}</div>` : ''}
      <div class="actions">${x.phone ? `<a class="btn primary" href="${tel(x.phone)}">${PHONE}${esc(t('callNow'))} ${esc(x.phone)}</a>` : ''}
      ${(x.alt || []).map(a => `<a class="btn" href="${tel(a.phone)}">${PHONE}${esc(tx(a.name))} ${esc(a.phone)}</a>`).join('')}</div>`)).join('');
-  // Line badges in the line colours (Rodalies lines; long-distance trains in one colour), then journey times.
-  const badges = s => `<span class="lbadges">${(s.badges || []).map(b => `<i class="lbadge${b.ink ? ' ink' : ''}" style="--lc:${b.c}">${esc(b.t)}</i>`).join('')}</span>`;
+  // Line badges in the line colours (Rodalies lines; long-distance trains in one colour), then journey times. A line
+  // with no name is left out (the editor's "Add a line" starts one empty).
+  const badges = s => `<span class="lbadges">${(s.badges || []).filter(b => String(b.t ?? '').trim()).map(b => `<i class="lbadge${b.ink ? ' ink' : ''}" style="--lc:${b.c}">${esc(b.t)}</i>`).join('')}</span>`;
   // Two columns, so destinations keep their width on a phone: the note ("1 change") sits under its destination.
   const dests = s => (s.to || []).length ? `<table class="dests"><tbody>${s.to.map(d => `<tr><th>${esc(tx(d.dest))}${tx(d.note) ? `<small>${esc(tx(d.note))}</small>` : ''}</th><td>${esc(d.time)}</td></tr>`).join('')}</tbody></table>` : '';
   const stops = (g.stations || []).filter(s => typeof s.lat === 'number' && !(s.lat === 0 && s.lng === 0));
