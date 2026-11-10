@@ -11,7 +11,9 @@ import { resolve, dirname, join, relative, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { spawnSync, spawn } from 'node:child_process';
-import { makeGoogle, hav, nameOf, sameName, sameMarket, schedule, hostPlace, hostPlaceById } from './places.mjs';   // Google check for Find more suggestions
+import { makeGoogle, hav, nameOf, sameName, sameMarket, schedule } from './places.mjs';   // Google check for Find more suggestions
+import { hostPlaces, placesOf } from './host-places.mjs';   // a host's own places: located by Google, filled from our own table
+import { makeStore } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
@@ -32,10 +34,15 @@ if (!KEY) { console.error('Missing SUPABASE_SERVICE_KEY. Put it in worker/.env.l
 
 const log = (...a) => console.log(new Date().toLocaleString('sv-SE'), ...a);   // date and time: the log file spans days
 // RESEARCH=api: the Claude API with the worker's own key (worker/claude-api.mjs), for a server. Otherwise the `claude` command.
-let claudeApi = null;
+// A host's places get their facts from a chain of their own (worker/host-places.mjs): Haiku 5.5 at low effort, once more at
+// medium for a place that gave nothing, on the same ledger, so the day's limit counts them with the rest.
+let claudeApi = null, placeAsk = null, placeAgain = null;
 if (RESEARCH === 'api') {
   if (!env.WORKER_ANTHROPIC_KEY) { console.error('RESEARCH=api needs WORKER_ANTHROPIC_KEY, the worker\'s own Claude API key (worker/.env.local or the environment).'); process.exit(1); }
-  try { claudeApi = (await import('./claude-api.mjs')).makeClaude(env, log, { spentToday: costToday, record: costRecord }); }
+  try { const { makeClaude } = await import('./claude-api.mjs'), ledger = { spentToday: costToday, record: costRecord };
+    claudeApi = makeClaude(env, log, ledger);
+    const chain = effort => makeClaude({ ...env, RESEARCH_MODEL: 'claude-haiku-5-5', TRANSLATE_MODEL: 'claude-haiku-5-5', RESEARCH_EFFORT: effort, RESEARCH_MAX_SEARCHES: '3' }, log, ledger);
+    placeAsk = chain('low'); placeAgain = chain('medium'); }
   catch (e) { console.error('RESEARCH=api needs the Claude SDK once: npm ci --prefix worker (' + e.message.slice(0, 120) + ')'); process.exit(1); }
 }
 const H = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
@@ -255,18 +262,18 @@ async function build(g) {
     writeFileSync(join(job, 'src/uploads', aid + '.json'), JSON.stringify({ kind: u.kind, assetId: aid, room: u.room || '', label: u.label || '', name: u.name || '' }));
   }
   writeFileSync(join(job, 'src/listing_photos.json'), JSON.stringify(remote.map(u => ({ url: u.src, room: u.room || '', label: u.roomLabel || '', caption: u.name || '' }))));
-  // The host's favourite places, as they typed them: looked up on Google, so each one gets its real position, distance,
-  // town, opening hours and Maps link (src/geocode.json, read by the generator). Not found: the generator says less.
-  const added = Array.isArray(A.favDo) ? A.favDo : String(A.favDo || '').split(/[,\n]+/).map(p => ({ p }));
-  const rows = [...(A.favEat || []), ...(A.favNight || []), ...added].filter(r => r && String(r.p || '').trim());   // Eat and drink, Nightlife, and what the host added to Attractions
-  const picked = rows.filter(r => r.gid), fav = rows.filter(r => !r.gid).map(r => r.p.trim());   // picked: chosen from Google's suggestions as they typed, so no search
-  const cards = Object.values(A.swipes || {}).filter(s => s && s.d === 'yes' && s.cat === 'todo' && s.name && s.id && !String(s.id).startsWith('r:'));   // r: a researched card, which has all this already
+  // The host's own places (Eat and drink, Nightlife, what they added to Attractions, the cards they kept): Google only
+  // locates them (id and position), and their name, town, kind, phone, website and hours come from our own table
+  // place_facts or the chain (worker/host-places.mjs), never from Google. src/geocode.json is read by the generator. Not
+  // found: the generator says less. Without Claude (RESEARCH not api): what is already kept, nothing asked. A failure never stops the build.
+  const { rows, cards } = placesOf(A);
   if ((rows.length || cards.length) && env.GOOGLE_PLACES_KEY) {
-    say(id, 'Finding your favourite places'); const geo = {};
-    for (const r of picked) { try { const g = await hostPlaceById(env.GOOGLE_PLACES_KEY, r.gid, { lat: A.lat, lng: A.lng }); if (g) geo[r.p.trim()] = g; } catch (e) { log('  picked place lookup failed:', e.message); } }
-    for (const p of fav) { try { const g = await hostPlace(env.GOOGLE_PLACES_KEY, p, { lat: A.lat, lng: A.lng }); if (g) geo[p]= g; else log('  favourite place not found on Google:', p.slice(0, 60)); } catch (e) { log('  favourite place lookup failed:', e.message); } }
-    for (const s of cards) { try { const g = await hostPlaceById(env.GOOGLE_PLACES_KEY, s.id, { lat: A.lat, lng: A.lng }); if (g) geo[String(s.name).trim()] = g; } catch (e) { log('  kept card lookup failed:', e.message); } }
-    writeFileSync(join(job, 'src/geocode.json'), JSON.stringify(geo));
+    say(id, 'Finding your favourite places');
+    try {
+      const geo = await hostPlaces({ rows, cards, house: { lat: A.lat, lng: A.lng }, town: A.town || '' },
+        { GK: env.GOOGLE_PLACES_KEY, store: makeStore(rest), ask: placeAsk, again: placeAgain, python: env.OVERTURE_PYTHON || 'python3', log: (...a) => log(' ', ...a) });
+      writeFileSync(join(job, 'src/geocode.json'), JSON.stringify(geo));
+    } catch (e) { log('  favourite places not looked up:', e.message); }
   }
   const srcLang = ['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(A.sourceLang) ? A.sourceLang : 'en';
   const gen = ['engine/scripts/generate-site.py', join(job, 'src'), '--slug', tmp, '--lat', String(A.lat), '--lng', String(A.lng), '--src', srcLang];

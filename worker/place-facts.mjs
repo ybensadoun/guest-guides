@@ -8,7 +8,8 @@
 // Run alone it goes over a guide's folder and prints what it finds beside the guide's own values. Without --save it
 // writes nothing. With --save each place with a Google id is kept in the table place_facts (worker/place-store.mjs: a
 // later weak read never loses an earlier good one), and a place looked at less than 30 days ago is skipped (--fresh: not
-// skipped). The worker does not use any of this yet.
+// skipped). The worker uses placeFacts and nearby when it builds a guide (worker/host-places.mjs): there the match also
+// gives our own name for the place and its kind (engine/src/kinds.json), never Google's.
 //   node worker/place-facts.mjs --site <slug> [--only id,id] [--effort low|medium] [--no-retry] [--save [--fresh]]
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -19,7 +20,8 @@ import { nameOf } from './places.mjs';
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
 
 // Overture's records near each pin (worker/overture.py). pins: [{ id, lat, lng, names: [] }]. Returns
-// { release, pins: { id: [candidates] } }. If Python or Overture fails, no candidates: the chain goes on with search only.
+// { release, pins: { id: [candidates] }, towns: { id: town } } (towns: the town most records around the pin carry, for a
+// place with no record of its own). If Python or Overture fails, no candidates: the chain goes on with search only.
 // python: the command that runs Python with pyarrow and overturemaps (OVERTURE_PYTHON, split on spaces; on the Mac
 // `uv run -q --no-project --with overturemaps==2.1.0 --with pyarrow python`).
 export async function nearby(house, pins, { km = 60, python = process.env.OVERTURE_PYTHON || 'python3', log = console.error } = {}) {
@@ -31,7 +33,7 @@ export async function nearby(house, pins, { km = 60, python = process.env.OVERTU
     p.stdout.on('data', d => { out += d; });
     p.stderr.on('data', d => { err += d; });
     let ended = false;   // a command that does not start says so twice (error, then close)
-    const none = why => { clearTimeout(timer); if (ended) return; ended = true; log(`overture: no records, search only (${why})`); done({ release: null, pins: {} }); };
+    const none = why => { clearTimeout(timer); if (ended) return; ended = true; log(`overture: no records, search only (${why})`); done({ release: null, pins: {}, towns: {} }); };
     p.on('error', e => none(e.message));
     p.on('close', code => {
       if (over) return none('took more than 5 minutes');
@@ -39,7 +41,7 @@ export async function nearby(house, pins, { km = 60, python = process.env.OVERTU
       const lines = err.split('\n').map(l => l.trim()).filter(Boolean);
       if (code !== 0) return none(lines.slice(-1)[0] || 'exit ' + code);
       for (const l of lines) if (/^overture:/.test(l)) log(l);   // what was fetched, how big, how long
-      try { const r = JSON.parse(out); ended = true; done({ release: r.release || null, pins: r.pins || {} }); } catch (e) { none('its answer was not JSON'); }
+      try { const r = JSON.parse(out); ended = true; done({ release: r.release || null, pins: r.pins || {}, towns: r.towns && typeof r.towns === 'object' ? r.towns : {} }); } catch (e) { none('its answer was not JSON'); }
     });
     p.stdin.on('error', () => {});   // a command that does not start closes stdin early
     p.stdin.end(JSON.stringify({ house: { lat: house.lat, lng: house.lng }, km, pins }));
@@ -74,6 +76,10 @@ const SHAPE = `{"website": "the address of the place's own site that you read, o
 Opening hours: a list of lines like [{"days":["tue","wed","thu"],"open":"10:00","close":"14:00"},{"days":["tue","wed","thu"],"open":"16:00","close":"19:00"}]. Days as mon tue wed thu fri sat sun. Times HH:MM in 24 h; a close earlier than the open means after midnight. Only the hours of this place, never those of a restaurant, hotel, café or shop inside it or beside it, nor those of its office or phone line. When the site gives different hours by season or part of the year, give one line per season and time span, each with "from":"MM-DD","to":"MM-DD" (like "from":"06-15","to":"09-15"). null when the site does not state them. Never guess.`;
 const READ = `read its phone number, opening hours, prices and whether booking is asked. You may open up to two more pages of that same site (contact, hours, prices, menu, tickets). Use only the place's own site, never a directory, a map or a review site. Never guess.`;
 const where = p => `"${p.name}"${p.town ? ` in ${p.town}` : ''}, ${p.country || 'Spain'}`;
+// The kinds a place can have, by list (engine/src/kinds.json, the builder's and the generator's list too): the match picks
+// one from the host's words and the record, never from Google.
+const KINDS = JSON.parse(readFileSync(resolve(ROOT, 'engine/src/kinds.json'), 'utf8'));
+export const kindsOf = list => list === 'eat' || list === 'todo' ? KINDS[list] : null;
 const json = t => { try { return JSON.parse(String(t || '').match(/\{[\s\S]*\}/)[0]); } catch (e) { return null; } };
 
 // What comes back from Claude is checked before it is kept: anything not in the expected shape is dropped.
@@ -100,36 +106,56 @@ const cleanText = s => typeof s === 'string' && s.trim() ? s.trim().slice(0, 80)
 export const showPhone = t => { const s = cleanText(t); if (!s) return null; const d = s.replace(/[\s.()\-\/]/g, '').replace(/^(\+|00)34(?=\d{9}$)/, '');
   return /^[6789]\d{8}$/.test(d) ? `${d.slice(0, 3)} ${d.slice(3, 5)} ${d.slice(5, 7)} ${d.slice(7)}` : s; };
 
-// One place: place = { name, town, about? (the host's own words, they help the match), country? (default Spain) },
-// cands = Overture's records near its pin (nearby()), ask = makeClaude(...) from worker/claude-api.mjs.
+// One place: place = { name, town, about? (the host's own words, they help the match), country? (default Spain),
+// list? ('eat' or 'todo': which kinds it may have; without it no kind is asked) }. name may be empty: a card the host
+// kept without typing anything, matched on the entries alone. cands = Overture's records near its pin (nearby()),
+// ask = makeClaude(...) from worker/claude-api.mjs.
 // again (optional): a second ask, with more effort. Reading a site does not always work the first time, so a place that
 // gives nothing is asked once more: at most one more match question and one more site read, never more.
-export async function placeFacts(place, cands, ask, { meter, again } = {}) {
+// matchOnly: only the match question (the record, its name, our kind), no site read and no search: for a place whose
+// site was read lately and that only lacks a name or a kind (a few hundredths of a cent).
+export async function placeFacts(place, cands, ask, { meter, again, matchOnly = false } = {}) {
   const m = meter || {}, before = m.usd || 0, errors = [];
   const asker = f => (prompt, o) => f(prompt, { ...o, meter: m }).catch(e => { errors.push(e.message); return ''; });
   const q = asker(ask), q2 = again ? asker(again) : null;
   cands = Array.isArray(cands) ? cands : [];
   // The record as kept: its own position too (Overture's, which may be kept for good, unlike Google's).
-  const pos = c => c ? { id: c.id, name: c.name, kind: c.kind, lat: typeof c.lat === 'number' ? c.lat : null, lng: typeof c.lng === 'number' ? c.lng : null } : null;
+  const pos = c => c ? { id: c.id, name: c.name, category: c.kind, lat: typeof c.lat === 'number' ? c.lat : null, lng: typeof c.lng === 'number' ? c.lng : null } : null;
   const cost = () => +((m.usd || 0) - before).toFixed(4);
 
   // a. Which record is this place, and is it a place with a door at all: Claude without the web. Not sure, or none: no
   // record (a doubtful match fills nothing). A town, a beach or a natural spot has no phone, website or hours to look
   // for: nothing is searched for it (measured 10 Nov 2026: a third of the cost went into searching for towns' websites).
+  // The same question also gives our own name for the place (the entry's, as the place writes it) and its kind from the
+  // list for place.list: both from the host's words and the entry only, so nothing of Google's is kept.
   const list = cands.map((c, i) => `${i + 1}. ${c.name} | ${String(c.kind || 'kind unknown').replace(/_/g, ' ')}${c.status && c.status !== 'open' ? ' | ' + String(c.status).replace(/_/g, ' ') : ''}${c.town ? ' | ' + c.town : ''} | ${c.metres} m away | ${(c.websites || []).map(host).filter(Boolean)[0] || 'no website'}`).join('\n');
-  const MATCH = `A host recommends ${where(place)}${place.about ? ` (in the host's words: ${place.about})` : ''}. ${cands.length ? `An open directory lists these entries within 150 m of it:\n${list}` : 'An open directory lists nothing within 150 m of it.'}\nFirst: is the host's place a venue, that is a business or a visitor site with a door, a phone and opening hours of its own (a restaurant, a bar, a shop, a museum, a monument, a park with a gate, a winery, a spa)? A town, a village, a city, a beach, a mountain, a spring or any open natural spot is not a venue.\nThen: which entry is the same place as the host's (the same business or the same site, even if spelt or named a little differently)? Another business that only shares a word with it, or sits next door, is not it. The entry must carry the word that sets the host's name apart (for "La Fàbrica del Pernil" that word is Pernil, not Fàbrica): without it you are not sure. A town, a village, a beach or a natural spot is never matched to a business or building that carries its name (a school, a hotel, a shop, a restaurant). Answer with JSON only: {"venue": true or false, "entry": the number, or null if none is it, "sure": true if you are sure, else false}`;
-  const decide = a => { const n = a && Number.isInteger(a.entry) ? a.entry : 0;
-    return { usable: !!a && typeof a.venue === 'boolean', entry: a && a.sure === true && n >= 1 && n <= cands.length ? cands[n - 1] : null, venue: !(a && a.venue === false) }; };
+  const named = !!String(place.name || '').trim(), K = kindsOf(place.list);
+  const kinds = K ? Object.entries(K).map(([k, v]) => `${k} (${v.name.en})`).join(', ') : '';
+  const said = place.about ? ` (in the host's words: ${place.about})` : '';
+  const MATCH = `${named ? `A host recommends ${where(place)}${said}.` : `A host kept a place at this spot${place.town ? ` in ${place.town}` : ''}, ${place.country || 'Spain'}, from a list of ${place.list === 'todo' ? 'things to do (a sight, a museum, an activity, a park, a beach, a nature spot, a winery)' : 'places to eat and drink'}, and we do not have its name${said}.`} ${cands.length ? `An open directory lists these entries within 150 m of it:\n${list}` : 'An open directory lists nothing within 150 m of it.'}\nFirst: is the host's place a venue, that is a business or a visitor site with a door, a phone and opening hours of its own (a restaurant, a bar, a shop, a museum, a monument, a park with a gate, a winery, a spa)? A town, a village, a city, a beach, a mountain, a spring or any open natural spot is not a venue.\n`
+    + (named ? `Then: which entry is the same place as the host's (the same business or the same site, even if spelt or named a little differently)? Another business that only shares a word with it, or sits next door, is not it. The entry must carry the word that sets the host's name apart (for "La Fàbrica del Pernil" that word is Pernil, not Fàbrica): without it you are not sure. `
+      : `Then: which entry is the place the host kept? It is the entry that is such a place; the shops, restaurants, hotels, offices and services around it are not${place.list === 'todo' ? '' : ' unless the list is of places to eat'}. Two entries that are plainly the same place under two names count as one: take the better named. When two or more different entries could be it, or none is such a place, none is it and you are not sure. `)
+    + `A town, a village, a beach or a natural spot is never matched to a business or building that carries its name (a school, a hotel, a shop, a restaurant).\n`
+    + `Its name: when an entry is the place, the entry's name as the place itself writes it, correcting only a clear typing fault or a web address written as a name ("esenciaelvendrell" is "Esencia", "Pith and Putt Vendrell" is "Pitch and Putt Vendrell"), else null.\n`
+    + (K ? `Its kind: the one key from this list that best says what the place is, from the host's words and the entry: ${kinds}. null when you are unsure.\n` : '')
+    + `Answer with JSON only: {"venue": true or false, "entry": the number, or null if none is it, "sure": true if you are sure, else false, "name": "the name" or null${K ? ', "kind": "a key" or null' : ''}}`;
+  const decide = a => { const n = a && Number.isInteger(a.entry) ? a.entry : 0, entry = a && a.sure === true && n >= 1 && n <= cands.length ? cands[n - 1] : null;
+    return { usable: !!a && typeof a.venue === 'boolean', entry, venue: !(a && a.venue === false),
+      name: entry ? cleanText(a.name) || cleanText(entry.name) : null,   // a name only for a sure entry; the entry's own when Claude gave none
+      kind: K && a && typeof a.kind === 'string' && Object.hasOwn(K, a.kind.trim()) ? a.kind.trim() : null }; };
   const match = async () => {
     let d = decide(json(await q(MATCH, { web: false, what: 'place match' }))), tries = 1;
     // A venue with candidates but no sure record: once more with more effort, the second answer wins when usable.
     if (q2 && cands.length && !d.entry && (!d.usable || d.venue)) { tries = 2; const d2 = decide(json(await q2(MATCH, { web: false, what: 'place match' }))); if (d2.usable) d = d2; }
     return { ...d, tries };
   };
-  const a = await match(), entry = a.entry;
-  if (!a.venue) return { entry: pos(entry), venue: false, phone: null, phoneFrom: null, website: null, websiteFrom: null, facebook: null, instagram: null,
-    town: entry && entry.town || null, kind: entry && entry.kind || null, hours: null, price: null, book: null, page: null, read: new Date().toISOString().slice(0, 10),
+  const a = await match(), entry = a.entry, ours = { name: a.name, ourKind: a.kind };
+  if (!a.venue) return { entry: pos(entry), venue: false, ...ours, phone: null, phoneFrom: null, website: null, websiteFrom: null, facebook: null, instagram: null,
+    town: entry && entry.town || null, category: entry && entry.kind || null, hours: null, price: null, book: null, page: null, read: new Date().toISOString().slice(0, 10),
     usd: cost(), tries: 1, matchTries: a.tries, gained: [], ...(errors.length ? { error: errors[0] } : {}) };
+  // The site is read and searched by a name: the host's, else ours from the entry. A kept card with neither has nothing
+  // to search by, so nothing is read.
+  place = { ...place, name: named ? place.name : a.name || '' };
 
   // b. From the record: phone, social links, a website to check, town and Overture's own kind (raw).
   const links = entry ? [...(entry.socials || []), ...(entry.websites || [])] : [];
@@ -139,13 +165,14 @@ export async function placeFacts(place, cands, ask, { meter, again } = {}) {
   // c. Its website: Overture's, if it answers on its own address, read by Claude; else, or if that read finds nothing of
   // its own, one web search. A pass that ends with no site, or a site with neither hours nor price, is read once more
   // with more effort; the second read fills what it holds, the first keeps the rest.
-  const alive = own ? await siteAlive(own) : null;
+  const alive = own && !matchOnly ? await siteAlive(own) : null, searchable = !!place.name;
   const ok = x => x && x.about === true && webUrl(x.website) && !denied(x.website);
   const read = (f, url) => f(url ? `Open ${url} : it should be the website of ${where(place)}. From it, ${READ}\nAnswer with JSON only: ${SHAPE}`
     : `Search the web for the official website of ${where(place)}. Open it and ${READ}\nAnswer with JSON only: ${SHAPE}`, { web: true, what: 'site facts', searches: 3 }).then(json);
   const thin = x => !ok(x) || (!cleanHours(x.hours) && !cleanPrice(x.price));
   const siteStep = async () => {
     let r = null, from = null;
+    if (!searchable) return { site: null, from: null, tries: 0, gained: [] };
     if (alive) { r = await read(q, alive); from = 'overture'; }
     if (!ok(r)) { r = await read(q, null); from = 'search'; }
     const first = ok(r) ? r : null;
@@ -157,16 +184,16 @@ export async function placeFacts(place, cands, ask, { meter, again } = {}) {
     const gained = [!first && 'site', cleanHours(site.hours) && !(first && cleanHours(first.hours)) && 'hours', cleanPrice(site.price) && !(first && cleanPrice(first.price)) && 'price'].filter(Boolean);
     return { site, from: first ? from : alive ? 'overture' : 'search', tries: 2, gained };
   };
-  const { site, from: websiteFrom, tries, gained } = await siteStep();
+  const { site, from: websiteFrom, tries, gained } = matchOnly ? { site: null, from: null, tries: 0, gained: [] } : await siteStep();
 
   // d, e. Kept only when Claude read the place's own site, and only what is in the expected shape.
   const page = site ? webUrl(site.website) : null;
   const sitePhone = site ? cleanText(site.phone) : null, ovPhone = entry ? cleanText((entry.phones || [])[0]) : null;
-  const res = { entry: pos(entry), venue: true,
+  const res = { entry: pos(entry), venue: true, ...ours,
     phone: showPhone(ovPhone || sitePhone), phoneFrom: ovPhone ? 'overture' : sitePhone ? 'site' : null,   // Overture's matched the hand-checked phone more often
     website: site ? (websiteFrom === 'overture' ? alive : page) : null, websiteFrom,
     facebook: social(/(^|\.)(facebook\.com|fb\.com|fb\.me)$/), instagram: social(/(^|\.)instagram\.com$/),
-    town: entry && entry.town || null, kind: entry && entry.kind || null,
+    town: entry && entry.town || null, category: entry && entry.kind || null,
     hours: site ? cleanHours(site.hours) : null, price: site ? cleanPrice(site.price) : null, book: site && site.book === true ? true : null,
     page, read: new Date().toISOString().slice(0, 10), usd: cost(), tries, matchTries: a.tries, gained };
   if (errors.length) res.error = errors[0];
@@ -190,10 +217,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const h = read('content/house.json') || {}, s = read('site.json') || {}, house = typeof h.lat === 'number' ? h : typeof (s.house || {}).lat === 'number' ? s.house : null;
   if (!house) { console.error(`No house position in sites/${slug}/content/house.json.`); process.exit(1); }
   let places = [];
-  for (const f of ['content/restaurants.json', 'content/todo.json', 'content/nightlife.json']) for (const x of (read(f) || {}).items || []) {
+  for (const f of ['content/restaurants.json', 'content/todo.json', 'content/nightlife.json']) for (const x of (read(f) || {}).items || []) {   // nightlife's kinds are those of eat
     if (only.length && !only.includes(x.id)) continue;
     const n = x.name, names = [...new Set([x.name_local, ...(typeof n === 'string' ? [n] : [n && n.ca, n && n.es, n && n.en])].filter(Boolean))];
-    places.push({ it: x, file: f.split('/')[1], place: { name: x.name_local || nameOf(n), town: x.town || null, about: x.type && typeof x.type === 'object' && x.type.en || undefined }, names });
+    places.push({ it: x, file: f.split('/')[1], place: { name: x.name_local || nameOf(n), town: x.town || null, about: x.type && typeof x.type === 'object' && x.type.en || undefined, list: f === 'content/todo.json' ? 'todo' : 'eat' }, names });
   }
   if (!places.length) { console.error('No places to look at.'); process.exit(1); }
   // With --save: the table, through Supabase's REST API as the worker reaches it (same errors), read before any Claude
@@ -244,7 +271,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     let note = '';
     if (store && !p.gid) { note = ' | no Google id, not kept'; noGid++; }
     else if (store) { try { await store.save(p.gid, p.place, r, { release: ov.release }); saved++; } catch (e) { note = ` | not kept: ${e.message}`; } }
-    console.log(`${g.id.padEnd(16)} [${r.entry ? r.entry.name.slice(0, 30) + (r.entry.kind ? ', ' + r.entry.kind : '') : 'no entry, ' + cands.length + ' near'}${r.venue ? '' : ', not a venue'}]`
+    console.log(`${g.id.padEnd(16)} [${r.entry ? r.entry.name.slice(0, 30) + (r.entry.category ? ', ' + r.entry.category : '') : 'no entry, ' + cands.length + ' near'}${r.venue ? '' : ', not a venue'}]`
+      + ` | name ${r.name || '-'} | kind ${r.ourKind || '-'}${g.icon ? (g.icon === r.ourKind ? ' =' : ` (guide: ${g.icon})`) : ''}`
       + ` | site ${r.website ? host(r.website) + ' (' + r.websiteFrom + ')' : '-'}${g.url ? (siteSame ? ' =' : ` (guide: ${host(g.url)})`) : ''}`
       + ` | phone ${r.phone ? r.phone + ' (' + r.phoneFrom + ')' : '-'}${g.phone ? (phoneSame ? ' =' : ` (guide: ${g.phone})`) : ''}`
       + ` | hours ${r.hours ? r.hours.length + ' lines' : '-'}${g.schedule ? (hoursSame ? ' =' : ` (guide: ${g.schedule.length} lines)`) : ''}`

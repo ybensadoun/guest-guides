@@ -60,54 +60,37 @@ export const makeGoogle = GK => async function google(it) {
   return (d.places || [])[0] || null;
 };
 
-// What a place is, from Google's own type: the quick filters of Things to do (engine/src/groups.json) and "Great for kids".
-const GROUP_OF = {
-  fun: 'adventure_sports_center amusement_center amusement_park aquarium bowling_alley ferris_wheel go_karting_venue golf_course ice_skating_rink indoor_playground miniature_golf_course off_roading_area planetarium playground roller_coaster skateboard_park ski_resort video_arcade water_park wildlife_park zoo',
-  sights: 'art_gallery castle church cultural_center cultural_landmark historical_landmark historical_place monument museum observation_deck place_of_worship plaza sculpture tourist_attraction',
-  nature: 'botanical_garden garden hiking_area national_park park picnic_ground state_park wildlife_refuge',
-  beach: 'beach', wine: 'winery'
-};
-const FOR_KIDS = new Set('amusement_center amusement_park aquarium bowling_alley go_karting_venue indoor_playground miniature_golf_course planetarium playground video_arcade water_park wildlife_park zoo'.split(' '));
-const HOST_FIELDS = [...FIELDS.split(','), 'primaryTypeDisplayName', 'primaryType'];
-// What the guide needs from Google's answer about a host's place.
-const hostFacts = (p, name, house) => {
-  const km = hav(house.lat, house.lng, p.location.latitude, p.location.longitude), sch = schedule(p.regularOpeningHours && p.regularOpeningHours.periods);
-  const group = Object.keys(GROUP_OF).find(g => GROUP_OF[g].split(' ').includes(p.primaryType));
-  return { name: p.displayName && p.displayName.text || name, lat: p.location.latitude, lng: p.location.longitude, km: Math.max(1, Math.round(km * 1.3)),
-    town: townOf(p.formattedAddress), gmaps: p.googleMapsUri, gid: p.id, type: p.primaryTypeDisplayName && p.primaryTypeDisplayName.text || null, status: p.businessStatus || null,
-    ...(group ? { group } : {}), ...(FOR_KIDS.has(p.primaryType) ? { tags: ['kidsfun'] } : {}),
-    ...(sch === 'always' ? { always: true } : sch ? { schedule: sch } : {}) };
-};
-// One of the host's own favourite places, as they typed it: a name, or a Google Maps link (a short maps.app.goo.gl
-// link is read for the name and pin it points to). Searched on Google near the house; kept only when Google's answer
-// shares a real word with the name and lies within reach. Gives what the guide needs: position, distance, town,
-// opening hours, its Maps link, its id for the monthly check and what kind of place it is.
-// The town is the part that starts with the postal code ("43700 El Vendrell"), never a road's kilometre ("Crta. N-340, Km 1185").
-const townOf = addr => { const parts = String(addr || '').split(',').map(x => x.trim()).filter(Boolean); const withCode = parts.find(x => /^\d{4,5}\b/.test(x)) || parts.find(x => /\b\d{4,5}\b/.test(x) && !/\bkm\b/i.test(x));
-  return (withCode || parts[parts.length - 2] || '').replace(/\b\d{4,5}\b\s*([A-Z]{2}\b)?/, '').trim() || null; };
-export async function hostPlace(GK, raw, house, reachKm = 50) {
-  let q = String(raw || '').trim(), pin = null;
+// Google only locates a host's place (the places work, step 3: docs/plan-ca-la-kimberly-through-the-maker.md, "Step 3,
+// the design"). Its terms let us keep a place's id for good and its position for 30 days, and nothing else: so these ask
+// for the id and the position only (and the name, for the search, which is compared in memory and never returned).
+// Everything else a guide shows comes from our own chain (worker/host-places.mjs). Each returns { gid, lat, lng } or null.
+const at = p => p && p.id && p.location && typeof p.location.latitude === 'number' ? { gid: p.id, lat: p.location.latitude, lng: p.location.longitude } : null;
+// A place whose Google id is known (a suggestion the host picked, a card they kept): Place Details, id and position.
+export async function locateById(GK, id) {
+  const r = await get(`https://places.googleapis.com/v1/places/${encodeURIComponent(id)}`, { headers: { 'X-Goog-Api-Key': GK, 'X-Goog-FieldMask': 'id,location' } });
+  const p = await r.json(); if (p.error) throw new Error(p.error.message);
+  return at(p);
+}
+// What the host typed: a name, or a Google Maps link (a short maps.app.goo.gl link is read for the name and pin it points
+// to). Searched near the house; kept only when Google's answer shares a real word with the words and lies within reach.
+// For a link, words: the name read from it, the host's words for the place.
+export async function locateByWords(GK, raw, house, reachKm = 50) {
+  let q = String(raw || '').trim(), pin = null, link = false;
   if (/^https?:/.test(q)) {
-    let url = q;
+    let url = q; link = true;
     if (/maps\.app\.goo\.gl|goo\.gl\/maps/.test(url)) { try { const r = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(10000) }); url = r.headers.get('location') || url; } catch (e) { /* read the link as it is */ } }
     const n = url.match(/\/maps\/place\/([^/@?]+)/), p = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/), s = url.match(/[?&]q(?:uery)?=([^&]+)/);
     q = n ? decodeURIComponent(n[1]).replace(/\+/g, ' ') : s ? decodeURIComponent(s[1]).replace(/\+/g, ' ') : '';
     if (p) pin = { lat: +p[1], lng: +p[2] };
     if (!q) return null;
   }
-  const at = pin || house, body = { textQuery: q, maxResultCount: 1, languageCode: 'en', locationBias: { circle: { center: { latitude: at.lat, longitude: at.lng }, radius: pin ? 300 : Math.min(50000, reachKm * 1000) } } };
-  const r = await get('https://places.googleapis.com/v1/places:searchText', { method: 'POST', headers: { 'X-Goog-Api-Key': GK, 'Content-Type': 'application/json', 'X-Goog-FieldMask': HOST_FIELDS.map(f => 'places.' + f).join(',') }, body: JSON.stringify(body) });
+  const c = pin || house, body = { textQuery: q, maxResultCount: 1, languageCode: 'en', locationBias: { circle: { center: { latitude: c.lat, longitude: c.lng }, radius: pin ? 300 : Math.min(50000, reachKm * 1000) } } };
+  const r = await get('https://places.googleapis.com/v1/places:searchText', { method: 'POST', headers: { 'X-Goog-Api-Key': GK, 'Content-Type': 'application/json', 'X-Goog-FieldMask': 'places.id,places.location,places.displayName' }, body: JSON.stringify(body) });
   const d = await r.json(); if (d.error) throw new Error(d.error.message);
-  const p = (d.places || [])[0];
-  if (!p || !p.location) return null;
-  const km = hav(house.lat, house.lng, p.location.latitude, p.location.longitude);
+  const p = (d.places || [])[0], loc = at(p);
+  if (!loc) return null;
+  const km = hav(house.lat, house.lng, loc.lat, loc.lng);
   const close = () => { const a = [...words(q)], b = [...words(p.displayName && p.displayName.text)]; return a.some(x => b.some(y => Math.min(x.length, y.length) >= 4 && (x.includes(y) || y.includes(x)))); };
   if (km > reachKm || !(sameName({ name: { en: q } }, p) || close())) return null;
-  return hostFacts(p, q, house);
-}
-// The same for a card the host kept in the swipe game: its Google id is known, so no search.
-export async function hostPlaceById(GK, id, house) {
-  const r = await get(`https://places.googleapis.com/v1/places/${encodeURIComponent(id)}?languageCode=en`, { headers: { 'X-Goog-Api-Key': GK, 'X-Goog-FieldMask': HOST_FIELDS.join(',') } });
-  const p = await r.json(); if (p.error) throw new Error(p.error.message);
-  return p.location ? hostFacts(p, '', house) : null;
+  return link ? { ...loc, words: q } : loc;
 }
