@@ -53,7 +53,7 @@ export const SECTION_LOOK = {
   'markets': { icon: NAV_ICON.markets, color: 'var(--ink)' },
   'restaurants': { icon: P('<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 21V3c-2 1-3 4-3 7h3"/>'), color: 'var(--orange)', ink: true },
   'todo': { icon: CAT_ICON.todo, color: 'var(--k-green)' },
-  // Optional, for guides that want it (late bars, clubs, live music: the host's own list); not in Ca La Kimberly.
+  // Optional, for guides that want it (late bars, clubs, live music: the host's own list), off unless the host switches it on.
   'nightlife': { icon: CAT_ICON.nightlife, color: 'var(--ink)' },
   'events': { icon: P('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M12 13l1 2 2 .3-1.5 1.4.4 2.3-1.9-1-1.9 1 .4-2.3L9 15.3l2-.3z"/>'), color: 'var(--k-blue)' },
   'map': { icon: NAV_ICON.map, color: 'var(--white)', ink: true },

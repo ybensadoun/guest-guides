@@ -816,7 +816,7 @@ const MOODS = [
 
 /* ---------- Guide sections (what the finished guide contains) ---------- */
 // Same sections as the live Ca La Kimberly guide, plus Nightlife (part of the design since 29 Oct 2026, off unless the host
-// switches it on; Ca La Kimberly does not have it). Optional extra sections (arrival, extras, shops, kids corner, day trips) come later.
+// switches it on). Optional extra sections (arrival, extras, shops, kids corner, day trips) come later.
 const SECTIONS = [
   {id:'welcome',name:'Welcome and photos',d:'Cover photo, name and a short welcome.',built:true,on:()=>true,fixed:true},
   {id:'houseguide',name:'House guide by room',d:'How everything works, room by room.',built:true,on:()=>true},
@@ -2361,7 +2361,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 07 Nov 2026, 23:20 (Madrid time, after commit a5accc9)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 10 Nov 2026, 08:39 (Madrid time, after commit ac43d72)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */

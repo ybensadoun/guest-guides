@@ -37,7 +37,7 @@
     "quick": true,
     "map": true,
     "reviews": true,
-    "nightlife": true,
+    "nightlife": false,
     "transport": true
   },
   "theme": {
