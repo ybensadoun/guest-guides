@@ -260,8 +260,8 @@ Measured for this design (10 Nov, 0.011 USD):
 Decisions, in order:
 | # | Question | Proposed | Status |
 |---|---|---|---|
-| 3.1 | **Whose name.** | The host's words win, tidied by our chain (spelling, capitals, accents, from the record or the site). A swiped card, where the host typed nothing, takes the record's name; with no record the host is asked to name it. The host sees the name and can change it. | asked 10 Nov |
-| 3.2 | **The deck.** | Stays live from Google, with its photos and ratings shown to the host only; a yes keeps the id, nothing else. | to ask |
+| 3.1 | **Whose name.** | The host's words win, tidied by our chain (spelling, capitals, accents, from the record or the site). A swiped card, where the host typed nothing, takes the record's name; with no record the host is asked to name it. The host sees the name and can change it. Just after a pick the row may show Google's name on screen; what is saved is the host's words until our name arrives. | **yes 10 Nov** |
+| 3.2 | **The deck.** | Stays live from Google, with its photos and ratings shown to the host only; a yes keeps the id, nothing else. While a Google card or list is on screen, the phone beside it shows no map of ours (Google's content may not sit with another map). | asked 10 Nov |
 | 3.3 | **The position.** | Overture's when the place is matched. Google's otherwise, dated, renewed monthly, and dropped by code after 30 days if a renewal fails (the place stays in the list, off the map). | to ask |
 | 3.4 | **The town**, which groups the map's pins. | The record's town; with no record, the nearest town from an open list we may keep (GeoNames, CC BY, to read first), never Google's address. | to ask |
 | 3.5 | **The kind.** | Overture's kind through one table of ours to the guide's kinds; the host corrects it in "Kind and marks" (proposal 3). | to ask |
