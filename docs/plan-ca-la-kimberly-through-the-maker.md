@@ -279,7 +279,7 @@ How it is built: on a branch of its own, `places-work`, in a second folder on th
 - (a) comparing Google's name with the directory's names inside our own program, at the build: Google's name is not saved and goes to no other service; what is kept is the directory's own record. 22 of 25. Fable's reading: nothing of Google's is kept, so the storage rule is met; but Google's terms also forbid "creating content based on" its content, and a link between a Google id and a directory record chosen with Google's name could be read as that. Not certain.
 - (b) position only: 7 of 25, and the host types the name of the other kept cards.
 - (c) our own deck (the other answer to 3.2).
-Asked to Yohann on 10 Nov.
+**Yohann, 10 Nov: (a), Fable's recommendation.** Built the same day: Google's name for a kept card is read once at the build, in Catalan, Spanish and English (in English alone the railway museum is "Catalonia Railway Museum" and matches nothing), compared by code with the records around the pin, and dropped. It is not kept, not logged and not sent to Claude; a test checks that. The record's own name becomes the place's. A card with no record of that name is not guessed from its spot: the host is asked. `GOOGLE_NAME_MATCH=0` switches it off. On the seven test cards: 7 named, with their kinds. To confirm against Google's own guidance in the terms pass (proposal 19, first item).
 
 ## Not gaps
 The look and its colours and fonts; languages and translation; Wi-Fi with several networks; Getting around (taxis with other numbers, stations, lines, journey times, the Home tile); automatic events and their settings; photos and their order; pinning a restaurant to Home; switching sections on and off; drafts, Preview and Publish.
