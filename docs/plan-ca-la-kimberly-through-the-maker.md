@@ -245,6 +245,30 @@ Seen in the run, for the next steps: the ham bar still finds no record and no si
 
 Open points carried into the steps: a place's town when Overture has no record (step 3); the swipe deck of suggestions, which shows Google's names and photos to the host (step 3, with the terms pass); what the "still exists" check may do (step 6, proposal 19).
 
+### Step 3, the design (10 Nov 2026, decisions one by one with Yohann)
+Re-read for this step (Google's Places policies page, 10 Nov): an app may not "copy and save business names, addresses, or user reviews"; the place id may be kept for good, the position for 30 days in a row; the one exception for a picked suggestion is an end user's own street address, not a business's name. A Google Maps link needs no key: `https://www.google.com/maps/search/?api=1&query=<our name>&query_place_id=<id>` opens the place by its id, and the words are used only if the id is not found.
+
+**What Google still does.** The list of suggestions as a host types and the swipe deck, both shown live with "Google Maps" written beside them, never saved. Finding a place's id and position (asked with only those two fields). The Google Maps button, from the id. Its own card on a place's page (step 5).
+**What is kept of it.** The id. For a suggestion or a card: the id and the host's yes or no. A position only when our own sources have none, with its date, renewed by the monthly run before 30 days.
+**Everything else is ours**, from `place_facts`: name, town, kind (and from the kind the filter, the icon and "Great for kids"), phone, website, hours, position.
+
+Measured for this design (10 Nov, 0.011 USD):
+- **Names.** 41 places typed in lower case without accents, Overture's records near each, Haiku without the web: the name came out right, or as the place's official name, for 38. Faults: one accent guessed in the wrong language where there was no record (Fábrica for Fàbrica), one accent missing because the record has none (Ancora), and places renamed after the directory when the host's words were a fine name ("Balneari Termaeuropa" for "Balneari de Coma-ruga", "Brasería 101" for "101 Restaurante", "Caves Codorníu" for "Codorníu"). So the rule must be that the host's words win and the record only corrects spelling, capitals and accents.
+- **The deck.** Of the 25 cards the deck shows for things to do near Ca La Kimberly, 22 have a record in Overture with the card's name (19 with the whole name), and 10 of 10 for places to eat. Google's names were compared in memory, not kept.
+- **Positions.** For the 25 places matched, Overture's position is 10 m from the guide's pin in the middle, under 35 m for 24, 81 m for one monastery. Good enough for the pin, and ours to keep.
+
+Decisions, in order:
+| # | Question | Proposed | Status |
+|---|---|---|---|
+| 3.1 | **Whose name.** | The host's words win, tidied by our chain (spelling, capitals, accents, from the record or the site). A swiped card, where the host typed nothing, takes the record's name; with no record the host is asked to name it. The host sees the name and can change it. | asked 10 Nov |
+| 3.2 | **The deck.** | Stays live from Google, with its photos and ratings shown to the host only; a yes keeps the id, nothing else. | to ask |
+| 3.3 | **The position.** | Overture's when the place is matched. Google's otherwise, dated, renewed monthly, and dropped by code after 30 days if a renewal fails (the place stays in the list, off the map). | to ask |
+| 3.4 | **The town**, which groups the map's pins. | The record's town; with no record, the nearest town from an open list we may keep (GeoNames, CC BY, to read first), never Google's address. | to ask |
+| 3.5 | **The kind.** | Overture's kind through one table of ours to the guide's kinds; the host corrects it in "Kind and marks" (proposal 3). | to ask |
+| 3.6 | **What is already kept**: Google's names, ratings and photos in hosts' answers (three copies), in old job results and in the guides. | Cleared in step 6 with the guides; the copy sent to Netlify Forms stops. A deletion: asked before it is run. | to ask |
+| 3.7 | **The day of caching** on the maker's Google answers. | Removed. | no question, a fix |
+| 3.8 | **Stations** in Getting around. | The host's name for it; position as 3.3. | to ask |
+
 ## Not gaps
 The look and its colours and fonts; languages and translation; Wi-Fi with several networks; Getting around (taxis with other numbers, stations, lines, journey times, the Home tile); automatic events and their settings; photos and their order; pinning a restaurant to Home; switching sections on and off; drafts, Preview and Publish.
 
