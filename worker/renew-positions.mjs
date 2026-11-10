@@ -6,6 +6,9 @@
 // Every published guide, its items, stations and home tiles, and the same places in its unpublished changes (guides.draft),
 // so publishing them later does not bring an old date back. An id Google no longer knows, or a failure, is left as it is and
 // listed: past 30 days the guide's engine shows the place with no pin (engine/src/content.js, posExpired). No Claude call.
+// The house's own point too, when it is Google's position of its town (the listing gave none, and the build found no town
+// of that name in GeoNames: content/house.json carries pos): GeoNames again first, else Google's text search of the town
+// (there is no id for it). A failure is listed, never fatal: the engine does not drop the house's point.
 // Run weekly by the timer guide-worker-renew (worker/systemd): a position may be kept 30 days in a row and a month can be 31.
 //   node worker/renew-positions.mjs                  dry run: Google is asked, the report printed, nothing written
 //   node worker/renew-positions.mjs --apply          write the new positions to the guides
@@ -16,8 +19,9 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { hav, nameOf, locateById } from './places.mjs';
+import { hav, nameOf, locateById, get } from './places.mjs';
 import { makeStore, isGid } from './place-store.mjs';
+import { townPoint } from './place-facts.mjs';
 
 export const RENEW_DAYS = 20;
 const num = v => typeof v === 'number' && Number.isFinite(v);
@@ -49,13 +53,34 @@ export function dueOf(files, { days = RENEW_DAYS, now = new Date() } = {}) {
   return out;
 }
 const label = it => nameOf(it.name) || nameOf(it.title) || it.id || '?';
+// The house's point is due when it is Google's (content/house.json pos) and older than the days.
+export const houseDue = (files, { days = RENEW_DAYS, now = new Date() } = {}) => due(files && files.house, days, now);
+// Google's position of a town, by a text search near the house's present point (no id: a town is not a place we keep the id
+// of). Only the position is asked; an answer more than 30 km away is another town of that name. { lat, lng } or null.
+export async function locateTown(GK, town, at) {
+  const body = { textQuery: String(town).slice(0, 160), maxResultCount: 1, locationBias: { circle: { center: { latitude: at.lat, longitude: at.lng }, radius: 20000 } } };
+  const r = await get('https://places.googleapis.com/v1/places:searchText', { method: 'POST', headers: { 'X-Goog-Api-Key': GK, 'Content-Type': 'application/json', 'X-Goog-FieldMask': 'places.location' }, body: JSON.stringify(body) });
+  const d = await r.json(); if (d.error) throw new Error(d.error.message);
+  const l = ((d.places || [])[0] || {}).location;
+  return l && num(l.latitude) && num(l.longitude) && hav(at.lat, at.lng, l.latitude, l.longitude) <= 30 ? { lat: l.latitude, lng: l.longitude } : null;
+}
 
 // The renewal itself, pure: no network, no clock unless now is left out. files: a guide's files (changed in place).
 // rows: gid -> its row in place_facts (or missing). located: gid -> Google's answer by id, { gid, lat, lng }, or null (Google
 // does not know it), or { error }; a gid not in located was not asked and its places are left alone, unreported.
-// house: { lat, lng } for the distances. Returns { renewed: [names], ours: [names], failed: [{ name, why }] }.
-export function renewFiles(files, { rows = {}, located = {}, house = null, days = RENEW_DAYS, now = new Date() } = {}) {
+// house: { lat, lng } for the distances. home: the answers for the house's own point when it is due, { ours: GeoNames'
+// { lat, lng } or null, google: Google's { lat, lng }, null (not found) or { error } }; left out, the house is left alone.
+// Returns { renewed: [names], ours: [names], failed: [{ name, why }] }, the house named "the house".
+export function renewFiles(files, { rows = {}, located = {}, house = null, home = null, days = RENEW_DAYS, now = new Date() } = {}) {
   const out = { renewed: [], ours: [], failed: [] };
+  // The house first: ours (GeoNames' town) for good, else Google's again with today's date; a failure leaves it as it is.
+  const H = files && files.house;
+  if (home && houseDue(files, { days, now })) {
+    const o = home.ours, g = home.google;
+    if (o && num(o.lat) && num(o.lng)) { H.lat = o.lat; H.lng = o.lng; delete H.pos; out.ours.push('the house'); }
+    else if (g && !g.error && num(g.lat) && num(g.lng)) { H.lat = g.lat; H.lng = g.lng; H.pos = { from: 'google', at: day(now) }; out.renewed.push('the house'); }
+    else out.failed.push({ name: 'the house', why: g && g.error ? g.error : 'its town was found neither in GeoNames nor on Google' });
+  }
   const place = (it, lat, lng) => { it.lat = lat; it.lng = lng;
     if (house && num(house.lat) && num(house.lng)) { if ('km_from_house' in it) it.km_from_house = kmTo(house, lat, lng); if ('km' in it) it.km = kmTo(house, lat, lng); } };
   for (const { it, gid } of dueOf(files, { days, now })) {
@@ -95,9 +120,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   };
   const store = makeStore(rest), now = new Date();
   // One answer per place for the whole run: a place in several guides, or read again after a clash, costs one request.
-  const rows = {}, located = {};
+  const rows = {}, located = {}, homes = {};
   let calls = 0, bad = 0;
-  const select = 'select=id,slug,status,updated_at,content,draft';
+  const select = 'select=id,slug,status,updated_at,content,draft,answers';   // answers: the house's town, for its own point
   const read = slug => rest(`/rest/v1/guides?${select}&${slug ? 'slug=eq.' + encodeURIComponent(slug) : 'status=eq.published'}`);
   let guides = [];
   try { guides = await read(SLUG) || []; } catch (e) { console.error(`Could not read the guides: ${e.message}`); process.exit(1); }
@@ -114,8 +139,18 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         try { calls++; located[gid] = await locateById(GK, gid); } catch (e) { located[gid] = { error: String(e.message || e).slice(0, 120) }; }
         await new Promise(r => setTimeout(r, 200));
       }
-      const live = renewFiles(F, { rows, located, house, days: DAYS, now });
-      const draft = D ? renewFiles(D, { rows, located, house, days: DAYS, now }) : null;
+      // The house's own point, once per guide: GeoNames by its town first, else Google's text search of the town.
+      let home = homes[g.id] || null;
+      const hDue = houseDue(F, { days: DAYS, now }) || (D && houseDue(D, { days: DAYS, now })), A = g.answers || {}, town = String(A.town || '').trim();
+      if (hDue && !home) {
+        const at = num(house.lat) ? house : (D && D.house) || house;
+        home = { ours: town ? await townPoint(town, at, { log: m => console.error(m) }) : null, google: null };
+        if (!home.ours && town) { try { calls++; home.google = await locateTown(GK, [town, A.region].filter(Boolean).join(', '), at); } catch (e) { home.google = { error: String(e.message || e).slice(0, 120) }; } }
+        if (!town) home.google = { error: 'the guide has no town in its answers' };
+        homes[g.id] = home;   // read again after a clash: the same answers
+      }
+      const live = renewFiles(F, { rows, located, house, home, days: DAYS, now });
+      const draft = D ? renewFiles(D, { rows, located, house: D.house || house, home, days: DAYS, now }) : null;
       const changed = live.renewed.length + live.ours.length + (draft ? draft.renewed.length + draft.ours.length : 0);
       if (attempt === 1 || changed) {
         console.log(`\n## ${g.slug} (${g.status}): ${live.renewed.length} renewed, ${live.ours.length} made ours, ${live.failed.length} failed${attempt > 1 ? ` (try ${attempt})` : ''}`);

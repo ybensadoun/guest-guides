@@ -79,6 +79,19 @@ export function featureFor(features, { venue = false } = {}) {
   return (Array.isArray(features) ? features : []).filter(f => f && isNum(f.lat) && isNum(f.lng) && isNum(f.metres) && REACH[f.cls] && f.metres <= REACH[f.cls] && !(venue && f.cls === 'P'))
     .sort((a, b) => (b.exact === true) - (a.exact === true) || a.metres - b.metres)[0] || null;   // the very name before a longer one that holds it, then the nearest
 }
+// The house's town in GeoNames, when the house's only position is Google's town search (the builder's pos mark): the town
+// or village (class P) of that name within its reach of Google's point, whose position is ours to keep. Used at the build
+// (worker/guide-worker.mjs) and by the weekly renewal (worker/renew-positions.mjs). Returns { lat, lng, name, metres } or
+// null (no town, no name, GeoNames not reachable); never throws. gaz (tests): in place of gazetteer().
+export async function townPoint(town, at, { country = 'ES', gaz = gazetteer, python, log = console.error } = {}) {
+  const name = String(town || '').trim(), lat = +(at && at.lat), lng = +(at && at.lng);
+  if (!name || !isNum(lat) || !isNum(lng)) return null;
+  try {
+    const g = await gaz(country, [{ id: 'house', lat, lng, names: [name] }], { log, ...(python ? { python } : {}) });
+    const f = featureFor((((g && g.pins) || {}).house || []).filter(x => x && x.cls === 'P'));
+    return f ? { lat: f.lat, lng: f.lng, name: f.name || name, metres: f.metres } : null;
+  } catch (e) { log(`geonames: the town not looked up (${e.message})`); return null; }
+}
 // Our kind (engine/src/kinds.json, todo) from a feature's class and code, for a place Claude gave no kind.
 const CODE_KIND = { 'T.BCH': 'beach', 'T.MT': 'mountain', 'T.MTS': 'mountain', 'T.PK': 'mountain', 'T.HLL': 'mountain', 'H.SPNG': 'spring',
   'S.MSTY': 'monastery', 'S.CH': 'monastery', 'S.CTHD': 'monastery', 'S.MUS': 'palette', 'S.CSTL': 'castle', 'S.RUIN': 'roman', 'S.ANS': 'roman',

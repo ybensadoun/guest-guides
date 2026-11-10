@@ -52,6 +52,7 @@ const PNG4 = (() => { const W = 4, rows = [], C = [[29, 79, 160], [213, 43, 30],
 const json = (route, body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 // The database on a web address: what slug_check answers (the real function is checked against real rows, not here).
 const slugAnswer = (route, b, taken) => { const free = !taken.has(b.p_wanted); return json(route, { free, options: free ? [] : [b.p_town ? `${b.p_wanted}-${b.p_town}` : `${b.p_wanted}-2`, `${b.p_wanted}-3`, `${b.p_wanted}-4`] }); };
+const plainKey = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');   // start.js plainName: a researched card's id is 'r:' + this
 const slugOf = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 async function open(browser, G, w, h, stored = {}, listing = null) {
@@ -197,17 +198,25 @@ try {
     const h = Object.values(rows)[0] || { answers: {} };
     ok('after the account: the answers from this device are the account\'s house, back on Review and send, with Send', Object.keys(rows).length === 1 && h.answers.wifiName === 'Visitor wifi' && h.answers._research === AREA_ID && h.answers.listingUrl === 'https://www.airbnb.com/rooms/12345678' && (await p.evaluate(() => location.hash)) === '#send' && !!(await p.$('#send')) && !!(await p.$('.logoutTop')), calls.join(', '));
     ok('after the account: the full research of the area starts in the background, for the house\'s point, and travels with the answers', calls.includes('job research ' + A0.lat) && h.answers._researchJob === JOB_ID, calls.join(', '));
+    ok('the house\'s position from the listing is kept as ours, with no date (no pos)', +h.answers.lat === +A0.lat && !('pos' in h.answers), JSON.stringify({ lat: h.answers.lat, pos: h.answers.pos }));
     ok('no account until the end: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // ---- Cards after sign-up (Yohann, 30 Oct 2026): what the research found goes in the guide only if the host keeps it ----
-  { const items = AREA_TODO.items, en = i => items[i].name.en, added = en(items.length - 1), G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, swipes: {}, favDo: [{ p: added, c: '' }] } };
+  // The research's items carry Google's id when the worker's check found them (part 3d): the first has a photo on Google, the
+  // second none (only a rating, which the card must not show then), the others no id. Their picture is asked live, once.
+  const TODO_G = { ...AREA_TODO, items: AREA_TODO.items.map((it, i) => i < 2 ? { ...it, gid: 'g-res' + i } : it) };
+  const CARD_PHOTO = photos[1] || photos[0] || '/api/photo?name=res-0', CARD = { 'g-res0': { ok: true, photo: CARD_PHOTO, photoBy: [{ name: 'Bea Test', uri: 'https://maps.google.com/maps/contrib/456' }], rating: 4.7, reviews: 321 }, 'g-res1': { ok: true, photo: null, photoBy: [], rating: 4.2, reviews: 50 } };
+  const cardAnswer = (r, asked, wait = 900) => { const id = new URL(r.request().url()).searchParams.get('card'); asked.push(id); setTimeout(() => json(r, CARD[id] || { ok: false }).catch(() => {}), id === 'g-res0' ? wait : 0); };
+  { const items = TODO_G.items, en = i => items[i].name.en, added = en(items.length - 1), G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, swipes: {}, favDo: [{ p: added, c: '' }] } };
     const { ctx, p, errors } = await open(browser, G, 360, 780); let job = { status: 'running', result: null };
+    const asked = [], saved = [];
     await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [job]));
-    await ctx.route('**/api/places**', r => json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: [{ id: 'g-twin', name: en(0), rating: 4.6, reviews: 90, type: 'Castle', maps: 'https://maps.google.com/?q=1', lat: A0.lat, lng: A0.lng, km: 3, photo: null }, { id: 'g-other', name: 'Otro Lugar Test', rating: 4.5, reviews: 80, type: 'Park', maps: 'https://maps.google.com/?q=2', lat: A0.lat, lng: A0.lng, km: 4, photo: null }] }));
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), r => { if (r.request().method() === 'PATCH') saved.push(r.request().postData() || ''); return r.fallback(); });
+    await ctx.route('**/api/places**', r => new URL(r.request().url()).searchParams.get('card') ? cardAnswer(r, asked) : json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: [{ id: 'g-twin', name: en(0), rating: 4.6, reviews: 90, type: 'Castle', maps: 'https://maps.google.com/?q=1', lat: A0.lat, lng: A0.lng, km: 3, photo: null }, { id: 'g-other', name: 'Otro Lugar Test', rating: 4.5, reviews: 80, type: 'Park', maps: 'https://maps.google.com/?q=2', lat: A0.lat, lng: A0.lng, km: 4, photo: null }] }));
     await p.goto('http://editor.test/#send'); await ready(p);
     await p.waitForFunction(() => /looking for more places/.test((document.getElementById('rvMore') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
     ok('cards after sign-up: while the research runs, Review says so and Send stays open', /looking for more places/.test(await p.textContent('#rvMore')) && !!(await p.$('#send')));
-    job = { status: 'running', result: { todo: AREA_TODO } };
+    job = { status: 'running', result: { todo: TODO_G } };
     await p.waitForFunction(() => /more places to look at/.test((document.getElementById('rvMore') || {}).textContent || ''), null, { timeout: 9000 }).catch(() => {});
     const more = n => `${n} more places to look at`;
     ok('cards after sign-up: as soon as things to do are found, before the rest of the research, Review counts them, without a place the host already added', (await p.textContent('#rvMore')).includes(more(items.length - 1)), await p.textContent('#rvMore'));
@@ -216,20 +225,66 @@ try {
     ok('cards after sign-up: the deck opens with the researched places', (await p.textContent('.sw-card h3').catch(() => '')) === en(0), await p.textContent('.sw-card h3').catch(() => ''));
     ok('cards after sign-up: a card without a Google rating shows no empty star', !/★ \?/.test(await p.textContent('.sw-card')));
     ok('cards after sign-up: "Google Maps" is written on a card with no rating', await p.isVisible('.sw-card .sw-on a:has-text("Google Maps")'));
+    ok('cards after sign-up: while its picture is on its way, a researched card shows its kind\'s icon on the guide\'s colour, no letter and no rating', !!(await p.$('.sw-card .sw-kind .sw-ic[data-kind="castle"] svg')) && !(await p.$('.sw-card .sw-ph > span:not(.sw-ic):not(.sw-stamp)')) && !/★/.test(await p.textContent('.sw-card')));
+    await p.waitForSelector('.sw-card .sw-ph[style*="background-image"]', { timeout: 4000 }).catch(() => {});
+    { const t = (await p.textContent('.sw-card .sw-on').catch(() => '')).replace(/\s+/g, ' ');
+      ok('cards after sign-up: a researched card with a Google id asks /api/places?card= once, for it and the next card, and shows the photo, its author, the rating and "Google Maps", under its own name',
+        asked.join() === 'g-res0,g-res1' && (await p.getAttribute('.sw-card .sw-ph', 'style')).includes(CARD_PHOTO) && (await p.textContent('.sw-card .sw-by').catch(() => '')).replace(/\s+/g, ' ').trim() === 'Photo: Bea Test'
+        && (await p.getAttribute('.sw-card .sw-by a', 'href').catch(() => '')) === 'https://maps.google.com/maps/contrib/456' && /★ 4\.7 \(321 reviews\)/.test(t) && await p.isVisible('.sw-card .sw-on a:has-text("Google Maps")') && (await p.textContent('.sw-card h3')) === en(0) && !(await p.$('.sw-card .sw-ic')), `${asked.join()} | ${t}`); }
     await p.screenshot({ path: join(SHOTS, 'cards-deck-360.png') });
     await p.click('[data-sw="yes"]'); await p.waitForTimeout(450);
+    ok('cards after sign-up: a researched card with no photo on Google shows its kind\'s icon, no rating and no author (even with a rating from Google)', (await p.textContent('.sw-card h3')) === en(1) && !!(await p.$('.sw-card .sw-ic[data-kind="mountain"] svg')) && !/★/.test(await p.textContent('.sw-card')) && !(await p.$('.sw-card .sw-by')));
+    ok('cards after sign-up: the icon card, nothing overlaps (the icon, the name, the rating line), no sideways scroll', await p.evaluate(() => { const r = s => { const e = document.querySelector('.sw-card ' + s); return e && e.getBoundingClientRect(); }, ic = r('.sw-ic'), on = r('.sw-on'), ph = r('.sw-ph');
+      return !!ic && !!on && ic.bottom <= on.top && ic.top >= ph.top && on.bottom <= ph.bottom && document.documentElement.scrollWidth <= innerWidth; }));
+    await p.screenshot({ path: join(SHOTS, 'cards-deck-icon-360.png') });
+    { const A = await stored(p), x = (A.swipes || {})['r:' + plainKey(en(0))] || {}, all = JSON.stringify(A) + saved.join('');
+      ok('cards after sign-up: a swipe on a researched card saves its own name, kind, link, position and distance, nothing of Google\'s (no photo, rating, reviews or author), on the device or in the account',
+        x.d === 'yes' && x.name === en(0) && Object.keys(x).every(k => ['id', 'd', 'cat', 'name', 'type', 'maps', 'lat', 'lng', 'km', 'c'].includes(k)) && !/Bea Test|contrib\/456|photoBy/.test(all) && !/"rating":4\.7|"reviews":321/.test(all) && saved.length > 0, JSON.stringify(x)); }
     await p.click('[data-sw="no"]'); await p.waitForTimeout(450);
     const names = [], left = items.length - 3;
     while (names.length < left) { names.push(await p.textContent('.sw-card h3')); await p.click('[data-sw="no"]'); await p.waitForTimeout(450); }
     ok('cards after sign-up: the Google card the research also found shows once, the others follow', (await p.textContent('.sw-card h3').catch(() => '')) === 'Otro Lugar Test' && !names.includes(en(0)) && !names.includes(added), names.join(', '));
-    const S = await p.evaluate(() => JSON.parse(Object.values(localStorage).find(x => /"swipes"/.test(x)) || '{}').swipes || null).catch(() => null);
+    ok('cards after sign-up: through the whole deck, each Google id was asked once, and a card with no id never', asked.join() === 'g-res0,g-res1', asked.join());
+    { const picks = await p.textContent('.sw-picks').catch(() => '');
+      ok('cards after sign-up: Your picks shows the researched pick by its own name, without Google\'s rating or author', picks.includes(en(0)) && !/★|4\.7|Bea Test/.test(picks), picks.replace(/\s+/g, ' ').slice(0, 120)); }
     await inPhone(p, d => { const b = d.querySelector('[data-pv="todo"]'); b && b.click(); return 1; }); await p.waitForTimeout(500);
     const phone = (await inPhone(p, d => d.body.textContent)) || '';
     ok('cards after sign-up: what the host keeps lands in the phone, what they skip does not', phone.includes(en(0)) && !phone.includes(en(1)), en(0));
+    ok('cards after sign-up: the phone shows the researched pick without Google\'s rating, photo or author', !/★|4\.7|Bea Test/.test(phone) && !(await inPhone(p, `d => [...d.querySelectorAll('img')].some(i => i.src.includes(${JSON.stringify(CARD_PHOTO.split('?')[0])}))`)));
     ok('cards after sign-up: no "Host\u2019s pick" label in the phone', !/Host.s pick/.test(phone));
     await go(p, '#send'); await p.waitForTimeout(300);
     ok('cards after sign-up: all seen, Review says nothing more', !(await p.textContent('#rvMore')).trim(), await p.textContent('#rvMore'));
     ok('cards after sign-up: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // The same researched cards at 360 px in French: one with Google's photo, its author and rating, one with its kind's icon.
+  { const items = TODO_G.items, G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, swipes: {}, favDo: [] } };
+    const { ctx, p, errors } = await open(browser, G, 360, 780), asked = [];
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ status: 'done', result: { todo: TODO_G } }]));
+    await ctx.route('**/api/places**', r => new URL(r.request().url()).searchParams.get('card') ? cardAnswer(r, asked, 0) : json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: [] }));
+    await p.goto('http://editor.test/?lang=fr#nearby'); await ready(p);
+    await p.waitForSelector('.sw-card .sw-ph[style*="background-image"]', { timeout: 8000 }).catch(() => {});
+    const clear = () => p.evaluate(() => { const card = document.querySelector('.sw-card'); if (!card) return 'no card';
+      const words = [...card.querySelectorAll('.sw-on h3, .sw-on small, .sw-on p, .sw-ic')].map(e => e.getBoundingClientRect()), hit = (a, b) => a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1;
+      const wide = [...card.querySelectorAll('.sw-on h3, .sw-on small, .sw-on p')].filter(e => e.scrollWidth > e.clientWidth + 1).length;
+      return words.some((a, i) => words.slice(i + 1).some(b => hit(a, b))) ? 'overlap' : wide ? 'a word wider than its line' : document.documentElement.scrollWidth > innerWidth ? 'sideways scroll' : ''; });
+    const t1 = (await p.textContent('.sw-card .sw-by').catch(() => '')).trim(), c1 = await clear();
+    ok('researched cards, 360 px in French: the photo card says "Photo : Bea Test", touching nothing', (await p.textContent('.sw-card h3').catch(() => '')) === (items[0].name.fr || items[0].name.en) && /^Photo\s:\s*Bea Test$/.test(t1) && !c1, `${t1} ${c1}`);
+    await p.locator('.sw-card').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'cards-photo-fr-360.png') });
+    await p.click('[data-sw="no"]'); await p.waitForTimeout(450);
+    const c2 = await clear();
+    ok('researched cards, 360 px in French: the icon card, touching nothing', !!(await p.$('.sw-card .sw-ic svg')) && !c2, c2);
+    await p.locator('.sw-card').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'cards-icon-fr-360.png') });
+    ok('researched cards in French: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // A house whose listing gave no position: the deck searches its town on Google, whose position may be kept 30 days only,
+  // so it is saved with its date (pos), for the build to look for the town in GeoNames.
+  { const ans = { ...B.answers }; delete ans.lat; delete ans.lng; delete ans.pos; delete ans._research; delete ans._researchJob;
+    const { ctx, p, errors } = await open(browser, { ...B, answers: ans }, 1280, 860), q = [];
+    await ctx.route('**/api/places**', r => { const u = new URL(r.request().url()).searchParams; if (!u.get('probe')) q.push(u.toString()); return json(r, u.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: 41.5, lng: 1.7, places: [] }); });
+    await p.goto('http://editor.test/#nearby'); await ready(p); await p.waitForTimeout(1500);
+    const A = await stored(p), today = new Date().toISOString().slice(0, 10);
+    ok('a house with no position from its listing: the deck searches the town and keeps Google\'s position with its date', q.some(x => /town=/.test(x) && !/lat=/.test(x)) && A.lat === 41.5 && A.lng === 1.7 && JSON.stringify(A.pos) === JSON.stringify({ from: 'google', at: today }), JSON.stringify({ lat: A.lat, pos: A.pos, q: q[0] }));
+    ok('a house with no position from its listing: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const G = { ...B, status: 'generating', slug: 'test-cards', answers: { ...B.answers, slug: 'test-cards' } };
     const { ctx, p, errors } = await open(browser, G, 360, 780);

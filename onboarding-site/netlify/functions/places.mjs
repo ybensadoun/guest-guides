@@ -1,6 +1,7 @@
 // GET /api/places?lat=..&lng=..&cat=eat|coffee|drinks|todo&town=..
 // Top-rated places near the house from Google Places (New). Without lat/lng, the town is geocoded first.
 // ?suggest=<text>: what Google suggests as a host types a place's name. ?id=<google id>: one place by its id. ?q=<name>: one place by its name.
+// ?card=<google id>: what a researched card in the deck shows live (its photo with the photo's authors, its rating).
 // Google's terms: a place's id may be kept for good and its position for 30 days, nothing else it returns. So ?id= and ?q= ask
 // for those two only and answer { id, lat, lng, km }; the suggestions and the deck are only shown, live, never kept. No answer
 // is cached anywhere (private, no-store): a shared or day-long copy of Google's answers would be a stored copy.
@@ -27,6 +28,10 @@ async function g(path, body, mask, key){
 const hav = (a, b, c, d) => { const R = 6371, t = Math.PI / 180, x = (c - a) * t, y = (d - b) * t; const h = Math.sin(x / 2) ** 2 + Math.cos(a * t) * Math.cos(c * t) * Math.sin(y / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
 // One place, as the maker may keep it: Google's id and position (the caller dates it), and the distance worked out from it.
 const PLACE = ['id', 'location'];
+// A photo as the deck shows it, through /api/photo, with its authors, which Google asks to show wherever the photo is shown
+// (they come with places.photos: nothing more is billed). None: photo null, no authors.
+const photoOf = ph => ph ? { photo: '/api/photo?name=' + encodeURIComponent(ph.name),
+  photoBy: (ph.authorAttributions || []).filter(a => a && a.displayName).map(a => ({ name: a.displayName, uri: (u => /^https:\/\//.test(u) ? u : null)(String(a.uri || '').replace(/^\/\//, 'https://')) })) } : { photo: null, photoBy: [] };
 const located = (p, la, ln) => ({ id: p.id, lat: p.location.latitude, lng: p.location.longitude, km: Math.max(1, Math.round(hav(la, ln, p.location.latitude, p.location.longitude) * 1.3)) });
 export default async (req) => {
   const key = process.env.GOOGLE_MAPS_API_KEY;
@@ -45,6 +50,17 @@ export default async (req) => {
         'suggestions.placePrediction.placeId,suggestions.placePrediction.structuredFormat,suggestions.placePrediction.distanceMeters', key);
       return json({ ok: true, places: (d.suggestions || []).map(s => s.placePrediction).filter(p => p && p.structuredFormat).map(p => ({ id: p.placeId, name: p.structuredFormat.mainText.text,
         where: (p.structuredFormat.secondaryText || {}).text || '', km: p.distanceMeters ? Math.max(1, Math.round(p.distanceMeters * 1.3 / 1000)) : null })) });
+    } catch (e) { return json({ ok: false, message: 'Could not reach Google right now.' }); }
+  }
+  // ?card=<google id>: a card of our own research in the builder's deck (its name, kind, distance and words are ours). Only
+  // what the card shows live with "Google Maps" on it: the first photo and its authors, the rating and how many rated it.
+  // Shown, never kept: the builder holds the answer in memory for the session, a swipe saves nothing of it.
+  if (u.searchParams.get('card')) {
+    try {
+      const r = await fetch(G + 'places/' + encodeURIComponent(u.searchParams.get('card').slice(0, 300)), { signal: AbortSignal.timeout(8000), headers: { 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': 'photos,rating,userRatingCount' } });
+      if (!r.ok) throw new Error('google_' + r.status);
+      const p = await r.json();
+      return json({ ok: true, ...photoOf((p.photos || [])[0]), rating: typeof p.rating === 'number' ? p.rating : null, reviews: typeof p.userRatingCount === 'number' ? p.userRatingCount : null });
     } catch (e) { return json({ ok: false, message: 'Could not reach Google right now.' }); }
   }
   // ?id=<google id>&lat=..&lng=..: the place a host picked from those suggestions, in the editor.
@@ -89,10 +105,7 @@ export default async (req) => {
       .map(p => ({ id: p.id, name: p.displayName && p.displayName.text, rating: p.rating, reviews: p.userRatingCount, price: p.priceLevel || null,
         type: p.primaryTypeDisplayName && p.primaryTypeDisplayName.text, address: p.shortFormattedAddress, maps: p.googleMapsUri,
         summary: p.editorialSummary && p.editorialSummary.text, lat: p.location.latitude, lng: p.location.longitude,
-        km: Math.round(hav(lat, lng, p.location.latitude, p.location.longitude) * 13) / 10,
-        photo: p.photos && p.photos[0] ? '/api/photo?name=' + encodeURIComponent(p.photos[0].name) : null,
-        // The photo's authors, which Google asks to show wherever the photo is shown (they come with places.photos: nothing more is billed).
-        photoBy: p.photos && p.photos[0] ? (p.photos[0].authorAttributions || []).filter(a => a && a.displayName).map(a => ({ name: a.displayName, uri: (u => /^https:\/\//.test(u) ? u : null)(String(a.uri || '').replace(/^\/\//, 'https://')) })) : [] }))
+        km: Math.round(hav(lat, lng, p.location.latitude, p.location.longitude) * 13) / 10, ...photoOf((p.photos || [])[0]) }))
       .sort((a, b) => (b.rating * Math.log(b.reviews + 1)) - (a.rating * Math.log(a.reviews + 1)));
     if (cat !== 'todo') return json({ ok: true, lat, lng, places: best(await search(CATS[cat]), 4.3) });
     const want = (u.searchParams.get('want') || '').split('|'), [sights, fun] = await Promise.all([search(todoTypes(want)), search(ACTIVITIES).catch(() => ({}))]);

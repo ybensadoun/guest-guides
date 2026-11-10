@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { gazetteer, placeFacts, featureFor, featureKind } from '../place-facts.mjs';
+import { gazetteer, placeFacts, featureFor, featureKind, townPoint } from '../place-facts.mjs';
 import { mergeFacts } from '../place-store.mjs';
 import { hostPlaces } from '../host-places.mjs';
 
@@ -245,4 +245,11 @@ test('hostPlaces: a place read lately with only Google\'s position gets a positi
   // Neither Overture nor GeoNames: Google's position, marked.
   const g = await hostPlaces({ rows: [{ p: 'el vendrell', list: 'todo' }], house }, { store: fakeStore({}), ask, locate, near, gaz: async () => ({ fetched: null, pins: {} }), log: () => {} });
   assert.equal(g['el vendrell'].lat, 41.219); assert.equal(g['el vendrell'].pos.from, 'google');
+});
+
+test('townPoint: the house\'s town from geonames.py, the town itself and not its station; a name it does not have gives null', async () => {
+  process.env.GEONAMES_CACHE = cache();
+  const t = await townPoint('El Vendrell', { lat: 41.219, lng: 1.5355 }, { log: () => {} });
+  assert.equal(t.name, 'El Vendrell'); assert.equal(t.lat, 41.21861); assert.equal(t.lng, 1.535); assert.ok(t.metres < 100);
+  assert.equal(await townPoint('Nowhere Town', { lat: 41.219, lng: 1.5355 }, { log: () => {} }), null);
 });

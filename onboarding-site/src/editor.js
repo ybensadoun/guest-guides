@@ -227,6 +227,14 @@ function cmGuide(c) {
 const edCssVar = (css, name) => { const m = css.match(new RegExp(name + '\\s*:\\s*([^;}]+)')); return m ? m[1].trim() : ''; };
 const edBlockOf = css => { const m = css.match(/\/\* editor:start \*\/([\s\S]*?)\/\* editor:end \*\//); return m ? m[1] : ''; };
 const edCoverPhoto = h => !!h.photo && h.cover !== 'themed';
+// The guide's credits say "the cover illustration was made with AI" while site.theme.coverMade is "ai" (engine/src/views/
+// credits.js). The worker's cover-art job names its drawings covers/art-<time>.jpg, so the mark follows the cover's file:
+// set when that drawing becomes the cover, gone when another cover is chosen (a photo, an upload, the drawn cover).
+const edArt = path => /(^|\/)covers\/art-[\w-]+\.jpg$/.test(String(path || ''));
+function edCoverMade(path) {
+  const s = edC().site = edC().site || {}, th = s.theme = s.theme || {};
+  if (edArt(path)) th.coverMade = 'ai'; else delete th.coverMade;
+}
 // The look, in four steps: logo, cover picture (one of the guide's photos, an upload, drawn from the colours, or an
 // artistic version of a photo), layout, colours. Fonts are optional, folded away and shown in their own typeface.
 const cmPhotos = c => { const f = c.files || {}, out = [], add = x => { if (typeof x === 'string' && x && !out.includes(x)) out.push(x); };
@@ -1068,7 +1076,7 @@ async function edPhotoInput(t) {
     for (const f of files) {
       const name = await edUpload(f, t.dataset.kind);
       if (t.dataset.phadd) { const p = edPath(t.dataset.phadd); let a = edGet(edC(), p); if (!Array.isArray(a)) { edSet(edC(), p, []); a = edGet(edC(), p); } a.push(name); }
-      else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') edSet(edC(), ['files', 'house', 'cover'], 'photo'); }
+      else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') { edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(name); } }
       if (t.dataset.phset === 'site/logo') { setSave('busy', 'Making the icons for phones…'); edC().site.icons = await edIconsFrom(f, 'contain'); CM.logoCol = ''; }
     }
     cmQueue(); render();
@@ -1195,16 +1203,16 @@ document.addEventListener('click', e => {
   if (d.cunpublish !== undefined) return cmUnpublish(t);
   if (d.cdiscard !== undefined) return cmDiscard(t);
   if (!t.closest('.edz')) return;
-  if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); return done(); }
+  if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); edCoverMade(d.cover === 'photo' ? ((edC().files || {}).house || {}).photo : ''); return done(); }
   if (d.allpics !== undefined) { CM.allPics = true; return render(); }
-  if (d.coverpic) { edSet(edC(), ['files', 'house', 'photo'], d.coverpic); edSet(edC(), ['files', 'house', 'cover'], 'photo'); return done(); }
+  if (d.coverpic) { edSet(edC(), ['files', 'house', 'photo'], d.coverpic); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(d.coverpic); return done(); }
   if (d.art) {
     const src = edImg(((edC().files || {}).house || {}).photo || '');
     if (d.art === 'words') { CM.artWords = CM.artWords || ''; render(); setTimeout(() => { const x = document.getElementById('c_artw'); if (x) x.focus(); }, 0); return; }
     if (d.art === 'draw') { const w = (document.getElementById('c_artw') || {}).value || ''; CM.artWords = w; return w.trim() ? artStart(src, w.trim()) : toast('Say how it should look first.'); }
     return artStart(src, d.art === 'again' ? CM.artLast : null);
   }
-  if (d.artuse !== undefined && CM.artRes) { edSet(edC(), ['files', 'house', 'photo'], CM.artRes.path); edSet(edC(), ['files', 'house', 'cover'], 'photo'); CM.artRes = null; toast('Your new cover is set. Preview to see it.'); return done(); }
+  if (d.artuse !== undefined && CM.artRes) { edSet(edC(), ['files', 'house', 'photo'], CM.artRes.path); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(CM.artRes.path); CM.artRes = null; toast('Your new cover is set. Preview to see it.'); return done(); }
   if (d.daytog) { const o = edGet(edC(), edPath(d.daytog)); if (o) { const s = new Set(o.days || []); s.has(d.d) ? s.delete(d.d) : s.add(d.d); o.days = ED_DAYS.map(x => x[0]).filter(x => s.has(x)); done(); } return; }
   if (d.cflag) { const it = edGet(edC(), edPath(d.cflag)); if (it) { const s = new Set(it.flags || []); s.has(d.f) ? s.delete(d.f) : s.add(d.f); it.flags = [...s]; done(); } return; }
   if (d.addsch) { arr(d.addsch).push({ days: [], open: '09:00', close: '14:00' }); return done(); }

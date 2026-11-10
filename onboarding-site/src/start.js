@@ -151,7 +151,7 @@ function applyEarly(d){
   while (nm.length > 40 && nm.includes(' | ')) nm = nm.slice(0, nm.lastIndexOf(' | ')).trim();
   WOW.name = nm || String(d.title || '').split('·')[0].trim();
   if (d.cover) A.coverUrl = d.cover;
-  if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
+  if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; delete A.pos; }   // the listing's own point: ours, no date (loadPlaces)
   addListingPhotos(d);
 }
 function addListingPhotos(d){
@@ -218,7 +218,7 @@ function applyDraft(d){
   // No section is switched by the listing: every guide starts with Ca La Kimberly's sections, and only the host switches one off.
   if (D.rating && !A.ratingAvg) { A.ratingAvg = String(D.rating); A._pre = { ...(A._pre || {}), ratingAvg: 'reviews' }; if (D.reviewCount) A.ratingCount = String(D.reviewCount); }
   if (Array.isArray(D.toConfirm)) A.toConfirm = D.toConfirm.slice(0, 6);
-  if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
+  if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; delete A.pos; }
   if (d.cover) A.coverUrl = d.cover;
   if (d.report) A._report = d.report;
   addListingPhotos(d);
@@ -233,7 +233,7 @@ document.addEventListener('input', e => { if (e.target.id === 'st_url') { const 
 // Google's cards are shown live and never kept (Google's terms: a place's id may be kept, not its name, rating, photo or
 // address). A swipe saves { id, d, cat, c }: the id, the host's yes or no and their comment. What the screen shows about a
 // card (the card, Your picks, the phone) is read by its id from SW.mem, every card loaded in this session, in memory only.
-const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {}, mem: new Map() };
+const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {}, mem: new Map(), live: new Map() };
 // Eating and drinking is the host's own list (see "Your places"): we only suggest things to do.
 const SW_CATS = [['todo', 'Attractions']];
 const swipes = () => A.swipes || (A.swipes = {});
@@ -250,9 +250,36 @@ function researchCards(){
   const S = swipes(), chosen = [...Object.values(S).filter(x => !String(x.id).startsWith('r:')).map(x => (SW.mem.get(x.id) || {}).name).filter(Boolean), ...addedPlaces()];
   return (((AREA.full || {}).todo || {}).items || []).filter(it => shownText(it.name) && !MARKET.test(shownText(it.name) + ' ' + shownText(it.type)) && !chosen.some(n => samePlace(n, shownText(it.name)))).map(it => { const name = shownText(it.name);
     return { id: 'r:' + plainName(name), name, type: shownText(it.type), km: it.km_from_house, lat: it.lat, lng: it.lng, summary: shownText(it.description),
-      maps: it.gmaps || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([name, it.town].filter(Boolean).join(' ')), ...(it._card || {}) }; });
+      maps: it.gmaps || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([name, it.town].filter(Boolean).join(' ')),
+      ...(it.gid ? { gid: it.gid } : {}), ...(it.icon ? { icon: it.icon } : {}) }; });
 }
 const moreLeft = () => researchCards().filter(p => !swipes()[p.id]).length;
+// A researched card is ours (name, kind, distance, words), but its picture and rating are Google's, shown live (Yohann,
+// 10 Nov 2026): asked once per id per session (/api/places?card=) when the card is on top or next, kept in SW.live with
+// the deck's memory, never saved. 'wait' while asked; null when there is nothing to show (no photo, the call failed).
+function swLiveAsk(p){
+  if (!p || !isOurs(p.id) || !p.gid || SW.live.has(p.gid)) return;
+  SW.live.set(p.gid, 'wait');
+  fetch('/api/places?card=' + encodeURIComponent(p.gid)).then(r => r.json()).catch(() => null).then(d => {
+    SW.live.set(p.gid, d && d.ok && d.photo ? { photo: d.photo, photoBy: Array.isArray(d.photoBy) ? d.photoBy : [], rating: d.rating, reviews: d.reviews } : null);
+    // Only the card on top is drawn again (a next one is drawn when it comes up), and only the card: not the picks, whose
+    // comment the host may be typing. A card held by the finger is drawn when it lets go.
+    const c = document.querySelector('.sw-card');
+    if (!d || !d.ok || !d.photo || !c || c.dataset.pid !== p.id) return;
+    if (c.dataset.drag || c.dataset.gone) { SW.stale = true; return; }
+    swCardRefresh();
+  });
+}
+function swCardRefresh(){
+  const d = document.querySelector('#swipe .sw-deck'); if (!d) return;
+  const keys = d.contains(document.activeElement), t = document.createElement('div'); t.innerHTML = swipeInner();
+  const n = t.querySelector('.sw-deck'); if (!n) return; d.replaceWith(n);
+  if (keys) { const c = n.querySelector('.sw-card'); if (c) c.focus({ preventScroll: true }); }
+}
+// The card as drawn: a researched one with Google's live photo and rating when there is a photo (else its kind's icon).
+const swLive = p => { const L = isOurs(p.id) && p.gid && SW.live.get(p.gid); return L && typeof L === 'object' ? { ...p, ...L } : p; };
+// The guide's own colour for Things to do (the engine's green), as the phone shows it: the layout's, or the picture's.
+const swKindColour = () => { const cs = colourSource(); return ((cs && PV.palSrc === cs.src && PV.palette) || PRESET_PAL[choosePreset()]).acc[3]; };
 const isOurs = id => String(id).startsWith('r:');
 // A decision as the screen shows it: the live card (Google's from memory, ours from the research) with the host's comment.
 // A Google card not in memory (after a reload, before the deck is loaded again) is a kept place with no name, and its link.
@@ -282,7 +309,9 @@ async function loadPlaces(cat){
     const q = new URLSearchParams({ cat, lang: (A.languages || ['en'])[0] || 'en', radius: String(({ '15 min': 6000, '30 min': 15000, '45 min': 25000, '1 hour': 30000 })[v('radius')] || 10000), want: swWant().join('|') });
     if (A.lat && A.lng) { q.set('lat', A.lat); q.set('lng', A.lng); } else q.set('town', [v('town'), v('region')].filter(Boolean).join(', '));
     const r = await fetch('/api/places?' + q); const d = await r.json();
-    if (!d.ok) SW.err = d.message || 'Could not load places.'; else { SW.lists[cat] = d.places; d.places.forEach(p => SW.mem.set(p.id, p)); if (!A.lat && d.lat) { A.lat = d.lat; A.lng = d.lng; queueSave(); } }
+    // No position from the listing: the town was searched on Google, whose position may be kept 30 days only. It is dated
+    // (pos, as a place's), so the build looks for the town in our own sources and the weekly renewal keeps it in time.
+    if (!d.ok) SW.err = d.message || 'Could not load places.'; else { SW.lists[cat] = d.places; d.places.forEach(p => SW.mem.set(p.id, p)); if (!A.lat && d.lat) { A.lat = d.lat; A.lng = d.lng; A.pos = { from: 'google', at: new Date().toISOString().slice(0, 10) }; queueSave(); } }
   } catch (e) { SW.err = 'Could not load places. Check your connection.'; }
   finally { SW.loading = false; refreshSwipe(); }
 }
@@ -299,12 +328,14 @@ function swipeInner(){
   const list = swList(), S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
   const tabs = SW_CATS.length > 1 ? `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>` : '';
   if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<div class="sw-empty">${SW.err ? esc(SW.err) : '<span class="spin dark"></span> Finding the best-rated places near you…'}</div>`; }
-  const left = list.filter(p => !S[p.id]), p = left[0], seen = list.length - left.length;
+  const left = list.filter(p => !S[p.id]), seen = list.length - left.length;
+  left.slice(0, 2).forEach(swLiveAsk);   // the card on top and the next one
+  const p = left[0] && swLive(left[0]), kind = p && isOurs(p.id) && !p.photo;   // a researched card with no picture (yet): its kind's icon
   const undo = SW.last && S[SW.last] ? ' <button type="button" class="sw-undo" data-swlast="1">Undo</button>' : '';
   const count = `<p class="sw-count" role="status">${p ? `${seen + 1} of ${list.length}` : `All ${list.length} seen`} · ${yes} recommended${undo}</p>`;
   const card = p ? `<div class="sw-deck">${left.length > 2 ? '<i class="sw-back b2" aria-hidden="true"></i>' : ''}${left.length > 1 ? '<i class="sw-back" aria-hidden="true"></i>' : ''}
       <article class="sw-card" data-pid="${esc(p.id)}" tabindex="0" aria-label="${esc(p.name)}: arrow right to recommend, arrow left to skip">
-        <div class="sw-ph" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : ''}">${p.photo ? '' : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
+        <div class="sw-ph${kind ? ' sw-kind' : ''}" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : kind ? `--kc:${esc(swKindColour())}` : ''}">${p.photo ? '' : kind ? `<span class="sw-ic" data-kind="${esc(p.icon && ENG_ICON[p.icon] ? p.icon : 'todo')}" aria-hidden="true">${(p.icon && ENG_ICON[p.icon]) || ENG_TODO}</span>` : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
           <span class="sw-stamp yes" aria-hidden="true">Recommend</span><span class="sw-stamp no" aria-hidden="true">Not for us</span>
           <div class="sw-on"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
             <p>${p.rating ? `<b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · ` : ''}<a href="${esc(swMaps(p) || gmLink(p.name, p.id))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>${swBy(p)}</div></div>
@@ -353,14 +384,16 @@ document.addEventListener('pointerdown', e => {
   const x0 = e.clientX; let dx = 0, moved = false;
   const move = ev => {
     dx = ev.clientX - x0; if (!moved && Math.abs(dx) < 6) return;
-    if (!moved) { moved = true; try { c.setPointerCapture(e.pointerId); } catch (er) { /* the pointer is gone */ } }
+    if (!moved) { moved = true; c.dataset.drag = '1'; try { c.setPointerCapture(e.pointerId); } catch (er) { /* the pointer is gone */ } }
     c.style.transition = 'none'; c.style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`;
     c.style.setProperty('--yes', Math.max(0, Math.min(1, dx / 90))); c.style.setProperty('--no', Math.max(0, Math.min(1, -dx / 90)));
   };
   const up = () => {
     c.removeEventListener('pointermove', move); c.removeEventListener('pointerup', up); c.removeEventListener('pointercancel', up);
+    delete c.dataset.drag;
     if (moved && Math.abs(dx) > 90) return swDecide(dx > 0 ? 'yes' : 'no', c);
     c.style.transition = ''; c.style.transform = ''; c.style.setProperty('--yes', 0); c.style.setProperty('--no', 0);
+    if (SW.stale) { SW.stale = false; swCardRefresh(); }   // a picture that came while the card was held
   };
   c.addEventListener('pointermove', move); c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
 });

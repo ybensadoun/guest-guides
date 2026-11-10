@@ -14,6 +14,7 @@ import { spawnSync, spawn } from 'node:child_process';
 import { hav, nameOf, sameName, locateItem } from './places.mjs';
 import { checkResearch } from './research-check.mjs';   // the research's check: Google locates, our own sources fill
 import { hostPlaces, placesOf } from './host-places.mjs';   // a host's own places: located by Google, filled from our own table
+import { townPoint } from './place-facts.mjs';   // the house's town in GeoNames, when its position is Google's
 import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
 
@@ -247,6 +248,15 @@ async function build(g) {
   const A = { ...(g.answers || {}) }, id = g.id, tmp = 'w-' + id.slice(0, 8), siteDir = resolve(ROOT, 'sites', tmp), job = resolve(HERE, 'jobs', id);
   if (!g.slug) throw new Error('This guide has no web address yet.');
   if (!A.lat || !A.lng) throw new Error('We do not know where the house is yet. Add its location in the first step.');
+  // A house whose listing gave no position has Google's position of its town (the builder's deck searched it), which may be
+  // kept 30 days only: pos { from: 'google', at }. Its town in GeoNames, near that point, gives one of ours to keep, before
+  // anything is worked out from it; none found, the build goes on with Google's and content/house.json carries pos, so
+  // the weekly renewal (worker/renew-positions.mjs) keeps it in time.
+  if (A.pos && A.pos.from === 'google') {
+    const t = await townPoint(A.town, { lat: +A.lat, lng: +A.lng }, { log: (...a) => log(' ', ...a) });
+    if (t) { A.lat = t.lat; A.lng = t.lng; delete A.pos; log(`  the house's position: ${t.name} in GeoNames, ${Math.round(t.metres)} m from Google's (ours to keep)`); }
+    else log(`  the house's position: Google's town search of ${A.pos.at || '?'}, no town of that name in GeoNames near it (kept with its date, renewed weekly)`);
+  }
   rmSync(job, { recursive: true, force: true }); rmSync(siteDir, { recursive: true, force: true });
   mkdirSync(join(job, 'src'), { recursive: true });
   const remote = (A._remote || []).filter(u => u && u.src && String(u.src).startsWith('https://a0.muscache.com/'));
@@ -260,7 +270,8 @@ async function build(g) {
     if (!r.ok) { log('  host image not downloaded:', u.path, r.status); continue; }
     const aid = 'host-' + String(i).padStart(2, '0');
     writeFileSync(join(job, 'src/assets', aid + '.jpg'), Buffer.from(await r.arrayBuffer()));
-    writeFileSync(join(job, 'src/uploads', aid + '.json'), JSON.stringify({ kind: u.kind, assetId: aid, room: u.room || '', label: u.label || '', name: u.name || '' }));
+    // made: 'ai' for a drawing of the cover-art job (covers/art-<time>.jpg) kept as the cover: the guide's credits say so.
+    writeFileSync(join(job, 'src/uploads', aid + '.json'), JSON.stringify({ kind: u.kind, assetId: aid, room: u.room || '', label: u.label || '', name: u.name || '', ...(/\/covers\/art-[\w-]+\.jpg$/.test(u.path) ? { made: 'ai' } : {}) }));
   }
   writeFileSync(join(job, 'src/listing_photos.json'), JSON.stringify(remote.map(u => ({ url: u.src, room: u.room || '', label: u.roomLabel || '', caption: u.name || '' }))));
   // The host's own places (Eat and drink, Nightlife, what they added to Attractions, the cards they kept): Google only

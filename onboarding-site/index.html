@@ -412,6 +412,12 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 /* The photo's author (Google's rule), its own line under the rating: small, white on the photo's dark foot */
 .sw-on .sw-by{margin-top:2px;font-size:12px;line-height:1.3;opacity:.92;text-shadow:0 1px 2px rgba(0,0,0,.6);overflow-wrap:anywhere}
 .sw-on .sw-by a{font-weight:500}
+/* A researched card with no picture: its kind's icon (the engine's drawing) on the guide's colour, above the words, in the
+   flow so a long name pushes the card taller instead of running over the icon */
+.sw-ph.sw-kind{display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;gap:14px;height:auto;min-height:clamp(180px,28vh,320px);padding:20px 16px 12px;background:var(--kc,var(--pine));color:#fff}
+.sw-kind .sw-on{position:relative;left:auto;right:auto;bottom:auto}
+.sw-ic{position:relative;z-index:1;align-self:center;width:76px;height:76px;flex:none;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;color:#fff}
+.sw-ic svg{width:40px;height:40px}
 .sw-stamp{position:absolute;top:16px;z-index:2;padding:4px 10px;border-radius:10px;border:3px solid currentColor;background:rgba(255,255,255,.9);font:800 17px/1.2 var(--body);text-transform:uppercase;letter-spacing:.04em}
 .sw-stamp.yes{left:14px;color:var(--ok);opacity:var(--yes,0);transform:rotate(-8deg)}
 .sw-stamp.no{right:14px;color:var(--danger,#B3261E);opacity:var(--no,0);transform:rotate(8deg)}
@@ -1121,6 +1127,44 @@ function fixRail(){
   if (cr.top < rr.top + 8 || cr.bottom > rr.bottom - 8) rail.scrollTop += (cr.top - rr.top) - (rail.clientHeight - cur.clientHeight) / 2;
 }
 
+const ENG_P = d => `<svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ENG_ICON = {
+  mug: ENG_P('<path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 1.5c-.8.8-.8 1.7 0 2.5s.8 1.7 0 2.5M12.5 1.5c-.8.8-.8 1.7 0 2.5s.8 1.7 0 2.5"/><path d="M3 21h15"/>'),
+  // A restaurant of no more precise kind (kinds.json "fork"): fork and knife, the maker's drawing.
+  fork: ENG_P('<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.5 2-3 6-3 8.5S15.5 14 17 14"/>'),
+  pizza: ENG_P('<path d="M12 21.5L3 6.5a15.5 15.5 0 0 1 18 0z"/><path d="M4.6 9.2a13 13 0 0 1 14.8 0"/><circle cx="10" cy="11.5" r="1.3" fill="currentColor"/><circle cx="14.2" cy="13.5" r="1.3" fill="currentColor"/><circle cx="12" cy="17" r="1.1" fill="currentColor"/>'),
+  paella: ENG_P('<ellipse cx="11" cy="13" rx="8" ry="5"/><path d="M19 12.5h3.5M3 13H1"/><circle cx="8" cy="12.3" r="1" fill="currentColor"/><circle cx="13.5" cy="11.6" r="1" fill="currentColor"/><path d="M10.5 14.5l2 .8M14 14l1.5-1"/>'),
+  fish: ENG_P('<path d="M2.5 12c3-4.5 9.5-6 14.5 0-5 6-11.5 4.5-14.5 0z"/><path d="M17 12l4.5-4v8z"/><circle cx="7" cy="11" r=".9" fill="currentColor"/>'),
+  ham: ENG_P('<path d="M3 15.5C3 10 7 6 11 6c3 0 4.5 1.5 5.5 3l-6.5 9c-1.5.8-3 1.2-4.2 1.2C4.2 19.2 3 17.8 3 15.5z"/><path d="M16.5 9l3.5-3.5"/><path d="M19.2 4.2l2.2 2.2-1.6 1.6-2.2-2.2z"/><path d="M6.5 15c.5-2.5 2-4.5 4.5-5.5"/>'),
+  truck: ENG_P('<path d="M1.5 6h12v10h-12z"/><path d="M13.5 9.5h4.5l3.5 3.5v3h-8"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>'),
+  cloche: ENG_P('<path d="M3.5 16.5a8.5 8.5 0 0 1 17 0z"/><path d="M2 19.5h20M12 8V6M10.5 6h3"/>'),
+  leaf: ENG_P('<path d="M5 19C4 11 9 4.5 20 4c.5 10.5-6 15.5-15 15z"/><path d="M5 19c3-5 6-8 10-10.5"/>'),
+  pot: ENG_P('<path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M2 10h20M9 4.5c0 1.5 1 1.5 1 3M14 4.5c0 1.5 1 1.5 1 3"/>'),
+  croissant: ENG_P('<path d="M2.5 14.5C3 9.5 7 6 12 6s9 3.5 9.5 8.5c-1.6 1.6-3.6 1.8-5.2.8-1 1.6-2.6 2.4-4.3 2.4s-3.3-.8-4.3-2.4c-1.6 1-3.6.8-5.2-.8z"/><path d="M8.5 7l1.5 10M15.5 7L14 17"/>'),
+  waterpark: ENG_P('<path d="M2 17c2 0 2-1.5 4-1.5S8 17 10 17s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M2 21c2 0 2-1.5 4-1.5S8 21 10 21s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M6 13V4M6 4c6 0 9 3 12 9"/>'),
+  bowling: ENG_P('<path d="M12 2.5c1.6 0 2.2 1.3 2.2 2.6S13.2 7.6 13.2 8.6c0 1.2 3.3 3.2 3.3 7.4a4.5 4.5 0 0 1-9 0c0-4.2 3.3-6.2 3.3-7.4 0-1-1-2.2-1-3.5S10.4 2.5 12 2.5z"/><path d="M10.6 10h2.8"/>'),
+  trampoline: ENG_P('<ellipse cx="12" cy="16" rx="9" ry="2.6"/><path d="M5 18l-1 3.5M19 18l1 3.5"/><circle cx="12" cy="4.5" r="1.8"/><path d="M12 7v4M9.5 9l2.5 2 2.5-2"/>'),
+  golf: ENG_P('<path d="M12 18V3l7 3.5-7 3.5"/><ellipse cx="12" cy="19" rx="7" ry="2.5"/>'),
+  kart: ENG_P('<path d="M5 21V3.5"/><path d="M5 4h14v8H5"/><path d="M9.7 4v8M14.3 4v8M5 8h14"/>'),
+  spring: ENG_P('<path d="M12 3s6 6.4 6 10.8a6 6 0 0 1-12 0C6 9.4 12 3 12 3z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>'),
+  beach: ENG_P('<path d="M12 3a9 9 0 0 1 9 8.5H3A9 9 0 0 1 12 3z"/><path d="M12 11.5V20"/><path d="M3 21c1.5 0 1.5-1 3-1s1.5 1 3 1 1.5-1 3-1 1.5 1 3 1 1.5-1 3-1 1.5 1 3 1"/>'),
+  city: ENG_P('<path d="M3 21h18"/><path d="M5 21V11l4-2v12M9 21V5h6v16M15 21V9l4 2v10"/><path d="M11.5 8h1M11.5 11h1M11.5 14h1"/>'),
+  roman: ENG_P('<path d="M3 8.5L12 4l9 4.5z"/><path d="M5.5 9v8.5M10 9v8.5M14 9v8.5M18.5 9v8.5"/><path d="M4 18h16M3 21h18"/>'),
+  arch: ENG_P('<path d="M3 5h18M4 5v16h4v-6a4 4 0 0 1 8 0v6h4V5"/>'),
+  town: ENG_P('<path d="M12 2.5v3M10.5 4h3"/><path d="M8.5 21V10L12 6.5l3.5 3.5V21"/><path d="M3.5 21v-6.5l5-3M20.5 21v-6.5l-5-3"/><path d="M11 21v-3.5h2V21"/><path d="M2.5 21h19"/>'),
+  castle: ENG_P('<path d="M4 21V8h3v2h2.5V8h5v2H17V8h3v13z"/><path d="M10 21v-4.5a2 2 0 0 1 4 0V21"/>'),
+  palette: ENG_P('<path d="M12 22a10 10 0 1 1 10-10c0 2.5-2 3.5-4 3.5h-2a2 2 0 0 0-1.5 3.3A2 2 0 0 1 12 22z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="16.5" cy="10.5" r="1"/>'),
+  monastery: ENG_P('<path d="M12 2v4M10.3 3.8h3.4"/><path d="M6 21V11l6-5 6 5v10"/><path d="M10 21v-5a2 2 0 0 1 4 0v5"/><path d="M3 21h18"/>'),
+  mountain: ENG_P('<path d="M2 20.5l5.5-9 3 4.5 3.5-7 8 11.5z"/><path d="M6 14l1.5-2.5 1.2 1.8"/>'),
+  wine: ENG_P('<path d="M7.5 3h9l-.6 5.5a3.9 3.9 0 0 1-7.8 0z"/><path d="M8 7h8"/><path d="M12 12.5V20M8.5 20.5h7"/>'),
+  bus: ENG_P('<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3M16 18v3"/><circle cx="8" cy="14.5" r=".9" fill="currentColor"/><circle cx="16" cy="14.5" r=".9" fill="currentColor"/>'),
+  train: ENG_P('<rect x="5.5" y="3" width="13" height="13" rx="3"/><path d="M5.5 10h13"/><circle cx="9" cy="13" r=".9" fill="currentColor"/><circle cx="15" cy="13" r=".9" fill="currentColor"/><path d="M8.5 16l-2 4.5M15.5 16l2 4.5M7.5 19h9"/>'),
+  music: ENG_P('<path d="M9 18V5.5l11-2.5v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
+  themepark: ENG_P('<circle cx="12" cy="10" r="7"/><circle cx="12" cy="10" r="1.3"/><path d="M12 3v5.7M12 11.3V17M5 10h5.7M13.3 10H19"/><path d="M8 21l4-4 4 4M6.5 21h11"/>'),
+  escape: ENG_P('<rect x="4" y="3" width="13" height="18" rx="1"/><path d="M17 5h3v14h-3"/><circle cx="14" cy="12.5" r="1" fill="currentColor"/><path d="M8 3v18"/>'),
+  beachbar: ENG_P('<path d="M4.5 4h15L12 12.5z"/><path d="M12 12.5V20M8 20.5h8"/><path d="M15 2l-2 4"/>')
+};
+const ENG_TODO = ENG_P('<path d="M12 3l2.6 5.5 6 .8-4.4 4.1 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.3l6-.8z"/>');
 const AMENS = {
  "_doc": "Amenities a guide can list, for the builder (search, groups), the listing read (Airbnb codes: pdp_v3_<group>_<n> gives n, sv<n> for scenic views) and the House page. id: kept in answers.amenities. g: group. ab: Airbnb codes. top: rank among the first ones on the House page (1 first, 0 not). t: the name in six languages. k: other words, as phrases separated by commas, for search and for matching a listing in any language (Airbnb's own titles too); \"-\" marks an old builder choice that is not offered any more.",
  "groups": [
@@ -1921,7 +1965,7 @@ function applyEarly(d){
   while (nm.length > 40 && nm.includes(' | ')) nm = nm.slice(0, nm.lastIndexOf(' | ')).trim();
   WOW.name = nm || String(d.title || '').split('·')[0].trim();
   if (d.cover) A.coverUrl = d.cover;
-  if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
+  if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; delete A.pos; }   // the listing's own point: ours, no date (loadPlaces)
   addListingPhotos(d);
 }
 function addListingPhotos(d){
@@ -1988,7 +2032,7 @@ function applyDraft(d){
   // No section is switched by the listing: every guide starts with Ca La Kimberly's sections, and only the host switches one off.
   if (D.rating && !A.ratingAvg) { A.ratingAvg = String(D.rating); A._pre = { ...(A._pre || {}), ratingAvg: 'reviews' }; if (D.reviewCount) A.ratingCount = String(D.reviewCount); }
   if (Array.isArray(D.toConfirm)) A.toConfirm = D.toConfirm.slice(0, 6);
-  if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; }
+  if (d.lat && d.lng) { A.lat = d.lat; A.lng = d.lng; delete A.pos; }
   if (d.cover) A.coverUrl = d.cover;
   if (d.report) A._report = d.report;
   addListingPhotos(d);
@@ -2003,7 +2047,7 @@ document.addEventListener('input', e => { if (e.target.id === 'st_url') { const 
 // Google's cards are shown live and never kept (Google's terms: a place's id may be kept, not its name, rating, photo or
 // address). A swipe saves { id, d, cat, c }: the id, the host's yes or no and their comment. What the screen shows about a
 // card (the card, Your picks, the phone) is read by its id from SW.mem, every card loaded in this session, in memory only.
-const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {}, mem: new Map() };
+const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {}, mem: new Map(), live: new Map() };
 // Eating and drinking is the host's own list (see "Your places"): we only suggest things to do.
 const SW_CATS = [['todo', 'Attractions']];
 const swipes = () => A.swipes || (A.swipes = {});
@@ -2020,9 +2064,36 @@ function researchCards(){
   const S = swipes(), chosen = [...Object.values(S).filter(x => !String(x.id).startsWith('r:')).map(x => (SW.mem.get(x.id) || {}).name).filter(Boolean), ...addedPlaces()];
   return (((AREA.full || {}).todo || {}).items || []).filter(it => shownText(it.name) && !MARKET.test(shownText(it.name) + ' ' + shownText(it.type)) && !chosen.some(n => samePlace(n, shownText(it.name)))).map(it => { const name = shownText(it.name);
     return { id: 'r:' + plainName(name), name, type: shownText(it.type), km: it.km_from_house, lat: it.lat, lng: it.lng, summary: shownText(it.description),
-      maps: it.gmaps || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([name, it.town].filter(Boolean).join(' ')), ...(it._card || {}) }; });
+      maps: it.gmaps || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([name, it.town].filter(Boolean).join(' ')),
+      ...(it.gid ? { gid: it.gid } : {}), ...(it.icon ? { icon: it.icon } : {}) }; });
 }
 const moreLeft = () => researchCards().filter(p => !swipes()[p.id]).length;
+// A researched card is ours (name, kind, distance, words), but its picture and rating are Google's, shown live (Yohann,
+// 10 Nov 2026): asked once per id per session (/api/places?card=) when the card is on top or next, kept in SW.live with
+// the deck's memory, never saved. 'wait' while asked; null when there is nothing to show (no photo, the call failed).
+function swLiveAsk(p){
+  if (!p || !isOurs(p.id) || !p.gid || SW.live.has(p.gid)) return;
+  SW.live.set(p.gid, 'wait');
+  fetch('/api/places?card=' + encodeURIComponent(p.gid)).then(r => r.json()).catch(() => null).then(d => {
+    SW.live.set(p.gid, d && d.ok && d.photo ? { photo: d.photo, photoBy: Array.isArray(d.photoBy) ? d.photoBy : [], rating: d.rating, reviews: d.reviews } : null);
+    // Only the card on top is drawn again (a next one is drawn when it comes up), and only the card: not the picks, whose
+    // comment the host may be typing. A card held by the finger is drawn when it lets go.
+    const c = document.querySelector('.sw-card');
+    if (!d || !d.ok || !d.photo || !c || c.dataset.pid !== p.id) return;
+    if (c.dataset.drag || c.dataset.gone) { SW.stale = true; return; }
+    swCardRefresh();
+  });
+}
+function swCardRefresh(){
+  const d = document.querySelector('#swipe .sw-deck'); if (!d) return;
+  const keys = d.contains(document.activeElement), t = document.createElement('div'); t.innerHTML = swipeInner();
+  const n = t.querySelector('.sw-deck'); if (!n) return; d.replaceWith(n);
+  if (keys) { const c = n.querySelector('.sw-card'); if (c) c.focus({ preventScroll: true }); }
+}
+// The card as drawn: a researched one with Google's live photo and rating when there is a photo (else its kind's icon).
+const swLive = p => { const L = isOurs(p.id) && p.gid && SW.live.get(p.gid); return L && typeof L === 'object' ? { ...p, ...L } : p; };
+// The guide's own colour for Things to do (the engine's green), as the phone shows it: the layout's, or the picture's.
+const swKindColour = () => { const cs = colourSource(); return ((cs && PV.palSrc === cs.src && PV.palette) || PRESET_PAL[choosePreset()]).acc[3]; };
 const isOurs = id => String(id).startsWith('r:');
 // A decision as the screen shows it: the live card (Google's from memory, ours from the research) with the host's comment.
 // A Google card not in memory (after a reload, before the deck is loaded again) is a kept place with no name, and its link.
@@ -2052,7 +2123,9 @@ async function loadPlaces(cat){
     const q = new URLSearchParams({ cat, lang: (A.languages || ['en'])[0] || 'en', radius: String(({ '15 min': 6000, '30 min': 15000, '45 min': 25000, '1 hour': 30000 })[v('radius')] || 10000), want: swWant().join('|') });
     if (A.lat && A.lng) { q.set('lat', A.lat); q.set('lng', A.lng); } else q.set('town', [v('town'), v('region')].filter(Boolean).join(', '));
     const r = await fetch('/api/places?' + q); const d = await r.json();
-    if (!d.ok) SW.err = d.message || 'Could not load places.'; else { SW.lists[cat] = d.places; d.places.forEach(p => SW.mem.set(p.id, p)); if (!A.lat && d.lat) { A.lat = d.lat; A.lng = d.lng; queueSave(); } }
+    // No position from the listing: the town was searched on Google, whose position may be kept 30 days only. It is dated
+    // (pos, as a place's), so the build looks for the town in our own sources and the weekly renewal keeps it in time.
+    if (!d.ok) SW.err = d.message || 'Could not load places.'; else { SW.lists[cat] = d.places; d.places.forEach(p => SW.mem.set(p.id, p)); if (!A.lat && d.lat) { A.lat = d.lat; A.lng = d.lng; A.pos = { from: 'google', at: new Date().toISOString().slice(0, 10) }; queueSave(); } }
   } catch (e) { SW.err = 'Could not load places. Check your connection.'; }
   finally { SW.loading = false; refreshSwipe(); }
 }
@@ -2069,12 +2142,14 @@ function swipeInner(){
   const list = swList(), S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
   const tabs = SW_CATS.length > 1 ? `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>` : '';
   if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<div class="sw-empty">${SW.err ? esc(SW.err) : '<span class="spin dark"></span> Finding the best-rated places near you…'}</div>`; }
-  const left = list.filter(p => !S[p.id]), p = left[0], seen = list.length - left.length;
+  const left = list.filter(p => !S[p.id]), seen = list.length - left.length;
+  left.slice(0, 2).forEach(swLiveAsk);   // the card on top and the next one
+  const p = left[0] && swLive(left[0]), kind = p && isOurs(p.id) && !p.photo;   // a researched card with no picture (yet): its kind's icon
   const undo = SW.last && S[SW.last] ? ' <button type="button" class="sw-undo" data-swlast="1">Undo</button>' : '';
   const count = `<p class="sw-count" role="status">${p ? `${seen + 1} of ${list.length}` : `All ${list.length} seen`} · ${yes} recommended${undo}</p>`;
   const card = p ? `<div class="sw-deck">${left.length > 2 ? '<i class="sw-back b2" aria-hidden="true"></i>' : ''}${left.length > 1 ? '<i class="sw-back" aria-hidden="true"></i>' : ''}
       <article class="sw-card" data-pid="${esc(p.id)}" tabindex="0" aria-label="${esc(p.name)}: arrow right to recommend, arrow left to skip">
-        <div class="sw-ph" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : ''}">${p.photo ? '' : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
+        <div class="sw-ph${kind ? ' sw-kind' : ''}" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : kind ? `--kc:${esc(swKindColour())}` : ''}">${p.photo ? '' : kind ? `<span class="sw-ic" data-kind="${esc(p.icon && ENG_ICON[p.icon] ? p.icon : 'todo')}" aria-hidden="true">${(p.icon && ENG_ICON[p.icon]) || ENG_TODO}</span>` : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
           <span class="sw-stamp yes" aria-hidden="true">Recommend</span><span class="sw-stamp no" aria-hidden="true">Not for us</span>
           <div class="sw-on"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
             <p>${p.rating ? `<b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · ` : ''}<a href="${esc(swMaps(p) || gmLink(p.name, p.id))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>${swBy(p)}</div></div>
@@ -2123,14 +2198,16 @@ document.addEventListener('pointerdown', e => {
   const x0 = e.clientX; let dx = 0, moved = false;
   const move = ev => {
     dx = ev.clientX - x0; if (!moved && Math.abs(dx) < 6) return;
-    if (!moved) { moved = true; try { c.setPointerCapture(e.pointerId); } catch (er) { /* the pointer is gone */ } }
+    if (!moved) { moved = true; c.dataset.drag = '1'; try { c.setPointerCapture(e.pointerId); } catch (er) { /* the pointer is gone */ } }
     c.style.transition = 'none'; c.style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`;
     c.style.setProperty('--yes', Math.max(0, Math.min(1, dx / 90))); c.style.setProperty('--no', Math.max(0, Math.min(1, -dx / 90)));
   };
   const up = () => {
     c.removeEventListener('pointermove', move); c.removeEventListener('pointerup', up); c.removeEventListener('pointercancel', up);
+    delete c.dataset.drag;
     if (moved && Math.abs(dx) > 90) return swDecide(dx > 0 ? 'yes' : 'no', c);
     c.style.transition = ''; c.style.transform = ''; c.style.setProperty('--yes', 0); c.style.setProperty('--no', 0);
+    if (SW.stale) { SW.stale = false; swCardRefresh(); }   // a picture that came while the card was held
   };
   c.addEventListener('pointermove', move); c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
 });
@@ -2410,7 +2487,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 10 Nov 2026, 20:32 (Madrid time, after commit 70ca140)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 10 Nov 2026, 21:03 (Madrid time, after commit 47efe8c)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -3465,6 +3542,14 @@ function cmGuide(c) {
 const edCssVar = (css, name) => { const m = css.match(new RegExp(name + '\\s*:\\s*([^;}]+)')); return m ? m[1].trim() : ''; };
 const edBlockOf = css => { const m = css.match(/\/\* editor:start \*\/([\s\S]*?)\/\* editor:end \*\//); return m ? m[1] : ''; };
 const edCoverPhoto = h => !!h.photo && h.cover !== 'themed';
+// The guide's credits say "the cover illustration was made with AI" while site.theme.coverMade is "ai" (engine/src/views/
+// credits.js). The worker's cover-art job names its drawings covers/art-<time>.jpg, so the mark follows the cover's file:
+// set when that drawing becomes the cover, gone when another cover is chosen (a photo, an upload, the drawn cover).
+const edArt = path => /(^|\/)covers\/art-[\w-]+\.jpg$/.test(String(path || ''));
+function edCoverMade(path) {
+  const s = edC().site = edC().site || {}, th = s.theme = s.theme || {};
+  if (edArt(path)) th.coverMade = 'ai'; else delete th.coverMade;
+}
 // The look, in four steps: logo, cover picture (one of the guide's photos, an upload, drawn from the colours, or an
 // artistic version of a photo), layout, colours. Fonts are optional, folded away and shown in their own typeface.
 const cmPhotos = c => { const f = c.files || {}, out = [], add = x => { if (typeof x === 'string' && x && !out.includes(x)) out.push(x); };
@@ -4306,7 +4391,7 @@ async function edPhotoInput(t) {
     for (const f of files) {
       const name = await edUpload(f, t.dataset.kind);
       if (t.dataset.phadd) { const p = edPath(t.dataset.phadd); let a = edGet(edC(), p); if (!Array.isArray(a)) { edSet(edC(), p, []); a = edGet(edC(), p); } a.push(name); }
-      else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') edSet(edC(), ['files', 'house', 'cover'], 'photo'); }
+      else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') { edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(name); } }
       if (t.dataset.phset === 'site/logo') { setSave('busy', 'Making the icons for phones…'); edC().site.icons = await edIconsFrom(f, 'contain'); CM.logoCol = ''; }
     }
     cmQueue(); render();
@@ -4433,16 +4518,16 @@ document.addEventListener('click', e => {
   if (d.cunpublish !== undefined) return cmUnpublish(t);
   if (d.cdiscard !== undefined) return cmDiscard(t);
   if (!t.closest('.edz')) return;
-  if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); return done(); }
+  if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); edCoverMade(d.cover === 'photo' ? ((edC().files || {}).house || {}).photo : ''); return done(); }
   if (d.allpics !== undefined) { CM.allPics = true; return render(); }
-  if (d.coverpic) { edSet(edC(), ['files', 'house', 'photo'], d.coverpic); edSet(edC(), ['files', 'house', 'cover'], 'photo'); return done(); }
+  if (d.coverpic) { edSet(edC(), ['files', 'house', 'photo'], d.coverpic); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(d.coverpic); return done(); }
   if (d.art) {
     const src = edImg(((edC().files || {}).house || {}).photo || '');
     if (d.art === 'words') { CM.artWords = CM.artWords || ''; render(); setTimeout(() => { const x = document.getElementById('c_artw'); if (x) x.focus(); }, 0); return; }
     if (d.art === 'draw') { const w = (document.getElementById('c_artw') || {}).value || ''; CM.artWords = w; return w.trim() ? artStart(src, w.trim()) : toast('Say how it should look first.'); }
     return artStart(src, d.art === 'again' ? CM.artLast : null);
   }
-  if (d.artuse !== undefined && CM.artRes) { edSet(edC(), ['files', 'house', 'photo'], CM.artRes.path); edSet(edC(), ['files', 'house', 'cover'], 'photo'); CM.artRes = null; toast('Your new cover is set. Preview to see it.'); return done(); }
+  if (d.artuse !== undefined && CM.artRes) { edSet(edC(), ['files', 'house', 'photo'], CM.artRes.path); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(CM.artRes.path); CM.artRes = null; toast('Your new cover is set. Preview to see it.'); return done(); }
   if (d.daytog) { const o = edGet(edC(), edPath(d.daytog)); if (o) { const s = new Set(o.days || []); s.has(d.d) ? s.delete(d.d) : s.add(d.d); o.days = ED_DAYS.map(x => x[0]).filter(x => s.has(x)); done(); } return; }
   if (d.cflag) { const it = edGet(edC(), edPath(d.cflag)); if (it) { const s = new Set(it.flags || []); s.has(d.f) ? s.delete(d.f) : s.add(d.f); it.flags = [...s]; done(); } return; }
   if (d.addsch) { arr(d.addsch).push({ days: [], open: '09:00', close: '14:00' }); return done(); }

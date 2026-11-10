@@ -2,7 +2,8 @@
 // table's rows and Google's answers are given, and fetch itself refuses.   node --test 'worker/test/*.test.mjs'
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renewFiles, dueOf, gidOf } from '../renew-positions.mjs';
+import { renewFiles, dueOf, gidOf, houseDue } from '../renew-positions.mjs';
+import { townPoint } from '../place-facts.mjs';
 
 globalThis.fetch = async () => { throw new Error('no network in tests'); };
 
@@ -73,4 +74,36 @@ test('renewFiles: the same answers renew the same places in the unpublished chan
   const located = { [gid(2)]: { gid: gid(2), lat: 41.31, lng: 1.61 } };
   renewFiles(live, { located, house, now }); renewFiles(draft, { located, house, now });
   assert.deepEqual(draft.restaurants.items[1], live.restaurants.items[1]);
+});
+
+// The house's own point when it is Google's town search (content/house.json pos): ours from GeoNames first, else Google's
+// text search of the town again; a failure is reported and the point stays as it was (the engine never drops it).
+const withHouse = pos => ({ ...files(), house: { name: 'Casa Test', lat: 41.2, lng: 1.5, ...(pos ? { pos: { ...pos } } : {}) } });
+test('renewFiles: the house\'s own point, made ours from GeoNames, renewed from Google, a failure left as it is, not due left alone', () => {
+  const F1 = withHouse(old), r1 = renewFiles(F1, { home: { ours: { lat: 41.2186, lng: 1.535 }, google: null }, house: F1.house, now });
+  assert.deepEqual(F1.house, { name: 'Casa Test', lat: 41.2186, lng: 1.535 }); assert.deepEqual(r1.ours, ['the house']);
+  const F2 = withHouse(old), r2 = renewFiles(F2, { home: { ours: null, google: { lat: 41.201, lng: 1.501 } }, house: F2.house, now });
+  assert.deepEqual(F2.house.pos, { from: 'google', at: '2026-11-10' }); assert.equal(F2.house.lat, 41.201); assert.deepEqual(r2.renewed, ['the house']);
+  const F3 = withHouse(old), r3 = renewFiles(F3, { home: { ours: null, google: { error: 'Quota' } }, house: F3.house, now });
+  assert.deepEqual(F3.house, withHouse(old).house); assert.deepEqual(r3.failed, [{ name: 'the house', why: 'Quota' }]);
+  const F4 = withHouse(old), r4 = renewFiles(F4, { home: { ours: null, google: null }, house: F4.house, now });
+  assert.equal(r4.failed[0].why, 'its town was found neither in GeoNames nor on Google'); assert.deepEqual(F4.house.pos, old);
+  // Not due (recent, or ours with no pos), or no answers given: left alone, nothing reported for the house.
+  for (const F of [withHouse(recent), withHouse(null)]) { const r = renewFiles(F, { home: { ours: { lat: 1, lng: 1 } }, now }); assert.ok(!r.ours.includes('the house') && F.house.lat === 41.2); }
+  const F5 = withHouse(old), r5 = renewFiles(F5, { now }); assert.deepEqual(F5.house.pos, old); assert.ok(![...r5.ours, ...r5.renewed, ...r5.failed.map(x => x.name)].includes('the house'));
+  assert.equal(houseDue(withHouse(old), { now }), true); assert.equal(houseDue(withHouse(recent), { now }), false); assert.equal(houseDue(withHouse(null), { now }), false);
+});
+
+test('townPoint: a town or village of that name near the point, never another kind of place; nothing found or a failure gives null', async () => {
+  const feats = [
+    { id: '1', name: 'Estació del Vendrell', cls: 'S', code: 'RSTN', lat: 41.212, lng: 1.5355, metres: 50, exact: false },
+    { id: '2', name: 'El Vendrell', cls: 'P', code: 'PPLA3', lat: 41.21861, lng: 1.535, metres: 90, exact: true },
+  ];
+  const asked = [], gaz = async (country, pins) => { asked.push([country, pins]); return { fetched: '2026-11-10', pins: { house: feats } }; };
+  assert.deepEqual(await townPoint('El Vendrell', { lat: 41.219, lng: 1.5355 }, { gaz }), { lat: 41.21861, lng: 1.535, name: 'El Vendrell', metres: 90 });
+  assert.deepEqual(asked, [['ES', [{ id: 'house', lat: 41.219, lng: 1.5355, names: ['El Vendrell'] }]]]);
+  assert.equal(await townPoint('El Vendrell', { lat: 41.2, lng: 1.5 }, { gaz: async () => ({ pins: { house: [{ ...feats[1], metres: 4000 }] } }) }), null);   // beyond a town's reach
+  assert.equal(await townPoint('El Vendrell', { lat: 41.2, lng: 1.5 }, { gaz: async () => ({ pins: { house: [feats[0]] } }) }), null);   // a station is not the town
+  assert.equal(await townPoint('El Vendrell', { lat: 41.2, lng: 1.5 }, { gaz: async () => { throw new Error('down'); }, log: () => {} }), null);
+  assert.equal(await townPoint('', { lat: 41.2, lng: 1.5 }, { gaz }), null); assert.equal(asked.length, 1);   // no name: GeoNames not asked
 });

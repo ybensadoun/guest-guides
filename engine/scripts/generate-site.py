@@ -456,6 +456,10 @@ if wifi:   # the Wi-Fi password never goes in tracked files: private/wifi.json i
     (SITE / 'private').mkdir(exist_ok=True)
     (SITE / 'private/wifi.json').write_text(json.dumps(wifi, ensure_ascii=False, indent=2))
 if A.get('listingUrl'): house['listing'] = A['listingUrl']
+# The point is Google's town search (the listing gave none, and GeoNames has no town of that name near it: worker build):
+# dated like a place's, so the weekly renewal (worker/renew-positions.mjs) keeps it within Google's 30 days.
+_pos = A.get('pos') if isinstance(A.get('pos'), dict) else {}
+if _pos.get('from') == 'google' and re.match(r'^\d{4}-\d{2}-\d{2}$', str(_pos.get('at') or '')): house['pos'] = {'from': 'google', 'at': _pos['at']}
 (SITE / 'content/house.json').write_text(json.dumps(house, ensure_ascii=False, indent=1))
 
 # The rooms as the host ordered them (answers.rooms: [{n: name, c: kind of room, t: what guests should know there}]), then
@@ -805,7 +809,8 @@ site = {
     **({'logo': 'logo-head.png'} if logo_im else {}), 'shareImage': 'house.jpg' if HAS_PHOTO else ('logo-head.png' if logo_im else 'favicon.png'), 'languages': LANGS, 'storageKey': args.slug,
     'area': {'radiusKm': {'15 min': 15, '30 min': 30, '45 min': 45, '1 hour': 60}.get(A.get('radius'), 30)},
     'modules': modules,
-    'theme': {'preset': preset, **({'fonts': DISP_FILES + TXT_FILES} if (DISP_FILES or TXT_FILES) else {}), 'paper': palette['paper'], 'manifestBackground': palette['paper'], 'manifestTheme': a[0], 'darkMode': False},
+    'theme': {'preset': preset, **({'fonts': DISP_FILES + TXT_FILES} if (DISP_FILES or TXT_FILES) else {}), 'paper': palette['paper'], 'manifestBackground': palette['paper'], 'manifestTheme': a[0], 'darkMode': False,
+              **({'coverMade': 'ai'} if own_cover and cover.get('made') == 'ai' else {})},   # the cover-art job's drawing: the credits say it was made with AI
     'previewImages': (['logo-head.png'] if logo_im else []) + ['favicon.png'] + (['house.jpg'] if HAS_PHOTO else []),
     'onboarding': {'mood': A.get('mood'), 'styleKit': kit_id, 'imageStats': stats, 'palette': palette, 'presetChosen': preset}
 }
