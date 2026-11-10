@@ -173,6 +173,16 @@ Read on 10 Nov 2026: Google Maps Platform EEA Terms of Service (last modified 26
 - **Prototype of Google's card (10 Nov 2026, Yohann: yes).** Written, not run yet: it needs a browser key of its own (the one we have is for servers and must not be put in a page), limited to our web addresses and to the Maps JavaScript API and Places UI Kit. Yohann creates it in Google Cloud; it goes in `.env` as `GOOGLE_MAPS_BROWSER_KEY`.
 - Open detail: a place's town in the list ("Bakery, El Vendrell") comes from Google's address today. To come from the website or the host; not worked out from Google's position, which the terms also rule out.
 
+## Proposal 3, the design: "Kind and marks" in a place's card (mocked up 10 Nov 2026, waiting for Yohann's view)
+Drawn in the maker's own styles with the guide's own icons, at 360 px in English and French. Everything in it is typed or chosen by the host: nothing comes from Google.
+- **Kind.** One choice gives the place its icon and, in Attractions, the filter it sits under and its colour. Shown as one line ("Fish and seafood · Change"); "Change" opens a grid of icon tiles, three across. Eat and drink: 12 kinds (restaurant, pizza, paella and rice, fish and seafood, grill and ham, fine dining, home cooking, vegetarian, bakery and café, café or bar, beach bar, roadside). Attractions: 21 kinds under the five filters (Activities, Beaches, Wine, Sights and towns, Nature and walks). All are icons the engine already has. Markets: their five kinds. Events: their ten kinds.
+- **Marks,** as chips, also the filters guests use. Eat and drink: Dog friendly, Vegetarian options, Gluten-free options, Terrace, Sea view, Book ahead. Attractions: Great for kids, Dog friendly, Free, Rainy day, Book ahead. Markets: what they sell, and "Not held on public holidays".
+- **Our favourite:** a switch; guests see "Unmissable". For two or three places.
+- **Price per person** as "from, to" on one line, and **set menus** as rows (Menú del día or Tasting menu, with its price).
+- **Hours:** on each line of hours, "Only part of the year" with its two dates; "Open 24 h" as a switch; for a market, which week of the month.
+- To tidy in the build: the menu's name is cut in its small box, and the season's two dates should sit on one line.
+- Later, with the countries (phase 2): kinds and marks that depend on the country ("Menú del día", human towers as an event kind) come from the country's profile.
+
 ## Not gaps
 The look and its colours and fonts; languages and translation; Wi-Fi with several networks; Getting around (taxis with other numbers, stations, lines, journey times, the Home tile); automatic events and their settings; photos and their order; pinning a restaurant to Home; switching sections on and off; drafts, Preview and Publish.
 
