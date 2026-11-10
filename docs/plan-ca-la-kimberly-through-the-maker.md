@@ -174,6 +174,14 @@ Read on 10 Nov 2026: Google Maps Platform EEA Terms of Service (last modified 26
 - Open detail: a place's town in the list ("Bakery, El Vendrell") comes from Google's address today. To come from the website or the host; not worked out from Google's position, which the terms also rule out.
 
 ## Proposal 3, the design: "Kind and marks" in a place's card (mocked up 10 Nov 2026, waiting for Yohann's view)
+**Corrected the same day (Yohann: "the guide should be made quick [...] as much as we can pre-fill, the better"; the first mockup showed a form to fill).** The host gives a place's name and, if they like, a few words. Everything else is filled in for them and shown as found, to look at once:
+- **Just added:** "Looking for its website…", and the host goes on to the next place.
+- **Found:** a block "Filled in for you" with the kind and its icon, the hours, the price, the phone and the marks, the site they came from and the date, and one link, "Change". The form below (the first mockup) only opens behind "Change". "Our favourite" stays a switch on the card: only the host knows.
+- **Nothing found:** the kind, guessed from the name and the host's words, and a plain line: guests still get the pin, the distance and the Google Maps button; nothing for the host to fill in; a field to paste the place's website if it has one.
+- Where the filling comes from, within the terms: the place's own website (proposal 2b) for hours, phone, price and "book ahead"; the kind and marks worked out by Claude from the name, the host's words and that website, never from Google's own kind.
+So proposals 2a, 2b and 3 are one piece of work, in that order: locate, fill, review.
+
+What follows is the form behind "Change".
 Drawn in the maker's own styles with the guide's own icons, at 360 px in English and French. Everything in it is typed or chosen by the host: nothing comes from Google.
 - **Kind.** One choice gives the place its icon and, in Attractions, the filter it sits under and its colour. Shown as one line ("Fish and seafood · Change"); "Change" opens a grid of icon tiles, three across. Eat and drink: 12 kinds (restaurant, pizza, paella and rice, fish and seafood, grill and ham, fine dining, home cooking, vegetarian, bakery and café, café or bar, beach bar, roadside). Attractions: 21 kinds under the five filters (Activities, Beaches, Wine, Sights and towns, Nature and walks). All are icons the engine already has. Markets: their five kinds. Events: their ten kinds.
 - **Marks,** as chips, also the filters guests use. Eat and drink: Dog friendly, Vegetarian options, Gluten-free options, Terrace, Sea view, Book ahead. Attractions: Great for kids, Dog friendly, Free, Rainy day, Book ahead. Markets: what they sell, and "Not held on public holidays".
