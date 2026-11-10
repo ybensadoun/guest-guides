@@ -1,0 +1,10 @@
+[Unit]
+Description=The guide worker's weekly renewal of Google's positions (worker/renew-positions.mjs): ours when we have one, else Google's again before its 30 days
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/guest-guides
+ExecStart=/usr/bin/docker compose -f worker/compose.yaml run --rm -T worker node worker/renew-positions.mjs --apply
+TimeoutStartSec=1h

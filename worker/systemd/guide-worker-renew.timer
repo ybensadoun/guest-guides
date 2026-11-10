@@ -1,0 +1,9 @@
+[Unit]
+Description=The guide worker's renewal of Google's positions, every Monday at 5:00 (Madrid)
+
+[Timer]
+OnCalendar=Mon *-*-* 05:00:00 Europe/Madrid
+Persistent=true
+
+[Install]
+WantedBy=timers.target

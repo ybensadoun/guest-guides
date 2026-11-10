@@ -101,3 +101,27 @@ export async function locateByWords(GK, raw, house, reachKm = 50) {
   if (km > reachKm || !(sameName({ name: { en: q } }, p) || close())) return null;
   return link ? { ...loc, words: q } : loc;
 }
+// A place the research found (Find more, the area research): is it on Google, the same place, and still open? Asked with
+// the id, the position, the name and the business status only. The name and the position decide in memory whether
+// Google's answer is our place (within 2 km of the research's pin and sharing a real word with its name, or for a market
+// the market rule), as the check did before step 3; the name is never returned. Details by id when the item has one, else
+// a text search around its pin. Returns { gid, lat, lng, status } (status: Google's businessStatus, used at once and not
+// kept) or null when Google has no such place near it.
+const ITEM_FIELDS = 'id,location,displayName,businessStatus';
+export async function locateItem(GK, it, { market = false } = {}) {
+  const head = { 'X-Goog-Api-Key': GK, 'Content-Type': 'application/json' };
+  let p = null;
+  if (it.gid) { const r = await get(`https://places.googleapis.com/v1/places/${encodeURIComponent(it.gid)}`, { headers: { ...head, 'X-Goog-FieldMask': ITEM_FIELDS } }); if (r.ok) p = await r.json(); }
+  if (!p) {
+    const body = { textQuery: [it.name_local || nameOf(it.name), it.town].filter(Boolean).join(', '), maxResultCount: 1 };
+    if (typeof it.lat === 'number') body.locationBias = { circle: { center: { latitude: it.lat, longitude: it.lng }, radius: 3000 } };
+    const r = await get('https://places.googleapis.com/v1/places:searchText', { method: 'POST', headers: { ...head, 'X-Goog-FieldMask': ITEM_FIELDS.split(',').map(f => 'places.' + f).join(',') }, body: JSON.stringify(body) });
+    const d = await r.json(); if (d.error) throw new Error(d.error.message);
+    p = (d.places || [])[0] || null;
+  }
+  const loc = at(p);
+  if (!loc) return null;
+  const far = typeof it.lat === 'number' ? hav(it.lat, it.lng, loc.lat, loc.lng) : 99;
+  if (!(far <= 2 && (sameName(it, p) || (market && sameMarket(it, p, far))))) return null;
+  return { ...loc, status: p.businessStatus || null };
+}

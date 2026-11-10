@@ -54,6 +54,42 @@ export function sameNamed(name, cands) {
   return scored[0].s >= 0.99 || scored.length === 1 ? scored[0].c : null;
 }
 
+// Each located place filled from our own table, or by the chain and then kept: shared by a host's places at the build
+// (hostPlaces) and the research's check (worker/research-check.mjs), so a place is looked at the same way wherever it comes
+// from. found: [{ key, gid, words, list, about?, town?, card?, record?, unnamed? }], Google's id for each; kept: gid -> its
+// row in place_facts (updated here with what is saved); ov: nearby()'s answer; feats(gid): GeoNames' features around the
+// pin. A place looked at less than 30 days ago for this list costs nothing. A failure for one place is logged, and its
+// entry keeps what is kept. started(p) (optional): before each place is looked at, for a progress message. Returns key -> facts.
+export async function fillPlaces(found, kept, ov, feats, { store, ask = null, again = null, meter = null, log = console.error, started = null } = {}) {
+  const facts = {}, towns = (ov && ov.towns) || {}, pins = (ov && ov.pins) || {};
+  const lanes = new Map();   // one place in two lists: its two looks one after the other, the second on the row the first kept
+  await each(found, 4, p => {
+    if (started) started(p);
+    const run = (lanes.get(p.gid) || Promise.resolve()).then(async () => {
+      const row = kept[p.gid] || null;
+      const fresh = !!row && !due(row);
+      const named = !p.card || !p.words || !!(row && row.facts && row.facts.name);   // a card that has just found its record still needs its name written
+      // A row with only Google's position and a GeoNames feature around its pin: the light look gives it one of ours.
+      const placed = !!(row && row.facts && num(row.facts.lat) && num(row.facts.lng));
+      const gains = !placed && !!featureFor(feats(p.gid), { venue: !!(row && row.venue === true) });
+      if (!ask || p.unnamed || (fresh && lookedFor(row, p.list) && named && !gains)) { facts[p.key] = row && row.facts || {}; return; }   // without Claude, or a card no record names: what is kept, nothing asked
+      try {
+        const place = { name: p.words, town: p.town || towns[p.gid] || undefined, about: p.about || undefined, list: p.list };
+        // Its site was read lately but never for this list (or before names and kinds were kept): only the match is asked.
+        const r = await placeFacts(place, pins[p.gid] || [], ask, { meter: {}, again, matchOnly: fresh, features: feats(p.gid) });
+        if (meter) meter.usd = +((meter.usd || 0) + (r.usd || 0)).toFixed(4);
+        // A look cut short (the day's limit, the API out of reach) is not kept: it would wait 30 days to be asked again.
+        if (r.error) { log(`place facts incomplete (${p.key.slice(0, 40)}): ${r.error}`); facts[p.key] = row && row.facts || {}; return; }
+        const saved = await store.save(p.gid, place, r, { release: ov.release, light: fresh });
+        kept[p.gid] = saved; facts[p.key] = saved.facts || {};
+      } catch (e) { log(`place facts failed (${p.key.slice(0, 40)}): ${e.message}`); facts[p.key] = row && row.facts || {}; }
+    });
+    lanes.set(p.gid, run);
+    return run;
+  });
+  return facts;
+}
+
 // rows: [{ p, gid?, list, c? }], cards: [{ id, list, c? }] (c: the host's comment, which helps the kind), house: { lat, lng },
 // town: the house's town (the generator's fallback for a place with no town; not asked for here). GK: the Google key;
 // store: makeStore(rest); ask, again: makeClaude(...) at low and medium effort.
@@ -115,30 +151,7 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
     }
     theirs.clear();
     Object.assign(towns, ov.towns || {});
-    const lanes = new Map();   // one place in two lists: its two looks one after the other, the second on the row the first kept
-    await each(found, 4, p => {
-      const run = (lanes.get(p.gid) || Promise.resolve()).then(async () => {
-        const row = kept[p.gid] || null;
-        const fresh = !!row && !due(row);
-        const named = !p.card || !p.words || !!(row && row.facts && row.facts.name);   // a card that has just found its record still needs its name written
-        // A row with only Google's position and a GeoNames feature around its pin: the light look gives it one of ours.
-        const placed = !!(row && row.facts && num(row.facts.lat) && num(row.facts.lng));
-        const gains = !placed && !!featureFor(feats(p.gid), { venue: !!(row && row.venue === true) });
-        if (!ask || p.unnamed || (fresh && lookedFor(row, p.list) && named && !gains)) { facts[p.key] = row && row.facts || {}; return; }   // without Claude, or a card no record names: what is kept, nothing asked
-        try {
-          const place = { name: p.words, town: towns[p.gid] || undefined, about: p.about || undefined, list: p.list };
-          // Its site was read lately but never for this list (or before names and kinds were kept): only the match is asked.
-          const r = await placeFacts(place, ov.pins[p.gid] || [], ask, { meter: {}, again, matchOnly: fresh, features: feats(p.gid) });
-          if (meter) meter.usd = +((meter.usd || 0) + (r.usd || 0)).toFixed(4);
-          // A look cut short (the day's limit, the API out of reach) is not kept: it would wait 30 days to be asked again.
-          if (r.error) { log(`place facts incomplete (${p.key.slice(0, 40)}): ${r.error}`); facts[p.key] = row && row.facts || {}; return; }
-          const saved = await store.save(p.gid, place, r, { release: ov.release, light: fresh });
-          kept[p.gid] = saved; facts[p.key] = saved.facts || {};
-        } catch (e) { log(`place facts failed (${p.key.slice(0, 40)}): ${e.message}`); facts[p.key] = row && row.facts || {}; }
-      });
-      lanes.set(p.gid, run);
-      return run;
-    });
+    Object.assign(facts, await fillPlaces(found, kept, ov, feats, { store, ask, again, meter, log }));
   }
 
   // 3. The entry the generator reads. Our position (Overture's or GeoNames', kept in place_facts) when we have it, else Google's,
