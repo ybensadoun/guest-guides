@@ -2,7 +2,7 @@
 
 Goal (Yohann, 10 Nov 2026): Ca La Kimberly is a guide like any other. We stop changing it by prompts and folder edits; every change goes through Guest Guide Maker, and a bug found in it is fixed in the product for every guide. Follows `plan-ca-la-kimberly-on-product.md` (the guide is in the database since 23 Oct) and finishes its phase 4.
 
-Status: step 1 (this gap list) is written and waits for Yohann's review. Nothing below is decided or built yet.
+Status: step 1 (the gap list) and the local half of step 2 (the builder test, below) are done. Nothing is decided or built yet.
 
 ## Two tests
 - **Editor test:** everything a guest sees in Ca La Kimberly can be changed, added and removed in the editor, by a host who never opens a file.
@@ -99,6 +99,25 @@ The editor changes a part's title, lines, photos and order. It cannot add or rem
 ### G. To measure, not yet a finding
 - **How good a built guide is next to the hand-made one** (how many markets, how well chosen the attractions, the contacts): the shapes match, the depth is unknown until step 2.
 - **Why other guides look plain** (finding 1): step 3.
+
+## Step 2: the builder test, local half (10 Nov 2026)
+**How.** The answers the builder really saved for the 4 Nov test house (Ca La Kimberly's own listing), plus what Yohann would type and upload, taken from the live guide: the 12 places to eat and the 29 things to do with their comments (32 picked from Google's suggestions, 9 typed), the 15 rooms with their 44 photos, notes per room, house rules, check-out tasks, the rubbish plan, the taxi, the logo and the cover. The 41 places were looked up on Google exactly as the worker does (32 by id, 9 searches: under 1 USD at list price). Markets, contacts and events are the ones the 4 Nov research gave that house (no new research, no Claude cost). Then `generate-site.py`, the content check (passed), a build, and a comparison with the live guide, file by file and on screen at 360 px. No translation was run. Nothing was queued, published or written to the database; the scratch site is deleted.
+
+**What comes out the same.** The look (same layout, colours, fonts, welcome card with logo and cover). The house page: the 15 rooms in order with all their photos, the rating, the amenities (richer than the live guide's: 13 groups, 72 items). The house guide's parts, icons and colours. The rubbish days. The taxi. Every one of the 41 places with its name, comment, pin (37 of 41 within 300 m of the live pin) and Google's opening hours.
+
+**What a guest would see differently.** New gaps are marked H to N; the others confirm A to F.
+- **H. A place a host adds has almost nothing but its hours.** Eat and drink, built against live: phone 0 of 11, website 0 of 9, rating 0 of 12, price 0 of 12, address 0 of 12, icon 0 of 12 (every place gets the same fork), marks 0 of 7, "Unmissable" 0 of 3, set menus 0 of 4. Things to do: phone 0 of 15, website 0 of 18, rating 0 of 24, icon 0 of 29, the note under the hours 0 of 18, seasons 0 of 6, "Free" 0 of 12, a quick filter for 20 of 29. Cause: the worker asks Google for the position, hours and kind only. Google's answer for the same request can carry the phone, website, rating, price level and address at no extra cost; the icon can follow from Google's kind.
+- **I. A city is not a place.** "Barcelona" got no pin (over the 50 km reach); Tarragona and Sitges landed on another point of the town. Day trips to towns need their own handling.
+- **J. The research misses the small villages near the house.** Markets: 23 found against 44 live; of the 15 weekly street markets within 20 km it has 7, and not the house's own village market (La Bisbal, 3 km) nor the next four nearest. It found the larger towns, and 9 the live guide does not have (to check: some may be good finds). Nothing beyond 30 km, as asked (radius 30 min). Contacts: 8 in 2 groups against 11 in 4; no police, town hall, village pharmacy, power cut, vet or poison line, and the clinic and pharmacy are the next village's. Possible cause for both: the listing says "Can Gordei" (the housing estate) as the town, so the guide never learns its municipality. It also shows as "Can Gordei, Catalonia, Spain" under the name and "guest guide for Can Gordei, Can Gordei" in the link text.
+- **K. House guide.** "How things work" lines are filed by keyword: 5 of 14 landed in the wrong part (the outdoor kitchen under Kitchen, the outdoor shower under Bathrooms, "Bedroom 1: king-size bed and a smart TV" under Living room), and the editor cannot move a line to another part. Only 4 of 12 parts get a line under their title, in the listing's raw words ("Washing machine in the accommodation (Free), ..."). Photos are grouped by kind of room: Outside gets 15.
+- **L. Rubbish.** As gap B, plus: the host's own sorting steps are added after the default ones (9 steps, some twice); the glass container gets no point on the map when its Google Maps link is a short one; a default bin colour shows in a name ("Paper and cardboard (blue)").
+- **M. Home.** No tiles for the shop next door and the pizza delivery (by design they are added in the editor), and a single small tile (the taxi) leaves the other half of its row empty.
+- **N. Small ones.** The highlights and beds are the listing's words ("Private outdoor pool: available year-round, available 24 hours"). The browser bar's colour does not match the page for the default layout (the generator's own cream, not the layout's). The reviews link opens the listing, not its reviews. Opening hours come from Google where the live guide has the places' official ones (12 of 21 differ).
+- Events: 8 found for the next three months, as designed; the live guide's other 39 were written by hand over the year.
+
+**What this changes in the order.** H is cheap and changes every host's guide the most: do it with A (the same fields, filled by Google at the build and editable afterwards). J needs a look at how the research is briefed (the municipality, the nearest villages first) before any building.
+
+**Not done: the same test through the maker's own screens.** Two things stand in the way as asked: the server's worker publishes every build, and Claude may not create an account on the live site. A test house added in Yohann's own account, filled in through the builder and never sent, would do; so would keeping this as the acceptance test once A to H are built. To decide.
 
 ## Not gaps
 The look and its colours and fonts; languages and translation; Wi-Fi with several networks; Getting around (taxis with other numbers, stations, lines, journey times, the Home tile); automatic events and their settings; photos and their order; pinning a restaurant to Home; switching sections on and off; drafts, Preview and Publish.
