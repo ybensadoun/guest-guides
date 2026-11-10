@@ -154,7 +154,7 @@ Each is one yes or no from Yohann, then one brief for Opus 5.5, built, checked (
 
 | # | Proposal | Closes | Size | Status |
 |---|---|---|---|---|
-| 1 | **The editor never publishes an empty thing.** Empty lines, stations, places and tiles are dropped on Publish; a place with no name is said so before. A new place starts blank instead of copying the first one's icon, filter and marks. | E, the bug in A | 0.5 | to decide |
+| 1 | **The editor never publishes an empty thing.** Empty lines, stations, places and tiles are dropped on Publish; a place with no name is said so before. A new place starts blank instead of copying the first one's icon, filter and marks. | E, the bug in A | 0.5 | yes 10 Nov, being built |
 | 2 | **A host's place comes with what Google knows.** At the build and at "Find it on Google": phone, website, rating, price level, address, and an icon from Google's kind of place. No extra cost per place. | H | 1 | to decide |
 | 3 | **"Kind and marks" on every place in the editor.** Kind (sets icon, filter, colour; a market's or an event's kind), marks per section (Great for kids, Dog friendly, Free, Vegetarian options, Book ahead), "Our favourite", set menus, open 24 h, a season on a line of hours, the week of the month for a market. | A | 1.5 | to decide |
 | 4 | **One tile system in colour worlds.** The six worlds and "From your picture" (a photo, a logo or the artistic cover), one contrast rule for all, the picker as a row of small phones in The look, fonts with the world. The icons of Home tiles, bins and Things to do groups take the world's colours. The four old layouts go; their guides move to the nearest world. | Step 3 | 2.5 | direction agreed, to confirm as a build |
