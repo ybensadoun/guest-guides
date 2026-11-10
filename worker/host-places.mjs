@@ -59,9 +59,10 @@ export function sameNamed(name, cands) {
 // near (tests): in place of nearby(), Overture's records.
 // meter (optional): { usd } that the chain's cost is added to. Returns the geocode map.
 // nameMatch: a kept card is named by comparing Google's name with Overture's names, in memory (below). false: it is not,
-// and a card our sources cannot name from its spot waits for the host to name it.
-export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { GK, store = null, ask = null, again = null, python, log = console.error, locate = null, near = nearby, meter = null, nameMatch = true } = {}) {
-  const L = locate || (GK ? { byId: id => locateById(GK, id), byWords: (w, h) => locateByWords(GK, w, h), name: id => nameById(GK, id) } : null);
+// and a card our sources cannot name from its spot waits for the host to name it. nameLangs: the languages Google's name
+// is asked in, the place's own first (Spain for now; with the countries, from the country's profile).
+export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { GK, store = null, ask = null, again = null, python, log = console.error, locate = null, near = nearby, meter = null, nameMatch = true, nameLangs = ['ca', 'es', 'en'] } = {}) {
+  const L = locate || (GK ? { byId: id => locateById(GK, id), byWords: (w, h) => locateByWords(GK, w, h), name: (id, lang) => nameById(GK, id, lang) } : null);
   if (!L || !house) return {};
   // 1. Located by Google: the id and the position, nothing else. The same place typed twice is located once.
   const want = [], seen = new Set();
@@ -89,10 +90,11 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
     // this way, 7 from the spot alone). A card we already have a name for is not asked.
     const theirs = new Map();
     if (ask && nameMatch && L.name) await each(found.filter(p => p.card && !(kept[p.gid] && kept[p.gid].facts && kept[p.gid].facts.name)), 4, async p => {
-      try { const n = await L.name(p.gid); if (n) theirs.set(p.gid, n); } catch (e) { log(`kept card's name not read: ${e.message}`); } });
-    const ov = ask ? await near(house, found.map(p => ({ id: p.gid, lat: p.lat, lng: p.lng, names: p.words ? [p.words] : theirs.has(p.gid) ? [theirs.get(p.gid)] : [] })), { python, log }) : { release: null, pins: {}, towns: {} };
+      // In the languages of the place first: Google gives "Catalonia Railway Museum" in English, the record is in Catalan.
+      try { const all = []; for (const lang of nameLangs) { const n = await L.name(p.gid, lang); if (n && !all.includes(n)) all.push(n); } if (all.length) theirs.set(p.gid, all); } catch (e) { log(`kept card's name not read: ${e.message}`); } });
+    const ov = ask ? await near(house, found.map(p => ({ id: p.gid, lat: p.lat, lng: p.lng, names: p.words ? [p.words] : theirs.get(p.gid) || [] })), { python, log }) : { release: null, pins: {}, towns: {} };
     for (const p of found) if (theirs.has(p.gid)) {
-      const rec = sameNamed(theirs.get(p.gid), ov.pins[p.gid] || []);
+      let rec = null; for (const n of theirs.get(p.gid)) if ((rec = sameNamed(n, ov.pins[p.gid] || []))) break;
       if (rec) { p.words = rec.name; p.record = true; }   // from here on the card has words: our record's own name
       else p.unnamed = true;         // no record of that name: picking one from the spot alone would more likely be wrong
     }

@@ -203,7 +203,7 @@ test('hostPlaces: a kept card is named by comparing Google\'s name with our reco
   const geo = await hostPlaces({ cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }, { id: 'G3aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore(rows, saved), ask, locate: loc2, near: near2, log: m => logs.push(m) });
   assert.equal(geo['gid:G2aaaaaaaaaa'].name, 'Aqualeon'); assert.equal(geo['gid:G2aaaaaaaaaa'].kind, 'waterpark'); assert.equal(geo['gid:G2aaaaaaaaaa'].pos, undefined);
   assert.equal(geo['gid:G3aaaaaaaaaa'].noname, true);   // no record of that name: not guessed from the spot
-  assert.equal(pins.find(p => p.id === 'G2aaaaaaaaaa').names[0], GOOGLE);   // our own reader of Overture may see it, in memory
+  assert.deepEqual(pins.find(p => p.id === 'G2aaaaaaaaaa').names, [GOOGLE]);   // asked in three languages, the same name once;   // our own reader of Overture may see it, in memory
   for (const kept of [geo, rows, saved, prompts, logs]) assert.ok(!/Parc Aqu|Nobody Lists/.test(JSON.stringify(kept)));   // not kept, not logged, not sent to Claude
   // A card we already have a name for is not asked again; switched off, nothing is asked at all.
   asked.length = 0;
