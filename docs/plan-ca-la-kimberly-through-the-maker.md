@@ -152,7 +152,19 @@ Read on 10 Nov 2026: Google Maps Platform EEA Terms of Service (last modified 26
 - So a guide must not keep Google's phone, website, rating, price level, address, opening hours or kind of place. What a guide keeps about a place has to come from the host, from the place's own website or another official source, or from OpenStreetMap (already credited on the map; its licence has its own conditions, to read before use).
 - Google stays useful for: finding the place and keeping its id, its pin (refreshed within 30 days), the link that opens it in Google Maps, and checks that keep nothing but their result ("still open", "closed for good").
 - A rating, or "open now" as Google has it, can only be shown fetched fresh from Google at the moment a guest looks, with Google's credit, never from a stored copy.
-To decide: what replaces proposal 2, and a pass over what guides and the monthly check keep today in the light of this rule.
+
+**Decided by Yohann (10 Nov 2026).** Always respect the terms of every service we use (now a shared rule in `../CLAUDE.md`). Google is used only to locate a place. No ratings: these are places the host picked by hand. Extra facts may come from a place's own website when it has one. Not from OpenStreetMap.
+
+**Tried on 10 Nov (Claude with the web, Ca La Kimberly's places to eat; 0.54 USD in all).**
+- One question for all 12 places, cheap model (Haiku 5.5): 24 searches, 13 pages read, nothing found, 0.25 USD. Again for 4 places with more effort: nothing, 0.22 USD. A long list in one question does not work with the cheap model.
+- One short question per place, at most 3 searches: about 6 seconds and 0.024 USD a place. Of 3 places: 2 found their own site (the same sites as the hand-checked guide), 2 gave the phone (one the same, one with a second number), 1 gave its hours, 1 found nothing. A small sample: to measure on all 41 places before building.
+
+**The optimised way, proposed (replaces proposal 2).**
+- **2a. Google only locates.** The request asks Google for the place's id and position and nothing else (the cheapest price class of the Places API, to confirm on the price list in the brief). The host confirms the name as they want it shown. The position is fetched again within 30 days by the server's run. Nothing else from Google is kept; the button "Google Maps" opens the place there by its id, where guests see live hours and reviews. Ratings on places go from the engine and from the data.
+- **2b. Facts from the place's own website.** When a place is added: one short question per place with the cheap model (its own site, then phone, hours, price per person, "book ahead", kind of place). Kept in our own table by the place's id with the page read and the date, so the same place in another guide costs nothing, and shown to the host as "found on its website, please check", editable. A host can paste the website instead: then it is one page read and no search. Read again when the host asks, or when the monthly check says the place changed. About 0.024 USD a place as measured, so about 1 USD once for a guide of 40 places.
+- **2c. What is shown when nothing is found.** The host's name and words, the pin, the distance, the Google Maps button. "Open now" only when hours are known from the website or the host.
+- **2d. Bring today's guides in line** (BACKLOG item 62): stored ratings, Google's hours, kinds and towns, positions older than 30 days, what the monthly check writes back.
+- Open detail: a place's town in the list ("Bakery, El Vendrell") comes from Google's address today. To come from the website or the host; not worked out from Google's position, which the terms also rule out.
 
 ## Not gaps
 The look and its colours and fonts; languages and translation; Wi-Fi with several networks; Getting around (taxis with other numbers, stations, lines, journey times, the Home tile); automatic events and their settings; photos and their order; pinning a restaurant to Home; switching sections on and off; drafts, Preview and Publish.
@@ -180,6 +192,7 @@ Each is one yes or no from Yohann, then one brief for Opus 5.5, built, checked (
 | 16 | **The day-rental site reads the guide from the database,** not from the folder; then the folder `sites/ca-la-kimberly`, `guide:push` and the guide's own Claude session can go (design notes and sources kept in `docs/`). | F4, F5 | 1 | to decide |
 | 17 | **Leftovers removed** from Ca La Kimberly's data (fields nothing reads, unused cover pictures), and its "written in" language set. | F6, F7 | 0.5 | to decide |
 | 18 | **The acceptance test** through the maker's own screens (step 2, second half). | all | 1, about 1.5 USD | agreed 10 Nov, at the end |
+| 19 | **Every service's terms, read and respected** (Yohann's rule, 10 Nov): one pass, service by service, starting with the listing reader and the listing photos; then what must change. By Fable. | rule | look, then to size | to decide |
 
 Order proposed: 1, 2, 3 (places, what guests see most), 4, 5, 6, 7 (the look), 8, 9, 10, then 11 and 12 (research), 13 to 17 (the special cases), 18. About 16 sessions in all.
 
