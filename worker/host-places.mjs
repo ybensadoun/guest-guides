@@ -3,6 +3,8 @@
 // the design"). Google's terms let us keep a place's id for good and its position for 30 days, nothing else: so Google
 // only locates each place (worker/places.mjs), and everything the guide shows comes from our own chain, kept in the table
 // place_facts (worker/place-facts.mjs, worker/place-store.mjs): name, town, kind, phone, website, hours, price, position.
+// The position is Overture's for a business, GeoNames' for a town, a beach, a mountain or a monument (open data, ours to
+// keep for good), and Google's, renewed within 30 days, only when neither has the place.
 // The result is the generator's src/geocode.json: one entry per place, keyed by what the host typed (r.p.trim()), or
 // 'gid:<id>' for a card they kept in the swipe deck.
 // Run alone, a dry run over a file of answers, printed as JSON (the worker's keys from worker/.env.local and .env):
@@ -13,7 +15,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hav, locateById, locateByWords, nameById } from './places.mjs';
-import { nearby, placeFacts } from './place-facts.mjs';
+import { nearby, gazetteer, featureFor, placeFacts } from './place-facts.mjs';
 import { tidyName, due, lookedFor, mergeFacts, makeStore } from './place-store.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
@@ -56,12 +58,13 @@ export function sameNamed(name, cands) {
 // town: the house's town (the generator's fallback for a place with no town; not asked for here). GK: the Google key;
 // store: makeStore(rest); ask, again: makeClaude(...) at low and medium effort.
 // Without store: located only, nothing filled. Without ask: filled from what is already kept, nothing asked. locate (tests): { byId(id), byWords(words, house) } instead of Google;
-// near (tests): in place of nearby(), Overture's records.
+// near (tests): in place of nearby(), Overture's records; gaz (tests): in place of gazetteer(), GeoNames' features.
 // meter (optional): { usd } that the chain's cost is added to. Returns the geocode map.
 // nameMatch: a kept card is named by comparing Google's name with Overture's names, in memory (below). false: it is not,
 // and a card our sources cannot name from its spot waits for the host to name it. nameLangs: the languages Google's name
-// is asked in, the place's own first (Spain for now; with the countries, from the country's profile).
-export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { GK, store = null, ask = null, again = null, python, log = console.error, locate = null, near = nearby, meter = null, nameMatch = true, nameLangs = ['ca', 'es', 'en'] } = {}) {
+// is asked in, the place's own first (Spain for now; with the countries, from the country's profile). country: the
+// GeoNames file read (Spain for now; it will come from the house's country).
+export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { GK, store = null, ask = null, again = null, python, log = console.error, locate = null, near = nearby, gaz = gazetteer, country = 'ES', meter = null, nameMatch = true, nameLangs = ['ca', 'es', 'en'] } = {}) {
   const L = locate || (GK ? { byId: id => locateById(GK, id), byWords: (w, h) => locateByWords(GK, w, h), name: (id, lang) => nameById(GK, id, lang) } : null);
   if (!L || !house) return {};
   // 1. Located by Google: the id and the position, nothing else. The same place typed twice is located once.
@@ -92,11 +95,23 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
     if (ask && nameMatch && L.name) await each(found.filter(p => p.card && !(kept[p.gid] && kept[p.gid].facts && kept[p.gid].facts.name)), 4, async p => {
       // In the languages of the place first: Google gives "Catalonia Railway Museum" in English, the record is in Catalan.
       try { const all = []; for (const lang of nameLangs) { const n = await L.name(p.gid, lang); if (n && !all.includes(n)) all.push(n); } if (all.length) theirs.set(p.gid, all); } catch (e) { log(`kept card's name not read: ${e.message}`); } });
-    const ov = ask ? await near(house, found.map(p => ({ id: p.gid, lat: p.lat, lng: p.lng, names: p.words ? [p.words] : theirs.get(p.gid) || [] })), { python, log }) : { release: null, pins: {}, towns: {} };
+    // GeoNames, beside Overture, for every located place: by the host's words, and for a kept card by Google's name
+    // while it is in memory, else the name we keep for it. Each pin is Google's position now, so a feature far from the
+    // place cannot move it. One place in two lists is one pin with the names of both.
+    const keptName = p => { const n = kept[p.gid] && kept[p.gid].facts && kept[p.gid].facts.name; return typeof n === 'string' && n.trim() ? [n.trim()] : []; };
+    const gzPins = new Map();
+    for (const p of found) { const x = gzPins.get(p.gid) || { id: p.gid, lat: p.lat, lng: p.lng, names: [] };
+      for (const n of p.words ? [p.words] : theirs.get(p.gid) || keptName(p)) if (!x.names.includes(n)) x.names.push(n); gzPins.set(p.gid, x); }
+    const [ov, gz] = ask ? await Promise.all([near(house, found.map(p => ({ id: p.gid, lat: p.lat, lng: p.lng, names: p.words ? [p.words] : theirs.get(p.gid) || [] })), { python, log }),
+      gaz(country, [...gzPins.values()], { log })]) : [{ release: null, pins: {}, towns: {} }, { fetched: null, pins: {} }];
+    gzPins.clear();
+    const feats = gid => (gz && gz.pins && gz.pins[gid]) || [];
     for (const p of found) if (theirs.has(p.gid)) {
       let rec = null; for (const n of theirs.get(p.gid)) if ((rec = sameNamed(n, ov.pins[p.gid] || []))) break;
+      const f = rec ? null : featureFor(feats(p.gid));
       if (rec) { p.words = rec.name; p.record = true; }   // from here on the card has words: our record's own name
-      else p.unnamed = true;         // no record of that name: picking one from the spot alone would more likely be wrong
+      else if (f && f.name) { p.words = f.name; p.feature = true; }   // or GeoNames' own name for the feature (a town, a beach), ours to keep
+      else p.unnamed = true;         // no record or feature of that name: picking one from the spot alone would more likely be wrong
     }
     theirs.clear();
     Object.assign(towns, ov.towns || {});
@@ -106,11 +121,14 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
         const row = kept[p.gid] || null;
         const fresh = !!row && !due(row);
         const named = !p.card || !p.words || !!(row && row.facts && row.facts.name);   // a card that has just found its record still needs its name written
-        if (!ask || p.unnamed || (fresh && lookedFor(row, p.list) && named)) { facts[p.key] = row && row.facts || {}; return; }   // without Claude, or a card no record names: what is kept, nothing asked
+        // A row with only Google's position and a GeoNames feature around its pin: the light look gives it one of ours.
+        const placed = !!(row && row.facts && num(row.facts.lat) && num(row.facts.lng));
+        const gains = !placed && !!featureFor(feats(p.gid), { venue: !!(row && row.venue === true) });
+        if (!ask || p.unnamed || (fresh && lookedFor(row, p.list) && named && !gains)) { facts[p.key] = row && row.facts || {}; return; }   // without Claude, or a card no record names: what is kept, nothing asked
         try {
           const place = { name: p.words, town: towns[p.gid] || undefined, about: p.about || undefined, list: p.list };
           // Its site was read lately but never for this list (or before names and kinds were kept): only the match is asked.
-          const r = await placeFacts(place, ov.pins[p.gid] || [], ask, { meter: {}, again, matchOnly: fresh });
+          const r = await placeFacts(place, ov.pins[p.gid] || [], ask, { meter: {}, again, matchOnly: fresh, features: feats(p.gid) });
           if (meter) meter.usd = +((meter.usd || 0) + (r.usd || 0)).toFixed(4);
           // A look cut short (the day's limit, the API out of reach) is not kept: it would wait 30 days to be asked again.
           if (r.error) { log(`place facts incomplete (${p.key.slice(0, 40)}): ${r.error}`); facts[p.key] = row && row.facts || {}; return; }
@@ -123,14 +141,14 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
     });
   }
 
-  // 3. The entry the generator reads. Our position (Overture's, kept in place_facts) when we have it, else Google's,
+  // 3. The entry the generator reads. Our position (Overture's or GeoNames', kept in place_facts) when we have it, else Google's,
   // marked with its date: it may be kept 30 days only, and a later step renews it.
   const geo = {};
   for (const p of found) {
     const f = facts[p.key] || {}, ours = num(f.lat) && num(f.lng);
     const lat = ours ? f.lat : p.lat, lng = ours ? f.lng : p.lng;
-    // A card: the name the chain wrote for its record, else the record's own name as Overture has it.
-    const name = p.card ? (typeof f.name === 'string' && f.name.trim() ? f.name.trim() : p.record ? p.words : null) : tidyName(p.words, f.name, [f.town, towns[p.gid], town].filter(Boolean));
+    // A card: the name the chain wrote for its record, else the record's own name as Overture has it, or the feature's.
+    const name = p.card ? (typeof f.name === 'string' && f.name.trim() ? f.name.trim() : p.record || p.feature ? p.words : null) : tidyName(p.words, f.name, [f.town, towns[p.gid], town].filter(Boolean));
     const e = { ...(name ? { name } : { noname: true }), lat, lng, km: Math.max(1, Math.round(hav(house.lat, house.lng, lat, lng) * 1.3)) };
     const t = f.town || towns[p.gid];
     if (t) e.town = t;

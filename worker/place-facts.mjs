@@ -9,7 +9,9 @@
 // writes nothing. With --save each place with a Google id is kept in the table place_facts (worker/place-store.mjs: a
 // later weak read never loses an earlier good one), and a place looked at less than 30 days ago is skipped (--fresh: not
 // skipped). The worker uses placeFacts and nearby when it builds a guide (worker/host-places.mjs): there the match also
-// gives our own name for the place and its kind (engine/src/kinds.json), never Google's.
+// gives our own name for the place and its kind (engine/src/kinds.json), never Google's. A place no Overture record is
+// (a town, a beach, a mountain, some monuments) takes its position, town and kind from GeoNames (worker/geonames.py,
+// gazetteer below); each line says where the position and the kind came from.
 //   node worker/place-facts.mjs --site <slug> [--only id,id] [--effort low|medium] [--no-retry] [--save [--fresh]]
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -19,34 +21,69 @@ import { nameOf } from './places.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
 
+// Runs one of our Python readers (worker/overture.py, worker/geonames.py): the question on stdin, JSON on stdout, its
+// progress on stderr as lines starting with tag. A failure of any kind (a command that does not start, a stuck download,
+// an exit code, an answer that is not JSON) gives empty() and one logged line, so the chain goes on without it.
+function runPython(script, question, { python, log, tag, none, empty, take }) {
+  const [cmd, ...args] = String(python).trim().split(/\s+/);
+  return new Promise(done => {
+    let out = '', err = '', over = false;
+    const p = spawn(cmd, [...args, resolve(HERE, script)], { stdio: ['pipe', 'pipe', 'pipe'] });
+    const timer = setTimeout(() => { over = true; p.kill('SIGKILL'); }, 5 * 60000);   // a stuck download must not hold the run
+    p.stdout.on('data', d => { out += d; });
+    p.stderr.on('data', d => { err += d; });
+    let ended = false;   // a command that does not start says so twice (error, then close)
+    const fail = why => { clearTimeout(timer); if (ended) return; ended = true; log(`${tag}: ${none} (${why})`); done(empty()); };
+    p.on('error', e => fail(e.message));
+    p.on('close', code => {
+      if (over) return fail('took more than 5 minutes');
+      clearTimeout(timer);
+      const lines = err.split('\n').map(l => l.trim()).filter(Boolean);
+      if (code !== 0) return fail(lines.slice(-1)[0] || 'exit ' + code);
+      for (const l of lines) if (l.startsWith(tag + ':')) log(l);   // what was fetched, how big, how long
+      let r; try { r = JSON.parse(out); } catch (e) { return fail('its answer was not JSON'); }
+      ended = true; done(take(r || {}));
+    });
+    p.stdin.on('error', () => {});   // a command that does not start closes stdin early
+    p.stdin.end(JSON.stringify(question));
+  });
+}
+
 // Overture's records near each pin (worker/overture.py). pins: [{ id, lat, lng, names: [] }]. Returns
 // { release, pins: { id: [candidates] }, towns: { id: town } } (towns: the town most records around the pin carry, for a
 // place with no record of its own). If Python or Overture fails, no candidates: the chain goes on with search only.
 // python: the command that runs Python with pyarrow and overturemaps (OVERTURE_PYTHON, split on spaces; on the Mac
 // `uv run -q --no-project --with overturemaps==2.1.0 --with pyarrow python`).
-export async function nearby(house, pins, { km = 60, python = process.env.OVERTURE_PYTHON || 'python3', log = console.error } = {}) {
-  const [cmd, ...args] = String(python).trim().split(/\s+/);
-  return new Promise(done => {
-    let out = '', err = '', over = false;
-    const p = spawn(cmd, [...args, resolve(HERE, 'overture.py')], { stdio: ['pipe', 'pipe', 'pipe'] });
-    const timer = setTimeout(() => { over = true; p.kill('SIGKILL'); }, 5 * 60000);   // a stuck download must not hold the run
-    p.stdout.on('data', d => { out += d; });
-    p.stderr.on('data', d => { err += d; });
-    let ended = false;   // a command that does not start says so twice (error, then close)
-    const none = why => { clearTimeout(timer); if (ended) return; ended = true; log(`overture: no records, search only (${why})`); done({ release: null, pins: {}, towns: {} }); };
-    p.on('error', e => none(e.message));
-    p.on('close', code => {
-      if (over) return none('took more than 5 minutes');
-      clearTimeout(timer);
-      const lines = err.split('\n').map(l => l.trim()).filter(Boolean);
-      if (code !== 0) return none(lines.slice(-1)[0] || 'exit ' + code);
-      for (const l of lines) if (/^overture:/.test(l)) log(l);   // what was fetched, how big, how long
-      try { const r = JSON.parse(out); ended = true; done({ release: r.release || null, pins: r.pins || {}, towns: r.towns && typeof r.towns === 'object' ? r.towns : {} }); } catch (e) { none('its answer was not JSON'); }
-    });
-    p.stdin.on('error', () => {});   // a command that does not start closes stdin early
-    p.stdin.end(JSON.stringify({ house: { lat: house.lat, lng: house.lng }, km, pins }));
-  });
+export function nearby(house, pins, { km = 60, python = process.env.OVERTURE_PYTHON || 'python3', log = console.error } = {}) {
+  return runPython('overture.py', { house: { lat: house.lat, lng: house.lng }, km, pins }, { python, log, tag: 'overture', none: 'no records, search only',
+    empty: () => ({ release: null, pins: {}, towns: {} }),
+    take: r => ({ release: r.release || null, pins: r.pins || {}, towns: r.towns && typeof r.towns === 'object' ? r.towns : {} }) });
 }
+
+// GeoNames' features near each pin that carry one of its names (worker/geonames.py, open data under CC BY 4.0: the
+// guide credits GeoNames): towns, beaches, mountains, springs, monuments, which Overture does not list. country: two
+// capital letters (the file fetched). pins: as for nearby(). Returns { fetched, pins: { id: [features] } }; if Python or
+// the download fails, no features. python: any Python 3.9 or later (standard library only).
+export function gazetteer(country, pins, { python = process.env.GEONAMES_PYTHON || 'python3', log = console.error } = {}) {
+  return runPython('geonames.py', { country, pins }, { python, log, tag: 'geonames', none: 'no features',
+    empty: () => ({ fetched: null, pins: {} }),
+    take: r => ({ fetched: r.fetched || null, pins: r.pins && typeof r.pins === 'object' ? r.pins : {} }) });
+}
+
+// Which GeoNames feature a place is, among those around its pin: the nearest within the reach of its class (P: towns and
+// villages; T, H, L, V, U: beaches, mountains, springs, parks, woods; S: buildings and sites), measured from the pin
+// Google gives at that moment, so a wrong record cannot move a pin far. venue: a place with a door is never a town.
+const REACH = { P: 3000, T: 1000, H: 1000, L: 1000, V: 1000, U: 1000, S: 300 };
+const isNum = v => typeof v === 'number' && Number.isFinite(v);
+export function featureFor(features, { venue = false } = {}) {
+  return (Array.isArray(features) ? features : []).filter(f => f && isNum(f.lat) && isNum(f.lng) && isNum(f.metres) && REACH[f.cls] && f.metres <= REACH[f.cls] && !(venue && f.cls === 'P'))
+    .sort((a, b) => (b.exact === true) - (a.exact === true) || a.metres - b.metres)[0] || null;   // the very name before a longer one that holds it, then the nearest
+}
+// Our kind (engine/src/kinds.json, todo) from a feature's class and code, for a place Claude gave no kind.
+const CODE_KIND = { 'T.BCH': 'beach', 'T.MT': 'mountain', 'T.MTS': 'mountain', 'T.PK': 'mountain', 'T.HLL': 'mountain', 'H.SPNG': 'spring',
+  'S.MSTY': 'monastery', 'S.CH': 'monastery', 'S.CTHD': 'monastery', 'S.MUS': 'palette', 'S.CSTL': 'castle', 'S.RUIN': 'roman', 'S.ANS': 'roman',
+  'S.MNMT': 'arch', 'S.AMUS': 'themepark' };
+export const featureKind = f => !f ? null : f.cls === 'P' ? (+f.pop >= 100000 ? 'city' : 'town') : CODE_KIND[`${f.cls}.${f.code}`] || null;
 
 const host = u => { try { return new URL(/^https?:/i.test(u) ? u : 'http://' + u).hostname.replace(/^www\./, '').toLowerCase(); } catch (e) { return ''; } };
 // The name part of a host: "recaredo" of recaredo.es and of recaredo.com, "bar" of bar.co.uk.
@@ -71,8 +108,9 @@ export async function siteAlive(url) {
   return null;
 }
 
-// What Claude must say about the site, and how to read it.
-const SHAPE = `{"website": "the address of the place's own site that you read, or null", "about": true if that site is clearly this place's own site else false, "phone": "as written on its site, or null", "hours": the opening hours of the place itself, or null if the site does not state them, "price": "typical price per person in euros if the site shows prices (menu, set menu, tickets), like 20-30 or 8, or null", "book": true if the site says booking is needed or recommended, else null}
+// What Claude must say about the site, and how to read it. For a place to eat, also its kind as its own menu or
+// description shows it (measured 10 Nov 2026: from a bare name the match gave plain "Restaurant" to 7 of 12 places).
+const SHAPE = list => `{"website": "the address of the place's own site that you read, or null", "about": true if that site is clearly this place's own site else false, "phone": "as written on its site, or null", "hours": the opening hours of the place itself, or null if the site does not state them, "price": "typical price per person in euros if the site shows prices (menu, set menu, tickets), like 20-30 or 8, or null", "book": true if the site says booking is needed or recommended, else null${list === 'eat' ? `, "kind": the one key from this list that the site's own menu or description shows: ${Object.entries(KINDS.eat).map(([k, v]) => `${k} (${v.name.en})`).join(', ')}; or null` : ''}}
 Opening hours: a list of lines like [{"days":["tue","wed","thu"],"open":"10:00","close":"14:00"},{"days":["tue","wed","thu"],"open":"16:00","close":"19:00"}]. Days as mon tue wed thu fri sat sun. Times HH:MM in 24 h; a close earlier than the open means after midnight. Only the hours of this place, never those of a restaurant, hotel, café or shop inside it or beside it, nor those of its office or phone line. When the site gives different hours by season or part of the year, give one line per season and time span, each with "from":"MM-DD","to":"MM-DD" (like "from":"06-15","to":"09-15"). null when the site does not state them. Never guess.`;
 const READ = `read its phone number, opening hours, prices and whether booking is asked. You may open up to two more pages of that same site (contact, hours, prices, menu, tickets). Use only the place's own site, never a directory, a map or a review site. Never guess.`;
 const where = p => `"${p.name}"${p.town ? ` in ${p.town}` : ''}, ${p.country || 'Spain'}`;
@@ -102,6 +140,7 @@ export function cleanHours(h) {
 const cleanPrice = p => { if (p == null) return null; const s = String(p).replace(/€|eur(os)?|\s/gi, '').replace(/[‒-―]/g, '-');
   return /^\d+([.,]\d+)?(-\d+([.,]\d+)?)?$/.test(s) ? s : null; };
 const cleanText = s => typeof s === 'string' && s.trim() ? s.trim().slice(0, 80) : null;
+const eatKind = k => typeof k === 'string' && Object.hasOwn(KINDS.eat, k.trim()) ? k.trim() : null;
 // A Spanish number as the guides show it ("977 66 16 25"); any other number as given.
 export const showPhone = t => { const s = cleanText(t); if (!s) return null; const d = s.replace(/[\s.()\-\/]/g, '').replace(/^(\+|00)34(?=\d{9}$)/, '');
   return /^[6789]\d{8}$/.test(d) ? `${d.slice(0, 3)} ${d.slice(3, 5)} ${d.slice(5, 7)} ${d.slice(7)}` : s; };
@@ -113,8 +152,11 @@ export const showPhone = t => { const s = cleanText(t); if (!s) return null; con
 // again (optional): a second ask, with more effort. Reading a site does not always work the first time, so a place that
 // gives nothing is asked once more: at most one more match question and one more site read, never more.
 // matchOnly: only the match question (the record, its name, our kind), no site read and no search: for a place whose
-// site was read lately and that only lacks a name or a kind (a few hundredths of a cent).
-export async function placeFacts(place, cands, ask, { meter, again, matchOnly = false } = {}) {
+// site was read lately and that only lacks a name, a kind or a position of ours (a few hundredths of a cent).
+// features: GeoNames' features around the pin (gazetteer()): a position of ours, a town and a kind for a place no
+// Overture record is (a town, a beach, a mountain). The result says where each came from: posFrom ('overture',
+// 'geonames' or null: Google's only), townFrom, nameFrom, kindFrom ('claude', 'site', 'geonames' or null).
+export async function placeFacts(place, cands, ask, { meter, again, matchOnly = false, features = [] } = {}) {
   const m = meter || {}, before = m.usd || 0, errors = [];
   const asker = f => (prompt, o) => f(prompt, { ...o, meter: m }).catch(e => { errors.push(e.message); return ''; });
   const q = asker(ask), q2 = again ? asker(again) : null;
@@ -149,13 +191,23 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
     if (q2 && cands.length && !d.entry && (!d.usable || d.venue)) { tries = 2; const d2 = decide(json(await q2(MATCH, { web: false, what: 'place match' }))); if (d2.usable) d = d2; }
     return { ...d, tries };
   };
-  const a = await match(), entry = a.entry, ours = { name: a.name, ourKind: a.kind };
+  const a = await match(), entry = a.entry;
+  // The position: Overture's for the chosen record, else the GeoNames feature's (both ours to keep), else none (the
+  // caller keeps Google's for 30 days). The feature is given even when Overture places it: it may still say the town
+  // and the kind. The name, the town and the kind of Things to do fall back on it only where the record and Claude gave none.
+  const feature = featureFor(features, { venue: a.venue }), fl = feature ? { id: String(feature.id), name: feature.name, cls: feature.cls, code: feature.code, lat: feature.lat, lng: feature.lng, pop: +feature.pop || 0 } : null;
+  const posFrom = entry && isNum(entry.lat) && isNum(entry.lng) ? 'overture' : fl ? 'geonames' : null;
+  const town = entry && entry.town ? entry.town : fl && fl.cls === 'P' ? fl.name : null, townFrom = !town ? null : entry && entry.town ? 'overture' : 'geonames';
+  const name = a.name || (fl && cleanText(fl.name)) || null, nameFrom = !name ? null : a.name ? 'overture' : 'geonames';
+  const gk = place.list === 'todo' && !a.kind ? featureKind(fl) : null;
+  const ourKind = a.kind || (gk && K && Object.hasOwn(K, gk) ? gk : null), kindFrom = a.kind ? 'claude' : ourKind ? 'geonames' : null;
+  const ours = { name, nameFrom, ourKind, kindFrom, feature: fl, posFrom, town, townFrom };
   if (!a.venue) return { entry: pos(entry), venue: false, ...ours, phone: null, phoneFrom: null, website: null, websiteFrom: null, facebook: null, instagram: null,
-    town: entry && entry.town || null, category: entry && entry.kind || null, hours: null, price: null, book: null, page: null, read: new Date().toISOString().slice(0, 10),
+    category: entry && entry.kind || null, hours: null, price: null, book: null, page: null, read: new Date().toISOString().slice(0, 10),
     usd: cost(), tries: 1, matchTries: a.tries, gained: [], ...(errors.length ? { error: errors[0] } : {}) };
-  // The site is read and searched by a name: the host's, else ours from the entry. A kept card with neither has nothing
-  // to search by, so nothing is read.
-  place = { ...place, name: named ? place.name : a.name || '' };
+  // The site is read and searched by a name: the host's, else ours from the entry or the feature. A kept card with none
+  // has nothing to search by, so nothing is read.
+  place = { ...place, name: named ? place.name : name || '' };
 
   // b. From the record: phone, social links, a website to check, town and Overture's own kind (raw).
   const links = entry ? [...(entry.socials || []), ...(entry.websites || [])] : [];
@@ -167,8 +219,8 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
   // with more effort; the second read fills what it holds, the first keeps the rest.
   const alive = own && !matchOnly ? await siteAlive(own) : null, searchable = !!place.name;
   const ok = x => x && x.about === true && webUrl(x.website) && !denied(x.website);
-  const read = (f, url) => f(url ? `Open ${url} : it should be the website of ${where(place)}. From it, ${READ}\nAnswer with JSON only: ${SHAPE}`
-    : `Search the web for the official website of ${where(place)}. Open it and ${READ}\nAnswer with JSON only: ${SHAPE}`, { web: true, what: 'site facts', searches: 3 }).then(json);
+  const read = (f, url) => f(url ? `Open ${url} : it should be the website of ${where(place)}. From it, ${READ}\nAnswer with JSON only: ${SHAPE(place.list)}`
+    : `Search the web for the official website of ${where(place)}. Open it and ${READ}\nAnswer with JSON only: ${SHAPE(place.list)}`, { web: true, what: 'site facts', searches: 3 }).then(json);
   const thin = x => !ok(x) || (!cleanHours(x.hours) && !cleanPrice(x.price));
   const siteStep = async () => {
     let r = null, from = null;
@@ -180,20 +232,23 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
     const r2 = await read(q2, alive);
     if (!ok(r2)) return { site: first, from: first ? from : null, tries: 2, gained: [] };
     const pick = (k, clean) => clean(r2[k]) ? r2[k] : first ? first[k] : null;
-    const site = first ? { ...first, phone: pick('phone', cleanText), hours: pick('hours', cleanHours), price: pick('price', cleanPrice), book: r2.book === true ? true : first.book } : r2;
+    const site = first ? { ...first, phone: pick('phone', cleanText), hours: pick('hours', cleanHours), price: pick('price', cleanPrice), kind: pick('kind', eatKind), book: r2.book === true ? true : first.book } : r2;
     const gained = [!first && 'site', cleanHours(site.hours) && !(first && cleanHours(first.hours)) && 'hours', cleanPrice(site.price) && !(first && cleanPrice(first.price)) && 'price'].filter(Boolean);
     return { site, from: first ? from : alive ? 'overture' : 'search', tries: 2, gained };
   };
   const { site, from: websiteFrom, tries, gained } = matchOnly ? { site: null, from: null, tries: 0, gained: [] } : await siteStep();
 
-  // d, e. Kept only when Claude read the place's own site, and only what is in the expected shape.
+  // d, e. Kept only when Claude read the place's own site, and only what is in the expected shape. A place to eat takes
+  // the kind its site shows over none or plain "Restaurant"; a more precise kind from the match (the host's words) stays.
   const page = site ? webUrl(site.website) : null;
+  const sk = place.list === 'eat' && site ? eatKind(site.kind) : null;
+  if (sk && (!ours.ourKind || ours.ourKind === 'fork')) { ours.ourKind = sk; ours.kindFrom = 'site'; }
   const sitePhone = site ? cleanText(site.phone) : null, ovPhone = entry ? cleanText((entry.phones || [])[0]) : null;
   const res = { entry: pos(entry), venue: true, ...ours,
     phone: showPhone(ovPhone || sitePhone), phoneFrom: ovPhone ? 'overture' : sitePhone ? 'site' : null,   // Overture's matched the hand-checked phone more often
     website: site ? (websiteFrom === 'overture' ? alive : page) : null, websiteFrom,
     facebook: social(/(^|\.)(facebook\.com|fb\.com|fb\.me)$/), instagram: social(/(^|\.)instagram\.com$/),
-    town: entry && entry.town || null, category: entry && entry.kind || null,
+    category: entry && entry.kind || null,
     hours: site ? cleanHours(site.hours) : null, price: site ? cleanPrice(site.price) : null, book: site && site.book === true ? true : null,
     page, read: new Date().toISOString().slice(0, 10), usd: cost(), tries, matchTries: a.tries, gained };
   if (errors.length) res.error = errors[0];
@@ -250,20 +305,24 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   // The second try, for a place that gave nothing at low effort: medium effort, its own limit of 1 USD a run.
   const again = retry ? makeClaude({ ...env, RESEARCH_MODEL: 'claude-haiku-5-5', TRANSLATE_MODEL: 'claude-haiku-5-5', RESEARCH_EFFORT: 'medium', RESEARCH_MAX_SEARCHES: '3', RESEARCH_USD_PER_DAY: '1' }, quiet) : null;
   console.log(`${places.length} places of ${slug}, Haiku 5.5, effort ${effort}${again ? ', a second try at medium effort' : ''}. ${save ? 'What is found is kept in the database (place_facts), nothing else is written.' : 'Nothing is written.'}`);
-  const ov = await nearby(house, places.filter(p => typeof p.it.lat === 'number').map(p => ({ id: p.it.id, lat: p.it.lat, lng: p.it.lng, names: p.names })), { python: process.env.OVERTURE_PYTHON || env.OVERTURE_PYTHON || 'python3' });
-  console.log(`Overture release ${ov.release || 'none'}.\n`);
+  // Overture's records and GeoNames' features around the guide's pins, one call each for all the places.
+  const pins = places.filter(p => typeof p.it.lat === 'number').map(p => ({ id: p.it.id, lat: p.it.lat, lng: p.it.lng, names: p.names }));
+  const [ov, gz] = await Promise.all([nearby(house, pins, { python: process.env.OVERTURE_PYTHON || env.OVERTURE_PYTHON || 'python3' }),
+    gazetteer('ES', pins, { python: process.env.GEONAMES_PYTHON || env.GEONAMES_PYTHON || 'python3' })]);   // Spain for now: with the countries, the guide's own
+  console.log(`Overture release ${ov.release || 'none'}; GeoNames file of ${gz.fetched || 'none'}.\n`);
   const digits = t => String(t || '').replace(/\D/g, '').replace(/^(00)?34(?=\d{9}$)/, '');
   const lines = sch => JSON.stringify((sch || []).map(s => [[...(s.days || [])].join(), s.open, s.close, s.from || '', s.to || '']).sort());
   const span = d => { const i = d.map(x => DAYS.indexOf(x)); return d.length > 2 && i.every((v, k) => !k || v === i[k - 1] + 1) ? `${d[0]}-${d[d.length - 1]}` : d.join(','); };
-  const n = { entry: 0, overture: 0, search: 0, phone: 0, phoneSame: 0, phoneGuide: 0, site: 0, siteSame: 0, siteGuide: 0, hours: 0, hoursSame: 0, hoursGuide: 0, price: 0, book: 0, fb: 0,
+  const n = { posOverture: 0, posGeonames: 0, entry: 0, overture: 0, search: 0, phone: 0, phoneSame: 0, phoneGuide: 0, site: 0, siteSame: 0, siteGuide: 0, hours: 0, hoursSame: 0, hoursGuide: 0, price: 0, book: 0, fb: 0,
     twice: 0, matchTwice: 0, gotSite: 0, gotHours: 0, gotPrice: 0 };
   let total = 0, secs = 0;
   for (const p of places) {
     const t0 = Date.now(), meter = {}, cands = ov.pins[p.it.id] || [];
-    const r = await placeFacts(p.place, cands, ask, { meter, again });
+    const r = await placeFacts(p.place, cands, ask, { meter, again, features: gz.pins[p.it.id] || [] });
     const sec = Math.round((Date.now() - t0) / 1000), g = p.it;
     total += r.usd; secs += sec;
     const phoneSame = r.phone && g.phone && digits(r.phone) === digits(g.phone), siteSame = r.website && g.url && host(r.website) === host(g.url), hoursSame = r.hours && g.schedule && lines(r.hours) === lines(g.schedule);
+    n.posOverture += r.posFrom === 'overture'; n.posGeonames += r.posFrom === 'geonames';
     n.entry += !!r.entry; n.overture += r.websiteFrom === 'overture'; n.search += r.websiteFrom === 'search'; n.fb += !!r.facebook; n.price += !!r.price; n.book += !!r.book;
     n.phone += !!r.phone; n.phoneSame += !!phoneSame; n.phoneGuide += !!g.phone; n.site += !!r.website; n.siteSame += !!siteSame; n.siteGuide += !!g.url; n.hours += !!r.hours; n.hoursSame += !!hoursSame; n.hoursGuide += !!g.schedule;
     n.twice += r.tries === 2; n.matchTwice += r.matchTries === 2; n.gotSite += r.gained.includes('site'); n.gotHours += r.gained.includes('hours'); n.gotPrice += r.gained.includes('price');
@@ -272,7 +331,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     if (store && !p.gid) { note = ' | no Google id, not kept'; noGid++; }
     else if (store) { try { await store.save(p.gid, p.place, r, { release: ov.release }); saved++; } catch (e) { note = ` | not kept: ${e.message}`; } }
     console.log(`${g.id.padEnd(16)} [${r.entry ? r.entry.name.slice(0, 30) + (r.entry.category ? ', ' + r.entry.category : '') : 'no entry, ' + cands.length + ' near'}${r.venue ? '' : ', not a venue'}]`
-      + ` | name ${r.name || '-'} | kind ${r.ourKind || '-'}${g.icon ? (g.icon === r.ourKind ? ' =' : ` (guide: ${g.icon})`) : ''}`
+      + ` | pos ${r.posFrom || 'google only'}${r.feature ? ` [${r.feature.name.slice(0, 30)}, ${r.feature.cls}.${r.feature.code}]` : ''}`
+      + ` | name ${r.name || '-'} | kind ${r.ourKind ? `${r.ourKind} (${r.kindFrom})` : '-'}${g.icon ? (g.icon === r.ourKind ? ' =' : ` (guide: ${g.icon})`) : ''}`
       + ` | site ${r.website ? host(r.website) + ' (' + r.websiteFrom + ')' : '-'}${g.url ? (siteSame ? ' =' : ` (guide: ${host(g.url)})`) : ''}`
       + ` | phone ${r.phone ? r.phone + ' (' + r.phoneFrom + ')' : '-'}${g.phone ? (phoneSame ? ' =' : ` (guide: ${g.phone})`) : ''}`
       + ` | hours ${r.hours ? r.hours.length + ' lines' : '-'}${g.schedule ? (hoursSame ? ' =' : ` (guide: ${g.schedule.length} lines)`) : ''}`
@@ -282,6 +342,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }
   const k = places.length;
   console.log(`\n${k} places, ${total.toFixed(3)} USD in all (${(total / k).toFixed(3)} a place), ${Math.round(secs / k)} s a place.`);
+  console.log(`Position of ours: from Overture ${n.posOverture}, from GeoNames ${n.posGeonames}, none (Google's only) ${k - n.posOverture - n.posGeonames}.`);
   console.log(`Entry chosen ${n.entry}; website from Overture ${n.overture}, by search ${n.search}, none ${k - n.overture - n.search}; Facebook link ${n.fb}.`);
   console.log(`Website ${n.site} (same host as the guide's ${n.siteSame} of ${n.siteGuide}); phone ${n.phone} (same as the guide's ${n.phoneSame} of ${n.phoneGuide}); hours ${n.hours} (exactly the guide's ${n.hoursSame} of ${n.hoursGuide}); price ${n.price}; book ahead ${n.book}.`);
   if (again) console.log(`Site read twice ${n.twice} (only thanks to the second try: a site ${n.gotSite}, hours ${n.gotHours}, price ${n.gotPrice}); match asked twice ${n.matchTwice}.`);

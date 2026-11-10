@@ -3,14 +3,20 @@
 // are stand-ins.   node --test 'worker/test/*.test.mjs'
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { readFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tidyName, mergeFacts, lookedFor, FACTS } from '../place-store.mjs';
 import { placeFacts } from '../place-facts.mjs';
 import { hostPlaces, placesOf } from '../host-places.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+// Nothing here may reach GeoNames: every build passes a stand-in, and a call that slipped through would find an empty
+// cache and nowhere to download from.
+process.env.GEONAMES_CACHE = mkdtempSync(join(tmpdir(), 'geonames-none-'));
+process.env.GEONAMES_URL = 'http://127.0.0.1:9/';
+const noGaz = async () => ({ fetched: null, pins: {} });
 const json = f => JSON.parse(readFileSync(resolve(ROOT, f), 'utf8'));
 const d1 = new Date('2026-11-01T09:00:00Z');
 const H = [{ days: ['tue', 'wed'], open: '10:00', close: '14:00' }];
@@ -110,7 +116,7 @@ test('hostPlaces: a typed place with kept facts, a card named by the chain, a ca
     if (o.what !== 'place match') return '{"website": null, "about": false}';
     return /Aqualeon/.test(prompt) ? '{"venue": true, "entry": 1, "sure": true, "name": "Aqualeon", "kind": "waterpark"}' : '{"venue": true, "entry": null, "sure": false, "name": null, "kind": null}'; };
   const geo = await hostPlaces({ rows: [{ p: ' ull de llebre ', list: 'eat', c: 'Our favourite' }, { p: 'nowhere at all', list: 'eat' }], cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }, { id: 'G3aaaaaaaaaa', list: 'todo' }], house, town: 'El Vendrell' },
-    { store: fakeStore(rows, saved), ask, locate, near, log: () => {} });
+    { store: fakeStore(rows, saved), ask, locate, near, gaz: noGaz, log: () => {} });
   assert.deepEqual(Object.keys(geo), ['ull de llebre', 'gid:G2aaaaaaaaaa', 'gid:G3aaaaaaaaaa']);   // not found on Google: no entry
   // Kept and not due: nothing asked for it; our name, our position (no pos), the facts we keep.
   const u = geo['ull de llebre'];
@@ -135,23 +141,23 @@ test('hostPlaces: a failure in the chain keeps the located entry; without Claude
   const store = { get: async () => ({}), save: async () => { throw new Error('database down'); } };
   const ask = async (p, o) => o.what === 'place match' ? '{"venue": true, "entry": null, "sure": false, "name": null, "kind": "fork"}' : '{}';
   const logs = [];
-  const geo = await hostPlaces({ rows: [{ p: 'can pep', list: 'eat' }], cards: [], house }, { store, ask, locate, near, log: m => logs.push(m) });
+  const geo = await hostPlaces({ rows: [{ p: 'can pep', list: 'eat' }], cards: [], house }, { store, ask, locate, near, gaz: noGaz, log: m => logs.push(m) });
   assert.equal(geo['can pep'].name, 'Can Pep'); assert.equal(geo['can pep'].lat, 41.22); assert.equal(geo['can pep'].pos.from, 'google');
   assert.equal(geo['can pep'].kind, undefined); assert.equal(geo['can pep'].town, 'Calafell');   // the town around the pin
   assert.ok(logs.some(m => /database down/.test(m)));
   // A look cut short by Claude is not kept.
   let kept = 0;
   const off = async () => { throw new Error('Searches are paused for today. Try again tomorrow.'); };
-  await hostPlaces({ rows: [{ p: 'can pep', list: 'eat' }], house }, { store: { get: async () => ({}), save: async () => { kept++; } }, ask: off, locate, near, log: () => {} });
+  await hostPlaces({ rows: [{ p: 'can pep', list: 'eat' }], house }, { store: { get: async () => ({}), save: async () => { kept++; } }, ask: off, locate, near, gaz: noGaz, log: () => {} });
   assert.equal(kept, 0);
   // No store: Google's position only, the host's words tidied, nothing else.
-  const bare = await hostPlaces({ rows: [{ p: 'ull de llebre', list: 'eat' }], cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }], house }, { locate, near: () => { throw new Error('not asked'); } });
+  const bare = await hostPlaces({ rows: [{ p: 'ull de llebre', list: 'eat' }], cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }], house }, { locate, near: () => { throw new Error('not asked'); }, gaz: () => { throw new Error('not asked'); } });
   assert.deepEqual(bare['ull de llebre'], { name: 'Ull de Llebre', lat: 41.21, lng: 1.51, km: bare['ull de llebre'].km, gid: 'G1aaaaaaaaaa',
     gmaps: 'https://www.google.com/maps/search/?api=1&query=Ull%20de%20Llebre&query_place_id=G1aaaaaaaaaa', pos: bare['ull de llebre'].pos });
   assert.equal(bare['gid:G2aaaaaaaaaa'].noname, true);
   // A store but no Claude: what is already kept fills the entry, nothing is asked, nothing is saved.
   const saved = [];
-  const keptOnly = await hostPlaces({ rows: [{ p: 'ull de llebre', list: 'eat' }], cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore(rows0(), saved), locate, near: () => { throw new Error('not asked'); } });
+  const keptOnly = await hostPlaces({ rows: [{ p: 'ull de llebre', list: 'eat' }], cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore(rows0(), saved), locate, near: () => { throw new Error('not asked'); }, gaz: () => { throw new Error('not asked'); } });
   assert.equal(keptOnly['ull de llebre'].phone, '977 00 00 00'); assert.equal(keptOnly['ull de llebre'].kind, 'fork'); assert.equal(keptOnly['ull de llebre'].pos, undefined);   // our own position
   assert.equal(keptOnly['gid:G2aaaaaaaaaa'].noname, true); assert.equal(saved.length, 0);
   // No Google key and no stand-in: nothing.
@@ -186,7 +192,7 @@ test('hostPlaces: a place read lately but never for this list gets only the matc
   const rows = rows0(), asked = [];
   rows.G1aaaaaaaaaa.sources = {}; rows.G1aaaaaaaaaa.tries = 1; delete rows.G1aaaaaaaaaa.facts.kind_eat;   // kept before kinds were
   const ask = async (prompt, o) => { asked.push(o.what); return '{"venue": true, "entry": null, "sure": false, "name": null, "kind": "fish"}'; };
-  const geo = await hostPlaces({ rows: [{ p: 'ull de llebre', list: 'eat' }], house }, { store: fakeStore(rows), ask, locate, near });
+  const geo = await hostPlaces({ rows: [{ p: 'ull de llebre', list: 'eat' }], house }, { store: fakeStore(rows), ask, locate, near, gaz: noGaz });
   assert.deepEqual(asked, ['place match']);   // no site read, no search
   assert.equal(geo['ull de llebre'].kind, 'fish'); assert.equal(geo['ull de llebre'].phone, '977 00 00 00');   // what was kept stays
   assert.equal(rows.G1aaaaaaaaaa.tried_at, fresh); assert.equal(rows.G1aaaaaaaaaa.tries, 1);
@@ -200,15 +206,15 @@ test('hostPlaces: a kept card is named by comparing Google\'s name with our reco
   const loc2 = { ...locate, name: async id => { asked.push(id); return id === 'G2aaaaaaaaaa' ? GOOGLE : 'A Place Nobody Lists'; } };
   const pins = [];
   const near2 = async (h, p) => { pins.push(...p); return { release: 'r', towns: {}, pins: { G2aaaaaaaaaa: [{ id: 'ov9', name: 'Bar Pepe', kind: 'bar', metres: 5, lat: 41.25, lng: 1.55 }, { id: 'ov2', name: 'Aqualeon Water Park', kind: 'water_park', metres: 60, lat: 41.2502, lng: 1.5502, phones: [], websites: [], socials: [] }], G3aaaaaaaaaa: [{ id: 'ov7', name: 'Hotel Sol', kind: 'hotel', metres: 20, lat: 41.1, lng: 1.4 }] } }; };
-  const geo = await hostPlaces({ cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }, { id: 'G3aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore(rows, saved), ask, locate: loc2, near: near2, log: m => logs.push(m) });
+  const geo = await hostPlaces({ cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }, { id: 'G3aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore(rows, saved), ask, locate: loc2, near: near2, gaz: noGaz, log: m => logs.push(m) });
   assert.equal(geo['gid:G2aaaaaaaaaa'].name, 'Aqualeon'); assert.equal(geo['gid:G2aaaaaaaaaa'].kind, 'waterpark'); assert.equal(geo['gid:G2aaaaaaaaaa'].pos, undefined);
   assert.equal(geo['gid:G3aaaaaaaaaa'].noname, true);   // no record of that name: not guessed from the spot
   assert.deepEqual(pins.find(p => p.id === 'G2aaaaaaaaaa').names, [GOOGLE]);   // asked in three languages, the same name once;   // our own reader of Overture may see it, in memory
   for (const kept of [geo, rows, saved, prompts, logs]) assert.ok(!/Parc Aqu|Nobody Lists/.test(JSON.stringify(kept)));   // not kept, not logged, not sent to Claude
   // A card we already have a name for is not asked again; switched off, nothing is asked at all.
   asked.length = 0;
-  await hostPlaces({ cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore(rows), ask, locate: loc2, near: near2, log: () => {} });
+  await hostPlaces({ cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore(rows), ask, locate: loc2, near: near2, gaz: noGaz, log: () => {} });
   assert.deepEqual(asked, []);
-  await hostPlaces({ cards: [{ id: 'G3aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore({}), ask, locate: loc2, near: near2, log: () => {}, nameMatch: false });
+  await hostPlaces({ cards: [{ id: 'G3aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore({}), ask, locate: loc2, near: near2, gaz: noGaz, log: () => {}, nameMatch: false });
   assert.deepEqual(asked, []);
 });

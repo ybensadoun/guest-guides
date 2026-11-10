@@ -2,7 +2,10 @@
 // Google place id (the places work, step 2). Reading a site does not always work the first time, so a look that finds
 // less never erases what an earlier look found: each fact is replaced only by a new value, and carries where it came
 // from and when. Google's own data is not kept here (its terms: only the place id for good), only facts from Overture
-// Maps (open data), the place's own website and Claude's reading of the host's words and the record (name, kind).
+// Maps and GeoNames (open data), the place's own website and Claude's reading of the host's words and the record (name,
+// kind). GeoNames gives a position, a name, a town and a kind of Things to do to a place no Overture record is (a town,
+// a beach, a mountain); its source carries ref, the feature's geonameid. Overture's record of the place itself beats a
+// gazetteer's point: a GeoNames value never replaces an Overture one, the other way round it does.
 // category: Overture's own raw category. name: the record's name as the place writes it. kind_eat, kind_todo: our kind
 // (a key of engine/src/kinds.json) for each list the place was looked at for; a place can be in both.
 export const FACTS = ['name', 'phone', 'website', 'facebook', 'instagram', 'town', 'category', 'kind_eat', 'kind_todo', 'hours', 'price', 'book', 'lat', 'lng'];
@@ -14,10 +17,15 @@ const has = v => v !== null && v !== undefined;
 const day = d => d.toISOString().slice(0, 10);
 const num = v => typeof v === 'number' && Number.isFinite(v) ? v : null;
 
-// Where each fact of a look came from. A fact whose source is not known is not kept.
-const FROM = { name: () => 'overture', phone: r => r.phoneFrom, website: r => r.websiteFrom, facebook: () => 'overture', instagram: () => 'overture',
-  town: () => 'overture', category: () => 'overture', kind_eat: () => 'claude', kind_todo: () => 'claude', lat: () => 'overture', lng: () => 'overture',
+// Where each fact of a look came from (placeFacts says it for name, town, kind and position; a look from before it did is
+// Overture's and Claude's). A fact whose source is not known is not kept.
+const POS = r => r.posFrom === 'geonames' ? 'geonames' : 'overture';
+const FROM = { name: r => r.nameFrom || 'overture', phone: r => r.phoneFrom, website: r => r.websiteFrom, facebook: () => 'overture', instagram: () => 'overture',
+  town: r => r.townFrom || 'overture', category: () => 'overture', kind_eat: r => r.kindFrom || 'claude', kind_todo: r => r.kindFrom || 'claude', lat: POS, lng: POS,
   hours: () => 'site', price: () => 'site', book: () => 'site' };
+// A new value that does not replace a kept one: GeoNames' over anything else (Overture's position, name or town; Claude's
+// or the site's kind), and a plain "Restaurant" (fork) from the match over the kind a site's menu showed.
+const weaker = (k, from, v, old) => !!old && !old.none && ((from === 'geonames' && old.from !== 'geonames') || (k.startsWith('kind_') && from === 'claude' && v === 'fork' && old.from === 'site'));
 
 // Whether the row was looked at for this list (its kind asked), even when no kind was sure: a build then does not ask again
 // before the row is due (worker/host-places.mjs).
@@ -30,19 +38,21 @@ export const lookedFor = (row, list) => LISTS.includes(list) && !!(row && row.so
 export function mergeFacts(row, place, res, { now = new Date(), release = null, light = false } = {}) {
   const old = row || {}, r = res || {}, e = r.entry || null, at = day(now);
   const facts = { ...(old.facts || {}) }, sources = { ...(old.sources || {}) };
-  // The position is Overture's own for the matched record, never Google's: Google's position may only be kept 30 days,
-  // Overture's may be kept for good.
+  // The position is Overture's own for the matched record, else GeoNames' for the feature, never Google's: Google's
+  // position may only be kept 30 days, these may be kept for good.
   // Only the kind of the list this look was for is set: the other list's kind is another question.
   const list = place && LISTS.includes(place.list) ? place.list : null;
-  const look = { ...Object.fromEntries(FACTS.map(k => [k, r[k]])), lat: e ? num(e.lat) : null, lng: e ? num(e.lng) : null,
+  const spot = r.posFrom === 'geonames' ? r.feature || null : r.posFrom === null ? null : e;
+  const look = { ...Object.fromEntries(FACTS.map(k => [k, r[k]])), lat: spot ? num(spot.lat) : null, lng: spot ? num(spot.lng) : null,
     kind_eat: list === 'eat' ? r.ourKind : null, kind_todo: list === 'todo' ? r.ourKind : null };
   let found = 0;
   for (const k of FACTS) {
     const v = look[k], from = has(v) ? FROM[k](r) : null;
-    if (!from) continue;
+    if (!from || weaker(k, from, v, sources[k])) continue;
     const src = { from, at };
     if ((from === 'site' || from === 'search') && r.page) src.page = r.page;
     if (from === 'overture' && release) src.release = release;
+    if (from === 'geonames' && r.feature && r.feature.id) src.ref = String(r.feature.id);
     facts[k] = v; sources[k] = src; found++;
   }
   // Asked for this list and no kind was sure: said so in sources (no fact), so the next build does not ask again.
