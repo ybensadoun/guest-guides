@@ -50,7 +50,7 @@ for (const w of [360, 390, 430]) for (const l of langs) {
         for (const [c, r] of content) if (hit(R, r)) out.push(`${g.dataset.k}${ps} touches ${c}`);
       }
     }
-    // List rows: the name and its lines (type, distance, rating) never run under the status on the right ("Rouvre à 20:00").
+    // List rows: the name and its lines (type, distance, price) never run under the status on the right ("Rouvre à 20:00").
     for (const r of document.querySelectorAll('.mrow > summary')) {
       const st = r.querySelector('.rt .st'), nm = r.querySelector('.nm'); if (!st || !nm || !st.offsetParent) continue;
       const S = st.getBoundingClientRect(), rg = document.createRange(); rg.selectNodeContents(nm);

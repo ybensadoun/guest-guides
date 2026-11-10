@@ -73,7 +73,7 @@ export function renderMarkets(V) {
   V.querySelectorAll('.mrow').forEach(e => { if (openIds.has(e.dataset.id)) e.open = true; });
   // The small map of the markets listed: kept as is when only the status refreshes, redrawn when the day or filters change.
   const box = V.querySelector('#mkmap');
-  if (box && oldMap) box.replaceWith(oldMap); else if (box) overviewMap(box, shown);
+  if (box && oldMap) box.replaceWith(oldMap); else if (box) overviewMap(box, shown.filter(m => !m.nomap));   // a market whose position ran out: no pin
   V.dataset.mkkey = mkey;
   // Keep the selected day visible in the scrolling strip.
   const bar = V.querySelector('#daybar');

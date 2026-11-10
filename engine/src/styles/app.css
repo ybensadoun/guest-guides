@@ -424,7 +424,7 @@ a.gt:active{transform:scale(.98)}
 .qcall.wide b{font-size:19px}
 .qt{display:flex;flex-direction:column;gap:2px;min-width:0}
 .dl{display:block}
-/* The distance, rating and price lines wrap between words (only a number and its unit stay together, .nw): kept on one
+/* The distance and price lines wrap between words (only a number and its unit stay together, .nw): kept on one
    line, a long one ran under the status on the right (French at 360 px). */
 .dk{display:block}
 
@@ -494,7 +494,6 @@ a.gt:active{transform:scale(.98)}
 .dests th small{display:block;font-size:14px;font-weight:400;color:var(--muted)}
 .dests tr+tr{border-top:1.5px solid var(--line)}
 :root{--tone-wine:#8E1B4A;--tone-wine-s:#F3DDE6}
-.dk.rating{color:#7A5200}
 /* Slim header that hides on scroll down; no bottom bar (Home is the menu) */
 body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .bnav{display:none!important}

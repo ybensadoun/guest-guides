@@ -2,7 +2,7 @@ import { t, tx } from '../i18n.js';
 import { HOUSE, QUICK_ALL, TRANSPORT, slots } from '../content.js';
 import { hoursText, statusLabel, nextOpenText, closedStatus } from '../schedule.js';
 import { stHTML } from '../ui.js';
-import { hav, kmMe, gSearch } from '../geo.js';
+import { hav, kmMe, gSearch, gDir } from '../geo.js';
 import { esc, ICON, itemIcon } from '../ui.js';
 import { miniMap, overviewMap } from './map.js';
 
@@ -17,12 +17,13 @@ export function renderPlace(V, id, icons) {
   if (!p) { location.replace(id === 'taxi' && TRANSPORT ? '#s/transport' : '#home'); return; }   // the old taxi tile now lives in Getting around
   if (p.trains) { renderTransport(V, transportOf(p), icons); return; }
   const now = new Date();
-  const hasPt = typeof p.lat === 'number' && typeof p.lng === 'number' && !(p.lat === 0 && p.lng === 0);   // 0,0 = not placed yet (new tile in the editor)
+  const hasPt = !p.nomap && typeof p.lat === 'number' && typeof p.lng === 'number' && !(p.lat === 0 && p.lng === 0);   // 0,0 = not placed yet (new tile in the editor); nomap: Google's position past its 30 days
   const raw = hasPt ? hav(HOUSE.lat, HOUSE.lng, p.lat, p.lng) : null;
   const km = raw != null && raw >= 0.8 ? Math.max(1, Math.round(raw * 1.3)) : null;
   const near = raw != null && raw < 0.8;
-  const mapsUrl = p.gmaps || p.map || (p.name && p.town ? gSearch(p) : hasPt ? `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}` : '');
-  const dirUrl = hasPt ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}` : p.map || '';
+  const mapsUrl = p.gid || p.gmaps || p.map || (p.name && p.town) || hasPt ? gSearch(p) : '';
+  // Directions by position, or by name once a position has run out (nomap); a tile never placed keeps its own map link.
+  const byName = !hasPt && p.nomap && p.name, dirUrl = hasPt || byName ? gDir(p) : p.map || '';
   // The map opens Google Maps when tapped but carries no button of its own: the Google Maps button is in the actions
   // under it, and a button on the map hid its names.
 
@@ -42,7 +43,7 @@ export function renderPlace(V, id, icons) {
     ${hasPt ? `<a class="pl-map" href="${esc(mapsUrl)}" target="_blank" rel="noopener" aria-label="${esc(t('openInMaps'))}"><div id="plmap"></div></a>` : ''}
     <div class="pl-actions">
       ${p.phone ? `<a class="ccall" href="${tel(p.phone)}">${PHONE}<span>${esc(t('callNow'))} ${esc(p.phone)}</span></a>` : ''}
-      ${dirUrl ? `<a class="btn primary" href="${esc(dirUrl)}" target="_blank" rel="noopener">${ICON.dir}${esc(t(hasPt ? 'directions' : 'openInMaps'))}</a>` : ''}
+      ${dirUrl ? `<a class="btn primary" href="${esc(dirUrl)}" target="_blank" rel="noopener">${ICON.dir}${esc(t(hasPt || byName ? 'directions' : 'openInMaps'))}</a>` : ''}
       ${mapsUrl ? `<a class="btn" href="${esc(mapsUrl)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
       ${p.web ? `<a class="btn" href="${esc(p.web)}" target="_blank" rel="noopener">${WEB}${esc(t('website'))}</a>` : ''}
     </div>
@@ -72,20 +73,22 @@ export function renderTransport(V, g, icons) {
   const badges = s => `<span class="lbadges">${(s.badges || []).filter(b => String(b.t ?? '').trim()).map(b => `<i class="lbadge${b.ink ? ' ink' : ''}" style="--lc:${b.c}">${esc(b.t)}</i>`).join('')}</span>`;
   // Two columns, so destinations keep their width on a phone: the note ("1 change") sits under its destination.
   const dests = s => (s.to || []).length ? `<table class="dests"><tbody>${s.to.map(d => `<tr><th>${esc(tx(d.dest))}${tx(d.note) ? `<small>${esc(tx(d.note))}</small>` : ''}</th><td>${esc(d.time)}</td></tr>`).join('')}</tbody></table>` : '';
-  const stops = (g.stations || []).filter(s => typeof s.lat === 'number' && !(s.lat === 0 && s.lng === 0));
+  // A station never placed (0,0, new in the editor) is left out; one whose Google position ran out (nomap) stays in the list, off the map.
+  const stops = (g.stations || []).filter(s => s.nomap || (typeof s.lat === 'number' && !(s.lat === 0 && s.lng === 0)));
+  const pins = stops.filter(s => !s.nomap);
   const modeOf = s => MODES.find(m => m[0] === (s.mode || 'train')) || MODES[0];
   const station = s => { const [mode, , cc] = modeOf(s);
     return row(itemIcon({ icon: mode }), cc, tx(s.name), [[s.tag && tx(s.tag), s.min ? t('minByCar', { n: s.min }) : ''].filter(Boolean).join(' · ')].filter(Boolean), '',
     `${dests(s)}${s.what ? `<div class="note">${esc(tx(s.what))}</div>` : ''}
-     <div class="actions"><a class="btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" rel="noopener">${ICON.dir}${esc(t('directions'))}</a>
- ${s.gmaps ? `<a class="btn" href="${esc(s.gmaps)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
+     <div class="actions"><a class="btn primary" href="${esc(gDir(s))}" target="_blank" rel="noopener">${ICON.dir}${esc(t('directions'))}</a>
+ ${s.gid || s.gmaps ? `<a class="btn" href="${esc(gSearch(s))}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
      ${s.link ? `<a class="btn" href="${esc(s.link)}" target="_blank" rel="noopener">${WEB}${esc(t(s.linkKey || 'timetable'))}</a>` : ''}</div>`, badges(s)); };
   const groups = MODES.map(([mode, label]) => [label, stops.filter(s => modeOf(s)[0] === mode)]).filter(([, l]) => l.length);
   V.innerHTML = `<div class="wrap place transport" style="gap:14px" data-q="${esc(g.id)}">
     <div class="pl-head"><span class="qi">${icons({ icon: g.tileIcon || ((g.taxis || []).length || !stops.length ? 'taxi' : modeOf(stops[0])[0]) })}</span>
       <div><h2 class="title">${esc(typeof g.title === 'string' ? g.title : tx(g.title))}</h2>${g.lead ? `<p class="lead">${esc(tx(g.lead))}</p>` : ''}</div></div>
     ${taxis ? `<h3 class="section-h">${esc(t('taxiH'))}</h3><div class="mlist">${taxis}</div>` : ''}
-    ${groups.map(([label, l], i) => `<h3 class="section-h">${esc(t(label))}</h3>${i === 0 ? '<div class="pl-map secmap"><div id="trmap"></div></div>' : ''}<div class="mlist">${l.map(station).join('')}</div>`).join('')}
+    ${groups.map(([label, l], i) => `<h3 class="section-h">${esc(t(label))}</h3>${i === 0 && pins.length ? '<div class="pl-map secmap"><div id="trmap"></div></div>' : ''}<div class="mlist">${l.map(station).join('')}</div>`).join('')}
   </div>`;
-  if (stops.length) overviewMap(V.querySelector('#trmap'), stops.map(s => ({ lat: s.lat, lng: s.lng, icon: modeOf(s)[0], tone: modeOf(s)[3], cat: 'todo' })));
+  if (pins.length) overviewMap(V.querySelector('#trmap'), pins.map(s => ({ lat: s.lat, lng: s.lng, icon: modeOf(s)[0], tone: modeOf(s)[3], cat: 'todo' })));
 }

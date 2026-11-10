@@ -169,7 +169,7 @@ test('kinds.json: groups, six names, icons', () => {
   const K = json('engine/src/kinds.json'), groups = json('engine/src/groups.json').groups;
   const ui = readFileSync(resolve(ROOT, 'engine/src/ui.js'), 'utf8'), block = ui.slice(ui.indexOf('const ITEM_ICON = {'));
   const icons = new Set([...block.slice(0, block.indexOf('\n};')).matchAll(/^\s+([a-z]+): P\(/gm)].map(m => m[1]));
-  const MISSING = new Set(['fork']);   // no icon of its own in the engine yet: the list's own icon is shown
+  const MISSING = new Set([]);   // kinds with no icon of their own in the engine yet (the list's own icon is shown)
   assert.equal(Object.keys(K.eat).length, 12); assert.equal(Object.keys(K.todo).length, 21);
   for (const list of ['eat', 'todo']) for (const [k, v] of Object.entries(K[list])) {
     assert.ok(icons.has(k) || MISSING.has(k), `${list}.${k} is not an icon of ui.js`);
