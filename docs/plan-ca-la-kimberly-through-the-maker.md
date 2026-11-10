@@ -146,6 +146,14 @@ The editor changes a part's title, lines, photos and order. It cannot add or rem
 - **Pictures stay (Yohann, 10 Nov 2026).** A host's own picture, or the artistic rendering of it, gives the colours as today, through "From your picture" and under the same contrast rule.
 - **To decide later:** where guides in the four old layouts go (Rural to Country, Mediterranean to Sea, Clean and calm to Stone, Soft to be decided).
 
+## Where a place's facts may come from (10 Nov 2026, after Yohann's question on proposal 2)
+Read on 10 Nov 2026: Google Maps Platform EEA Terms of Service (last modified 26 Aug 2026) and EEA Service Specific Terms (last modified 28 Oct 2026); they apply to a billing account with an address in the European Economic Area. Not read yet: the "Places API EEA Permitted Uses" they point to. This is a reading of published terms, not legal advice.
+- A place's Google id may be kept as long as we like. Its latitude and longitude may be kept for up to 30 days, then must be deleted or fetched again. Nothing else that the Places API returns may be stored: the terms name "copy and save business names, addresses, or user reviews" as not allowed.
+- So a guide must not keep Google's phone, website, rating, price level, address, opening hours or kind of place. What a guide keeps about a place has to come from the host, from the place's own website or another official source, or from OpenStreetMap (already credited on the map; its licence has its own conditions, to read before use).
+- Google stays useful for: finding the place and keeping its id, its pin (refreshed within 30 days), the link that opens it in Google Maps, and checks that keep nothing but their result ("still open", "closed for good").
+- A rating, or "open now" as Google has it, can only be shown fetched fresh from Google at the moment a guest looks, with Google's credit, never from a stored copy.
+To decide: what replaces proposal 2, and a pass over what guides and the monthly check keep today in the light of this rule.
+
 ## Not gaps
 The look and its colours and fonts; languages and translation; Wi-Fi with several networks; Getting around (taxis with other numbers, stations, lines, journey times, the Home tile); automatic events and their settings; photos and their order; pinning a restaurant to Home; switching sections on and off; drafts, Preview and Publish.
 
@@ -155,7 +163,7 @@ Each is one yes or no from Yohann, then one brief for Opus 5.5, built, checked (
 | # | Proposal | Closes | Size | Status |
 |---|---|---|---|---|
 | 1 | **The editor never publishes an empty thing.** Empty lines, stations, places and tiles are dropped on Publish; a place with no name is said so before. A new place starts blank instead of copying the first one's icon, filter and marks. | E, the bug in A | 0.5 | yes 10 Nov, being built |
-| 2 | **A host's place comes with what Google knows.** At the build and at "Find it on Google": phone, website, rating, price level, address, and an icon from Google's kind of place. No extra cost per place. | H | 1 | to decide |
+| 2 | **A host's place comes with what Google knows.** At the build and at "Find it on Google": phone, website, rating, price level, address, and an icon from Google's kind of place. | H | 1 | **withdrawn in this form, 10 Nov** (see "Where a place's facts may come from") |
 | 3 | **"Kind and marks" on every place in the editor.** Kind (sets icon, filter, colour; a market's or an event's kind), marks per section (Great for kids, Dog friendly, Free, Vegetarian options, Book ahead), "Our favourite", set menus, open 24 h, a season on a line of hours, the week of the month for a market. | A | 1.5 | to decide |
 | 4 | **One tile system in colour worlds.** The six worlds and "From your picture" (a photo, a logo or the artistic cover), one contrast rule for all, the picker as a row of small phones in The look, fonts with the world. The icons of Home tiles, bins and Things to do groups take the world's colours. The four old layouts go; their guides move to the nearest world. | Step 3 | 2.5 | direction agreed, to confirm as a build |
 | 5 | **Quieter filter chips** on the list pages, as mocked up. | Step 3 | 0.5 | agreed 10 Nov |
