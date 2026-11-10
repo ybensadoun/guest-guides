@@ -1,0 +1,202 @@
+#!/usr/bin/env node
+// A place's facts from sources we may keep (the places work, step 1: docs/plan-ca-la-kimberly-through-the-maker.md,
+// "Where a place's facts may come from"). Google only locates a place. Its phone, website and Facebook link come from
+// Overture Maps (open data, worker/overture.py); its opening hours, price and "book ahead" from its own website, read by
+// Claude; with no usable website, one short web search. A doubtful match fills nothing. Measured on 10 Nov 2026: about
+// 18 s and 0.02 USD a place with Haiku 5.5 at low effort.
+// Run alone it is a dry run over a guide's folder: it prints what it finds beside the guide's own values, writes nothing.
+//   node worker/place-facts.mjs --site <slug> [--only id,id] [--effort low|medium]
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
+import { nameOf } from './places.mjs';
+
+const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
+
+// Overture's records near each pin (worker/overture.py). pins: [{ id, lat, lng, names: [] }]. Returns
+// { release, pins: { id: [candidates] } }. If Python or Overture fails, no candidates: the chain goes on with search only.
+// python: the command that runs Python with pyarrow and overturemaps (OVERTURE_PYTHON, split on spaces; on the Mac
+// `uv run -q --no-project --with overturemaps==2.1.0 --with pyarrow python`).
+export async function nearby(house, pins, { km = 60, python = process.env.OVERTURE_PYTHON || 'python3', log = console.error } = {}) {
+  const [cmd, ...args] = String(python).trim().split(/\s+/);
+  return new Promise(done => {
+    let out = '', err = '', over = false;
+    const p = spawn(cmd, [...args, resolve(HERE, 'overture.py')], { stdio: ['pipe', 'pipe', 'pipe'] });
+    const timer = setTimeout(() => { over = true; p.kill('SIGKILL'); }, 5 * 60000);   // a stuck download must not hold the run
+    p.stdout.on('data', d => { out += d; });
+    p.stderr.on('data', d => { err += d; });
+    let ended = false;   // a command that does not start says so twice (error, then close)
+    const none = why => { clearTimeout(timer); if (ended) return; ended = true; log(`overture: no records, search only (${why})`); done({ release: null, pins: {} }); };
+    p.on('error', e => none(e.message));
+    p.on('close', code => {
+      if (over) return none('took more than 5 minutes');
+      clearTimeout(timer);
+      const lines = err.split('\n').map(l => l.trim()).filter(Boolean);
+      if (code !== 0) return none(lines.slice(-1)[0] || 'exit ' + code);
+      for (const l of lines) if (/^overture:/.test(l)) log(l);   // what was fetched, how big, how long
+      try { const r = JSON.parse(out); ended = true; done({ release: r.release || null, pins: r.pins || {} }); } catch (e) { none('its answer was not JSON'); }
+    });
+    p.stdin.on('error', () => {});   // a command that does not start closes stdin early
+    p.stdin.end(JSON.stringify({ house: { lat: house.lat, lng: house.lng }, km, pins }));
+  });
+}
+
+const host = u => { try { return new URL(/^https?:/i.test(u) ? u : 'http://' + u).hostname.replace(/^www\./, '').toLowerCase(); } catch (e) { return ''; } };
+// The name part of a host: "recaredo" of recaredo.es and of recaredo.com, "bar" of bar.co.uk.
+const label = h => { const p = h.split('.'); return (p.length > 2 && /^(co|com|org|net|gov|edu|ac)$/.test(p[p.length - 2]) && p[p.length - 1].length === 2 ? p[p.length - 3] : p[p.length - 2]) || ''; };
+// Not a place's own website: directories, maps, reviews, booking and social sites. Facebook and Instagram are kept only
+// as links (their terms do not allow reading them by automated means).
+const DENY = /(^|\.)(google\.[a-z.]+|goo\.gl|g\.page|tripadvisor\.[a-z.]+|facebook\.com|fb\.com|fb\.me|instagram\.com|twitter\.com|x\.com|tiktok\.com|youtube\.com|linkedin\.com|thefork\.[a-z.]+|eltenedor\.[a-z.]+|yelp\.[a-z.]+|booking\.com|airbnb\.[a-z.]+|expedia\.[a-z.]+|hotels\.com|foursquare\.com|restaurantguru\.com|wikipedia\.org|wikiloc\.com|paginasamarillas\.es|cylex\.[a-z.]+|infoisinfo\.[a-z.]+|guiarepsol\.com|michelin\.com|openstreetmap\.org|bing\.com|apple\.com|waze\.com|linktr\.ee|wa\.me|whatsapp\.com)$/;
+const denied = u => !host(u) || DENY.test(host(u));
+const webUrl = u => { if (typeof u !== 'string') return null; try { const x = new URL(u.trim()); return /^https?:$/.test(x.protocol) && x.hostname.includes('.') ? x.href : null; } catch (e) { return null; } };
+
+// Our own check of a website (from Overture: some are dead or now lead elsewhere): it must answer within 12 s and land on
+// a site of the same name (recaredo.es -> recaredo.com is fine, calafellhistoric.org -> x-andra.ro is not). When the page
+// fails, its home page is tried. Returns the address it landed on, or null.
+export async function siteAlive(url) {
+  const first = webUrl(/^https?:/i.test(String(url || '')) ? url : 'http://' + url);
+  if (!first) return null;
+  for (const u of new Set([first, new URL(first).origin + '/'])) {
+    try { const r = await fetch(u, { redirect: 'follow', signal: AbortSignal.timeout(12000), headers: { 'user-agent': 'Mozilla/5.0 (guest guide website check)' } });
+      r.body?.cancel().catch(() => {});
+      if (r.status < 400 && label(host(r.url)) === label(host(first))) return r.url; } catch (e) { /* next */ }
+  }
+  return null;
+}
+
+// What Claude must say about the site, and how to read it.
+const SHAPE = `{"website": "the address of the place's own site that you read, or null", "about": true if that site is clearly this place's own site else false, "phone": "as written on its site, or null", "hours": the opening hours of the place itself, or null if the site does not state them, "price": "typical price per person in euros if the site shows prices (menu, set menu, tickets), like 20-30 or 8, or null", "book": true if the site says booking is needed or recommended, else null}
+Opening hours: a list of lines like [{"days":["tue","wed","thu"],"open":"10:00","close":"14:00"},{"days":["tue","wed","thu"],"open":"16:00","close":"19:00"}]. Days as mon tue wed thu fri sat sun. Times HH:MM in 24 h; a close earlier than the open means after midnight. Only the hours of this place, never those of a restaurant, hotel, café or shop inside it or beside it, nor those of its office or phone line. When the site gives different hours by season or part of the year, give one line per season and time span, each with "from":"MM-DD","to":"MM-DD" (like "from":"06-15","to":"09-15"). null when the site does not state them. Never guess.`;
+const READ = `read its phone number, opening hours, prices and whether booking is asked. You may open up to two more pages of that same site (contact, hours, prices, menu, tickets). Use only the place's own site, never a directory, a map or a review site. Never guess.`;
+const where = p => `"${p.name}"${p.town ? ` in ${p.town}` : ''}, ${p.country || 'Spain'}`;
+const json = t => { try { return JSON.parse(String(t || '').match(/\{[\s\S]*\}/)[0]); } catch (e) { return null; } };
+
+// What comes back from Claude is checked before it is kept: anything not in the expected shape is dropped.
+const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const hhmm = t => { const m = String(t || '').trim().match(/^(\d{1,2})[:.h](\d{2})$/); if (!m || +m[1] > 24 || +m[2] > 59 || (+m[1] === 24 && +m[2])) return null; return `${String(+m[1] % 24).padStart(2, '0')}:${m[2]}`; };
+const mmdd = s => { const m = String(s || '').trim().match(/^(\d{2})-(\d{2})$/); return m && +m[1] >= 1 && +m[1] <= 12 && +m[2] >= 1 && +m[2] <= 31 ? m[0] : null; };
+export function cleanHours(h) {
+  if (!Array.isArray(h)) return null;
+  const out = [], seen = new Set();
+  for (const s of h) {
+    if (!s || typeof s !== 'object' || !Array.isArray(s.days)) continue;
+    const days = DAYS.filter(d => s.days.map(x => String(x).toLowerCase().slice(0, 3)).includes(d)), open = hhmm(s.open), close = hhmm(s.close);
+    if (!days.length || !open || !close || open === close) continue;
+    const line = { days, open, close }, from = mmdd(s.from), to = mmdd(s.to);
+    if (from && to && from !== to) { line.from = from; line.to = to; }
+    const key = JSON.stringify(line); if (!seen.has(key)) { seen.add(key); out.push(line); }
+  }
+  return out.length ? out : null;
+}
+const cleanPrice = p => { if (p == null) return null; const s = String(p).replace(/€|eur(os)?|\s/gi, '').replace(/[‒-―]/g, '-');
+  return /^\d+([.,]\d+)?(-\d+([.,]\d+)?)?$/.test(s) ? s : null; };
+const cleanText = s => typeof s === 'string' && s.trim() ? s.trim().slice(0, 80) : null;
+// A Spanish number as the guides show it ("977 66 16 25"); any other number as given.
+export const showPhone = t => { const s = cleanText(t); if (!s) return null; const d = s.replace(/[\s.()\-\/]/g, '').replace(/^(\+|00)34(?=\d{9}$)/, '');
+  return /^[6789]\d{8}$/.test(d) ? `${d.slice(0, 3)} ${d.slice(3, 5)} ${d.slice(5, 7)} ${d.slice(7)}` : s; };
+
+// One place: place = { name, town, about? (the host's own words, they help the match), country? (default Spain) },
+// cands = Overture's records near its pin (nearby()), ask = makeClaude(...) from worker/claude-api.mjs.
+export async function placeFacts(place, cands, ask, { meter } = {}) {
+  const m = meter || {}, before = m.usd || 0, errors = [];
+  const q = (prompt, o) => ask(prompt, { ...o, meter: m }).catch(e => { errors.push(e.message); return ''; });
+  cands = Array.isArray(cands) ? cands : [];
+  // a. Which record is this place, and is it a place with a door at all: Claude without the web. Not sure, or none: no
+  // record (a doubtful match fills nothing). A town, a beach or a natural spot has no phone, website or hours to look
+  // for: nothing is searched for it (measured 10 Nov 2026: a third of the cost went into searching for towns' websites).
+  let entry = null, venue = true;
+  {
+    const list = cands.map((c, i) => `${i + 1}. ${c.name} | ${String(c.kind || 'kind unknown').replace(/_/g, ' ')}${c.status && c.status !== 'open' ? ' | ' + String(c.status).replace(/_/g, ' ') : ''}${c.town ? ' | ' + c.town : ''} | ${c.metres} m away | ${(c.websites || []).map(host).filter(Boolean)[0] || 'no website'}`).join('\n');
+    const a = json(await q(`A host recommends ${where(place)}${place.about ? ` (in the host's words: ${place.about})` : ''}. ${cands.length ? `An open directory lists these entries within 150 m of it:\n${list}` : 'An open directory lists nothing within 150 m of it.'}\nFirst: is the host's place a venue, that is a business or a visitor site with a door, a phone and opening hours of its own (a restaurant, a bar, a shop, a museum, a monument, a park with a gate, a winery, a spa)? A town, a village, a city, a beach, a mountain, a spring or any open natural spot is not a venue.\nThen: which entry is the same place as the host's (the same business or the same site, even if spelt or named a little differently)? Another business that only shares a word with it, or sits next door, is not it. The entry must carry the word that sets the host's name apart (for "La Fàbrica del Pernil" that word is Pernil, not Fàbrica): without it you are not sure. A town, a village, a beach or a natural spot is never matched to a business or building that carries its name (a school, a hotel, a shop, a restaurant). Answer with JSON only: {"venue": true or false, "entry": the number, or null if none is it, "sure": true if you are sure, else false}`, { web: false, what: 'place match' }));
+    const n = a && Number.isInteger(a.entry) ? a.entry : 0;
+    if (a && a.sure === true && n >= 1 && n <= cands.length) entry = cands[n - 1];
+    if (a && a.venue === false) venue = false;
+  }
+  if (!venue) return { entry: entry ? { id: entry.id, name: entry.name, kind: entry.kind } : null, venue: false, phone: null, phoneFrom: null, website: null, websiteFrom: null, facebook: null, instagram: null,
+    town: entry && entry.town || null, kind: entry && entry.kind || null, hours: null, price: null, book: null, page: null, read: new Date().toISOString().slice(0, 10), usd: +((m.usd || 0) - before).toFixed(4), ...(errors.length ? { error: errors[0] } : {}) };
+  // b. From the record: phone, social links, a website to check, town and Overture's own kind (raw).
+  const links = entry ? [...(entry.socials || []), ...(entry.websites || [])] : [];
+  const social = re => links.map(webUrl).find(u => u && re.test(host(u))) || null;
+  const own = entry ? (entry.websites || []).map(u => webUrl(/^https?:/i.test(u) ? u : 'http://' + u)).find(u => u && !denied(u)) || null : null;
+  // c. Its website: Overture's, if it answers on its own address, read by Claude; else, or if that read finds nothing of
+  // its own, one web search.
+  let r = null, websiteFrom = null, page = null;
+  const alive = own ? await siteAlive(own) : null;
+  if (alive) {
+    r = json(await q(`Open ${alive} : it should be the website of ${where(place)}. From it, ${READ}\nAnswer with JSON only: ${SHAPE}`, { web: true, what: 'site facts', searches: 3 }));
+    websiteFrom = 'overture';
+  }
+  const ok = x => x && x.about === true && webUrl(x.website) && !denied(x.website);
+  if (!ok(r)) {
+    r = json(await q(`Search the web for the official website of ${where(place)}. Open it and ${READ}\nAnswer with JSON only: ${SHAPE}`, { web: true, what: 'site facts', searches: 3 }));
+    websiteFrom = 'search';
+  }
+  // d, e. Kept only when Claude read the place's own site, and only what is in the expected shape.
+  const site = ok(r) ? r : null;
+  if (site) page = webUrl(site.website); else websiteFrom = null;
+  const sitePhone = site ? cleanText(site.phone) : null, ovPhone = entry ? cleanText((entry.phones || [])[0]) : null;
+  const res = { entry: entry ? { id: entry.id, name: entry.name, kind: entry.kind } : null, venue: true,
+    phone: showPhone(ovPhone || sitePhone), phoneFrom: ovPhone ? 'overture' : sitePhone ? 'site' : null,   // Overture's matched the hand-checked phone more often
+    website: site ? (websiteFrom === 'overture' ? alive : page) : null, websiteFrom,
+    facebook: social(/(^|\.)(facebook\.com|fb\.com|fb\.me)$/), instagram: social(/(^|\.)instagram\.com$/),
+    town: entry && entry.town || null, kind: entry && entry.kind || null,
+    hours: site ? cleanHours(site.hours) : null, price: site ? cleanPrice(site.price) : null, book: site && site.book === true ? true : null,
+    page, read: new Date().toISOString().slice(0, 10), usd: +((m.usd || 0) - before).toFixed(4) };
+  if (errors.length) res.error = errors[0];
+  return res;
+}
+
+/* ---------- Dry run over a guide's folder: printed, written nowhere ---------- */
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const arg = k => { const i = process.argv.indexOf(k); return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : ''; };
+  const slug = arg('--site'), only = arg('--only').split(',').filter(Boolean), effort = arg('--effort') || 'low';
+  if (!slug || !['low', 'medium'].includes(effort)) { console.error('Use: node worker/place-facts.mjs --site <slug> [--only id,id] [--effort low|medium]'); process.exit(1); }
+  const dir = resolve(ROOT, 'sites', slug), read = f => existsSync(resolve(dir, f)) ? JSON.parse(readFileSync(resolve(dir, f), 'utf8')) : null;
+  // The worker's own settings file, as the prototype read it (never printed).
+  const env = {}, envFile = resolve(HERE, '.env.local');
+  if (existsSync(envFile)) for (const l of readFileSync(envFile, 'utf8').split('\n')) { const m = l.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/); if (m) env[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); }
+  if (!env.WORKER_ANTHROPIC_KEY) { console.error('Needs WORKER_ANTHROPIC_KEY in worker/.env.local.'); process.exit(1); }
+  // The house's position: content/house.json (approximate on purpose), or site.json if a guide keeps it there.
+  const h = read('content/house.json') || {}, s = read('site.json') || {}, house = typeof h.lat === 'number' ? h : typeof (s.house || {}).lat === 'number' ? s.house : null;
+  if (!house) { console.error(`No house position in sites/${slug}/content/house.json.`); process.exit(1); }
+  const places = [];
+  for (const f of ['content/restaurants.json', 'content/todo.json', 'content/nightlife.json']) for (const x of (read(f) || {}).items || []) {
+    if (only.length && !only.includes(x.id)) continue;
+    const n = x.name, names = [...new Set([x.name_local, ...(typeof n === 'string' ? [n] : [n && n.ca, n && n.es, n && n.en])].filter(Boolean))];
+    places.push({ it: x, file: f.split('/')[1], place: { name: x.name_local || nameOf(n), town: x.town || null, about: x.type && typeof x.type === 'object' && x.type.en || undefined }, names });
+  }
+  if (!places.length) { console.error('No places to look at.'); process.exit(1); }
+  const { makeClaude } = await import('./claude-api.mjs');
+  const ask = makeClaude({ ...env, RESEARCH_MODEL: 'claude-haiku-5-5', TRANSLATE_MODEL: 'claude-haiku-5-5', RESEARCH_EFFORT: effort, RESEARCH_MAX_SEARCHES: '3', RESEARCH_USD_PER_DAY: '2' },
+    (...a) => { const t = a.join(' '); if (!/^\s*claude api, /.test(t)) console.error(t); });   // each call's cost is in the place's line
+  console.log(`${places.length} places of ${slug}, Haiku 5.5, effort ${effort}. Nothing is written.`);
+  const ov = await nearby(house, places.filter(p => typeof p.it.lat === 'number').map(p => ({ id: p.it.id, lat: p.it.lat, lng: p.it.lng, names: p.names })), { python: process.env.OVERTURE_PYTHON || env.OVERTURE_PYTHON || 'python3' });
+  console.log(`Overture release ${ov.release || 'none'}.\n`);
+  const digits = t => String(t || '').replace(/\D/g, '').replace(/^(00)?34(?=\d{9}$)/, '');
+  const lines = sch => JSON.stringify((sch || []).map(s => [[...(s.days || [])].join(), s.open, s.close, s.from || '', s.to || '']).sort());
+  const span = d => { const i = d.map(x => DAYS.indexOf(x)); return d.length > 2 && i.every((v, k) => !k || v === i[k - 1] + 1) ? `${d[0]}-${d[d.length - 1]}` : d.join(','); };
+  const n = { entry: 0, overture: 0, search: 0, phone: 0, phoneSame: 0, phoneGuide: 0, site: 0, siteSame: 0, siteGuide: 0, hours: 0, hoursSame: 0, hoursGuide: 0, price: 0, book: 0, fb: 0 };
+  let total = 0, secs = 0;
+  for (const p of places) {
+    const t0 = Date.now(), meter = {}, cands = ov.pins[p.it.id] || [];
+    const r = await placeFacts(p.place, cands, ask, { meter });
+    const sec = Math.round((Date.now() - t0) / 1000), g = p.it;
+    total += r.usd; secs += sec;
+    const phoneSame = r.phone && g.phone && digits(r.phone) === digits(g.phone), siteSame = r.website && g.url && host(r.website) === host(g.url), hoursSame = r.hours && g.schedule && lines(r.hours) === lines(g.schedule);
+    n.entry += !!r.entry; n.overture += r.websiteFrom === 'overture'; n.search += r.websiteFrom === 'search'; n.fb += !!r.facebook; n.price += !!r.price; n.book += !!r.book;
+    n.phone += !!r.phone; n.phoneSame += !!phoneSame; n.phoneGuide += !!g.phone; n.site += !!r.website; n.siteSame += !!siteSame; n.siteGuide += !!g.url; n.hours += !!r.hours; n.hoursSame += !!hoursSame; n.hoursGuide += !!g.schedule;
+    console.log(`${g.id.padEnd(16)} [${r.entry ? r.entry.name.slice(0, 30) + (r.entry.kind ? ', ' + r.entry.kind : '') : 'no entry, ' + cands.length + ' near'}${r.venue ? '' : ', not a venue'}]`
+      + ` | site ${r.website ? host(r.website) + ' (' + r.websiteFrom + ')' : '-'}${g.url ? (siteSame ? ' =' : ` (guide: ${host(g.url)})`) : ''}`
+      + ` | phone ${r.phone ? r.phone + ' (' + r.phoneFrom + ')' : '-'}${g.phone ? (phoneSame ? ' =' : ` (guide: ${g.phone})`) : ''}`
+      + ` | hours ${r.hours ? r.hours.length + ' lines' : '-'}${g.schedule ? (hoursSame ? ' =' : ` (guide: ${g.schedule.length} lines)`) : ''}`
+      + ` | price ${r.price || '-'}${g.price ? ` (guide ${g.price})` : ''} | book ${r.book ? 'yes' : '-'}${r.facebook ? ' | facebook' : ''}${r.instagram ? ' | instagram' : ''}`
+      + ` | ${sec} s, ${r.usd.toFixed(3)} USD${r.error ? ' | ' + r.error : ''}`);
+    for (const s of r.hours || []) console.log(`${' '.repeat(19)}${span(s.days)} ${s.open}-${s.close}${s.from ? ` (${s.from} to ${s.to})` : ''}`);
+  }
+  const k = places.length;
+  console.log(`\n${k} places, ${total.toFixed(3)} USD in all (${(total / k).toFixed(3)} a place), ${Math.round(secs / k)} s a place.`);
+  console.log(`Entry chosen ${n.entry}; website from Overture ${n.overture}, by search ${n.search}, none ${k - n.overture - n.search}; Facebook link ${n.fb}.`);
+  console.log(`Website ${n.site} (same host as the guide's ${n.siteSame} of ${n.siteGuide}); phone ${n.phone} (same as the guide's ${n.phoneSame} of ${n.phoneGuide}); hours ${n.hours} (exactly the guide's ${n.hoursSame} of ${n.hoursGuide}); price ${n.price}; book ahead ${n.book}.`);
+  process.exit(0);
+}
