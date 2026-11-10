@@ -2131,10 +2131,10 @@
 "es": "{x} · añadido automáticamente",
 "fr": "{x} · ajouté automatiquement"
 },
-"Check on Google Maps": {
-"ca": "Comprova-ho a Google Maps",
-"es": "Comprobar en Google Maps",
-"fr": "Vérifier sur Google Maps"
+"Matched on": {
+"ca": "Trobat a",
+"es": "Encontrado en",
+"fr": "Trouvé sur"
 },
 "Check-in from": {
 "ca": "Arribada a partir de les",
@@ -2591,10 +2591,10 @@
 "es": "Hemos encontrado {n} líneas y {m} destinos. Revísalos, añade tus palabras y publica.",
 "fr": "{n} lignes et {m} destinations trouvées. Vérifiez-les, ajoutez vos mots, puis publiez."
 },
-"Found: {x}. Not the right one? Search again, or paste its Google Maps link below.": {
-"ca": "Trobat: {x}. No és aquest? Torna a buscar o enganxa’n l’enllaç de Google Maps a sota.",
-"es": "Encontrado: {x}. ¿No es este? Busca de nuevo o pega su enlace de Google Maps abajo.",
-"fr": "Trouvé : {x}. Ce n’est pas le bon ? Cherchez à nouveau, ou collez son lien Google Maps ci-dessous."
+"Found: {x}, {n} km from the house. Not the right one? Search again, or paste its Google Maps link below.": {
+"ca": "Trobat: {x}, a {n} km de la casa. No és aquest? Torna a buscar o enganxa’n l’enllaç de Google Maps a sota.",
+"es": "Encontrado: {x}, a {n} km de la casa. ¿No es este? Busca de nuevo o pega su enlace de Google Maps abajo.",
+"fr": "Trouvé : {x}, à {n} km de la maison. Ce n’est pas le bon ? Cherchez à nouveau, ou collez son lien Google Maps ci-dessous."
 },
 "{x}, {n} km from the house": {
 "ca": "{x}, a {n} km de la casa",
@@ -3376,10 +3376,10 @@
 "es": "No encontrado en Google. Elígelo de la lista o déjalo como lo has escrito: puede que no tenga chincheta.",
 "fr": "Pas trouvé sur Google. Choisissez-le dans la liste, ou gardez-le tel que saisi : il n’aura peut-être pas de repère."
 },
-"Not on the map yet: pick it from the list to get its name, pin, distance and hours.": {
-"ca": "Encara no és al mapa: tria’l de la llista per tenir-ne el nom, el punt, la distància i l’horari.",
-"es": "Aún no está en el mapa: elígelo de la lista para tener su nombre, chincheta, distancia y horario.",
-"fr": "Pas encore sur la carte : choisissez-le dans la liste pour avoir son nom, son repère, sa distance et ses horaires."
+"Not on the map yet: pick it from the list to get its pin and distance.": {
+"ca": "Encara no és al mapa: tria’l de la llista per tenir-ne el punt i la distància.",
+"es": "Aún no está en el mapa: elígelo de la lista para tener su chincheta y su distancia.",
+"fr": "Pas encore sur la carte : choisissez-le dans la liste pour avoir son repère et sa distance."
 },
 "Note": {
 "ca": "Nota",
@@ -3591,10 +3591,10 @@
 "es": "Fotos, estancias y lo que ofrece la casa.",
 "fr": "Photos, pièces et ce que propose la maison."
 },
-"Pick it from the list to update its pin, distance and hours.": {
-"ca": "Tria’l de la llista per actualitzar-ne el punt, la distància i l’horari.",
-"es": "Elígelo de la lista para actualizar su chincheta, distancia y horario.",
-"fr": "Choisissez-le dans la liste pour mettre à jour son repère, sa distance et ses horaires."
+"Pick it from the list to update its pin and distance.": {
+"ca": "Tria’l de la llista per actualitzar-ne el punt i la distància.",
+"es": "Elígelo de la lista para actualizar su chincheta y su distancia.",
+"fr": "Choisissez-le dans la liste pour mettre à jour son repère et sa distance."
 },
 "Pick one of your photos, upload a picture, or let us draw an artistic version of your cover photo.": {
 "ca": "Tria una de les teves fotos, puja una imatge o deixa’ns dibuixar una versió artística de la foto de portada.",
@@ -7190,5 +7190,20 @@
 "ca": "{n} elements sense nom",
 "es": "{n} elementos sin nombre",
 "fr": "{n} éléments sans nom"
+},
+"A place you kept": {
+"ca": "Un lloc que has guardat",
+"es": "Un sitio que has guardado",
+"fr": "Un lieu que vous avez gardé"
+},
+"Comment on {x}": {
+"ca": "Comentari sobre {x}",
+"es": "Comentario sobre {x}",
+"fr": "Commentaire sur {x}"
+},
+"Comment on this place": {
+"ca": "Comentari sobre aquest lloc",
+"es": "Comentario sobre este sitio",
+"fr": "Commentaire sur ce lieu"
 }
 }

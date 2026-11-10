@@ -230,7 +230,10 @@ document.addEventListener('submit', e => { if (e.target.id === 'startForm') { e.
 document.addEventListener('input', e => { if (e.target.id === 'st_url') { const m = document.getElementById('st_urlMsg'); const p = linkProblem(e.target.value); if (m) { m.textContent = p || 'Airbnb, Booking.com or Vrbo.'; m.className = 'st-hint' + (p ? ' bad' : ''); } } });
 
 /* ---------- Swipe: top-rated places near the house ---------- */
-const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {} };
+// Google's cards are shown live and never kept (Google's terms: a place's id may be kept, not its name, rating, photo or
+// address). A swipe saves { id, d, cat, c }: the id, the host's yes or no and their comment. What the screen shows about a
+// card (the card, Your picks, the phone) is read by its id from SW.mem, every card loaded in this session, in memory only.
+const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {}, mem: new Map() };
 // Eating and drinking is the host's own list (see "Your places"): we only suggest things to do.
 const SW_CATS = [['todo', 'Attractions']];
 const swipes = () => A.swipes || (A.swipes = {});
@@ -244,12 +247,22 @@ const addedPlaces = () => (Array.isArray(A.favDo) ? placeRows('favDo').map(r => 
 const MARKET = /(?<!\p{L})(markets?|mercados?|mercats?|mercadillos?|mercadets?|march[ée]s?|m[äa]rkte?|mercato|mercati|markthal)(?!\p{L})/iu;
 const shownText = x => (typeof x === 'string' ? x : (x && (x[UIL] || x.en || Object.values(x)[0])) || '');
 function researchCards(){
-  const S = swipes(), chosen = [...Object.values(S).filter(x => !String(x.id).startsWith('r:')).map(x => x.name), ...addedPlaces()];
+  const S = swipes(), chosen = [...Object.values(S).filter(x => !String(x.id).startsWith('r:')).map(x => (SW.mem.get(x.id) || {}).name).filter(Boolean), ...addedPlaces()];
   return (((AREA.full || {}).todo || {}).items || []).filter(it => shownText(it.name) && !MARKET.test(shownText(it.name) + ' ' + shownText(it.type)) && !chosen.some(n => samePlace(n, shownText(it.name)))).map(it => { const name = shownText(it.name);
     return { id: 'r:' + plainName(name), name, type: shownText(it.type), km: it.km_from_house, lat: it.lat, lng: it.lng, summary: shownText(it.description),
       maps: it.gmaps || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([name, it.town].filter(Boolean).join(' ')), ...(it._card || {}) }; });
 }
 const moreLeft = () => researchCards().filter(p => !swipes()[p.id]).length;
+const isOurs = id => String(id).startsWith('r:');
+// A decision as the screen shows it: the live card (Google's from memory, ours from the research) with the host's comment.
+// A Google card not in memory (after a reload, before the deck is loaded again) is a kept place with no name, and its link.
+// A researched card kept earlier keeps its own saved name.
+function swShown(x){
+  const p = isOurs(x.id) ? researchCards().find(r => r.id === x.id) || x : SW.mem.get(x.id);
+  return p ? { ...p, c: x.c || '' } : { id: x.id, c: x.c || '', gone: true };
+}
+const gmLink = (words, id) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(words || 'place')}&query_place_id=${encodeURIComponent(id)}`;
+const swMaps = p => p.maps || (isOurs(p.id) ? '' : gmLink(p.name, p.id));
 const swList = () => { const list = SW.lists[SW.cat]; if (!list || SW.cat !== 'todo') return list; const cards = researchCards(); return [...cards, ...list.filter(p => !cards.some(c => samePlace(c.name, p.name)))]; };
 // New cards: the deck takes them, Review says so, once.
 function moreRefresh(){
@@ -269,7 +282,7 @@ async function loadPlaces(cat){
     const q = new URLSearchParams({ cat, lang: (A.languages || ['en'])[0] || 'en', radius: String(({ '15 min': 6000, '30 min': 15000, '45 min': 25000, '1 hour': 30000 })[v('radius')] || 10000), want: swWant().join('|') });
     if (A.lat && A.lng) { q.set('lat', A.lat); q.set('lng', A.lng); } else q.set('town', [v('town'), v('region')].filter(Boolean).join(', '));
     const r = await fetch('/api/places?' + q); const d = await r.json();
-    if (!d.ok) SW.err = d.message || 'Could not load places.'; else { SW.lists[cat] = d.places; if (!A.lat && d.lat) { A.lat = d.lat; A.lng = d.lng; queueSave(); } }
+    if (!d.ok) SW.err = d.message || 'Could not load places.'; else { SW.lists[cat] = d.places; d.places.forEach(p => SW.mem.set(p.id, p)); if (!A.lat && d.lat) { A.lat = d.lat; A.lng = d.lng; queueSave(); } }
   } catch (e) { SW.err = 'Could not load places. Check your connection.'; }
   finally { SW.loading = false; refreshSwipe(); }
 }
@@ -294,22 +307,25 @@ function swipeInner(){
         <div class="sw-ph" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : ''}">${p.photo ? '' : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
           <span class="sw-stamp yes" aria-hidden="true">Recommend</span><span class="sw-stamp no" aria-hidden="true">Not for us</span>
           <div class="sw-on"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
-            <p>${p.rating ? `<b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · ` : ''}<a href="${esc(p.maps)}" target="_blank" rel="noopener">Google Maps</a></p></div></div>
+            <p>${p.rating ? `<b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · ` : ''}<a href="${esc(swMaps(p) || gmLink(p.name, p.id))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p></div></div>
         ${p.summary ? `<div class="sw-tx"><p>${esc(p.summary)}</p></div>` : ''}
       </article></div>
     <div class="sw-btns"><button type="button" class="sw-no" data-sw="no">${svg('<path d="M6 6l12 12M18 6L6 18"/>').replace('stroke-width="2.2"', 'stroke-width="2.4" width="16" height="16"')}Not for us</button><button type="button" class="sw-yes" data-sw="yes">${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>`
     : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> ${AUTH && AREA.fullOpen && !researchCards().length ? 'Our research is finding more: they will land here in about 2 minutes.' : 'Missing one? Add it below.'}</div>`;
-  const picks = Object.values(S).filter(x => x.d === 'yes' && x.cat === SW.cat);
+  const picks = Object.values(S).filter(x => x.d === 'yes' && x.cat === SW.cat).map(swShown);
   return `${tabs}${count}${card}
-    ${picks.length ? `<div class="sw-picks"><b>Your picks</b>${picks.map(x => `<div class="sw-pick"><span>${esc(x.name)} <small>★ ${x.rating ? (+x.rating).toFixed(1) : ''}</small></span>
-      <input type="text" data-swc="${esc(x.id)}" value="${esc(x.c || '')}" placeholder="Why you love it, when to go (optional)" aria-label="Comment on ${esc(x.name)}"><button type="button" class="x" data-swundo="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">×</button></div>`).join('')}</div>` : ''}`;
+    ${picks.length ? `<div class="sw-picks"><b>Your picks</b>${picks.map(x => { const nm = x.gone ? 'A place you kept' : x.name, link = swMaps(x);
+      return `<div class="sw-pick"><span>${esc(nm)}${link ? ` <small><a href="${esc(link)}" target="_blank" rel="noopener" translate="no">Google Maps</a></small>` : ''}</span>
+      <input type="text" data-swc="${esc(x.id)}" value="${esc(x.c || '')}" placeholder="Why you love it, when to go (optional)" aria-label="${x.gone ? 'Comment on this place' : `Comment on ${esc(nm)}`}"><button type="button" class="x" data-swundo="${esc(x.id)}" aria-label="${x.gone ? 'Remove this place' : `Remove ${esc(nm)}`}">×</button></div>`; }).join('')}</div>` : ''}`;
 }
 function refreshSwipe(){ const el = document.getElementById('swipe'); if (el) el.innerHTML = swipeInner(); }
 // A decision: the card flies off the way it went, the next one comes up (with the focus, for keyboard users), the phone follows.
 function swDecide(d, c){
   const id = c && c.dataset.pid, p = id && (swList() || []).find(x => x.id === id); if (!p || c.dataset.gone) return;
   c.dataset.gone = '1';
-  swipes()[id] = { id, d, cat: SW.cat, name: p.name, rating: p.rating, reviews: p.reviews, type: p.type, maps: p.maps, lat: p.lat, lng: p.lng, km: p.km, photo: p.photo, c: '' };
+  // Google's card: its id and the host's decision, nothing of Google's. A researched card is ours: it keeps its name and
+  // where it is (the build finds it among the research by that name), not the rating or photo Google gave it.
+  swipes()[id] = { id, d, cat: SW.cat, ...(isOurs(id) ? { name: p.name, type: p.type, maps: p.maps, lat: p.lat, lng: p.lng, km: p.km } : {}) };
   SW.last = id; log('swipe', d); queueSave();
   const dir = d === 'yes' ? 1 : -1, keys = document.activeElement === c;
   c.style.transition = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'none' : ''; c.style.setProperty('--' + d, 1);
@@ -345,7 +361,7 @@ document.addEventListener('pointerdown', e => {
   };
   c.addEventListener('pointermove', move); c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
 });
-document.addEventListener('input', e => { const id = e.target.dataset && e.target.dataset.swc; if (id && swipes()[id]) { swipes()[id].c = e.target.value; queueSave(); phoneSoon(); } });
+document.addEventListener('input', e => { const id = e.target.dataset && e.target.dataset.swc, s = id && swipes()[id]; if (s) { if (e.target.value) s.c = e.target.value; else delete s.c; queueSave(); phoneSoon(); } });
 
 
 /* ---------- Host lists: places (name or link + comment) and the rubbish plan ---------- */
@@ -367,17 +383,35 @@ document.addEventListener('click', e => {
 /* ---------- A place's name, looked up on Google as the host types (the host's lists, and the places in the editor) ---------- */
 // What Google suggests near the house, listed under the field so nothing is covered. Tapping one says which place it is, so a
 // misspelt name still lands on the right one (Yohann, 30 Oct 2026: "llul de llebre" was not found at the build). A row keeps the
-// place's Google id and the worker reads the rest from it; a name typed and not picked, or a link, the worker searches as before.
-const PS = { el: null, list: [], on: -1, timer: 0, turn: 0 };
+// host's own words and the place's Google id, nothing else of Google's (its terms: the id may be kept, not the name or the
+// address); the worker locates it by the id and names it from our own sources. Google's name and address are shown for this
+// session only, from PS.seen, in memory. A name typed and not picked, or a link, the worker searches as before.
+const PS = { el: null, list: [], on: -1, timer: 0, turn: 0, seen: new Map() };
+// The host's words, with a capital to each word when they typed all in small letters ("ull de llebre": "Ull de Llebre").
+const PS_SMALL = new Set('a al d de del dels des du el els en i la las le les los of the y'.split(' '));
+const psWords = x => { const t = String(x || '').trim().replace(/\s+/g, ' '); return t !== t.toLowerCase() ? t : t.split(' ').map((w, i) => i && PS_SMALL.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' '); };
 const psAttrs = id => `data-gs role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}" autocomplete="off"`;
 const psIsLink = x => /^(https?:|www\.)/i.test(String(x || '').trim());
 const psHouse = () => (CM.on ? edF().house : A) || {};
 function psDraw(){
   const el = PS.el, box = el && document.getElementById(el.getAttribute('aria-controls')); if (!box) return;
-  box.innerHTML = PS.list.map((s, i) => `<button type="button" role="option" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}"><b>${esc(s.name)}</b><small>${esc([s.where, s.km ? s.km + ' km' : ''].filter(Boolean).join(' · '))}</small></button>`).join('');
+  // Google's places with "Google Maps" written at the foot of the list, as its terms ask of content shown from it.
+  box.innerHTML = PS.list.map((s, i) => `<button type="button" role="option" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}"><b>${esc(s.name)}</b><small>${esc([s.where, s.km ? s.km + ' km' : ''].filter(Boolean).join(' · '))}</small></button>`).join('')
+    + (PS.list.length ? '<span class="pl-gm" aria-hidden="true" translate="no">Google Maps</span>' : '');
   box.hidden = !PS.list.length; el.setAttribute('aria-expanded', String(!!PS.list.length));
   if (PS.on >= 0) el.setAttribute('aria-activedescendant', `${box.id}_${PS.on}`); else el.removeAttribute('aria-activedescendant');
+  gLiveSync();
 }
+// Google's content may not sit on screen with a map that is not Google's. The builder's phone is drawn by preview.js and has
+// no map; the editor's is the guide itself, whose lists have one. So while Google's suggestions or the place just found
+// (data-glive) are in view, the editor's phone shows the guide's Home, which has none, and goes back to the step's screen after.
+const gLiveNow = () => [...document.querySelectorAll('.pl-sug:not([hidden]),[data-glive]')].some(e => !e.closest('details:not([open])') && (e.checkVisibility ? e.checkVisibility() : e.getClientRects().length > 0));   // a closed card's content keeps its boxes in Chrome
+function gLiveSync(){
+  const s = document.getElementById('cmPhone'), f = s && s.querySelector('iframe'); if (!f) return;
+  const want = gLiveNow() ? 'home' : s.dataset.screen; if (f.dataset.shown === want) return;
+  f.dataset.shown = want; try { f.contentWindow.location.replace(f.src.split('#')[0] + '#' + want); } catch (e) { /* gone meanwhile */ }   // the whole address: a bare '#home' would resolve against the builder's page
+}
+document.addEventListener('toggle', gLiveSync, true);   // a card opened or closed shows or hides what it found
 function psClose(){ clearTimeout(PS.timer); PS.turn++; PS.list = []; PS.on = -1; psDraw(); PS.el = null; }
 async function psAsk(el){
   const turn = ++PS.turn, h = psHouse(), text = el.value.trim(), q = new URLSearchParams({ suggest: h.lat ? text : [text, v('town')].filter(Boolean).join(', ') });
@@ -392,15 +426,20 @@ function psType(el){
 }
 function psPick(i){
   const s = PS.list[i], el = PS.el; if (!s) return; psClose();
-  if (el.dataset.gsp) return cmFindById(el.dataset.gsp, s.id);
-  const k = el.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+el.dataset.i]; Object.assign(r, { p: s.name, gid: s.id, at: s.where, km: s.km });
-  set(k, rows); el.value = s.name; plShow(el, r); softRefresh(); phoneSoon();
+  PS.seen.set(s.id, s);
+  if (el.dataset.gsp) return cmFindById(el.dataset.gsp, s.id, s, el.value);
+  const k = el.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+el.dataset.i], words = psWords(el.value);
+  r.p = words; r.gid = s.id; delete r.at; delete r.km;   // at and km: what rows picked before 10 Nov 2026 kept of Google's
+  set(k, rows); el.value = words; plShow(el, r); softRefresh(); phoneSoon();
   el.closest('.pl-row').querySelector('textarea').focus();
 }
-// Under the name: which place it is, with a link to check, or that it is not matched yet (not while typing: see theme2.css).
+// Under the name: which place it is, with "Google Maps" opening it by its id, or that it is not matched yet (not while typing:
+// see theme2.css). Google's name and address only while this session remembers the pick; after a reload, that it is matched.
 function plAt(r){
   const none = !String(r.p || '').trim() || psIsLink(r.p) || window.__placesOff;
-  return `<p class="pl-at${r.gid ? ' ok' : none ? '' : ' miss'}">${r.gid ? `✓ ${esc([r.at, r.km ? r.km + ' km' : ''].filter(Boolean).join(' · '))} <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.p)}&query_place_id=${encodeURIComponent(r.gid)}" target="_blank" rel="noopener">Check on Google Maps</a>` : none ? '' : 'Not matched on Google. Pick it from the list, or keep it as typed: it may have no map pin.'}</p>`;
+  if (r.gid) { const s = PS.seen.get(r.gid), link = `<a href="${esc(gmLink(r.p, r.gid))}" target="_blank" rel="noopener" translate="no">Google Maps</a>`;
+    return `<p class="pl-at ok"${s ? ' data-glive' : ''}><span aria-hidden="true">✓</span> ${s ? `<span translate="no">${esc([s.name, s.where, s.km ? s.km + ' km' : ''].filter(Boolean).join(' · '))}</span>` : 'Matched on'} ${link}</p>`; }
+  return `<p class="pl-at${none ? '' : ' miss'}">${none ? '' : 'Not matched on Google. Pick it from the list, or keep it as typed: it may have no map pin.'}</p>`;
 }
 function plShow(el, r){ el.parentElement.querySelector('.pl-at').outerHTML = plAt(r); }
 document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.gs !== undefined) psType(e.target); });

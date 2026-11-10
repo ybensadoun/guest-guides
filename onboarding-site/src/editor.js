@@ -125,7 +125,7 @@ function cCard(p, title, meta, inner, order) {   // order: [this card's place, h
 }
 
 /* --- One place, contact or tile: its texts, links, position, hours or dates --- */
-const C_SKIP = new Set(['id', 'from', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx']);
+const C_SKIP = new Set(['id', 'from', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx', 'pos']);
 const C_STR = ['town', 'place', 'phone', 'web', 'url', 'map', 'gmaps', 'venue', 'address', 'comarca', 'price'];
 const C_LONG = ['description', 'what', 'examples', 'priceNote', 'hours', 'occasional_when'];
 const C_LBL = { name: 'Name', name_local: 'Name in the local language', title: 'Title on its page', sub: 'Line under the name', type: 'Type', kind: 'Kind', what: 'What guests need to know', description: 'Description', hours: 'Opening hours, in words', occasional_when: 'When it runs', town: 'Town', place: 'Where exactly', venue: 'Where exactly', address: 'Address', comarca: 'County', phone: 'Phone', url: 'Official website', web: 'Website', gmaps: 'Google Maps link', map: 'Map link', price: 'Price (€)', priceNote: 'About the price', taxiName: 'Taxi name', taxiSub: 'Line under the taxi' };
@@ -138,7 +138,11 @@ function cItem(base, it, i, what) {
   const km = it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
   const meta = [typeof it.town === 'string' ? it.town : '', km, (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
   const said = (CM.gfind || {})[p], has = typeof it.lat === 'number';
-  const find = has ? `<div class="f full"><label for="${cmId(p + '/gs')}">Find it on Google</label><input id="${cmId(p + '/gs')}" type="text" ${psAttrs(cmId(p + '/sug'))} data-gsp="${p}" placeholder="Start typing the name"><div class="pl-sug" id="${cmId(p + '/sug')}" role="listbox" aria-label="Places on Google" hidden></div><p class="hint">${esc(said || (it.nomap ? 'Not on the map yet: pick it from the list to get its name, pin, distance and hours.' : 'Pick it from the list to update its pin, distance and hours.'))}</p></div>` : '';
+  // What was found: Google's name and address, from this session's memory, with Google Maps beside them (data-glive: the phone
+  // shows no map meanwhile, gLiveSync in start.js). Nothing of it is in the guide.
+  const saidHTML = said && typeof said === 'object' ? `<p class="hint" data-glive>${esc(`Found: ${[said.name, said.where].filter(Boolean).join(', ') || said.words}, ${said.km} km from the house. Not the right one? Search again, or paste its Google Maps link below.`)} <a href="${esc(gmLink(said.words, said.gid))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>`
+    : `<p class="hint">${esc(said || (it.nomap ? 'Not on the map yet: pick it from the list to get its pin and distance.' : 'Pick it from the list to update its pin and distance.'))}</p>`;
+  const find = has ? `<div class="f full"><label for="${cmId(p + '/gs')}">Find it on Google</label><input id="${cmId(p + '/gs')}" type="text" ${psAttrs(cmId(p + '/sug'))} data-gsp="${p}" placeholder="Start typing the name"><div class="pl-sug" id="${cmId(p + '/sug')}" role="listbox" aria-label="Places on Google" hidden></div>${saidHTML}</div>` : '';
   const pin = has ? `<div class="f full"><label for="${cmId(p + '/gm')}">Or move the pin: paste a Google Maps link</label><p class="hint">${it.lat && !it.nomap ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
   const first = it.nomap || said;   // a place with no pin yet starts here: finding it fills in the rest
   const check = Array.isArray(it.flags) || what !== 'contact' ? cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.') : '';
@@ -158,9 +162,10 @@ function cmPin(p) {
   const f = edF(), q = f.quick = f.quick || { items: [] }; q.items = q.items || [];
   const i = q.items.findIndex(x => x.from === it.id);
   if (i >= 0) { q.items.splice(i, 1); return; }
-  const pick = k => it[k] != null ? { [k]: cmClone(it[k]) } : {};
-  q.items.push({ id: 'food-' + it.id, icon: 'food', from: it.id, name: cmClone(it.name), sub: cmClone(it.type || {}), title: cmClone(it.name), kind: cmClone(it.type || {}), what: cmClone(it.description || {}),
-    ...pick('phone'), ...pick('lat'), ...pick('lng'), ...pick('gmaps'), ...pick('schedule'), ...pick('hours'), ...pick('price'), ...pick('priceNote') });
+  // Only what the restaurant has, and no hours of Google's (hoursSource "google", from an older check): those may not be kept.
+  const pick = k => it[k] != null ? { [k]: cmClone(it[k]) } : {}, type = it.type && edShown(it.type) ? { sub: cmClone(it.type), kind: cmClone(it.type) } : {};
+  q.items.push({ id: 'food-' + it.id, icon: 'food', from: it.id, name: cmClone(it.name), ...type, title: cmClone(it.name), what: cmClone(it.description || {}),
+    ...pick('phone'), ...pick('lat'), ...pick('lng'), ...pick('pos'), ...pick('gmaps'), ...(it.hoursSource === 'google' ? {} : pick('schedule')), ...pick('hours'), ...pick('price'), ...pick('priceNote') });
   const s = edC().site = edC().site || {}; s.modules = { ...(s.modules || {}), quick: true };
 }
 // A new entry starts blank (Yohann, 10 Nov 2026): it takes the first entry's shape (which fields, so its card asks for the
@@ -175,7 +180,7 @@ function edNewItem(arr, path) {
   const clear = o => { for (const k of Object.keys(o)) { const x = o[k]; if (['icon', 'group', 'tone', 'category', 'type', 'wide'].includes(k) && !edIs18(x)) { delete o[k]; continue; } if (edIs18(x)) o[k] = Object.fromEntries(Object.keys(x).map(l => [l, ''])); else if (typeof x === 'string') o[k] = ''; else if (Array.isArray(x)) o[k] = []; else if (typeof x === 'number' && k !== 'lat' && k !== 'lng') o[k] = 0; else if (typeof x === 'boolean') delete o[k]; } return o; };   // switches too: a new event is not "added automatically" because the first one was
   const n = clear(clone); n.id = 'custom-' + Date.now().toString(36);
   if ('lat' in n) { n.lat = h.lat || 0; n.lng = h.lng || 0; n.km_from_house = null; n.nomap = true; }   // no position yet: never "0 km", never a pin at the house
-  for (const k of ['verify', 'always', 'gid', 'checked', 'hoursSource', 'rating', 'topPick', 'wiki', 'sources', 'setMenus']) delete n[k];
+  for (const k of ['verify', 'always', 'gid', 'pos', 'checked', 'hoursSource', 'rating', 'topPick', 'wiki', 'sources', 'setMenus']) delete n[k];
   Object.assign(n, cmClone(ED_NEW_DEFAULT[path] || {}));
   const fl = path && n.category ? edGet(edC(), edPath(path).slice(0, -1)) : null;   // the market's category is one of the file's, as in cmFindAdd
   if (fl) { fl.categories = fl.categories || []; if (!fl.categories.includes(n.category)) fl.categories.push(n.category); }
@@ -184,28 +189,21 @@ function edNewItem(arr, path) {
 const edKm = (a, b, c, d) => { const R = 6371, r = x => x * Math.PI / 180, dl = r(c - a), dg = r(d - b), x = Math.sin(dl / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dg / 2) ** 2; return Math.round(2 * R * Math.asin(Math.sqrt(x))); };
 function edUpdateKm(ip) { const it = edGet(edC(), ip), h = edF().house || {}; if (!it || !h.lat || !it.lat) return; if ('km_from_house' in it) it.km_from_house = edKm(h.lat, h.lng, it.lat, it.lng); if ('km' in it) it.km = edKm(h.lat, h.lng, it.lat, it.lng); }
 // "Find it on Google": the place picked from what Google suggests as the host types (psPick in start.js), read by its id
-// (/api/places?id=): its position, distance, town, Maps link, Google id and, when it has none, its name, opening hours and
-// kind. The answer is shown, so the host can tell.
-const ED_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'], ED_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], edP2 = n => String(n).padStart(2, '0');
-function edSchedule(periods) {
-  if (!periods || !periods.length || (periods.length === 1 && !periods[0].close)) return null;
-  const g = new Map(); for (const x of periods) { if (!x.close) continue; const k = `${edP2(x.open.hour)}:${edP2(x.open.minute)}-${edP2(x.close.hour)}:${edP2(x.close.minute)}`; g.set(k, [...(g.get(k) || []), ED_DAY[x.open.day]]); }
-  return [...g].map(([k, d]) => ({ days: [...new Set(d)].sort((a, b) => ED_ORDER.indexOf(a) - ED_ORDER.indexOf(b)), open: k.slice(0, 5), close: k.slice(6) }));
-}
-async function cmFindById(p, id) {
+// (/api/places?id=). Google's terms: only its id is kept for good, and its position for 30 days (pos: from and the day, so
+// the monthly run renews it), with the distance and the Google Maps link made from them. The name stays the host's: a
+// place with none takes the words they typed to find it. Google's name is said for this session only (CM.gfind, cItem).
+const gPos = () => ({ from: 'google', at: new Date().toISOString().slice(0, 10) });
+async function cmFindById(p, id, s = {}, typed = '') {
   const it = edGet(edC(), edPath(p)), h = edF().house || {};
   CM.gfind = CM.gfind || {}; CM.gfind[p] = 'Looking it up…'; render();
   try {
     const d = await fetch(`/api/places?id=${encodeURIComponent(id)}&lat=${h.lat}&lng=${h.lng}`).then(r => r.json());
     const f = d.ok && d.place;
     if (!f) { CM.gfind[p] = d.ok ? 'Not found on Google. Paste its Google Maps link below.' : d.message || 'Google could not be reached.'; return render(); }
-    Object.assign(it, { lat: f.lat, lng: f.lng, km_from_house: f.km, gmaps: f.maps, gid: f.id }); delete it.nomap;
-    if (f.town) it.town = f.town;
-    if (f.name && !edShown(it.name || {})) it.name = L6(f.name);
-    if (!(it.schedule && it.schedule.length)) { const s = edSchedule(f.periods); if (s) it.schedule = s; }
-    if (f.type && !(it.type && edShown(it.type))) it.type = { en: f.type };   // Google's kind, in English: "Translate missing texts" does the rest
-    it.flags = (it.flags || []).filter(x => x !== 'check'); if (f.status === 'CLOSED_TEMPORARILY') it.flags.push('check');
-    CM.gfind[p] = `Found: ${f.name}${f.town ? ', ' + f.town : ''}, ${f.km} km from the house. Not the right one? Search again, or paste its Google Maps link below.`;
+    if (!edShown(it.name || {}) && psWords(typed)) it.name = L6(psWords(typed));
+    const words = edShown(it.name || {}) || psWords(typed);
+    Object.assign(it, { gid: f.id, lat: f.lat, lng: f.lng, pos: gPos(), km_from_house: f.km, gmaps: gmLink(words, f.id) }); delete it.nomap;
+    CM.gfind[p] = { name: s.name || '', where: s.where || '', km: f.km, gid: f.id, words };
     cmQueue(); render();
   } catch (e) { CM.gfind[p] = 'Google could not be reached. Try again.'; render(); }
 }
@@ -451,6 +449,7 @@ async function cmStopAdd(btn) {
   try {
     const link = /^https?:\/\//.test(v), pos = link ? edParseMaps(v) : null;
     const named = link ? decodeURIComponent((v.match(/\/place\/([^/@?]+)/) || [])[1] || '').replace(/\+/g, ' ') : v;
+    // Google gives the id and the position only (dated: kept 30 days, renewed by the monthly run); the name is the host's.
     let place = null;
     if (named && h.lat) {
       const q = cmStopWord.test(named) ? named : `${named} ${mode === 'bus' ? 'bus stop' : 'train station'}`;
@@ -458,11 +457,12 @@ async function cmStopAdd(btn) {
       place = d && d.place;
       if (place && pos && edKm(pos.lat, pos.lng, place.lat, place.lng) > 1) place = null;   // the link wins over a namesake elsewhere
     }
-    if (!place && pos) place = { name: named, lat: pos.lat, lng: pos.lng, maps: v, km: h.lat ? edKm(h.lat, h.lng, pos.lat, pos.lng) : 0 };
+    if (!place && pos) place = { lat: pos.lat, lng: pos.lng, km: h.lat ? edKm(h.lat, h.lng, pos.lat, pos.lng) : 0 };
     if (!place) throw new Error(link ? 'This link has no place in it. Use the long link from the browser bar, or type the name.' : 'Not found on Google. Try its full name, or paste its Google Maps link.');
-    if (!place.name) throw new Error('Found the spot, but not its name. Type its name instead.');
-    const T = cmTrEnsure(), id = mode + '-' + Date.now().toString(36);
-    (T.stations = T.stations || []).push({ id, mode, name: L6(place.name), lat: place.lat, lng: place.lng, km: place.km || 0, min: cmMin(place.km), tag: L6(''), what: L6(''), link: '', gmaps: place.maps || (link ? v : ''), badges: [], to: [] });
+    const name = psWords(named);
+    if (!name) throw new Error('Found the spot, but not its name. Type its name instead.');
+    const T = cmTrEnsure(), id = mode + '-' + Date.now().toString(36), g = place.id ? { gid: place.id, pos: gPos() } : {};
+    (T.stations = T.stations || []).push({ id, mode, name: L6(name), lat: place.lat, lng: place.lng, km: place.km || 0, ...g, min: cmMin(place.km), tag: L6(''), what: L6(''), link: '', gmaps: place.id ? gmLink(name, place.id) : (link ? v : ''), badges: [], to: [] });
     CM.open.add('files/transport/stations/' + (T.stations.length - 1));
     CM.stopMsg = ''; cmQueue(); render(); cmLines(id);
   } catch (e) { CM.stopMsg = /fetch/i.test(e.message) ? 'Google could not be reached. Try again.' : e.message; render(); }
@@ -815,9 +815,11 @@ function cmPhoneOn() {
     f = document.createElement('iframe'); f.id = 'cmPhoneFrame'; f.title = 'Your guide, as guests will see it';
     f.addEventListener('load', () => {
       say(navigator.onLine ? '' : 'No connection: your guide shows here again once you are online.');
-      try { const w = f.contentWindow, y = CM.phoneY || 0; w.addEventListener('scroll', () => { CM.phoneY = w.scrollY; }, { passive: true }); if (y) setTimeout(() => w.scrollTo(0, y), 600); } catch (e) { /* another origin: no scroll memory */ }
+      try { const w = f.contentWindow, y = CM.phoneY || 0; if (w.location.hash !== '#' + f.dataset.shown) w.location.replace(f.src.split('#')[0] + '#' + f.dataset.shown);   // the screen asked while it was loading (gLiveSync)
+        w.addEventListener('scroll', () => { CM.phoneY = w.scrollY; }, { passive: true }); if (y) setTimeout(() => w.scrollTo(0, y), 600); } catch (e) { /* another origin: no scroll memory */ }
     });
-    s.prepend(f); f.src = cmPreviewUrl() + '#' + s.dataset.screen;
+    f.dataset.shown = gLiveNow() ? 'home' : s.dataset.screen;   // Google's content on screen: no map beside it (start.js gLiveSync)
+    s.prepend(f); f.src = cmPreviewUrl() + '#' + f.dataset.shown;
   }
   phoneWatch(f);
 }
