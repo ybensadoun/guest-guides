@@ -1,5 +1,7 @@
-// UX check (docs/UX-GUIDELINES.md): renders Home at phone widths in every language of a site and reports any
-// decorative shape (tile ::before / ::after) that touches text, an icon or an arrow, plus any page wider than the screen.
+// UX check (docs/UX-GUIDELINES.md): renders Home, six sections and one place page at phone widths in every language
+// of a site and reports any decorative shape (tile ::before / ::after) that touches text, an icon or an arrow, a
+// floating back or language button that sits on the page's text or icons before any scroll, plus any page wider than
+// the screen.
 // Needs Playwright (npx playwright) and a built site: node engine/scripts/ux-check.mjs <site> [chromium path]
 // Or a live guide: node engine/scripts/ux-check.mjs <site> --url https://porta-guides.netlify.app/g/<slug> (the site folder gives the languages).
 import { createServer } from 'http'; import { readFileSync, existsSync, statSync } from 'fs'; import { join, extname, resolve } from 'path';
@@ -14,10 +16,24 @@ let bad = 0;
 for (const w of [360, 390, 430]) for (const l of langs) {
   const pg = await b.newPage({ viewport: { width: w, height: 900 } });
   let res = [];
-  for (const route of ['', '#markets/today', '#s/restaurants', '#s/todo', '#s/house', '#s/events', '#s/transport']) {
+  const routes = ['', '#markets/today', '#s/restaurants', '#s/todo', '#s/house', '#s/events', '#s/transport'];
+  for (const route of routes) {
   await pg.goto(`${URLBASE || 'http://localhost:5299/'}?lang=${l}${route}`); await pg.waitForTimeout(800);
+  if (!route) { const pl = await pg.evaluate(() => document.querySelector('a[href^="#p/"]')?.getAttribute('href')); if (pl) routes.push(pl); }   // the first place page Home links to
   res.push(...(await pg.evaluate(() => {
     const out = [], hit = (a, b) => a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1;
+    // The floating back and language buttons never sit on the page's own text or icons before any scroll (a photo,
+    // like Home's cover, may lie under them: only icon-sized images count).
+    scrollTo(0, 0);
+    const shown = e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden';
+    const btns = [...document.querySelectorAll('.hero .back, .hero .langsel')].filter(shown), V = document.getElementById('view');
+    if (btns.length && V) {
+      const things = [];
+      V.querySelectorAll('svg, img, canvas, .qi').forEach(e => { const r = e.getBoundingClientRect(); if (r.width && r.height && Math.min(r.width, r.height) <= 96 && shown(e)) things.push(['an icon (' + (e.className.baseVal ?? e.className ?? e.tagName) + ')', r]); });
+      const tv = document.createTreeWalker(V, NodeFilter.SHOW_TEXT);
+      for (let t; (t = tv.nextNode());) { if (!t.textContent.trim() || !shown(t.parentElement)) continue; const rg = document.createRange(); rg.selectNodeContents(t); for (const x of rg.getClientRects()) things.push([`"${t.textContent.trim().slice(0, 24)}"`, x]); }
+      for (const e of btns) { const B = e.getBoundingClientRect(), h = things.find(([, r]) => hit(B, r)); if (h) out.push(`the floating ${e.classList.contains('back') ? 'back' : 'language'} button sits on ${h[0]}`); }
+    }
     for (const g of document.querySelectorAll('.gt')) {
       const T = g.getBoundingClientRect(), content = [];
       g.querySelectorAll('.ib,.go,.gt-bins,.gtb,.gt-tl,.soon-tag').forEach(e => content.push([e.className, e.getBoundingClientRect()]));
