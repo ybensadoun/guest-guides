@@ -117,7 +117,18 @@ The editor changes a part's title, lines, photos and order. It cannot add or rem
 
 **What this changes in the order.** H is cheap and changes every host's guide the most: do it with A (the same fields, filled by Google at the build and editable afterwards). J needs a look at how the research is briefed (the municipality, the nearest villages first) before any building.
 
-**Not done: the same test through the maker's own screens.** Two things stand in the way as asked: the server's worker publishes every build, and Claude may not create an account on the live site. A test house added in Yohann's own account, filled in through the builder and never sent, would do; so would keeping this as the acceptance test once A to H are built. To decide.
+**The same test through the maker's own screens: kept for the end (Yohann, 10 Nov 2026),** as the acceptance test once A to H are built. How: a test house added in Yohann's own account (Claude may not create an account on the live site), filled in through the builder, never sent (the server's worker publishes every build), its saved answers run through the generator locally, then the house deleted.
+
+## Step 3: the look (started 10 Nov 2026)
+**What was looked at.** The same guide (Ca La Kimberly's content from the builder test) built in each of the five layouts, and the three live test guides, Home and Eat and drink at 360 px.
+
+**Why other guides look plain: four causes.**
+1. **Two of the five layouts are white by design.** "Clean and calm" is white boxes with thin lines and no colour at all; "Mediterranean" is one blue on white. "Soft rounded cards" is pale pastels. Only "Big colour tiles" and "Rural" fill their tiles with colour.
+2. **The drawn cover.** A guide with no photo gets the same small house on a hill, whatever the house.
+3. **An emptier Home.** No Home tiles (the shop, the pizza), fewer markets today, one bin instead of two, and holes in the grid: a lone taxi tile, a lone "What to do" in "Clean and calm".
+4. **Bare lists** (gaps A and H): every place has the same icon, no rating, no price, no marks, in every layout.
+
+**Direction to decide (not decided).** Either one tile system for every guide (Ca La Kimberly's: filled colour tiles with a corner shape) offered in several colour worlds, each with its own palette, title font and shapes, which is what was agreed on 27 Oct ("always tiles"); or keep five different layouts and enrich the pale ones. Mockups at 360 px come before any building.
 
 ## Not gaps
 The look and its colours and fonts; languages and translation; Wi-Fi with several networks; Getting around (taxis with other numbers, stations, lines, journey times, the Home tile); automatic events and their settings; photos and their order; pinning a restaurant to Home; switching sections on and off; drafts, Preview and Publish.
