@@ -87,7 +87,8 @@ export function renderHome(V) {
   const links = [MODULE_ON('markets') ? `<a href="#markets/today">${esc(t('allMarkets'))}</a>` : '', evSec ? `<a href="#s/events">${esc(t('allEvents'))}</a>` : ''].join('');
   if (links) agenda += `<div class="wo-links">${links}</div>`;
 
-  // No header on Home: the language button sits on the first heading's row.
+  // No header on Home: the language button sits on the first heading's row. At the very end, one quiet text link to
+  // Sources and credits (views/credits.js), below everything else.
   // The house itself on top, like the standard guest guides: its photo (from the Airbnb listing),
   // the name as a small label, then the three facts guests look for first. Each opens its House guide row.
   const top = `<section class="sthero">
@@ -105,6 +106,7 @@ export function renderHome(V) {
    ${sectionGrid(now, todays.length)}
    ${MODULE_ON('markets') || evSec ? `<h2 class="sh">${esc(t('whatsOn'))}</h2>
    <section class="whatson">${agenda}</section>` : ''}
+   <p class="hfoot"><a href="#credits">${esc(t('credits'))}</a></p>
   </div>`;
   const wb = V.querySelector('#wifiBtn');
   if (wb) wb.addEventListener('click', wifiSheet);
@@ -113,7 +115,7 @@ export function renderHome(V) {
 // The cover: guests have already booked and seen the listing photos, so by default it sets a welcome tone instead of selling.
 // A scene drawn in code from the guide's own colours (no text, so nothing to overlap in any language).
 // The host's photo replaces it when house.json has "photo" and "cover" is not "themed".
-const COVER_PHOTO = !!HOUSE.photo && HOUSE.cover !== 'themed';
+export const COVER_PHOTO = !!HOUSE.photo && HOUSE.cover !== 'themed';
 const THEMED_COVER = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
   <rect class="a-sky" width="400" height="160"/>
   <circle class="a-sun" cx="246" cy="48" r="15"/>

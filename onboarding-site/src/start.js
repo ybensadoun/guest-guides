@@ -307,7 +307,7 @@ function swipeInner(){
         <div class="sw-ph" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : ''}">${p.photo ? '' : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
           <span class="sw-stamp yes" aria-hidden="true">Recommend</span><span class="sw-stamp no" aria-hidden="true">Not for us</span>
           <div class="sw-on"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
-            <p>${p.rating ? `<b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · ` : ''}<a href="${esc(swMaps(p) || gmLink(p.name, p.id))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p></div></div>
+            <p>${p.rating ? `<b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · ` : ''}<a href="${esc(swMaps(p) || gmLink(p.name, p.id))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>${swBy(p)}</div></div>
         ${p.summary ? `<div class="sw-tx"><p>${esc(p.summary)}</p></div>` : ''}
       </article></div>
     <div class="sw-btns"><button type="button" class="sw-no" data-sw="no">${svg('<path d="M6 6l12 12M18 6L6 18"/>').replace('stroke-width="2.2"', 'stroke-width="2.4" width="16" height="16"')}Not for us</button><button type="button" class="sw-yes" data-sw="yes">${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>`
@@ -318,6 +318,9 @@ function swipeInner(){
       return `<div class="sw-pick"><span>${esc(nm)}${link ? ` <small><a href="${esc(link)}" target="_blank" rel="noopener" translate="no">Google Maps</a></small>` : ''}</span>
       <input type="text" data-swc="${esc(x.id)}" value="${esc(x.c || '')}" placeholder="Why you love it, when to go (optional)" aria-label="${x.gone ? 'Comment on this place' : `Comment on ${esc(nm)}`}"><button type="button" class="x" data-swundo="${esc(x.id)}" aria-label="${x.gone ? 'Remove this place' : `Remove ${esc(nm)}`}">×</button></div>`; }).join('')}</div>` : ''}`;
 }
+// Google's rule for a photo: its authors, when Google names them, shown with it ("Photo: Ana", the name a link to their page).
+// In memory only, like the rest of the card: a swipe never keeps them.
+const swBy = p => p.photo && (p.photoBy || []).length ? `<p class="sw-by">Photo: ${p.photoBy.map(a => a.uri ? `<a href="${esc(a.uri)}" target="_blank" rel="noopener" translate="no">${esc(a.name)}</a>` : `<span translate="no">${esc(a.name)}</span>`).join(', ')}</p>` : '';
 function refreshSwipe(){ const el = document.getElementById('swipe'); if (el) el.innerHTML = swipeInner(); }
 // A decision: the card flies off the way it went, the next one comes up (with the focus, for keyboard users), the phone follows.
 function swDecide(d, c){

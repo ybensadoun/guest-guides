@@ -16,7 +16,8 @@ async function putOk(cache, req, res) { if (res && (res.ok || res.type === 'opaq
 self.addEventListener('fetch', e => {
   const req = e.request; if (req.method !== 'GET') return;
   const u = new URL(req.url);
-  if (req.mode === 'navigate' && u.origin === location.origin && (SINGLE || u.pathname.startsWith('/g/'))) {
+  // A guide's pages open the app; a file opened on its own (licenses.txt, from the credits page) is that file, kept below.
+  if (req.mode === 'navigate' && u.origin === location.origin && (SINGLE || u.pathname.startsWith('/g/')) && !/\.(?!html?$)\w+$/i.test(u.pathname)) {
     e.respondWith((async () => {
       try { const r = await fetch(req); if (r.ok) (await caches.open(SHELL)).put(PAGE, r.clone()); return r; }
       catch (err) { return (await caches.match(PAGE)) || Response.error(); }

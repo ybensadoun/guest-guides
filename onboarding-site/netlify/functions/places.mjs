@@ -90,7 +90,9 @@ export default async (req) => {
         type: p.primaryTypeDisplayName && p.primaryTypeDisplayName.text, address: p.shortFormattedAddress, maps: p.googleMapsUri,
         summary: p.editorialSummary && p.editorialSummary.text, lat: p.location.latitude, lng: p.location.longitude,
         km: Math.round(hav(lat, lng, p.location.latitude, p.location.longitude) * 13) / 10,
-        photo: p.photos && p.photos[0] ? '/api/photo?name=' + encodeURIComponent(p.photos[0].name) : null }))
+        photo: p.photos && p.photos[0] ? '/api/photo?name=' + encodeURIComponent(p.photos[0].name) : null,
+        // The photo's authors, which Google asks to show wherever the photo is shown (they come with places.photos: nothing more is billed).
+        photoBy: p.photos && p.photos[0] ? (p.photos[0].authorAttributions || []).filter(a => a && a.displayName).map(a => ({ name: a.displayName, uri: (u => /^https:\/\//.test(u) ? u : null)(String(a.uri || '').replace(/^\/\//, 'https://')) })) : [] }))
       .sort((a, b) => (b.rating * Math.log(b.reviews + 1)) - (a.rating * Math.log(a.reviews + 1)));
     if (cat !== 'todo') return json({ ok: true, lat, lng, places: best(await search(CATS[cat]), 4.3) });
     const want = (u.searchParams.get('want') || '').split('|'), [sights, fun] = await Promise.all([search(todoTypes(want)), search(ACTIVITIES).catch(() => ({}))]);

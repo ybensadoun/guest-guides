@@ -8,6 +8,7 @@ import { defineConfig } from 'vite';
 import { mkdirSync, readFileSync, writeFileSync, renameSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ENGINE, ROOT, siteDir, sitePlugin } from './site.config.js';
+import { licensesPlugin, fontFamilies } from './scripts/licenses.mjs';
 
 const SLUG = process.env.GUIDE_SLUG || '';
 const SD = siteDir('_viewer'), GD = SLUG ? siteDir(SLUG) : SD;   // data always from the database (the _viewer stub); brand files from the guide
@@ -42,5 +43,7 @@ export default defineConfig({
   resolve: { alias: { '@site': SD } },
   server: { host: true, fs: { allow: [ROOT] } },
   build: { outDir: SLUG ? resolve(GD, 'dist') : resolve(ROOT, 'onboarding-site/g-app'), emptyOutDir: true, target: 'es2020', rollupOptions: { input: resolve(ENGINE, 'viewer.html') } },
-  plugins: [sitePlugin(SLUG || '_viewer'), vendorMaplibre(), ...(SLUG ? [singleGuide()] : [])]
+  // licenses.txt next to viewer.html (/g-app/licenses.txt) or index.html (a guide's own address): every font family installed,
+  // since the viewer can show a guide in any of them; no Workbox (its service worker is onboarding-site/g-sw.js).
+  plugins: [sitePlugin(SLUG || '_viewer'), vendorMaplibre(), licensesPlugin({ fonts: fontFamilies(), workbox: false }), ...(SLUG ? [singleGuide()] : [])]
 });

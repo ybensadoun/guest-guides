@@ -1002,3 +1002,15 @@ body:not(.is-home) .pl-head h2.title{grid-column:1 / -1;grid-row:1;margin-bottom
 body:not(.is-home) .pl-head .qi{grid-column:1;grid-row:2 / span 2;align-self:center}
 body:not(.is-home) .pl-head .lead{grid-column:2;grid-row:2;margin-top:0;align-self:end}
 body:not(.is-home) .pl-head .pl-dist{grid-column:2;grid-row:3;align-self:start}
+/* Sources and credits (views/credits.js): one quiet text link at the very foot of Home, below everything else (not a
+   tile), then the page itself: small headings, plain sentences, links to each source. The link is 44 px tall to tap. */
+.hfoot{margin:6px 0 0;text-align:center;font-size:14px;line-height:20px}
+.hfoot a{display:inline-block;padding:12px 10px;color:var(--muted);font-weight:500;text-decoration:underline;text-underline-offset:3px}
+.credits .cr-h{font-family:var(--display);font-weight:700;font-size:19px;line-height:1.2;margin:0}
+.credits .hsec p{margin:8px 0 0;font-size:16px;line-height:1.5}
+.credits .hsec a{color:var(--blue);font-weight:600}
+.credits .cr-q{font-size:14px;line-height:1.45;color:var(--muted)}
+.credits .cr-l{margin-top:10px;font-size:16px;line-height:1.45}
+.credits a,.credits [lang="en"]{-webkit-hyphens:manual;hyphens:manual}   /* names, licences and the quoted notices are never hyphenated */
+.credits .pn{-webkit-hyphens:manual;hyphens:manual}
+.credits .nw{white-space:nowrap}

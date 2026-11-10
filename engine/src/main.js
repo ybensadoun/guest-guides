@@ -15,6 +15,7 @@ import { renderMarkets } from './views/markets.js';
 import { renderSection } from './views/section.js';
 import { renderMore, quickIcon } from './views/home.js';
 import { renderPlace } from './views/place.js';
+import { renderCredits } from './views/credits.js';
 import { NAV_ICON } from './ui.js';
 import { showMap, refreshMapLang, refreshMapStatus, locate, tabOf } from './views/map.js';
 
@@ -23,7 +24,7 @@ const MV = document.getElementById('mapview');
 
 /* Routes
    #home · #markets · #markets/today, #markets/day/<n> (Home shortcuts: day strip on today or n days ahead, filters kept)
-   #map · #map/g/<town> · #map/m/<id> · #s/<section> · #more */
+   #map · #map/g/<town> · #map/m/<id> · #s/<section> · #more · #credits (Sources and credits, linked from the foot of Home) */
 function parse() {
   const [a, b, c] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
   if (a === 'markets') return { view: 'markets', today: b === 'today', day: b === 'day' ? Math.max(0, +c || 0) : null };
@@ -31,6 +32,7 @@ function parse() {
   if (a === 's' && b) return { view: 'section', id: b };
   if (a === 'p' && b) return { view: 'place', id: b };
   if (a === 'more') return { view: 'more' };
+  if (a === 'credits') return { view: 'credits' };
   return { view: 'home' };
 }
 
@@ -142,6 +144,7 @@ function render() {
   else if (st.view === 'section') renderSection(V, parse().id);
   else if (st.view === 'more') renderMore(V);
   else if (st.view === 'place') renderPlace(V, parse().id, quickIcon);
+  else if (st.view === 'credits') renderCredits(V);
   syncTitle();
   pageBar();
 }

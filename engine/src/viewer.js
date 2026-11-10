@@ -74,6 +74,7 @@ function goOffline(site, files, base, slug, paper, icons = {}) {
       const urls = new Set(performance.getEntriesByType('resource').map(r => r.name));
       const walk = x => { if (typeof x === 'string') { if (x.startsWith(base) && IMG.test(x.slice(base.length))) urls.add(x); } else if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') Object.values(x).forEach(walk); };
       walk(site); walk(files);
+      urls.add(new URL(import.meta.env.BASE_URL + 'licenses.txt', location.href).href);   // linked from the credits page, so it opens offline too
       const msg = { type: 'keep', urls: [...urls] };
       (reg.active || navigator.serviceWorker.controller) && (reg.active || navigator.serviceWorker.controller).postMessage(msg);
     }, 2500);
@@ -93,7 +94,10 @@ function goOffline(site, files, base, slug, paper, icons = {}) {
   const c = row.content, th = row.theme || {};
   const base = c.assetBase || '';
   const site = withAssets(c.site, base), files = withAssets(c.files || {}, base);
-  window.__GUIDE__ = { site, files, private: c.private || {}, i18n: c.i18n || {} };
+  // The fonts this guide shows: the look's own, then the guide's (loaded from the CDN below, named on the credits page).
+  const preset = th.preset || (site.theme || {}).preset;
+  const fonts = [...new Set([...(LOOKS.fonts[preset] || []), ...(th.fonts || (site.theme || {}).fonts || [])])];
+  window.__GUIDE__ = { site, files, private: c.private || {}, i18n: c.i18n || {}, fonts };
   window.__VENDOR_BASE = import.meta.env.BASE_URL + 'vendor/maplibre/';
 
   document.title = site.name;
@@ -108,8 +112,7 @@ function goOffline(site, files, base, slug, paper, icons = {}) {
 
   // Fonts come from the CDN (the viewer does not bundle every font): the look's own, then this guide's; then the look's
   // styles, then this guide's own theme.
-  const preset = th.preset || (site.theme || {}).preset;
-  for (const f of new Set([...(LOOKS.fonts[preset] || []), ...(th.fonts || (site.theme || {}).fonts || [])])) {
+  for (const f of fonts) {
     const [fam, file] = f.replace(/^@fontsource\//, '').split('/');
     const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = `https://cdn.jsdelivr.net/npm/@fontsource/${fam}@5/${file}`; document.head.appendChild(l);
   }

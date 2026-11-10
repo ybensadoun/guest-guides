@@ -5,7 +5,8 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ENGINE, ROOT, siteDir, readSite, sitePlugin } from './site.config.js';
+import { ENGINE, ROOT, siteDir, readSite, sitePlugin, siteFonts } from './site.config.js';
+import { licensesPlugin } from './scripts/licenses.mjs';
 
 const SITE = process.env.SITE || 'ca-la-kimberly';
 const SD = siteDir(SITE);
@@ -58,9 +59,10 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg,woff2,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,woff2,webmanifest,txt}'],   // txt: licenses.txt, linked from the credits page, also offline
         globIgnores: ['vendor/**'],
         navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/\/licenses\.txt$/],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.includes('/vendor/maplibre/'),
@@ -74,6 +76,8 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }),
+    // After the PWA plugin: licenses.txt is in the bundle before the service worker lists the files to keep.
+    licensesPlugin({ fonts: siteFonts(site), workbox: true })
   ]
 });

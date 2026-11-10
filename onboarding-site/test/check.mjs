@@ -605,20 +605,30 @@ try {
     ok('amenities: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // ---- Places nearby: one card at a time, dragged with a finger or the arrow keys; each yes lands in the phone ----
-  { const places = ['Cala Test', 'Castell Test', 'Camí Test', 'Jardins Test'].map((name, i) => ({ id: 'tp' + i, name, rating: 4.5, reviews: 200, type: 'Beach', maps: 'https://maps.google.com/?q=' + i, summary: 'A test place.', lat: A0.lat, lng: A0.lng, km: 2 + i, photo: photos[i] || null }));
-    const deck = async (w, h) => { const o = await open(browser, B, w, h);
+  // The first card's photo has an author (Google's authorAttributions, as /api/places passes them on), the second's none.
+  { const places = ['Cala Test', 'Castell Test', 'Camí Test', 'Jardins Test'].map((name, i) => ({ id: 'tp' + i, name, rating: 4.5, reviews: 200, type: 'Beach', maps: 'https://maps.google.com/?q=' + i, summary: 'A test place.', lat: A0.lat, lng: A0.lng, km: 2 + i, photo: photos[i] || (i < 2 ? '/api/photo?name=test-' + i : null),
+      photoBy: i === 0 ? [{ name: 'Ana Test', uri: 'https://maps.google.com/maps/contrib/123' }] : [] }));
+    const deck = async (w, h, lang) => { const o = await open(browser, B, w, h);
       await o.ctx.route('**/api/places**', r => json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places }));
-      await o.p.goto('http://editor.test/'); await ready(o.p); await go(o.p, '#nearby'); await o.p.waitForSelector('.sw-card', { timeout: 5000 }).catch(() => {}); return o; };
+      await o.p.goto('http://editor.test/' + (lang ? '?lang=' + lang : '')); await ready(o.p); await go(o.p, '#nearby'); await o.p.waitForSelector('.sw-card', { timeout: 5000 }).catch(() => {}); return o; };
+    // The author's line sits on the photo, on a line of its own: it touches neither the name, the rating line, the buttons nor the photo's edges.
+    const byClear = q => q.evaluate(() => { const b = document.querySelector('.sw-card .sw-by'), ph = document.querySelector('.sw-card .sw-ph'); if (!b || !ph) return false;
+      const B = b.getBoundingClientRect(), P = ph.getBoundingClientRect(), hit = (a, c) => a.right > c.left + 1 && c.right > a.left + 1 && a.bottom > c.top + 1 && c.bottom > a.top + 1;
+      const others = [...document.querySelectorAll('.sw-card .sw-on h3, .sw-card .sw-on small, .sw-card .sw-on p:not(.sw-by), .sw-btns')].map(e => e.getBoundingClientRect());
+      return B.top >= P.top && B.bottom <= P.bottom && B.left >= P.left && B.right <= P.right && !others.some(r => hit(B, r)); });
     const { ctx, p, errors } = await deck(1280, 860);
     const top = () => p.$eval('.sw-card h3', e => e.textContent).catch(() => null);
     const drag = async dx => { const [x, y] = await p.$eval('.sw-card', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + 80]; });
       await p.mouse.move(x, y); await p.mouse.down(); for (let i = 1; i <= 8; i++) { await p.mouse.move(x + dx * i / 8, y); await p.waitForTimeout(16); } await p.mouse.up(); await p.waitForTimeout(450); };
     await drag(40);
     ok('Places nearby: "Google Maps" is written on the card', await p.isVisible('.sw-card .sw-on a:has-text("Google Maps")'));
+    ok('Places nearby: a photo by someone Google names says so on the card, the name a link to their page', (await p.textContent('.sw-card .sw-by').catch(() => '')).replace(/\s+/g, ' ').trim() === 'Photo: Ana Test' && (await p.getAttribute('.sw-card .sw-by a', 'href').catch(() => '')) === 'https://maps.google.com/maps/contrib/123' && (await p.getAttribute('.sw-card .sw-by a', 'target').catch(() => '')) === '_blank');
+    ok('Places nearby: the photo\'s author on its own line, over the photo, touching nothing', await byClear(p));
     ok('Places nearby: the phone beside Google\'s card has no map', await inPhone(p, d => !d.querySelector('canvas, .maplibregl-map, iframe')));
     ok('Places nearby: a short drag puts the card back', (await top()) === 'Cala Test' && (await p.$eval('.sw-card', e => e.style.transform)) === '' && /0 recommended/.test(await p.textContent('.sw-count')));
     await drag(160);
     ok('Places nearby: dragging right recommends it, the next card comes up', (await top()) === 'Castell Test' && /1 recommended/.test(await p.textContent('.sw-count')), (await p.textContent('.sw-count')).trim());
+    ok('Places nearby: a card whose photo has no author shows no author line', !(await p.$('.sw-card .sw-by')));
     await drag(-160);
     ok('Places nearby: dragging left skips it', (await top()) === 'Camí Test' && /1 recommended/.test(await p.textContent('.sw-count')));
     await p.focus('.sw-card'); await p.keyboard.press('ArrowRight'); await p.waitForTimeout(450);
@@ -669,6 +679,10 @@ try {
     ok('Places nearby, 360 px: the whole card and its buttons on screen, above the bottom bar, no sideways scroll', await m.p.evaluate(() => document.querySelector('.sw-btns').getBoundingClientRect().bottom <= document.getElementById('navbar').getBoundingClientRect().top && document.documentElement.scrollWidth <= innerWidth));
     await m.p.screenshot({ path: join(SHOTS, 'nearby-360.png') });
     await m.ctx.close();
+    { const f = await deck(360, 780, 'fr');
+      ok('Places nearby, 360 px in French: "Photo : Ana Test" on the photo, touching nothing, no sideways scroll', /^Photo\s:\s*Ana Test$/.test((await f.p.textContent('.sw-card .sw-by').catch(() => '')).trim()) && await byClear(f.p) && await f.p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), (await f.p.textContent('.sw-card .sw-by').catch(() => '')).trim());
+      await f.p.locator('.sw-card').scrollIntoViewIfNeeded(); await f.p.screenshot({ path: join(SHOTS, 'deck-author-fr-360.png') });
+      await f.ctx.close(); }
     // Kept cards from an earlier session, one in the old shape with Google's name and rating in it, and a deck that no
     // longer has them: a kept place with Google Maps by its id, never the name that was saved.
     const K = { ...B, answers: { ...B.answers, swipes: { 'g-kept': { id: 'g-kept', d: 'yes', cat: 'todo', name: 'Old Google Name', rating: 4.6, reviews: 90, c: 'Our favourite' } } } };
