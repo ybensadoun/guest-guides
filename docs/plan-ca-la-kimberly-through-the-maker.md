@@ -324,6 +324,7 @@ Each is one yes or no from Yohann, then one brief for Opus 5.5, built, checked (
 | 17 | **Leftovers removed** from Ca La Kimberly's data (fields nothing reads, unused cover pictures), and its "written in" language set. | F6, F7 | 0.5 | to decide |
 | 18 | **The acceptance test** through the maker's own screens (step 2, second half). | all | 1, about 1.5 USD | agreed 10 Nov, at the end |
 | 19 | **Every service's terms, read and respected** (Yohann's rule, 10 Nov): one pass, service by service, starting with the listing reader and the listing photos; then what must change. By Fable. | rule | look, then to size | to decide |
+| 20 | **Every source credited as its terms ask** (Yohann, 10 Nov: "don't forget to credit all of the sources"). A page "Sources and credits" in the guide, a licences file shipped with each guide, the photo's author on a deck card, the missing processors on the maker's privacy page. The list: `docs/CREDITS.md`. | rule | 1 | **yes 10 Nov**, building on the branch `places-work` |
 
 Order proposed: 1, 2, 3 (places, what guests see most), 4, 5, 6, 7 (the look), 8, 9, 10, then 11 and 12 (research), 13 to 17 (the special cases), 18. About 16 sessions in all.
 
