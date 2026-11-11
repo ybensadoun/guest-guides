@@ -1,6 +1,9 @@
 [build]
   publish = "."
-  command = "echo 'static site + functions'"
+  # Static site + functions. The one build step: the shared viewer's page (g-app/viewer.html, committed with a placeholder)
+  # gets the Google Maps browser key for Google's hours card from the Netlify variable GOOGLE_MAPS_BROWSER_KEY (set in
+  # Netlify, never in git); empty when the variable is not set, which means no card.
+  command = 'sed -i "s|__GOOGLE_MAPS_BROWSER_KEY__|${GOOGLE_MAPS_BROWSER_KEY:-}|g" g-app/viewer.html'
   # Only redeploy when the onboarding site itself changed.
   ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- ."
 

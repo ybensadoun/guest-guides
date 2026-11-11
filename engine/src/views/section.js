@@ -15,7 +15,7 @@ import GROUPS_FILE from '../groups.json';
 const GROUPS = GROUPS_FILE.groups;
 
 const GI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-const EVENT_TONE = { castells: 'var(--tone-red)', festa: 'var(--tone-orange)', carnival: 'var(--tone-green)', parade: 'var(--tone-blue)', food: 'var(--tone-wine)', fair: 'var(--tone-taxi)', film: 'var(--ink)', music: 'var(--tone-wine)', historical: 'var(--ink)', tradition: 'var(--tone-blue)' };
+const EVENT_TONE = { castells: 'var(--tone-red)', festa: 'var(--tone-orange)', carnival: 'var(--tone-green)', parade: 'var(--tone-blue)', food: 'var(--tone-wine)', fair: 'var(--tone-taxi)', film: 'var(--ink)', music: 'var(--tone-wine)', historical: 'var(--ink)', tradition: 'var(--tone-blue)', sports: 'var(--tone-red)', theatre: 'var(--tone-green)', art: 'var(--tone-orange)', kids: 'var(--tone-wine)', christmas: 'var(--tone-red)', religious: 'var(--tone-wine)', fireworks: 'var(--tone-blue)', flowers: 'var(--tone-green)' };
 const EVENT_ICON = {
   castells: GI('<circle cx="12" cy="3.5" r="1.5"/><circle cx="9" cy="8" r="1.5"/><circle cx="15" cy="8" r="1.5"/><circle cx="6" cy="13" r="1.5"/><circle cx="12" cy="13" r="1.5"/><circle cx="18" cy="13" r="1.5"/><path d="M4 21v-3a2 2 0 0 1 4 0v3M10 21v-3a2 2 0 0 1 4 0v3M16 21v-3a2 2 0 0 1 4 0v3"/>'),
   festa: GI('<path d="M4 20L9 5l10 10z"/><path d="M14 4l1-2M18 7l2-1M19 3l1 1"/>'),
@@ -26,7 +26,15 @@ const EVENT_ICON = {
   film: GI('<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 6l4-3M10 6l4-3M17 6l4-3"/>'),
   music: GI('<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>'),
   historical: GI('<path d="M4 21h16M5 21V10l7-6 7 6v11M9 21v-6h6v6"/>'),
-  tradition: GI('<path d="M12 3c1 2 3 3 3 6a3 3 0 0 1-6 0c0-3 2-4 3-6z"/><path d="M10 13h4v8h-4z"/>')
+  tradition: GI('<path d="M12 3c1 2 3 3 3 6a3 3 0 0 1-6 0c0-3 2-4 3-6z"/><path d="M10 13h4v8h-4z"/>'),
+  sports: GI('<path d="M7.5 2.5l3.5 7.2M16.5 2.5L13 9.7"/><circle cx="12" cy="15.5" r="5.5"/>'),
+  theatre: GI('<path d="M2.5 3h19"/><path d="M3 3v3c1.5 1.3 3 1.3 4.5 0 1.5 1.3 3 1.3 4.5 0 1.5 1.3 3 1.3 4.5 0 1.5 1.3 3 1.3 4.5 0V3"/><path d="M4 8.5c.5 4.5 2.5 7.5 5 9-1 1-1.5 2-1.5 3.5H4zM20 8.5c-.5 4.5-2.5 7.5-5 9 1 1 1.5 2 1.5 3.5H20z"/>'),
+  art: GI('<path d="M8.5 7L12 3.5 15.5 7"/><rect x="3.5" y="7" width="17" height="13" rx="1"/><path d="M7 17l3.5-4 2.5 2.5 2-2 2 3.5"/>'),
+  fireworks: GI('<path d="M10 2v3.5M10 12.5V16M3 9h3.5M13.5 9H17M5 4l2.5 2.5M12.5 11.5L15 14M5 14l2.5-2.5M12.5 6.5L15 4"/><path d="M19 16v5M16.5 18.5h5"/>'),
+  religious: GI('<path d="M12 2.5V6M9 2.5h6"/><path d="M7 17.5c.8-1 1-2.5 1-4.5v-3a4 4 0 0 1 8 0v3c0 2 .2 3.5 1 4.5"/><path d="M4.5 17.5h15"/><path d="M10.5 20.5a1.5 1.5 0 0 0 3 0"/>'),
+  christmas: GI('<path d="M12 1.2l.76 1.95 2.09.12-1.61 1.33.52 2.03L12 5.5l-1.76 1.13.52-2.03-1.61-1.33 2.09-.12z"/><path d="M12 8l-5 5.5h2.5L5.5 18h13l-4-4.5H17z"/><path d="M12 18v3"/>'),
+  kids: GI('<path d="M12 2.5c3.2 0 5.5 2.6 5.5 6 0 3.7-2.8 6.6-5.5 7-2.7-.4-5.5-3.3-5.5-7 0-3.4 2.3-6 5.5-6z"/><path d="M12 15.5l-1 1.5h2z"/><path d="M12 17c-1.6 1.3 1.6 2.4 0 4.5"/>'),
+  flowers: GI('<path d="M10.95 6.56a2.4 2.4 0 1 1 2.1 0 2.4 2.4 0 1 1 .64 1.99 2.4 2.4 0 1 1-1.69 1.23 2.4 2.4 0 1 1-1.69-1.23 2.4 2.4 0 1 1 .64-1.99z"/><path d="M12 9.8V21"/><path d="M12 17.5c0-2.5 2-4 5-4 0 2.8-2 4-5 4z"/>')
 };
 const GUIDE_ICON = {
   sofa: GI('<path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v5H2z"/><path d="M5 18v2M19 18v2"/>'),
@@ -151,19 +159,23 @@ export function renderSection(V, id) {
     }).join('')}</div>`;
   }
   else if (sec.kind === 'spots') {
-    // Same pattern as Markets: an overview map, then rows ranked by distance (from the house or from you).
+    // Same pattern as Markets: an overview map, then rows ranked by distance (from the house or from you). A place with no
+    // hours of ours shows Google's card when its row opens (gcard: true, engine/src/gcard.js).
     const all = SPOTS.filter(s => s.section === id);
     // Quick filters when items have a "group" (What to do: Kids & fun, Beach, Sights & towns).
     const groups = [...new Set(all.map(s => s.group).filter(g => g in GROUPS))];   // only groups with a label (engine/src/groups.json)
     const gsel = groups.includes(st.sgroup[id]) ? st.sgroup[id] : 'all';
     // Open now first, then places opening later today, then the rest; each block by distance.
+    // 3: no hours of ours (on purpose for many: Google's live line shows when the row opens, gcard.js), so not known. Open now
+    // and Opens later today keep them after the ones we know, under a quiet heading, so a guest never loses the host's picks.
     const now0 = new Date(), nmin = now0.getHours() * 60 + now0.getMinutes();
     const tm = h => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
     const stateOf = s => {
       if (s.always) return 0;
-      const lab = s.s && s.s.length ? statusLabel(s, now0) : null;
+      if (!(s.s && s.s.length)) return 3;
+      const lab = statusLabel(s, now0);
       if (lab && lab.cls === 'open') return 0;
-      return s.s && runsOn(s, now0).some(x => tm(x.o) > nmin) ? 1 : 2;
+      return runsOn(s, now0).some(x => tm(x.o) > nmin) ? 1 : 2;
     };
     const timed = all.some(s => s.s && s.s.length);
     let ofsel = timed && ['now', 'later'].includes(st.openf[id]) ? st.openf[id] : 'any';
@@ -175,12 +187,14 @@ export function renderSection(V, id) {
     const feats = (FEAT_SECS[id] || []).filter(k => all.some(FEATS[k]));
     const fsel = (st.featf[id] || []).filter(k => feats.includes(k));
     const byFeat = byGroup.filter(s => fsel.every(k => FEATS[k](s)));
-    const nNow = byFeat.filter(s => stateOf(s) === 0).length, nLater = byFeat.filter(s => stateOf(s) === 1).length;
+    const nNow = byFeat.filter(s => stateOf(s) === 0).length, nLater = byFeat.filter(s => stateOf(s) === 1).length;   // what we know only
     // A filter with nothing in it is hidden, and falls back to Any time if it was selected.
     if ((ofsel === 'now' && !nNow) || (ofsel === 'later' && !nLater)) ofsel = 'any';
-    const filtered0 = ofsel === 'now' ? byFeat.filter(s => stateOf(s) === 0) : ofsel === 'later' ? byFeat.filter(s => stateOf(s) === 1) : byFeat;
-    const filtered = filtered0;
-    const l = timed ? sorted(filtered).map((s, i) => ({ s, i, k: stateOf(s) })).sort((a, b) => a.k - b.k || a.i - b.i).map(x => x.s) : sorted(filtered);
+    const filtered = ofsel === 'any' ? byFeat : byFeat.filter(s => [ofsel === 'now' ? 0 : 1, 3].includes(stateOf(s)));
+    // The guest's sort inside each block; Any time keeps the not known among the closed, as before.
+    const kOf = s => (ofsel === 'any' ? Math.min(stateOf(s), 2) : stateOf(s));
+    const l = timed ? sorted(filtered).map((s, i) => ({ s, i, k: kOf(s) })).sort((a, b) => a.k - b.k || a.i - b.i).map(x => x.s) : sorted(filtered);
+    const k3 = ofsel === 'any' ? -1 : l.findIndex(s => stateOf(s) === 3);
     const ochips = timed ? `<div class="gchips ochips" role="group">${[['any', 'f_anyTime', byFeat.length], ['now', 'f_openNow', nNow], ['later', 'f_openLater', nLater]].filter(([k, , n]) => k === 'any' || n).map(([k, key, n]) => `<button class="gchip" data-openf="${k}" data-sec="${id}" aria-pressed="${k === ofsel}"${k === 'now' ? ' style="--cc:var(--green)"' : k === 'later' ? ' style="--cc:var(--blue)"' : ''}>${esc(t(key))}<span class="n">${n}</span></button>`).join('')}</div>` : '';
     const fchips = feats.length ? `<div class="gchips fchips" role="group">${feats.map(k => `<button class="gchip" data-featf="${k}" data-sec="${id}" aria-pressed="${fsel.includes(k)}">${esc(t('ff_' + k))}<span class="n">${byGroup.filter(FEATS[k]).length}</span></button>`).join('')}</div>` : '';
     const toneOf = g => GROUPS[g] || all.find(s => s.group === g)?.tone;
@@ -192,7 +206,7 @@ export function renderSection(V, id) {
     const hl = hq ? `<div class="qcalls"><a class="qcall wide" data-q="${hq.id}" href="#p/${hq.id}"><span class="qi">${quickIcon(hq)}</span><span class="qt"><b>${esc(tx(hq.name))}</b>${hq.sub ? `<small>${esc(tx(hq.sub))}</small>` : ''}</span></a></div>` : '';
     body = all.length ? `${hl}<a class="pl-map secmap" href="#map" data-mapcat="${esc(all[0].cat)}" aria-label="${esc(t('openMap'))}"><div id="secmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openMap'))}</span></a>
       ${gchips}${ochips}${fchips}${sortRow()}
-      ${l.length ? `<div class="mlist">${l.map(m => row(m, { date: now, live: true })).join('')}</div>` : `<p class="empty">${esc(t('f_noneOpen'))}</p>`}` : `<div class="empty">${esc(t('soon'))}</div>`;
+      ${l.length ? `<div class="mlist">${l.map((m, i) => (i === k3 ? `<h3 class="mgh">${esc(t('f_noHours'))}</h3>` : '') + row(m, { date: now, live: true, gcard: true })).join('')}</div>` : `<p class="empty">${esc(t('f_noneOpen'))}</p>`}` : `<div class="empty">${esc(t('soon'))}</div>`;
   } else {
     // Info page (House guide): one expandable row per topic, same look as the other lists.
     const tone = k => k === 'ink' ? 'var(--ink)' : k === 'yellow' ? 'var(--tone-taxi)' : `var(--tone-${k})`;

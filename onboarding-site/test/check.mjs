@@ -9,6 +9,7 @@
 // Needs SUPABASE_SERVICE_KEY (worker/.env.local or the environment) and Playwright (npm i --no-save playwright).
 import { createRequire } from 'node:module';
 import { deflateSync } from 'node:zlib';
+import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,6 +36,8 @@ const listing = (route, body) => setTimeout(() => json(route, body.stage === 'pa
 const capsEs = photos.map((x, i) => i < 2 ? 'Salón' : i < 4 ? 'Dormitorio 1' : '');
 const PAGE_ES = { ...PAGE, photoCaps: capsEs }, WRITE_ES = { ...WRITE, photoCaps: capsEs, draft: { ...WRITE.draft, roomNames: { 'Salón': 'Living room', 'Dormitorio 1': 'Bedroom 1' }, sections: { wifi: false, rubbish: false, markets: false, eat: false, todo: false, events: false } } };
 const listingEs = (route, body) => setTimeout(() => json(route, body.stage === 'page' ? PAGE_ES : WRITE_ES), body.stage === 'page' ? 400 : 1500);
+// What this device keeps of the answers (porta-onboarding-v1), as Google's terms are checked against it.
+const stored = p => p.evaluate(() => { try { return (JSON.parse(localStorage.getItem('porta-onboarding-v1') || '{}') || {}).A || {}; } catch (e) { return {}; } });
 const inPhone = (p, fn) => p.evaluate(fn => { const d = document.getElementById('phoneFrame') && document.getElementById('phoneFrame').contentDocument; return d ? new Function('d', 'return (' + fn + ')(d)')(d) : null; }, fn.toString());
 mkdirSync(SHOTS, { recursive: true });
 // CHECK_LIVE=1: each result is printed as it comes, to see where a run is stuck.
@@ -50,6 +53,8 @@ const PNG4 = (() => { const W = 4, rows = [], C = [[29, 79, 160], [213, 43, 30],
 const json = (route, body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 // The database on a web address: what slug_check answers (the real function is checked against real rows, not here).
 const slugAnswer = (route, b, taken) => { const free = !taken.has(b.p_wanted); return json(route, { free, options: free ? [] : [b.p_town ? `${b.p_wanted}-${b.p_town}` : `${b.p_wanted}-2`, `${b.p_wanted}-3`, `${b.p_wanted}-4`] }); };
+const plainKey = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');   // start.js plainName: a researched card's id is 'r:' + this
+const cmpSame = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const slugOf = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 async function open(browser, G, w, h, stored = {}, listing = null) {
@@ -195,17 +200,25 @@ try {
     const h = Object.values(rows)[0] || { answers: {} };
     ok('after the account: the answers from this device are the account\'s house, back on Review and send, with Send', Object.keys(rows).length === 1 && h.answers.wifiName === 'Visitor wifi' && h.answers._research === AREA_ID && h.answers.listingUrl === 'https://www.airbnb.com/rooms/12345678' && (await p.evaluate(() => location.hash)) === '#send' && !!(await p.$('#send')) && !!(await p.$('.logoutTop')), calls.join(', '));
     ok('after the account: the full research of the area starts in the background, for the house\'s point, and travels with the answers', calls.includes('job research ' + A0.lat) && h.answers._researchJob === JOB_ID, calls.join(', '));
+    ok('the house\'s position from the listing is kept as ours, with no date (no pos)', +h.answers.lat === +A0.lat && !('pos' in h.answers), JSON.stringify({ lat: h.answers.lat, pos: h.answers.pos }));
     ok('no account until the end: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // ---- Cards after sign-up (Yohann, 30 Oct 2026): what the research found goes in the guide only if the host keeps it ----
-  { const items = AREA_TODO.items, en = i => items[i].name.en, added = en(items.length - 1), G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, swipes: {}, favDo: [{ p: added, c: '' }] } };
+  // The research's items carry Google's id when the worker's check found them (part 3d): the first has a photo on Google, the
+  // second none (only a rating, which the card must not show then), the others no id. Their picture is asked live, once.
+  const TODO_G = { ...AREA_TODO, items: AREA_TODO.items.map((it, i) => i < 2 ? { ...it, gid: 'g-res' + i } : it) };
+  const CARD_PHOTO = photos[1] || photos[0] || '/api/photo?name=res-0', CARD = { 'g-res0': { ok: true, photo: CARD_PHOTO, photoBy: [{ name: 'Bea Test', uri: 'https://maps.google.com/maps/contrib/456' }], rating: 4.7, reviews: 321 }, 'g-res1': { ok: true, photo: null, photoBy: [], rating: 4.2, reviews: 50 } };
+  const cardAnswer = (r, asked, wait = 900) => { const id = new URL(r.request().url()).searchParams.get('card'); asked.push(id); setTimeout(() => json(r, CARD[id] || { ok: false }).catch(() => {}), id === 'g-res0' ? wait : 0); };
+  { const items = TODO_G.items, en = i => items[i].name.en, added = en(items.length - 1), G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, swipes: {}, favDo: [{ p: added, c: '' }] } };
     const { ctx, p, errors } = await open(browser, G, 360, 780); let job = { status: 'running', result: null };
+    const asked = [], saved = [];
     await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [job]));
-    await ctx.route('**/api/places**', r => json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: [{ id: 'g-twin', name: en(0), rating: 4.6, reviews: 90, type: 'Castle', maps: 'https://maps.google.com/?q=1', lat: A0.lat, lng: A0.lng, km: 3, photo: null }, { id: 'g-other', name: 'Otro Lugar Test', rating: 4.5, reviews: 80, type: 'Park', maps: 'https://maps.google.com/?q=2', lat: A0.lat, lng: A0.lng, km: 4, photo: null }] }));
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), r => { if (r.request().method() === 'PATCH') saved.push(r.request().postData() || ''); return r.fallback(); });
+    await ctx.route('**/api/places**', r => new URL(r.request().url()).searchParams.get('card') ? cardAnswer(r, asked) : json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: [{ id: 'g-twin', name: en(0), rating: 4.6, reviews: 90, type: 'Castle', maps: 'https://maps.google.com/?q=1', lat: A0.lat, lng: A0.lng, km: 3, photo: null }, { id: 'g-other', name: 'Otro Lugar Test', rating: 4.5, reviews: 80, type: 'Park', maps: 'https://maps.google.com/?q=2', lat: A0.lat, lng: A0.lng, km: 4, photo: null }] }));
     await p.goto('http://editor.test/#send'); await ready(p);
     await p.waitForFunction(() => /looking for more places/.test((document.getElementById('rvMore') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
     ok('cards after sign-up: while the research runs, Review says so and Send stays open', /looking for more places/.test(await p.textContent('#rvMore')) && !!(await p.$('#send')));
-    job = { status: 'running', result: { todo: AREA_TODO } };
+    job = { status: 'running', result: { todo: TODO_G } };
     await p.waitForFunction(() => /more places to look at/.test((document.getElementById('rvMore') || {}).textContent || ''), null, { timeout: 9000 }).catch(() => {});
     const more = n => `${n} more places to look at`;
     ok('cards after sign-up: as soon as things to do are found, before the rest of the research, Review counts them, without a place the host already added', (await p.textContent('#rvMore')).includes(more(items.length - 1)), await p.textContent('#rvMore'));
@@ -213,20 +226,67 @@ try {
     await p.click('#rvMore a'); await p.waitForSelector('.sw-card', { timeout: 5000 }).catch(() => {});
     ok('cards after sign-up: the deck opens with the researched places', (await p.textContent('.sw-card h3').catch(() => '')) === en(0), await p.textContent('.sw-card h3').catch(() => ''));
     ok('cards after sign-up: a card without a Google rating shows no empty star', !/★ \?/.test(await p.textContent('.sw-card')));
+    ok('cards after sign-up: "Google Maps" is written on a card with no rating', await p.isVisible('.sw-card .sw-on a:has-text("Google Maps")'));
+    ok('cards after sign-up: while its picture is on its way, a researched card shows its kind\'s icon on the guide\'s colour, no letter and no rating', !!(await p.$('.sw-card .sw-kind .sw-ic[data-kind="castle"] svg')) && !(await p.$('.sw-card .sw-ph > span:not(.sw-ic):not(.sw-stamp)')) && !/★/.test(await p.textContent('.sw-card')));
+    await p.waitForSelector('.sw-card .sw-ph[style*="background-image"]', { timeout: 4000 }).catch(() => {});
+    { const t = (await p.textContent('.sw-card .sw-on').catch(() => '')).replace(/\s+/g, ' ');
+      ok('cards after sign-up: a researched card with a Google id asks /api/places?card= once, for it and the next card, and shows the photo, its author, the rating and "Google Maps", under its own name',
+        asked.join() === 'g-res0,g-res1' && (await p.getAttribute('.sw-card .sw-ph', 'style')).includes(CARD_PHOTO) && (await p.textContent('.sw-card .sw-by').catch(() => '')).replace(/\s+/g, ' ').trim() === 'Photo: Bea Test'
+        && (await p.getAttribute('.sw-card .sw-by a', 'href').catch(() => '')) === 'https://maps.google.com/maps/contrib/456' && /★ 4\.7 \(321 reviews\)/.test(t) && await p.isVisible('.sw-card .sw-on a:has-text("Google Maps")') && (await p.textContent('.sw-card h3')) === en(0) && !(await p.$('.sw-card .sw-ic')), `${asked.join()} | ${t}`); }
     await p.screenshot({ path: join(SHOTS, 'cards-deck-360.png') });
     await p.click('[data-sw="yes"]'); await p.waitForTimeout(450);
+    ok('cards after sign-up: a researched card with no photo on Google shows its kind\'s icon, no rating and no author (even with a rating from Google)', (await p.textContent('.sw-card h3')) === en(1) && !!(await p.$('.sw-card .sw-ic[data-kind="mountain"] svg')) && !/★/.test(await p.textContent('.sw-card')) && !(await p.$('.sw-card .sw-by')));
+    ok('cards after sign-up: the icon card, nothing overlaps (the icon, the name, the rating line), no sideways scroll', await p.evaluate(() => { const r = s => { const e = document.querySelector('.sw-card ' + s); return e && e.getBoundingClientRect(); }, ic = r('.sw-ic'), on = r('.sw-on'), ph = r('.sw-ph');
+      return !!ic && !!on && ic.bottom <= on.top && ic.top >= ph.top && on.bottom <= ph.bottom && document.documentElement.scrollWidth <= innerWidth; }));
+    await p.screenshot({ path: join(SHOTS, 'cards-deck-icon-360.png') });
+    { const A = await stored(p), x = (A.swipes || {})['r:' + plainKey(en(0))] || {}, all = JSON.stringify(A) + saved.join('');
+      ok('cards after sign-up: a swipe on a researched card saves its own name, kind, link, position and distance, nothing of Google\'s (no photo, rating, reviews or author), on the device or in the account',
+        x.d === 'yes' && x.name === en(0) && Object.keys(x).every(k => ['id', 'd', 'cat', 'name', 'type', 'maps', 'lat', 'lng', 'km', 'c'].includes(k)) && !/Bea Test|contrib\/456|photoBy/.test(all) && !/"rating":4\.7|"reviews":321/.test(all) && saved.length > 0, JSON.stringify(x)); }
     await p.click('[data-sw="no"]'); await p.waitForTimeout(450);
     const names = [], left = items.length - 3;
     while (names.length < left) { names.push(await p.textContent('.sw-card h3')); await p.click('[data-sw="no"]'); await p.waitForTimeout(450); }
     ok('cards after sign-up: the Google card the research also found shows once, the others follow', (await p.textContent('.sw-card h3').catch(() => '')) === 'Otro Lugar Test' && !names.includes(en(0)) && !names.includes(added), names.join(', '));
-    const S = await p.evaluate(() => JSON.parse(Object.values(localStorage).find(x => /"swipes"/.test(x)) || '{}').swipes || null).catch(() => null);
+    ok('cards after sign-up: through the whole deck, each Google id was asked once, and a card with no id never', asked.join() === 'g-res0,g-res1', asked.join());
+    { const picks = await p.textContent('.sw-picks').catch(() => '');
+      ok('cards after sign-up: Your picks shows the researched pick by its own name, without Google\'s rating or author', picks.includes(en(0)) && !/★|4\.7|Bea Test/.test(picks), picks.replace(/\s+/g, ' ').slice(0, 120)); }
     await inPhone(p, d => { const b = d.querySelector('[data-pv="todo"]'); b && b.click(); return 1; }); await p.waitForTimeout(500);
     const phone = (await inPhone(p, d => d.body.textContent)) || '';
     ok('cards after sign-up: what the host keeps lands in the phone, what they skip does not', phone.includes(en(0)) && !phone.includes(en(1)), en(0));
+    ok('cards after sign-up: the phone shows the researched pick without Google\'s rating, photo or author', !/★|4\.7|Bea Test/.test(phone) && !(await inPhone(p, `d => [...d.querySelectorAll('img')].some(i => i.src.includes(${JSON.stringify(CARD_PHOTO.split('?')[0])}))`)));
     ok('cards after sign-up: no "Host\u2019s pick" label in the phone', !/Host.s pick/.test(phone));
     await go(p, '#send'); await p.waitForTimeout(300);
     ok('cards after sign-up: all seen, Review says nothing more', !(await p.textContent('#rvMore')).trim(), await p.textContent('#rvMore'));
     ok('cards after sign-up: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // The same researched cards at 360 px in French: one with Google's photo, its author and rating, one with its kind's icon.
+  { const items = TODO_G.items, G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, swipes: {}, favDo: [] } };
+    const { ctx, p, errors } = await open(browser, G, 360, 780), asked = [];
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ status: 'done', result: { todo: TODO_G } }]));
+    await ctx.route('**/api/places**', r => new URL(r.request().url()).searchParams.get('card') ? cardAnswer(r, asked, 0) : json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: [] }));
+    await p.goto('http://editor.test/?lang=fr#nearby'); await ready(p);
+    await p.waitForSelector('.sw-card .sw-ph[style*="background-image"]', { timeout: 8000 }).catch(() => {});
+    const clear = () => p.evaluate(() => { const card = document.querySelector('.sw-card'); if (!card) return 'no card';
+      const words = [...card.querySelectorAll('.sw-on h3, .sw-on small, .sw-on p, .sw-ic')].map(e => e.getBoundingClientRect()), hit = (a, b) => a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1;
+      const wide = [...card.querySelectorAll('.sw-on h3, .sw-on small, .sw-on p')].filter(e => e.scrollWidth > e.clientWidth + 1).length;
+      return words.some((a, i) => words.slice(i + 1).some(b => hit(a, b))) ? 'overlap' : wide ? 'a word wider than its line' : document.documentElement.scrollWidth > innerWidth ? 'sideways scroll' : ''; });
+    const t1 = (await p.textContent('.sw-card .sw-by').catch(() => '')).trim(), c1 = await clear();
+    ok('researched cards, 360 px in French: the photo card says "Photo : Bea Test", touching nothing', (await p.textContent('.sw-card h3').catch(() => '')) === (items[0].name.fr || items[0].name.en) && /^Photo\s:\s*Bea Test$/.test(t1) && !c1, `${t1} ${c1}`);
+    await p.locator('.sw-card').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'cards-photo-fr-360.png') });
+    await p.click('[data-sw="no"]'); await p.waitForTimeout(450);
+    const c2 = await clear();
+    ok('researched cards, 360 px in French: the icon card, touching nothing', !!(await p.$('.sw-card .sw-ic svg')) && !c2, c2);
+    await p.locator('.sw-card').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'cards-icon-fr-360.png') });
+    ok('researched cards in French: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // A house whose listing gave no position: the deck searches its town on Google, whose position may be kept 30 days only,
+  // so it is saved with its date (pos), for the build to look for the town in GeoNames.
+  { const ans = { ...B.answers }; delete ans.lat; delete ans.lng; delete ans.pos; delete ans._research; delete ans._researchJob;
+    const { ctx, p, errors } = await open(browser, { ...B, answers: ans }, 1280, 860), q = [];
+    await ctx.route('**/api/places**', r => { const u = new URL(r.request().url()).searchParams; if (!u.get('probe')) q.push(u.toString()); return json(r, u.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: 41.5, lng: 1.7, places: [] }); });
+    await p.goto('http://editor.test/#nearby'); await ready(p); await p.waitForTimeout(1500);
+    const A = await stored(p), today = new Date().toISOString().slice(0, 10);
+    ok('a house with no position from its listing: the deck searches the town and keeps Google\'s position with its date', q.some(x => /town=/.test(x) && !/lat=/.test(x)) && A.lat === 41.5 && A.lng === 1.7 && JSON.stringify(A.pos) === JSON.stringify({ from: 'google', at: today }), JSON.stringify({ lat: A.lat, pos: A.pos, q: q[0] }));
+    ok('a house with no position from its listing: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const G = { ...B, status: 'generating', slug: 'test-cards', answers: { ...B.answers, slug: 'test-cards' } };
     const { ctx, p, errors } = await open(browser, G, 360, 780);
@@ -469,9 +529,13 @@ try {
     ok('place lookup: a burst of typing is one request', asked.length === 1 && asked[0] === 'llul de llebre', asked.join(' | '));
     const box = await p.evaluate(sel => { const r = document.querySelector(sel), b = x => r.querySelector(x).getBoundingClientRect(); return { list: b('.pl-sug').bottom, comment: b('textarea').top, fits: [...r.querySelectorAll('.pl-sug button')].every(x => x.scrollWidth <= x.clientWidth), page: document.documentElement.scrollWidth - innerWidth }; }, row);
     ok('place lookup, 360 px: the list pushes the comment down, covers nothing, and long names fit', box.list <= box.comment && box.fits && box.page <= 0, JSON.stringify(box));
+    ok('place lookup: "Google Maps" is written at the foot of Google\'s list', await p.isVisible(row + ' .pl-sug .pl-gm') && (await p.textContent(row + ' .pl-sug .pl-gm')) === 'Google Maps');
     await p.locator(row).scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'place-lookup-360.png') });
     await p.click(list); await p.waitForTimeout(150);
-    ok('place lookup: a tap fills the name, says which place it is with a link to check, and moves on to the comment', (await p.inputValue(field)) === found[0].name && /La Bisbal/.test(await p.textContent(row + ' .pl-at.ok').catch(() => '')) && /query_place_id=g-ull/.test(await p.getAttribute(row + ' .pl-at a', 'href').catch(() => '')) && (await p.evaluate(() => document.activeElement.tagName)) === 'TEXTAREA' && await hidden(row + ' .pl-sug'));
+    ok('place lookup: a tap keeps the host\'s words (with capitals), says which place it is with Google Maps, and moves on to the comment', (await p.inputValue(field)) === 'Llul de Llebre' && /Restaurant Ull de Llebre · Carrer Santa Cristina, La Bisbal/.test(await p.textContent(row + ' .pl-at.ok').catch(() => '')) && (await p.textContent(row + ' .pl-at a').catch(() => '')) === 'Google Maps' && /query=Llul%20de%20Llebre&query_place_id=g-ull/.test(await p.getAttribute(row + ' .pl-at a', 'href').catch(() => '')) && (await p.evaluate(() => document.activeElement.tagName)) === 'TEXTAREA' && await hidden(row + ' .pl-sug'));
+    await p.waitForTimeout(1200);
+    { const A = await stored(p), r = (A.favEat || []).find(x => x.gid === 'g-ull') || {}, all = JSON.stringify(A);
+      ok('place lookup: a picked suggestion saves the host\'s words and Google\'s id, no name, address or distance of Google\'s', r.p === 'Llul de Llebre' && Object.keys(r).every(k => ['p', 'c', 'gid'].includes(k)) && !/Restaurant Ull de Llebre|Carrer Santa Cristina/.test(all), JSON.stringify(r)); }
     await p.locator(row).scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'place-picked-360.png') });
     await go(p, '#nearby'); await go(p, '#favourites');
     ok('place lookup: the row keeps the place it picked', !!(await p.$(row + ' .pl-at.ok')));
@@ -484,12 +548,23 @@ try {
     ok('place lookup: a name that was not picked says so once the host moves on, and what it means', /may have no map pin/.test(await p.textContent(row + ' .pl-at.miss').catch(() => '')) && await p.isVisible(row + ' .pl-at.miss'));
     await p.click(field); await p.waitForSelector(list, { timeout: 3000 }).catch(() => {});
     await p.keyboard.press('ArrowDown'); await p.keyboard.press('ArrowDown'); await p.keyboard.press('ArrowDown'); await p.keyboard.press('Enter'); await p.waitForTimeout(150);
-    ok('place lookup: the list works with the keyboard, and a name left unpicked offers it again on coming back', (await p.inputValue(field)) === found[0].name && !!(await p.$(row + ' .pl-at.ok')));
+    ok('place lookup: the list works with the keyboard, and a name left unpicked offers it again on coming back', (await p.inputValue(field)) === 'Llul de Llebrex' && !!(await p.$(row + ' .pl-at.ok')));
     const before = asked.length; await p.fill(field, 'https://maps.app.goo.gl/abc123'); await p.waitForTimeout(500);
     ok('place lookup: a link is kept as it is: no search, no list, no warning', asked.length === before && await hidden(row + ' .pl-sug') && !(await p.$(row + ' .pl-at.ok')) && !(await p.$(row + ' .pl-at.miss')));
     await p.fill(field, 'nowhere'); await p.waitForTimeout(500); await p.click(row + ' textarea'); await p.waitForTimeout(300);
     ok('place lookup: nothing found on Google: no empty list, the name stays and says what it means', await hidden(row + ' .pl-sug') && (await p.inputValue(field)) === 'nowhere' && await p.isVisible(row + ' .pl-at.miss'));
     ok('place lookup: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // A row picked in an earlier session (nothing of Google's in memory), and one saved before 10 Nov 2026 with Google's address
+  // in it (at): both say they are matched, with Google Maps, and show nothing of what was saved of Google's.
+  { const G = { ...B, answers: { ...B.answers, favEat: [{ p: 'Ull de Llebre', c: '', gid: 'g-ull' }, { p: 'Restaurant Old Pick', c: '', gid: 'g-old', at: 'Carrer Vell, Old Town, Spain', km: 4 }] } };
+    const { ctx, p, errors } = await open(browser, G, 360, 780);
+    await ctx.route('**/api/places**', r => json(r, { ok: true, enabled: true, places: [] }));
+    await p.goto('http://editor.test/#favourites'); await ready(p); await p.waitForTimeout(300);
+    const at = await p.$$eval('#pl_favEat .pl-at.ok', els => els.map(e => ({ t: e.textContent.replace(/\s+/g, ' ').trim(), a: (e.querySelector('a') || {}).href || '' })));
+    ok('place lookup, after a reload: a picked row says it is matched, with Google Maps by its id, and an older row shows nothing of Google\'s address', at.length === 2 && at.every(x => x.t === '✓ Matched on Google Maps') && /query_place_id=g-ull/.test(at[0].a) && /query_place_id=g-old/.test(at[1].a), JSON.stringify(at));
+    await p.locator('#pl_favEat .pl-row >> nth=1').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'place-matched-360.png') });
+    ok('place lookup, after a reload: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // ---- Rooms and photos: each room its own card, as guests see it, in the host's order; the phone follows (Yohann, 30 Oct 2026) ----
   { const rooms = [['Salón', 'Living room'], ['Salón', 'Living room'], ['Cocina completa', 'Kitchen'], ['Dormitorio 1', 'Bedroom'], ['Dormitorio 2', 'Bedroom'], ['Zona para hacer la colada muy larga', 'Laundry'], ['Piscina', 'Pool']];
@@ -587,24 +662,40 @@ try {
     ok('amenities: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // ---- Places nearby: one card at a time, dragged with a finger or the arrow keys; each yes lands in the phone ----
-  { const places = ['Cala Test', 'Castell Test', 'Camí Test', 'Jardins Test'].map((name, i) => ({ id: 'tp' + i, name, rating: 4.5, reviews: 200, type: 'Beach', maps: 'https://maps.google.com/?q=' + i, summary: 'A test place.', lat: A0.lat, lng: A0.lng, km: 2 + i, photo: photos[i] || null }));
-    const deck = async (w, h) => { const o = await open(browser, B, w, h);
+  // The first card's photo has an author (Google's authorAttributions, as /api/places passes them on), the second's none.
+  { const places = ['Cala Test', 'Castell Test', 'Camí Test', 'Jardins Test'].map((name, i) => ({ id: 'tp' + i, name, rating: 4.5, reviews: 200, type: 'Beach', maps: 'https://maps.google.com/?q=' + i, summary: 'A test place.', lat: A0.lat, lng: A0.lng, km: 2 + i, photo: photos[i] || (i < 2 ? '/api/photo?name=test-' + i : null),
+      photoBy: i === 0 ? [{ name: 'Ana Test', uri: 'https://maps.google.com/maps/contrib/123' }] : [] }));
+    const deck = async (w, h, lang) => { const o = await open(browser, B, w, h);
       await o.ctx.route('**/api/places**', r => json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places }));
-      await o.p.goto('http://editor.test/'); await ready(o.p); await go(o.p, '#nearby'); await o.p.waitForSelector('.sw-card', { timeout: 5000 }).catch(() => {}); return o; };
+      await o.p.goto('http://editor.test/' + (lang ? '?lang=' + lang : '')); await ready(o.p); await go(o.p, '#nearby'); await o.p.waitForSelector('.sw-card', { timeout: 5000 }).catch(() => {}); return o; };
+    // The author's line sits on the photo, on a line of its own: it touches neither the name, the rating line, the buttons nor the photo's edges.
+    const byClear = q => q.evaluate(() => { const b = document.querySelector('.sw-card .sw-by'), ph = document.querySelector('.sw-card .sw-ph'); if (!b || !ph) return false;
+      const B = b.getBoundingClientRect(), P = ph.getBoundingClientRect(), hit = (a, c) => a.right > c.left + 1 && c.right > a.left + 1 && a.bottom > c.top + 1 && c.bottom > a.top + 1;
+      const others = [...document.querySelectorAll('.sw-card .sw-on h3, .sw-card .sw-on small, .sw-card .sw-on p:not(.sw-by), .sw-btns')].map(e => e.getBoundingClientRect());
+      return B.top >= P.top && B.bottom <= P.bottom && B.left >= P.left && B.right <= P.right && !others.some(r => hit(B, r)); });
     const { ctx, p, errors } = await deck(1280, 860);
     const top = () => p.$eval('.sw-card h3', e => e.textContent).catch(() => null);
     const drag = async dx => { const [x, y] = await p.$eval('.sw-card', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + 80]; });
       await p.mouse.move(x, y); await p.mouse.down(); for (let i = 1; i <= 8; i++) { await p.mouse.move(x + dx * i / 8, y); await p.waitForTimeout(16); } await p.mouse.up(); await p.waitForTimeout(450); };
     await drag(40);
+    ok('Places nearby: "Google Maps" is written on the card', await p.isVisible('.sw-card .sw-on a:has-text("Google Maps")'));
+    ok('Places nearby: a photo by someone Google names says so on the card, the name a link to their page', (await p.textContent('.sw-card .sw-by').catch(() => '')).replace(/\s+/g, ' ').trim() === 'Photo: Ana Test' && (await p.getAttribute('.sw-card .sw-by a', 'href').catch(() => '')) === 'https://maps.google.com/maps/contrib/123' && (await p.getAttribute('.sw-card .sw-by a', 'target').catch(() => '')) === '_blank');
+    ok('Places nearby: the photo\'s author on its own line, over the photo, touching nothing', await byClear(p));
+    ok('Places nearby: the phone beside Google\'s card has no map', await inPhone(p, d => !d.querySelector('canvas, .maplibregl-map, iframe')));
     ok('Places nearby: a short drag puts the card back', (await top()) === 'Cala Test' && (await p.$eval('.sw-card', e => e.style.transform)) === '' && /0 recommended/.test(await p.textContent('.sw-count')));
     await drag(160);
     ok('Places nearby: dragging right recommends it, the next card comes up', (await top()) === 'Castell Test' && /1 recommended/.test(await p.textContent('.sw-count')), (await p.textContent('.sw-count')).trim());
+    ok('Places nearby: a card whose photo has no author shows no author line', !(await p.$('.sw-card .sw-by')));
     await drag(-160);
     ok('Places nearby: dragging left skips it', (await top()) === 'Camí Test' && /1 recommended/.test(await p.textContent('.sw-count')));
     await p.focus('.sw-card'); await p.keyboard.press('ArrowRight'); await p.waitForTimeout(450);
     ok('Places nearby: the arrow keys work, and the next card keeps the focus', (await top()) === 'Jardins Test' && await p.evaluate(() => document.activeElement.classList.contains('sw-card')));
     await p.click('[data-swlast]'); await p.waitForTimeout(300);
     ok('Places nearby: Undo brings the last card back', (await top()) === 'Camí Test' && /1 recommended/.test(await p.textContent('.sw-count')));
+    await p.fill('[data-swc="tp0"]', 'Go at sunset'); await p.waitForTimeout(1200);
+    { const S = (await stored(p)).swipes || {}, v = Object.values(S);
+      ok('Places nearby: a swipe saves only the id, yes or no, the list and the host\'s comment', v.length === 2 && v.every(x => Object.keys(x).every(k => ['id', 'd', 'cat', 'c'].includes(k))) && S.tp0.d === 'yes' && S.tp0.c === 'Go at sunset' && S.tp1.d === 'no' && !('c' in S.tp1), JSON.stringify(S));
+      ok('Places nearby: Your picks shows the kept card from the live deck, with Google Maps', /Cala Test/.test(await p.textContent('.sw-picks')) && (await p.textContent('.sw-pick a').catch(() => '')) === 'Google Maps'); }
     await p.waitForTimeout(600);
     const inGuide = await inPhone(p, d => d.body.textContent);
     ok('Places nearby: a recommended place is in the phone, as the host\'s pick', /Cala Test/.test(inGuide || '') && !/Castell Test/.test(inGuide || ''));
@@ -644,7 +735,23 @@ try {
     const m = await deck(360, 780);
     ok('Places nearby, 360 px: the whole card and its buttons on screen, above the bottom bar, no sideways scroll', await m.p.evaluate(() => document.querySelector('.sw-btns').getBoundingClientRect().bottom <= document.getElementById('navbar').getBoundingClientRect().top && document.documentElement.scrollWidth <= innerWidth));
     await m.p.screenshot({ path: join(SHOTS, 'nearby-360.png') });
-    await m.ctx.close(); }
+    await m.ctx.close();
+    { const f = await deck(360, 780, 'fr');
+      ok('Places nearby, 360 px in French: "Photo : Ana Test" on the photo, touching nothing, no sideways scroll', /^Photo\s:\s*Ana Test$/.test((await f.p.textContent('.sw-card .sw-by').catch(() => '')).trim()) && await byClear(f.p) && await f.p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), (await f.p.textContent('.sw-card .sw-by').catch(() => '')).trim());
+      await f.p.locator('.sw-card').scrollIntoViewIfNeeded(); await f.p.screenshot({ path: join(SHOTS, 'deck-author-fr-360.png') });
+      await f.ctx.close(); }
+    // Kept cards from an earlier session, one in the old shape with Google's name and rating in it, and a deck that no
+    // longer has them: a kept place with Google Maps by its id, never the name that was saved.
+    const K = { ...B, answers: { ...B.answers, swipes: { 'g-kept': { id: 'g-kept', d: 'yes', cat: 'todo', name: 'Old Google Name', rating: 4.6, reviews: 90, c: 'Our favourite' } } } };
+    const k = await open(browser, K, 1280, 860);
+    await k.ctx.route('**/api/places**', r => json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places }));
+    await k.p.goto('http://editor.test/#nearby'); await ready(k.p); await k.p.waitForSelector('.sw-picks', { timeout: 5000 }).catch(() => {}); await k.p.waitForTimeout(600);
+    const pick = await k.p.textContent('.sw-picks').catch(() => ''), href = await k.p.getAttribute('.sw-pick a', 'href').catch(() => '');
+    await inPhone(k.p, d => { const b = d.querySelector('[data-pv="todo"]'); b && b.click(); return 1; }); await k.p.waitForTimeout(500);
+    const ph = (await inPhone(k.p, d => d.body.textContent)) || '';
+    ok('Places nearby, a card kept earlier and not in the deck: "A place you kept" with Google Maps by its id, in the picks and the phone, never the saved name', /A place you kept/.test(pick) && /query_place_id=g-kept/.test(href || '') && /A place you kept/.test(ph) && /Our favourite/.test(ph) && !/Old Google Name|4\.6/.test(pick + ph), pick.replace(/\s+/g, ' ').slice(0, 120));
+    ok('Places nearby, a card kept earlier: no page errors', !k.errors.length, k.errors.join(' | '));
+    await k.ctx.close(); }
   // ---- A second device, signed in, opened straight at a step (backlog 48): the account's answers come in, and the
   // device's near empty ones (only the step it opened) never go over them ----
   { const { ctx, p, errors } = await open(browser, B, 360, 780);
@@ -764,6 +871,8 @@ try {
     ok('editor: reopens on the step left last time', (await p.evaluate(() => location.hash)) === '#look');
     await ctx.close(); }
   { const { ctx, p, errors } = await open(browser, E, 1280, 860);
+    await ctx.route(u => u.pathname === '/api/places', route => { const q = new URL(route.request().url()).searchParams;
+      return json(route, q.get('id') ? { ok: true, place: { id: 'g-ull', lat: 41.28, lng: 1.48, km: 3 } } : q.get('suggest') ? { ok: true, places: [{ id: 'g-ull', name: 'Restaurant Ull de Llebre', where: 'La Bisbal del Penedès, Spain', km: 3 }] } : { ok: true, enabled: true }); });
     await p.goto('http://editor.test/#guide'); await ready(p); await p.waitForTimeout(500);
     const src = () => p.$eval('#cmPhoneFrame', f => f.getAttribute('src')).catch(() => '');
     ok('editor, desktop: the phone sits next to the step and shows the guide itself, with the changes', await p.$eval('.side-phone', e => getComputedStyle(e).display !== 'none').catch(() => false) && /\/g\/[^?]+\?preview#home$/.test(await src()), await src());
@@ -777,12 +886,25 @@ try {
     const loads = ctx.viewer || 0, field = await p.$('.edz input[type="text"], .edz textarea');
     if (field) { await field.fill(((await field.inputValue()) || '') + ' '); await p.waitForTimeout(2200); }
     ok('editor, desktop: a saved change reloads the phone', !!field && (ctx.viewer || 0) > loads, `${before} -> ${loads} -> ${ctx.viewer}`);
+    // Google's suggestions on screen: the phone shows the guide's Home (no map), and goes back to the step's screen after.
+    await go(p, '#restaurants'); await p.waitForTimeout(500);
+    const hash = () => p.$eval('#cmPhoneFrame', f => f.contentWindow.location.hash).catch(() => '');
+    const own = await hash();
+    await p.click('[data-addit="files/restaurants/items"]'); await p.waitForTimeout(400);
+    const gsp = 'details.cmi[open] [data-gsp]'; await p.locator(gsp).pressSequentially('ull de', { delay: 20 }); await p.waitForSelector('details.cmi[open] .pl-sug button', { timeout: 3000 }).catch(() => {}); await p.waitForTimeout(600);   // the phone may still be loading after the new card
+    const listing = await hash();
+    await p.click('details.cmi[open] .pl-sug button'); await p.waitForTimeout(800);
+    const found = await hash();
+    await p.click('details.cmi[open] > summary'); await p.waitForTimeout(400);
+    ok('editor, desktop: while Google\'s list or the place found is on screen, the phone shows Home (no map), then the step\'s screen again', /^#s\//.test(own) && listing === '#home' && found === '#home' && (await hash()) === own, [own, listing, found, await hash()].join(' > '));
     ok('editor, desktop phone: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
-  // The editor finds a place the same way: the host picks it as they type, and the place takes its pin, distance, town and name from Google.
-  { const { ctx, p, errors } = await open(browser, E, 360, 780), read = [];
+  // The editor finds a place the same way: the host picks it as they type, and the place takes Google's id and position (dated)
+  // and the distance; its name is the host's words. /api/places?id= answers only { id, lat, lng, km } (Google's terms).
+  { const { ctx, p, errors } = await open(browser, E, 360, 780), read = [], saved = [];
+    p.on('request', r => { if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(r.url())) saved.push(r.postData()); });
     await ctx.route(u => u.pathname === '/api/places', route => { const q = new URL(route.request().url()).searchParams; if (q.get('id')) read.push(q.get('id'));
-      return json(route, q.get('id') ? { ok: true, place: { id: 'g-ull', name: 'Restaurant Ull de Llebre', lat: 41.28, lng: 1.48, maps: 'https://maps.google.com/?cid=7', km: 3, town: 'La Bisbal del Penedès', type: 'Restaurant', status: 'OPERATIONAL', periods: [{ open: { day: 4, hour: 13, minute: 0 }, close: { day: 4, hour: 16, minute: 0 } }] } } : q.get('suggest') ? { ok: true, places: [{ id: 'g-ull', name: 'Restaurant Ull de Llebre', where: 'La Bisbal del Penedès, Spain', km: 3 }] } : { ok: true, enabled: true }); });
+      return json(route, q.get('id') ? { ok: true, place: { id: 'g-ull', lat: 41.28, lng: 1.48, km: 3 } } : q.get('suggest') ? { ok: true, places: [{ id: 'g-ull', name: 'Restaurant Ull de Llebre', where: 'La Bisbal del Penedès, Spain', km: 3 }] } : { ok: true, enabled: true }); });
     await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(300);
     await p.click('[data-addit="files/restaurants/items"]'); await p.waitForTimeout(250);
     const card = 'details.cmi[open]:has([data-gsp])', field = card + ' [data-gsp]';
@@ -792,30 +914,632 @@ try {
     await p.waitForSelector(card + ' .pl-sug button', { timeout: 3000 }).catch(() => {});
     await p.locator(card + ' .pl-sug').scrollIntoViewIfNeeded().catch(() => {}); await p.screenshot({ path: join(SHOTS, 'editor-place-lookup-360.png') });
     await p.click(card + ' .pl-sug button').catch(() => {});
-    await p.waitForFunction(() => [...document.querySelectorAll('details.cmi')].some(d => /Restaurant Ull de Llebre/.test(d.querySelector('summary').textContent)), null, { timeout: 5000 }).catch(() => {});
-    const got = await p.evaluate(() => { const d = [...document.querySelectorAll('details.cmi')].find(x => /Restaurant Ull de Llebre/.test(x.querySelector('summary').textContent)); return d ? { head: d.querySelector('summary').textContent, text: d.textContent, name: d.querySelector('input[data-p$="/name"]') && d.querySelector('input[data-p$="/name"]').value } : {}; });
-    ok('editor, finding a place: the pick is read by its id and fills the empty name, town and distance', read[0] === 'g-ull' && got.name === 'Restaurant Ull de Llebre' && /La Bisbal del Penedès/.test(got.head || '') && /3 km/.test(got.head || ''), JSON.stringify({ read, ...got, text: undefined }));
-    ok('editor, finding a place: it says what it found, so the host can tell', /Found: Restaurant Ull de Llebre, La Bisbal del Penedès, 3 km from the house/.test(got.text || ''));
+    await p.waitForFunction(() => [...document.querySelectorAll('details.cmi')].some(d => /Llul de Ll/.test(d.querySelector('summary').textContent)), null, { timeout: 5000 }).catch(() => {});
+    const got = await p.evaluate(() => { const d = [...document.querySelectorAll('details.cmi')].find(x => /Llul de Ll/.test(x.querySelector('summary').textContent)); return d ? { head: d.querySelector('summary').textContent, text: d.textContent, link: (d.querySelector('[data-glive] a') || {}).textContent, name: d.querySelector('input[data-p$="/name"]') && d.querySelector('input[data-p$="/name"]').value } : {}; });
+    ok('editor, finding a place: the pick is read by its id, fills the empty name with the host\'s words and the distance, and no town of Google\'s', read[0] === 'g-ull' && got.name === 'Llul de Ll' && /3 km/.test(got.head || '') && !/La Bisbal/.test(got.head || ''), JSON.stringify({ read, ...got, text: undefined }));
+    await p.locator('details.cmi[open] [data-glive]').scrollIntoViewIfNeeded().catch(() => {}); await p.screenshot({ path: join(SHOTS, 'editor-place-found-360.png') });
+    ok('editor, finding a place: it says what it found on Google, with Google Maps beside it, so the host can tell', /Found: Restaurant Ull de Llebre, La Bisbal del Penedès, Spain, 3 km from the house/.test(got.text || '') && got.link === 'Google Maps');
+    await p.waitForTimeout(2500);
+    { let it = null; try { const c = JSON.parse(saved[saved.length - 1] || '{}').draft.content; it = c.files.restaurants.items.find(x => x.gid === 'g-ull'); } catch (e) { /* not saved */ }
+      const day = new Date().toISOString().slice(0, 10), en = it && (typeof it.name === 'object' ? it.name.en || Object.values(it.name)[0] : it.name);
+      ok('editor, finding a place: the guide keeps Google\'s id, its dated position, the distance and a Google Maps link by the id, and no name, town, kind or hours of Google\'s', !!it && en === 'Llul de Ll' && it.lat === 41.28 && it.pos && it.pos.from === 'google' && it.pos.at === day && it.km_from_house === 3 && /query=Llul%20de%20Ll&query_place_id=g-ull/.test(it.gmaps || '') && !it.town && !(it.schedule || []).length && !(it.type && Object.values(it.type).some(Boolean)) && !JSON.stringify(it).includes('Restaurant Ull de Llebre'), JSON.stringify(it)); }
     ok('editor, finding a place, 360 px: no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0);
     ok('editor, finding a place: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // Getting around: the host types a station's name; Google places it, the worker finds its lines (mocked here), the card shows them.
   { const { ctx, p, errors } = await open(browser, E, 360, 780), jobs = [];
-    await ctx.route(u => u.pathname === '/api/places', route => json(route, { ok: true, place: { name: 'Calafell station', lat: 41.19, lng: 1.57, maps: 'https://maps.google.com/?cid=1', km: 9 } }));
+    const saved = []; p.on('request', r => { if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(r.url())) saved.push(r.postData()); });
+    await ctx.route(u => u.pathname === '/api/places', route => json(route, { ok: true, place: { id: 'g-calafell', lat: 41.19, lng: 1.57, km: 9 } }));
     await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), route => { const req = route.request();
       if (req.method() === 'POST') { jobs.push(JSON.parse(req.postData() || '{}')); return json(route, [{ id: 'job-tr-1' }]); }
       return json(route, [{ status: 'done', message: '1 line, 1 destination', result: { id: (jobs[0] || {}).params && jobs[0].params.id, badges: [{ t: 'R2 Sud', c: '#00A651', ink: false }], to: [{ dest: { en: 'Barcelona Sants' }, time: '50 min', note: { en: 'direct' } }], link: 'https://example.org/timetable', operator: 'Rodalies', checked: '2026-10-29' } }]); });
     await p.goto('http://editor.test/#transport'); await ready(p); await p.waitForTimeout(300);
     ok('Getting around: one field to add a station or stop (name or Google Maps link)', !!(await p.$('#c_stopq')) && !(await p.$('[data-tradd="train"]')));
     await p.fill('#c_stopq', 'Calafell'); await p.click('[data-stopadd]');
-    await p.waitForFunction(() => [...document.querySelectorAll('details.cmi')].some(d => /Calafell station/.test(d.querySelector('summary').textContent) && /Found 1 line/.test(d.textContent)), null, { timeout: 15000 }).catch(() => {});
-    const job = jobs[0] || {}, card = await p.evaluate(() => { const c = [...document.querySelectorAll('details.cmi')].find(d => /Calafell station/.test(d.querySelector('summary').textContent)); return c ? { open: c.open, text: c.textContent.replace(/\s+/g, ' '), tag: !!c.querySelector('[data-p$="/tag"]'), what: !!c.querySelector('[data-p$="/what"]') } : null; });
-    ok('Getting around: Google places it and the lines are looked up for it', job.kind === 'find-transport' && (job.params || {}).name === 'Calafell station' && !!card, JSON.stringify(job.params || {}));
+    await p.waitForFunction(() => [...document.querySelectorAll('details.cmi')].some(d => /Calafell/.test(d.querySelector('summary').textContent) && /Found 1 line/.test(d.textContent)), null, { timeout: 15000 }).catch(() => {});
+    const job = jobs[0] || {}, card = await p.evaluate(() => { const c = [...document.querySelectorAll('details.cmi')].find(d => /Calafell/.test(d.querySelector('summary').textContent)); return c ? { open: c.open, text: c.textContent.replace(/\s+/g, ' '), tag: !!c.querySelector('[data-p$="/tag"]'), what: !!c.querySelector('[data-p$="/what"]') } : null; });
+    ok('Getting around: Google places it under the name the host typed, and the lines are looked up for it', job.kind === 'find-transport' && (job.params || {}).name === 'Calafell' && !!card, JSON.stringify(job.params || {}));
+    { let st = null; for (const b of saved) { try { st = JSON.parse(b).draft.content.files.transport.stations.find(x => x.gid === 'g-calafell') || st; } catch (e) { /* another save */ } }
+      ok('Getting around: the station keeps Google\'s id and its dated position, and a Google Maps link by the id', !!st && st.name.en === 'Calafell' && st.pos && st.pos.from === 'google' && /query_place_id=g-calafell/.test(st.gmaps || '') && st.km === 9, JSON.stringify(st)); }
     ok('Getting around: the card shows the lines and where they go, the host only adds their words', !!card && /R2 Sud/.test(card.text) && /Barcelona Sants 50 min/.test(card.text) && /Refresh the lines/.test(card.text) && card.tag && card.what, card && card.text.slice(0, 120));
     ok('Getting around, 360 px: no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0);
     await p.screenshot({ path: join(SHOTS, 'transport-360.png'), fullPage: true });
     ok('Getting around: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // The opened place card in Eat and drink, Nightlife and Attractions (11 Nov 2026, Yohann: "never a form to complete"): the
+  // kind's tile in the row, the host's own words first (name, comment, Our favourite), "Filled in for you" to look at, and the
+  // form behind Change. Markets have the same card, events their kind (below).
+  { const items = s => E.content.files[s].items, ri = items('restaurants').findIndex(x => x.id === 'locanda'), ti = items('todo').findIndex(x => x.id === 'aqualeon'), tn = items('todo').length;
+    const RP = `files/restaurants/items/${ri}`, TP = `files/todo/items/${ti}`, NP = `files/todo/items/${tn}`, card = x => `details.cmi[data-open="${x}"]`;
+    // A tag the card does not offer, to see it kept ("tapas" on La Locanda).
+    const c2 = JSON.parse(JSON.stringify(E.content)); c2.files.restaurants.items[ri].tags = [...(c2.files.restaurants.items[ri].tags || []), 'tapas'];
+    const G = { ...E, content: c2 }, L0 = c2.files.restaurants.items[ri];
+    // Anything in the opened card that touches something else (a label, a field, a button, a line of the summary), or that
+    // sticks out of the card, and the page wider than the screen.
+    const clash = (p, sel) => p.evaluate(sel => {
+      const c = document.querySelector(sel); if (!c) return ['no card'];
+      const cr = c.getBoundingClientRect(), bad = [];
+      const els = [...c.querySelectorAll('label, .lab, input, textarea, select, button, .hint, .pl-note, .pl-hl, .pl-mk, .pl-ic, .pl-l > div, .pl-k span, .pl-kg, summary b, summary small, .pl-season > span, .pl-price > span, .cm-times > span, .pl-h')].filter(e => e.getClientRects().length && !e.closest('[hidden]'));
+      const r = els.map(e => e.getBoundingClientRect()), nm = e => (e.getAttribute('aria-label') || e.textContent || e.tagName).trim().replace(/\s+/g, ' ').slice(0, 28);
+      els.forEach((e, i) => { if (r[i].right > cr.right + 0.5 || r[i].left < cr.left - 0.5) bad.push('outside: ' + nm(e)); });
+      for (let i = 0; i < els.length; i++) for (let j = i + 1; j < els.length; j++) { if (els[i].contains(els[j]) || els[j].contains(els[i])) continue;
+        const a = r[i], b = r[j]; if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1) bad.push(`${nm(els[i])} / ${nm(els[j])}`); }
+      if (document.documentElement.scrollWidth > innerWidth) bad.push('sideways scroll');
+      return bad.slice(0, 4); }, sel);
+    const NO_BAR = '#navbar{visibility:hidden}';   // a whole card in one picture: the bottom bar would sit on it
+    const height = (p, sel) => p.$eval(sel, e => Math.round(e.getBoundingClientRect().height)).catch(() => 0);
+    const kindsOk = (p, sel) => p.evaluate(sel => { const ks = [...document.querySelectorAll(sel + ' .pl-k')], cv = document.createElement('canvas').getContext('2d');
+      const bad = ks.map(k => k.querySelector('span')).filter(s => { cv.font = getComputedStyle(s).font; const lines = Math.round(s.getBoundingClientRect().height / parseFloat(getComputedStyle(s).lineHeight));
+        return lines > 2 || s.scrollWidth > s.clientWidth + 1 || s.textContent.split(/\s+/).some(w => cv.measureText(w).width > s.clientWidth + 0.5) || parseFloat(getComputedStyle(s).fontSize) < 13.5; }).map(s => s.textContent);
+      const xs = new Set(ks.slice(0, 6).map(k => Math.round(k.getBoundingClientRect().left)));
+      return { n: ks.length, heads: [...document.querySelectorAll(sel + ' .pl-kg')].map(h => h.textContent), across: ks.length ? ks.findIndex(k => Math.round(k.getBoundingClientRect().top) > Math.round(ks[0].getBoundingClientRect().top)) : 0, cols: xs.size, bad, tall: Math.min(...ks.map(k => k.getBoundingClientRect().height)) }; }, sel);
+    const run = async (w, h, stored = {}, G1 = G) => { const o = await open(browser, G1, w, h, stored); o.saved = [];
+      await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); o.saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
+      // The place as last saved in the draft (each change is saved within a second).
+      // A change back to what is live saves no draft (draft: null): the place is then the live one.
+      o.item = async path => { await o.p.waitForTimeout(1300); for (const b of o.saved.slice().reverse()) { try { const j = JSON.parse(b); if (!('draft' in j)) continue; const c = j.draft ? j.draft.content : G1.content; return path.split('/').reduce((a, k) => a == null ? a : a[/^\d+$/.test(k) ? +k : k], c); } catch (e) { /* not a draft */ } } return null; };
+      return o; };
+    { const { ctx, p, errors, item } = await run(360, 780);
+      await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(300);
+      const rows = await p.$$eval('.edz details.cmi > summary', ss => ss.map(s => ({ tile: !!s.querySelector('i.pl-ic'), svg: !!s.querySelector('i.pl-ic svg'), meta: (s.querySelector('small') || {}).textContent || '' })));
+      const lr = rows[ri] || {};
+      ok('place card: every row of Eat and drink starts with its kind\'s tile, drawn with the guide\'s icon when it has a kind', rows.length > 3 && rows.every(r => r.tile) && rows.filter(r => r.svg).length === items('restaurants').filter(x => x.icon).length, `${rows.filter(r => r.svg).length} of ${rows.length}`);
+      ok('place card: the row says kind · town · km, and never the town twice', lr.meta === [L0.type.en, L0.type.en.toLowerCase().includes(L0.town.toLowerCase()) ? '' : L0.town, L0.km_from_house + ' km'].filter(Boolean).join(' · '), lr.meta);
+      await p.$eval(card(RP), e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -10)); await p.screenshot({ path: join(SHOTS, 'place-card-closed-list-360.png') });
+      await p.click(card(RP) + ' > summary'); await p.waitForTimeout(300);
+      const order = await p.evaluate(sel => { const c = document.querySelector(sel), y = s => { const e = c.querySelector(s); return e ? e.getBoundingClientRect().top : -1; };
+        return [y(`[data-p$="/name"]`), y(`[data-p$="/description"]`), y('[data-cfav]'), y('.pl-found')]; }, card(RP));
+      ok('place card: Name, Your comment, Our favourite, then "Filled in for you", in that order', order.every(x => x > 0) && order.every((x, i) => !i || x > order[i - 1]) && /Your comment/.test(await p.textContent(card(RP) + ' label[for$="_description"]').catch(() => '')), order.map(Math.round).join(' < '));
+      const panel = (await p.textContent(card(RP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+      ok('place card, La Locanda: the panel has the kind, the hours by days, the price, the phone, the website, the marks, the note on the price and Change', ['Filled in for you', L0.type.en, 'Tue-Sat 13:00-16:00, 20:00-23:30', '€20-25 per person', L0.phone, 'facebook.com', 'Vegetarian options', 'Book ahead', 'A pizza each', 'Change'].every(x => panel.includes(x)) && !panel.includes('tapas') && !/Our favourite/.test(panel), panel.slice(0, 200));
+      const pnH = await height(p, card(RP) + ' .pl-found'), h1 = await height(p, card(RP));
+      ok(`place card, 360 px: the opened card with Change closed is about one and a half screens (${h1} px, its panel ${pnH} px)`, h1 > 0 && h1 <= 1250, `${h1} px`);
+      ok('place card, 360 px, Change closed: nothing overlaps, nothing sticks out, no sideways scroll', !(await clash(p, card(RP))).length, (await clash(p, card(RP))).join('; '));
+      await p.locator(card(RP)).screenshot({ path: join(SHOTS, 'place-card-360.png'), style: NO_BAR });
+      // Our favourite: topPick set and deleted
+      await p.click(card(RP) + ' [data-cfav]'); const f1 = await item(RP); await p.click(card(RP) + ' [data-cfav]'); const f2 = await item(RP);
+      ok('place card: Our favourite deletes topPick, and sets it again', f1 && !('topPick' in f1) && f2 && f2.topPick === true, `${f1 && f1.topPick} -> ${f2 && f2.topPick}`);
+      // Change opens the form in place, stays open across a re-render, and closes
+      await p.click(card(RP) + ' [data-cchg]'); await p.waitForTimeout(200);
+      ok('place card: Change opens the form under the panel and becomes Done', !!(await p.$(card(RP) + ' .pl-form')) && (await p.textContent(card(RP) + ' [data-cchg]')).trim() === 'Done' && await p.evaluate(sel => { const c = document.querySelector(sel); return c.querySelector('.pl-found').getBoundingClientRect().bottom <= c.querySelector('.pl-form').getBoundingClientRect().top; }, card(RP)));
+      // Marks: a tag chip and the flag "Book ahead"; a tag the card does not offer stays
+      await p.click(card(RP) + ' [data-ctag][data-m="dogs"]'); const m1 = await item(RP);
+      ok('place card: a mark chip adds its tag, keeps the others (also one it does not offer), and the form stays open across the redraw', !!m1 && ['veggie', 'tapas', 'dogs'].every(t => (m1.tags || []).includes(t)) && !!(await p.$(card(RP) + ' .pl-form')) && (await p.getAttribute(card(RP) + ' [data-ctag][data-m="dogs"]', 'aria-pressed')) === 'true', JSON.stringify(m1 && m1.tags));
+      await p.click(card(RP) + ' [data-ctag][data-m="dogs"]'); await p.click(card(RP) + ' [data-cflag][data-f="book"].chip'); const m2 = await item(RP);
+      ok('place card: tapped again the tag goes; "Book ahead" is the flag book', !!m2 && !(m2.tags || []).includes('dogs') && (m2.tags || []).includes('tapas') && !(m2.flags || []).includes('book'), JSON.stringify([m2 && m2.tags, m2 && m2.flags]));
+      await p.click(card(RP) + ' [data-cflag][data-f="book"].chip'); await p.waitForTimeout(100);
+      // Price per person
+      const pf = card(RP) + ' [data-cprice][data-end="from"]', pt = card(RP) + ' [data-cprice][data-end="to"]';
+      await p.fill(pf, '18'); await p.fill(pt, '30'); const pr1 = (await item(RP) || {}).price;
+      await p.fill(pt, ''); const pr2 = (await item(RP) || {}).price; await p.fill(pf, ''); const pr3 = await item(RP);
+      ok('place card: price from and to write "18-30", "18" with one, nothing with none', pr1 === '18-30' && pr2 === '18' && !!pr3 && !('price' in pr3), `${pr1}, ${pr2}, ${pr3 && pr3.price}`);
+      await p.fill(pf, '20'); await p.fill(pt, '25'); await p.waitForTimeout(100);
+      // Set menus
+      await p.click(card(RP) + ' [data-csmadd]'); await p.waitForTimeout(200);
+      const smP = card(RP) + ` [data-p="${RP}/setMenus/0/price"]`, smK = card(RP) + ` select[data-p="${RP}/setMenus/0/kind"]`;
+      await p.fill(smP, '12-15'); await p.selectOption(smK, 'tasting'); const s1 = await item(RP);
+      const smLine = await p.evaluate(sel => { const r = document.querySelector(sel + ' .pl-sm'), m = [...r.children].map(e => { const x = e.getBoundingClientRect(); return x.top + x.height / 2; }); return m.length === 3 && Math.max(...m) - Math.min(...m) < 2; }, card(RP));
+      await p.click(card(RP) + ` [data-csmdel="${RP}/setMenus/0"]`); const s2 = await item(RP);
+      ok('place card: a set menu added (Tasting menu, 12-15) on one line, then removed takes the property away', !!s1 && JSON.stringify(s1.setMenus) === '[{"kind":"tasting","price":"12-15"}]' && smLine && !!s2 && !('setMenus' in s2), JSON.stringify([s1 && s1.setMenus, s2 && s2.setMenus]));
+      // Open 24 hours: the rows hidden, not deleted
+      await p.click(card(RP) + ' [data-calways]'); const a1 = await item(RP); const rowsHidden = !(await p.$(card(RP) + ' .cm-sch'));
+      await p.click(card(RP) + ' [data-calways]'); const a2 = await item(RP);
+      ok('place card: Open 24 hours sets always and hides the hours, which stay; off again it goes', !!a1 && a1.always === true && (a1.schedule || []).length === 2 && rowsHidden && !!a2 && !('always' in a2) && !!(await p.$(card(RP) + ' .cm-sch')), `${a1 && a1.always}, ${a1 && (a1.schedule || []).length} rows`);
+      // Only part of the year, on the first row of hours
+      await p.click(card(RP) + ` [data-cseason="${RP}/schedule/0"]`); const se1 = await item(RP + '/schedule/0');
+      await p.selectOption(card(RP) + ` [data-cseas="${RP}/schedule/0"][data-end="to"][data-part="m"]`, '10'); await p.selectOption(card(RP) + ` [data-cseas="${RP}/schedule/0"][data-end="from"][data-part="d"]`, '15'); const se2 = await item(RP + '/schedule/0');
+      const oneLine = await p.evaluate(sel => { const s = document.querySelector(sel + ' .pl-season'); if (!s) return false; const mids = [...s.children].map(c => { const r = c.getBoundingClientRect(); return Math.round(r.top + r.height / 2); }); return s.children.length === 6 && Math.max(...mids) - Math.min(...mids) <= 2 && s.scrollWidth <= s.clientWidth; }, card(RP));
+      ok('place card, 360 px: "Only part of the year" shows both dates on one line and writes from and to (06-01 to 09-30, then 06-15 to 10-30)', !!se1 && se1.from === '06-01' && se1.to === '09-30' && !!se2 && se2.from === '06-15' && se2.to === '10-30' && oneLine, JSON.stringify([se1, se2].map(x => x && [x.from, x.to])));
+      // the panel's lines show while the form is closed: closed to read them, then open again
+      await p.click(card(RP) + ' [data-cchg]'); const seasonSaid = await p.textContent(card(RP) + ' .pl-found').catch(() => ''); await p.click(card(RP) + ' [data-cchg]');
+      ok('place card: the panel prints the season in words', /from 15 Jun to 30 Oct/.test(seasonSaid));
+      await p.click(card(RP) + ` [data-cseason="${RP}/schedule/0"]`); const se3 = await item(RP + '/schedule/0');
+      ok('place card: switched off, the season goes from the row', !!se3 && !('from' in se3) && !('to' in se3));
+      const h2 = await height(p, card(RP));
+      ok(`place card, 360 px, Change open: nothing overlaps, nothing sticks out (${h2} px)`, !(await clash(p, card(RP))).length, (await clash(p, card(RP))).join('; '));
+      await p.locator(card(RP)).screenshot({ path: join(SHOTS, 'place-card-change-360.png'), style: NO_BAR });
+      // The kind picker for a place to eat: 12 kinds, three across
+      await p.click(card(RP) + ` [data-ckinds]`); await p.waitForTimeout(200);
+      const ke = await kindsOk(p, card(RP));
+      ok('place card, kind picker (Eat and drink): the 12 kinds, three across at 360 px, names on at most two lines, no word cut, tiles 40 px or more', ke.n === 12 && ke.across === 3 && !ke.bad.length && ke.tall >= 40 && !ke.heads.length, JSON.stringify(ke));
+      ok('place card, kind picker open: nothing overlaps', !(await clash(p, card(RP))).length, (await clash(p, card(RP))).join('; '));
+      await p.$eval(card(RP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -12)); await p.screenshot({ path: join(SHOTS, 'place-card-kinds-eat-360.png') });
+      await p.click(card(RP) + ' [data-ckind][data-k="fish"]'); const k1 = await item(RP);
+      ok('place card: a kind picked sets the icon, keeps the host\'s own line under the name, and closes the grid', !!k1 && k1.icon === 'fish' && cmpSame(k1.type, L0.type) && !(await p.$(card(RP) + ' .pl-k')), `${k1 && k1.icon}: ${k1 && k1.type && k1.type.en}`);
+      await p.click(card(RP) + ' [data-cchg]'); await p.waitForTimeout(200);
+      ok('place card: Done closes the form', !(await p.$(card(RP) + ' .pl-form')) && (await p.textContent(card(RP) + ' [data-cchg]')).trim() === 'Change');
+      ok('place card (restaurants): no page errors', !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // Attractions: the panel of a rich place, the 21 kinds under their five groups, the line under the name and Great for kids
+    { const { ctx, p, errors, item } = await run(360, 780);
+      await p.goto('http://editor.test/#todo'); await ready(p); await p.waitForTimeout(300);
+      const A1 = items('todo')[ti];
+      await p.click(card(TP) + ' > summary'); await p.waitForTimeout(200);
+      const panel = (await p.textContent(card(TP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' '), hl = await p.$$eval(card(TP) + ' .pl-hl', e => e.length);
+      ok('place card, Aqualeon: the panel has its kind, one line per season of hours with its dates, the phone, the website by its name, Great for kids', panel.includes(A1.type.en) && hl === 3 && /Every day 11:00-18:00 from 13 Jun to 12 Jul/.test(panel) && panel.includes('aqualeon.es') && panel.includes('Great for kids') && !/https?:/.test(panel), `${hl} lines: ${panel.slice(0, 160)}`);
+      const wine = items('todo').findIndex(x => x.icon === 'wine' && !(x.schedule || []).length && !x.always && !x.hours), WP = `files/todo/items/${wine}`;
+      if (wine >= 0) { await p.click(card(WP) + ' > summary'); await p.waitForTimeout(200);
+        const wt = (await p.textContent(card(WP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' '), wc = await p.$eval(card(WP) + ' summary .pl-ic', e => e.style.getPropertyValue('--kc')).catch(() => '');
+        ok('place card, a winery: its tile in the wine group\'s colour, and with no hours of ours, the panel says so', wc.toUpperCase() === '#8E1B4A' && /No opening hours found\./.test(wt), `${wc}: ${wt.slice(0, 140)}`); }
+      // A new place: empty panel, "Find it on Google" first whatever the state of Change
+      await p.$eval('[data-addit="files/todo/items"]', e => e.scrollIntoView({ block: 'center' })); await p.click('[data-addit="files/todo/items"]'); await p.waitForTimeout(300);
+      const nt = (await p.textContent(card(NP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+      const firstFind = () => p.evaluate(sel => { const c = document.querySelector(sel), f = c.querySelectorAll('[data-gsp]'), n = c.querySelector('[data-p$="/name"]'); return f.length === 1 && f[0].getBoundingClientRect().top < n.getBoundingClientRect().top; }, card(NP));
+      ok('place card, a new place: the panel says nothing was found yet, with Change; "Find it on Google" comes first, above Name', /Nothing found for this place yet\. Guests still get the map pin and the Google Maps button\./.test(nt) && /Change/.test(nt) && await firstFind(), nt);
+      await p.locator(card(NP)).screenshot({ path: join(SHOTS, 'place-card-empty-360.png'), style: NO_BAR });
+      await p.click(card(NP) + ' [data-cchg]'); await p.waitForTimeout(200);
+      ok('place card, a new place with the form open: still one "Find it on Google", at the top', await firstFind());
+      await p.click(card(NP) + ' [data-ckinds]'); await p.waitForTimeout(200);
+      const kt = await kindsOk(p, card(NP));
+      ok('place card, kind picker (Attractions): the 21 kinds under the five groups, as the guide names its filters, three across, no name cut', kt.n === 21 && JSON.stringify(kt.heads) === JSON.stringify(['Activities', 'Beaches', 'Sights & towns', 'Nature & walks', 'Wine & cava']) && kt.across === 3 && !kt.bad.length, JSON.stringify(kt));
+      ok('place card, kind picker (Attractions), 360 px: nothing overlaps', !(await clash(p, card(NP))).length, (await clash(p, card(NP))).join('; '));
+      await p.$eval(card(NP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -12)); await p.screenshot({ path: join(SHOTS, 'place-card-kinds-todo-360.png') });
+      await p.click(card(NP) + ' [data-ckind][data-k="waterpark"]'); const n1 = await item(NP);
+      await p.click(card(NP) + ' [data-ckinds]'); await p.click(card(NP) + ' [data-ckind][data-k="castle"]'); const n2 = await item(NP);
+      ok('place card: a kind picked on a new place gives its name as the line under the name, its group, and Great for kids for a kids\' kind; another kind replaces them', !!n1 && n1.icon === 'waterpark' && (n1.type || {}).en === 'Water park' && n1.group === 'fun' && (n1.tags || []).includes('kidsfun') && !!n2 && n2.icon === 'castle' && (n2.type || {}).en === 'Castle' && n2.group === 'sights' && !(n2.tags || []).includes('kidsfun'), JSON.stringify([n1, n2].map(x => x && [x.icon, (x.type || {}).en, x.group, x.tags])));
+      await p.click(card(NP) + ' [data-ckinds]'); await p.click(card(NP) + ' [data-ckind][data-k="waterpark"]'); await p.waitForTimeout(150);
+      await p.click(card(NP) + ' [data-ctag][data-m="kidsfun"]'); await p.click(card(NP) + ' [data-ctag][data-m="kidsfun"]'); await p.waitForTimeout(150);
+      await p.click(card(NP) + ' [data-ckinds]'); await p.click(card(NP) + ' [data-ckind][data-k="castle"]'); const n3 = await item(NP);
+      ok('place card: Great for kids set by hand stays when the kind changes', !!n3 && n3.icon === 'castle' && (n3.tags || []).includes('kidsfun'), JSON.stringify(n3 && n3.tags));
+      await p.click(card(TP) + ' [data-cchg]'); await p.click(card(TP) + ' [data-ckinds]'); await p.click(card(TP) + ' [data-ckind][data-k="themepark"]'); const t1 = await item(TP);
+      ok('place card: on Aqualeon a new kind keeps the host\'s line under the name ("Water park, Albinyana")', !!t1 && t1.icon === 'themepark' && cmpSame(t1.type, A1.type) && t1.group === 'fun', `${t1 && t1.icon}: ${t1 && t1.type && t1.type.en}`);
+      ok('place card (Attractions): no page errors', !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // Editing in German and French, and the maker itself in French: the opened card closed and open, nothing overlapping.
+    for (const [lang, maker] of [['de', 'en'], ['fr', 'en'], [null, 'fr']]) {
+      const { ctx, p, errors } = await run(360, 780, { 'porta-lang-v1': maker }), tag = maker === 'fr' ? 'the maker in French' : `editing in ${lang}`;
+      await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(300);
+      if (lang) { await p.selectOption('#c_lang', lang).catch(() => {}); await p.waitForTimeout(300); }
+      await p.click(card(RP) + ' > summary'); await p.waitForTimeout(200);
+      const b1 = await clash(p, card(RP));
+      if (maker === 'fr') await p.locator(card(RP)).screenshot({ path: join(SHOTS, 'place-card-fr-360.png'), style: NO_BAR });
+      await p.click(card(RP) + ' [data-cchg]'); await p.click(card(RP) + ` [data-cseason="${RP}/schedule/0"]`); await p.click(card(RP) + ' [data-csmadd]'); await p.waitForTimeout(300);
+      const b2 = await clash(p, card(RP));
+      // The set menu's name is not cut: the select's text fits inside it
+      const cut = await p.$eval(card(RP) + ' .pl-sm select', s => { const cv = document.createElement('canvas').getContext('2d'), cs = getComputedStyle(s); cv.font = cs.font; return cv.measureText(s.options[s.selectedIndex].text).width + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 18 > s.clientWidth; }).catch(() => true);
+      await p.click(card(RP) + ' [data-ckinds]'); await p.waitForTimeout(200); const b3 = await clash(p, card(RP)), k = await kindsOk(p, card(RP));
+      ok(`place card, 360 px, ${tag}: nothing overlaps with Change closed, open (with a season and a set menu) and with the kinds; no name cut`, !b1.length && !b2.length && !b3.length && !cut && !k.bad.length, [...b1, ...b2, ...b3, cut ? 'set menu cut' : '', ...k.bad].filter(Boolean).join('; '));
+      if (maker === 'fr') { const kindsFr = await p.textContent(card(RP) + ' .pl-kinds'), marksFr = await p.textContent(card(RP) + ' .pl-marks'); await p.click(card(RP) + ' [data-cchg]'); const panelFr = await p.textContent(card(RP) + ' .pl-found'); await p.click(card(RP) + ' [data-cchg]');
+        ok('place card, the maker in French: the panel, the kinds and the marks are in French', /Rempli pour vous/.test(panelFr) && /Poisson et fruits de mer/.test(kindsFr) && /Options végétariennes/.test(marksFr) && /20-25 € par personne/.test(panelFr)); }
+      ok(`place card, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // Desktop, with the guide in the phone beside the editor
+    { const { ctx, p, errors, item } = await run(1280, 860);
+      await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(600);
+      const beside = () => p.evaluate(() => { const a = document.querySelector('.split .col').getBoundingClientRect(), b = document.querySelector('.side-phone').getBoundingClientRect(); return getComputedStyle(document.querySelector('.side-phone')).display !== 'none' && a.right <= b.left && b.right <= innerWidth; });
+      await p.click(card(RP) + ' > summary'); await p.waitForTimeout(300);
+      const d1 = await height(p, card(RP)), c1 = await clash(p, card(RP));
+      await p.locator(card(RP)).screenshot({ path: join(SHOTS, 'place-card-desktop.png'), style: NO_BAR });
+      await p.click(card(RP) + ' [data-cchg]'); await p.waitForTimeout(300);
+      const d2 = await height(p, card(RP)), c2 = await clash(p, card(RP)), half = await p.evaluate(sel => { const c = document.querySelector(sel), a = c.querySelector('[data-p$="/phone"]').getBoundingClientRect(), b = c.querySelector('[data-p$="/url"]').getBoundingClientRect(); return Math.abs(a.top - b.top) < 2 && a.right < b.left; }, card(RP));
+      await p.locator(card(RP)).screenshot({ path: join(SHOTS, 'place-card-change-desktop.png'), style: NO_BAR });
+      ok(`place card, desktop: nothing overlaps or sticks out with Change closed (${d1} px) and open (${d2} px), phone and website side by side, the phone preview beside the editor`, !c1.length && !c2.length && half && await beside(), [...c1, ...c2].join('; '));
+      await go(p, '#todo'); await p.waitForTimeout(500);
+      await p.click(card(TP) + ' > summary'); await p.click(card(TP) + ' [data-cchg]'); await p.click(card(TP) + ' [data-ckinds]'); await p.waitForTimeout(300);
+      const kd = await kindsOk(p, card(TP)), c3 = await clash(p, card(TP));
+      ok('place card, desktop: the kind picker shows more than three tiles a row, at their own size, nothing overlapping', kd.n === 21 && kd.cols > 3 && !kd.bad.length && !c3.length && await beside(), JSON.stringify({ ...kd, c3 }));
+      await p.$eval(card(TP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -12)); await p.screenshot({ path: join(SHOTS, 'place-card-kinds-todo-desktop.png') });
+      await p.waitForTimeout(1500); const loads = ctx.viewer || 0;
+      await p.click(card(TP) + ' [data-ckind][data-k="kart"]'); const k1 = await item(TP); await p.waitForTimeout(1200);
+      ok('place card, desktop: a new kind is saved and the phone beside the editor reloads with it', !!k1 && k1.icon === 'kart' && (ctx.viewer || 0) > loads && await beside(), `${loads} -> ${ctx.viewer}`);
+      ok('place card, desktop: no page errors', !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // A place's facts, looked up in the editor (job place-facts, 11 Nov 2026): picked on Google, the place gets one job; its
+    // panel says it is looking (through a re-render, another step and a reload), then fills only what is empty, once, and says
+    // in one quiet line where the facts came from. Nothing found: the host may paste its website; a failure offers Try again.
+    // The database is played here: the guide (its draft as last saved, so a reload finds the new place), the jobs, Google.
+    { const PF_AT = '2026-11-10', PF_H = [{ days: ['tue', 'wed', 'thu', 'fri', 'sat'], open: '13:00', close: '16:00' }], today = new Date().toISOString().slice(0, 10);
+      const ENTRY = more => ({ name: 'La Locanda Nòva', lat: 41.2102, lng: 1.5102, km: 4, town: 'Calafell', gid: 'gPlaceNova01', kind: 'pizza', phone: '977 66 16 25', url: 'https://locanda-nova.example/', schedule: PF_H, price: '20-30', book: true,
+        filled: { at: PF_AT, from: { kind: 'site', phone: 'overture', url: 'search', schedule: 'site', price: 'site', book: 'site' }, page: 'https://locanda-nova.example/horari' }, ...more });
+      const pfRun = async (w, h, G0 = E, stored = {}) => {
+        const o = await open(browser, { ...G0, draft: null }, w, h, stored); o.jobs = []; o.posts = []; o.draft = null;
+        await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { const req = route.request();
+          if (req.method() === 'PATCH') { try { const j = JSON.parse(req.postData() || '{}'); if ('draft' in j) o.draft = j.draft; } catch (e) { /* not a save */ } return route.fulfill({ status: 204, body: '' }); }
+          if (req.method() === 'GET' && !/select=id(%2C|,)slug/.test(new URL(req.url()).search)) return json(route, [{ ...G0, draft: o.draft }]);
+          return route.fallback(); });
+        await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), route => { const req = route.request(), q = new URL(req.url()).searchParams;
+          if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'), j = { id: 'pf-' + (o.posts.length + 1), status: 'queued', message: null, result: null, params: b.params, created_at: new Date().toISOString() };
+            o.posts.push(b); if (b.kind === 'place-facts') o.jobs.push(j); return json(route, [j]); }
+          const id = (q.get('id') || '').replace(/^eq\./, '');
+          if (id) return json(route, o.jobs.filter(j => j.id === id));
+          return json(route, q.get('kind') === 'eq.place-facts' ? o.jobs.slice().reverse() : []); });
+        await o.ctx.route(u => u.pathname === '/api/places', route => { const q = new URL(route.request().url()).searchParams;
+          return json(route, q.get('id') ? { ok: true, place: { id: q.get('id'), lat: 41.2111, lng: 1.5111, km: 3 } } : q.get('suggest') ? { ok: true, places: [{ id: 'gPlaceNova01', name: 'Pizzeria La Locanda Nova', where: 'Calafell, Spain', km: 3 }] } : { ok: true, enabled: true }); });
+        // The place as last saved, by its id (each change is saved within a second).
+        o.item = async (id, file = 'restaurants') => { await o.p.waitForTimeout(1300); const c = o.draft ? o.draft.content : G0.content; return (((c.files || {})[file] || {}).items || []).find(x => x.id === id) || null; };
+        o.job = (i, st) => Object.assign(o.jobs[i], st);
+        o.panel = sel => o.p.textContent(sel + ' .pl-found').then(t => t.replace(/\s+/g, ' ').trim()).catch(() => '');
+        // A new place in Eat and drink, picked on Google from what the host types: its path.
+        o.pick = async () => { const { p } = o, n = (await p.$$('[data-open^="files/restaurants/items/"]')).length, NP = `files/restaurants/items/${n}`;
+          await p.$eval('[data-addit="files/restaurants/items"]', e => e.scrollIntoView({ block: 'center' })); await p.click('[data-addit="files/restaurants/items"]'); await p.waitForTimeout(300);
+          await p.locator(card(NP) + ' [data-gsp]').pressSequentially('la locanda nova', { delay: 15 }); await p.waitForSelector(card(NP) + ' .pl-sug button', { timeout: 3000 }).catch(() => {});
+          await p.click(card(NP) + ' .pl-sug button'); await p.waitForTimeout(1600); return NP; };
+        o.wait = (sel, re, ms = 9000) => o.p.waitForFunction(([s, r]) => new RegExp(r).test(((document.querySelector(s) || {}).textContent || '').replace(/\s+/g, ' ')), [sel + ' .pl-found', re.source], { timeout: ms }).catch(() => {});
+        o.wide = () => o.p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+        o.beside = () => o.p.evaluate(() => { const a = document.querySelector('.split .col').getBoundingClientRect(), b = document.querySelector('.side-phone').getBoundingClientRect(); return getComputedStyle(document.querySelector('.side-phone')).display !== 'none' && a.right <= b.left && b.right <= innerWidth; });
+        return o; };
+      const LOOKING = /Looking for its website and hours…/, FOUND_LINE = 'From locanda-nova.example, an open directory and a web search, 10 Nov 2026.';
+      for (const [w, h, tag] of [[360, 780, '360'], [1280, 860, 'desktop']]) {
+        const o = await pfRun(w, h), { p, errors } = o, wide = w > 400;
+        await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
+        const NP = await o.pick(), q = (o.posts[0] || {}).params || {}, ID = q.item;
+        await o.wait(card(NP), LOOKING, 4000);
+        if (!wide) ok('place facts: a place picked on Google queues one place-facts job with its id, list, Google id and the host\'s words', o.posts.length === 1 && o.posts[0].kind === 'place-facts' && /^custom-/.test(ID || '') && q.list === 'eat' && q.gid === 'gPlaceNova01' && q.words === 'La Locanda Nova' && q.about === '' && !('website' in q), JSON.stringify(o.posts));
+        o.job(0, { status: 'running', message: 'Looking for its website' }); await p.waitForTimeout(2600);
+        const t1 = await o.panel(card(NP)), c1 = await clash(p, card(NP));
+        ok(`place facts, ${tag}: while it runs, the panel's lines are one calm line, "Looking for its website and hours…", nothing overlapping, no sideways scroll`, LOOKING.test(t1) && !(await p.$(card(NP) + ' .pl-ls')) && !!(await p.$(card(NP) + ' .pl-wait .cm-prog')) && !c1.length && (await o.wide()) <= 0 && (!wide || await o.beside()), [t1.slice(0, 90), ...c1].join('; '));
+        await p.locator(card(NP)).screenshot({ path: join(SHOTS, `place-facts-looking-${tag}.png`), style: NO_BAR });
+        if (!wide) {
+          // Picked again while it runs: still one job for the place.
+          await p.locator(card(NP) + ' [data-gsp]').pressSequentially('la locanda nova', { delay: 15 }); await p.waitForSelector(card(NP) + ' .pl-sug button', { timeout: 3000 }).catch(() => {});
+          await p.click(card(NP) + ' .pl-sug button').catch(() => {}); await p.waitForTimeout(1500);
+          ok('place facts: never two jobs for one place (picked again while it runs)', o.posts.length === 1, `${o.posts.length} jobs`);
+          // A re-render (closed and opened), another step and back, a reload: the same line, the job found again by its place.
+          await p.click(card(NP) + ' > summary'); await p.click(card(NP) + ' > summary'); await p.waitForTimeout(200); const r1 = LOOKING.test(await o.panel(card(NP)));
+          await go(p, '#todo'); await go(p, '#restaurants'); await p.waitForTimeout(300); const r2 = LOOKING.test(await o.panel(card(NP)));
+          await p.reload(); await ready(p); await p.waitForTimeout(800); await p.click(card(NP) + ' > summary').catch(() => {}); await o.wait(card(NP), LOOKING, 4000); const r3 = LOOKING.test(await o.panel(card(NP)));
+          ok('place facts: the "looking" line survives a re-render, another step and a reload (the job is found again by its place)', r1 && r2 && r3 && o.posts.length === 1, `${r1} ${r2} ${r3}, ${o.posts.length} jobs`);
+        }
+        const before = await height(p, card(NP));
+        o.job(0, { status: 'done', message: 'Details found', result: { item: ID, entry: ENTRY() } });
+        await o.wait(card(NP), /From locanda-nova/); await p.waitForTimeout(300);
+        const t2 = await o.panel(card(NP)), src = await p.$eval(card(NP) + ' .pl-src', e => ({ t: e.textContent.replace(/\s+/g, ' ').trim(), a: (e.querySelector('a') || {}).href, lines: Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)), last: e === e.parentElement.lastElementChild })).catch(() => ({}));
+        const it = await o.item(ID), c2 = await clash(p, card(NP));
+        ok(`place facts, ${tag}: the result shows its facts and, at the foot, "${FOUND_LINE}", the site linked to the page read, on one line when there is room`, src.t === FOUND_LINE && src.a === 'https://locanda-nova.example/horari' && src.last && (src.lines === 1 || !wide) && /Tue-Sat 13:00-16:00/.test(t2) && /977 66 16 25/.test(t2) && !c2.length && (await o.wide()) <= 0 && (!wide || await o.beside()), [src.t, src.lines, ...c2].join('; '));
+        await p.locator(card(NP)).screenshot({ path: join(SHOTS, `place-facts-found-${tag}.png`), style: NO_BAR });
+        if (!wide) {
+          ok('place facts: the result fills the empty place (kind, phone, website, hours, price, Book ahead, town), our position replaces Google\'s and drops pos, our spelling of the name, and where each fact came from',
+            !!it && it.icon === 'pizza' && (it.type || {}).en === 'Pizza' && it.phone === '977 66 16 25' && it.url === 'https://locanda-nova.example/' && JSON.stringify(it.schedule) === JSON.stringify(PF_H) && it.price === '20-30' && (it.flags || []).includes('book') && it.town === 'Calafell'
+            && it.lat === 41.2102 && it.lng === 1.5102 && it.km_from_house === 4 && !('pos' in it) && it.gid === 'gPlaceNova01' && Object.values(it.name).every(x => x === 'La Locanda Nòva') && JSON.stringify(it.filled) === JSON.stringify(ENTRY().filled), JSON.stringify(it));
+          ok(`place facts: the panel's own change of height only (${before} px with the line, ${await height(p, card(NP))} px with the facts)`, before > 0);
+          // Applied once: the host empties the phone, reloads; the result is not used again, and the phone's source is gone from the line.
+          await p.click(card(NP) + ' [data-cchg]'); await p.fill(card(NP) + ` [data-p="${NP}/phone"]`, ''); await p.click(card(NP) + ' [data-cchg]'); await p.waitForTimeout(1500);
+          await p.reload(); await ready(p); await p.waitForTimeout(2500); await p.click(card(NP) + ' > summary').catch(() => {}); await p.waitForTimeout(300);
+          const it2 = await o.item(ID), t3 = await p.textContent(card(NP) + ' .pl-src').catch(() => '');
+          ok('place facts: a result is used once (after a reload the emptied phone stays empty), and the line no longer names the directory', !!it2 && !it2.phone && !('phone' in ((it2.filled || {}).from || {})) && t3.trim() === 'From locanda-nova.example and a web search, 10 Nov 2026.' && o.posts.length === 1, `${it2 && it2.phone} | ${t3}`);
+        }
+        // Nothing found: said so, with the field for its website (and nothing else to fill in).
+        const N2 = await o.pick(), i2 = o.jobs.length - 1, ID2 = o.jobs[i2].params.item;
+        o.job(i2, { status: 'done', message: 'Nothing found', result: { item: ID2, entry: null } });
+        await o.wait(card(N2), /Nothing found for this place\. Guests/); await p.waitForTimeout(200);
+        const t4 = await o.panel(card(N2)), c4 = await clash(p, card(N2));
+        ok(`place facts, ${tag}: nothing found says so ("Guests still get the map pin and the Google Maps button.") with "Know its website? Paste it and we read its hours.", nothing overlapping`, /Nothing found for this place\. Guests still get the map pin and the Google Maps button\./.test(t4) && !/yet\./.test(t4) && /Know its website\? Paste it and we read its hours\./.test(t4) && !!(await p.$(card(N2) + ' [data-pfweb]')) && !c4.length && (await o.wide()) <= 0 && (!wide || await o.beside()), [t4.slice(0, 120), ...c4].join('; '));
+        await p.locator(card(N2)).screenshot({ path: join(SHOTS, `place-facts-none-${tag}.png`), style: NO_BAR });
+        if (!wide) {
+          await p.fill(card(N2) + ' [data-pfweb]', 'not a web address'); await p.press(card(N2) + ' [data-pfweb]', 'Enter'); await p.waitForTimeout(600); const n0 = o.posts.length;
+          await p.fill(card(N2) + ' [data-pfweb]', 'locanda-nova.example'); await p.press(card(N2) + ' [data-pfweb]', 'Enter'); await o.wait(card(N2), LOOKING, 4000);
+          const j3 = o.posts[o.posts.length - 1] || {}, it3 = await o.item(ID2);
+          ok('place facts: a pasted website is written as the place\'s and looked up again with it (a typo is refused)', n0 === 2 && o.posts.length === 3 && (j3.params || {}).website === 'https://locanda-nova.example/' && (j3.params || {}).item === ID2 && !!it3 && it3.url === 'https://locanda-nova.example/' && !it3.filled, JSON.stringify([n0, j3.params, it3 && it3.url]));
+          o.job(o.jobs.length - 1, { status: 'failed', message: 'You have looked up a lot of places today. Try again tomorrow.' });
+          await o.wait(card(N2), /The search did not work\./);
+          const t5 = await o.panel(card(N2));
+          await p.click(card(N2) + ' [data-pfagain]').catch(() => {}); await o.wait(card(N2), LOOKING, 4000);
+          ok('place facts: a failed lookup says "The search did not work." with why, and Try again starts it again with the same website', /The search did not work\. You have looked up a lot of places today\. Try again tomorrow\. Try again/.test(t5) && o.posts.length === 4 && (o.posts[3].params || {}).website === 'https://locanda-nova.example/', `${t5.slice(0, 140)} | ${o.posts.length}`);
+        }
+        ok(`place facts, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+        await o.ctx.close(); }
+      // The host changes the name or a fact while it runs; Google's position kept when the entry has none of ours.
+      { const o = await pfRun(360, 780), { p, errors } = o;
+        await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
+        const NP = await o.pick(), ID = o.jobs[0].params.item;
+        await p.fill(card(NP) + ` [data-p="${NP}/name"]`, 'Locanda di Marco'); await p.click(card(NP) + ' [data-cchg]'); await p.fill(card(NP) + ` [data-p="${NP}/phone"]`, '600 00 00 00'); await p.waitForTimeout(1200);
+        o.job(0, { status: 'done', message: 'Details found', result: { item: ID, entry: ENTRY({ lat: 41.3, lng: 1.6, pos: { from: 'google', at: today }, filled: { at: PF_AT, from: { phone: 'overture', schedule: 'site' }, page: 'https://locanda-nova.example/horari' } }) } });
+        let it = null; for (let k = 0; k < 8 && !((it = await o.item(ID)) && it.filled); k++);   // the result, once used and saved
+        ok('place facts: a result keeps a name and a phone the host changed meanwhile, fills the rest, and keeps the pick\'s position when the entry has only Google\'s',
+          !!it && Object.values(it.name).every(x => x === 'Locanda di Marco') && it.phone === '600 00 00 00' && JSON.stringify(it.schedule) === JSON.stringify(PF_H) && it.lat === 41.2111 && it.pos && it.pos.from === 'google' && JSON.stringify(it.filled) === JSON.stringify({ at: PF_AT, from: { schedule: 'site' }, page: 'https://locanda-nova.example/horari' }), JSON.stringify(it));
+        ok('place facts (changed meanwhile): no page errors', !errors.length, errors.join(' | '));
+        await o.ctx.close(); }
+      // The source line for each kind of source, a hand change taking a fact off it, and "Look for its details" on a place built
+      // before lookups existed (a Google id and no facts). Never a field of its own.
+      { const c3 = JSON.parse(JSON.stringify(E.content)), R3 = c3.files.restaurants.items, at = id => R3.findIndex(x => x.id === id), P3 = id => `files/restaurants/items/${at(id)}`;
+        Object.assign(R3[at('locanda')], { phone: '977 66 16 25', schedule: PF_H, always: undefined, filled: { at: PF_AT, from: { phone: 'overture', schedule: 'site', kind: 'claude' }, page: 'https://locanda.es/horari' } });
+        Object.assign(R3[at('obrador')], { phone: '977 00 00 01', filled: { at: PF_AT, from: { phone: 'overture' } } });
+        Object.assign(R3[at('casinet')], { url: 'https://casinet.example/', filled: { at: '2026-11-03', from: { url: 'search' } } });
+        Object.assign(R3[at('ulldellebre')], { icon: 'pot', filled: { at: PF_AT, from: { kind: 'claude' } } });
+        const Q = R3[at('quijote')]; for (const k of ['phone', 'url', 'schedule', 'hours', 'always', 'filled']) delete Q[k]; Q.gid = 'gQuijote0001';
+        const G3 = { ...E, content: c3 };
+        for (const [maker, lines] of [['en', ['From locanda.es and an open directory, 10 Nov 2026.', 'From an open directory, 10 Nov 2026.', 'From a web search, 3 Nov 2026.']], ['fr', ['D’après locanda.es et un annuaire ouvert, 10 nov. 2026.', 'D’après un annuaire ouvert, 10 nov. 2026.', 'D’après une recherche sur le web, 3 nov. 2026.']]]) {
+          const o = await pfRun(360, 780, G3, { 'porta-lang-v1': maker }), { p, errors } = o, said = [];
+          await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
+          for (const id of ['locanda', 'obrador', 'casinet', 'ulldellebre']) { await p.click(card(P3(id)) + ' > summary'); await p.waitForTimeout(150); said.push((await p.textContent(card(P3(id)) + ' .pl-src').catch(() => '')).replace(/\s+/g, ' ').trim()); }
+          ok(`place facts, the maker in ${maker === 'en' ? 'English' : 'French'}: the source line says the site's name and an open directory, a directory alone, a web search, and nothing for a kind Claude guessed; the date in the maker's language`, JSON.stringify(said) === JSON.stringify([...lines, '']), JSON.stringify(said));
+          if (maker === 'en') {
+            await p.locator(card(P3('locanda'))).screenshot({ path: join(SHOTS, 'place-facts-source-360.png'), style: NO_BAR });
+            const L = P3('locanda');
+            ok('place facts: filled is never a field of the form', !(await p.$(`${card(L)} [data-p="${L}/filled"]`)) && !/filled/i.test(await p.$$eval(card(L) + ' label, ' + card(L) + ' .lab', ls => ls.map(l => l.textContent).join(' ')).catch(() => '')));
+            await p.click(card(L) + ' [data-cchg]'); await p.fill(card(L) + ` [data-p="${L}/phone"]`, '977 66 16 26'); await p.click(card(L) + ' [data-cchg]'); await p.waitForTimeout(200);
+            const s1 = (await p.textContent(card(L) + ' .pl-src').catch(() => '')).trim(), f1 = (await o.item('locanda')).filled;
+            await p.click(card(L) + ' [data-cchg]'); await p.click(card(L) + ` [data-daytog="${L}/schedule/0"][data-d="mon"]`); await p.click(card(L) + ' [data-cchg]'); await p.waitForTimeout(200);
+            const s2 = await p.$(card(L) + ' .pl-src'), f2 = (await o.item('locanda')).filled;
+            ok('place facts: a fact changed by hand leaves the line (the phone: only the site is said), and the last one said takes filled with it (a kind Claude guessed stays, unsaid)', s1 === 'From locanda.es, 10 Nov 2026.' && !!f1 && !('phone' in f1.from) && 'schedule' in f1.from && !s2 && !!f2 && JSON.stringify(f2.from) === '{"kind":"claude"}', JSON.stringify([s1, f1, f2]));
+            await p.click(card(P3('ulldellebre')) + ' [data-cchg]'); await p.click(card(P3('ulldellebre')) + ' [data-ckinds]'); await p.click(card(P3('ulldellebre')) + ' [data-ckind][data-k="fish"]'); const u1 = await o.item('ulldellebre');
+            ok('place facts: the kind picked by hand is the host\'s, and filled goes with the last fact it said', !!u1 && u1.icon === 'fish' && !('filled' in u1), JSON.stringify(u1 && u1.filled));
+            // An older place with a Google id and no facts: "Look for its details" queues one job for it.
+            const QP = P3('quijote'); await p.click(card(QP) + ' > summary'); await p.waitForTimeout(200);
+            const has = !!(await p.$(card(QP) + ' [data-pflook]')), c5 = await clash(p, card(QP));
+            await p.click(card(QP) + ' [data-pflook]').catch(() => {}); await o.wait(card(QP), LOOKING, 4000);
+            const j = o.posts[0] || {};
+            ok('place facts: a place with a Google id and no hours, phone, website or filled offers "Look for its details", which queues one job for it', has && !c5.length && o.posts.length === 1 && j.kind === 'place-facts' && (j.params || {}).item === 'quijote' && (j.params || {}).gid === 'gQuijote0001' && !(await p.$(card(QP) + ' [data-pflook]')), JSON.stringify(j.params || {}));
+            ok('place facts: places that have facts, or a lookup, never offer it', !(await p.$(card(L) + ' [data-pflook]')) && !(await p.$(card(P3('obrador')) + ' [data-pflook]')));
+          }
+          ok(`place facts (source lines, ${maker}): no page errors`, !errors.length, errors.join(' | '));
+          await o.ctx.close(); } }
+    }
+    // A market (11 Nov 2026): the place card's shape. The kind's tile in the row, Name and Description first, "Filled in for
+    // you" (kind and stalls, the days with their week of the month, what it sells, its marks) and the form behind Change: the
+    // kind as tiles, what it sells as chips, the hours with "Only part of the year" and "Which weeks", the two switches, stalls,
+    // where it is. An event keeps its card, with its kind's tile in the row and one line "Kind" under its name.
+    { const MK = E.content.files.markets.markets, EV = E.content.files.events.items;
+      const mi = Math.max(0, MK.findIndex(x => x.id === 'vilafranca-art')), MP = `files/markets/markets/${mi}`, M0 = MK[mi], NM = `files/markets/markets/${MK.length}`;
+      const fi = Math.max(0, EV.findIndex(x => x.type === 'fair')), FP = `files/events/items/${fi}`, NE = `files/events/items/${EV.length}`;
+      // A tag the card does not offer, to see it kept ("vintage" on the market).
+      const c4 = JSON.parse(JSON.stringify(E.content)); c4.files.markets.markets[mi].tags = [...(c4.files.markets.markets[mi].tags || []), 'vintage'];
+      const G4 = { ...E, content: c4 };
+      // The page of the last commit, for the heights and the event card before
+      let before = null; try { before = execSync('git show HEAD:onboarding-site/index.html', { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', 'ignore'] }); } catch (e) { /* no git here */ }
+      const asBefore = async (w, h, fn) => { const { ctx, p } = await open(browser, E, w, h); await ctx.route(u => u.host === 'editor.test' && !u.pathname.startsWith('/api/') && !u.pathname.startsWith('/g/'), r => r.fulfill({ status: 200, contentType: 'text/html', body: before })); const x = await fn(p); await ctx.close(); return x; };
+      const marketH = async p => { await p.goto('http://editor.test/#markets'); await ready(p); await p.click(card(MP) + ' > summary').catch(() => {}); await p.waitForTimeout(250); return height(p, card(MP)); };
+      const evCard = async p => { await p.goto('http://editor.test/#events'); await ready(p); await p.waitForTimeout(300); await p.click(card(FP) + ' > summary').catch(() => {}); await p.waitForTimeout(250);
+        return p.evaluate(sel => { const c = document.querySelector(sel); if (!c) return { card: 'none', find: 'none' }; const x = c.cloneNode(true); x.querySelectorAll('summary > i.pl-ic').forEach(e => e.remove()); const k = x.querySelector('.pl-kindrow'); if (k) k.parentElement.remove();
+          return { card: x.outerHTML, find: (document.getElementById('cmFind') || {}).outerHTML || 'none' }; }, card(FP)); };
+      const was = before ? { h360: await asBefore(360, 780, marketH), h1280: await asBefore(1280, 860, marketH), ev: await asBefore(360, 780, evCard) } : {};
+      const tiles = (p, step) => p.$$eval('.edz details.cmi > summary', ss => ss.map(s => { const i = s.querySelector('i.pl-ic'); return { tile: !!i, svg: !!(i && i.querySelector('svg')), kc: i ? i.style.getPropertyValue('--kc') : '', ink: i ? getComputedStyle(i).color : '', html: i ? i.innerHTML : '' }; }));
+      const chipRows = (p, sel) => p.$$eval(sel + ' .pl-sells .chip', cs => { const t = new Set(cs.map(c => Math.round(c.getBoundingClientRect().top))); const b = cs.map(c => c.querySelector('span').getBoundingClientRect()); return { n: cs.length, rows: t.size, low: Math.min(...b.map(r => r.height)) }; });
+      const weeksAt = (p, sel) => p.evaluate(sel => { const c = document.querySelector(sel + ' [data-cseason]'), s = document.querySelector(sel + ' [data-cweek]'); if (!c || !s) return null; const a = c.getBoundingClientRect(), b = s.getBoundingClientRect();
+        return { same: Math.abs((a.top + a.bottom) / 2 - (b.top + b.bottom) / 2) < 2, under: b.top >= a.bottom - 1 && b.top - a.bottom < 12, h: Math.round(b.height), fits: s.scrollWidth <= s.clientWidth + 1 }; }, sel);
+      { const { ctx, p, errors, item } = await run(360, 780, {}, G4);
+        await p.goto('http://editor.test/#markets'); await ready(p); await p.waitForTimeout(300);
+        const rows = await tiles(p);
+        ok('market card: every row of Local markets starts with its kind\'s tile, the guide\'s icon in one colour', rows.length === MK.length && rows.every(r => r.tile) && rows.filter(r => r.svg).length === MK.filter(x => ['covered', 'street', 'flea', 'antiques', 'events'].includes(x.category)).length && rows.every(r => !r.svg || r.kc === 'var(--pine)'), `${rows.filter(r => r.svg).length} of ${rows.length}`);
+        await p.click(card(MP) + ' > summary'); await p.waitForTimeout(300);
+        const order = await p.evaluate(sel => { const c = document.querySelector(sel), y = s => { const e = c.querySelector(s); return e ? e.getBoundingClientRect().top : -1; }; return [y('[data-p$="/name"]'), y('[data-p$="/description"]'), y('.pl-found')]; }, card(MP));
+        ok('market card: Name, Description, then "Filled in for you", and no "Our favourite"', order.every(x => x > 0) && order[0] < order[1] && order[1] < order[2] && !(await p.$(card(MP) + ' [data-cfav]')) && /Description/.test(await p.textContent(card(MP) + ' label[for$="_description"]').catch(() => '')), order.map(Math.round).join(' < '));
+        const panel = (await p.textContent(card(MP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+        ok('market card, Vilafranca crafts market: the panel has the kind and its stalls, "2nd Sun of the month 10:00-14:00", what it sells, "October to May only" and Change, no source line', ['Filled in for you', 'Antiques and crafts', '~50 stalls', '2nd Sun of the month 10:00-14:00', 'Crafts', 'Antiques', 'October to May only', 'Change'].every(x => panel.includes(x)) && !panel.includes('vintage') && !(await p.$(card(MP) + ' .pl-src')), panel.slice(0, 220));
+        const h1 = await height(p, card(MP));
+        ok(`market card, 360 px: opened with Change closed it is ${h1} px (${was.h360 || '?'} px in the last commit), nothing overlaps, no sideways scroll`, h1 > 0 && h1 <= 900 && !(await clash(p, card(MP))).length, (await clash(p, card(MP))).join('; '));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-360.png'), style: NO_BAR });
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        ok('market card: Change opens the form under the panel (its lines fold away) and becomes Done', !!(await p.$(card(MP) + ' .pl-form')) && !(await p.$(card(MP) + ' .pl-ls')) && (await p.textContent(card(MP) + ' [data-cchg]')).trim() === 'Done');
+        const labels = await p.$$eval(card(MP) + ' .pl-form .lab, ' + card(MP) + ' .pl-form label, ' + card(MP) + ' .pl-form .cm-sw-label', ls => ls.map(l => l.textContent.trim()));
+        const want = ['Kind', 'What it sells', 'Opening days and hours', 'Not held on public holidays', 'Check before going', 'Stalls (about)', 'Where it is', 'Town', 'Where exactly', 'County'], at = want.map(x => labels.indexOf(x));
+        ok('market card: the form has the kind, what it sells, the hours, the two switches, stalls, then where it is, in that order', at.every(x => x >= 0) && at.every((x, i) => !i || x > at[i - 1]), labels.join(' | '));
+        const cr = await chipRows(p, card(MP)), wk = await weeksAt(p, card(MP));
+        ok(`market card, 360 px: the 16 chips of what it sells wrap in ${cr.rows} rows, 40 px tall; "Which weeks" sits beside or just under "Only part of the year", whole`, cr.n === 16 && cr.low >= 40 && !!wk && (wk.same || wk.under) && wk.h >= 40 && wk.fits, JSON.stringify([cr, wk]));
+        ok('market card, 360 px, Change open: nothing overlaps, nothing sticks out', !(await clash(p, card(MP))).length, (await clash(p, card(MP))).join('; '));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-change-360.png'), style: NO_BAR });
+        // What it sells: a chip adds its tag and keeps the others (one it does not offer too); again, it goes
+        await p.click(card(MP) + ' [data-ctag][data-m="books"]'); const t1 = await item(MP);
+        await p.click(card(MP) + ' [data-ctag][data-m="books"]'); const t2 = await item(MP);
+        ok('market card: a chip of what it sells adds its tag, keeps the others and one it does not offer, and goes again', !!t1 && ['crafts', 'antiques', 'vintage', 'books'].every(x => (t1.tags || []).includes(x)) && !!t2 && !(t2.tags || []).includes('books') && ['crafts', 'antiques', 'vintage'].every(x => (t2.tags || []).includes(x)), JSON.stringify([t1 && t1.tags, t2 && t2.tags]));
+        // Which weeks
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, '3'); const w1 = await item(MP + '/schedule/0');
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, ''); const w2 = await item(MP + '/schedule/0');
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, String(M0.schedule[0].week_of_month || '')); await p.waitForTimeout(100);
+        const wopts = await p.$$eval(card(MP) + ` [data-cweek="${MP}/schedule/0"] option`, os => os.map(o => o.value));
+        ok('market card: "Which weeks" writes week_of_month (3), "Every week" deletes it; it offers every week, the 1st to 4th and the last', !!w1 && w1.week_of_month === 3 && !!w2 && !('week_of_month' in w2) && cmpSame(wopts, ['', '1', '2', '3', '4', '-1']), JSON.stringify([w1, w2, wopts]));
+        // The 4th and the last (11 Nov 2026): -1 is kept as it is (engine/src/weeks.js), and the panel says it in the guide's words
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, '4'); const w4 = await item(MP + '/schedule/0');
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, '-1'); const wl = await item(MP + '/schedule/0'), wkl = await weeksAt(p, card(MP));
+        ok('market card, 360 px: "4th week of the month" writes 4, "Last week of the month" writes -1 and shows whole, nothing overlaps', !!w4 && w4.week_of_month === 4 && !!wl && wl.week_of_month === -1 && !!wkl && wkl.fits && (await p.$eval(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, s => s.selectedOptions[0].textContent)) === 'Last week of the month' && !(await clash(p, card(MP))).length, JSON.stringify([w4, wl, wkl]));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-last-week-360.png'), style: NO_BAR });
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        const pl = (await p.textContent(card(MP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+        ok('market card, 360 px: with the last week chosen the panel says "Last Sun of the month 10:00-14:00", nothing overlaps', pl.includes('Last Sun of the month 10:00-14:00') && !(await clash(p, card(MP))).length, pl);
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-last-week-panel-360.png'), style: NO_BAR });
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, String(M0.schedule[0].week_of_month || '')); await p.waitForTimeout(100);
+        // Not held on public holidays
+        await p.click(card(MP) + ' [data-cflag][data-f="holidays"]'); const f1 = await item(MP);
+        await p.click(card(MP) + ' [data-cflag][data-f="holidays"]'); const f2 = await item(MP);
+        ok('market card: "Not held on public holidays" sets the flag holidays and takes it off, other flags kept', !!f1 && (f1.flags || []).includes('holidays') && (f1.flags || []).includes('octmay') && !!f2 && !(f2.flags || []).includes('holidays') && (f2.flags || []).includes('octmay'), JSON.stringify([f1 && f1.flags, f2 && f2.flags]));
+        // The kind: five tiles, three across; a pick writes category and changes the row's tile
+        await p.click(card(MP) + ' [data-ckinds]'); await p.waitForTimeout(200);
+        const kn = await kindsOk(p, card(MP));
+        ok('market card, kind picker: the 5 kinds, three across at 360 px, names on at most two lines, no word cut', kn.n === 5 && kn.across === 3 && !kn.bad.length && kn.tall >= 40, JSON.stringify(kn));
+        ok('market card, kind picker open, 360 px: nothing overlaps', !(await clash(p, card(MP))).length, (await clash(p, card(MP))).join('; '));
+        const rt0 = (await tiles(p))[mi].html;
+        await p.click(card(MP) + ' [data-ckind][data-k="flea"]'); const k1 = await item(MP), rt1 = (await tiles(p))[mi].html;
+        ok('market card: a kind picked writes category, closes the grid and changes the row\'s tile', !!k1 && k1.category === 'flea' && !(await p.$(card(MP) + ' .pl-k')) && rt0 !== rt1, k1 && k1.category);
+        await p.click(card(MP) + ' [data-ckinds]'); await p.click(card(MP) + ` [data-ckind][data-k="${M0.category}"]`); await p.waitForTimeout(100);
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        // A new market: street, as today, with the panel
+        await p.$eval('[data-addit="files/markets/markets"]', e => e.scrollIntoView({ block: 'center' })); await p.click('[data-addit="files/markets/markets"]'); await p.waitForTimeout(300);
+        const nm = await item(NM), nr = (await tiles(p))[MK.length] || {};
+        ok('market card: a new market starts as today (category street, no tags of the first one) and shows the panel with its tile', !!nm && nm.category === 'street' && !(nm.tags || []).length && /^custom-/.test(nm.id || '') && !!(await p.$(card(NM) + ' .pl-found')) && nr.svg && /No days or hours yet\./.test(await p.textContent(card(NM) + ' .pl-found').catch(() => '')), JSON.stringify(nm).slice(0, 160));
+        ok('market card (360 px): no page errors', !errors.length, errors.join(' | '));
+        await ctx.close(); }
+      // The maker in French: the panel and the kinds in the guide's own words, nothing overlapping
+      { const { ctx, p, errors } = await run(360, 780, { 'porta-lang-v1': 'fr' }, G4);
+        await p.goto('http://editor.test/#markets'); await ready(p); await p.waitForTimeout(300);
+        await p.click(card(MP) + ' > summary'); await p.waitForTimeout(250);
+        const panel = (await p.textContent(card(MP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' '), b1 = await clash(p, card(MP));
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200); const b2 = await clash(p, card(MP)), wopt = await p.textContent(card(MP) + ` [data-cweek="${MP}/schedule/0"] option:checked`).catch(() => '');
+        await p.click(card(MP) + ' [data-ckinds]'); await p.waitForTimeout(200); const b3 = await clash(p, card(MP)), kn = await kindsOk(p, card(MP)), sells = await p.textContent(card(MP) + ' .pl-sells').catch(() => '');
+        ok('market card, the maker in French: the panel ("Rempli pour vous", "Antiquités et artisanat", "2e dim. du mois 10:00-14:00", "~50 étals"), what it sells and "Which weeks" in French', /Rempli pour vous/.test(panel) && /Antiquités et artisanat/.test(panel) && /2e dim\. du mois 10:00-14:00/.test(panel) && /~50 étals/.test(panel) && /octobre à mai/.test(panel) && /Fruits et légumes/.test(sells) && wopt.trim() === '2e semaine du mois', `${panel.slice(0, 200)} | ${wopt}`);
+        ok('market card, 360 px, the maker in French: nothing overlaps with Change closed, open and with the kinds; no kind name cut', !b1.length && !b2.length && !b3.length && !kn.bad.length, [...b1, ...b2, ...b3, ...kn.bad].join('; '));
+        ok('market card (French): no page errors', !errors.length, errors.join(' | '));
+        await ctx.close(); }
+      // Events: the kind's tile in the row, "Kind" under the name, the eighteen kinds; the rest of the card and Finding events as before
+      { const { ctx, p, errors, item } = await run(360, 780);
+        await p.goto('http://editor.test/#events'); await ready(p); await p.waitForTimeout(300);
+        const KN = ['castells', 'festa', 'carnival', 'parade', 'food', 'fair', 'film', 'music', 'historical', 'tradition', 'sports', 'theatre', 'art', 'fireworks', 'religious', 'christmas', 'kids', 'flowers'], rows = await tiles(p);
+        ok('event card: every row starts with its kind\'s tile, in its colour (the fair\'s yellow with a dark icon)', rows.length === EV.length && rows.every(r => r.tile) && rows.filter(r => r.svg).length === EV.filter(x => KN.includes(x.type)).length && rows[fi].kc.toUpperCase() === '#F5C400' && rows[fi].ink === 'rgb(18, 18, 18)', `${rows.filter(r => r.svg).length} of ${rows.length}, ${rows[fi] && rows[fi].kc}`);
+        const now = await evCard(p);
+        ok('event card: apart from the kind, the opened card and the "Finding events" panel are the same markup as in the last commit', !before || (now.card === was.ev.card && now.find === was.ev.find && now.card.length > 1000), before ? `${now.card.length} / ${was.ev.card.length}` : 'no git');
+        const pos = await p.evaluate(sel => { const c = document.querySelector(sel), k = c.querySelector('.pl-kindrow'), n = c.querySelector('[data-p$="/name"]'), f = [...c.querySelectorAll('.grid > .f')]; const i = f.findIndex(x => x.contains(k)); return { after: !!k && !!n && i > 0 && f[i - 1].contains(n), text: k ? k.innerText.replace(/\s+/g, ' ').trim() : '' }; }, card(FP));
+        ok('event card: right under Name, one line "Kind" with the kind\'s icon, its name and Change', pos.after && pos.text === 'Kind Fair Change', JSON.stringify(pos));
+        await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(200);
+        const kn = await kindsOk(p, card(FP));
+        ok('event card, kind picker: the 18 kinds, three across at 360 px, no name cut, nothing overlaps', kn.n === 18 && kn.across === 3 && !kn.bad.length && kn.tall >= 40 && !(await clash(p, card(FP))).length, JSON.stringify(kn));
+        await p.$eval(card(FP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -80)); await p.screenshot({ path: join(SHOTS, 'event-card-kinds-360.png') });
+        await p.click(card(FP) + ' [data-ckind][data-k="music"]'); const e1 = await item(FP), r1 = (await tiles(p))[fi];
+        ok('event card: a kind picked writes type, closes the grid and changes the row\'s tile (music, in wine)', !!e1 && e1.type === 'music' && !(await p.$(card(FP) + ' .pl-k')) && r1.html !== rows[fi].html && r1.kc.toUpperCase() === '#8E1B4A', `${e1 && e1.type}, ${r1 && r1.kc}`);
+        await p.$eval('[data-addit="files/events/items"]', e => e.scrollIntoView({ block: 'center' })); await p.click('[data-addit="files/events/items"]'); await p.waitForTimeout(300);
+        const ne = await item(NE), nr = (await tiles(p))[EV.length] || {};
+        ok('event card: a new event starts as today (no type, so an empty tile), with its kind line', !!ne && !('type' in ne) && /^custom-/.test(ne.id || '') && nr.tile && !nr.svg && !!(await p.$(card(NE) + ' .pl-kindrow')), JSON.stringify(ne).slice(0, 160));
+        ok('event card (360 px): no page errors', !errors.length, errors.join(' | '));
+        await ctx.close(); }
+      // Desktop, with the guide in the phone beside the editor
+      { const { ctx, p, errors } = await run(1280, 860, {}, G4);
+        const beside = () => p.evaluate(() => { const a = document.querySelector('.split .col').getBoundingClientRect(), b = document.querySelector('.side-phone').getBoundingClientRect(); return getComputedStyle(document.querySelector('.side-phone')).display !== 'none' && a.right <= b.left && b.right <= innerWidth; });
+        await p.goto('http://editor.test/#markets'); await ready(p); await p.waitForTimeout(600);
+        await p.$eval('.cm-list', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -20)); await p.screenshot({ path: join(SHOTS, 'markets-list-desktop.png') });
+        await p.click(card(MP) + ' > summary'); await p.waitForTimeout(300);
+        const d1 = await height(p, card(MP)), c1 = await clash(p, card(MP));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-desktop.png'), style: NO_BAR });
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(300);
+        const d2 = await height(p, card(MP)), c2 = await clash(p, card(MP)), cr = await chipRows(p, card(MP)), wk = await weeksAt(p, card(MP));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-change-desktop.png'), style: NO_BAR });
+        // A fixed bound, not "shorter than the last commit": once the new card is committed the two are the same.
+        ok(`market card, desktop: ${d1} px with Change closed (${was.h1280 || '?'} px in the last commit) and ${d2} px open, nothing overlaps or sticks out, the phone preview beside the editor`, d1 > 0 && d1 <= 700 && !c1.length && !c2.length && await beside(), [...c1, ...c2].join('; '));
+        ok(`market card, desktop: what it sells in ${cr.rows} full rows at most 3, "Which weeks" on the line of "Only part of the year"`, cr.n === 16 && cr.rows <= 3 && !!wk && wk.same && wk.fits, JSON.stringify([cr, wk]));
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, '-1'); await p.waitForTimeout(100);
+        const wkl = await weeksAt(p, card(MP)), cl = await clash(p, card(MP));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-last-week-desktop.png'), style: NO_BAR });
+        ok('market card, desktop: "Last week of the month" chosen sits whole on the line of "Only part of the year", nothing overlaps', !!wkl && wkl.same && wkl.fits && !cl.length, JSON.stringify([wkl, cl]));
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        const pld = (await p.textContent(card(MP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+        ok('market card, desktop: the panel says "Last Sun of the month 10:00-14:00"', pld.includes('Last Sun of the month 10:00-14:00'), pld);
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-last-week-panel-desktop.png'), style: NO_BAR });
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, String(M0.schedule[0].week_of_month || '')); await p.waitForTimeout(100);
+        await p.click(card(MP) + ' [data-ckinds]'); await p.waitForTimeout(200);
+        const kd = await kindsOk(p, card(MP)), c3 = await clash(p, card(MP));
+        ok('market card, desktop: the five kinds on one row, nothing overlapping', kd.n === 5 && kd.cols === 5 && kd.across <= 0 && !kd.bad.length && !c3.length, JSON.stringify({ ...kd, c3 }));
+        await go(p, '#events'); await p.waitForTimeout(500);
+        await p.click(card(FP) + ' > summary'); await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(300);
+        const ke = await kindsOk(p, card(FP)), c4 = await clash(p, card(FP));
+        await p.$eval(card(FP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -80)); await p.screenshot({ path: join(SHOTS, 'event-card-kinds-desktop.png') });
+        ok('event card, desktop: the eighteen kinds more than three a row, nothing overlapping, no sideways scroll, the phone beside', ke.n === 18 && ke.cols > 3 && !ke.bad.length && !c4.length && (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0 && await beside(), JSON.stringify({ ...ke, c4 }));
+        ok('market and event cards, desktop: no page errors', !errors.length, errors.join(' | '));
+        await ctx.close(); } }
+  }
+  // The kinds of event (11 Nov 2026): eighteen, human towers last, and a search above every grid of more than 12 kinds (events,
+  // attractions; not eating places or markets). Typing hides what does not match without redrawing the card; Enter picks the
+  // only kind left, Escape clears; nothing kept once the grid closes. Then one sheet of the eighteen icons as they are used.
+  { const EV = E.content.files.events.items, fi = Math.max(0, EV.findIndex(x => x.type === 'fair')), FP = `files/events/items/${fi}`;
+    const ti = E.content.files.todo.items.findIndex(x => x.id === 'aqualeon'), TP = `files/todo/items/${ti}`;
+    const ri = E.content.files.restaurants.items.findIndex(x => x.id === 'locanda'), RP = `files/restaurants/items/${ri}`;
+    const MKS = E.content.files.markets.markets, MP = `files/markets/markets/${Math.max(0, MKS.findIndex(x => x.id === 'vilafranca-art'))}`;
+    const card = x => `details.cmi[data-open="${x}"]`, NO_BAR = '#navbar{visibility:hidden}';
+    const ORDER = ['festa', 'music', 'food', 'fair', 'tradition', 'sports', 'theatre', 'art', 'kids', 'parade', 'carnival', 'christmas', 'religious', 'fireworks', 'flowers', 'historical', 'film', 'castells'];
+    const NAMES = ['Local festival', 'Music', 'Food and wine', 'Fair', 'Tradition', 'Sports', 'Theatre and dance', 'Art and exhibitions', 'For kids', 'Parade', 'Carnival', 'Christmas', 'Religious celebration', 'Fireworks', 'Flowers and gardens', 'History', 'Film', 'Human towers'];
+    const NEW = new Set(['sports', 'theatre', 'art', 'fireworks', 'religious', 'christmas', 'kids', 'flowers']);
+    const run = async (w, h, stored = {}) => { const o = await open(browser, E, w, h, stored); o.saved = [];
+      await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); o.saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
+      o.item = async path => { await o.p.waitForTimeout(1300); for (const b of o.saved.slice().reverse()) { try { const j = JSON.parse(b); if (!j.draft) continue; return path.split('/').reduce((a, k) => a == null ? a : a[/^\d+$/.test(k) ? +k : k], j.draft.content); } catch (e) { /* not a draft */ } } return null; };
+      return o; };
+    // What the grid shows: the kinds left, the headings left, the line for no match, the field (and whether it has the focus).
+    const grid = (p, sel) => p.evaluate(sel => { const c = document.querySelector(sel), w = c && c.querySelector('.pl-kinds-w'); if (!w) return null; const q = w.querySelector('.pl-kq'), on = e => !!e.getClientRects().length;
+      return { keys: [...w.querySelectorAll('.pl-k')].filter(on).map(b => b.dataset.k), names: [...w.querySelectorAll('.pl-k')].filter(on).map(b => b.querySelector('span').textContent.trim()), heads: [...w.querySelectorAll('.pl-kg')].filter(on).map(h => h.textContent.trim()), allHeads: w.querySelectorAll('.pl-kg').length,
+        none: !!w.querySelector('.pl-knone') && on(w.querySelector('.pl-knone')), noneText: (w.querySelector('.pl-knone') || {}).textContent || '', field: !!q, value: q ? q.value : null, focus: !!q && document.activeElement === q, ph: q ? q.placeholder : '', h: q ? Math.round(q.getBoundingClientRect().height) : 0, width: Math.round(w.getBoundingClientRect().width) }; }, sel);
+    // Anything in the kind field that touches something else or sticks out of the card, and the page wider than the screen.
+    const clash = (p, sel) => p.evaluate(sel => { const c = document.querySelector(sel); if (!c) return ['no card']; const cr = c.getBoundingClientRect(), bad = [];
+      const els = [...c.querySelectorAll('.pl-kindrow > *, .pl-kq, .pl-knone, .pl-kg, .pl-k, .pl-k span, .lab, input, textarea, button')].filter(e => e.getClientRects().length);
+      const r = els.map(e => e.getBoundingClientRect()), nm = e => (e.getAttribute('placeholder') || e.getAttribute('aria-label') || e.textContent || e.tagName).trim().replace(/\s+/g, ' ').slice(0, 28);
+      els.forEach((e, i) => { if (r[i].right > cr.right + 0.5 || r[i].left < cr.left - 0.5) bad.push('outside: ' + nm(e)); });
+      for (let i = 0; i < els.length; i++) for (let j = i + 1; j < els.length; j++) { if (els[i].contains(els[j]) || els[j].contains(els[i])) continue;
+        const a = r[i], b = r[j]; if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1) bad.push(`${nm(els[i])} / ${nm(els[j])}`); }
+      const w = c.querySelector('.pl-kinds-w'); if (w) for (const s of w.querySelectorAll('.pl-k span')) if (s.getClientRects().length && s.scrollWidth > s.clientWidth + 1) bad.push('cut: ' + s.textContent);
+      if (document.documentElement.scrollWidth > innerWidth) bad.push('sideways scroll');
+      return bad.slice(0, 4); }, sel);
+    const field = sel => sel + ' .pl-kq';
+    const typeIn = async (p, sel, text) => { await p.fill(field(sel), ''); await p.type(field(sel), text, { delay: 15 }); await p.waitForTimeout(120); };
+    const rowTile = (p, i) => p.$$eval('.edz details.cmi > summary', (ss, i) => { const t = ss[i] && ss[i].querySelector('i.pl-ic'); return t ? { html: t.innerHTML, kc: t.style.getPropertyValue('--kc') } : null; }, i);
+    for (const [w, h, tag] of [[360, 780, '360 px'], [1280, 860, 'desktop']]) {
+      const { ctx, p, errors, item } = await run(w, h), shot = n => join(SHOTS, `${n}-${w === 360 ? '360' : 'desktop'}.png`);
+      await p.goto('http://editor.test/#events'); await ready(p); await p.waitForTimeout(400);
+      await p.click(card(FP) + ' > summary'); await p.waitForTimeout(250);
+      const tile0 = await rowTile(p, fi);
+      await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(250);
+      const g0 = await grid(p, card(FP)), c0 = await clash(p, card(FP));
+      ok(`event kinds, ${tag}: the eighteen kinds in the hosts' order, human towers last, and the search above them, its field ${g0 && g0.h} px`, !!g0 && cmpSame(g0.keys, ORDER) && cmpSame(g0.names, NAMES) && g0.field && g0.value === '' && g0.ph === 'Search a kind' && g0.h >= 40 && !g0.none, JSON.stringify(g0).slice(0, 300));
+      ok(`event kinds, ${tag}: the search has the focus as the grid opens (a mouse and a keyboard here, no touch screen)`, !!g0 && g0.focus);
+      ok(`event kinds, ${tag}, grid open and nothing typed: nothing overlaps, no name cut, no sideways scroll`, !c0.length, c0.join('; '));
+      await p.locator(card(FP) + ' .f:has(.pl-kindrow)').screenshot({ path: shot('event-kinds'), style: NO_BAR });
+      // Typing: the same field, with the focus, in the same card (nothing redrawn), the grid as wide as before
+      const before = await p.$(field(card(FP))); await p.$eval(card(FP), c => { c.__kept = 1; });
+      await typeIn(p, card(FP), 'concert'); const g1 = await grid(p, card(FP));
+      const same = await p.evaluate(([el, sel]) => el === document.querySelector(sel + ' .pl-kq') && document.activeElement === el && document.querySelector(sel).__kept === 1, [before, card(FP)]);
+      ok(`event kinds, ${tag}: "concert" leaves Music; the field is the same element, keeps the focus, and the card is not redrawn`, !!g1 && cmpSame(g1.keys, ['music']) && same && g1.width === g0.width, JSON.stringify(g1 && g1.keys));
+      await typeIn(p, card(FP), 'CONCÉRT'); const g2 = await grid(p, card(FP));
+      await typeIn(p, card(FP), 'Procesión'); const g2b = await grid(p, card(FP));
+      ok(`event kinds, ${tag}: case and accents do not matter ("CONCÉRT", "Procesión")`, !!g2 && cmpSame(g2.keys, ['music']) && !!g2b && cmpSame(g2b.keys, ['religious']), JSON.stringify([g2 && g2.keys, g2b && g2b.keys]));
+      await typeIn(p, card(FP), 'con'); const g3 = await grid(p, card(FP)), c3 = await clash(p, card(FP));
+      ok(`event kinds, ${tag}, filtered by "con" (${g3 && g3.keys.join(', ')}): nothing overlaps, no sideways scroll, the grid keeps its width`, !!g3 && g3.keys.includes('music') && g3.keys.length < 18 && !c3.length && g3.width === g0.width, c3.join('; '));
+      await p.locator(card(FP) + ' .f:has(.pl-kindrow)').screenshot({ path: shot('event-kinds-search'), style: NO_BAR });
+      await typeIn(p, card(FP), 'xyzzy'); const g4 = await grid(p, card(FP)), c4 = await clash(p, card(FP));
+      ok(`event kinds, ${tag}: no match hides every tile and says so in one line, nothing overlapping`, !!g4 && !g4.keys.length && g4.none && g4.noneText.trim() === 'No kind matches. Try another word.' && !c4.length, JSON.stringify(g4).slice(0, 200) + ' ' + c4.join('; '));
+      await p.keyboard.press('Escape'); await p.waitForTimeout(100); const g5 = await grid(p, card(FP));
+      ok(`event kinds, ${tag}: Escape clears the field and the eighteen come back`, !!g5 && g5.value === '' && g5.keys.length === 18 && !g5.none && g5.focus, JSON.stringify(g5 && [g5.value, g5.keys.length]));
+      await typeIn(p, card(FP), 'f'); await p.keyboard.press('Enter'); await p.waitForTimeout(150); const g6 = await grid(p, card(FP));
+      ok(`event kinds, ${tag}: Enter with several kinds left picks none`, !!g6 && g6.keys.length > 1 && g6.value === 'f', JSON.stringify(g6 && g6.keys));
+      // Closed with Change and opened again: the words are gone
+      await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(150); await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(200); const g7 = await grid(p, card(FP));
+      ok(`event kinds, ${tag}: the search is not kept once the grid closes`, !!g7 && g7.value === '' && g7.keys.length === 18, JSON.stringify(g7 && g7.value));
+      // Enter with one kind left picks it: a new kind is written and the row's tile changes (sports, in red)
+      await typeIn(p, card(FP), w === 360 ? 'marathon' : 'regata'); await p.keyboard.press('Enter'); const e1 = await item(FP), t1 = await rowTile(p, fi);
+      ok(`event kinds, ${tag}: Enter with one kind left picks it: type "sports", the grid closes and the row's tile changes to the new icon in red`, !!e1 && e1.type === 'sports' && !(await p.$(card(FP) + ' .pl-k')) && !!t1 && t1.html !== tile0.html && t1.kc.toUpperCase() === '#D52B1E' && /Sports/.test(await p.textContent(card(FP) + ' .pl-kindrow')), `${e1 && e1.type}, ${t1 && t1.kc}`);
+      if (w === 360) {
+        // A tap on a new kind writes it too (For kids, in red)
+        await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(200); await p.click(card(FP) + ' [data-ckind][data-k="kids"]'); const e2 = await item(FP), t2 = await rowTile(p, fi);
+        ok('event kinds: a tap on a new kind writes it and the row\'s tile changes (For kids, in wine)', !!e2 && e2.type === 'kids' && !!t2 && t2.html !== t1.html && t2.kc.toUpperCase() === '#8E1B4A', `${e2 && e2.type}, ${t2 && t2.kc}`);
+      }
+      // Eating places and markets: no search; attractions: a search that hides the headings with nothing left
+      await go(p, '#restaurants'); await p.waitForTimeout(400); await p.click(card(RP) + ' > summary'); await p.click(card(RP) + ' [data-cchg]'); await p.click(card(RP) + ' [data-ckinds]'); await p.waitForTimeout(250);
+      const gr = await grid(p, card(RP));
+      await go(p, '#markets'); await p.waitForTimeout(400); await p.click(card(MP) + ' > summary'); await p.click(card(MP) + ' [data-cchg]'); await p.click(card(MP) + ' [data-ckinds]'); await p.waitForTimeout(250);
+      const gm = await grid(p, card(MP));
+      ok(`kind grids, ${tag}: eating places (12 kinds) and markets (5) have no search`, !!gr && gr.keys.length === 12 && !gr.field && !!gm && gm.keys.length === 5 && !gm.field, JSON.stringify([gr && gr.field, gm && gm.field]));
+      await go(p, '#todo'); await p.waitForTimeout(400); await p.click(card(TP) + ' > summary'); await p.click(card(TP) + ' [data-cchg]'); await p.click(card(TP) + ' [data-ckinds]'); await p.waitForTimeout(250);
+      const ga = await grid(p, card(TP)), ca = await clash(p, card(TP));
+      await typeIn(p, card(TP), 'plage'); const gb = await grid(p, card(TP)), cb = await clash(p, card(TP));
+      ok(`attraction kinds, ${tag}: the search above the 21 kinds; "plage" leaves the beach kinds and hides the other groups' headings`, !!ga && ga.field && ga.keys.length === 21 && ga.heads.length === ga.allHeads && !!gb && cmpSame([...gb.keys].sort(), ['beach', 'beachbar']) && gb.heads.length === 1 && gb.allHeads > 1, JSON.stringify(gb && [gb.keys, gb.heads]));
+      ok(`attraction kinds, ${tag}: nothing overlaps or sticks out, empty and filtered`, !ca.length && !cb.length, [...ca, ...cb].join('; '));
+      if (w > 360) await p.locator(card(TP) + ' .f:has(.pl-kindrow)').screenshot({ path: join(SHOTS, 'todo-kinds-search-desktop.png'), style: NO_BAR });
+      ok(`event kinds, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // The maker in Spanish: the new names in Spanish, "procesión" leaves the religious kind
+    { const { ctx, p, errors } = await run(360, 780, { 'porta-lang-v1': 'es' });
+      await p.goto('http://editor.test/#events'); await ready(p); await p.waitForTimeout(400);
+      await p.click(card(FP) + ' > summary'); await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(300);
+      const g0 = await grid(p, card(FP)), c0 = await clash(p, card(FP));
+      await typeIn(p, card(FP), 'procesión'); const g1 = await grid(p, card(FP));
+      await typeIn(p, card(FP), 'cabalgata'); const g2 = await grid(p, card(FP));
+      ok('event kinds, the maker in Spanish: the names and the field in Spanish, nothing overlapping; "procesión" leaves "Celebración religiosa"; "cabalgata" the parade and Christmas', !!g0 && g0.names.includes('Celebración religiosa') && g0.names.includes('Para niños') && g0.ph === 'Busca un tipo' && !c0.length && !!g1 && cmpSame(g1.keys, ['religious']) && cmpSame(g1.names, ['Celebración religiosa']) && !!g2 && cmpSame(g2.keys, ['parade', 'christmas']), JSON.stringify([g1 && g1.names, g2 && g2.keys, c0]));
+      ok('event kinds (Spanish): no page errors', !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // One sheet of the eighteen icons as they are used: 18 px in the maker's 28 px tile (a row), 24 px in its 40 px tile (the
+    // grid), and in the guide's row dot with the guide's own rules (engine app.css .dot, .events .mrow .dot svg); new ones marked.
+    { const { ctx, p } = await run(1280, 860); await p.goto('http://editor.test/#events'); await ready(p); await p.waitForTimeout(300);
+      await p.click(card(FP) + ' > summary'); await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(250);   // the maker's own tiles, as its grid draws them
+      const sec = readFileSync(join(ROOT, 'engine/src/views/section.js'), 'utf8'), GI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+      const icon = Object.fromEntries([...sec.slice(sec.indexOf('const EVENT_ICON = {')).split('\n};')[0].matchAll(/^\s+([a-z]+): GI\('(.*)'\),?$/gm)].map(m => [m[1], GI(m[2])]));
+      const tone = Object.fromEntries([...sec.match(/\nconst EVENT_TONE = \{([^\n]*)\};/)[1].matchAll(/([a-z]+): '([^']+)'/g)].map(m => [m[1], m[2]]));
+      const css = readFileSync(join(ROOT, 'engine/src/styles/app.css'), 'utf8'), rule = sel => { const i = css.indexOf('\n' + sel + '{'); return i < 0 ? '' : css.slice(i + 1, css.indexOf('}', i) + 1); };
+      const vars = [...css.matchAll(/--(red|blue|yellow|orange|green|ink|tone-[a-z]+):([^;}]+)/g)].map(m => `--${m[1]}:${m[2]}`).join(';');
+      const guide = [rule('.dot'), rule('.events .mrow .dot svg')].join('\n');
+      ok('icon sheet: the guide\'s own rules for an event\'s dot are found in the engine', /\.dot\{width:\d+px/.test(guide) && /\.events \.mrow \.dot svg\{width:\d+px/.test(guide), guide);
+      await p.evaluate(([vars, guide, NEW, icon, tone, sel]) => {
+        const kinds = [...document.querySelectorAll(sel + ' .pl-k')].map(b => [b.dataset.k, b.querySelector('span').textContent.trim(), b.querySelector('i.pl-ic').outerHTML]);
+        const small = h => h.replace('class="pl-ic"', 'class="pl-ic s"');
+        const sec = document.createElement('section'); sec.className = 'sheet-ev';
+        const st = document.createElement('style'); st.textContent = `.sheet-ev{position:fixed;inset:0;z-index:999;overflow:auto;background:#fff;padding:24px 28px;font:15px/1.3 system-ui,sans-serif;color:#121212}
+          .sheet-ev .gv{${vars}}.sheet-ev h1{font-size:20px;margin:0 0 4px}.sheet-ev p{margin:0 0 18px;color:#4A4A4A;font-size:13.5px}
+          .sheet-ev .gr{display:grid;grid-template-columns:repeat(6,1fr);gap:22px 12px}.sheet-ev .c{display:flex;flex-direction:column;align-items:center;gap:8px}
+          .sheet-ev .t{display:flex;align-items:center;gap:12px}.sheet-ev .n{font-size:13.5px;font-weight:600;text-align:center}.sheet-ev .n i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#D52B1E;margin-right:5px;vertical-align:2px}
+          .sheet-ev .k{font-size:11.5px;color:#6E6A63}.sheet-ev .gv .events{display:contents}${guide.replace(/(^|\n)\./g, '$1.sheet-ev .gv .')}`;
+        const cell = ([k, n, t]) => `<div class="c"><div class="t">${small(t)}${t}<span class="gv"><span class="events"><span class="mrow" style="display:contents"><span class="dot" style="--cc:${tone[k]}">${icon[k]}</span></span></span></span></div><div class="n" translate="no">${NEW.includes(k) ? '<i></i>' : ''}${n}</div><div class="k" translate="no">${k}</div></div>`;
+        sec.innerHTML = `<h1 translate="no">The eighteen kinds of event</h1><p translate="no">Each: the maker's row tile (18 px in 28 px), the maker's grid tile (24 px in 40 px), the guide's row dot (its own CSS). A red dot: new on 11 Nov 2026.</p><div class="gr">${kinds.map(cell).join('')}</div>`;
+        document.body.append(st, sec); }, [vars, guide, [...NEW], icon, tone, card(FP)]);
+      await p.waitForTimeout(200);
+      const box = await p.$eval('.sheet-ev', s => { const g = s.querySelector('.gr').getBoundingClientRect(); return { n: s.querySelectorAll('.c').length, h: Math.ceil(g.bottom + 24), svgs: s.querySelectorAll('.c svg').length }; });
+      await p.setViewportSize({ width: 1280, height: Math.max(400, box.h) }); await p.waitForTimeout(100);
+      await p.screenshot({ path: join(SHOTS, 'event-icons-sheet.png'), clip: { x: 0, y: 0, width: 1280, height: box.h } });
+      ok('icon sheet: the eighteen kinds, each drawn three times (event-icons-sheet.png)', box.n === 18 && box.svgs === 54, JSON.stringify(box));
+      await ctx.close(); }
+  }
   // The editor never publishes an empty thing (10 Nov 2026). A new place starts blank (no icon, quick filter or marks of the
   // first one). On Publish, what nobody filled in is dropped (a line with no name on a station, a station with nothing in
   // it, a new place left as it came); a place with words but no name stops Publish and says where.

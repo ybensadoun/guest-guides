@@ -3,7 +3,9 @@
 # docs/plan-ca-la-kimberly-through-the-maker.md). Open data we may keep (CDLA Permissive 2.0, Apache 2.0): phone,
 # website, social links, kind. Google only gives the pin; this finds the records that may be the same place.
 #   stdin:  {"house": {"lat", "lng"}, "km": 60, "pins": [{"id", "lat", "lng", "names": ["..."]}]}
-#   stdout: {"release": "...", "pins": {"<id>": [candidates...]}}, and nothing else (progress goes to stderr)
+#   stdout: {"release": "...", "pins": {"<id>": [candidates...]}, "towns": {"<id>": "El Vendrell"}}, and nothing else (progress goes to stderr)
+# towns: the town around each pin, from the records' own addresses (a place's town when its record is not found; never
+# from Google's address, which its terms do not let us keep). A pin with no town clear enough is left out.
 # Needs pyarrow and overturemaps==2.1.0 (that package wants Python 3.11+). On the Mac:
 #   uv run -q --no-project --with overturemaps==2.1.0 --with pyarrow python worker/overture.py < pins.json
 # The box around the house is fetched once per Overture release and kept in OVERTURE_CACHE (default ~/.cache/guest-guides/overture/).
@@ -12,8 +14,9 @@ import contextlib, glob, json, math, os, re, sys, time, unicodedata
 
 CACHE = os.environ.get('OVERTURE_CACHE') or os.path.join(os.path.expanduser('~'), '.cache', 'guest-guides', 'overture')   # outside the repo: the Mac's copy is synced by Google Drive
 COLS = ['id', 'bbox', 'names', 'basic_category', 'operating_status', 'confidence', 'websites', 'phones', 'socials', 'addresses']
-NEAR_KM, NAMED, ANY_KM, ANY_MAX, MAX = 0.15, 5, 0.06, 4, 9   # as measured on 10 Nov 2026 (pick.py in the session's scratch)
+NEAR_KM, NAMED, ANY_KM, ANY_MAX, MAX, NAMELESS_MAX = 0.15, 5, 0.06, 4, 9, 12   # as measured on 10 Nov 2026 (pick.py in the session's scratch)
 FAR_PINS, FAR_PAD = 6, 0.01                                 # pins outside the house's box: a small box each, at most 6
+TOWN_KM, TOWN_MIN, TOWN_FAR_KM, TOWN_FAR_N = 0.4, 3, 2.0, 15   # the town around a pin: most records within 400 m (at least 3), else the 15 nearest within 2 km
 
 def say(*a): print(*a, file=sys.stderr, flush=True)
 def fail(msg): say('overture: ' + msg); sys.exit(1)
@@ -70,17 +73,41 @@ def fetch(b, rel):
 def km(a, b, c, d):
     p = math.pi / 180; return 6371 * math.hypot((d - b) * p * math.cos((a + c) / 2 * p), (c - a) * p)
 
-# Only the rows near one of the pins (about 300 m), filtered in pyarrow before they become Python objects.
-def rows_near(path, pins):
-    import pyarrow.compute as pc, pyarrow.parquet as pq
-    t = pq.read_table(path, columns=COLS)
+def read(path):
+    import pyarrow.parquet as pq
+    return pq.read_table(path, columns=COLS)
+
+# Only the rows near one of the pins (dy degrees: about 300 m by default), filtered in pyarrow before they become Python objects.
+def rows_near(t, pins, dy=0.003, cols=None):
+    import pyarrow.compute as pc
     if not pins or not t.num_rows: return []
     x, y, mask = pc.struct_field(t['bbox'], 'xmin'), pc.struct_field(t['bbox'], 'ymin'), None
     for p in pins:
-        dy = 0.003; dx = dy / max(0.2, math.cos(p['lat'] * math.pi / 180))
+        dx = dy / max(0.2, math.cos(p['lat'] * math.pi / 180))
         m = pc.and_(pc.and_(pc.greater_equal(x, p['lng'] - dx), pc.less_equal(x, p['lng'] + dx)), pc.and_(pc.greater_equal(y, p['lat'] - dy), pc.less_equal(y, p['lat'] + dy)))
         mask = m if mask is None else pc.or_(mask, m)
-    return t.filter(mask).to_pylist()
+    t = t.filter(mask)
+    return (t.select(cols) if cols else t).to_pylist()
+
+# The town around a pin, from the localities of Overture's records: the one most records within 400 m carry, when at
+# least 3 carry it (a lone record may be filed under the next town); else the most common among the 15 nearest within
+# 2 km (a beach or a spot outside a village); else none. Ties go to the nearer record.
+def town_of(p, rows):
+    near = []
+    for r in rows:
+        b = r.get('bbox') or {}; a = (r.get('addresses') or [None])[0] or {}; town = (a.get('locality') or '').strip()
+        if not town or b.get('ymin') is None or b.get('xmin') is None: continue
+        d = km(p['lat'], p['lng'], b['ymin'], b['xmin'])
+        if d <= TOWN_FAR_KM: near.append((d, town))
+    near.sort()
+    def most(lst):
+        n = {}
+        for d, t in lst: n[t] = n.get(t, 0) + 1
+        return max(n, key=lambda t: (n[t], -next(d for d, u in lst if u == t))) if n else None, n
+    best, n = most([x for x in near if x[0] <= TOWN_KM])
+    if best and n[best] >= TOWN_MIN: return best
+    best, n = most(near[:TOWN_FAR_N])
+    return best
 
 # How well a record's name carries the host's name (0 to 1), as in the prototype: common words ("restaurant", "beach",
 # "museum", articles) do not count, a long word may be the start of another one.
@@ -105,7 +132,13 @@ def candidates(p, rows):
         cand.append((max([score(w, nm) for w in p['names']] or [0]), r.get('confidence') or 0, d, r))
     cand.sort(key=lambda c: (-c[0], -c[1], c[2]))
     keep = [c for c in cand if c[0] >= 0.3][:NAMED]
+    # A pin with no name (a card the host kept in the swipe deck: only its Google id is ours): the nearest ones, further out,
+    # since a large site's record can sit 80 m from its pin.
+    nameless = not [w for w in p['names'] if w]
     for c in sorted(cand, key=lambda c: c[2]):
+        if nameless:
+            if len(keep) >= NAMELESS_MAX: break
+            keep.append(c); continue
         if len(keep) >= MAX or c[2] > ANY_KM: break
         if all(c[3]['id'] != k[3]['id'] for k in keep) and sum(1 for k in keep if k[0] < 0.3) < ANY_MAX: keep.append(c)
     out = []
@@ -128,13 +161,16 @@ def main():
     main_box = box(hlat, hlng, dlat, dlng, 0.1)
     inside = [p for p in pins if main_box[0] <= p['lng'] <= main_box[2] and main_box[1] <= p['lat'] <= main_box[3]]
     outside = [p for p in pins if p not in inside]
-    res = {p['id']: [] for p in pins}
-    if inside:
-        rows = rows_near(fetch(main_box, rel), inside)
-        for p in inside: res[p['id']] = candidates(p, rows)
+    res, towns = {p['id']: [] for p in pins}, {}
+    def look(t, group):
+        rows, wide = rows_near(t, group), rows_near(t, group, dy=TOWN_FAR_KM / 111.32, cols=['bbox', 'addresses'])
+        for p in group:
+            res[p['id']] = candidates(p, rows)
+            town = town_of(p, wide)
+            if town: towns[p['id']] = town
+    if inside: look(read(fetch(main_box, rel)), inside)
     if len(outside) > FAR_PINS: say('overture: %d pins outside the box around the house, only the first %d looked up' % (len(outside), FAR_PINS))
-    for p in outside[:FAR_PINS]:
-        res[p['id']] = candidates(p, rows_near(fetch(box(p['lat'], p['lng'], FAR_PAD, FAR_PAD, 0.01), rel), [p]))
-    sys.stdout.write(json.dumps({'release': rel, 'pins': res}, ensure_ascii=False)); sys.stdout.flush()
+    for p in outside[:FAR_PINS]: look(read(fetch(box(p['lat'], p['lng'], FAR_PAD, FAR_PAD, 0.01), rel)), [p])   # its small box: the 2 km for its town are cut at about 1 km
+    sys.stdout.write(json.dumps({'release': rel, 'pins': res, 'towns': towns}, ensure_ascii=False)); sys.stdout.flush()
 
 if __name__ == '__main__': main()

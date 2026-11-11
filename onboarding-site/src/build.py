@@ -95,7 +95,38 @@ views=rep(views,"""        <div class="row"><button class="btn primary" type="bu
 views=rep(views,"<p>We build your guide and send you a link to try it. Every round of changes is included.</p>","<p>We build your guide from your answers and email you a link to try it. Every round of changes is included.</p>")
 views=rep(views,"    case 'guide': return [v('guideName') || v('placeName'),","    case 'guide': return [v('guideName') || v('placeName'), v('slug') ? GUIDES_AT + '/' + v('slug') : '',")
 a=views.index('function moduleHTML(m){'); b=views.index('function summary(m){')
-views=views[:a]+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'nav.js')).read()+'\n'+'const AMENS = '+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src','amenities.json')).read().strip()+';\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'amen.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'prefill.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'preview.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'start.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'account.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'editor.js')).read()+'\n'+views[b:]
+import re as _re
+# The engine's icons of the kinds of place (ITEM_ICON, and the Things to do icon for a place of no kind), read from
+# engine/src/ui.js so the maker draws a researched card's kind with the guide's own drawings, never a second set.
+_ui=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src','ui.js'),encoding='utf-8').read()
+_ii=_ui.index('const ITEM_ICON = {'); _ij=_ui.index('\n};',_ii)
+_todo=_re.search(r"\n  todo: (P\('[^']*'\)),",_ui)
+assert _todo,'engine/src/ui.js: CAT_ICON.todo not found'
+ENG_ICONS=('const ENG_P = d => `<svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;\n'
+  +_re.sub(r'\bP\(','ENG_P(',_ui[_ii:_ij+3].replace('const ITEM_ICON = {','const ENG_ICON = {'))+'\n'
+  +'const ENG_TODO = '+_re.sub(r'\bP\(','ENG_P(',_todo.group(1))+';\n')
+# The engine's icons of the market kinds (CAT_ICON, five categories) and of the event kinds with their colours (EVENT_ICON,
+# EVENT_TONE in engine/src/views/section.js), for the market and event cards in the editor.
+_ci=_ui.index('export const CAT_ICON = {'); _cj=_ui.index('\n};',_ci)
+_cat=[l for l in _ui[_ci:_cj].split('\n') if _re.match(r'\s+(covered|street|flea|antiques|events): P\(',l)]
+assert len(_cat)==5,'engine/src/ui.js: the five market kinds of CAT_ICON not found'
+_sec=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src','views','section.js'),encoding='utf-8').read()
+_et=_re.search(r'\nconst EVENT_TONE = (\{[^\n]*\});',_sec); _ei=_sec.index('const EVENT_ICON = {'); _ej=_sec.index('\n};',_ei)
+assert _et,'engine/src/views/section.js: EVENT_TONE not found'
+ENG_ICONS+=('const ENG_CAT = {\n'+_re.sub(r'\bP\(','ENG_P(','\n'.join(_cat))+'\n};\n'
+  +'const ENG_EV_TONE = '+_et.group(1)+';\n'
+  +_re.sub(r'\bGI\(','ENG_P(',_sec[_ei:_ej+3].replace('const EVENT_ICON = {','const ENG_EV_ICON = {'))+'\n')
+# The engine's kinds of place, quick-filter groups and the guide's own words for them (labels of the groups, marks, prices and
+# set menus), for the place card in the editor: pasted from engine/src so the maker never retypes them. Maker languages only.
+import json as _jsn
+_ES=__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src')
+_eng=lambda n: {k: v for k, v in _jsn.load(open(__import__('os').path.join(_ES, n), encoding='utf-8')).items() if not k.startswith('_')}
+_ENGW=_re.compile(r'^(g_[a-z]+|t_(dogs|veggie|glutenfree|terrace|seaview|kidsfun|free|rainy|fruitveg|food|cheese|deli|clothes|plants|home|secondhand|toys|meat|fish|shoes|tapas|crafts|antiques|books)|f_(book|check|holidays|octmay|older|closest|tiny)|cat_[a-z]+|nth(\d|Last)?|stalls|sm_\w+|ff_(menuDia|tasting)|perPerson)$')   # markets: kinds, what they sell, their marks, the week of the month, stalls
+ENG_DATA=('const ENG_KINDS = '+_jsn.dumps(_eng('kinds.json'),ensure_ascii=False,separators=(',',':'))+';\n'
+  +'const ENG_GROUPS = '+_jsn.dumps(_eng('groups.json'),ensure_ascii=False,separators=(',',':'))+';\n'
+  +'const ENG_T = '+_jsn.dumps({l: {k: v for k, v in _eng('i18n/'+l+'.json').items() if _ENGW.match(k)} for l in ('en','ca','es','fr')},ensure_ascii=False,separators=(',',':'))+';\n'
+  +_re.sub(r'(?m)^export ','',open(__import__('os').path.join(_ES,'weeks.js'),encoding='utf-8').read()))   # the week of the month and its word (nthKey), the guide's own rule
+views=views[:a]+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'nav.js')).read()+'\n'+ENG_ICONS+ENG_DATA+'const AMENS = '+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src','amenities.json')).read().strip()+';\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'amen.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'prefill.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'preview.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'start.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'account.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'editor.js')).read()+'\n'+views[b:]
 views=rep(views,"function badge(k){ const q = k.startsWith('up:') ? UP[k.slice(3)] : Q[k]; if (!q || q.opt) return '<span class=\"opt\">optional</span>'; const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k;",
  "const NEEDED = new Set(MODULES.flatMap(m => m.need));\nfunction badge(k){ const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k; if (!NEEDED.has(key)) return '<span class=\"opt\">optional</span>';")
 seg1=rep(seg1,"need:['placeName','town'],fields:['listingUrl','listingText','placeName'","need:['placeName','town'],fields:['listingUrl','listingText','fillBtn','placeName'")

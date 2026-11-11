@@ -2131,10 +2131,10 @@
 "es": "{x} · añadido automáticamente",
 "fr": "{x} · ajouté automatiquement"
 },
-"Check on Google Maps": {
-"ca": "Comprova-ho a Google Maps",
-"es": "Comprobar en Google Maps",
-"fr": "Vérifier sur Google Maps"
+"Matched on": {
+"ca": "Trobat a",
+"es": "Encontrado en",
+"fr": "Trouvé sur"
 },
 "Check-in from": {
 "ca": "Arribada a partir de les",
@@ -2591,10 +2591,10 @@
 "es": "Hemos encontrado {n} líneas y {m} destinos. Revísalos, añade tus palabras y publica.",
 "fr": "{n} lignes et {m} destinations trouvées. Vérifiez-les, ajoutez vos mots, puis publiez."
 },
-"Found: {x}. Not the right one? Search again, or paste its Google Maps link below.": {
-"ca": "Trobat: {x}. No és aquest? Torna a buscar o enganxa’n l’enllaç de Google Maps a sota.",
-"es": "Encontrado: {x}. ¿No es este? Busca de nuevo o pega su enlace de Google Maps abajo.",
-"fr": "Trouvé : {x}. Ce n’est pas le bon ? Cherchez à nouveau, ou collez son lien Google Maps ci-dessous."
+"Found: {x}, {n} km from the house. Not the right one? Search again, or paste its Google Maps link below.": {
+"ca": "Trobat: {x}, a {n} km de la casa. No és aquest? Torna a buscar o enganxa’n l’enllaç de Google Maps a sota.",
+"es": "Encontrado: {x}, a {n} km de la casa. ¿No es este? Busca de nuevo o pega su enlace de Google Maps abajo.",
+"fr": "Trouvé : {x}, à {n} km de la maison. Ce n’est pas le bon ? Cherchez à nouveau, ou collez son lien Google Maps ci-dessous."
 },
 "{x}, {n} km from the house": {
 "ca": "{x}, a {n} km de la casa",
@@ -3376,10 +3376,10 @@
 "es": "No encontrado en Google. Elígelo de la lista o déjalo como lo has escrito: puede que no tenga chincheta.",
 "fr": "Pas trouvé sur Google. Choisissez-le dans la liste, ou gardez-le tel que saisi : il n’aura peut-être pas de repère."
 },
-"Not on the map yet: pick it from the list to get its name, pin, distance and hours.": {
-"ca": "Encara no és al mapa: tria’l de la llista per tenir-ne el nom, el punt, la distància i l’horari.",
-"es": "Aún no está en el mapa: elígelo de la lista para tener su nombre, chincheta, distancia y horario.",
-"fr": "Pas encore sur la carte : choisissez-le dans la liste pour avoir son nom, son repère, sa distance et ses horaires."
+"Not on the map yet: pick it from the list to get its pin and distance.": {
+"ca": "Encara no és al mapa: tria’l de la llista per tenir-ne el punt i la distància.",
+"es": "Aún no está en el mapa: elígelo de la lista para tener su chincheta y su distancia.",
+"fr": "Pas encore sur la carte : choisissez-le dans la liste pour avoir son repère et sa distance."
 },
 "Note": {
 "ca": "Nota",
@@ -3591,10 +3591,10 @@
 "es": "Fotos, estancias y lo que ofrece la casa.",
 "fr": "Photos, pièces et ce que propose la maison."
 },
-"Pick it from the list to update its pin, distance and hours.": {
-"ca": "Tria’l de la llista per actualitzar-ne el punt, la distància i l’horari.",
-"es": "Elígelo de la lista para actualizar su chincheta, distancia y horario.",
-"fr": "Choisissez-le dans la liste pour mettre à jour son repère, sa distance et ses horaires."
+"Pick it from the list to update its pin and distance.": {
+"ca": "Tria’l de la llista per actualitzar-ne el punt i la distància.",
+"es": "Elígelo de la lista para actualizar su chincheta y su distancia.",
+"fr": "Choisissez-le dans la liste pour mettre à jour son repère et sa distance."
 },
 "Pick one of your photos, upload a picture, or let us draw an artistic version of your cover photo.": {
 "ca": "Tria una de les teves fotos, puja una imatge o deixa’ns dibuixar una versió artística de la foto de portada.",
@@ -7190,5 +7190,400 @@
 "ca": "{n} elements sense nom",
 "es": "{n} elementos sin nombre",
 "fr": "{n} éléments sans nom"
+},
+"A place you kept": {
+"ca": "Un lloc que has guardat",
+"es": "Un sitio que has guardado",
+"fr": "Un lieu que vous avez gardé"
+},
+"Comment on {x}": {
+"ca": "Comentari sobre {x}",
+"es": "Comentario sobre {x}",
+"fr": "Commentaire sur {x}"
+},
+"Comment on this place": {
+"ca": "Comentari sobre aquest lloc",
+"es": "Comentario sobre este sitio",
+"fr": "Commentaire sur ce lieu"
+},
+"Photo:": {
+"ca": "Foto:",
+"es": "Foto:",
+"fr": "Photo :"
+},
+"Filled in for you": {
+"ca": "Omplert per a tu",
+"es": "Rellenado para ti",
+"fr": "Rempli pour vous"
+},
+"Change": {
+"ca": "Canvia",
+"es": "Cambiar",
+"fr": "Modifier"
+},
+"Our favourite": {
+"ca": "El nostre preferit",
+"es": "Nuestro favorito",
+"fr": "Notre coup de cœur"
+},
+"Guests see it marked Unmissable. Keep it for two or three places.": {
+"ca": "Els hostes el veuen marcat com a Imprescindible. Fes-lo servir per a dos o tres llocs.",
+"es": "Los huéspedes lo ven marcado como Imprescindible. Úsalo para dos o tres sitios.",
+"fr": "Les voyageurs le voient marqué Incontournable. Gardez-le pour deux ou trois lieux."
+},
+"Your comment": {
+"ca": "El teu comentari",
+"es": "Tu comentario",
+"fr": "Votre commentaire"
+},
+"Nothing found for this place yet. Guests still get the map pin and the Google Maps button.": {
+"ca": "Encara no hem trobat res d’aquest lloc. Els hostes tenen igualment el punt al mapa i el botó de Google Maps.",
+"es": "Aún no hemos encontrado nada de este sitio. Los huéspedes tienen igualmente el punto en el mapa y el botón de Google Maps.",
+"fr": "Rien trouvé pour ce lieu pour l’instant. Les voyageurs ont quand même le repère sur la carte et le bouton Google Maps."
+},
+"No opening hours found. Guests see Google’s own line saying whether it is open.": {
+"ca": "No hem trobat l’horari. Els hostes veuen la línia de Google que diu si és obert.",
+"es": "No hemos encontrado el horario. Los huéspedes ven la línea de Google que dice si está abierto.",
+"fr": "Aucun horaire trouvé. Les voyageurs voient la ligne de Google qui dit si c’est ouvert."
+},
+"No opening hours found.": {
+"ca": "No hem trobat l’horari.",
+"es": "No hemos encontrado el horario.",
+"fr": "Aucun horaire trouvé."
+},
+"Open 24 hours": {
+"ca": "Obert 24 hores",
+"es": "Abierto 24 horas",
+"fr": "Ouvert 24 h sur 24"
+},
+"Every day": {
+"ca": "Cada dia",
+"es": "Todos los días",
+"fr": "Tous les jours"
+},
+"from {x} to {y}": {
+"ca": "del {x} al {y}",
+"es": "del {x} al {y}",
+"fr": "du {x} au {y}"
+},
+"Marks": {
+"ca": "Etiquetes",
+"es": "Etiquetas",
+"fr": "Étiquettes"
+},
+"Price per person": {
+"ca": "Preu per persona",
+"es": "Precio por persona",
+"fr": "Prix par personne"
+},
+"From": {
+"ca": "De",
+"es": "De",
+"fr": "De"
+},
+"Between": {
+"ca": "Entre",
+"es": "Entre",
+"fr": "Entre"
+},
+"and": {
+"ca": "i",
+"es": "y",
+"fr": "et"
+},
+"Set menus": {
+"ca": "Menús",
+"es": "Menús",
+"fr": "Menus"
+},
+"+ Add a set menu": {
+"ca": "+ Afegeix un menú",
+"es": "+ Añadir un menú",
+"fr": "+ Ajouter un menu"
+},
+"Remove this set menu": {
+"ca": "Treu aquest menú",
+"es": "Quitar este menú",
+"fr": "Retirer ce menu"
+},
+"Only part of the year": {
+"ca": "Només una part de l’any",
+"es": "Solo una parte del año",
+"fr": "Une partie de l’année seulement"
+},
+"Day": {
+"ca": "Dia",
+"es": "Día",
+"fr": "Jour"
+},
+"Month": {
+"ca": "Mes",
+"es": "Mes",
+"fr": "Mois"
+},
+"Where it is": {
+"ca": "Ubicació",
+"es": "Ubicación",
+"fr": "Emplacement"
+},
+"Delete this place": {
+"ca": "Esborra aquest lloc",
+"es": "Borrar este sitio",
+"fr": "Supprimer ce lieu"
+},
+"Looking for its website and hours…": {
+"ca": "Buscant-ne el web i l’horari…",
+"es": "Buscando su web y su horario…",
+"fr": "Recherche de son site et de ses horaires…"
+},
+"Looking for its website and hours": {
+"ca": "Buscant-ne el web i l’horari",
+"es": "Buscando su web y su horario",
+"fr": "Recherche de son site et de ses horaires"
+},
+"Nothing found for this place. Guests still get the map pin and the Google Maps button.": {
+"ca": "No hem trobat res d’aquest lloc. Els hostes tenen igualment el punt al mapa i el botó de Google Maps.",
+"es": "No hemos encontrado nada de este sitio. Los huéspedes tienen igualmente el punto en el mapa y el botón de Google Maps.",
+"fr": "Rien trouvé pour ce lieu. Les voyageurs ont quand même le repère sur la carte et le bouton Google Maps."
+},
+"Know its website? Paste it and we read its hours.": {
+"ca": "En saps el web? Enganxa’l i en llegirem l’horari.",
+"es": "¿Sabes su web? Pégala y leeremos su horario.",
+"fr": "Vous connaissez son site ? Collez-le et nous lirons ses horaires."
+},
+"The search did not work.": {
+"ca": "La cerca no ha funcionat.",
+"es": "La búsqueda no ha funcionado.",
+"fr": "La recherche n’a pas fonctionné."
+},
+"Look for its details": {
+"ca": "Busca’n les dades",
+"es": "Buscar sus datos",
+"fr": "Chercher ses informations"
+},
+"From ‹a›, ‹d›.": {
+"ca": "Segons ‹a›, ‹d›.",
+"es": "Según ‹a›, ‹d›.",
+"fr": "D’après ‹a›, ‹d›."
+},
+"From ‹a›.": {
+"ca": "Segons ‹a›.",
+"es": "Según ‹a›.",
+"fr": "D’après ‹a›."
+},
+"an open directory": {
+"ca": "un directori obert",
+"es": "un directorio abierto",
+"fr": "un annuaire ouvert"
+},
+"a web search": {
+"ca": "una cerca web",
+"es": "una búsqueda web",
+"fr": "une recherche sur le web"
+},
+"That does not look like a web address.": {
+"ca": "Això no sembla una adreça web.",
+"es": "Eso no parece una dirección web.",
+"fr": "Cela ne ressemble pas à une adresse web."
+},
+"You have looked up a lot of places today. Try again tomorrow.": {
+"ca": "Avui has buscat molts llocs. Torna-ho a provar demà.",
+"es": "Hoy has buscado muchos sitios. Vuelve a intentarlo mañana.",
+"fr": "Vous avez cherché beaucoup de lieux aujourd’hui. Réessayez demain."
+},
+"Looking up places is not switched on yet.": {
+"ca": "La cerca de llocs encara no està activada.",
+"es": "La búsqueda de sitios aún no está activada.",
+"fr": "La recherche de lieux n’est pas encore activée."
+},
+"This place cannot be looked up.": {
+"ca": "Aquest lloc no es pot buscar.",
+"es": "Este sitio no se puede buscar.",
+"fr": "Ce lieu ne peut pas être recherché."
+},
+"Looking for its website": {
+"ca": "Buscant-ne el web",
+"es": "Buscando su web",
+"fr": "Recherche de son site"
+},
+"Reading its website": {
+"ca": "Llegint-ne el web",
+"es": "Leyendo su web",
+"fr": "Lecture de son site"
+},
+"Details found": {
+"ca": "Dades trobades",
+"es": "Datos encontrados",
+"fr": "Informations trouvées"
+},
+"Nothing found": {
+"ca": "No s’ha trobat res",
+"es": "No se ha encontrado nada",
+"fr": "Rien trouvé"
+},
+"Starting to look": {
+"ca": "Començant a buscar",
+"es": "Empezando a buscar",
+"fr": "Début de la recherche"
+},
+"Try again in a few minutes.": {
+"ca": "Torna-ho a provar d’aquí a uns minuts.",
+"es": "Vuelve a intentarlo dentro de unos minutos.",
+"fr": "Réessayez dans quelques minutes."
+},
+"Looking up places is paused for today. Try again tomorrow.": {
+"ca": "La cerca de llocs està aturada per avui. Torna-ho a provar demà.",
+"es": "La búsqueda de sitios está en pausa por hoy. Vuelve a intentarlo mañana.",
+"fr": "La recherche de lieux est en pause pour aujourd’hui. Réessayez demain."
+},
+"What it sells": {
+"ca": "Què s’hi ven",
+"es": "Qué se vende",
+"fr": "Ce qu’on y vend"
+},
+"Which weeks": {
+"ca": "Quines setmanes",
+"es": "Qué semanas",
+"fr": "Quelles semaines"
+},
+"Every week": {
+"ca": "Cada setmana",
+"es": "Cada semana",
+"fr": "Chaque semaine"
+},
+"1st week of the month": {
+"ca": "1a setmana del mes",
+"es": "1.ª semana del mes",
+"fr": "1re semaine du mois"
+},
+"2nd week of the month": {
+"ca": "2a setmana del mes",
+"es": "2.ª semana del mes",
+"fr": "2e semaine du mois"
+},
+"3rd week of the month": {
+"ca": "3a setmana del mes",
+"es": "3.ª semana del mes",
+"fr": "3e semaine du mois"
+},
+"4th week of the month": {
+"ca": "4a setmana del mes",
+"es": "4.ª semana del mes",
+"fr": "4e semaine du mois"
+},
+"Last week of the month": {
+"ca": "Última setmana del mes",
+"es": "Última semana del mes",
+"fr": "Dernière semaine du mois"
+},
+"Week {n} of the month": {
+"ca": "Setmana {n} del mes",
+"es": "Semana {n} del mes",
+"fr": "Semaine {n} du mois"
+},
+"Not held on public holidays": {
+"ca": "No es fa els festius",
+"es": "No se celebra en festivos",
+"fr": "Pas les jours fériés"
+},
+"No days or hours yet.": {
+"ca": "Encara no hi ha dies ni horaris.",
+"es": "Aún no hay días ni horarios.",
+"fr": "Pas encore de jours ni d’horaires."
+},
+"Human towers": {
+"ca": "Castells",
+"es": "Torres humanas",
+"fr": "Tours humaines"
+},
+"Local festival": {
+"ca": "Festa major",
+"es": "Fiesta mayor",
+"fr": "Fête locale"
+},
+"Carnival": {
+"ca": "Carnaval",
+"es": "Carnaval",
+"fr": "Carnaval"
+},
+"Parade": {
+"ca": "Desfilada",
+"es": "Desfile",
+"fr": "Défilé"
+},
+"Food and wine": {
+"ca": "Gastronomia i vi",
+"es": "Gastronomía y vino",
+"fr": "Gastronomie et vin"
+},
+"Fair": {
+"ca": "Fira",
+"es": "Feria",
+"fr": "Foire"
+},
+"Film": {
+"ca": "Cinema",
+"es": "Cine",
+"fr": "Cinéma"
+},
+"Music": {
+"ca": "Música",
+"es": "Música",
+"fr": "Musique"
+},
+"History": {
+"ca": "Història",
+"es": "Historia",
+"fr": "Histoire"
+},
+"Tradition": {
+"ca": "Tradició",
+"es": "Tradición",
+"fr": "Tradition"
+},
+"Theatre and dance": {
+"ca": "Teatre i dansa",
+"es": "Teatro y danza",
+"fr": "Théâtre et danse"
+},
+"Art and exhibitions": {
+"ca": "Art i exposicions",
+"es": "Arte y exposiciones",
+"fr": "Art et expositions"
+},
+"For kids": {
+"ca": "Per als infants",
+"es": "Para niños",
+"fr": "Pour les enfants"
+},
+"Christmas": {
+"ca": "Nadal",
+"es": "Navidad",
+"fr": "Noël"
+},
+"Religious celebration": {
+"ca": "Celebració religiosa",
+"es": "Celebración religiosa",
+"fr": "Fête religieuse"
+},
+"Fireworks": {
+"ca": "Focs artificials",
+"es": "Fuegos artificiales",
+"fr": "Feux d’artifice"
+},
+"Flowers and gardens": {
+"ca": "Flors i jardins",
+"es": "Flores y jardines",
+"fr": "Fleurs et jardins"
+},
+"Search a kind": {
+"ca": "Cerca un tipus",
+"es": "Busca un tipo",
+"fr": "Chercher un type"
+},
+"No kind matches. Try another word.": {
+"ca": "Cap tipus no hi coincideix. Prova una altra paraula.",
+"es": "Ningún tipo coincide. Prueba otra palabra.",
+"fr": "Aucun type ne correspond. Essayez un autre mot."
 }
 }

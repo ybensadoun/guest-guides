@@ -215,6 +215,24 @@ a.gt:active{transform:scale(.98)}
 .flag{font-size:15px;font-weight:600;color:#8A4B00;display:flex;gap:8px;align-items:baseline}
 .flag::before{content:"!";display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--yellow);color:var(--ink);font-size:13px;font-weight:700;flex:none}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+/* Google's open-now line (engine/src/gcard.js), under the address in a row's body or in its own block on a tile page.
+   No box at all: its surface is the paper of the panel or the page it sits on, so it reads like our own lines. Its
+   inside is a closed shadow root, so only Google's documented --gmp-* properties and the host's border and radius apply,
+   all from the theme so every look gets its own fonts and colours. Google pads its inside by 16 px on the sides and
+   about as much above and below: the slot is pulled out by 16 px so its text lines up with ours, and takes back the
+   row's own 10 px gap above and below so Google's padding is the only space. While it loads it is out of sight; a row
+   keeps its room (--gcard-h, the card's height with a status line) so nothing under it moves when it comes. */
+.gcard{height:0;overflow:hidden;visibility:hidden;pointer-events:none;margin-inline:-16px}
+.mbody > .gcard{--gcard-h:125px;height:var(--gcard-h);margin-block:-10px}
+.gcard.on{height:auto;overflow:visible;visibility:visible;pointer-events:auto}
+.pl-sec.gcard{margin-inline:0}.pl-sec.gcard > .gcard-in{margin-inline:-16px}
+gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;border-radius:0;
+  --gmp-mat-font-family:var(--font);--gmp-mat-font-body-medium:400 17px/1.3 var(--font);--gmp-mat-font-body-small:400 16px/1.3 var(--font);
+  --gmp-mat-font-title-small:600 17px/1.25 var(--font);--gmp-mat-font-label-large:600 16px/1.2 var(--font);
+  --gmp-mat-color-surface:var(--paper);--gmp-mat-color-on-surface:var(--ink);--gmp-mat-color-on-surface-variant:var(--muted);
+  --gmp-mat-color-primary:var(--blue);--gmp-mat-color-positive:var(--green);--gmp-mat-color-negative:var(--red);
+  --gmp-mat-color-secondary-container:var(--white);--gmp-mat-color-on-secondary-container:var(--ink);
+  --gmp-button-border-color:var(--ink);--gmp-button-border-width:2px;--gmp-button-border-radius:999px}
 .emptybox{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:20px;background:var(--white);border-radius:var(--r);border:2px solid var(--ink)}
 .emptybox b{font-size:19px;font-weight:600}
 
@@ -424,7 +442,7 @@ a.gt:active{transform:scale(.98)}
 .qcall.wide b{font-size:19px}
 .qt{display:flex;flex-direction:column;gap:2px;min-width:0}
 .dl{display:block}
-/* The distance, rating and price lines wrap between words (only a number and its unit stay together, .nw): kept on one
+/* The distance and price lines wrap between words (only a number and its unit stay together, .nw): kept on one
    line, a long one ran under the status on the right (French at 360 px). */
 .dk{display:block}
 
@@ -484,6 +502,8 @@ a.gt:active{transform:scale(.98)}
 #trmap{position:absolute;inset:0}
 :root{--tone-taxi:#F5C400}
 .transport .mrow[style*="tone-taxi"] .dot{color:#121212}
+/* The same for an event on the yellow tone (a fair): a white icon on yellow could hardly be seen. */
+.events .mrow[style*="tone-taxi"] .dot{color:#121212}
 .lbadges{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0 3px}
 .lbadge{font-style:normal;display:inline-block;padding:2px 7px;border-radius:6px;background:var(--lc);color:#fff;font-weight:700;font-size:14px;line-height:1.3}
 .lbadge.ink{color:#121212}
@@ -494,7 +514,6 @@ a.gt:active{transform:scale(.98)}
 .dests th small{display:block;font-size:14px;font-weight:400;color:var(--muted)}
 .dests tr+tr{border-top:1.5px solid var(--line)}
 :root{--tone-wine:#8E1B4A;--tone-wine-s:#F3DDE6}
-.dk.rating{color:#7A5200}
 /* Slim header that hides on scroll down; no bottom bar (Home is the menu) */
 body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .bnav{display:none!important}
@@ -540,8 +559,12 @@ body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .guide .mrow .dot svg{width:22px;height:22px}
 .guide .mrow[data-tone=yellow] .dot{color:var(--ink)}
 .guide .mbody .note{font-size:15px;line-height:1.45}
-.events .evm{font-size:15px;font-weight:700;margin:0;padding:14px 16px 6px;color:var(--muted);background:var(--white)}
+.events .evm,.mlist > .mgh{font-size:15px;font-weight:700;margin:0;padding:14px 16px 6px;color:var(--muted);background:var(--white)}
 .events .evm:first-child{padding-top:12px}
+/* A second group in the same list (places whose hours we do not hold, under Open now): the month heading's look, the row
+   divider above it rather than under it, so the heading reads as the start of its rows, not the end of the ones above. */
+.mlist > .mgh{border-top:1.5px solid var(--line);text-wrap:balance}
+.mlist > .mgh + .mrow{border-top:0}
 .events .mrow .dot svg{width:22px;height:22px}
 .gt[data-k="events"]::before{width:120px;height:60px;border-radius:120px 120px 0 0;background:var(--red);right:-20px;bottom:-4px}
 .gt[data-k="events"]{flex-direction:row;align-items:center;gap:14px;min-height:0;padding:18px 64px 18px 18px}
@@ -554,6 +577,16 @@ body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .st.later,.status.later,.chours .st.later,.pl-hours .st.later{color:var(--blue)!important}
 .st.closed,.status.closed,.chours .st.closed,.pl-hours .st.closed{color:var(--red)!important}
 .st small{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+/* Home's short rows (.mini > a): a closed market's status is wide in some languages ("Geschlossen", "Öffnet morgen um 8:00") and
+   left 105 px for the name at 360 px, so German names were cut mid-word. It goes under the name as one line, in the size
+   of the lines above it; an open market keeps its status at the right. In these rows a name breaks only between words or
+   at a soft hyphen of its own, as in the lists (the browser's own hyphenation cut "Gemüse-markt" even with room). */
+.mini > a .nm,.mini > a .nm small{hyphens:manual;-webkit-hyphens:manual;overflow-wrap:normal}
+.mini > a:has(> .st.closed){grid-template-columns:40px minmax(0,1fr);row-gap:1px}
+.mini > a:has(> .st.closed) > .dot{grid-row:1/span 2}
+.mini > a:has(> .st.closed) > .st{display:block;grid-column:2;justify-self:start;max-width:none;white-space:normal;text-align:left;line-height:1.3}
+.mini > a:has(> .st.closed) > .st small{display:inline;font-size:15px;font-weight:400;hyphens:manual;-webkit-hyphens:manual;overflow-wrap:normal}
+.mini > a:has(> .st.closed) > .st small::before{content:" · "}
 .st.plain{color:var(--muted)}
 .chours .st,.pl-hours .st,.status{align-items:flex-start;text-align:left}
 /* Header v3: no logo or site name. Round language button with just the code; greeting on Home. */
@@ -828,6 +861,7 @@ body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) +
 .mlist > .mrow[open] > .mbody{margin:0 12px 14px;border-radius:14px;padding-top:14px}
 .mlist > .mrow[open] + .mrow{border-top:6px solid var(--paper)!important}
 .mlist > .mrow + .mrow[open]{border-top:6px solid var(--paper)!important}
+.mlist > .mrow[open] + .mgh{border-top:6px solid var(--paper)!important}
 #mapview .maplist .mrow[open] > .mbody{padding-left:14px;padding-right:14px}
 .mlist > .mrow[open] > .mbody{padding-left:16px;padding-right:16px}
 
@@ -1003,3 +1037,15 @@ body:not(.is-home) .pl-head h2.title{grid-column:1 / -1;grid-row:1;margin-bottom
 body:not(.is-home) .pl-head .qi{grid-column:1;grid-row:2 / span 2;align-self:center}
 body:not(.is-home) .pl-head .lead{grid-column:2;grid-row:2;margin-top:0;align-self:end}
 body:not(.is-home) .pl-head .pl-dist{grid-column:2;grid-row:3;align-self:start}
+/* Sources and credits (views/credits.js): one quiet text link at the very foot of Home, below everything else (not a
+   tile), then the page itself: small headings, plain sentences, links to each source. The link is 44 px tall to tap. */
+.hfoot{margin:6px 0 0;text-align:center;font-size:14px;line-height:20px}
+.hfoot a{display:inline-block;padding:12px 10px;color:var(--muted);font-weight:500;text-decoration:underline;text-underline-offset:3px}
+.credits .cr-h{font-family:var(--display);font-weight:700;font-size:19px;line-height:1.2;margin:0}
+.credits .hsec p{margin:8px 0 0;font-size:16px;line-height:1.5}
+.credits .hsec a{color:var(--blue);font-weight:600}
+.credits .cr-q{font-size:14px;line-height:1.45;color:var(--muted)}
+.credits .cr-l{margin-top:10px;font-size:16px;line-height:1.45}
+.credits a,.credits [lang="en"]{-webkit-hyphens:manual;hyphens:manual}   /* names, licences and the quoted notices are never hyphenated */
+.credits .pn{-webkit-hyphens:manual;hyphens:manual}
+.credits .nw{white-space:nowrap}

@@ -5,7 +5,8 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ENGINE, ROOT, siteDir, readSite, sitePlugin } from './site.config.js';
+import { ENGINE, ROOT, siteDir, readSite, sitePlugin, siteFonts } from './site.config.js';
+import { licensesPlugin } from './scripts/licenses.mjs';
 
 const SITE = process.env.SITE || 'ca-la-kimberly';
 const SD = siteDir(SITE);
@@ -36,7 +37,8 @@ export default defineConfig({
   resolve: { alias: { '@site': SD } },
   build: { outDir: resolve(SD, 'dist'), emptyOutDir: true, target: 'es2020' },
   plugins: [
-    sitePlugin(SITE),
+    // Google's hours card: the key from the build's environment (Netlify's variable, or the shell for the dev server), never from git.
+    sitePlugin(SITE, { gmapsKey: process.env.GOOGLE_MAPS_BROWSER_KEY || '' }),
     vendorMaplibre(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -58,9 +60,10 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg,woff2,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,woff2,webmanifest,txt}'],   // txt: licenses.txt, linked from the credits page, also offline
         globIgnores: ['vendor/**'],
         navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/\/licenses\.txt$/],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.includes('/vendor/maplibre/'),
@@ -74,6 +77,8 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }),
+    // After the PWA plugin: licenses.txt is in the bundle before the service worker lists the files to keep.
+    licensesPlugin({ fonts: siteFonts(site), workbox: true })
   ]
 });

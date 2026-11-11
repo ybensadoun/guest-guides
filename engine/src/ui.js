@@ -1,4 +1,4 @@
-import { t, tx, locale, lang } from './i18n.js';
+import { t, tx, lang } from './i18n.js';
 import { offSeason, hoursText, statusLabel, nextOpenText, runsOn, closedStatus } from './schedule.js';
 // Live status as text, like Google Maps: green "Open until 23:00", red "Closed" with when it next opens.
 // Status on the right of a row. Times never break ("14:00" stays whole), so a long label like
@@ -6,6 +6,7 @@ import { offSeason, hoursText, statusLabel, nextOpenText, runsOn, closedStatus }
 const nwT = x => esc(x).replace(/(\d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?)/g, '<span class="nw">$1</span>');
 export const stHTML = s => s ? `<span class="st ${s.cls}">${nwT(s.text)}${s.sub ? `<small>${nwT(s.sub)}</small>` : ''}</span>` : '';
 import { kmMe, gDir, gSearch } from './geo.js';
+import { wantsCard, slotHTML } from './gcard.js';
 import FLAGS_FILE from './flags.json';
 // Warnings only: anything else in "flags" (a filter label, a typo) is never shown.
 const FLAGS = FLAGS_FILE.flags;
@@ -69,6 +70,8 @@ export const catIcon = c => CAT_ICON[c] || CAT_ICON.places;
 // Per-item icons for "What to do" (set with "icon" in the content file); otherwise the category icon.
 const ITEM_ICON = {
   mug: P('<path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 1.5c-.8.8-.8 1.7 0 2.5s.8 1.7 0 2.5M12.5 1.5c-.8.8-.8 1.7 0 2.5s.8 1.7 0 2.5"/><path d="M3 21h15"/>'),
+  // A restaurant of no more precise kind (kinds.json "fork"): fork and knife, the maker's drawing.
+  fork: P('<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.5 2-3 6-3 8.5S15.5 14 17 14"/>'),
   pizza: P('<path d="M12 21.5L3 6.5a15.5 15.5 0 0 1 18 0z"/><path d="M4.6 9.2a13 13 0 0 1 14.8 0"/><circle cx="10" cy="11.5" r="1.3" fill="currentColor"/><circle cx="14.2" cy="13.5" r="1.3" fill="currentColor"/><circle cx="12" cy="17" r="1.1" fill="currentColor"/>'),
   paella: P('<ellipse cx="11" cy="13" rx="8" ry="5"/><path d="M19 12.5h3.5M3 13H1"/><circle cx="8" cy="12.3" r="1" fill="currentColor"/><circle cx="13.5" cy="11.6" r="1" fill="currentColor"/><path d="M10.5 14.5l2 .8M14 14l1.5-1"/>'),
   fish: P('<path d="M2.5 12c3-4.5 9.5-6 14.5 0-5 6-11.5 4.5-14.5 0z"/><path d="M17 12l4.5-4v8z"/><circle cx="7" cy="11" r=".9" fill="currentColor"/>'),
@@ -145,7 +148,7 @@ export function card(m, opts = {}) {
      <a class="btn primary" href="${gDir(m)}" target="_blank" rel="noopener">${ICON.dir}${esc(t('directions'))}</a>
      ${opts.inMap
        ? `<a class="btn" href="${gSearch(m)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>`
-       : `<a class="btn" href="#map/m/${encodeURIComponent(m.id)}">${ICON.pin}${esc(t('onMap'))}</a>`}
+       : m.nomap ? '' : `<a class="btn" href="#map/m/${encodeURIComponent(m.id)}">${ICON.pin}${esc(t('onMap'))}</a>`}
      ${m.phone ? `<a class="btn" href="tel:${m.phone.replace(/\s+/g, '')}">${esc(t('callLabel'))} ${esc(m.phone)}</a>` : ''}
      ${m.url ? `<a class="btn" href="${esc(m.url)}" target="_blank" rel="noopener">${esc(t('website'))}</a>` : ''}
      ${m.wiki ? `<a class="btn" href="${wikiUrl(m.wiki)}" target="_blank" rel="noopener">Wikipedia</a>` : ''}
@@ -174,13 +177,18 @@ const wikiUrl = q => `https://${lang}.wikipedia.org/w/index.php?search=${encodeU
 
 // Compact list row that expands to the full details (Markets page). Summary: icon, name,
 // type and distance, and the live status (today) or that day's hours (other days).
+// No rating: the host's places are hand-picked, and Google's ratings may not be kept (a "rating" left in old data is ignored).
+// opts.gcard (spots sections only): a place with no hours of ours gets Google's line (gcard.js) where our hours go,
+// under the address, and its "Google Maps" button goes last in the actions (data-gbtn), kept back until we know no
+// line of Google's comes (that line has Google's own Maps button), so no other button ever moves. Every other row is
+// drawn exactly as before.
 export function row(m, opts = {}) {
+  const gc = !!opts.gcard && wantsCard(m);
   const live = opts.date && opts.live ? statusLabel(m, opts.date) : null;
   const hrs = !live && opts.date ? runsOn(m, opts.date).map(x => (x.m ? t('morning') : `${x.o.replace(/^0/, '')}-${x.c.replace(/^0/, '')}`)).join(', ') : '';
   const me = kmMe(m);
   // A number stays with its unit (.nw); the rest of the line wraps between words.
   const dist = [m.km != null ? `<span class="nw">${m.km} km</span> ${esc(t('fromHouseShort'))}` : null, me != null ? `<span class="nw">${me} km</span> ${esc(t('fromYouShort'))}` : null].filter(Boolean).map(x => `<span class="dk">${x}</span>`).join('');
-  const rate = m.rating ? `<span class="dk rating"><span class="nw">★ ${m.rating.stars.toFixed(1)}</span> · ${esc(t('gReviews', { n: m.rating.count.toLocaleString(locale()) }))}</span>` : '';
   const price = m.price ? `<span class="dk price">${esc(t('perPerson', { p: m.price }))}</span>` : '';
   const warn = false; // notes like "Book ahead" are shown as plain tags, not a warning sign
   const ht = hoursText(m);
@@ -192,12 +200,12 @@ export function row(m, opts = {}) {
   return `<details class="mrow" style="${itemStyle(m)}" data-id="${esc(m.id)}">
    <summary>
      <span class="dot">${itemIcon(m)}</span>
-     <span class="nm">${nameWithWarn(title(m), warn)}<small>${esc(catLabel(m))}<span class="dl">${dist}${rate}${price}</span></small></span>
+     <span class="nm">${nameWithWarn(title(m), warn)}<small>${esc(catLabel(m))}<span class="dl">${dist}${price}</span></small></span>
      <span class="rt">${live ? stHTML(live) : hrs ? `<span class="st plain">${esc(hrs)}</span>` : m.kind === 'spot' && opts.live && m.always ? `<span class="st open">${esc(t('open24'))}</span>` : m.kind === 'spot' && opts.live && m.s.length ? stHTML(closedStatus(m, opts.date)) : ''}<span class="chev" aria-hidden="true"></span></span>
      ${tagStrip(m)}
    </summary>
    <div class="mbody">
-     <div class="where">${where.map(esc).join('<br>')}</div>
+     <div class="where">${where.map(esc).join('<br>')}</div>${gc ? slotHTML(m) : ''}
      ${m.stalls_approx ? `<div class="row"><span class="size">${esc(t('stalls', { n: m.stalls_approx }))}</span></div>` : ''}
      ${m.s.length ? when : ''}${m.hours ? `<p class="hnote">${esc(tx(m.hours))}</p>` : ''}
      ${m.description ? `<div class="note">${esc(tx(m.description))}</div>` : ''}
@@ -205,11 +213,12 @@ export function row(m, opts = {}) {
      ${warnings(m).filter(f => !['book', 'check', 'older'].includes(f)).map(f => `<div class="flag">${esc(t('f_' + f))}</div>`).join('')}
      <div class="actions">
        <a class="btn primary" href="${gDir(m)}" target="_blank" rel="noopener">${ICON.dir}${esc(t('directions'))}</a>
-       <a class="btn" href="${gSearch(m)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>
+       ${gc ? '' : `<a class="btn" href="${gSearch(m)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>`}
        ${m.nomap ? '' : `<a class="btn" href="#map/m/${encodeURIComponent(m.id)}">${esc(t('onMap'))}</a>`}
        ${m.phone ? `<a class="btn" href="tel:${m.phone.replace(/\s+/g, '')}">${esc(t('callLabel'))} ${esc(m.phone)}</a>` : ''}
        ${m.url ? `<a class="btn" href="${esc(m.url)}" target="_blank" rel="noopener">${esc(t('website'))}</a>` : ''}
-     ${m.wiki ? `<a class="btn" href="${wikiUrl(m.wiki)}" target="_blank" rel="noopener">Wikipedia</a>` : ''}
+     ${m.wiki ? `<a class="btn" href="${wikiUrl(m.wiki)}" target="_blank" rel="noopener">Wikipedia</a>` : ''}${gc ? `
+       <a class="btn" data-gbtn hidden href="${gSearch(m)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
      </div>
    </div></details>`;
 }

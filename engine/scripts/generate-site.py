@@ -456,6 +456,10 @@ if wifi:   # the Wi-Fi password never goes in tracked files: private/wifi.json i
     (SITE / 'private').mkdir(exist_ok=True)
     (SITE / 'private/wifi.json').write_text(json.dumps(wifi, ensure_ascii=False, indent=2))
 if A.get('listingUrl'): house['listing'] = A['listingUrl']
+# The point is Google's town search (the listing gave none, and GeoNames has no town of that name near it: worker build):
+# dated like a place's, so the weekly renewal (worker/renew-positions.mjs) keeps it within Google's 30 days.
+_pos = A.get('pos') if isinstance(A.get('pos'), dict) else {}
+if _pos.get('from') == 'google' and re.match(r'^\d{4}-\d{2}-\d{2}$', str(_pos.get('at') or '')): house['pos'] = {'from': 'google', 'at': _pos['at']}
 (SITE / 'content/house.json').write_text(json.dumps(house, ensure_ascii=False, indent=1))
 
 # The rooms as the host ordered them (answers.rooms: [{n: name, c: kind of room, t: what guests should know there}]), then
@@ -675,26 +679,42 @@ def resolve_short(url):
 # The host's own places (bars and restaurants, and Nightlife when they switched it on), each list into its own file.
 def host_list(key):
     return [r for r in (A.get(key) or []) if isinstance(r, dict) and (r.get('p') or '').strip()]
-def host_items(rows, filters=False):   # filters: the quick filters of Things to do, worked out from the kind of place
-    items = []
+# The one list of kinds (engine/src/kinds.json): a place's kind gives its icon, its type in six languages (no translation),
+# and for Things to do its quick filter and "Great for kids".
+KINDS = json.loads((ROOT / 'engine/src/kinds.json').read_text())
+no_name = []   # cards the host kept whose place has no name of ours yet: left out until it has one
+def host_items(rows, filters=False):   # filters: Things to do (kinds of todo, with their filters); else the kinds of eat
+    kinds, items = KINDS['todo' if filters else 'eat'], []
     for r in rows:
-        key = r['p'].strip(); g = GEO.get(key) or resolve_short(key)
-        nm = (g.get('name') or place_name_from(key)) if key.startswith('http') else key   # a name the host typed stays theirs (Jopenkerk, not Google's "Jopen")
+        key = r['p'].strip(); card = key.startswith('gid:')   # gid:<id>: a card kept in the swipe deck, only its Google id is known
+        g = GEO.get(key) or ({} if card else resolve_short(key))
+        if card and not (g.get('name') or '').strip(): no_name.append(key); continue
+        # Our name for the place (geocode.json: the host's words tidied, or our record's for a card), else the typed words.
+        nm = (g.get('name') or '').strip() or ((place_name_from(key) if key.startswith('http') else key))
         isurl = key.startswith('http'); ismaps = bool(re.search(r'google\.[a-z.]+/maps|maps\.app\.goo\.gl|goo\.gl/maps', key))
-        # Looked up on Google by the worker (geocode.json): real position, distance, town, hours, kind of place. Not found:
-        # no position (nomap: no pin, no distance, directions by name; the house's point only satisfies the content check),
-        # no kind, no warning (the host vouches for their own places).
+        kind = g.get('kind') if g.get('kind') in kinds else None; K = kinds.get(kind) or {}
+        # Located by the worker (geocode.json): position, distance, town, kind and the facts we keep. Not found: no position
+        # (nomap: no pin, no distance, directions by name; the house's point only satisfies the content check), no kind, no
+        # warning (the host vouches for their own places).
         it = {'id': re.sub(r'[^a-z0-9]+', '-', nm.lower()).strip('-')[:40] or 'place', 'name': {l: nm for l in LANGS},
-              **({'type': L(g['type'])} if g.get('type') else {}), 'town': g.get('town') or town, 'place': g.get('place', ''),
+              **({'type': {l: K['name'].get(l) or K['name']['en'] for l in LANGS}, 'icon': kind} if kind else {}), 'town': g.get('town') or town, 'place': g.get('place', ''),
               'lat': g.get('lat', args.lat), 'lng': g.get('lng', args.lng), 'km_from_house': g.get('km'),
-              'tags': g.get('tags', []) if filters else [], **({'group': g['group']} if filters and g.get('group') else {}),
-              'flags': ['check'] if g.get('status') == 'CLOSED_TEMPORARILY' else [], 'hostPick': True,
-              **({'gid': g['gid']} if g.get('gid') else {}), **({'always': True} if g.get('always') else {}), **({} if g.get('lat') else {'nomap': True}),
+              'tags': ['kidsfun'] if filters and K.get('kids') else [], **({'group': K['group']} if filters and K.get('group') else {}),
+              'flags': [], 'hostPick': True,
+              **({'gid': g['gid']} if g.get('gid') else {}), **({'pos': g['pos']} if g.get('pos') else {}), **({'always': True} if g.get('always') else {}), **({} if g.get('lat') else {'nomap': True}),
               'gmaps': g.get('gmaps') or (key if ismaps else 'https://www.google.com/maps/search/?api=1&query=' + __import__('urllib.parse').parse.quote_plus(nm + ' ' + (g.get('town') or town)))}
         if (r.get('c') or '').strip(): it['description'] = L(r['c'].strip())   # the host's own words; no comment, no description
         if isurl and not ismaps: it['url'] = key
-        for k2 in ('phone', 'hours', 'schedule', 'price', 'priceNote', 'icon', 'wiki'):
+        elif g.get('url'): it['url'] = g['url']   # its own website, from our sources
+        for k2 in ('phone', 'hours', 'schedule', 'price', 'priceNote', 'wiki'):
             if g.get(k2): it[k2] = L(g[k2]) if k2 in ('hours', 'priceNote') else g[k2]
+        if g.get('book') is True: it['flags'] = ['book']   # its own site asks to book: the engine's "Book ahead"
+        # Where those facts came from (the worker's filled: {at, from: {field: source}, page?}), for the editor's line under
+        # "Filled in for you"; guests never see it. A website the host typed as the place is theirs, not a source's.
+        if isinstance(g.get('filled'), dict):
+            fl = json.loads(json.dumps(g['filled']))
+            if isurl and not ismaps: (fl.get('from') or {}).pop('url', None)
+            if fl.get('from'): it['filled'] = fl
         items.append(it)
     return items
 def write_host_places(rows, file):
@@ -708,14 +728,18 @@ if night: write_host_places(night, 'nightlife')
 # makes it cards in the editor, for them to keep or skip.
 plain = lambda x: re.sub(r'[^a-z0-9]+', '', unicodedata.normalize('NFD', str(x).lower()).encode('ascii', 'ignore').decode())
 en_name = lambda it: (lambda n: n.get('en') or next(iter(n.values()), '') if isinstance(n, dict) else n or '')(it.get('name'))
-swipes = [s for s in (A.get('swipes') or {}).values() if isinstance(s, dict) and s.get('cat', 'todo') == 'todo' and (s.get('name') or '').strip()]
+swipes = [s for s in (A.get('swipes') or {}).values() if isinstance(s, dict) and s.get('cat', 'todo') == 'todo']
 raw_added = A.get('favDo')
 added = host_list('favDo') if isinstance(raw_added, list) else [{'p': x.strip()} for x in re.split(r'[,\n]+', raw_added or '') if x.strip()]
-kept = [{'p': s['name'].strip(), 'c': s.get('c') or ''} for s in swipes if s.get('d') == 'yes']
-for s in swipes:   # the card already has its position and link: no lookup
-    if s.get('d') == 'yes' and s.get('lat') is not None:
-        GEO.setdefault(s['name'].strip(), {'lat': s['lat'], 'lng': s['lng'], 'km': s.get('km'), 'gmaps': s.get('maps'), 'type': s.get('type')})
-turned_down = {plain(s['name']) for s in swipes if s.get('d') == 'no'}
+# A card from Google: only its id is ours, so it is gid:<id> and its name comes from geocode.json. A researched card (r:)
+# keeps the research's own name, which finds its place among the research's below.
+kept = []
+for s in swipes:
+    if s.get('d') != 'yes': continue
+    sid = str(s.get('id') or '')
+    if sid and not sid.startswith('r:'): kept.append({'p': 'gid:' + sid, 'c': s.get('c') or ''})
+    elif (s.get('name') or '').strip(): kept.append({'p': s['name'].strip(), 'c': s.get('c') or ''})
+turned_down = {plain(s['name']) for s in swipes if s.get('d') == 'no' and (s.get('name') or '').strip()}
 todo_file = SITE / 'content/todo.json'
 if todo_file.exists() or kept or added:
     todo_doc = json.loads(todo_file.read_text()) if todo_file.exists() else {'_doc': "The host's places, written by generate-site.py."}
@@ -731,6 +755,7 @@ if todo_file.exists() or kept or added:
     (SITE / 'docs').mkdir(parents=True, exist_ok=True)
     for x in found: x.setdefault('id', re.sub(r'[^a-z0-9]+', '-', en_name(x).lower()).strip('-')[:40] or 'place'); x.pop('_card', None)
     (SITE / 'docs/more-places.json').write_text(json.dumps(found, ensure_ascii=False, indent=1))
+if no_name: print(f'{len(no_name)} kept cards have no name yet')
 
 # Sections, in Home order. Researched ones start as "soon" until their content file has items.
 def has_items(f):
@@ -790,7 +815,8 @@ site = {
     **({'logo': 'logo-head.png'} if logo_im else {}), 'shareImage': 'house.jpg' if HAS_PHOTO else ('logo-head.png' if logo_im else 'favicon.png'), 'languages': LANGS, 'storageKey': args.slug,
     'area': {'radiusKm': {'15 min': 15, '30 min': 30, '45 min': 45, '1 hour': 60}.get(A.get('radius'), 30)},
     'modules': modules,
-    'theme': {'preset': preset, **({'fonts': DISP_FILES + TXT_FILES} if (DISP_FILES or TXT_FILES) else {}), 'paper': palette['paper'], 'manifestBackground': palette['paper'], 'manifestTheme': a[0], 'darkMode': False},
+    'theme': {'preset': preset, **({'fonts': DISP_FILES + TXT_FILES} if (DISP_FILES or TXT_FILES) else {}), 'paper': palette['paper'], 'manifestBackground': palette['paper'], 'manifestTheme': a[0], 'darkMode': False,
+              **({'coverMade': 'ai'} if own_cover and cover.get('made') == 'ai' else {})},   # the cover-art job's drawing: the credits say it was made with AI
     'previewImages': (['logo-head.png'] if logo_im else []) + ['favicon.png'] + (['house.jpg'] if HAS_PHOTO else []),
     'onboarding': {'mood': A.get('mood'), 'styleKit': kit_id, 'imageStats': stats, 'palette': palette, 'presetChosen': preset}
 }

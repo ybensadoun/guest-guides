@@ -44,7 +44,7 @@ h2.title{font-weight:600;letter-spacing:-.02em}
 
 .whatson,.mlist,.clist,.hsec,.allphotos,.pl-hours,.pl-alt,#mapview .maplist,.filters,.sheet{box-shadow:var(--shadow);border:0!important}
 .mbody,.mrow[open] summary{background:color-mix(in srgb,var(--paper) 60%,var(--white))!important}
-.mlist > .mrow[open] + .mrow,.mlist > .mrow + .mrow[open]{border-top-color:var(--paper)!important}
+.mlist > .mrow[open] + .mrow,.mlist > .mrow + .mrow[open],.mlist > .mrow[open] + .mgh{border-top-color:var(--paper)!important}
 .dot{border-radius:50%;background:color-mix(in srgb,var(--cc) 22%,var(--white))!important;color:var(--ink)}
 .dbadge{border-radius:14px;background:var(--sf-blue)!important;color:var(--ink)}
 
@@ -57,3 +57,6 @@ h2.title{font-weight:600;letter-spacing:-.02em}
 .hero .back,.langsel{box-shadow:var(--shadow)!important}
 .gphotos img{border-radius:16px}
 .gt[data-k="nightlife"]::before{box-shadow:none!important}   /* Nightlife: this layout's own shape, not the Bauhaus crescent */
+
+/* Google's open-now line (gcard.js): its Maps button takes this look's thin border, like our own buttons. */
+gmp-place-details-compact{--gmp-button-border-width:1.5px;--gmp-button-border-color:var(--line)}

@@ -32,7 +32,7 @@ h2.title{font-weight:600;font-size:30px;letter-spacing:-.025em}
 
 .whatson,.mlist,.clist,.hsec,.allphotos,.pl-hours,.pl-alt,#mapview .maplist,.filters,.sheet{border:1px solid var(--line)!important;background:var(--white)!important}
 .mbody,.mrow[open] summary,.mlist > .mrow[open] > summary{background:var(--white)!important}
-.mlist > .mrow[open] + .mrow,.mlist > .mrow + .mrow[open]{border-top:1px solid var(--line)!important}
+.mlist > .mrow[open] + .mrow,.mlist > .mrow + .mrow[open],.mlist > .mrow[open] + .mgh{border-top:1px solid var(--line)!important}
 .mlist > .mrow[open] > .mbody{border:1px solid var(--line)}
 .dot{background:none!important;color:var(--cc);border:1px solid var(--line)}
 .dbadge{background:none!important;color:var(--ink);border:1px solid var(--line)}
@@ -46,3 +46,6 @@ h2.title{font-weight:600;font-size:30px;letter-spacing:-.025em}
 .cgroup[data-g="urgent"] .ccall{background:var(--red)!important}
 .pl-map,#mapview .mapbox{border-width:1px!important;border-color:var(--line)!important}
 .hero .back,.langsel{box-shadow:0 0 0 1px var(--line)!important}
+
+/* Google's open-now line (gcard.js): its Maps button takes this look's thin border, like our own buttons. */
+gmp-place-details-compact{--gmp-button-border-width:1px;--gmp-button-border-color:var(--line)}

@@ -2,22 +2,22 @@
 //   node --test 'worker/test/*.test.mjs'   (Node 22 and later read --test's arguments as file patterns, not folders)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeFacts, due, FACTS } from '../place-store.mjs';
+import { mergeFacts, due, FACTS, tidyName } from '../place-store.mjs';
 import { placeFacts } from '../place-facts.mjs';
 
 const d1 = new Date('2026-11-01T09:00:00Z'), d2 = new Date('2026-11-10T09:00:00Z');
 const look = o => ({ entry: null, venue: true, phone: null, phoneFrom: null, website: null, websiteFrom: null, facebook: null, instagram: null,
-  town: null, kind: null, hours: null, price: null, book: null, page: null, usd: 0.02, ...o });
+  town: null, category: null, name: null, ourKind: null, hours: null, price: null, book: null, page: null, usd: 0.02, ...o });
 const H = [{ days: ['tue', 'wed'], open: '10:00', close: '14:00' }];
 
 test('a first look keeps what it found, each fact with its source', () => {
   const r = mergeFacts(null, { name: 'Bar X' }, look({
-    entry: { id: 'ov1', name: 'Bar X', kind: 'bar', lat: 41.2, lng: 1.6 }, phone: '977 66 16 25', phoneFrom: 'overture',
-    website: 'https://barx.es/', websiteFrom: 'search', page: 'https://barx.es/', facebook: 'https://facebook.com/barx', town: 'Calafell', kind: 'bar', hours: H, price: '20-30', book: true,
+    entry: { id: 'ov1', name: 'Bar X', category: 'bar', lat: 41.2, lng: 1.6 }, phone: '977 66 16 25', phoneFrom: 'overture',
+    website: 'https://barx.es/', websiteFrom: 'search', page: 'https://barx.es/', facebook: 'https://facebook.com/barx', town: 'Calafell', category: 'bar', hours: H, price: '20-30', book: true,
   }), { now: d1, release: '2026-10-22.0' });
   assert.equal(r.name, 'Bar X'); assert.equal(r.country, 'ES'); assert.equal(r.venue, true);
   assert.equal(r.overture_id, 'ov1'); assert.equal(r.overture_release, '2026-10-22.0');
-  assert.deepEqual(r.facts, { phone: '977 66 16 25', website: 'https://barx.es/', facebook: 'https://facebook.com/barx', town: 'Calafell', kind: 'bar', hours: H, price: '20-30', book: true, lat: 41.2, lng: 1.6 });
+  assert.deepEqual(r.facts, { phone: '977 66 16 25', website: 'https://barx.es/', facebook: 'https://facebook.com/barx', town: 'Calafell', category: 'bar', hours: H, price: '20-30', book: true, lat: 41.2, lng: 1.6 });
   assert.deepEqual(r.sources.phone, { from: 'overture', at: '2026-11-01', release: '2026-10-22.0' });
   assert.deepEqual(r.sources.website, { from: 'search', at: '2026-11-01', page: 'https://barx.es/' });
   assert.deepEqual(r.sources.hours, { from: 'site', at: '2026-11-01', page: 'https://barx.es/' });
@@ -74,7 +74,7 @@ test('placeFacts: a place that gives nothing is read once more, and the second r
   const r = await placeFacts({ name: 'Bar X', town: 'Calafell' }, cands, ask, { meter: {}, again });
   assert.deepEqual(asked, [['low', 'place match'], ['low', 'site facts'], ['medium', 'site facts']]);
   assert.equal(r.tries, 2); assert.equal(r.matchTries, 1); assert.deepEqual(r.gained, ['site', 'hours', 'price']);
-  assert.deepEqual(r.entry, { id: 'ov1', name: 'Bar X', kind: 'bar', lat: 41.2, lng: 1.6 });
+  assert.deepEqual(r.entry, { id: 'ov1', name: 'Bar X', category: 'bar', lat: 41.2, lng: 1.6 });
   assert.equal(r.website, 'https://barx.es/'); assert.equal(r.websiteFrom, 'search'); assert.equal(r.page, 'https://barx.es/');
   assert.deepEqual(r.hours, H); assert.equal(r.price, '20-30'); assert.equal(r.book, true);
   assert.equal(r.phone, '977 66 16 25'); assert.equal(r.phoneFrom, 'overture');
@@ -93,4 +93,14 @@ test('placeFacts: an unsure match is asked once more, the second answer wins whe
   assert.equal(r.matchTries, 2); assert.equal(r.entry.id, 'ov2');
   // The first site read has a price, so it is not read again.
   assert.equal(r.tries, 1); assert.equal(r.price, '12'); assert.equal(r.phone, '977 12 34 56'); assert.equal(r.phoneFrom, 'site');
+});
+
+test('tidyName: word order, small words, towns, punctuation (cases seen on Ca La Kimberly, 10 Nov 2026)', () => {
+  assert.equal(tidyName("l'ancora del serrallo", "L'ancora Del Serrallo"), "L'Ancora del Serrallo");   // ref's own capital on a small word is not taken
+  assert.equal(tidyName('la cuina de la marga', 'La Cuina de la Marga', ['La Bisbal del Penedès']), 'La Cuina de la Marga');   // the second "la" is ref's second
+  assert.equal(tidyName('llepol', 'Llépol, espai gastronòmic'), 'Llépol');
+  assert.equal(tidyName('pitch putt golf el vendrell', 'Pitch and Putt Vendrell', ['El Vendrell']), 'Pitch Putt Golf El Vendrell');   // a town keeps its article's capital
+  assert.equal(tidyName('vilafranca del penedes', null, ['Vilafranca del Penedès']), 'Vilafranca del Penedès');
+  assert.equal(tidyName("platja d'en bossa", null), "Platja d'en Bossa");
+  assert.equal(tidyName('platja per a gossos de coma ruga', null), 'Platja per a Gossos de Coma Ruga');
 });

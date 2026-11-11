@@ -15,5 +15,6 @@ export default defineConfig({
   resolve: { alias: { '@site': SD } },
   server: { fs: { allow: [ROOT] } },
   build: { outDir: resolve(SD, 'preview'), emptyOutDir: true, target: 'es2020', assetsInlineLimit: 100000000 },
-  plugins: [sitePlugin(SITE), viteSingleFile()]
+  // A file people send around: never a key in it, so no Google card.
+  plugins: [sitePlugin(SITE, { gmapsKey: '' }), viteSingleFile()]
 });

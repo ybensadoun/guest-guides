@@ -39,6 +39,8 @@ const i18n = Object.fromEntries(LANGS.map(l => [l, { ...read(resolve(ENGINE, 'sr
 const base = i18n.en || i18n[LANGS[0]];
 for (const k of Object.keys(base)) for (const l of LANGS) if (!(k in i18n[l])) errors.push(`i18n ${l} is missing "${k}"`);
 
+// A position Google gave carries its date (pos: { from: 'google', at: 'YYYY-MM-DD' }; the engine drops it after 30 days).
+const posBad = it => it.pos !== undefined && !(it.pos && typeof it.pos.from === 'string' && /^\d{4}-\d\d-\d\d$/.test(it.pos.at || ''));
 const four = (o, what) => { for (const l of LANGS) if (!o || !String(o[l] || '').trim()) errors.push(`${what} is missing ${l}`); };
 
 let nMarkets = 0;
@@ -52,6 +54,7 @@ if (on('markets') && existsSync(C('markets'))) {
     four(m.name, `${w} name`);
     four(m.description, `${w} description`);
     if (typeof m.lat !== 'number' || typeof m.lng !== 'number') errors.push(`${w} needs lat/lng`);
+    if (posBad(m)) errors.push(`${w} pos must be { from, at: YYYY-MM-DD }`);
     if (!(m.schedule || []).length) four(m.occasional_when, `${w} occasional_when (no weekly schedule)`);
     for (const s of m.schedule || []) {
       if (!s.days.every(d => DAYS.includes(d))) errors.push(`${w} bad day in ${s.days}`);
@@ -71,7 +74,10 @@ for (const s of read(C('sections')).sections) {
     for (const it of read(C(s.id)).items) {
       four(it.name, `${s.id} "${it.id}" name`);
       if (!it.hostPick || it.description) four(it.description, `${s.id} "${it.id}" description`);   // a host's own pick may have no comment
-      if (typeof it.lat !== 'number') errors.push(`${s.id} "${it.id}" needs lat/lng`);
+      // A numeric position, unless the place has none (nomap). A Google id (gid) needs no gmaps link; a rating is ignored.
+      if (!it.nomap && (typeof it.lat !== 'number' || typeof it.lng !== 'number')) errors.push(`${s.id} "${it.id}" needs lat/lng`);
+      if (posBad(it)) errors.push(`${s.id} "${it.id}" pos must be { from, at: YYYY-MM-DD }`);
+      if (it.gid !== undefined && (typeof it.gid !== 'string' || !it.gid.trim())) errors.push(`${s.id} "${it.id}" gid must be a Google place id`);
       if (it.group && !(it.group in GROUPS)) errors.push(`${s.id} "${it.id}" group "${it.group}" is not a filter group (engine/src/groups.json)`);
     }
   }

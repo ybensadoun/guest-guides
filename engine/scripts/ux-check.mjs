@@ -1,4 +1,4 @@
-// UX check (docs/UX-GUIDELINES.md): renders Home, six sections and one place page at phone widths in every language
+// UX check (docs/UX-GUIDELINES.md): renders Home, six sections, Sources and credits and one place page at phone widths in every language
 // of a site and reports any decorative shape (tile ::before / ::after) that touches text, an icon or an arrow, a
 // floating back or language button that sits on the page's text or icons before any scroll, plus any page wider than
 // the screen.
@@ -16,7 +16,7 @@ let bad = 0;
 for (const w of [360, 390, 430]) for (const l of langs) {
   const pg = await b.newPage({ viewport: { width: w, height: 900 } });
   let res = [];
-  const routes = ['', '#markets/today', '#s/restaurants', '#s/todo', '#s/house', '#s/events', '#s/transport'];
+  const routes = ['', '#markets/today', '#s/restaurants', '#s/todo', '#s/house', '#s/events', '#s/transport', '#credits'];
   for (const route of routes) {
   await pg.goto(`${URLBASE || 'http://localhost:5299/'}?lang=${l}${route}`); await pg.waitForTimeout(800);
   if (!route) { const pl = await pg.evaluate(() => document.querySelector('a[href^="#p/"]')?.getAttribute('href')); if (pl) routes.push(pl); }   // the first place page Home links to
@@ -50,7 +50,7 @@ for (const w of [360, 390, 430]) for (const l of langs) {
         for (const [c, r] of content) if (hit(R, r)) out.push(`${g.dataset.k}${ps} touches ${c}`);
       }
     }
-    // List rows: the name and its lines (type, distance, rating) never run under the status on the right ("Rouvre à 20:00").
+    // List rows: the name and its lines (type, distance, price) never run under the status on the right ("Rouvre à 20:00").
     for (const r of document.querySelectorAll('.mrow > summary')) {
       const st = r.querySelector('.rt .st'), nm = r.querySelector('.nm'); if (!st || !nm || !st.offsetParent) continue;
       const S = st.getBoundingClientRect(), rg = document.createRange(); rg.selectNodeContents(nm);

@@ -1,0 +1,40 @@
+{
+ "_doc": "The one list of kinds of place, for the builder, the worker's chain (worker/place-facts.mjs picks one from the host's words and our records, never from Google), the generator and the editor. eat: Eat and drink and Nightlife; todo: Attractions. The key is the name of the place's icon (ITEM_ICON in engine/src/ui.js). todo: group is the quick filter (a key of engine/src/groups.json); kids: true when the kind is for kids (the tag kidsfun, \"Great for kids\"). name: the kind in the six languages, shown as the place's type. hours: false for a kind with no door and so no opening hours (beach, town, city): such a place never asks for Google's hours card (engine/src/gcard.js).",
+ "eat": {
+  "fork": { "name": { "en": "Restaurant", "es": "Restaurante", "fr": "Restaurant", "ca": "Restaurant", "de": "Restaurant", "nl": "Restaurant" } },
+  "pizza": { "name": { "en": "Pizza", "es": "Pizza", "fr": "Pizza", "ca": "Pizza", "de": "Pizza", "nl": "Pizza" } },
+  "paella": { "name": { "en": "Paella and rice", "es": "Paella y arroces", "fr": "Paella et riz", "ca": "Paella i arrossos", "de": "Paella und Reis", "nl": "Paella en rijst" } },
+  "fish": { "name": { "en": "Fish and seafood", "es": "Pescado y marisco", "fr": "Poisson et fruits de mer", "ca": "Peix i marisc", "de": "Fisch und Meeresfrüchte", "nl": "Vis en zeevruchten" } },
+  "ham": { "name": { "en": "Grill and ham", "es": "Brasa y jamón", "fr": "Grillades et jambon", "ca": "Brasa i pernil", "de": "Grill und Schinken", "nl": "Grill en ham" } },
+  "cloche": { "name": { "en": "Fine dining", "es": "Alta cocina", "fr": "Gastronomique", "ca": "Alta cuina", "de": "Gehobene Küche", "nl": "Gastronomisch" } },
+  "pot": { "name": { "en": "Home cooking", "es": "Cocina casera", "fr": "Cuisine maison", "ca": "Cuina casolana", "de": "Hausmannskost", "nl": "Huiselijke keuken" } },
+  "leaf": { "name": { "en": "Vegetarian", "es": "Vegetariano", "fr": "Végétarien", "ca": "Vegetarià", "de": "Vegetarisch", "nl": "Vegetarisch" } },
+  "croissant": { "name": { "en": "Bakery and café", "es": "Panadería y café", "fr": "Boulangerie et café", "ca": "Forn i cafè", "de": "Bäckerei und Café", "nl": "Bakkerij en café" } },
+  "mug": { "name": { "en": "Café or bar", "es": "Café o bar", "fr": "Café ou bar", "ca": "Cafè o bar", "de": "Café oder Bar", "nl": "Café of bar" } },
+  "beachbar": { "name": { "en": "Beach bar", "es": "Chiringuito", "fr": "Bar de plage", "ca": "Xiringuito", "de": "Strandbar", "nl": "Strandbar" } },
+  "truck": { "name": { "en": "Roadside", "es": "De carretera", "fr": "Bord de route", "ca": "De carretera", "de": "Rasthof", "nl": "Wegrestaurant" } }
+ },
+ "todo": {
+  "waterpark": { "group": "fun", "kids": true, "name": { "en": "Water park", "es": "Parque acuático", "fr": "Parc aquatique", "ca": "Parc aquàtic", "de": "Wasserpark", "nl": "Waterpark" } },
+  "themepark": { "group": "fun", "kids": true, "name": { "en": "Theme park", "es": "Parque temático", "fr": "Parc d’attractions", "ca": "Parc temàtic", "de": "Freizeitpark", "nl": "Pretpark" } },
+  "kart": { "group": "fun", "kids": true, "name": { "en": "Karting", "es": "Karts", "fr": "Karting", "ca": "Karts", "de": "Kartbahn", "nl": "Karting" } },
+  "bowling": { "group": "fun", "kids": true, "name": { "en": "Bowling", "es": "Bolera", "fr": "Bowling", "ca": "Bolera", "de": "Bowling", "nl": "Bowling" } },
+  "trampoline": { "group": "fun", "kids": true, "name": { "en": "Play park", "es": "Parque infantil", "fr": "Aire de jeux", "ca": "Parc infantil", "de": "Spielpark", "nl": "Speeltuin" } },
+  "golf": { "group": "fun", "name": { "en": "Golf", "es": "Golf", "fr": "Golf", "ca": "Golf", "de": "Golf", "nl": "Golf" } },
+  "escape": { "group": "fun", "name": { "en": "Escape room", "es": "Escape room", "fr": "Escape game", "ca": "Escape room", "de": "Escape-Room", "nl": "Escaperoom" } },
+  "music": { "group": "fun", "name": { "en": "Music and shows", "es": "Música y espectáculos", "fr": "Musique et spectacles", "ca": "Música i espectacles", "de": "Musik und Shows", "nl": "Muziek en shows" } },
+  "beach": { "hours": false, "group": "beach", "name": { "en": "Beach", "es": "Playa", "fr": "Plage", "ca": "Platja", "de": "Strand", "nl": "Strand" } },
+  "beachbar": { "group": "beach", "name": { "en": "Beach bar", "es": "Chiringuito", "fr": "Bar de plage", "ca": "Xiringuito", "de": "Strandbar", "nl": "Strandbar" } },
+  "wine": { "group": "wine", "name": { "en": "Winery", "es": "Bodega", "fr": "Domaine viticole", "ca": "Celler", "de": "Weingut", "nl": "Wijndomein" } },
+  "castle": { "group": "sights", "name": { "en": "Castle", "es": "Castillo", "fr": "Château", "ca": "Castell", "de": "Burg", "nl": "Kasteel" } },
+  "monastery": { "group": "sights", "name": { "en": "Church or monastery", "es": "Iglesia o monasterio", "fr": "Église ou monastère", "ca": "Església o monestir", "de": "Kirche oder Kloster", "nl": "Kerk of klooster" } },
+  "palette": { "group": "sights", "name": { "en": "Museum or art", "es": "Museo o arte", "fr": "Musée ou art", "ca": "Museu o art", "de": "Museum oder Kunst", "nl": "Museum of kunst" } },
+  "roman": { "group": "sights", "name": { "en": "Ruins", "es": "Ruinas", "fr": "Ruines", "ca": "Ruïnes", "de": "Ruinen", "nl": "Ruïnes" } },
+  "arch": { "group": "sights", "name": { "en": "Monument", "es": "Monumento", "fr": "Monument", "ca": "Monument", "de": "Denkmal", "nl": "Monument" } },
+  "town": { "hours": false, "group": "sights", "name": { "en": "Town or village", "es": "Pueblo o villa", "fr": "Ville ou village", "ca": "Poble o vila", "de": "Stadt oder Dorf", "nl": "Stadje of dorp" } },
+  "city": { "hours": false, "group": "sights", "name": { "en": "City", "es": "Ciudad", "fr": "Grande ville", "ca": "Ciutat", "de": "Großstadt", "nl": "Stad" } },
+  "train": { "group": "sights", "name": { "en": "Train ride", "es": "Paseo en tren", "fr": "Balade en train", "ca": "Passeig en tren", "de": "Zugfahrt", "nl": "Treinrit" } },
+  "mountain": { "group": "nature", "name": { "en": "Mountain and views", "es": "Montaña y vistas", "fr": "Montagne et panoramas", "ca": "Muntanya i vistes", "de": "Berge und Aussicht", "nl": "Bergen en uitzicht" } },
+  "spring": { "group": "nature", "name": { "en": "Springs and spa", "es": "Fuentes y spa", "fr": "Sources et spa", "ca": "Fonts i spa", "de": "Quellen und Spa", "nl": "Bronnen en spa" } }
+ }
+}

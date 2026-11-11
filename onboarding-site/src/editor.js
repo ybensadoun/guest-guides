@@ -3,7 +3,7 @@
    (groups, tiles, rail, bottom bar), but each step shows and changes the guide's own content and look.
    Changes save as a draft (guides.draft) that guests never see: Preview shows it to the host, "Publish changes"
    makes it live. Plan and rules: docs/plan-single-editor.md */
-const CM = { on: false, g: null, live: null, lang: 'en', timer: null, marks: null, saving: null, again: false, open: new Set() };
+const CM = { on: false, g: null, live: null, lang: 'en', timer: null, marks: null, saving: null, again: false, open: new Set(), chg: new Set(), kpick: new Set(), kq: new Map(), kidsHand: new Set() };
 const ED_LANGS = { en: 'English', es: 'Español', fr: 'Français', ca: 'Català', de: 'Deutsch', nl: 'Nederlands' };
 const ED_DAYS = [['mon', 'Mo'], ['tue', 'Tu'], ['wed', 'We'], ['thu', 'Th'], ['fri', 'Fr'], ['sat', 'Sa'], ['sun', 'Su']];
 const ED_FONTS = [['jost', 'Jost'], ['inter', 'Inter'], ['cormorant-garamond', 'Cormorant Garamond'], ['dm-sans', 'DM Sans'], ['dm-serif-display', 'DM Serif Display', [400]], ['fraunces', 'Fraunces'], ['geist', 'Geist'], ['instrument-serif', 'Instrument Serif', [400]], ['nunito', 'Nunito'], ['outfit', 'Outfit'], ['space-grotesk', 'Space Grotesk'], ['bricolage-grotesque', 'Bricolage Grotesque']];
@@ -99,10 +99,10 @@ function cf(label, path, obj, o = {}) {
 // An on/off setting: a switch with its state written next to it, so it is clear whether it is on.
 const cSwitch = (attrs, label, on, hint = '') => `<div class="cm-swrow"><button type="button" class="cm-switch" role="switch" aria-checked="${!!on}" ${attrs}><span class="cm-sw-track" aria-hidden="true"><span class="cm-sw-knob"></span></span><span class="cm-sw-label">${esc(label)}</span><span class="cm-sw-state" aria-hidden="true">${on ? 'On' : 'Off'}</span></button>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}</div>`;
 const cDays = (path, days) => ED_DAYS.map(([d, l]) => `<button class="chip" type="button" data-daytog="${esc(path)}" data-d="${d}" aria-pressed="${(days || []).includes(d)}"><span>${l}</span></button>`).join('');
-function cSchedule(path, arr) {
+function cSchedule(path, arr, season = false, weeks = false) {   // season: each row says whether it is only part of the year (places, markets); weeks: and which weeks of the month (markets)
   return `<div class="f full"><span class="lab">Opening days and hours</span><div class="cm-sch">${(arr || []).map((r, k) => `<div class="cm-sr"><div class="cm-dayrow"><div class="chips" role="group" aria-label="Days">${cDays(`${path}/${k}`, r.days)}</div><button class="cm-x" type="button" data-cdel="${path}/${k}" data-now="1" aria-label="Remove these hours">×</button></div>
     <div class="cm-times"><input type="time" aria-label="Opens" data-p="${path}/${k}/open" data-t="str" value="${esc(r.open || '')}"><span>to</span><input type="time" aria-label="Closes" data-p="${path}/${k}/close" data-t="str" value="${esc(r.close || '')}"></div>
-    ${r.from || r.to ? `<p class="hint">Only from ${esc(r.from || '?')} to ${esc(r.to || '?')} (month-day).</p>` : ''}</div>`).join('')}
+    ${season ? plSeason(`${path}/${k}`, r, weeks) : r.from || r.to ? `<p class="hint">Only from ${esc(r.from || '?')} to ${esc(r.to || '?')} (month-day).</p>` : ''}</div>`).join('')}
     <button class="btn small" type="button" data-addsch="${path}">+ Add opening hours</button></div></div>`;
 }
 function cDates(path, arr) {
@@ -119,13 +119,13 @@ function cPhotos(path, arr) {
   return `${(arr || []).length ? `<div class="thumbs">${arr.map((n, i) => `<div class="thumb"><img src="${esc(edImg(n))}" alt="" loading="lazy"><div class="cm-phb"><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="-1" aria-label="Move earlier">‹</button><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="1" aria-label="Move later">›</button></div><button class="x" type="button" data-cdel="${path}/${i}" data-now="1" aria-label="Remove photo ${i + 1}">×</button></div>`).join('')}</div>` : ''}
     <label class="btn small cm-file"><input class="sr" type="file" accept="image/*" multiple data-phadd="${path}">+ Add photos</label>`;
 }
-function cCard(p, title, meta, inner, order) {   // order: [this card's place, how many there are], for a list the host can put in order
+function cCard(p, title, meta, inner, order, lead = '') {   // lead: what goes before the name in the row (a place's kind)   // order: [this card's place, how many there are], for a list the host can put in order
   const mv = order ? `<div class="cm-ord"><button type="button" data-cardmove="${esc(p)}" data-dir="-1" aria-label="Move ${esc(title)} up"${order[0] ? '' : ' disabled'}>↑</button><button type="button" data-cardmove="${esc(p)}" data-dir="1" aria-label="Move ${esc(title)} down"${order[0] < order[1] - 1 ? '' : ' disabled'}>↓</button></div>` : '';
-  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary><span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}</span>${mv}<i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
+  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary>${lead}<span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}</span>${mv}<i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
 }
 
 /* --- One place, contact or tile: its texts, links, position, hours or dates --- */
-const C_SKIP = new Set(['id', 'from', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx']);
+const C_SKIP = new Set(['id', 'from', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx', 'pos', 'filled']);   // filled: where a place's facts came from, said under "Filled in for you", never a field
 const C_STR = ['town', 'place', 'phone', 'web', 'url', 'map', 'gmaps', 'venue', 'address', 'comarca', 'price'];
 const C_LONG = ['description', 'what', 'examples', 'priceNote', 'hours', 'occasional_when'];
 const C_LBL = { name: 'Name', name_local: 'Name in the local language', title: 'Title on its page', sub: 'Line under the name', type: 'Type', kind: 'Kind', what: 'What guests need to know', description: 'Description', hours: 'Opening hours, in words', occasional_when: 'When it runs', town: 'Town', place: 'Where exactly', venue: 'Where exactly', address: 'Address', comarca: 'County', phone: 'Phone', url: 'Official website', web: 'Website', gmaps: 'Google Maps link', map: 'Map link', price: 'Price (€)', priceNote: 'About the price', taxiName: 'Taxi name', taxiSub: 'Line under the taxi' };
@@ -133,20 +133,348 @@ const C_ORDER = ['name', 'name_local', 'title', 'sub', 'type', 'kind', 'what', '
 const cLabel = k => C_LBL[k] || k.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/^./, x => x.toUpperCase());
 const cName = it => edShown(it.name) || edShown(it.title) || edShown(it.where) || (it.id && !String(it.id).startsWith('custom-') ? it.id : 'New');
 function cItem(base, it, i, what) {
+  if (PL_SEC[base]) return cPlace(base, it, i);
+  if (base === MK_PATH) return cMarket(base, it, i);
   const p = `${base}/${i}`, ord = k => { const n = C_ORDER.indexOf(k); return n < 0 ? 99 : n; };
   const keys = Object.keys(it).filter(k => !C_SKIP.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'))).sort((a, b) => ord(a) - ord(b));
-  const km = it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
+  const km = cKm(it);
   const meta = [typeof it.town === 'string' ? it.town : '', km, (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
-  const said = (CM.gfind || {})[p], has = typeof it.lat === 'number';
-  const find = has ? `<div class="f full"><label for="${cmId(p + '/gs')}">Find it on Google</label><input id="${cmId(p + '/gs')}" type="text" ${psAttrs(cmId(p + '/sug'))} data-gsp="${p}" placeholder="Start typing the name"><div class="pl-sug" id="${cmId(p + '/sug')}" role="listbox" aria-label="Places on Google" hidden></div><p class="hint">${esc(said || (it.nomap ? 'Not on the map yet: pick it from the list to get its name, pin, distance and hours.' : 'Pick it from the list to update its pin, distance and hours.'))}</p></div>` : '';
-  const pin = has ? `<div class="f full"><label for="${cmId(p + '/gm')}">Or move the pin: paste a Google Maps link</label><p class="hint">${it.lat && !it.nomap ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
-  const first = it.nomap || said;   // a place with no pin yet starts here: finding it fills in the rest
+  const { find, pin, first } = cWhere(p, it);
   const check = Array.isArray(it.flags) || what !== 'contact' ? cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.') : '';
-  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], { long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' })).join('')}
+  const ev = base === EV_PATH, kr = ev ? evKind(p, it) : '';   // an event's kind: one line right under its name
+  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${keys.includes('name') ? '' : kr}${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], cOpt(it, k)) + (k === 'name' ? kr : '')).join('')}
     ${'stalls_approx' in it ? cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx, { type: 'number', half: true }) : ''}${first ? '' : find}${pin}
     ${'schedule' in it || base.includes('markets') ? cSchedule(`${p}/schedule`, it.schedule) : ''}${'dates' in it || base.includes('events') ? cDates(`${p}/dates`, it.dates) : ''}</div>
-    ${what === 'contact' ? '' : check}${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`);
+    ${what === 'contact' ? '' : check}${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`, null, ev ? evTile(it.type) : '');
 }
+const cKm = it => it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
+const cOpt = (it, k) => ({ long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' });
+// "Find it on Google" and "Or move the pin"; first: a place with no pin yet starts with the search.
+function cWhere(p, it) {
+  const km = cKm(it), said = (CM.gfind || {})[p], has = typeof it.lat === 'number';
+  // What was found: Google's name and address, from this session's memory, with Google Maps beside them (data-glive: the phone
+  // shows no map meanwhile, gLiveSync in start.js). Nothing of it is in the guide.
+  const saidHTML = said && typeof said === 'object' ? `<p class="hint" data-glive>${esc(`Found: ${[said.name, said.where].filter(Boolean).join(', ') || said.words}, ${said.km} km from the house. Not the right one? Search again, or paste its Google Maps link below.`)} <a href="${esc(gmLink(said.words, said.gid))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>`
+    : `<p class="hint">${esc(said || (it.nomap ? 'Not on the map yet: pick it from the list to get its pin and distance.' : 'Pick it from the list to update its pin and distance.'))}</p>`;
+  const find = has ? `<div class="f full"><label for="${cmId(p + '/gs')}">Find it on Google</label><input id="${cmId(p + '/gs')}" type="text" ${psAttrs(cmId(p + '/sug'))} data-gsp="${p}" placeholder="Start typing the name"><div class="pl-sug" id="${cmId(p + '/sug')}" role="listbox" aria-label="Places on Google" hidden></div>${saidHTML}</div>` : '';
+  const pin = has ? `<div class="f full"><label for="${cmId(p + '/gm')}">Or move the pin: paste a Google Maps link</label><p class="hint">${it.lat && !it.nomap ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
+  return { find, pin, first: !!(it.nomap || said) };   // a place with no pin yet starts here: finding it fills in the rest
+}
+/* --- A place in Eat and drink, Nightlife or Attractions (Yohann, 11 Nov 2026): the host gives the least possible, everything
+   else is filled in and shown to look at once, never a form to complete. So an opened place starts with what only the host
+   knows (name, comment, favourite), then a quiet summary of what was filled in, and the form behind "Change". The kinds,
+   groups and the guide's own words come from engine/src (ENG_KINDS, ENG_GROUPS, ENG_T, pasted by build.py). --- */
+const PL_SEC = { 'files/restaurants/items': 'eat', 'files/nightlife/items': 'eat', 'files/todo/items': 'todo' };
+// The marks a host can switch on, by list: tags (t) and the one flag (f) that is a choice, "Book ahead".
+const PL_MARKS = { eat: [['t', 'dogs'], ['t', 'veggie'], ['t', 'glutenfree'], ['t', 'terrace'], ['t', 'seaview'], ['f', 'book']], todo: [['t', 'kidsfun'], ['t', 'dogs'], ['t', 'free'], ['t', 'rainy'], ['f', 'book']] };
+const PL_DONE = new Set(['name', 'description', 'type', 'town', 'place', 'address', 'comarca', 'phone', 'url', 'price', 'priceNote', 'hours']);   // the card's own fields; what is left keeps the generic list, at the end
+// The guide's default colour for each tone of groups.json (engine app.css), and one colour for every place to eat.
+const PL_TONE = { red: '#D52B1E', blue: '#1D4FA0', orange: '#EC6A1C', purple: '#6E4A7E', green: '#0E7C46', wine: '#8E1B4A' }, PL_FOOD = 'var(--tomato)';
+I.clock = svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>');
+I.globe = svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>');
+I.euro = svg('<path d="M17 6.5A6.5 6.5 0 1 0 17 17.5"/><path d="M4 10.5h9M4 13.5h9"/>');
+// The engine's words in the maker's language (French spaces as the guide's typo() puts them).
+function engT(k, p) {
+  let x = (ENG_T[UIL] || {})[k] || ENG_T.en[k] || k; if (p != null) x = x.split('{p}').join(p);
+  return UIL === 'fr' ? x.replace(/(\d) (€|%)/g, '$1 $2').replace(/ ([?!;])/g, ' $1').replace(/ :/g, ' :') : x;
+}
+const plSec = p => PL_SEC[p.replace(/\/\d+$/, '')];
+const plKind = (sec, icon) => (ENG_KINDS[sec] || {})[icon];
+const plKindName = (sec, icon, l) => { const k = plKind(sec, icon); return k ? k.name[l] || k.name.en : ''; };
+// The row and the summary say the place's own line under the name, else its kind, in the language being edited.
+const plType = (sec, it) => (edIs18(it.type) ? edShown(it.type) : typeof it.type === 'string' ? it.type : '').trim() || plKindName(sec, it.icon, CM.lang);
+const plColour = (sec, it) => sec === 'eat' ? PL_FOOD : PL_TONE[ENG_GROUPS.groups[it.group || (plKind('todo', it.icon) || {}).group]] || 'var(--pine)';
+// A kind's tile (places, markets, events): the guide's icon on its colour, an empty outline for no kind; ink: a dark icon on a light colour.
+const kTile = (svg, kc, small, ink) => svg ? `<i class="pl-ic${small ? ' s' : ''}" style="--kc:${kc}${ink ? ';color:#121212' : ''}" aria-hidden="true">${svg}</i>` : `<i class="pl-ic none${small ? ' s' : ''}" aria-hidden="true"></i>`;
+const plTile = (sec, it, small) => kTile(it.icon && ENG_ICON[it.icon], plColour(sec, it), small);
+// Dates and days in the maker's language, never written by hand (docs/TYPOGRAPHY.md).
+const plLoc = () => UIL === 'en' ? 'en-GB' : UIL;
+const plDay = d => new Intl.DateTimeFormat(plLoc(), { weekday: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, 0, 1 + ED_DAYS.findIndex(x => x[0] === d))));   // 1 Jan 2024 was a Monday
+const plDate = md => { const [m, d] = String(md || '').split('-').map(Number); return m && d ? new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, m - 1, d))) : '?'; };
+const plMonth = m => new Intl.DateTimeFormat(plLoc(), { month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, m - 1, 1)));
+// Days as runs: "Tue-Sat", "Mon Wed", or "Every day".
+function plDays(days) {
+  const ix = ED_DAYS.map(x => x[0]).filter(d => (days || []).includes(d)).map(d => ED_DAYS.findIndex(x => x[0] === d));
+  if (ix.length === 7) return '<span>Every day</span>';
+  const runs = []; for (const i of ix) { const r = runs[runs.length - 1]; if (r && r[1] === i - 1) r[1] = i; else runs.push([i, i]); }
+  return `<span translate="no">${esc(runs.map(([a, b]) => b - a >= 2 ? `${plDay(ED_DAYS[a][0])}-${plDay(ED_DAYS[b][0])}` : ED_DAYS.slice(a, b + 1).map(x => plDay(x[0])).join(' ')).join(' '))}</span>`;
+}
+// A market held one week of the month, in the guide's own words: "2nd Sun of the month", "Last Sun of the month" (engine
+// i18n nth, nth1 to nth4 and nthLast through the engine's nthKey; a capital first, as the guide's hoursText puts one).
+const plNth = r => { const n = r.week_of_month, w = engT(nthKey(n)), d = ED_DAYS.map(x => x[0]).filter(x => (r.days || []).includes(x)).map(plDay).join(' '),
+  x = engT('nth').split('{nth}').join(w === nthKey(n) ? n + '.' : w).split('{day}').join(d);
+  return `<span translate="no">${esc(x.charAt(0).toUpperCase() + x.slice(1))}</span>`; };
+// One line per group of days (and season, and week of the month): "Tue-Sat 13:00-16:00, 20:00-23:30".
+function plHours(sch) {
+  const g = new Map();
+  for (const r of sch || []) { if (!(r.days || []).length) continue; const k = [(r.days || []).join(), r.from || '', r.to || '', r.week_of_month || ''].join('|'); if (!g.has(k)) g.set(k, { r, t: [] }); g.get(k).t.push(`${r.open || ''}${r.close ? '-' + r.close : ''}`); }
+  return [...g.values()].map(({ r, t }) => `<span class="pl-hl">${r.week_of_month ? plNth(r) : plDays(r.days)} ${t.filter(Boolean).map(x => `<span class="pl-nw">${esc(x)}</span>`).join(', ')}${r.from || r.to ? ` <small>${esc(`from ${plDate(r.from)} to ${plDate(r.to)}`)}</small>` : ''}</span>`);
+}
+const plHost = u => { try { return new URL(/^https?:/.test(u) ? u : 'https://' + u).hostname.replace(/^www\./, ''); } catch (e) { return u; } };
+const plMarks = (sec, it) => PL_MARKS[sec].filter(([t, k]) => (t === 't' ? it.tags || [] : it.flags || []).includes(k));
+const plMark = ([t, k]) => engT(t === 't' ? 't_' + k : 'f_' + k);
+// "Filled in for you": what the place has, one line each, only the lines with a value (two columns where there is room).
+// "Change" sits on the title row; while the form is open the lines go, since the form under it shows the same things.
+// The same panel for a market (mkFound): plPanel around its lines, each one plLine.
+const plLine = (ic, html, c = "") => `<div class="pl-l${c}"><i aria-hidden="true">${ic}</i><div>${html}</div></div>`;
+function plPanel(p, body) {
+  const open = CM.chg.has(p), btn = `<button class="pl-link pl-chg" type="button" data-cchg="${p}" aria-expanded="${open}">${open ? 'Done' : 'Change'}</button>`;
+  return `<div class="cm-found pl-found"><div class="pl-hd"><b class="pl-h">Filled in for you</b>${btn}</div>${body}</div>`;
+}
+function plFound(p, sec, it) {
+  const line = plLine;
+  const out = [], kind = it.icon && ENG_ICON[it.icon], K = plKind(sec, it.icon), say = (x, o) => `<p class="pl-note${o ? ' pl-clip" translate="no' : ''}">${esc(x)}</p>`;   // the guide's own notes: two lines at most here, whole in the form
+  if (kind || plType(sec, it)) out.push(`<div class="pl-l pl-lk">${plTile(sec, it, true)}<div translate="no">${esc(plType(sec, it))}</div></div>`);
+  const hrs = it.always ? ['<span>Open 24 hours</span>'] : plHours(it.schedule), note = edShown(it.hours || {}), facts = [it.price, (it.setMenus || []).length, it.phone, it.url, plMarks(sec, it).length, note, edShown(it.priceNote || {})].some(x => x && String(x).trim());
+  if (hrs.length || note) out.push(line(I.clock, hrs.join('') + (note ? say(note, 1) : '')));
+  else if ((kind || facts) && (!K || K.hours !== false)) out.push(line(I.clock, say(it.gid ? 'No opening hours found. Guests see Google’s own line saying whether it is open.' : 'No opening hours found.')));
+  const price = [it.price ? engT('perPerson', it.price) : '', ...(it.setMenus || []).filter(m => m && m.price).map(m => engT('sm_' + m.kind, m.price))].filter(Boolean), pn = edShown(it.priceNote || {});
+  if (price.length || pn) out.push(line(I.euro, (price.length ? `<span translate="no">${esc(price.join(' · '))}</span>` : '') + (pn ? say(pn, 1) : '')));
+  if (it.phone) out.push(line(I.phone, `<a href="tel:${esc(String(it.phone).replace(/[^\d+]/g, ''))}" translate="no">${esc(it.phone)}</a>`));
+  if (it.url) out.push(line(I.globe, `<a href="${esc(/^https?:/.test(it.url) ? it.url : 'https://' + it.url)}" target="_blank" rel="noopener" translate="no">${esc(plHost(it.url))}</a>`));
+  const mk = plMarks(sec, it); if (mk.length) out.push(line(I.tag, `<span class="pl-mks">${mk.map(m => `<span class="pl-mk" translate="no">${esc(plMark(m))}</span>`).join('')}</span>`, " pl-lm"));
+  const open = CM.chg.has(p);
+  // Its facts being looked up (job place-facts, below): one calm line in place of the lines, the form open or not. Then, at
+  // the foot of the lines: where they came from, the search that did not work, or "Look for its details".
+  const j = it.id ? CM.pf[it.id] : null, none = j && j.status === 'done' && !(j.result || {}).entry, failed = j && j.status === 'failed';
+  const empty = none ? `<p class="pl-note">Nothing found for this place. Guests still get the map pin and the Google Maps button.</p>${pfWebHTML(p)}`
+    : failed ? '' : '<p class="pl-note">Nothing found for this place yet. Guests still get the map pin and the Google Maps button.</p>';
+  const foot = failed ? `<p class="pl-foot pl-note"><span>The search did not work.</span>${j.message ? ` <span>${esc(j.message)}</span>` : ''} <button class="pl-more" type="button" data-pfagain="${p}">Try again</button></p>`
+    : plFrom(it) || (pfCan(it, j) ? `<p class="pl-foot"><button class="pl-more" type="button" data-pflook="${p}">Look for its details</button></p>` : '');
+  const body = pfBusy(j) ? pfWaitHTML(it.id) : open ? '' : `<div class="pl-ls">${out.length ? out.join('') : empty}${foot}</div>`;
+  return plPanel(p, body);
+}
+// Where the facts still shown came from (filled, from the worker: the build, Find more or a lookup here), one quiet line:
+// "From locanda.es and an open directory, 10 Nov 2026." The place's own site is said by its name, as a link to the page
+// read; Overture is "an open directory"; a kind Claude guessed from the name alone says nothing. A fact the host changed is
+// theirs and left out (plMine). The sentence is put together here, in the maker's language (its template and words from
+// i18n/ui.json, Intl for the list and the date), so the line is not translated again on its way (translate="no").
+const PF_HAS = { kind: it => !!it.icon, phone: it => !!it.phone, url: it => !!it.url, schedule: it => !it.always && (it.schedule || []).some(r => (r.days || []).length), price: it => !!it.price, book: it => (it.flags || []).includes('book') };
+function plFrom(it) {
+  const f = it.filled; if (!f || !f.from || typeof f.from !== 'object') return '';
+  const src = new Set(Object.entries(f.from).filter(([k]) => PF_HAS[k] && PF_HAS[k](it)).map(([, v]) => v)), parts = [];
+  if (src.has('site')) { const u = /^https?:\/\//.test(f.page || '') ? f.page : it.url ? (/^https?:/.test(it.url) ? it.url : 'https://' + it.url) : ''; if (u) parts.push({ t: plHost(u), u }); }
+  if (src.has('overture')) parts.push({ t: tr('an open directory') });
+  if (src.has('search')) parts.push({ t: tr('a web search') });
+  if (!parts.length) return '';
+  let k = 0;
+  const list = new Intl.ListFormat(plLoc(), { type: 'conjunction' }).formatToParts(parts.map(x => x.t)).map(x => { if (x.type !== 'element') return esc(x.value); const q = parts[k++];
+    return q.u ? `<a href="${esc(q.u)}" target="_blank" rel="noopener">${esc(q.t)}</a>` : esc(q.t); }).join('');
+  const d = /^\d{4}-\d\d-\d\d$/.test(f.at || '') ? new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(f.at + 'T00:00:00Z')) : '';
+  // ‹a› and ‹d› are filled here: a {gap} would make the sentence a pattern that any text starting with "From" would match.
+  return `<p class="pl-src" translate="no">${esc(tr(d ? 'From ‹a›, ‹d›.' : 'From ‹a›.')).split('‹a›').join(list).split('‹d›').join(esc(d))}</p>`;
+}
+// A fact the host changes by hand (kind, phone, website, the hours or Open 24 hours, the price, Book ahead) is theirs: its
+// source leaves filled, and filled goes with the last one. p: any path inside the place.
+function plMine(p, k) {
+  const m = String(p || '').match(/^files\/(?:restaurants|nightlife|todo)\/items\/\d+/); if (!m) return;
+  const it = edGet(edC(), edPath(m[0])), f = it && it.filled; if (!f || !f.from || !(k in f.from)) return;
+  delete f.from[k]; if (!Object.keys(f.from).length) delete it.filled;
+}
+// "Only part of the year" on a row of opening hours: two dates on one line, each a day and a month (from and to, MM-DD).
+// weeks (markets): "Which weeks" on the same line, in the values engine/src/weeks.js understands and names (week_of_month
+// 1 to 4, and -1 for the last one of the month; any other value a market already has is kept and offered as it is).
+function plSeason(rp, r, weeks = false) {
+  const on = !!(r.from || r.to), sel = (end, md) => { const [m, d] = String(md || '').split('-').map(Number);
+    return `<select data-cseas="${rp}" data-end="${end}" data-part="d" aria-label="Day">${Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}"${i + 1 === d ? ' selected' : ''}>${i + 1}</option>`).join('')}</select><select data-cseas="${rp}" data-end="${end}" data-part="m" aria-label="Month" translate="no">${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}"${i + 1 === m ? ' selected' : ''}>${esc(plMonth(i + 1))}</option>`).join('')}</select>`; };
+  const chip = `<button class="chip" type="button" data-cseason="${rp}" aria-pressed="${on}"><span>Only part of the year</span></button>`;
+  return `<div class="pl-part">${weeks ? `<div class="pl-when">${chip}${plWeeks(rp, r)}</div>` : chip}${on ? `<div class="pl-season"><span>Between</span>${sel('from', r.from)}<span>and</span>${sel('to', r.to)}</div>` : ''}</div>`;
+}
+const PL_WEEKS = [[0, 'Every week'], [1, '1st week of the month'], [2, '2nd week of the month'], [3, '3rd week of the month'], [4, '4th week of the month'], [-1, 'Last week of the month']];
+function plWeeks(rp, r) {
+  const n = +r.week_of_month || 0, o = PL_WEEKS.some(x => x[0] === n) ? PL_WEEKS : [...PL_WEEKS, [n, `Week ${n} of the month`]];
+  return `<select class="pl-wk" data-cweek="${rp}" aria-label="Which weeks">${o.map(([v, l]) => `<option value="${v || ''}"${v === n ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+}
+// The grid of kinds, behind a kind's "Change" (places, markets, events): groups of tiles, each with a heading or none.
+// A tile: { k, tile, name, on, no, kw } (no: the name is already in the maker's language, never translated on its way).
+// More than 12 tiles (events, attractions; not eating places or markets): a search field above them (Yohann, 11 Nov 2026).
+// kw: the words a tile is found by, folded (kFold): its name in every language we have for it, and for events other words
+// (EV_WORDS). Typing hides what does not match, and a heading with nothing left, without redrawing (kFilter): the field
+// keeps its focus and the grid its width. The words typed live in CM.kq while the grid is open, so a redraw keeps them.
+const kFold = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const kHit = (kw, q) => !q || (' ' + kw).includes(' ' + q);   // at the start of a word: "con" finds concert, not "icon"
+function kGrid(p, groups) {
+  const gs = groups.filter(g => g.tiles.length), find = gs.reduce((n, g) => n + g.tiles.length, 0) > 12, q = find ? kFold(CM.kq.get(p)) : '';
+  const hit = x => !find || kHit(x.kw, q), any = gs.some(g => g.tiles.some(hit));
+  const tile = x => `<button class="pl-k" type="button" data-ckind="${p}" data-k="${x.k}" aria-pressed="${x.on}"${find ? ` data-kw="${esc(x.kw)}"` : ''}${hit(x) ? '' : ' hidden'}>${x.tile}<span${x.no ? ' translate="no"' : ''}>${esc(x.name)}</span></button>`;
+  const field = find ? `<input type="text" class="pl-kq" id="${cmId(p + '/kq')}" data-ckq="${p}" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Search a kind" aria-label="Search a kind" value="${esc(CM.kq.get(p) || '')}"><p class="pl-note pl-knone" aria-live="polite"${any ? ' hidden' : ''}>No kind matches. Try another word.</p>` : '';
+  return `<div class="pl-kinds-w" role="group" aria-label="Kind">${field}${gs.map(g => { const h = g.tiles.some(hit) ? '' : ' hidden';
+    return `${g.head ? `<p class="pl-kg" translate="no"${h}>${esc(g.head)}</p>` : ''}<div class="pl-kinds"${h}>${g.tiles.map(tile).join('')}</div>`; }).join('')}</div>`;
+}
+function kFilter(t) {
+  const p = t.dataset.ckq, w = t.closest('.pl-kinds-w'), q = kFold(t.value); if (!w) return;
+  if (t.value.trim()) CM.kq.set(p, t.value); else CM.kq.delete(p);
+  let n = 0;
+  w.querySelectorAll('.pl-kinds').forEach(g => { let m = 0;
+    g.querySelectorAll('.pl-k').forEach(b => { const on = kHit(b.dataset.kw || '', q); b.hidden = !on; m += on; });
+    g.hidden = !m; const h = g.previousElementSibling; if (h && h.classList.contains('pl-kg')) h.hidden = !m; n += m; });
+  const none = w.querySelector('.pl-knone'); if (none) none.hidden = n > 0;
+}
+// The grid closed (picked, Change again, the place deleted): its search goes with it.
+const kClose = p => { CM.kpick.delete(p); CM.kq.delete(p); };
+// "Kind <tile> <name> Change", and the grid under it while it is open.
+const kRow = (p, tile, name, grid) => `<div class="f full"><div class="pl-kindrow"><span class="lab">Kind</span>${tile}${name}<button class="pl-link" type="button" data-ckinds="${p}" aria-expanded="${CM.kpick.has(p)}">Change</button></div>${CM.kpick.has(p) ? grid() : ''}</div>`;
+function plKinds(p, sec, it) {
+  const tile = ([k, x]) => ({ k, tile: plTile(sec, { icon: k, group: x.group }), name: x.name[UIL] || x.name.en, on: it.icon === k, no: true, kw: kFold(Object.values(x.name).join(' ')) });
+  const all = Object.entries(ENG_KINDS[sec]);
+  return kGrid(p, sec === 'eat' ? [{ tiles: all.map(tile) }] : Object.keys(ENG_GROUPS.groups).map(g => ({ head: engT('g_' + g), tiles: all.filter(([, x]) => x.group === g).map(tile) })));
+}
+function plForm(p, sec, it, rest, where) {
+  const sm = it.setMenus || [], [pf, pt] = String(it.price || '').split('-').map(x => x.trim());
+  const smOpt = (k, cur) => `<option value="${k}"${k === cur ? ' selected' : ''}>${esc(ENG_T.en['ff_' + k] ? engT('ff_' + k) : engT('sm_' + k).replace(/\s*(€\s*\{p\}|\{p\}\s*€)\s*/g, ' ').trim())}</option>`;
+  const hasOwn = k => k in it;
+  return `<div class="pl-form grid">
+    ${kRow(p, plTile(sec, it, true), `<span class="pl-kn" translate="no">${esc(plKindName(sec, it.icon, UIL))}</span>`, () => plKinds(p, sec, it))}
+    ${cf('Line under the name', `${p}/type`, it.type, { i18n: true, long: false })}
+    <div class="f full"><span class="lab">Marks</span><div class="chips pl-marks">${PL_MARKS[sec].map(m => { const [t, k] = m, on = (t === 't' ? it.tags || [] : it.flags || []).includes(k); return `<button class="chip" type="button" ${t === 't' ? `data-ctag="${p}" data-m="${k}"` : `data-cflag="${p}" data-f="${k}"`} aria-pressed="${on}"><span translate="no">${esc(plMark(m))}</span></button>`; }).join('')}</div></div>
+    <div class="f full"><span class="lab">Price per person</span><div class="pl-price"><span>From</span><input type="number" step="any" min="0" inputmode="decimal" id="${cmId(p + '/pf')}" data-cprice="${p}" data-end="from" aria-label="From" value="${esc(pf || '')}"><span>to</span><input type="number" step="any" min="0" inputmode="decimal" id="${cmId(p + '/pt')}" data-cprice="${p}" data-end="to" aria-label="to" value="${esc(pt || '')}"><span>€</span></div></div>
+    ${hasOwn('priceNote') ? cf('About the price', `${p}/priceNote`, it.priceNote, { long: true, rows: 2 }) : ''}
+    ${sec === 'eat' ? `<div class="f full"><span class="lab">Set menus</span>${sm.map((m, k) => `<div class="pl-sm"><select id="${cmId(`${p}/setMenus/${k}/kind`)}" data-p="${p}/setMenus/${k}/kind" data-t="str" aria-label="Set menus" translate="no">${[...new Set(['menuDia', 'tasting', m.kind])].filter(Boolean).map(x => smOpt(x, m.kind)).join('')}</select><input type="text" inputmode="decimal" id="${cmId(`${p}/setMenus/${k}/price`)}" data-p="${p}/setMenus/${k}/price" data-t="str" aria-label="Price (€)" placeholder="12-15" value="${esc(m.price || '')}"><button class="cm-x" type="button" data-csmdel="${p}/setMenus/${k}" aria-label="Remove this set menu">×</button></div>`).join('')}<button class="btn small pl-add" type="button" data-csmadd="${p}">+ Add a set menu</button></div>` : ''}
+    ${cf('Phone', `${p}/phone`, it.phone, { type: 'tel', half: true })}${cf('Official website', `${p}/url`, it.url, { type: 'url', half: true })}
+    <div class="full">${cSwitch(`data-calways="${p}"`, 'Open 24 hours', !!it.always)}</div>
+    ${it.always ? '' : cSchedule(`${p}/schedule`, it.schedule, true)}
+    ${hasOwn('hours') ? cf('Opening hours, in words', `${p}/hours`, it.hours, { long: true, rows: 2 }) : ''}
+    <div class="full">${cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.')}</div>
+    <div class="f full pl-sub"><span class="lab">Where it is</span></div>
+    ${['town', 'place', 'address', 'comarca'].filter(k => hasOwn(k) && (edIs18(it[k]) || typeof it[k] === 'string')).map(k => cf(cLabel(k), `${p}/${k}`, it[k], { ...cOpt(it, k), half: true })).join('')}
+    ${where}${rest.map(k => cf(cLabel(k), `${p}/${k}`, it[k], cOpt(it, k))).join('')}</div>`;
+}
+function cPlace(base, it, i) {
+  const p = `${base}/${i}`, sec = PL_SEC[base], ord = k => { const n = C_ORDER.indexOf(k); return n < 0 ? 99 : n; };
+  const rest = Object.keys(it).filter(k => !C_SKIP.has(k) && !PL_DONE.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'))).sort((a, b) => ord(a) - ord(b));
+  const ty = plType(sec, it), town = typeof it.town === 'string' ? it.town : '';   // a line that already names the town does not get it twice
+  const meta = [ty, town && !ty.toLowerCase().includes(town.toLowerCase()) ? town : '', cKm(it), (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
+  const { find, pin, first } = cWhere(p, it);
+  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${cf('Name', `${p}/name`, it.name, { i18n: true })}${cf('Your comment', `${p}/description`, it.description, { long: true, i18n: true })}</div>
+    ${cSwitch(`data-cfav="${p}"`, 'Our favourite', !!it.topPick, 'Guests see it marked Unmissable. Keep it for two or three places.')}
+    ${plFound(p, sec, it)}${CM.chg.has(p) ? plForm(p, sec, it, rest, (first ? '' : find) + pin) : ''}
+    ${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this place</button></div>`, null, plTile(sec, it));
+}
+// A kind picked: its icon; its name as the line under the name unless the host wrote their own; for Attractions its quick
+// filter (and tone) and "Great for kids" when the kind is for kids (taken off again only if the host did not set it here).
+function plPick(p, k) {
+  const it = edGet(edC(), edPath(p)), sec = plSec(p), was = plKind(sec, it && it.icon), nk = plKind(sec, k); if (!it || !nk) return;
+  const ty = it.type, own = edIs18(ty) ? Object.entries(ty) : typeof ty === 'string' ? [['en', ty]] : [];
+  if (own.every(([, s]) => !String(s || '').trim()) || (was && own.every(([l, s]) => !s || s === (was.name[l] || was.name.en)))) it.type = Object.fromEntries(edLangs().map(l => [l, nk.name[l] || nk.name.en]));
+  it.icon = k;
+  if (sec === 'todo') {
+    it.group = nk.group; if ('tone' in it && ENG_GROUPS.groups[nk.group]) it.tone = ENG_GROUPS.groups[nk.group];
+    const tg = [...(it.tags || [])];
+    if (nk.kids && !tg.includes('kidsfun')) tg.push('kidsfun');
+    else if (!nk.kids && was && was.kids && !CM.kidsHand.has(p)) { const j = tg.indexOf('kidsfun'); if (j >= 0) tg.splice(j, 1); }
+    it.tags = tg;
+  }
+  kClose(p);
+}
+// Price per person from two numbers: "20-25", "20" when only one is given, none when both are empty.
+function plPrice(t) {
+  const it = edGet(edC(), edPath(t.dataset.cprice)), box = t.closest('.pl-price'), v = e => (box.querySelector(`[data-end="${e}"]`).value || '').trim(), a = v('from'), b = v('to');
+  const s = a && b ? (a === b ? a : `${a}-${b}`) : a || b; if (s) it.price = s; else delete it.price;
+  plMine(t.dataset.cprice, 'price'); cmQueue();
+}
+function plSeasonSet(t) {
+  const r = edGet(edC(), edPath(t.dataset.cseas)), end = t.dataset.end; if (!r) return;
+  const md = String(r[end] || (end === 'from' ? '06-01' : '09-30')).split('-').map(Number);
+  md[t.dataset.part === 'm' ? 0 : 1] = +t.value;
+  md[1] = Math.min(md[1], [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][md[0] - 1]);
+  r[end] = md.map(x => String(x).padStart(2, '0')).join('-');
+  plMine(t.dataset.cseas, 'schedule'); cmQueue(); render();
+}
+/* --- A market (Yohann, 11 Nov 2026): the place card's shape. The row starts with the kind's tile (the guide's icon, engine
+   CAT_ICON, pasted by build.py as ENG_CAT; one colour for every market: the engine colours markets by kind, so none of its
+   colours is "the markets'"), the host's words first (Name, Description), then "Filled in for you" and the form behind
+   Change: the kind, what it sells, the hours with their season and week of the month, the marks, where it is. --- */
+const MK_PATH = 'files/markets/markets', MK_COL = 'var(--pine)';
+// What a market sells (tags, the guide's words t_<tag>): food first, then goods, then old things. A tag not in the list stays.
+const MK_TAGS = ['fruitveg', 'meat', 'fish', 'cheese', 'deli', 'food', 'tapas', 'clothes', 'shoes', 'home', 'plants', 'toys', 'crafts', 'secondhand', 'antiques', 'books'];
+// The engine's warnings a market can carry (engine/src/flags.json, words f_<flag>), said in the panel; holidays and check are switches.
+const MK_FLAGS = ['holidays', 'check', 'octmay', 'older', 'closest', 'tiny'];
+I.alert = svg('<path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/>');
+const mkTile = (cat, small) => kTile(ENG_CAT[cat], MK_COL, small);
+const mkKind = cat => ENG_CAT[cat] ? engT('cat_' + cat) : String(cat || '');
+function mkFound(p, it) {
+  const out = [], n = +it.stalls_approx, st = n > 0 ? engT('stalls').split('{n}').join(n) : '';
+  if (it.category) out.push(`<div class="pl-l pl-lk">${mkTile(it.category, true)}<div translate="no">${esc(mkKind(it.category))}${st ? `<span class="pl-qty"> · <span class="pl-nw">${esc(st)}</span></span>` : ''}</div></div>`);
+  const hrs = plHours(it.schedule), when = edShown(it.occasional_when || {}).trim();
+  out.push(plLine(I.clock, hrs.length ? hrs.join('') + (when ? `<p class="pl-note pl-clip" translate="no">${esc(when)}</p>` : '') : when ? `<span class="pl-hl" translate="no">${esc(when)}</span>` : '<p class="pl-note">No days or hours yet.</p>'));
+  const chips = ks => `<span class="pl-mks">${ks.map(x => `<span class="pl-mk" translate="no">${esc(x)}</span>`).join('')}</span>`;
+  const tg = (it.tags || []).filter(t => MK_TAGS.includes(t)), fl = MK_FLAGS.filter(f => (it.flags || []).includes(f));
+  if (tg.length) out.push(plLine(I.bag, chips(tg.map(t => engT('t_' + t))), ' pl-lm'));
+  if (fl.length) out.push(plLine(I.alert, chips(fl.map(f => engT('f_' + f))), ' pl-lm'));
+  return plPanel(p, CM.chg.has(p) ? '' : `<div class="pl-ls">${out.join('')}</div>`);
+}
+function mkForm(p, it, where) {
+  const on = (k, f) => (it[k] || []).includes(f);
+  return `<div class="pl-form grid">
+    ${kRow(p, mkTile(it.category, true), `<span class="pl-kn" translate="no">${esc(mkKind(it.category))}</span>`, () => kGrid(p, [{ tiles: Object.keys(ENG_CAT).map(k => ({ k, tile: mkTile(k), name: mkKind(k), on: it.category === k, no: true })) }]))}
+    <div class="f full"><span class="lab">What it sells</span><div class="chips pl-marks pl-sells">${MK_TAGS.map(k => `<button class="chip" type="button" data-ctag="${p}" data-m="${k}" aria-pressed="${on('tags', k)}"><span translate="no">${esc(engT('t_' + k))}</span></button>`).join('')}</div></div>
+    ${cSchedule(`${p}/schedule`, it.schedule, true, true)}
+    ${'occasional_when' in it ? cf('When it runs', `${p}/occasional_when`, it.occasional_when, { long: true, rows: 2 }) : ''}
+    <div class="full pl-sws">${cSwitch(`data-cflag="${p}" data-f="holidays"`, 'Not held on public holidays', on('flags', 'holidays'))}${cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', on('flags', 'check'), 'Tells guests to check the hours or the dates before they go.')}</div>
+    ${cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx || null, { type: 'number', half: true })}
+    <div class="f full pl-sub"><span class="lab">Where it is</span></div>
+    ${where}</div>`;
+}
+function cMarket(base, it, i) {
+  const p = `${base}/${i}`, ord = k => { const n = C_ORDER.indexOf(k); return n < 0 ? 99 : n; }, WH = ['town', 'place', 'venue', 'address', 'comarca'], LK = ['gmaps', 'map'];
+  const shown = k => !C_SKIP.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'));
+  const rest = Object.keys(it).filter(k => shown(k) && !['name', 'description', 'occasional_when', ...WH, ...LK].includes(k)).sort((a, b) => ord(a) - ord(b));
+  const meta = [typeof it.town === 'string' ? it.town : '', cKm(it).replace(' ', '\u00a0'), (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');   // "27 km" never split
+  const { find, pin, first } = cWhere(p, it), field = (k, o = {}) => cf(cLabel(k), `${p}/${k}`, it[k], { ...cOpt(it, k), ...o });
+  const where = WH.filter(shown).map(k => field(k, { half: true })).join('') + LK.filter(shown).map(k => field(k)).join('') + (first ? '' : find) + pin + rest.map(k => field(k)).join('');
+  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${cf('Name', `${p}/name`, it.name, { i18n: true, long: cOpt(it, 'name').long, rows: 2 })}${cf('Description', `${p}/description`, it.description, { long: true, i18n: true })}</div>
+    ${mkFound(p, it)}${CM.chg.has(p) ? mkForm(p, it, where) : ''}
+    <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this market</button></div>`, null, mkTile(it.category));
+}
+// A kind picked for a market: its category, also one of the file's (the Markets page filters by them, as in edNewItem).
+function mkPick(p, k) {
+  const it = edGet(edC(), edPath(p)); if (!it || !ENG_CAT[k]) return;
+  it.category = k; const fl = edGet(edC(), edPath(p).slice(0, -2));
+  if (fl) { fl.categories = fl.categories || []; if (!fl.categories.includes(k)) fl.categories.push(k); }
+  kClose(p);
+}
+/* --- An event's kind (type): its tile in the row and one line under its name, with the grid of the eighteen kinds behind Change.
+   Icons and colours are the guide's (engine section.js EVENT_ICON, EVENT_TONE, pasted as ENG_EV_ICON, ENG_EV_TONE); the
+   engine has no names for them, so these are the maker's (i18n/ui.json). --- */
+// In the order hosts most often need them (Yohann, 11 Nov 2026); what belongs to one region (human towers: Catalonia) comes last.
+// Eight more kinds the same day: sports to flowers. The keys are the guide's (engine section.js) and the worker's research.
+const EV_KINDS = [['festa', 'Local festival'], ['music', 'Music'], ['food', 'Food and wine'], ['fair', 'Fair'], ['tradition', 'Tradition'], ['sports', 'Sports'], ['theatre', 'Theatre and dance'], ['art', 'Art and exhibitions'], ['kids', 'For kids'], ['parade', 'Parade'], ['carnival', 'Carnival'], ['christmas', 'Christmas'], ['religious', 'Religious celebration'], ['fireworks', 'Fireworks'], ['flowers', 'Flowers and gardens'], ['historical', 'History'], ['film', 'Film'], ['castells', 'Human towers']];
+// Other words a host may type in the grid's search to find a kind, in the maker's four languages: the words a host of that
+// language would use, not translations of each other. Its names (EV_KINDS and their translations in ui.json) count too.
+const EV_WORDS = {
+  festa: { en: 'town festival, feast, party, fiesta, festivities, patron saint festival', ca: 'festa major, festes, festa, revetlla, ball de festa major', es: 'fiesta, fiestas, fiestas patronales, verbena, fiesta mayor', fr: 'fête, fête du village, fête patronale, festivités, bal' },
+  music: { en: 'concert, festival, band, orchestra, jazz, choir, gig, live music, opera', ca: 'concert, festival, banda, orquestra, jazz, coral, cobla, havaneres', es: 'concierto, festival, banda, orquesta, jazz, coro, flamenco, habaneras', fr: 'concert, festival, groupe, orchestre, jazz, chorale, opéra' },
+  food: { en: 'wine, harvest, tasting, gastronomy, grape harvest, cava, olive oil, calçotada', ca: 'vi, verema, tast, gastronomia, cava, oli, calçotada, vermut', es: 'vino, vendimia, degustación, cata, gastronomía, cava, aceite, calçotada, tapas', fr: 'vin, vendanges, dégustation, gastronomie, cava, huile d’olive, terroir' },
+  fair: { en: 'market, crafts, trade fair, craft fair', ca: 'mercat, artesania, fira, mostra', es: 'mercado, mercadillo, artesanía, feria, muestra', fr: 'marché, artisanat, foire, salon, brocante' },
+  tradition: { en: 'folklore, dances, giants, sardana, folk', ca: 'folklore, gegants, capgrossos, sardanes, ball de bastons, cultura popular', es: 'folclore, bailes, gigantes, cabezudos, sardanas, cultura popular', fr: 'folklore, danses, géants, sardane, traditions populaires' },
+  sports: { en: 'race, run, marathon, cycling, football, regatta, match, triathlon, tournament', ca: 'cursa, marató, ciclisme, futbol, regata, partit, torneig, bicicleta', es: 'carrera, maratón, ciclismo, fútbol, regata, partido, torneo, bici', fr: 'course, marathon, cyclisme, football, régate, match, tournoi, vélo' },
+  theatre: { en: 'dance, play, show, circus, ballet, comedy', ca: 'teatre, dansa, obra, espectacle, circ, ballet', es: 'teatro, danza, obra, espectáculo, circo, ballet', fr: 'théâtre, danse, pièce, spectacle, cirque, ballet' },
+  art: { en: 'exhibition, museum, gallery, photography, painting, sculpture', ca: 'exposició, museu, galeria, fotografia, pintura, escultura', es: 'exposición, museo, galería, fotografía, pintura, escultura', fr: 'exposition, musée, galerie, photographie, peinture, sculpture, vernissage' },
+  kids: { en: 'family, children, puppets, games', ca: 'família, nens, infants, canalla, titelles, jocs', es: 'familia, niños, infantil, títeres, marionetas, juegos', fr: 'famille, enfants, marionnettes, jeux, jeune public' },
+  christmas: { en: 'Three Kings, nativity, crib, New Year, Santa', ca: 'Nadal, Reis, cavalcada de Reis, pessebre, pessebre vivent, Cap d’Any, tió', es: 'Navidad, Reyes, cabalgata de Reyes, belén, belén viviente, Nochevieja, Año Nuevo', fr: 'Noël, Rois mages, crèche, crèche vivante, Nouvel An, réveillon' },
+  religious: { en: 'procession, pilgrimage, Easter, Holy Week, patron saint, mass', ca: 'processó, romeria, aplec, Setmana Santa, Pasqua, patró, missa', es: 'procesión, romería, Semana Santa, Pascua, patrón, patrona, misa, Virgen', fr: 'procession, pèlerinage, Pâques, Semaine sainte, saint patron, pardon, messe' },
+  fireworks: { en: 'fire run, bonfire, correfoc, fire, pyrotechnics', ca: 'focs, correfoc, foguera, revetlla de Sant Joan, piromusical', es: 'fuegos, correfoc, hoguera, pirotecnia, mascletà, San Juan', fr: 'feu d’artifice, feux, correfoc, feu de la Saint-Jean, pyrotechnie' },
+  flowers: { en: 'garden, blossom, flower show, spring, roses', ca: 'jardí, flors, floració, primavera, roses, temps de flors', es: 'jardín, flores, floración, primavera, rosas', fr: 'jardin, fleurs, floraison, printemps, roses' },
+  historical: { en: 'medieval, Roman, re-enactment, history, heritage', ca: 'medieval, romà, recreació, història, patrimoni', es: 'medieval, romano, recreación, historia, patrimonio', fr: 'médiéval, romain, reconstitution, histoire, patrimoine' },
+  film: { en: 'cinema, open-air cinema, movie, screening, film festival', ca: 'cinema, cinema a la fresca, pel·lícula, projecció', es: 'cine, cine de verano, cine al aire libre, película, proyección', fr: 'cinéma, cinéma en plein air, séance, projection' },
+  parade: { en: 'cavalcade, floats, march', ca: 'cercavila, cavalcada, carrosses, desfilada, rua', es: 'cabalgata, carrozas, desfile, pasacalles', fr: 'cavalcade, chars, défilé, corso' },
+  carnival: { en: 'masks, costumes, fancy dress, Mardi Gras', ca: 'carnestoltes, disfresses, màscares, rua', es: 'carnaval, disfraces, máscaras, comparsas', fr: 'carnaval, déguisements, masques, Mardi gras' },
+  castells: { en: 'castellers, towers, human tower', ca: 'castellers, colla, diada castellera, pilars', es: 'castellers, torres humanas, castillos humanos', fr: 'castellers, tours humaines, pyramides humaines' }
+};
+const evKw = (k, n) => kFold([n, ...['ca', 'es', 'fr'].map(l => (UI_T[n] || {})[l] || ''), ...Object.values(EV_WORDS[k] || {})].join(' '));
+const EV_HEX = { ...PL_TONE, taxi: '#F5C400' };
+function evColour(ty) {
+  const v = ENG_EV_TONE[ty] || '', m = v.match(/^var\(--tone-(\w+)\)$/), bg = m ? EV_HEX[m[1]] : v === 'var(--ink)' ? '#121212' : 'var(--pine)';
+  const rgb = /^#[0-9a-f]{6}$/i.test(bg) ? [1, 3, 5].map(i => parseInt(bg.slice(i, i + 2), 16)) : null;
+  return { bg, ink: !!rgb && edContrast([255, 255, 255], rgb) < 3 };   // the fair's yellow: a dark icon, as the guide does on its taxi
+}
+const evTile = (ty, small) => { const c = evColour(ty); return kTile(typeof ty === 'string' && ENG_EV_ICON[ty], c.bg, small, c.ink); };
+function evKind(p, it) {
+  const ty = typeof it.type === 'string' ? it.type : '', nm = (EV_KINDS.find(x => x[0] === ty) || [])[1];
+  return kRow(p, evTile(ty, true), `<span class="pl-kn"${nm ? '' : ' translate="no"'}>${esc(nm || ty)}</span>`, () => kGrid(p, [{ tiles: EV_KINDS.map(([k, n]) => ({ k, tile: evTile(k), name: n, on: ty === k, kw: evKw(k, n) })) }]));
+}
+function evPick(p, k) { const it = edGet(edC(), edPath(p)); if (!it || !EV_KINDS.some(x => x[0] === k)) return; it.type = k; kClose(p); }
+const kPick = p => p.startsWith(MK_PATH + '/') ? mkPick : p.startsWith(EV_PATH + '/') ? evPick : plPick;
 // A restaurant pinned to the home page becomes a Home tile (one tap, its own page), a copy of the restaurant that the
 // host can reword in Home tiles: "from" remembers which restaurant it came from.
 const cPinned = it => ((((edC().files || {}).quick || {}).items) || []).some(q => q.from && q.from === it.id);
@@ -158,9 +486,10 @@ function cmPin(p) {
   const f = edF(), q = f.quick = f.quick || { items: [] }; q.items = q.items || [];
   const i = q.items.findIndex(x => x.from === it.id);
   if (i >= 0) { q.items.splice(i, 1); return; }
-  const pick = k => it[k] != null ? { [k]: cmClone(it[k]) } : {};
-  q.items.push({ id: 'food-' + it.id, icon: 'food', from: it.id, name: cmClone(it.name), sub: cmClone(it.type || {}), title: cmClone(it.name), kind: cmClone(it.type || {}), what: cmClone(it.description || {}),
-    ...pick('phone'), ...pick('lat'), ...pick('lng'), ...pick('gmaps'), ...pick('schedule'), ...pick('hours'), ...pick('price'), ...pick('priceNote') });
+  // Only what the restaurant has, and no hours of Google's (hoursSource "google", from an older check): those may not be kept.
+  const pick = k => it[k] != null ? { [k]: cmClone(it[k]) } : {}, type = it.type && edShown(it.type) ? { sub: cmClone(it.type), kind: cmClone(it.type) } : {};
+  q.items.push({ id: 'food-' + it.id, icon: 'food', from: it.id, name: cmClone(it.name), ...type, title: cmClone(it.name), what: cmClone(it.description || {}),
+    ...pick('phone'), ...pick('lat'), ...pick('lng'), ...pick('pos'), ...pick('gmaps'), ...(it.hoursSource === 'google' ? {} : pick('schedule')), ...pick('hours'), ...pick('price'), ...pick('priceNote') });
   const s = edC().site = edC().site || {}; s.modules = { ...(s.modules || {}), quick: true };
 }
 // A new entry starts blank (Yohann, 10 Nov 2026): it takes the first entry's shape (which fields, so its card asks for the
@@ -175,7 +504,7 @@ function edNewItem(arr, path) {
   const clear = o => { for (const k of Object.keys(o)) { const x = o[k]; if (['icon', 'group', 'tone', 'category', 'type', 'wide'].includes(k) && !edIs18(x)) { delete o[k]; continue; } if (edIs18(x)) o[k] = Object.fromEntries(Object.keys(x).map(l => [l, ''])); else if (typeof x === 'string') o[k] = ''; else if (Array.isArray(x)) o[k] = []; else if (typeof x === 'number' && k !== 'lat' && k !== 'lng') o[k] = 0; else if (typeof x === 'boolean') delete o[k]; } return o; };   // switches too: a new event is not "added automatically" because the first one was
   const n = clear(clone); n.id = 'custom-' + Date.now().toString(36);
   if ('lat' in n) { n.lat = h.lat || 0; n.lng = h.lng || 0; n.km_from_house = null; n.nomap = true; }   // no position yet: never "0 km", never a pin at the house
-  for (const k of ['verify', 'always', 'gid', 'checked', 'hoursSource', 'rating', 'topPick', 'wiki', 'sources', 'setMenus']) delete n[k];
+  for (const k of ['verify', 'always', 'gid', 'pos', 'checked', 'hoursSource', 'rating', 'topPick', 'wiki', 'sources', 'setMenus', 'filled']) delete n[k];
   Object.assign(n, cmClone(ED_NEW_DEFAULT[path] || {}));
   const fl = path && n.category ? edGet(edC(), edPath(path).slice(0, -1)) : null;   // the market's category is one of the file's, as in cmFindAdd
   if (fl) { fl.categories = fl.categories || []; if (!fl.categories.includes(n.category)) fl.categories.push(n.category); }
@@ -184,30 +513,122 @@ function edNewItem(arr, path) {
 const edKm = (a, b, c, d) => { const R = 6371, r = x => x * Math.PI / 180, dl = r(c - a), dg = r(d - b), x = Math.sin(dl / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dg / 2) ** 2; return Math.round(2 * R * Math.asin(Math.sqrt(x))); };
 function edUpdateKm(ip) { const it = edGet(edC(), ip), h = edF().house || {}; if (!it || !h.lat || !it.lat) return; if ('km_from_house' in it) it.km_from_house = edKm(h.lat, h.lng, it.lat, it.lng); if ('km' in it) it.km = edKm(h.lat, h.lng, it.lat, it.lng); }
 // "Find it on Google": the place picked from what Google suggests as the host types (psPick in start.js), read by its id
-// (/api/places?id=): its position, distance, town, Maps link, Google id and, when it has none, its name, opening hours and
-// kind. The answer is shown, so the host can tell.
-const ED_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'], ED_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], edP2 = n => String(n).padStart(2, '0');
-function edSchedule(periods) {
-  if (!periods || !periods.length || (periods.length === 1 && !periods[0].close)) return null;
-  const g = new Map(); for (const x of periods) { if (!x.close) continue; const k = `${edP2(x.open.hour)}:${edP2(x.open.minute)}-${edP2(x.close.hour)}:${edP2(x.close.minute)}`; g.set(k, [...(g.get(k) || []), ED_DAY[x.open.day]]); }
-  return [...g].map(([k, d]) => ({ days: [...new Set(d)].sort((a, b) => ED_ORDER.indexOf(a) - ED_ORDER.indexOf(b)), open: k.slice(0, 5), close: k.slice(6) }));
-}
-async function cmFindById(p, id) {
+// (/api/places?id=). Google's terms: only its id is kept for good, and its position for 30 days (pos: from and the day, so
+// the monthly run renews it), with the distance and the Google Maps link made from them. The name stays the host's: a
+// place with none takes the words they typed to find it. Google's name is said for this session only (CM.gfind, cItem).
+const gPos = () => ({ from: 'google', at: new Date().toISOString().slice(0, 10) });
+async function cmFindById(p, id, s = {}, typed = '') {
   const it = edGet(edC(), edPath(p)), h = edF().house || {};
   CM.gfind = CM.gfind || {}; CM.gfind[p] = 'Looking it up…'; render();
   try {
     const d = await fetch(`/api/places?id=${encodeURIComponent(id)}&lat=${h.lat}&lng=${h.lng}`).then(r => r.json());
     const f = d.ok && d.place;
     if (!f) { CM.gfind[p] = d.ok ? 'Not found on Google. Paste its Google Maps link below.' : d.message || 'Google could not be reached.'; return render(); }
-    Object.assign(it, { lat: f.lat, lng: f.lng, km_from_house: f.km, gmaps: f.maps, gid: f.id }); delete it.nomap;
-    if (f.town) it.town = f.town;
-    if (f.name && !edShown(it.name || {})) it.name = L6(f.name);
-    if (!(it.schedule && it.schedule.length)) { const s = edSchedule(f.periods); if (s) it.schedule = s; }
-    if (f.type && !(it.type && edShown(it.type))) it.type = { en: f.type };   // Google's kind, in English: "Translate missing texts" does the rest
-    it.flags = (it.flags || []).filter(x => x !== 'check'); if (f.status === 'CLOSED_TEMPORARILY') it.flags.push('check');
-    CM.gfind[p] = `Found: ${f.name}${f.town ? ', ' + f.town : ''}, ${f.km} km from the house. Not the right one? Search again, or paste its Google Maps link below.`;
+    if (!edShown(it.name || {}) && psWords(typed)) it.name = L6(psWords(typed));
+    const words = edShown(it.name || {}) || psWords(typed);
+    Object.assign(it, { gid: f.id, lat: f.lat, lng: f.lng, pos: gPos(), km_from_house: f.km, gmaps: gmLink(words, f.id) }); delete it.nomap;
+    CM.gfind[p] = { name: s.name || '', where: s.where || '', km: f.km, gid: f.id, words };
     cmQueue(); render();
-  } catch (e) { CM.gfind[p] = 'Google could not be reached. Try again.'; render(); }
+  } catch (e) { CM.gfind[p] = 'Google could not be reached. Try again.'; return render(); }
+  if (plSec(p)) pfStart(p);   // a place to eat, a night out or an attraction: its facts are looked up at once
+}
+/* --- A place's facts, looked up for it (job place-facts, worker/place-job.mjs; the places work, Piece C, 11 Nov 2026) ---
+   A place picked on Google in the editor has a pin and nothing else: the worker gives it what the first build gives a
+   host's place (kind, phone, website, hours, price, book ahead, a position of ours), through the same chain. The job is
+   queued right after the pick, or with "Look for its details" on a place built before this existed; one at a time per
+   place. While it runs the panel says so; the host may close the card, change step or reload: the job is found again by
+   its place (params.item, as Find more is found again). Its result fills only what the place does not have, once (this
+   device remembers which results it used, cmpf:<job>), through the normal change path. Nothing found: the host may paste
+   the place's website, and it is looked up again with it. */
+CM.pf = {};
+const pfBusy = j => !!j && (j.status === 'queued' || j.status === 'running');
+const pfUrl = v => { try { const x = new URL(/^https?:\/\//i.test(v) ? v : 'https://' + v); return /^https?:$/.test(x.protocol) && /\.[a-z]{2,}$/i.test(x.hostname) && !/\s/.test(v) ? x.href : null; } catch (e) { return null; } };
+const pfSeen = id => { try { return !!localStorage.getItem('cmpf:' + id); } catch (e) { return false; } };
+const pfMark = id => { try { localStorage.setItem('cmpf:' + id, '1'); } catch (e) { /* storage blocked: applied once in this visit */ } };
+// The place's path now from its id (the host may have moved or deleted it meanwhile).
+function pfPath(id) { for (const base of Object.keys(PL_SEC)) { const i = (edGet(edC(), edPath(base)) || []).findIndex(x => x && x.id === id); if (i >= 0) return `${base}/${i}`; } return null; }
+// "Look for its details": a place on Google with no hours, phone or website and nothing filled, and no lookup of its own yet.
+const pfCan = (it, j) => CM.pfLoaded === true && !j && !!it.gid && !!it.id && !it.filled && !it.always && !(it.schedule || []).length && !it.phone && !it.url && !!String(edShown(it.name || {})).trim();
+function pfWaitHTML(id) {
+  const p = progOf(CM.pf[id], 'facts') || { pct: 2 };
+  return `<div class="pl-wait" data-prog="pf:${esc(id)}"><p class="pl-note">Looking for its website and hours…</p><div class="cm-prog" role="progressbar" aria-label="Looking for its website and hours" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p.pct)}"><i style="width:${p.pct.toFixed(1)}%"></i></div><p class="cm-progt" hidden translate="no"></p></div>`;   // the bar's own words stay unsaid: the line says it
+}
+const pfWebHTML = p => `<div class="f full pl-web"><label for="${cmId(p + '/pfweb')}">Know its website? Paste it and we read its hours.</label><input id="${cmId(p + '/pfweb')}" type="url" inputmode="url" autocomplete="off" data-pfweb="${esc(p)}" placeholder="https://"></div>`;
+// The jobs of the last week, the latest for each place: one still running is followed again, one done is used (once).
+function pfLoad() {
+  if (CM.pfLoaded === true) return Promise.resolve();
+  return CM.pfLoading = CM.pfLoading || (async () => {
+    try {
+      await ensureFresh();
+      const since = new Date(Date.now() - 7 * 864e5).toISOString();
+      const r = await sb(`/rest/v1/guide_jobs?select=id,status,message,result,params,created_at&guide_id=eq.${CM.g.id}&kind=eq.place-facts&created_at=gt.${encodeURIComponent(since)}&order=created_at.desc&limit=200`);
+      for (const x of r || []) { const q = x.params || {}, id = q.item; if (!id || CM.pf[id]) continue;
+        CM.pf[id] = { id: x.id, status: x.status, message: x.message, result: x.result, words: q.words || '', gid: q.gid || '', website: q.website || '', since: Date.parse(x.created_at) || Date.now() }; }
+    } catch (e) { /* not found: each place shows as it is */ }
+    CM.pfLoaded = true; CM.pfLoading = null;
+    let used = false;
+    for (const [id, j] of Object.entries(CM.pf)) { if (pfBusy(j)) pfPoll(id); else if (pfApply(id)) used = true; }
+    if (used) { cmQueue(); render(); } else for (const id of Object.keys(CM.pf)) pfRefresh(id);
+    for (const el of document.querySelectorAll('.edz .pl-found')) { const d = el.closest('details.cmi'), q = d && d.dataset.open, it = q && edGet(edC(), edPath(q)); if (it && pfCan(it, null)) el.outerHTML = plFound(q, plSec(q), it); }   // "Look for its details" once we know none is running
+  })();
+}
+async function pfStart(p, website = '') {
+  if (CM.pfLoaded !== true) await pfLoad();   // one may be running for it already (another tab, before a reload)
+  const it = edGet(edC(), edPath(p)), sec = plSec(p), words = it ? String(edShown(it.name || {})).trim() : '';
+  if (!it || !sec || !it.id || !it.gid || !words || pfBusy(CM.pf[it.id])) return;
+  const j = CM.pf[it.id] = { status: 'queued', since: Date.now(), words, gid: it.gid, website };
+  pfRefresh(it.id);
+  try {
+    await cmSave(); await ensureFresh();   // the worker reads the pin from the draft
+    const r = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'place-facts',
+      params: { item: it.id, list: sec, gid: it.gid, words, about: String(edShown(it.description || {})).trim().slice(0, 600), ...(website ? { website } : {}) } } });
+    j.id = r && r[0] && r[0].id; if (!j.id) throw new Error('Could not start');
+    pfPoll(it.id);
+  } catch (e) { if (CM.pf[it.id] === j) { j.status = 'failed'; j.message = ''; pfRefresh(it.id); } }
+}
+async function pfPoll(id) {
+  const j = CM.pf[id]; if (!j || !j.id || j.polling) return; j.polling = true;
+  for (let i = 0; i < 150 && CM.pf[id] === j; i++) {
+    await new Promise(r => setTimeout(r, i < 15 ? 2000 : 5000));
+    try {
+      await ensureFresh();
+      const st = ((await sb('/rest/v1/guide_jobs?select=status,message,result&id=eq.' + j.id)) || [])[0]; if (!st) continue;
+      progSet(j, st);
+      if (st.status === 'done') { j.result = st.result; if (pfApply(id)) { cmQueue(); render(); } else pfRefresh(id); break; }
+      if (st.status === 'failed') { pfRefresh(id); break; }
+    } catch (e) { /* offline for a moment: asked again */ }
+  }
+  j.polling = false;
+}
+// The panel of that place only (the rest of the step as it is: a field being typed in keeps its focus).
+function pfRefresh(id) {
+  const p = pfPath(id), el = p && document.querySelector(`details.cmi[data-open="${p}"] .pl-found`);
+  if (el) el.outerHTML = plFound(p, plSec(p), edGet(edC(), edPath(p)));
+}
+// A result used once: only what the place does not have. Its kind as a pick would set it, its town, our position in place
+// of Google's (with the entry's pos, Google's still, the pick's stays), our spelling of the name while it is still the
+// words that were sent, then where the facts taken came from. Returns whether the place changed.
+function pfApply(id) {
+  const j = CM.pf[id]; if (!j || j.status !== 'done' || j.applied) return false;
+  j.applied = true;
+  if (!j.id || pfSeen(j.id)) return false;
+  pfMark(j.id);
+  const e = (j.result || {}).entry, p = pfPath(id), it = p && edGet(edC(), edPath(p)), sec = p && plSec(p);
+  if (!e || !it) return false;
+  if (e.gid && it.gid !== e.gid) { setTimeout(() => pfStart(p), 0); return false; }   // picked again meanwhile: looked up again for the new one
+  const took = [], none = v => v == null || (typeof v === 'string' && !v.trim()) || (Array.isArray(v) && !v.length);
+  if (!it.icon && e.kind && plKind(sec, e.kind)) { plPick(p, e.kind); took.push('kind'); }
+  for (const k of ['phone', 'url', 'price']) if (none(it[k]) && typeof e[k] === 'string' && e[k].trim()) { it[k] = e[k]; took.push(k); }
+  if (none(it.schedule) && !it.always && Array.isArray(e.schedule) && e.schedule.length) { it.schedule = cmClone(e.schedule); took.push('schedule'); }
+  if (e.book === true && !(it.flags || []).includes('book')) { it.flags = [...(it.flags || []), 'book']; took.push('book'); }
+  if (typeof e.town === 'string' && e.town && (it.town == null || (typeof it.town === 'string' && !it.town.trim()))) it.town = e.town;
+  if (!e.pos && typeof e.lat === 'number' && typeof e.lng === 'number') { it.lat = e.lat; it.lng = e.lng; if (e.km != null) it.km_from_house = e.km; else edUpdateKm(edPath(p)); delete it.pos; delete it.nomap; }
+  if (typeof e.name === 'string' && e.name.trim() && j.words && edShown(it.name || {}) === j.words) {
+    if (edIs18(it.name)) { for (const l of Object.keys(it.name)) if (it.name[l] === j.words) it.name[l] = e.name; } else it.name = e.name; }
+  const from = Object.fromEntries(Object.entries((e.filled || {}).from || {}).filter(([k]) => took.includes(k)));
+  if (Object.keys(from).length) { const o = it.filled && it.filled.from ? it.filled : null, web = Object.values(from).some(v => v === 'site' || v === 'search');
+    it.filled = { at: [o && o.at, e.filled.at].filter(Boolean).sort().pop(), from: { ...(o ? o.from : {}), ...from }, ...(web && e.filled.page ? { page: e.filled.page } : o && o.page ? { page: o.page } : {}) }; }
+  return true;
 }
 function edParseMaps(url) {
   const m = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || url.match(/[?&](?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
@@ -229,6 +650,14 @@ function cmGuide(c) {
 const edCssVar = (css, name) => { const m = css.match(new RegExp(name + '\\s*:\\s*([^;}]+)')); return m ? m[1].trim() : ''; };
 const edBlockOf = css => { const m = css.match(/\/\* editor:start \*\/([\s\S]*?)\/\* editor:end \*\//); return m ? m[1] : ''; };
 const edCoverPhoto = h => !!h.photo && h.cover !== 'themed';
+// The guide's credits say "the cover illustration was made with AI" while site.theme.coverMade is "ai" (engine/src/views/
+// credits.js). The worker's cover-art job names its drawings covers/art-<time>.jpg, so the mark follows the cover's file:
+// set when that drawing becomes the cover, gone when another cover is chosen (a photo, an upload, the drawn cover).
+const edArt = path => /(^|\/)covers\/art-[\w-]+\.jpg$/.test(String(path || ''));
+function edCoverMade(path) {
+  const s = edC().site = edC().site || {}, th = s.theme = s.theme || {};
+  if (edArt(path)) th.coverMade = 'ai'; else delete th.coverMade;
+}
 // The look, in four steps: logo, cover picture (one of the guide's photos, an upload, drawn from the colours, or an
 // artistic version of a photo), layout, colours. Fonts are optional, folded away and shown in their own typeface.
 const cmPhotos = c => { const f = c.files || {}, out = [], add = x => { if (typeof x === 'string' && x && !out.includes(x)) out.push(x); };
@@ -377,6 +806,7 @@ function edAddTile(icon) {
 }
 function cmPlaces(path, what) {
   const arr = edGet(edC(), edPath(path)) || [];
+  if (PL_SEC[path] && CM.pfLoaded !== true) pfLoad();   // lookups of a place's facts still running, or done while away
   return `${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
     <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
@@ -451,6 +881,7 @@ async function cmStopAdd(btn) {
   try {
     const link = /^https?:\/\//.test(v), pos = link ? edParseMaps(v) : null;
     const named = link ? decodeURIComponent((v.match(/\/place\/([^/@?]+)/) || [])[1] || '').replace(/\+/g, ' ') : v;
+    // Google gives the id and the position only (dated: kept 30 days, renewed by the monthly run); the name is the host's.
     let place = null;
     if (named && h.lat) {
       const q = cmStopWord.test(named) ? named : `${named} ${mode === 'bus' ? 'bus stop' : 'train station'}`;
@@ -458,11 +889,12 @@ async function cmStopAdd(btn) {
       place = d && d.place;
       if (place && pos && edKm(pos.lat, pos.lng, place.lat, place.lng) > 1) place = null;   // the link wins over a namesake elsewhere
     }
-    if (!place && pos) place = { name: named, lat: pos.lat, lng: pos.lng, maps: v, km: h.lat ? edKm(h.lat, h.lng, pos.lat, pos.lng) : 0 };
+    if (!place && pos) place = { lat: pos.lat, lng: pos.lng, km: h.lat ? edKm(h.lat, h.lng, pos.lat, pos.lng) : 0 };
     if (!place) throw new Error(link ? 'This link has no place in it. Use the long link from the browser bar, or type the name.' : 'Not found on Google. Try its full name, or paste its Google Maps link.');
-    if (!place.name) throw new Error('Found the spot, but not its name. Type its name instead.');
-    const T = cmTrEnsure(), id = mode + '-' + Date.now().toString(36);
-    (T.stations = T.stations || []).push({ id, mode, name: L6(place.name), lat: place.lat, lng: place.lng, km: place.km || 0, min: cmMin(place.km), tag: L6(''), what: L6(''), link: '', gmaps: place.maps || (link ? v : ''), badges: [], to: [] });
+    const name = psWords(named);
+    if (!name) throw new Error('Found the spot, but not its name. Type its name instead.');
+    const T = cmTrEnsure(), id = mode + '-' + Date.now().toString(36), g = place.id ? { gid: place.id, pos: gPos() } : {};
+    (T.stations = T.stations || []).push({ id, mode, name: L6(name), lat: place.lat, lng: place.lng, km: place.km || 0, ...g, min: cmMin(place.km), tag: L6(''), what: L6(''), link: '', gmaps: place.id ? gmLink(name, place.id) : (link ? v : ''), badges: [], to: [] });
     CM.open.add('files/transport/stations/' + (T.stations.length - 1));
     CM.stopMsg = ''; cmQueue(); render(); cmLines(id);
   } catch (e) { CM.stopMsg = /fetch/i.test(e.message) ? 'Google could not be reached. Try again.' : e.message; render(); }
@@ -530,6 +962,7 @@ const PROG_STEPS = {
   events: [[/Searching the web/, 4, 85, 240], [/Translating/, 85, 98, 60]],
   translate: [[/Translating (\d+) of (\d+)/, 5, 97, 45]],
   art: [[/Reading your photo/, 3, 8, 8], [/Drawing your cover/, 8, 94, 70], [/Saving your cover/, 94, 99, 5]],
+  facts: [[/Looking for its website/, 4, 45, 12], [/Reading its website/, 45, 97, 20]],   // a place's facts (place-facts): about 20 s
   build: [[/Reading your answers/, 3, 8, 20], [/Researching: markets/, 8, 30, 180], [/Researching: todo/, 30, 52, 180], [/Researching: emergency/, 52, 62, 90], [/Building the guide/, 62, 78, 40], [/Translating/, 78, 92, 90], [/Saving the guide/, 92, 99, 30]]
 };
 const progEase = (t, tau) => 1 - Math.exp(-Math.max(0, t) / tau);
@@ -555,8 +988,8 @@ function progOf(j, kind) {
 // The bar itself; its key says which job it follows (see progJob).
 const progBar = (key, label, dark) => { const p = progOf(progJob(key), progKind(key)) || { pct: 2, text: '' };
   return `<div class="cm-progw${dark ? ' dark' : ''}" data-prog="${key}"><div class="cm-prog" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p.pct)}"><i style="width:${p.pct.toFixed(1)}%"></i></div><p class="hint cm-progt">${esc(p.text)}</p></div>`; };
-const progJob = key => key === 'auto' ? CM.evJob : key === 'tr' ? CM.trJob : key === 'art' ? CM.artJob : key === 'build' ? window.__buildJob : (CM.find || {})[key];
-const progKind = key => key === 'tr' ? 'translate' : key === 'build' ? 'build' : key === 'art' ? 'art' : key === 'find-todo' || key === 'find-markets' ? 'places' : 'events';
+const progJob = key => key === 'auto' ? CM.evJob : key === 'tr' ? CM.trJob : key === 'art' ? CM.artJob : key === 'build' ? window.__buildJob : key.startsWith('pf:') ? (CM.pf || {})[key.slice(3)] : (CM.find || {})[key];
+const progKind = key => key === 'tr' ? 'translate' : key === 'build' ? 'build' : key === 'art' ? 'art' : key.startsWith('pf:') ? 'facts' : key === 'find-todo' || key === 'find-markets' ? 'places' : 'events';
 // A job's new state from the database: a new step restarts the clock of that step.
 function progSet(j, st) { if (st.message !== j.message || st.status !== j.status) j.phaseAt = Date.now(); j.status = st.status; j.message = st.message; }
 setInterval(() => document.querySelectorAll('[data-prog]').forEach(el => {
@@ -766,6 +1199,13 @@ async function cmEvPoll(job) {
   }
 }
 document.addEventListener('keydown', e => { const t = e.target; if (CM.on && e.key === 'Enter' && t.dataset && t.dataset.evin) { e.preventDefault(); cmEvTopic(t.dataset.evin); } });
+// A kind grid's search: Enter picks the only tile left, Escape clears the field.
+document.addEventListener('keydown', e => {
+  const t = e.target; if (!CM.on || !t.dataset || t.dataset.ckq === undefined) return;
+  if (e.key === 'Escape' && t.value) { e.preventDefault(); e.stopPropagation(); t.value = ''; kFilter(t); return; }
+  if (e.key !== 'Enter') return;
+  e.preventDefault(); const left = [...t.closest('.pl-kinds-w').querySelectorAll('.pl-k:not([hidden])')]; if (left.length === 1) left[0].click();
+});
 
 /* --- Pages: overview, one step, publish --- */
 function cmTile(m) {
@@ -815,9 +1255,11 @@ function cmPhoneOn() {
     f = document.createElement('iframe'); f.id = 'cmPhoneFrame'; f.title = 'Your guide, as guests will see it';
     f.addEventListener('load', () => {
       say(navigator.onLine ? '' : 'No connection: your guide shows here again once you are online.');
-      try { const w = f.contentWindow, y = CM.phoneY || 0; w.addEventListener('scroll', () => { CM.phoneY = w.scrollY; }, { passive: true }); if (y) setTimeout(() => w.scrollTo(0, y), 600); } catch (e) { /* another origin: no scroll memory */ }
+      try { const w = f.contentWindow, y = CM.phoneY || 0; if (w.location.hash !== '#' + f.dataset.shown) w.location.replace(f.src.split('#')[0] + '#' + f.dataset.shown);   // the screen asked while it was loading (gLiveSync)
+        w.addEventListener('scroll', () => { CM.phoneY = w.scrollY; }, { passive: true }); if (y) setTimeout(() => w.scrollTo(0, y), 600); } catch (e) { /* another origin: no scroll memory */ }
     });
-    s.prepend(f); f.src = cmPreviewUrl() + '#' + s.dataset.screen;
+    f.dataset.shown = gLiveNow() ? 'home' : s.dataset.screen;   // Google's content on screen: no map beside it (start.js gLiveSync)
+    s.prepend(f); f.src = cmPreviewUrl() + '#' + f.dataset.shown;
   }
   phoneWatch(f);
 }
@@ -888,7 +1330,8 @@ async function cmSave() {
 const edBlank = x => x == null || x === 0 || (typeof x === 'string' ? !x.trim() : Array.isArray(x) ? x.every(edBlank) : typeof x === 'object' ? Object.values(x).every(edBlank) : false);
 // The rows inside an entry, and when one is empty
 const CM_ROWS = {
-  badges: b => edBlank(b.t),                                            // a station's line with no name ("R4"): its colour alone says nothing
+  badges: b => edBlank(b.t),
+  setMenus: m => edBlank(m.price),                                      // a set menu with no price ("Menú del día €")                                            // a station's line with no name ("R4"): its colour alone says nothing
   to: d => edBlank(d.dest) && edBlank(d.time),                          // a journey time with no destination and no time
   alt: a => edBlank(a.phone),                                           // a taxi's other number with no phone
   schedule: r => !(r.days || []).length && (edBlank(r.open) && edBlank(r.close) || r.open === '09:00' && r.close === '14:00'),   // opening hours with no day, and no time or the times Add puts in
@@ -1066,7 +1509,7 @@ async function edPhotoInput(t) {
     for (const f of files) {
       const name = await edUpload(f, t.dataset.kind);
       if (t.dataset.phadd) { const p = edPath(t.dataset.phadd); let a = edGet(edC(), p); if (!Array.isArray(a)) { edSet(edC(), p, []); a = edGet(edC(), p); } a.push(name); }
-      else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') edSet(edC(), ['files', 'house', 'cover'], 'photo'); }
+      else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') { edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(name); } }
       if (t.dataset.phset === 'site/logo') { setSave('busy', 'Making the icons for phones…'); edC().site.icons = await edIconsFrom(f, 'contain'); CM.logoCol = ''; }
     }
     cmQueue(); render();
@@ -1118,6 +1561,7 @@ function edEdit(t) {
     o[CM.lang] = val;
   } else if (kind === 'num') edSet(c, p, val === '' ? 0 : Number(val));
   else edSet(c, p, val);
+  const own = t.dataset.p.match(/^files\/(?:restaurants|nightlife|todo)\/items\/\d+\/(phone|url|schedule)(\/|$)/); if (own) plMine(t.dataset.p, own[1]);   // typed by the host: theirs
   if (p[0] === 'private' && p[1] === 'wifi') cmWifiQr();
   if (p[p.length - 1] === 'c' && p[p.length - 3] === 'badges' && /^#[0-9a-f]{6}$/i.test(val)) { const n = parseInt(val.slice(1), 16), lum = (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; edGet(c, p.slice(0, -1)).ink = lum > 0.62; }
   cmQueue();
@@ -1161,6 +1605,8 @@ function edApplyDesign(kind, el) {
 const inEd = t => CM.on && t.closest && t.closest('.edz');
 document.addEventListener('input', e => {
   const t = e.target; if (!inEd(t)) return;
+  if (t.dataset.cprice) return plPrice(t);
+  if (t.dataset.ckq !== undefined) return kFilter(t);   // a kind grid's search: filters in place, nothing saved, no redraw
   if (t.dataset.p) return edEdit(t);
   if (t.dataset.cfilter !== undefined) { const q = t.value.toLowerCase().trim(); t.closest('.edz').querySelectorAll('details.cmi').forEach(d => { d.hidden = !!q && !d.querySelector('summary').textContent.toLowerCase().includes(q); }); }
 });
@@ -1168,6 +1614,13 @@ document.addEventListener('change', e => {
   const t = e.target; if (!CM.on || !t.dataset) return;
   if (t.dataset.cmlang !== undefined) { CM.lang = t.value; return render(); }
   if (!inEd(t)) return;
+  if (t.dataset.cseas) return plSeasonSet(t);
+  if (t.dataset.cweek) { const r = edGet(edC(), edPath(t.dataset.cweek)); if (!r) return; if (+t.value) r.week_of_month = +t.value; else delete r.week_of_month; return cmQueue(); }   // a market's "Which weeks"
+  if (t.dataset.pfweb) {   // nothing found, and the host knows its website: it is theirs, and read for the hours
+    const v = t.value.trim(), u = pfUrl(v), it = edGet(edC(), edPath(t.dataset.pfweb)); if (!v || !it) return;
+    if (!u) return toast('That does not look like a web address.');
+    it.url = u; cmQueue(); return pfStart(t.dataset.pfweb, u);
+  }
   if (t.dataset.gm) {   // a pasted Google Maps link: the pin moves when it holds a position, and the link becomes the place's map button
     const ip = edPath(t.dataset.gm), it = edGet(edC(), ip), pos = edParseMaps(t.value), url = t.value.trim();
     if (pos) { it.lat = pos.lat; it.lng = pos.lng; delete it.nomap; edUpdateKm(ip); }
@@ -1179,8 +1632,10 @@ document.addEventListener('change', e => {
   else if (t.dataset.phadd !== undefined || t.dataset.phset !== undefined) edPhotoInput(t);
   else if (t.dataset.clang) { const s = edC().site = edC().site || {}; s.languages = [...(s.languages || ['en'])]; const l = t.dataset.clang, i = s.languages.indexOf(l); if (t.checked && i < 0) s.languages.push(l); else if (!t.checked && i > 0) s.languages.splice(i, 1); cmQueue(); render(); }
 });
+addEventListener('porta-lang', () => { if (CM.on) render(); });   // kinds, marks, days and months are written in the maker's language
 document.addEventListener('toggle', e => { const d = e.target; if (CM.on && d.matches && d.matches('details.cmi,details.cm-more[data-open]')) d.open ? CM.open.add(d.dataset.open) : CM.open.delete(d.dataset.open); }, true);
-document.addEventListener('keydown', e => { if (CM.on && e.key === 'Enter' && e.target && e.target.id === 'c_stopq') { e.preventDefault(); cmStopAdd(document.querySelector('[data-stopadd]')); } });
+document.addEventListener('keydown', e => { if (CM.on && e.key === 'Enter' && e.target && e.target.id === 'c_stopq') { e.preventDefault(); cmStopAdd(document.querySelector('[data-stopadd]')); }
+  if (CM.on && e.key === 'Enter' && e.target && e.target.dataset && e.target.dataset.pfweb) { e.preventDefault(); e.target.blur(); } });   // the pasted website: Enter reads it
 document.addEventListener('click', e => {
   if (!CM.on) return;
   const t = e.target.closest && e.target.closest('button,a[data-cpreview]'); if (!t) return;
@@ -1193,18 +1648,36 @@ document.addEventListener('click', e => {
   if (d.cunpublish !== undefined) return cmUnpublish(t);
   if (d.cdiscard !== undefined) return cmDiscard(t);
   if (!t.closest('.edz')) return;
-  if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); return done(); }
+  // A place's fact changed by hand (its kind, the hours or Open 24 hours, Book ahead) is the host's: no source said for it.
+  { const own = d.ckind ? [d.ckind, 'kind'] : d.cflag && d.f === 'book' ? [d.cflag, 'book'] : d.calways || d.daytog || d.cseason || d.addsch ? [d.calways || d.daytog || d.cseason || d.addsch, 'schedule']
+      : d.cdel && /\/schedule\/\d+$/.test(d.cdel) ? [d.cdel, 'schedule'] : null; if (own) plMine(...own); }
+  if (d.pflook) return pfStart(d.pflook);
+  if (d.pfagain) { const it = edGet(edC(), edPath(d.pfagain)), j = it && CM.pf[it.id]; return pfStart(d.pfagain, (j && j.website) || ''); }
+  if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); edCoverMade(d.cover === 'photo' ? ((edC().files || {}).house || {}).photo : ''); return done(); }
   if (d.allpics !== undefined) { CM.allPics = true; return render(); }
-  if (d.coverpic) { edSet(edC(), ['files', 'house', 'photo'], d.coverpic); edSet(edC(), ['files', 'house', 'cover'], 'photo'); return done(); }
+  if (d.coverpic) { edSet(edC(), ['files', 'house', 'photo'], d.coverpic); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(d.coverpic); return done(); }
   if (d.art) {
     const src = edImg(((edC().files || {}).house || {}).photo || '');
     if (d.art === 'words') { CM.artWords = CM.artWords || ''; render(); setTimeout(() => { const x = document.getElementById('c_artw'); if (x) x.focus(); }, 0); return; }
     if (d.art === 'draw') { const w = (document.getElementById('c_artw') || {}).value || ''; CM.artWords = w; return w.trim() ? artStart(src, w.trim()) : toast('Say how it should look first.'); }
     return artStart(src, d.art === 'again' ? CM.artLast : null);
   }
-  if (d.artuse !== undefined && CM.artRes) { edSet(edC(), ['files', 'house', 'photo'], CM.artRes.path); edSet(edC(), ['files', 'house', 'cover'], 'photo'); CM.artRes = null; toast('Your new cover is set. Preview to see it.'); return done(); }
+  if (d.artuse !== undefined && CM.artRes) { edSet(edC(), ['files', 'house', 'photo'], CM.artRes.path); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(CM.artRes.path); CM.artRes = null; toast('Your new cover is set. Preview to see it.'); return done(); }
   if (d.daytog) { const o = edGet(edC(), edPath(d.daytog)); if (o) { const s = new Set(o.days || []); s.has(d.d) ? s.delete(d.d) : s.add(d.d); o.days = ED_DAYS.map(x => x[0]).filter(x => s.has(x)); done(); } return; }
   if (d.cflag) { const it = edGet(edC(), edPath(d.cflag)); if (it) { const s = new Set(it.flags || []); s.has(d.f) ? s.delete(d.f) : s.add(d.f); it.flags = [...s]; done(); } return; }
+  // A place (cPlace): favourite, the form behind Change, its kind, marks, set menus, open 24 hours, part of the year.
+  if (d.cfav) { const it = edGet(edC(), edPath(d.cfav)); if (it) { if (it.topPick) delete it.topPick; else it.topPick = true; done(); } return; }
+  if (d.cchg) { CM.chg.has(d.cchg) ? CM.chg.delete(d.cchg) : CM.chg.add(d.cchg); return render(); }
+  if (d.ckinds) { const p = d.ckinds, open = !CM.kpick.has(p); if (open) CM.kpick.add(p); else kClose(p); render();
+    // On a desktop the search has the focus at once; on a touch screen it would raise the keyboard over the tiles.
+    if (open && matchMedia('(pointer:fine)').matches) setTimeout(() => { const q = document.getElementById(cmId(p + '/kq')); if (q) q.focus({ preventScroll: true }); }, 0);
+    return; }
+  if (d.ckind) { kPick(d.ckind)(d.ckind, d.k); return done(); }   // a place's, a market's or an event's kind
+  if (d.ctag) { const it = edGet(edC(), edPath(d.ctag)); if (it) { const tg = [...(it.tags || [])], j = tg.indexOf(d.m); j >= 0 ? tg.splice(j, 1) : tg.push(d.m); it.tags = tg; if (d.m === 'kidsfun') CM.kidsHand.add(d.ctag); done(); } return; }
+  if (d.csmadd) { const it = edGet(edC(), edPath(d.csmadd)); if (it) { (it.setMenus = it.setMenus || []).push({ kind: 'menuDia', price: '' }); done(); const x = document.getElementById(cmId(`${d.csmadd}/setMenus/${it.setMenus.length - 1}/price`)); if (x) x.focus(); } return; }
+  if (d.csmdel) { const q = edPath(d.csmdel), it = edGet(edC(), q.slice(0, -2)); if (it && Array.isArray(it.setMenus)) { it.setMenus.splice(q[q.length - 1], 1); if (!it.setMenus.length) delete it.setMenus; done(); } return; }
+  if (d.calways) { const it = edGet(edC(), edPath(d.calways)); if (it) { if (it.always) delete it.always; else it.always = true; done(); } return; }   // the hours stay, only hidden
+  if (d.cseason) { const r = edGet(edC(), edPath(d.cseason)); if (r) { if (r.from || r.to) { delete r.from; delete r.to; } else { r.from = '06-01'; r.to = '09-30'; } done(); } return; }
   if (d.addsch) { arr(d.addsch).push({ days: [], open: '09:00', close: '14:00' }); return done(); }
   if (d.adddate) { arr(d.adddate).push({ start: '', end: '', status: 'expected' }); return done(); }
   if (d.translate !== undefined) return cmTranslate();
@@ -1244,7 +1717,7 @@ document.addEventListener('click', e => {
     const p = edPath(d.cdel), a = edGet(edC(), p.slice(0, -1));
     const ev = d.cdel.startsWith('files/events/items/') && p.length === 4 && a && a[p[3]];
     if (ev && ev.auto) cmEvAutoSet({ removed: [...(evAuto().removed || []), { name: (ev.name || {}).en || edShown(ev.name), at: new Date().toISOString().slice(0, 10) }] });
-    if (Array.isArray(a)) { a.splice(p[p.length - 1], 1); for (const k of [...CM.open]) if (k.startsWith(d.cdel)) CM.open.delete(k); if (p[0] === 'private') cmWifiQr(); done(); }
+    if (Array.isArray(a)) { a.splice(p[p.length - 1], 1); for (const S of [CM.open, CM.chg, CM.kpick]) for (const k of [...S]) if (k.startsWith(d.cdel)) S.delete(k); for (const k of [...CM.kq.keys()]) if (k.startsWith(d.cdel)) CM.kq.delete(k); if (p[0] === 'private') cmWifiQr(); done(); }
   }
 });
 
@@ -1389,6 +1862,79 @@ function cmInit() {
 .cm-switch[aria-checked=true] .cm-sw-state{color:var(--ok)}
 .cm-topic span{gap:4px;padding-right:6px}
 .cm-topic button{border:0;background:none;font:inherit;font-size:17px;line-height:1;padding:0 4px;cursor:pointer;color:inherit}
-.cm-fstop{align-self:center;border:0;background:none;font:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer;padding:6px}`;
+.cm-fstop{align-self:center;border:0;background:none;font:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer;padding:6px}
+/* A place (cPlace): the kind's tile, the summary filled in for the host, the form behind Change */
+.pl-ic{flex:none;width:40px;height:40px;border-radius:12px;background:var(--kc,var(--pine));color:#fff;display:grid;place-items:center;font-style:normal}
+.pl-ic svg{width:24px;height:24px}
+.pl-ic.s{width:28px;height:28px;border-radius:8px}.pl-ic.s svg{width:18px;height:18px}
+.pl-ic.none{background:none;box-shadow:inset 0 0 0 1.5px var(--line)}
+.cmi>summary .pl-ic{margin-right:-2px}
+.cmi>summary .pl-ic+span{flex:1}
+.pl-found{gap:6px;margin:0;padding:8px 14px 14px}
+.pl-found:not(:has(.pl-ls)){padding-bottom:8px}
+.pl-hd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pl-h{font-size:15px}
+.pl-ls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:7px 24px}   /* two columns on a wide screen, one on a phone */
+.pl-ls>.pl-lk,.pl-ls>.pl-lm,.pl-ls>.pl-note{grid-column:1/-1}
+.pl-clip{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pl-l{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;font-size:15px;line-height:1.35}
+.pl-l>i{display:grid;place-items:center;height:21px;color:var(--muted);font-style:normal}
+.pl-l>i svg{width:18px;height:18px}
+.pl-l.pl-lk{align-items:center;font-weight:600}
+.pl-l a{color:inherit;overflow-wrap:anywhere}
+.pl-hl{display:block}.pl-nw{white-space:nowrap}
+.pl-hl small{color:var(--muted);font-size:13.5px}
+.pl-note{margin:0;color:var(--muted);font-size:13.5px}
+.pl-mks{display:flex;flex-wrap:wrap;gap:4px 6px}
+.pl-mk{font-size:13.5px;font-weight:600;line-height:1.3;padding:1px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.pl-found .pl-chg{margin-right:-4px}
+.pl-chg,.pl-add{min-height:40px}
+.pl-form{gap:16px 20px}
+.pl-kindrow{display:flex;align-items:center;gap:10px;min-height:40px;flex-wrap:wrap}
+.pl-kn{font-weight:600}
+.pl-link{border:0;background:none;font:inherit;font-weight:700;color:var(--ink);text-decoration:underline;cursor:pointer;padding:8px 4px;min-height:40px;margin-left:auto}
+.pl-kinds-w{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.pl-kinds{display:grid;grid-template-columns:repeat(auto-fill,104px);gap:8px}
+@media (max-width:480px){.pl-kinds-w{margin-inline:-4px}.pl-kinds{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}}   /* three across at 360 px: "Montagne et" still on one line */
+.pl-kg{margin:6px 0 0;font-size:13.5px;font-weight:700;color:var(--muted)}
+.pl-kinds-w>.pl-kq{margin-bottom:2px}   /* the kinds' search (kGrid): the maker's own field, right above the tiles */
+@media (max-width:480px){.pl-kinds-w>.pl-kq,.pl-kinds-w>.pl-knone{width:auto;margin-inline:4px}}   /* in line with the card's fields, not with the wider grid */
+.pl-knone{margin:2px 0 0}
+.pl-k{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;min-height:96px;padding:10px 2px 8px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.pl-k span{font-size:13.5px;font-weight:500;line-height:1.25;text-align:center;overflow-wrap:normal;word-break:normal;hyphens:manual}
+.pl-k[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.pl-k:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.pl-marks .chip span,.pl-part .chip span{min-height:40px}
+.pl-price{display:flex;align-items:center;gap:8px}
+.pl-price input{width:84px;flex:none;padding-inline:10px}
+.pl-sm{display:grid;grid-template-columns:minmax(0,1fr) 70px 40px;gap:6px;align-items:center;margin-bottom:8px}
+.pl-sm select{padding-inline:8px 4px;max-width:320px}
+.pl-sm input{padding-inline:8px}
+.pl-add{align-self:flex-start}
+.pl-part{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.pl-season{display:flex;align-items:center;gap:3px;max-width:100%}
+.pl-season select{width:auto;flex:none;min-height:40px;padding:6px 5px;-webkit-appearance:none;appearance:none;text-align:center;background:var(--surface)}
+.pl-season span{font-size:15px;font-weight:500}
+.pl-form .cm-sch{padding:0!important;background:none}   /* one surface: the hours are not a box inside the card */
+.pl-sub{margin-top:4px;padding-top:14px;border-top:1px solid var(--line)}
+.pl-form .cm-times{max-width:360px}   /* two times, not two long empty fields on a wide screen */
+/* Where the facts came from, and a lookup of them (pfWaitHTML, plFrom): quiet lines at the foot of the panel, never a box */
+.pl-ls>.pl-src,.pl-ls>.pl-foot,.pl-ls>.pl-web{grid-column:1/-1}
+.pl-src{margin:1px 0 0;color:var(--muted);font-size:13px;line-height:1.4}
+.pl-src a{color:inherit;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+.pl-foot{margin:0;display:flex;flex-wrap:wrap;align-items:center;column-gap:6px}
+.pl-more{border:0;background:none;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:2px;cursor:pointer;padding:0;min-height:32px}
+.pl-wait{display:flex;flex-direction:column;gap:8px;padding:4px 0 2px}
+.pl-wait .cm-prog{height:4px;max-width:240px}
+.pl-web{margin-top:4px}
+.pl-web input{max-width:420px}
+/* A market (cMarket) and an event's kind (evKind): the place card's pieces, and these */
+.pl-qty{font-weight:500;color:var(--muted)}
+.pl-when{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.pl-wk{width:auto;flex:0 1 auto;min-width:0;max-width:100%;min-height:40px;padding:6px 10px;font-size:15px;font-weight:600;background:var(--surface)}
+.pl-sws{display:flex;flex-direction:column;gap:10px}
+.pl-sells{gap:6px}.pl-sells .chip span{padding:6px 12px;font-size:14px}   /* sixteen chips: as few rows as the width allows */
+.pl-kindrow:has([data-ckinds^="files/markets/"]) .pl-kn{flex:1 1 0;min-width:0}   /* "Antiques and crafts" wraps, Change stays on the row */
+.cmi textarea[data-p^="files/markets/"]{field-sizing:content;min-height:0}   /* a market's name and description: as tall as their words */`;
   document.head.appendChild(st);
 })();

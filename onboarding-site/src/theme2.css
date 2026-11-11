@@ -125,6 +125,15 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .sw-on h3{margin:0;font-size:27px;line-height:1.08;color:#fff;overflow-wrap:break-word}
 .sw-on p{margin:0;font-size:14px}
 .sw-on a{color:#fff;font-weight:600}
+/* The photo's author (Google's rule), its own line under the rating: small, white on the photo's dark foot */
+.sw-on .sw-by{margin-top:2px;font-size:12px;line-height:1.3;opacity:.92;text-shadow:0 1px 2px rgba(0,0,0,.6);overflow-wrap:anywhere}
+.sw-on .sw-by a{font-weight:500}
+/* A researched card with no picture: its kind's icon (the engine's drawing) on the guide's colour, above the words, in the
+   flow so a long name pushes the card taller instead of running over the icon */
+.sw-ph.sw-kind{display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;gap:14px;height:auto;min-height:clamp(180px,28vh,320px);padding:20px 16px 12px;background:var(--kc,var(--pine));color:#fff}
+.sw-kind .sw-on{position:relative;left:auto;right:auto;bottom:auto}
+.sw-ic{position:relative;z-index:1;align-self:center;width:76px;height:76px;flex:none;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;color:#fff}
+.sw-ic svg{width:40px;height:40px}
 .sw-stamp{position:absolute;top:16px;z-index:2;padding:4px 10px;border-radius:10px;border:3px solid currentColor;background:rgba(255,255,255,.9);font:800 17px/1.2 var(--body);text-transform:uppercase;letter-spacing:.04em}
 .sw-stamp.yes{left:14px;color:var(--ok);opacity:var(--yes,0);transform:rotate(-8deg)}
 .sw-stamp.no{right:14px;color:var(--danger,#B3261E);opacity:var(--no,0);transform:rotate(8deg)}
@@ -140,6 +149,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .sw-pick{display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center;background:var(--sunk);border-radius:14px;padding:10px 12px}
 .sw-pick span{font-weight:600}
 .sw-pick small{font-weight:500;color:var(--muted)}
+.sw-pick small a{color:inherit;white-space:nowrap}
 .sw-pick input{grid-column:1/-1;grid-row:2;font-size:14px!important;padding:8px 10px!important}
 .sw-pick .x{grid-column:2;grid-row:1;border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)}
 @media (prefers-reduced-motion: reduce){.sw-card{transition:none}}
@@ -173,6 +183,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .pl-sug button:first-child{border-top:0}
 .pl-sug button:hover,.pl-sug button[aria-selected="true"]{background:var(--sunk)}
 .pl-sug b,.pl-sug small{display:block;overflow-wrap:break-word}
+.pl-sug .pl-gm{display:block;padding:5px 12px 6px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;text-align:right}
 .pl-sug small{margin-top:1px;color:var(--muted);font-size:13px}
 .pl-at{grid-column:1/-1;margin:0;font-size:13px;line-height:1.4;color:var(--muted)}
 .pl-at:empty{display:none}

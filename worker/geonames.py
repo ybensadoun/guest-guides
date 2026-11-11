@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+# GeoNames' places near a guide's pins, for a position, a town and a kind we may keep (worker/place-facts.mjs, the places
+# work). Overture lists businesses, not towns, mountains, most beaches or some monuments; GeoNames does. Licence CC BY 4.0:
+# commercial use allowed, the guide must credit GeoNames. One text file per country, no account, no key.
+#   stdin:  {"country": "ES", "pins": [{"id", "lat", "lng", "names": ["..."]}]}
+#   stdout: {"fetched": "YYYY-MM-DD", "pins": {"<id>": [candidates...]}}, and nothing else (progress goes to stderr)
+# A candidate: a feature within 3 km of the pin that carries one of the pin's names (see same()), administrative areas
+# aside, at most 8, nearest first: {"id", "name", "cls", "code", "pop", "lat", "lng", "metres"}.
+# Python's standard library only (3.9 and later). The country's file is kept in GEONAMES_CACHE (default
+# ~/.cache/guest-guides/geonames/, next to Overture's, outside the repo) and fetched again when 30 days old; offline, the
+# old one is used. Downloaded data is only ever read as text, never run. The pins' names are never printed.
+import datetime, json, math, os, re, sys, time, unicodedata, urllib.request, zipfile
+
+CACHE = os.environ.get('GEONAMES_CACHE') or os.path.join(os.path.expanduser('~'), '.cache', 'guest-guides', 'geonames')   # outside the repo: the Mac's copy is synced by Google Drive
+URL = os.environ.get('GEONAMES_URL') or 'https://download.geonames.org/export/dump/'   # another base only for tests
+MAX_DAYS, REACH_KM, MAX = 30, 3.0, 8
+MAX_ZIP, MAX_TXT, DEADLINE = 400e6, 2e9, 240   # bytes, bytes, seconds: a stuck or odd download gives up before the worker's 5 minutes
+CELL = 0.1                                     # degrees: pins sorted into cells, so each line is compared with the pins of its cell and the next ones
+GENERIC = set('el la els les l d de del dels the of i y and a en al per platja playa beach plage strand'.split())
+
+def say(*a): print(*a, file=sys.stderr, flush=True)
+def fail(msg): say('geonames: ' + msg); sys.exit(1)
+
+# The country's file, from the cache when fetched less than 30 days ago. Returns (path, date fetched).
+def country_file(cc):
+    txt, meta = os.path.join(CACHE, cc + '.txt'), os.path.join(CACHE, cc + '.json')
+    old = None
+    try:
+        with open(meta) as f: old = datetime.date.fromisoformat(json.load(f)['fetched'])
+        if not os.path.exists(txt): old = None
+    except Exception: old = None
+    if old and (datetime.date.today() - old).days < MAX_DAYS: return txt, old.isoformat()
+    try: fetched = fetch(cc, txt, meta)
+    except Exception as e:
+        if old: say('geonames: could not fetch %s (%s), using the file of %s' % (cc, str(e).replace('\n', ' ')[:160], old.isoformat())); return txt, old.isoformat()
+        fail('could not fetch %s: %s' % (cc, str(e).replace('\n', ' ')[:200]))
+    return txt, fetched
+
+# Downloaded to a .part file, then only the member <CC>.txt is read out of the zip (never extracted in full), renamed last.
+def fetch(cc, txt, meta):
+    zpart, tpart = os.path.join(CACHE, cc + '.zip.part'), txt + '.part'
+    say('geonames: fetching %s' % cc); t0 = time.time(); n = 0
+    try:
+        with urllib.request.urlopen(URL + cc + '.zip', timeout=30) as r, open(zpart, 'wb') as out:
+            while True:
+                b = r.read(1 << 16)
+                if not b: break
+                n += len(b)
+                if n > MAX_ZIP: raise RuntimeError('more than %d MB' % (MAX_ZIP / 1e6))
+                if time.time() - t0 > DEADLINE: raise RuntimeError('took more than %d s' % DEADLINE)
+                out.write(b)
+        with zipfile.ZipFile(zpart) as z:
+            info = z.getinfo(cc + '.txt')   # KeyError when the zip is not the country's
+            if info.file_size > MAX_TXT: raise RuntimeError('its text file is too large')
+            with z.open(info) as src, open(tpart, 'wb') as out:
+                while True:
+                    b = src.read(1 << 20)
+                    if not b: break
+                    out.write(b)
+        os.replace(tpart, txt)
+        today = datetime.date.today().isoformat()
+        with open(meta, 'w') as f: json.dump({'fetched': today}, f)
+    finally:
+        for p in (zpart, tpart):
+            try: os.remove(p)
+            except OSError: pass
+    say('geonames: %s, %.1f MB, %d s' % (cc, os.path.getsize(txt) / 1e6, time.time() - t0))
+    return today
+
+def km(a, b, c, d):
+    p = math.pi / 180; return 6371 * math.hypot((d - b) * p * math.cos((a + c) / 2 * p), (c - a) * p)
+
+# A name's words, without case, accents or punctuation, generic words aside ("Platja de Sant Salvador": sant salvador).
+# The Catalan middle dot joins its letters (Cal·la is calla). A name of generic words only keeps them all.
+def words(s):
+    s = unicodedata.normalize('NFKD', str(s or '').replace('·', '').replace('‧', '')).encode('ascii', 'ignore').decode().lower()
+    w = re.sub(r'[^a-z0-9]+', ' ', s).split()
+    return [t for t in w if t not in GENERIC] or w
+
+# A name that says it is a beach is never the village of the same name ("Platja de Sant Salvador" is not Sant Salvador,
+# whose centre lies 700 m inland: seen on 10 Nov 2026). Such a name matches no feature of class P (towns and villages).
+SPOT = set('platja playa beach plage strand'.split())
+LODGING = set('HTL HSTL GHSE MOTL'.split())
+def is_spot(s):
+    return any(t in SPOT for t in re.sub(r'[^a-z0-9]+', ' ', unicodedata.normalize('NFKD', str(s or '')).encode('ascii', 'ignore').decode().lower()).split())
+
+# The feature carries the pin's name: the same words, or every word of the pin's name with at most two more.
+def same(want, got):
+    if not want or not got: return False
+    return want == got or (all(t in got for t in want) and len(got) <= len(want) + 2)
+
+def main():
+    try:
+        q = json.load(sys.stdin); cc = str(q.get('country') or '')
+        pins = [{'id': str(p['id']), 'lat': float(p['lat']), 'lng': float(p['lng']), 'names': [str(n) for n in (p.get('names') or []) if n]}
+                for p in q.get('pins') or [] if p.get('lat') is not None and p.get('lng') is not None]
+    except Exception as e: fail('the question on stdin is not as expected (%s)' % type(e).__name__)
+    if not re.match(r'^[A-Z]{2}\Z', cc): fail('the country must be two capital letters')
+    res = {p['id']: [] for p in pins}
+    named = [dict(p, want=[(w, is_spot(n)) for n in p['names'] for w in [words(n)] if w]) for p in pins]
+    named = [p for p in named if p['want']]   # a pin with no names gets none
+    if not named:   # nothing to look for: no download either
+        sys.stdout.write(json.dumps({'fetched': None, 'pins': res})); sys.stdout.flush(); return
+    os.makedirs(CACHE, exist_ok=True)
+    path, fetched = country_file(cc)
+    cells = {}
+    for p in named: cells.setdefault((math.floor(p['lat'] / CELL), math.floor(p['lng'] / CELL)), []).append(p)
+    found = {p['id']: [] for p in named}; t0 = time.time(); lines = 0
+    with open(path, encoding='utf-8', errors='replace') as f:
+        for line in f:
+            lines += 1
+            c = line.rstrip('\n').split('\t')
+            if len(c) < 15 or c[6] == 'A' or not c[6]: continue   # administrative areas: a town's boundary, not a place to go
+            if c[7] in LODGING: continue   # a hotel carries its town's name ("Hotel Ciutat de Tarragona") and is never what a host means by it
+            try: lat, lng = float(c[4]), float(c[5])
+            except ValueError: continue
+            y, x = math.floor(lat / CELL), math.floor(lng / CELL)
+            near = [p for dy in (-1, 0, 1) for dx in (-1, 0, 1) for p in cells.get((y + dy, x + dx), ())]
+            if not near: continue
+            near = [(p, km(p['lat'], p['lng'], lat, lng)) for p in near]
+            near = [(p, d) for p, d in near if d <= REACH_KM]
+            if not near: continue
+            names = [c[1], c[2]] + [a for a in c[3].split(',') if a]
+            own = [w for w in (words(n) for n in names) if w]
+            for p, d in near:
+                hit = [w == g for w, spot in p['want'] for g in own if same(w, g) and not (spot and c[6] == 'P')]
+                if hit and all(x['id'] != c[0] for x in found[p['id']]):   # one pin sent twice: each feature once
+                    try: pop = int(c[14] or 0)
+                    except ValueError: pop = 0
+                    found[p['id']].append({'id': c[0], 'name': c[1], 'cls': c[6], 'code': c[7], 'pop': pop,
+                                           'lat': round(lat, 6), 'lng': round(lng, 6), 'metres': round(d * 1000), 'exact': any(hit)})
+    for pid, lst in found.items():
+        lst.sort(key=lambda x: (not x['exact'], x['metres'], x['id'])); res[pid] = lst[:MAX]   # the very name first ("Sitges" before "Parrots Sitges Hotel"), then the nearest
+    say('geonames: %s of %s, %d lines, %d of %d pins with a feature, %.1f s' % (cc, fetched, lines, sum(1 for v in res.values() if v), len(pins), time.time() - t0))
+    sys.stdout.write(json.dumps({'fetched': fetched, 'pins': res}, ensure_ascii=False)); sys.stdout.flush()
+
+if __name__ == '__main__': main()
