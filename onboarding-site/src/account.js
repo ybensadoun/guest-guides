@@ -493,10 +493,17 @@ function acctHouses(){
   if (!AUTH || !GUIDE) return;
   let d = document.querySelector('#acctbar .houses');
   const cur = HOUSES.find(h => h.id === GUIDE.id) || { ...GUIDE, name: ((GUIDE.content || {}).site || {}).name };
+  // The house being worked on: its name as the host has it now and its state as the server has it, not as they were when
+  // the list was read (a house just added said "New house, not built yet" while its guide was being built).
+  if (cur.id === GUIDE.id) { cur.guideName = A.guideName || cur.guideName; cur.place = A.placeName || cur.place; cur.status = GUIDE.status || cur.status; }
   const html = `<summary aria-label="Your houses"><b>${esc(houseName(cur))}</b></summary><div class="hmenu">${HOUSES.map(h => `<div class="hrow"><button type="button" data-house="${esc(h.id)}"${h.id === GUIDE.id ? ' aria-current="true"' : ''}><b>${esc(houseName(h))}</b><small>${esc(houseState(h))}${h.id === GUIDE.id ? ' · open now' : ''}</small></button><button type="button" class="hdel" data-delhouse="${esc(h.id)}" aria-label="Delete ${esc(houseName(h))}" title="Delete this house">${TRASH}</button></div>`).join('')}<button type="button" class="add" data-addhouse>+ Add a house</button><button type="button" class="gone" data-delacct>Delete my account</button></div>`;
   if (!d) { d = document.createElement('details'); d.className = 'houses'; acctBar().prepend(d); }
   const open = d.open; d.innerHTML = html; d.open = open;
 }
+// The houses menu closes like any menu: a click outside it, or Escape. Opening it redraws it, so it is never stale.
+document.addEventListener('click', e => { const d = document.querySelector('#acctbar .houses[open]'); if (d && !(e.target.closest && e.target.closest('#acctbar .houses'))) d.open = false; });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; const d = document.querySelector('#acctbar .houses[open]'); if (d) { d.open = false; const su = d.querySelector('summary'); if (su) su.focus(); } });
+document.addEventListener('toggle', e => { if (e.target.matches && e.target.matches('#acctbar .houses') && e.target.open) acctHouses(); }, true);
 window.__acctHouses = () => { const h = HOUSES.find(x => x.id === GUIDE.id); if (h) { h.status = GUIDE.status; h.name = ((GUIDE.content || {}).site || {}).name || h.name; } acctHouses(); };
 // Leaving a house: what this device holds for it goes to the account first (answers, photos not sent yet, the editor's
 // draft), then the device forgets it.
@@ -619,7 +626,7 @@ async function acctStatus(){
   if (!AUTH || !GUIDE) return null;
   await ensureFresh();
   const r = await sb('/rest/v1/guides?select=status,message,slug,finished_at&id=eq.' + GUIDE.id);
-  if (r && r[0]) { GUIDE.status = r[0].status; GUIDE.message = r[0].message; return r[0]; }
+  if (r && r[0]) { const was = GUIDE.status; GUIDE.status = r[0].status; GUIDE.message = r[0].message; if (was !== GUIDE.status) acctHouses(); return r[0]; }   // the houses menu says the new state
   return null;
 }
 // The places the research found that the host has not seen: cards in the editor (worker/guide-worker.mjs, build).

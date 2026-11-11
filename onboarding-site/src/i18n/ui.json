@@ -2636,10 +2636,10 @@
 "es": "De tu anuncio",
 "fr": "De votre annonce"
 },
-"Suggested by Claude: please check": {
-"ca": "Suggerit per Claude: revisa-ho",
-"es": "Sugerido por Claude: revísalo",
-"fr": "Suggéré par Claude : à vérifier"
+"Suggested for you: please check": {
+"ca": "Suggerit per a tu: revisa-ho",
+"es": "Sugerido para ti: revísalo",
+"fr": "Suggéré pour vous : à vérifier"
 },
 "Gentle pastels, rounded corners.": {
 "ca": "Pastels suaus, cantonades arrodonides.",

@@ -980,6 +980,10 @@ function progOf(j, kind) {
     const [re, from, to, secs] = steps[k], t = (now - (j.phaseAt || j.since || now)) / 1000, m = j.message.match(re), later = steps.slice(k + 1).reduce((a, x) => a + x[3], 0);
     if (m && m[2]) { const i = Math.max(1, +m[1]), n = Math.max(i, +m[2]), per = secs; pct = from + (to - from) * ((i - 1 + progEase(t, per)) / n); left = (n - i + 1) * per - t + later; }
     else { pct = from + (to - from) * progEase(t, secs / 2); left = secs - t + later; }
+    // A job that starts at a later step (a build whose research was done while the host answered starts at "emergency",
+    // 52 on the full scale) has its own scale from there: the bar starts near empty, not half full (Yohann, 11 Nov 2026).
+    if (j.k0 == null) j.k0 = k;
+    const f0 = steps[j.k0][1]; if (j.k0 > 0 && k >= j.k0) pct = 3 + (pct - f0) * 96 / (99 - f0);
   }
   pct = Math.min(99, Math.max(j.shown || 0, pct)); j.shown = pct;   // never goes back
   const words = ({ 'Researching: markets': 'Looking for markets', 'Researching: todo': 'Looking for things to do', 'Researching: emergency': 'Finding emergency numbers', 'Translating': 'Translating into your languages' })[j.message] || j.message.replace(/ · .*$/, '').replace(/^Starting again$/, 'Starting');

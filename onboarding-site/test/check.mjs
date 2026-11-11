@@ -305,6 +305,7 @@ try {
     await p.goto('http://editor.test/#send'); await p.waitForSelector('#send', { timeout: 15000 }).catch(() => {}); await p.waitForTimeout(900);
     await p.click('#send'); await p.waitForTimeout(1500);
     ok(`Send ${tag}: the guide starts building`, queued === 1 && (await p.evaluate(() => location.hash)) === '#building', await p.textContent('#sendState').catch(() => ''));
+    ok(`Send ${tag}: no button under the progress while it is being built`, !(await p.$('#bfoot a')) && !!(await p.$('#bfoot')), await p.$eval('#bfoot', e => e.innerText).catch(() => 'no #bfoot'));
     ok(`Send ${tag}: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -425,6 +426,12 @@ try {
     const rowsClash = await p.$$eval('#acctbar .hrow', rs => rs.filter(r => { const [a, b] = [...r.children].map(x => x.getBoundingClientRect()); return a.right > b.left + 1 || b.right > innerWidth; }).length);
     ok('houses menu, 360 px: each house has its delete button, nothing overlaps', (await p.$$('#acctbar .hdel')).length === 3 && !rowsClash && !!(await p.$('#acctbar [data-delacct]')));
     await p.screenshot({ path: join(SHOTS, 'delete-menu-360.png') });
+    // The menu closes like any menu: Escape, or a click outside it.
+    await p.keyboard.press('Escape'); await p.waitForTimeout(100);
+    const escClosed = !(await p.$('#acctbar .houses[open]'));
+    await menu(); await p.mouse.click(300, 600); await p.waitForTimeout(100);
+    ok('houses menu: Escape closes it, and so does a click outside it', escClosed && !(await p.$('#acctbar .houses[open]')));
+    await menu();
     // A published house: the box asks to type its web address.
     await p.click(`#acctbar [data-delhouse="${E.id}"]`); await p.waitForSelector('.acdel', { timeout: 3000 }).catch(() => {});
     const yes = () => p.$eval('.acdel [data-yes]', b => !b.disabled).catch(() => null);
