@@ -99,10 +99,10 @@ function cf(label, path, obj, o = {}) {
 // An on/off setting: a switch with its state written next to it, so it is clear whether it is on.
 const cSwitch = (attrs, label, on, hint = '') => `<div class="cm-swrow"><button type="button" class="cm-switch" role="switch" aria-checked="${!!on}" ${attrs}><span class="cm-sw-track" aria-hidden="true"><span class="cm-sw-knob"></span></span><span class="cm-sw-label">${esc(label)}</span><span class="cm-sw-state" aria-hidden="true">${on ? 'On' : 'Off'}</span></button>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}</div>`;
 const cDays = (path, days) => ED_DAYS.map(([d, l]) => `<button class="chip" type="button" data-daytog="${esc(path)}" data-d="${d}" aria-pressed="${(days || []).includes(d)}"><span>${l}</span></button>`).join('');
-function cSchedule(path, arr, season = false) {   // season: each row says whether it is only part of the year (places; markets keep the hint)
+function cSchedule(path, arr, season = false, weeks = false) {   // season: each row says whether it is only part of the year (places, markets); weeks: and which weeks of the month (markets)
   return `<div class="f full"><span class="lab">Opening days and hours</span><div class="cm-sch">${(arr || []).map((r, k) => `<div class="cm-sr"><div class="cm-dayrow"><div class="chips" role="group" aria-label="Days">${cDays(`${path}/${k}`, r.days)}</div><button class="cm-x" type="button" data-cdel="${path}/${k}" data-now="1" aria-label="Remove these hours">×</button></div>
     <div class="cm-times"><input type="time" aria-label="Opens" data-p="${path}/${k}/open" data-t="str" value="${esc(r.open || '')}"><span>to</span><input type="time" aria-label="Closes" data-p="${path}/${k}/close" data-t="str" value="${esc(r.close || '')}"></div>
-    ${season ? plSeason(`${path}/${k}`, r) : r.from || r.to ? `<p class="hint">Only from ${esc(r.from || '?')} to ${esc(r.to || '?')} (month-day).</p>` : ''}</div>`).join('')}
+    ${season ? plSeason(`${path}/${k}`, r, weeks) : r.from || r.to ? `<p class="hint">Only from ${esc(r.from || '?')} to ${esc(r.to || '?')} (month-day).</p>` : ''}</div>`).join('')}
     <button class="btn small" type="button" data-addsch="${path}">+ Add opening hours</button></div></div>`;
 }
 function cDates(path, arr) {
@@ -134,16 +134,18 @@ const cLabel = k => C_LBL[k] || k.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, 
 const cName = it => edShown(it.name) || edShown(it.title) || edShown(it.where) || (it.id && !String(it.id).startsWith('custom-') ? it.id : 'New');
 function cItem(base, it, i, what) {
   if (PL_SEC[base]) return cPlace(base, it, i);
+  if (base === MK_PATH) return cMarket(base, it, i);
   const p = `${base}/${i}`, ord = k => { const n = C_ORDER.indexOf(k); return n < 0 ? 99 : n; };
   const keys = Object.keys(it).filter(k => !C_SKIP.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'))).sort((a, b) => ord(a) - ord(b));
   const km = cKm(it);
   const meta = [typeof it.town === 'string' ? it.town : '', km, (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
   const { find, pin, first } = cWhere(p, it);
   const check = Array.isArray(it.flags) || what !== 'contact' ? cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.') : '';
-  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], cOpt(it, k))).join('')}
+  const ev = base === EV_PATH, kr = ev ? evKind(p, it) : '';   // an event's kind: one line right under its name
+  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${keys.includes('name') ? '' : kr}${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], cOpt(it, k)) + (k === 'name' ? kr : '')).join('')}
     ${'stalls_approx' in it ? cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx, { type: 'number', half: true }) : ''}${first ? '' : find}${pin}
     ${'schedule' in it || base.includes('markets') ? cSchedule(`${p}/schedule`, it.schedule) : ''}${'dates' in it || base.includes('events') ? cDates(`${p}/dates`, it.dates) : ''}</div>
-    ${what === 'contact' ? '' : check}${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`);
+    ${what === 'contact' ? '' : check}${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`, null, ev ? evTile(it.type) : '');
 }
 const cKm = it => it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
 const cOpt = (it, k) => ({ long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' });
@@ -182,7 +184,9 @@ const plKindName = (sec, icon, l) => { const k = plKind(sec, icon); return k ? k
 // The row and the summary say the place's own line under the name, else its kind, in the language being edited.
 const plType = (sec, it) => (edIs18(it.type) ? edShown(it.type) : typeof it.type === 'string' ? it.type : '').trim() || plKindName(sec, it.icon, CM.lang);
 const plColour = (sec, it) => sec === 'eat' ? PL_FOOD : PL_TONE[ENG_GROUPS.groups[it.group || (plKind('todo', it.icon) || {}).group]] || 'var(--pine)';
-const plTile = (sec, it, small) => it.icon && ENG_ICON[it.icon] ? `<i class="pl-ic${small ? ' s' : ''}" style="--kc:${plColour(sec, it)}" aria-hidden="true">${ENG_ICON[it.icon]}</i>` : `<i class="pl-ic none${small ? ' s' : ''}" aria-hidden="true"></i>`;
+// A kind's tile (places, markets, events): the guide's icon on its colour, an empty outline for no kind; ink: a dark icon on a light colour.
+const kTile = (svg, kc, small, ink) => svg ? `<i class="pl-ic${small ? ' s' : ''}" style="--kc:${kc}${ink ? ';color:#121212' : ''}" aria-hidden="true">${svg}</i>` : `<i class="pl-ic none${small ? ' s' : ''}" aria-hidden="true"></i>`;
+const plTile = (sec, it, small) => kTile(it.icon && ENG_ICON[it.icon], plColour(sec, it), small);
 // Dates and days in the maker's language, never written by hand (docs/TYPOGRAPHY.md).
 const plLoc = () => UIL === 'en' ? 'en-GB' : UIL;
 const plDay = d => new Intl.DateTimeFormat(plLoc(), { weekday: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, 0, 1 + ED_DAYS.findIndex(x => x[0] === d))));   // 1 Jan 2024 was a Monday
@@ -195,19 +199,28 @@ function plDays(days) {
   const runs = []; for (const i of ix) { const r = runs[runs.length - 1]; if (r && r[1] === i - 1) r[1] = i; else runs.push([i, i]); }
   return `<span translate="no">${esc(runs.map(([a, b]) => b - a >= 2 ? `${plDay(ED_DAYS[a][0])}-${plDay(ED_DAYS[b][0])}` : ED_DAYS.slice(a, b + 1).map(x => plDay(x[0])).join(' ')).join(' '))}</span>`;
 }
-// One line per group of days (and season): "Tue-Sat 13:00-16:00, 20:00-23:30".
+// A market held one week of the month, in the guide's own words: "2nd Sun of the month" (engine i18n nth, nth1 to nth3).
+const plNth = r => { const n = r.week_of_month, w = engT('nth' + n), d = ED_DAYS.map(x => x[0]).filter(x => (r.days || []).includes(x)).map(plDay).join(' ');
+  return `<span translate="no">${esc(engT('nth').split('{nth}').join(w === 'nth' + n ? n + '.' : w).split('{day}').join(d))}</span>`; };
+// One line per group of days (and season, and week of the month): "Tue-Sat 13:00-16:00, 20:00-23:30".
 function plHours(sch) {
   const g = new Map();
-  for (const r of sch || []) { if (!(r.days || []).length) continue; const k = [(r.days || []).join(), r.from || '', r.to || ''].join('|'); if (!g.has(k)) g.set(k, { r, t: [] }); g.get(k).t.push(`${r.open || ''}${r.close ? '-' + r.close : ''}`); }
-  return [...g.values()].map(({ r, t }) => `<span class="pl-hl">${plDays(r.days)} ${t.filter(Boolean).map(x => `<span class="pl-nw">${esc(x)}</span>`).join(', ')}${r.from || r.to ? ` <small>${esc(`from ${plDate(r.from)} to ${plDate(r.to)}`)}</small>` : ''}</span>`);
+  for (const r of sch || []) { if (!(r.days || []).length) continue; const k = [(r.days || []).join(), r.from || '', r.to || '', r.week_of_month || ''].join('|'); if (!g.has(k)) g.set(k, { r, t: [] }); g.get(k).t.push(`${r.open || ''}${r.close ? '-' + r.close : ''}`); }
+  return [...g.values()].map(({ r, t }) => `<span class="pl-hl">${r.week_of_month ? plNth(r) : plDays(r.days)} ${t.filter(Boolean).map(x => `<span class="pl-nw">${esc(x)}</span>`).join(', ')}${r.from || r.to ? ` <small>${esc(`from ${plDate(r.from)} to ${plDate(r.to)}`)}</small>` : ''}</span>`);
 }
 const plHost = u => { try { return new URL(/^https?:/.test(u) ? u : 'https://' + u).hostname.replace(/^www\./, ''); } catch (e) { return u; } };
 const plMarks = (sec, it) => PL_MARKS[sec].filter(([t, k]) => (t === 't' ? it.tags || [] : it.flags || []).includes(k));
 const plMark = ([t, k]) => engT(t === 't' ? 't_' + k : 'f_' + k);
 // "Filled in for you": what the place has, one line each, only the lines with a value (two columns where there is room).
 // "Change" sits on the title row; while the form is open the lines go, since the form under it shows the same things.
+// The same panel for a market (mkFound): plPanel around its lines, each one plLine.
+const plLine = (ic, html, c = "") => `<div class="pl-l${c}"><i aria-hidden="true">${ic}</i><div>${html}</div></div>`;
+function plPanel(p, body) {
+  const open = CM.chg.has(p), btn = `<button class="pl-link pl-chg" type="button" data-cchg="${p}" aria-expanded="${open}">${open ? 'Done' : 'Change'}</button>`;
+  return `<div class="cm-found pl-found"><div class="pl-hd"><b class="pl-h">Filled in for you</b>${btn}</div>${body}</div>`;
+}
 function plFound(p, sec, it) {
-  const line = (ic, html, c = "") => `<div class="pl-l${c}"><i aria-hidden="true">${ic}</i><div>${html}</div></div>`;
+  const line = plLine;
   const out = [], kind = it.icon && ENG_ICON[it.icon], K = plKind(sec, it.icon), say = (x, o) => `<p class="pl-note${o ? ' pl-clip" translate="no' : ''}">${esc(x)}</p>`;   // the guide's own notes: two lines at most here, whole in the form
   if (kind || plType(sec, it)) out.push(`<div class="pl-l pl-lk">${plTile(sec, it, true)}<div translate="no">${esc(plType(sec, it))}</div></div>`);
   const hrs = it.always ? ['<span>Open 24 hours</span>'] : plHours(it.schedule), note = edShown(it.hours || {}), facts = [it.price, (it.setMenus || []).length, it.phone, it.url, plMarks(sec, it).length, note, edShown(it.priceNote || {})].some(x => x && String(x).trim());
@@ -218,7 +231,7 @@ function plFound(p, sec, it) {
   if (it.phone) out.push(line(I.phone, `<a href="tel:${esc(String(it.phone).replace(/[^\d+]/g, ''))}" translate="no">${esc(it.phone)}</a>`));
   if (it.url) out.push(line(I.globe, `<a href="${esc(/^https?:/.test(it.url) ? it.url : 'https://' + it.url)}" target="_blank" rel="noopener" translate="no">${esc(plHost(it.url))}</a>`));
   const mk = plMarks(sec, it); if (mk.length) out.push(line(I.tag, `<span class="pl-mks">${mk.map(m => `<span class="pl-mk" translate="no">${esc(plMark(m))}</span>`).join('')}</span>`, " pl-lm"));
-  const open = CM.chg.has(p), btn = `<button class="pl-link pl-chg" type="button" data-cchg="${p}" aria-expanded="${open}">${open ? 'Done' : 'Change'}</button>`;
+  const open = CM.chg.has(p);
   // Its facts being looked up (job place-facts, below): one calm line in place of the lines, the form open or not. Then, at
   // the foot of the lines: where they came from, the search that did not work, or "Look for its details".
   const j = it.id ? CM.pf[it.id] : null, none = j && j.status === 'done' && !(j.result || {}).entry, failed = j && j.status === 'failed';
@@ -227,7 +240,7 @@ function plFound(p, sec, it) {
   const foot = failed ? `<p class="pl-foot pl-note"><span>The search did not work.</span>${j.message ? ` <span>${esc(j.message)}</span>` : ''} <button class="pl-more" type="button" data-pfagain="${p}">Try again</button></p>`
     : plFrom(it) || (pfCan(it, j) ? `<p class="pl-foot"><button class="pl-more" type="button" data-pflook="${p}">Look for its details</button></p>` : '');
   const body = pfBusy(j) ? pfWaitHTML(it.id) : open ? '' : `<div class="pl-ls">${out.length ? out.join('') : empty}${foot}</div>`;
-  return `<div class="cm-found pl-found"><div class="pl-hd"><b class="pl-h">Filled in for you</b>${btn}</div>${body}</div>`;
+  return plPanel(p, body);
 }
 // Where the facts still shown came from (filled, from the worker: the build, Find more or a lookup here), one quiet line:
 // "From locanda.es and an open directory, 10 Nov 2026." The place's own site is said by its name, as a link to the page
@@ -257,23 +270,38 @@ function plMine(p, k) {
   delete f.from[k]; if (!Object.keys(f.from).length) delete it.filled;
 }
 // "Only part of the year" on a row of opening hours: two dates on one line, each a day and a month (from and to, MM-DD).
-function plSeason(rp, r) {
+// weeks (markets): "Which weeks" on the same line, in the values engine/src/schedule.js understands and names (week_of_month
+// 1 to 3: the engine's guide says "1st", "2nd", "3rd" only; any other value a market already has is kept and offered as it is).
+function plSeason(rp, r, weeks = false) {
   const on = !!(r.from || r.to), sel = (end, md) => { const [m, d] = String(md || '').split('-').map(Number);
     return `<select data-cseas="${rp}" data-end="${end}" data-part="d" aria-label="Day">${Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}"${i + 1 === d ? ' selected' : ''}>${i + 1}</option>`).join('')}</select><select data-cseas="${rp}" data-end="${end}" data-part="m" aria-label="Month" translate="no">${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}"${i + 1 === m ? ' selected' : ''}>${esc(plMonth(i + 1))}</option>`).join('')}</select>`; };
-  return `<div class="pl-part"><button class="chip" type="button" data-cseason="${rp}" aria-pressed="${on}"><span>Only part of the year</span></button>${on ? `<div class="pl-season"><span>Between</span>${sel('from', r.from)}<span>and</span>${sel('to', r.to)}</div>` : ''}</div>`;
+  const chip = `<button class="chip" type="button" data-cseason="${rp}" aria-pressed="${on}"><span>Only part of the year</span></button>`;
+  return `<div class="pl-part">${weeks ? `<div class="pl-when">${chip}${plWeeks(rp, r)}</div>` : chip}${on ? `<div class="pl-season"><span>Between</span>${sel('from', r.from)}<span>and</span>${sel('to', r.to)}</div>` : ''}</div>`;
 }
+const PL_WEEKS = [[0, 'Every week'], [1, '1st week of the month'], [2, '2nd week of the month'], [3, '3rd week of the month']];
+function plWeeks(rp, r) {
+  const n = +r.week_of_month || 0, o = PL_WEEKS.some(x => x[0] === n) ? PL_WEEKS : [...PL_WEEKS, [n, `Week ${n} of the month`]];
+  return `<select class="pl-wk" data-cweek="${rp}" aria-label="Which weeks">${o.map(([v, l]) => `<option value="${v || ''}"${v === n ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+}
+// The grid of kinds, behind a kind's "Change" (places, markets, events): groups of tiles, each with a heading or none.
+// A tile: { k, tile, name, on, no } (no: the name is already in the maker's language, never translated on its way).
+function kGrid(p, groups) {
+  const tile = x => `<button class="pl-k" type="button" data-ckind="${p}" data-k="${x.k}" aria-pressed="${x.on}">${x.tile}<span${x.no ? ' translate="no"' : ''}>${esc(x.name)}</span></button>`;
+  return `<div class="pl-kinds-w" role="group" aria-label="Kind">${groups.filter(g => g.tiles.length).map(g => `${g.head ? `<p class="pl-kg" translate="no">${esc(g.head)}</p>` : ''}<div class="pl-kinds">${g.tiles.map(tile).join('')}</div>`).join('')}</div>`;
+}
+// "Kind <tile> <name> Change", and the grid under it while it is open.
+const kRow = (p, tile, name, grid) => `<div class="f full"><div class="pl-kindrow"><span class="lab">Kind</span>${tile}${name}<button class="pl-link" type="button" data-ckinds="${p}" aria-expanded="${CM.kpick.has(p)}">Change</button></div>${CM.kpick.has(p) ? grid() : ''}</div>`;
 function plKinds(p, sec, it) {
-  const tile = ([k, x]) => `<button class="pl-k" type="button" data-ckind="${p}" data-k="${k}" aria-pressed="${it.icon === k}">${plTile(sec, { icon: k, group: x.group })}<span translate="no">${esc(x.name[UIL] || x.name.en)}</span></button>`;
+  const tile = ([k, x]) => ({ k, tile: plTile(sec, { icon: k, group: x.group }), name: x.name[UIL] || x.name.en, on: it.icon === k, no: true });
   const all = Object.entries(ENG_KINDS[sec]);
-  return `<div class="pl-kinds-w" role="group" aria-label="Kind">${sec === 'eat' ? `<div class="pl-kinds">${all.map(tile).join('')}</div>`
-    : Object.keys(ENG_GROUPS.groups).map(g => { const ks = all.filter(([, x]) => x.group === g); return ks.length ? `<p class="pl-kg" translate="no">${esc(engT('g_' + g))}</p><div class="pl-kinds">${ks.map(tile).join('')}</div>` : ''; }).join('')}</div>`;
+  return kGrid(p, sec === 'eat' ? [{ tiles: all.map(tile) }] : Object.keys(ENG_GROUPS.groups).map(g => ({ head: engT('g_' + g), tiles: all.filter(([, x]) => x.group === g).map(tile) })));
 }
 function plForm(p, sec, it, rest, where) {
   const sm = it.setMenus || [], [pf, pt] = String(it.price || '').split('-').map(x => x.trim());
   const smOpt = (k, cur) => `<option value="${k}"${k === cur ? ' selected' : ''}>${esc(ENG_T.en['ff_' + k] ? engT('ff_' + k) : engT('sm_' + k).replace(/\s*(€\s*\{p\}|\{p\}\s*€)\s*/g, ' ').trim())}</option>`;
   const hasOwn = k => k in it;
   return `<div class="pl-form grid">
-    <div class="f full"><div class="pl-kindrow"><span class="lab">Kind</span>${plTile(sec, it, true)}<span class="pl-kn" translate="no">${esc(plKindName(sec, it.icon, UIL))}</span><button class="pl-link" type="button" data-ckinds="${p}" aria-expanded="${CM.kpick.has(p)}">Change</button></div>${CM.kpick.has(p) ? plKinds(p, sec, it) : ''}</div>
+    ${kRow(p, plTile(sec, it, true), `<span class="pl-kn" translate="no">${esc(plKindName(sec, it.icon, UIL))}</span>`, () => plKinds(p, sec, it))}
     ${cf('Line under the name', `${p}/type`, it.type, { i18n: true, long: false })}
     <div class="f full"><span class="lab">Marks</span><div class="chips pl-marks">${PL_MARKS[sec].map(m => { const [t, k] = m, on = (t === 't' ? it.tags || [] : it.flags || []).includes(k); return `<button class="chip" type="button" ${t === 't' ? `data-ctag="${p}" data-m="${k}"` : `data-cflag="${p}" data-f="${k}"`} aria-pressed="${on}"><span translate="no">${esc(plMark(m))}</span></button>`; }).join('')}</div></div>
     <div class="f full"><span class="lab">Price per person</span><div class="pl-price"><span>From</span><input type="number" step="any" min="0" inputmode="decimal" id="${cmId(p + '/pf')}" data-cprice="${p}" data-end="from" aria-label="From" value="${esc(pf || '')}"><span>to</span><input type="number" step="any" min="0" inputmode="decimal" id="${cmId(p + '/pt')}" data-cprice="${p}" data-end="to" aria-label="to" value="${esc(pt || '')}"><span>€</span></div></div>
@@ -329,6 +357,76 @@ function plSeasonSet(t) {
   r[end] = md.map(x => String(x).padStart(2, '0')).join('-');
   plMine(t.dataset.cseas, 'schedule'); cmQueue(); render();
 }
+/* --- A market (Yohann, 11 Nov 2026): the place card's shape. The row starts with the kind's tile (the guide's icon, engine
+   CAT_ICON, pasted by build.py as ENG_CAT; one colour for every market: the engine colours markets by kind, so none of its
+   colours is "the markets'"), the host's words first (Name, Description), then "Filled in for you" and the form behind
+   Change: the kind, what it sells, the hours with their season and week of the month, the marks, where it is. --- */
+const MK_PATH = 'files/markets/markets', MK_COL = 'var(--pine)';
+// What a market sells (tags, the guide's words t_<tag>): food first, then goods, then old things. A tag not in the list stays.
+const MK_TAGS = ['fruitveg', 'meat', 'fish', 'cheese', 'deli', 'food', 'tapas', 'clothes', 'shoes', 'home', 'plants', 'toys', 'crafts', 'secondhand', 'antiques', 'books'];
+// The engine's warnings a market can carry (engine/src/flags.json, words f_<flag>), said in the panel; holidays and check are switches.
+const MK_FLAGS = ['holidays', 'check', 'octmay', 'older', 'closest', 'tiny'];
+I.alert = svg('<path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/>');
+const mkTile = (cat, small) => kTile(ENG_CAT[cat], MK_COL, small);
+const mkKind = cat => ENG_CAT[cat] ? engT('cat_' + cat) : String(cat || '');
+function mkFound(p, it) {
+  const out = [], n = +it.stalls_approx, st = n > 0 ? engT('stalls').split('{n}').join(n) : '';
+  if (it.category) out.push(`<div class="pl-l pl-lk">${mkTile(it.category, true)}<div translate="no">${esc(mkKind(it.category))}${st ? `<span class="pl-qty"> · <span class="pl-nw">${esc(st)}</span></span>` : ''}</div></div>`);
+  const hrs = plHours(it.schedule), when = edShown(it.occasional_when || {}).trim();
+  out.push(plLine(I.clock, hrs.length ? hrs.join('') + (when ? `<p class="pl-note pl-clip" translate="no">${esc(when)}</p>` : '') : when ? `<span class="pl-hl" translate="no">${esc(when)}</span>` : '<p class="pl-note">No days or hours yet.</p>'));
+  const chips = ks => `<span class="pl-mks">${ks.map(x => `<span class="pl-mk" translate="no">${esc(x)}</span>`).join('')}</span>`;
+  const tg = (it.tags || []).filter(t => MK_TAGS.includes(t)), fl = MK_FLAGS.filter(f => (it.flags || []).includes(f));
+  if (tg.length) out.push(plLine(I.bag, chips(tg.map(t => engT('t_' + t))), ' pl-lm'));
+  if (fl.length) out.push(plLine(I.alert, chips(fl.map(f => engT('f_' + f))), ' pl-lm'));
+  return plPanel(p, CM.chg.has(p) ? '' : `<div class="pl-ls">${out.join('')}</div>`);
+}
+function mkForm(p, it, where) {
+  const on = (k, f) => (it[k] || []).includes(f);
+  return `<div class="pl-form grid">
+    ${kRow(p, mkTile(it.category, true), `<span class="pl-kn" translate="no">${esc(mkKind(it.category))}</span>`, () => kGrid(p, [{ tiles: Object.keys(ENG_CAT).map(k => ({ k, tile: mkTile(k), name: mkKind(k), on: it.category === k, no: true })) }]))}
+    <div class="f full"><span class="lab">What it sells</span><div class="chips pl-marks pl-sells">${MK_TAGS.map(k => `<button class="chip" type="button" data-ctag="${p}" data-m="${k}" aria-pressed="${on('tags', k)}"><span translate="no">${esc(engT('t_' + k))}</span></button>`).join('')}</div></div>
+    ${cSchedule(`${p}/schedule`, it.schedule, true, true)}
+    ${'occasional_when' in it ? cf('When it runs', `${p}/occasional_when`, it.occasional_when, { long: true, rows: 2 }) : ''}
+    <div class="full pl-sws">${cSwitch(`data-cflag="${p}" data-f="holidays"`, 'Not held on public holidays', on('flags', 'holidays'))}${cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', on('flags', 'check'), 'Tells guests to check the hours or the dates before they go.')}</div>
+    ${cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx || null, { type: 'number', half: true })}
+    <div class="f full pl-sub"><span class="lab">Where it is</span></div>
+    ${where}</div>`;
+}
+function cMarket(base, it, i) {
+  const p = `${base}/${i}`, ord = k => { const n = C_ORDER.indexOf(k); return n < 0 ? 99 : n; }, WH = ['town', 'place', 'venue', 'address', 'comarca'], LK = ['gmaps', 'map'];
+  const shown = k => !C_SKIP.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'));
+  const rest = Object.keys(it).filter(k => shown(k) && !['name', 'description', 'occasional_when', ...WH, ...LK].includes(k)).sort((a, b) => ord(a) - ord(b));
+  const meta = [typeof it.town === 'string' ? it.town : '', cKm(it).replace(' ', '\u00a0'), (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');   // "27 km" never split
+  const { find, pin, first } = cWhere(p, it), field = (k, o = {}) => cf(cLabel(k), `${p}/${k}`, it[k], { ...cOpt(it, k), ...o });
+  const where = WH.filter(shown).map(k => field(k, { half: true })).join('') + LK.filter(shown).map(k => field(k)).join('') + (first ? '' : find) + pin + rest.map(k => field(k)).join('');
+  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${cf('Name', `${p}/name`, it.name, { i18n: true, long: cOpt(it, 'name').long, rows: 2 })}${cf('Description', `${p}/description`, it.description, { long: true, i18n: true })}</div>
+    ${mkFound(p, it)}${CM.chg.has(p) ? mkForm(p, it, where) : ''}
+    <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this market</button></div>`, null, mkTile(it.category));
+}
+// A kind picked for a market: its category, also one of the file's (the Markets page filters by them, as in edNewItem).
+function mkPick(p, k) {
+  const it = edGet(edC(), edPath(p)); if (!it || !ENG_CAT[k]) return;
+  it.category = k; const fl = edGet(edC(), edPath(p).slice(0, -2));
+  if (fl) { fl.categories = fl.categories || []; if (!fl.categories.includes(k)) fl.categories.push(k); }
+  CM.kpick.delete(p);
+}
+/* --- An event's kind (type): its tile in the row and one line under its name, with the grid of the ten kinds behind Change.
+   Icons and colours are the guide's (engine section.js EVENT_ICON, EVENT_TONE, pasted as ENG_EV_ICON, ENG_EV_TONE); the
+   engine has no names for them, so these are the maker's (i18n/ui.json). --- */
+const EV_KINDS = [['castells', 'Human towers'], ['festa', 'Local festival'], ['carnival', 'Carnival'], ['parade', 'Parade'], ['food', 'Food and wine'], ['fair', 'Fair'], ['film', 'Film'], ['music', 'Music'], ['historical', 'History'], ['tradition', 'Tradition']];
+const EV_HEX = { ...PL_TONE, taxi: '#F5C400' };
+function evColour(ty) {
+  const v = ENG_EV_TONE[ty] || '', m = v.match(/^var\(--tone-(\w+)\)$/), bg = m ? EV_HEX[m[1]] : v === 'var(--ink)' ? '#121212' : 'var(--pine)';
+  const rgb = /^#[0-9a-f]{6}$/i.test(bg) ? [1, 3, 5].map(i => parseInt(bg.slice(i, i + 2), 16)) : null;
+  return { bg, ink: !!rgb && edContrast([255, 255, 255], rgb) < 3 };   // the fair's yellow: a dark icon, as the guide does on its taxi
+}
+const evTile = (ty, small) => { const c = evColour(ty); return kTile(typeof ty === 'string' && ENG_EV_ICON[ty], c.bg, small, c.ink); };
+function evKind(p, it) {
+  const ty = typeof it.type === 'string' ? it.type : '', nm = (EV_KINDS.find(x => x[0] === ty) || [])[1];
+  return kRow(p, evTile(ty, true), `<span class="pl-kn"${nm ? '' : ' translate="no"'}>${esc(nm || ty)}</span>`, () => kGrid(p, [{ tiles: EV_KINDS.map(([k, n]) => ({ k, tile: evTile(k), name: n, on: ty === k })) }]));
+}
+function evPick(p, k) { const it = edGet(edC(), edPath(p)); if (!it || !EV_KINDS.some(x => x[0] === k)) return; it.type = k; CM.kpick.delete(p); }
+const kPick = p => p.startsWith(MK_PATH + '/') ? mkPick : p.startsWith(EV_PATH + '/') ? evPick : plPick;
 // A restaurant pinned to the home page becomes a Home tile (one tap, its own page), a copy of the restaurant that the
 // host can reword in Home tiles: "from" remembers which restaurant it came from.
 const cPinned = it => ((((edC().files || {}).quick || {}).items) || []).some(q => q.from && q.from === it.id);
@@ -1461,6 +1559,7 @@ document.addEventListener('change', e => {
   if (t.dataset.cmlang !== undefined) { CM.lang = t.value; return render(); }
   if (!inEd(t)) return;
   if (t.dataset.cseas) return plSeasonSet(t);
+  if (t.dataset.cweek) { const r = edGet(edC(), edPath(t.dataset.cweek)); if (!r) return; if (+t.value) r.week_of_month = +t.value; else delete r.week_of_month; return cmQueue(); }   // a market's "Which weeks"
   if (t.dataset.pfweb) {   // nothing found, and the host knows its website: it is theirs, and read for the hours
     const v = t.value.trim(), u = pfUrl(v), it = edGet(edC(), edPath(t.dataset.pfweb)); if (!v || !it) return;
     if (!u) return toast('That does not look like a web address.');
@@ -1514,7 +1613,7 @@ document.addEventListener('click', e => {
   if (d.cfav) { const it = edGet(edC(), edPath(d.cfav)); if (it) { if (it.topPick) delete it.topPick; else it.topPick = true; done(); } return; }
   if (d.cchg) { CM.chg.has(d.cchg) ? CM.chg.delete(d.cchg) : CM.chg.add(d.cchg); return render(); }
   if (d.ckinds) { CM.kpick.has(d.ckinds) ? CM.kpick.delete(d.ckinds) : CM.kpick.add(d.ckinds); return render(); }
-  if (d.ckind) { plPick(d.ckind, d.k); return done(); }
+  if (d.ckind) { kPick(d.ckind)(d.ckind, d.k); return done(); }   // a place's, a market's or an event's kind
   if (d.ctag) { const it = edGet(edC(), edPath(d.ctag)); if (it) { const tg = [...(it.tags || [])], j = tg.indexOf(d.m); j >= 0 ? tg.splice(j, 1) : tg.push(d.m); it.tags = tg; if (d.m === 'kidsfun') CM.kidsHand.add(d.ctag); done(); } return; }
   if (d.csmadd) { const it = edGet(edC(), edPath(d.csmadd)); if (it) { (it.setMenus = it.setMenus || []).push({ kind: 'menuDia', price: '' }); done(); const x = document.getElementById(cmId(`${d.csmadd}/setMenus/${it.setMenus.length - 1}/price`)); if (x) x.focus(); } return; }
   if (d.csmdel) { const q = edPath(d.csmdel), it = edGet(edC(), q.slice(0, -2)); if (it && Array.isArray(it.setMenus)) { it.setMenus.splice(q[q.length - 1], 1); if (!it.setMenus.length) delete it.setMenus; done(); } return; }
@@ -1766,6 +1865,14 @@ function cmInit() {
 .pl-wait{display:flex;flex-direction:column;gap:8px;padding:4px 0 2px}
 .pl-wait .cm-prog{height:4px;max-width:240px}
 .pl-web{margin-top:4px}
-.pl-web input{max-width:420px}`;
+.pl-web input{max-width:420px}
+/* A market (cMarket) and an event's kind (evKind): the place card's pieces, and these */
+.pl-qty{font-weight:500;color:var(--muted)}
+.pl-when{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.pl-wk{width:auto;flex:0 1 auto;min-width:0;max-width:100%;min-height:40px;padding:6px 10px;font-size:15px;font-weight:600;background:var(--surface)}
+.pl-sws{display:flex;flex-direction:column;gap:10px}
+.pl-sells{gap:6px}.pl-sells .chip span{padding:6px 12px;font-size:14px}   /* sixteen chips: as few rows as the width allows */
+.pl-kindrow:has([data-ckinds^="files/markets/"]) .pl-kn{flex:1 1 0;min-width:0}   /* "Antiques and crafts" wraps, Change stays on the row */
+.cmi textarea[data-p^="files/markets/"]{field-sizing:content;min-height:0}   /* a market's name and description: as tall as their words */`;
   document.head.appendChild(st);
 })();

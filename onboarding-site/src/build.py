@@ -105,12 +105,23 @@ assert _todo,'engine/src/ui.js: CAT_ICON.todo not found'
 ENG_ICONS=('const ENG_P = d => `<svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;\n'
   +_re.sub(r'\bP\(','ENG_P(',_ui[_ii:_ij+3].replace('const ITEM_ICON = {','const ENG_ICON = {'))+'\n'
   +'const ENG_TODO = '+_re.sub(r'\bP\(','ENG_P(',_todo.group(1))+';\n')
+# The engine's icons of the market kinds (CAT_ICON, five categories) and of the event kinds with their colours (EVENT_ICON,
+# EVENT_TONE in engine/src/views/section.js), for the market and event cards in the editor.
+_ci=_ui.index('export const CAT_ICON = {'); _cj=_ui.index('\n};',_ci)
+_cat=[l for l in _ui[_ci:_cj].split('\n') if _re.match(r'\s+(covered|street|flea|antiques|events): P\(',l)]
+assert len(_cat)==5,'engine/src/ui.js: the five market kinds of CAT_ICON not found'
+_sec=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src','views','section.js'),encoding='utf-8').read()
+_et=_re.search(r'\nconst EVENT_TONE = (\{[^\n]*\});',_sec); _ei=_sec.index('const EVENT_ICON = {'); _ej=_sec.index('\n};',_ei)
+assert _et,'engine/src/views/section.js: EVENT_TONE not found'
+ENG_ICONS+=('const ENG_CAT = {\n'+_re.sub(r'\bP\(','ENG_P(','\n'.join(_cat))+'\n};\n'
+  +'const ENG_EV_TONE = '+_et.group(1)+';\n'
+  +_re.sub(r'\bGI\(','ENG_P(',_sec[_ei:_ej+3].replace('const EVENT_ICON = {','const ENG_EV_ICON = {'))+'\n')
 # The engine's kinds of place, quick-filter groups and the guide's own words for them (labels of the groups, marks, prices and
 # set menus), for the place card in the editor: pasted from engine/src so the maker never retypes them. Maker languages only.
 import json as _jsn
 _ES=__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src')
 _eng=lambda n: {k: v for k, v in _jsn.load(open(__import__('os').path.join(_ES, n), encoding='utf-8')).items() if not k.startswith('_')}
-_ENGW=_re.compile(r'^(g_[a-z]+|t_(dogs|veggie|glutenfree|terrace|seaview|kidsfun|free|rainy)|f_book|sm_\w+|ff_(menuDia|tasting)|perPerson)$')
+_ENGW=_re.compile(r'^(g_[a-z]+|t_(dogs|veggie|glutenfree|terrace|seaview|kidsfun|free|rainy|fruitveg|food|cheese|deli|clothes|plants|home|secondhand|toys|meat|fish|shoes|tapas|crafts|antiques|books)|f_(book|check|holidays|octmay|older|closest|tiny)|cat_[a-z]+|nth\d?|stalls|sm_\w+|ff_(menuDia|tasting)|perPerson)$')   # markets: kinds, what they sell, their marks, the week of the month, stalls
 ENG_DATA=('const ENG_KINDS = '+_jsn.dumps(_eng('kinds.json'),ensure_ascii=False,separators=(',',':'))+';\n'
   +'const ENG_GROUPS = '+_jsn.dumps(_eng('groups.json'),ensure_ascii=False,separators=(',',':'))+';\n'
   +'const ENG_T = '+_jsn.dumps({l: {k: v for k, v in _eng('i18n/'+l+'.json').items() if _ENGW.match(k)} for l in ('en','ca','es','fr')},ensure_ascii=False,separators=(',',':'))+';\n')

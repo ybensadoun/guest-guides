@@ -7435,5 +7435,100 @@
 "ca": "La cerca de llocs està aturada per avui. Torna-ho a provar demà.",
 "es": "La búsqueda de sitios está en pausa por hoy. Vuelve a intentarlo mañana.",
 "fr": "La recherche de lieux est en pause pour aujourd’hui. Réessayez demain."
+},
+"What it sells": {
+"ca": "Què s’hi ven",
+"es": "Qué se vende",
+"fr": "Ce qu’on y vend"
+},
+"Which weeks": {
+"ca": "Quines setmanes",
+"es": "Qué semanas",
+"fr": "Quelles semaines"
+},
+"Every week": {
+"ca": "Cada setmana",
+"es": "Cada semana",
+"fr": "Chaque semaine"
+},
+"1st week of the month": {
+"ca": "1a setmana del mes",
+"es": "1.ª semana del mes",
+"fr": "1re semaine du mois"
+},
+"2nd week of the month": {
+"ca": "2a setmana del mes",
+"es": "2.ª semana del mes",
+"fr": "2e semaine du mois"
+},
+"3rd week of the month": {
+"ca": "3a setmana del mes",
+"es": "3.ª semana del mes",
+"fr": "3e semaine du mois"
+},
+"Week {n} of the month": {
+"ca": "Setmana {n} del mes",
+"es": "Semana {n} del mes",
+"fr": "Semaine {n} du mois"
+},
+"Not held on public holidays": {
+"ca": "No es fa els festius",
+"es": "No se celebra en festivos",
+"fr": "Pas les jours fériés"
+},
+"No days or hours yet.": {
+"ca": "Encara no hi ha dies ni horaris.",
+"es": "Aún no hay días ni horarios.",
+"fr": "Pas encore de jours ni d’horaires."
+},
+"Human towers": {
+"ca": "Castells",
+"es": "Torres humanas",
+"fr": "Tours humaines"
+},
+"Local festival": {
+"ca": "Festa major",
+"es": "Fiesta mayor",
+"fr": "Fête locale"
+},
+"Carnival": {
+"ca": "Carnaval",
+"es": "Carnaval",
+"fr": "Carnaval"
+},
+"Parade": {
+"ca": "Desfilada",
+"es": "Desfile",
+"fr": "Défilé"
+},
+"Food and wine": {
+"ca": "Gastronomia i vi",
+"es": "Gastronomía y vino",
+"fr": "Gastronomie et vin"
+},
+"Fair": {
+"ca": "Fira",
+"es": "Feria",
+"fr": "Foire"
+},
+"Film": {
+"ca": "Cinema",
+"es": "Cine",
+"fr": "Cinéma"
+},
+"Music": {
+"ca": "Música",
+"es": "Música",
+"fr": "Musique"
+},
+"History": {
+"ca": "Història",
+"es": "Historia",
+"fr": "Histoire"
+},
+"Tradition": {
+"ca": "Tradició",
+"es": "Tradición",
+"fr": "Tradition"
 }
 }

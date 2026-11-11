@@ -948,7 +948,7 @@ try {
     await ctx.close(); }
   // The opened place card in Eat and drink, Nightlife and Attractions (11 Nov 2026, Yohann: "never a form to complete"): the
   // kind's tile in the row, the host's own words first (name, comment, Our favourite), "Filled in for you" to look at, and the
-  // form behind Change. Markets and events keep their card.
+  // form behind Change. Markets have the same card, events their kind (below).
   { const items = s => E.content.files[s].items, ri = items('restaurants').findIndex(x => x.id === 'locanda'), ti = items('todo').findIndex(x => x.id === 'aqualeon'), tn = items('todo').length;
     const RP = `files/restaurants/items/${ri}`, TP = `files/todo/items/${ti}`, NP = `files/todo/items/${tn}`, card = x => `details.cmi[data-open="${x}"]`;
     // A tag the card does not offer, to see it kept ("tapas" on La Locanda).
@@ -973,11 +973,11 @@ try {
         return lines > 2 || s.scrollWidth > s.clientWidth + 1 || s.textContent.split(/\s+/).some(w => cv.measureText(w).width > s.clientWidth + 0.5) || parseFloat(getComputedStyle(s).fontSize) < 13.5; }).map(s => s.textContent);
       const xs = new Set(ks.slice(0, 6).map(k => Math.round(k.getBoundingClientRect().left)));
       return { n: ks.length, heads: [...document.querySelectorAll(sel + ' .pl-kg')].map(h => h.textContent), across: ks.length ? ks.findIndex(k => Math.round(k.getBoundingClientRect().top) > Math.round(ks[0].getBoundingClientRect().top)) : 0, cols: xs.size, bad, tall: Math.min(...ks.map(k => k.getBoundingClientRect().height)) }; }, sel);
-    const run = async (w, h, stored = {}) => { const o = await open(browser, G, w, h, stored); o.saved = [];
+    const run = async (w, h, stored = {}, G1 = G) => { const o = await open(browser, G1, w, h, stored); o.saved = [];
       await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); o.saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
       // The place as last saved in the draft (each change is saved within a second).
       // A change back to what is live saves no draft (draft: null): the place is then the live one.
-      o.item = async path => { await o.p.waitForTimeout(1300); for (const b of o.saved.slice().reverse()) { try { const j = JSON.parse(b); if (!('draft' in j)) continue; const c = j.draft ? j.draft.content : G.content; return path.split('/').reduce((a, k) => a == null ? a : a[/^\d+$/.test(k) ? +k : k], c); } catch (e) { /* not a draft */ } } return null; };
+      o.item = async path => { await o.p.waitForTimeout(1300); for (const b of o.saved.slice().reverse()) { try { const j = JSON.parse(b); if (!('draft' in j)) continue; const c = j.draft ? j.draft.content : G1.content; return path.split('/').reduce((a, k) => a == null ? a : a[/^\d+$/.test(k) ? +k : k], c); } catch (e) { /* not a draft */ } } return null; };
       return o; };
     { const { ctx, p, errors, item } = await run(360, 780);
       await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(300);
@@ -1265,13 +1265,133 @@ try {
           ok(`place facts (source lines, ${maker}): no page errors`, !errors.length, errors.join(' | '));
           await o.ctx.close(); } }
     }
-    // Markets and events keep their card: the same markup as the page of the last commit, for the first of each.
-    { let before = null; try { before = execSync('git show HEAD:onboarding-site/index.html', { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', 'ignore'] }); } catch (e) { /* no git here */ }
-      const markup = async html => { const { ctx, p } = await open(browser, E, 360, 780); if (html) await ctx.route(u => u.host === 'editor.test' && !u.pathname.startsWith('/api/') && !u.pathname.startsWith('/g/'), r => r.fulfill({ status: 200, contentType: 'text/html', body: html })); let out = '';
-        for (const [step, path] of [['markets', 'files/markets/markets/0'], ['events', 'files/events/items/0']]) { await p.goto('http://editor.test/#' + step); await ready(p); await p.click(card(path) + ' > summary').catch(() => {}); await p.waitForTimeout(250); out += await p.$eval(card(path), e => e.outerHTML).catch(() => 'none'); }
-        await ctx.close(); return out; };
-      if (before) { const a = await markup(before), b = await markup(null); const at = [...a].findIndex((x, i) => x !== b[i]);
-        ok('markets and events: their opened card is the same markup as in the last commit', a === b && !/class="pl-(found|form|ic)/.test(b) && a.length > 1000, at < 0 ? `${a.length}` : `${a.slice(at - 60, at + 60)} / ${b.slice(at - 60, at + 60)}`); } }
+    // A market (11 Nov 2026): the place card's shape. The kind's tile in the row, Name and Description first, "Filled in for
+    // you" (kind and stalls, the days with their week of the month, what it sells, its marks) and the form behind Change: the
+    // kind as tiles, what it sells as chips, the hours with "Only part of the year" and "Which weeks", the two switches, stalls,
+    // where it is. An event keeps its card, with its kind's tile in the row and one line "Kind" under its name.
+    { const MK = E.content.files.markets.markets, EV = E.content.files.events.items;
+      const mi = Math.max(0, MK.findIndex(x => x.id === 'vilafranca-art')), MP = `files/markets/markets/${mi}`, M0 = MK[mi], NM = `files/markets/markets/${MK.length}`;
+      const fi = Math.max(0, EV.findIndex(x => x.type === 'fair')), FP = `files/events/items/${fi}`, NE = `files/events/items/${EV.length}`;
+      // A tag the card does not offer, to see it kept ("vintage" on the market).
+      const c4 = JSON.parse(JSON.stringify(E.content)); c4.files.markets.markets[mi].tags = [...(c4.files.markets.markets[mi].tags || []), 'vintage'];
+      const G4 = { ...E, content: c4 };
+      // The page of the last commit, for the heights and the event card before
+      let before = null; try { before = execSync('git show HEAD:onboarding-site/index.html', { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', 'ignore'] }); } catch (e) { /* no git here */ }
+      const asBefore = async (w, h, fn) => { const { ctx, p } = await open(browser, E, w, h); await ctx.route(u => u.host === 'editor.test' && !u.pathname.startsWith('/api/') && !u.pathname.startsWith('/g/'), r => r.fulfill({ status: 200, contentType: 'text/html', body: before })); const x = await fn(p); await ctx.close(); return x; };
+      const marketH = async p => { await p.goto('http://editor.test/#markets'); await ready(p); await p.click(card(MP) + ' > summary').catch(() => {}); await p.waitForTimeout(250); return height(p, card(MP)); };
+      const evCard = async p => { await p.goto('http://editor.test/#events'); await ready(p); await p.waitForTimeout(300); await p.click(card(FP) + ' > summary').catch(() => {}); await p.waitForTimeout(250);
+        return p.evaluate(sel => { const c = document.querySelector(sel); if (!c) return { card: 'none', find: 'none' }; const x = c.cloneNode(true); x.querySelectorAll('summary > i.pl-ic').forEach(e => e.remove()); const k = x.querySelector('.pl-kindrow'); if (k) k.parentElement.remove();
+          return { card: x.outerHTML, find: (document.getElementById('cmFind') || {}).outerHTML || 'none' }; }, card(FP)); };
+      const was = before ? { h360: await asBefore(360, 780, marketH), h1280: await asBefore(1280, 860, marketH), ev: await asBefore(360, 780, evCard) } : {};
+      const tiles = (p, step) => p.$$eval('.edz details.cmi > summary', ss => ss.map(s => { const i = s.querySelector('i.pl-ic'); return { tile: !!i, svg: !!(i && i.querySelector('svg')), kc: i ? i.style.getPropertyValue('--kc') : '', ink: i ? getComputedStyle(i).color : '', html: i ? i.innerHTML : '' }; }));
+      const chipRows = (p, sel) => p.$$eval(sel + ' .pl-sells .chip', cs => { const t = new Set(cs.map(c => Math.round(c.getBoundingClientRect().top))); const b = cs.map(c => c.querySelector('span').getBoundingClientRect()); return { n: cs.length, rows: t.size, low: Math.min(...b.map(r => r.height)) }; });
+      const weeksAt = (p, sel) => p.evaluate(sel => { const c = document.querySelector(sel + ' [data-cseason]'), s = document.querySelector(sel + ' [data-cweek]'); if (!c || !s) return null; const a = c.getBoundingClientRect(), b = s.getBoundingClientRect();
+        return { same: Math.abs((a.top + a.bottom) / 2 - (b.top + b.bottom) / 2) < 2, under: b.top >= a.bottom - 1 && b.top - a.bottom < 12, h: Math.round(b.height), fits: s.scrollWidth <= s.clientWidth + 1 }; }, sel);
+      { const { ctx, p, errors, item } = await run(360, 780, {}, G4);
+        await p.goto('http://editor.test/#markets'); await ready(p); await p.waitForTimeout(300);
+        const rows = await tiles(p);
+        ok('market card: every row of Local markets starts with its kind\'s tile, the guide\'s icon in one colour', rows.length === MK.length && rows.every(r => r.tile) && rows.filter(r => r.svg).length === MK.filter(x => ['covered', 'street', 'flea', 'antiques', 'events'].includes(x.category)).length && rows.every(r => !r.svg || r.kc === 'var(--pine)'), `${rows.filter(r => r.svg).length} of ${rows.length}`);
+        await p.click(card(MP) + ' > summary'); await p.waitForTimeout(300);
+        const order = await p.evaluate(sel => { const c = document.querySelector(sel), y = s => { const e = c.querySelector(s); return e ? e.getBoundingClientRect().top : -1; }; return [y('[data-p$="/name"]'), y('[data-p$="/description"]'), y('.pl-found')]; }, card(MP));
+        ok('market card: Name, Description, then "Filled in for you", and no "Our favourite"', order.every(x => x > 0) && order[0] < order[1] && order[1] < order[2] && !(await p.$(card(MP) + ' [data-cfav]')) && /Description/.test(await p.textContent(card(MP) + ' label[for$="_description"]').catch(() => '')), order.map(Math.round).join(' < '));
+        const panel = (await p.textContent(card(MP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+        ok('market card, Vilafranca crafts market: the panel has the kind and its stalls, "2nd Sun of the month 10:00-14:00", what it sells, "October to May only" and Change, no source line', ['Filled in for you', 'Antiques and crafts', '~50 stalls', '2nd Sun of the month 10:00-14:00', 'Crafts', 'Antiques', 'October to May only', 'Change'].every(x => panel.includes(x)) && !panel.includes('vintage') && !(await p.$(card(MP) + ' .pl-src')), panel.slice(0, 220));
+        const h1 = await height(p, card(MP));
+        ok(`market card, 360 px: opened with Change closed it is ${h1} px (${was.h360 || '?'} px in the last commit), nothing overlaps, no sideways scroll`, h1 > 0 && h1 <= 900 && !(await clash(p, card(MP))).length, (await clash(p, card(MP))).join('; '));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-360.png'), style: NO_BAR });
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        ok('market card: Change opens the form under the panel (its lines fold away) and becomes Done', !!(await p.$(card(MP) + ' .pl-form')) && !(await p.$(card(MP) + ' .pl-ls')) && (await p.textContent(card(MP) + ' [data-cchg]')).trim() === 'Done');
+        const labels = await p.$$eval(card(MP) + ' .pl-form .lab, ' + card(MP) + ' .pl-form label, ' + card(MP) + ' .pl-form .cm-sw-label', ls => ls.map(l => l.textContent.trim()));
+        const want = ['Kind', 'What it sells', 'Opening days and hours', 'Not held on public holidays', 'Check before going', 'Stalls (about)', 'Where it is', 'Town', 'Where exactly', 'County'], at = want.map(x => labels.indexOf(x));
+        ok('market card: the form has the kind, what it sells, the hours, the two switches, stalls, then where it is, in that order', at.every(x => x >= 0) && at.every((x, i) => !i || x > at[i - 1]), labels.join(' | '));
+        const cr = await chipRows(p, card(MP)), wk = await weeksAt(p, card(MP));
+        ok(`market card, 360 px: the 16 chips of what it sells wrap in ${cr.rows} rows, 40 px tall; "Which weeks" sits beside or just under "Only part of the year", whole`, cr.n === 16 && cr.low >= 40 && !!wk && (wk.same || wk.under) && wk.h >= 40 && wk.fits, JSON.stringify([cr, wk]));
+        ok('market card, 360 px, Change open: nothing overlaps, nothing sticks out', !(await clash(p, card(MP))).length, (await clash(p, card(MP))).join('; '));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-change-360.png'), style: NO_BAR });
+        // What it sells: a chip adds its tag and keeps the others (one it does not offer too); again, it goes
+        await p.click(card(MP) + ' [data-ctag][data-m="books"]'); const t1 = await item(MP);
+        await p.click(card(MP) + ' [data-ctag][data-m="books"]'); const t2 = await item(MP);
+        ok('market card: a chip of what it sells adds its tag, keeps the others and one it does not offer, and goes again', !!t1 && ['crafts', 'antiques', 'vintage', 'books'].every(x => (t1.tags || []).includes(x)) && !!t2 && !(t2.tags || []).includes('books') && ['crafts', 'antiques', 'vintage'].every(x => (t2.tags || []).includes(x)), JSON.stringify([t1 && t1.tags, t2 && t2.tags]));
+        // Which weeks
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, '3'); const w1 = await item(MP + '/schedule/0');
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, ''); const w2 = await item(MP + '/schedule/0');
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, String(M0.schedule[0].week_of_month || '')); await p.waitForTimeout(100);
+        const wopts = await p.$$eval(card(MP) + ` [data-cweek="${MP}/schedule/0"] option`, os => os.map(o => o.value));
+        ok('market card: "Which weeks" writes week_of_month (3), "Every week" deletes it; it offers every week and the 1st to 3rd', !!w1 && w1.week_of_month === 3 && !!w2 && !('week_of_month' in w2) && cmpSame(wopts, ['', '1', '2', '3']), JSON.stringify([w1, w2, wopts]));
+        // Not held on public holidays
+        await p.click(card(MP) + ' [data-cflag][data-f="holidays"]'); const f1 = await item(MP);
+        await p.click(card(MP) + ' [data-cflag][data-f="holidays"]'); const f2 = await item(MP);
+        ok('market card: "Not held on public holidays" sets the flag holidays and takes it off, other flags kept', !!f1 && (f1.flags || []).includes('holidays') && (f1.flags || []).includes('octmay') && !!f2 && !(f2.flags || []).includes('holidays') && (f2.flags || []).includes('octmay'), JSON.stringify([f1 && f1.flags, f2 && f2.flags]));
+        // The kind: five tiles, three across; a pick writes category and changes the row's tile
+        await p.click(card(MP) + ' [data-ckinds]'); await p.waitForTimeout(200);
+        const kn = await kindsOk(p, card(MP));
+        ok('market card, kind picker: the 5 kinds, three across at 360 px, names on at most two lines, no word cut', kn.n === 5 && kn.across === 3 && !kn.bad.length && kn.tall >= 40, JSON.stringify(kn));
+        ok('market card, kind picker open, 360 px: nothing overlaps', !(await clash(p, card(MP))).length, (await clash(p, card(MP))).join('; '));
+        const rt0 = (await tiles(p))[mi].html;
+        await p.click(card(MP) + ' [data-ckind][data-k="flea"]'); const k1 = await item(MP), rt1 = (await tiles(p))[mi].html;
+        ok('market card: a kind picked writes category, closes the grid and changes the row\'s tile', !!k1 && k1.category === 'flea' && !(await p.$(card(MP) + ' .pl-k')) && rt0 !== rt1, k1 && k1.category);
+        await p.click(card(MP) + ' [data-ckinds]'); await p.click(card(MP) + ` [data-ckind][data-k="${M0.category}"]`); await p.waitForTimeout(100);
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        // A new market: street, as today, with the panel
+        await p.$eval('[data-addit="files/markets/markets"]', e => e.scrollIntoView({ block: 'center' })); await p.click('[data-addit="files/markets/markets"]'); await p.waitForTimeout(300);
+        const nm = await item(NM), nr = (await tiles(p))[MK.length] || {};
+        ok('market card: a new market starts as today (category street, no tags of the first one) and shows the panel with its tile', !!nm && nm.category === 'street' && !(nm.tags || []).length && /^custom-/.test(nm.id || '') && !!(await p.$(card(NM) + ' .pl-found')) && nr.svg && /No days or hours yet\./.test(await p.textContent(card(NM) + ' .pl-found').catch(() => '')), JSON.stringify(nm).slice(0, 160));
+        ok('market card (360 px): no page errors', !errors.length, errors.join(' | '));
+        await ctx.close(); }
+      // The maker in French: the panel and the kinds in the guide's own words, nothing overlapping
+      { const { ctx, p, errors } = await run(360, 780, { 'porta-lang-v1': 'fr' }, G4);
+        await p.goto('http://editor.test/#markets'); await ready(p); await p.waitForTimeout(300);
+        await p.click(card(MP) + ' > summary'); await p.waitForTimeout(250);
+        const panel = (await p.textContent(card(MP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' '), b1 = await clash(p, card(MP));
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200); const b2 = await clash(p, card(MP)), wopt = await p.textContent(card(MP) + ` [data-cweek="${MP}/schedule/0"] option:checked`).catch(() => '');
+        await p.click(card(MP) + ' [data-ckinds]'); await p.waitForTimeout(200); const b3 = await clash(p, card(MP)), kn = await kindsOk(p, card(MP)), sells = await p.textContent(card(MP) + ' .pl-sells').catch(() => '');
+        ok('market card, the maker in French: the panel ("Rempli pour vous", "Antiquités et artisanat", "2e dim. du mois 10:00-14:00", "~50 étals"), what it sells and "Which weeks" in French', /Rempli pour vous/.test(panel) && /Antiquités et artisanat/.test(panel) && /2e dim\. du mois 10:00-14:00/.test(panel) && /~50 étals/.test(panel) && /octobre à mai/.test(panel) && /Fruits et légumes/.test(sells) && wopt.trim() === '2e semaine du mois', `${panel.slice(0, 200)} | ${wopt}`);
+        ok('market card, 360 px, the maker in French: nothing overlaps with Change closed, open and with the kinds; no kind name cut', !b1.length && !b2.length && !b3.length && !kn.bad.length, [...b1, ...b2, ...b3, ...kn.bad].join('; '));
+        ok('market card (French): no page errors', !errors.length, errors.join(' | '));
+        await ctx.close(); }
+      // Events: the kind's tile in the row, "Kind" under the name, the ten kinds; the rest of the card and Finding events as before
+      { const { ctx, p, errors, item } = await run(360, 780);
+        await p.goto('http://editor.test/#events'); await ready(p); await p.waitForTimeout(300);
+        const KN = ['castells', 'festa', 'carnival', 'parade', 'food', 'fair', 'film', 'music', 'historical', 'tradition'], rows = await tiles(p);
+        ok('event card: every row starts with its kind\'s tile, in its colour (the fair\'s yellow with a dark icon)', rows.length === EV.length && rows.every(r => r.tile) && rows.filter(r => r.svg).length === EV.filter(x => KN.includes(x.type)).length && rows[fi].kc.toUpperCase() === '#F5C400' && rows[fi].ink === 'rgb(18, 18, 18)', `${rows.filter(r => r.svg).length} of ${rows.length}, ${rows[fi] && rows[fi].kc}`);
+        const now = await evCard(p);
+        ok('event card: apart from the kind, the opened card and the "Finding events" panel are the same markup as in the last commit', !before || (now.card === was.ev.card && now.find === was.ev.find && now.card.length > 1000), before ? `${now.card.length} / ${was.ev.card.length}` : 'no git');
+        const pos = await p.evaluate(sel => { const c = document.querySelector(sel), k = c.querySelector('.pl-kindrow'), n = c.querySelector('[data-p$="/name"]'), f = [...c.querySelectorAll('.grid > .f')]; const i = f.findIndex(x => x.contains(k)); return { after: !!k && !!n && i > 0 && f[i - 1].contains(n), text: k ? k.innerText.replace(/\s+/g, ' ').trim() : '' }; }, card(FP));
+        ok('event card: right under Name, one line "Kind" with the kind\'s icon, its name and Change', pos.after && pos.text === 'Kind Fair Change', JSON.stringify(pos));
+        await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(200);
+        const kn = await kindsOk(p, card(FP));
+        ok('event card, kind picker: the 10 kinds, three across at 360 px, no name cut, nothing overlaps', kn.n === 10 && kn.across === 3 && !kn.bad.length && kn.tall >= 40 && !(await clash(p, card(FP))).length, JSON.stringify(kn));
+        await p.$eval(card(FP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -80)); await p.screenshot({ path: join(SHOTS, 'event-card-kinds-360.png') });
+        await p.click(card(FP) + ' [data-ckind][data-k="music"]'); const e1 = await item(FP), r1 = (await tiles(p))[fi];
+        ok('event card: a kind picked writes type, closes the grid and changes the row\'s tile (music, in wine)', !!e1 && e1.type === 'music' && !(await p.$(card(FP) + ' .pl-k')) && r1.html !== rows[fi].html && r1.kc.toUpperCase() === '#8E1B4A', `${e1 && e1.type}, ${r1 && r1.kc}`);
+        await p.$eval('[data-addit="files/events/items"]', e => e.scrollIntoView({ block: 'center' })); await p.click('[data-addit="files/events/items"]'); await p.waitForTimeout(300);
+        const ne = await item(NE), nr = (await tiles(p))[EV.length] || {};
+        ok('event card: a new event starts as today (no type, so an empty tile), with its kind line', !!ne && !('type' in ne) && /^custom-/.test(ne.id || '') && nr.tile && !nr.svg && !!(await p.$(card(NE) + ' .pl-kindrow')), JSON.stringify(ne).slice(0, 160));
+        ok('event card (360 px): no page errors', !errors.length, errors.join(' | '));
+        await ctx.close(); }
+      // Desktop, with the guide in the phone beside the editor
+      { const { ctx, p, errors } = await run(1280, 860, {}, G4);
+        const beside = () => p.evaluate(() => { const a = document.querySelector('.split .col').getBoundingClientRect(), b = document.querySelector('.side-phone').getBoundingClientRect(); return getComputedStyle(document.querySelector('.side-phone')).display !== 'none' && a.right <= b.left && b.right <= innerWidth; });
+        await p.goto('http://editor.test/#markets'); await ready(p); await p.waitForTimeout(600);
+        await p.$eval('.cm-list', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -20)); await p.screenshot({ path: join(SHOTS, 'markets-list-desktop.png') });
+        await p.click(card(MP) + ' > summary'); await p.waitForTimeout(300);
+        const d1 = await height(p, card(MP)), c1 = await clash(p, card(MP));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-desktop.png'), style: NO_BAR });
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(300);
+        const d2 = await height(p, card(MP)), c2 = await clash(p, card(MP)), cr = await chipRows(p, card(MP)), wk = await weeksAt(p, card(MP));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-change-desktop.png'), style: NO_BAR });
+        ok(`market card, desktop: ${d1} px with Change closed (${was.h1280 || '?'} px in the last commit) and ${d2} px open, nothing overlaps or sticks out, the phone preview beside the editor`, d1 > 0 && d1 < (was.h1280 || 9e9) && !c1.length && !c2.length && await beside(), [...c1, ...c2].join('; '));
+        ok(`market card, desktop: what it sells in ${cr.rows} full rows at most 3, "Which weeks" on the line of "Only part of the year"`, cr.n === 16 && cr.rows <= 3 && !!wk && wk.same && wk.fits, JSON.stringify([cr, wk]));
+        await p.click(card(MP) + ' [data-ckinds]'); await p.waitForTimeout(200);
+        const kd = await kindsOk(p, card(MP)), c3 = await clash(p, card(MP));
+        ok('market card, desktop: the five kinds on one row, nothing overlapping', kd.n === 5 && kd.cols === 5 && kd.across <= 0 && !kd.bad.length && !c3.length, JSON.stringify({ ...kd, c3 }));
+        await go(p, '#events'); await p.waitForTimeout(500);
+        await p.click(card(FP) + ' > summary'); await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(300);
+        const ke = await kindsOk(p, card(FP)), c4 = await clash(p, card(FP));
+        await p.$eval(card(FP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -80)); await p.screenshot({ path: join(SHOTS, 'event-card-kinds-desktop.png') });
+        ok('event card, desktop: the ten kinds more than three a row, nothing overlapping, no sideways scroll, the phone beside', ke.n === 10 && ke.cols > 3 && !ke.bad.length && !c4.length && (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0 && await beside(), JSON.stringify({ ...ke, c4 }));
+        ok('market and event cards, desktop: no page errors', !errors.length, errors.join(' | '));
+        await ctx.close(); } }
   }
   // The editor never publishes an empty thing (10 Nov 2026). A new place starts blank (no icon, quick filter or marks of the
   // first one). On Publish, what nobody filled in is dropped (a line with no name on a station, a station with nothing in
