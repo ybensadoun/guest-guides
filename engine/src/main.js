@@ -17,6 +17,7 @@ import { renderMore, quickIcon } from './views/home.js';
 import { renderPlace } from './views/place.js';
 import { renderCredits } from './views/credits.js';
 import { NAV_ICON } from './ui.js';
+import { watchRows, mountOpen } from './gcard.js';
 import { showMap, refreshMapLang, refreshMapStatus, locate, tabOf } from './views/map.js';
 
 const V = document.getElementById('view');
@@ -145,6 +146,8 @@ function render() {
   else if (st.view === 'more') renderMore(V);
   else if (st.view === 'place') renderPlace(V, parse().id, quickIcon);
   else if (st.view === 'credits') renderCredits(V);
+  // Google's hours card (gcard.js): the tile page's, and those of rows still open after a re-render, in the same frame.
+  mountOpen(V);
   syncTitle();
   pageBar();
 }
@@ -180,6 +183,7 @@ document.addEventListener('click', e => {
 });
 
 applyTheme();
+watchRows();   // a row with Google's hours card asks for it when it opens
 document.getElementById('langSel').addEventListener('change', e => { setLang(e.target.value); chrome(); render(); refreshMapLang(); });
 window.addEventListener('hashchange', route);
 route();

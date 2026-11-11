@@ -328,6 +328,7 @@
   "crHours": "Opening hours and prices were read on each place's own website.",
   "crGoogleH": "Google Maps",
   "crGoogle": "The Google Maps buttons open Google Maps. Google Maps is a trademark of Google LLC.",
+  "crGoogleCard": "The line that says whether a place is open now, with “Google Maps” under it, comes from Google at the moment you open that place, so your phone connects to Google then. The guide does not keep it.",
   "crWordsH": "Photos and words",
   "crPhotos": "The photos of the house are the hosts' own.",
   "crPhotosFrom": "The photos of the house are the hosts' own, from their {src} listing.",

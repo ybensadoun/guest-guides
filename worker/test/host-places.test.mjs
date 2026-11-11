@@ -183,9 +183,11 @@ test('kinds.json: groups, six names, icons', () => {
     for (const t of Object.values(v.name)) { assert.ok(t.trim(), `${list}.${k} has an empty name`); assert.ok(!t.includes('\u2014'), `${list}.${k} em-dash`); }
     if (list === 'todo') assert.ok(v.group in groups, `${k}: group ${v.group} is not in groups.json`); else assert.equal(v.group, undefined);
     assert.ok(v.kids === undefined || v.kids === true, `${list}.${k}: kids only when true`);
+    assert.ok(v.hours === undefined || (v.hours === false && list === 'todo'), `${list}.${k}: hours only false, on a kind of todo with no door`);
   }
   for (const k of MISSING) assert.ok(!icons.has(k), `${k} now has an icon: take it off the missing list`);
   assert.deepEqual(Object.keys(K.todo).filter(k => K.todo[k].kids), ['waterpark', 'themepark', 'kart', 'bowling', 'trampoline']);
+  assert.deepEqual(Object.keys(K.todo).filter(k => K.todo[k].hours === false), ['beach', 'town', 'city']);
 });
 
 test('hostPlaces: a place read lately but never for this list gets only the match question, and keeps its last full look', async () => {

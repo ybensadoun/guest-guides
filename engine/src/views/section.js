@@ -151,7 +151,8 @@ export function renderSection(V, id) {
     }).join('')}</div>`;
   }
   else if (sec.kind === 'spots') {
-    // Same pattern as Markets: an overview map, then rows ranked by distance (from the house or from you).
+    // Same pattern as Markets: an overview map, then rows ranked by distance (from the house or from you). A place with no
+    // hours of ours shows Google's card when its row opens (gcard: true, engine/src/gcard.js).
     const all = SPOTS.filter(s => s.section === id);
     // Quick filters when items have a "group" (What to do: Kids & fun, Beach, Sights & towns).
     const groups = [...new Set(all.map(s => s.group).filter(g => g in GROUPS))];   // only groups with a label (engine/src/groups.json)
@@ -192,7 +193,7 @@ export function renderSection(V, id) {
     const hl = hq ? `<div class="qcalls"><a class="qcall wide" data-q="${hq.id}" href="#p/${hq.id}"><span class="qi">${quickIcon(hq)}</span><span class="qt"><b>${esc(tx(hq.name))}</b>${hq.sub ? `<small>${esc(tx(hq.sub))}</small>` : ''}</span></a></div>` : '';
     body = all.length ? `${hl}<a class="pl-map secmap" href="#map" data-mapcat="${esc(all[0].cat)}" aria-label="${esc(t('openMap'))}"><div id="secmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openMap'))}</span></a>
       ${gchips}${ochips}${fchips}${sortRow()}
-      ${l.length ? `<div class="mlist">${l.map(m => row(m, { date: now, live: true })).join('')}</div>` : `<p class="empty">${esc(t('f_noneOpen'))}</p>`}` : `<div class="empty">${esc(t('soon'))}</div>`;
+      ${l.length ? `<div class="mlist">${l.map(m => row(m, { date: now, live: true, gcard: true })).join('')}</div>` : `<p class="empty">${esc(t('f_noneOpen'))}</p>`}` : `<div class="empty">${esc(t('soon'))}</div>`;
   } else {
     // Info page (House guide): one expandable row per topic, same look as the other lists.
     const tone = k => k === 'ink' ? 'var(--ink)' : k === 'yellow' ? 'var(--tone-taxi)' : `var(--tone-${k})`;

@@ -46,3 +46,6 @@ h2.title{font-weight:600;font-size:30px;letter-spacing:-.025em}
 .cgroup[data-g="urgent"] .ccall{background:var(--red)!important}
 .pl-map,#mapview .mapbox{border-width:1px!important;border-color:var(--line)!important}
 .hero .back,.langsel{box-shadow:0 0 0 1px var(--line)!important}
+
+/* Google's open-now line (gcard.js): its Maps button takes this look's thin border, like our own buttons. */
+gmp-place-details-compact{--gmp-button-border-width:1px;--gmp-button-border-color:var(--line)}

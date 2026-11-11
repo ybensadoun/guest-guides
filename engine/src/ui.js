@@ -6,6 +6,7 @@ import { offSeason, hoursText, statusLabel, nextOpenText, runsOn, closedStatus }
 const nwT = x => esc(x).replace(/(\d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?)/g, '<span class="nw">$1</span>');
 export const stHTML = s => s ? `<span class="st ${s.cls}">${nwT(s.text)}${s.sub ? `<small>${nwT(s.sub)}</small>` : ''}</span>` : '';
 import { kmMe, gDir, gSearch } from './geo.js';
+import { wantsCard, slotHTML } from './gcard.js';
 import FLAGS_FILE from './flags.json';
 // Warnings only: anything else in "flags" (a filter label, a typo) is never shown.
 const FLAGS = FLAGS_FILE.flags;
@@ -177,7 +178,12 @@ const wikiUrl = q => `https://${lang}.wikipedia.org/w/index.php?search=${encodeU
 // Compact list row that expands to the full details (Markets page). Summary: icon, name,
 // type and distance, and the live status (today) or that day's hours (other days).
 // No rating: the host's places are hand-picked, and Google's ratings may not be kept (a "rating" left in old data is ignored).
+// opts.gcard (spots sections only): a place with no hours of ours gets Google's line (gcard.js) where our hours go,
+// under the address, and its "Google Maps" button goes last in the actions (data-gbtn), kept back until we know no
+// line of Google's comes (that line has Google's own Maps button), so no other button ever moves. Every other row is
+// drawn exactly as before.
 export function row(m, opts = {}) {
+  const gc = !!opts.gcard && wantsCard(m);
   const live = opts.date && opts.live ? statusLabel(m, opts.date) : null;
   const hrs = !live && opts.date ? runsOn(m, opts.date).map(x => (x.m ? t('morning') : `${x.o.replace(/^0/, '')}-${x.c.replace(/^0/, '')}`)).join(', ') : '';
   const me = kmMe(m);
@@ -199,7 +205,7 @@ export function row(m, opts = {}) {
      ${tagStrip(m)}
    </summary>
    <div class="mbody">
-     <div class="where">${where.map(esc).join('<br>')}</div>
+     <div class="where">${where.map(esc).join('<br>')}</div>${gc ? slotHTML(m) : ''}
      ${m.stalls_approx ? `<div class="row"><span class="size">${esc(t('stalls', { n: m.stalls_approx }))}</span></div>` : ''}
      ${m.s.length ? when : ''}${m.hours ? `<p class="hnote">${esc(tx(m.hours))}</p>` : ''}
      ${m.description ? `<div class="note">${esc(tx(m.description))}</div>` : ''}
@@ -207,11 +213,12 @@ export function row(m, opts = {}) {
      ${warnings(m).filter(f => !['book', 'check', 'older'].includes(f)).map(f => `<div class="flag">${esc(t('f_' + f))}</div>`).join('')}
      <div class="actions">
        <a class="btn primary" href="${gDir(m)}" target="_blank" rel="noopener">${ICON.dir}${esc(t('directions'))}</a>
-       <a class="btn" href="${gSearch(m)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>
+       ${gc ? '' : `<a class="btn" href="${gSearch(m)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>`}
        ${m.nomap ? '' : `<a class="btn" href="#map/m/${encodeURIComponent(m.id)}">${esc(t('onMap'))}</a>`}
        ${m.phone ? `<a class="btn" href="tel:${m.phone.replace(/\s+/g, '')}">${esc(t('callLabel'))} ${esc(m.phone)}</a>` : ''}
        ${m.url ? `<a class="btn" href="${esc(m.url)}" target="_blank" rel="noopener">${esc(t('website'))}</a>` : ''}
-     ${m.wiki ? `<a class="btn" href="${wikiUrl(m.wiki)}" target="_blank" rel="noopener">Wikipedia</a>` : ''}
+     ${m.wiki ? `<a class="btn" href="${wikiUrl(m.wiki)}" target="_blank" rel="noopener">Wikipedia</a>` : ''}${gc ? `
+       <a class="btn" data-gbtn hidden href="${gSearch(m)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
      </div>
    </div></details>`;
 }

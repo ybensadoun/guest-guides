@@ -328,6 +328,7 @@
   "crHours": "Les horaires et les prix ont été lus sur le site de chaque lieu.",
   "crGoogleH": "Google Maps",
   "crGoogle": "Les boutons Google Maps ouvrent Google Maps. Google Maps est une marque de Google LLC.",
+  "crGoogleCard": "La ligne qui dit si un lieu est ouvert en ce moment, avec « Google Maps » en dessous, vient de Google au moment où vous ouvrez ce lieu, votre téléphone se connecte donc alors à Google. Le guide ne la garde pas.",
   "crWordsH": "Photos et textes",
   "crPhotos": "Les photos de la maison sont celles des hôtes.",
   "crPhotosFrom": "Les photos de la maison sont celles des hôtes, tirées de leur annonce {src}.",

@@ -215,6 +215,24 @@ a.gt:active{transform:scale(.98)}
 .flag{font-size:15px;font-weight:600;color:#8A4B00;display:flex;gap:8px;align-items:baseline}
 .flag::before{content:"!";display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--yellow);color:var(--ink);font-size:13px;font-weight:700;flex:none}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+/* Google's open-now line (engine/src/gcard.js), under the address in a row's body or in its own block on a tile page.
+   No box at all: its surface is the paper of the panel or the page it sits on, so it reads like our own lines. Its
+   inside is a closed shadow root, so only Google's documented --gmp-* properties and the host's border and radius apply,
+   all from the theme so every look gets its own fonts and colours. Google pads its inside by 16 px on the sides and
+   about as much above and below: the slot is pulled out by 16 px so its text lines up with ours, and takes back the
+   row's own 10 px gap above and below so Google's padding is the only space. While it loads it is out of sight; a row
+   keeps its room (--gcard-h, the card's height with a status line) so nothing under it moves when it comes. */
+.gcard{height:0;overflow:hidden;visibility:hidden;pointer-events:none;margin-inline:-16px}
+.mbody > .gcard{--gcard-h:125px;height:var(--gcard-h);margin-block:-10px}
+.gcard.on{height:auto;overflow:visible;visibility:visible;pointer-events:auto}
+.pl-sec.gcard{margin-inline:0}.pl-sec.gcard > .gcard-in{margin-inline:-16px}
+gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;border-radius:0;
+  --gmp-mat-font-family:var(--font);--gmp-mat-font-body-medium:400 17px/1.3 var(--font);--gmp-mat-font-body-small:400 16px/1.3 var(--font);
+  --gmp-mat-font-title-small:600 17px/1.25 var(--font);--gmp-mat-font-label-large:600 16px/1.2 var(--font);
+  --gmp-mat-color-surface:var(--paper);--gmp-mat-color-on-surface:var(--ink);--gmp-mat-color-on-surface-variant:var(--muted);
+  --gmp-mat-color-primary:var(--blue);--gmp-mat-color-positive:var(--green);--gmp-mat-color-negative:var(--red);
+  --gmp-mat-color-secondary-container:var(--white);--gmp-mat-color-on-secondary-container:var(--ink);
+  --gmp-button-border-color:var(--ink);--gmp-button-border-width:2px;--gmp-button-border-radius:999px}
 .emptybox{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:20px;background:var(--white);border-radius:var(--r);border:2px solid var(--ink)}
 .emptybox b{font-size:19px;font-weight:600}
 

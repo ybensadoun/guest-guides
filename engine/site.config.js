@@ -43,7 +43,11 @@ const escAttr = v => String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot
 // virtual:site-fonts imports the @fontsource files the site's theme asks for.
 // virtual:site-credits gives the credits page (src/views/credits.js) the names of those fonts, and the name of every
 // @fontsource family installed (the shared viewer shows a guide in any of them).
-export function sitePlugin(slug) {
+// opts.gmapsKey: the Google Maps browser key for the page's <meta name="gmaps-key"> (Google's hours card, src/gcard.js).
+// Restricted by web address, so it may be seen in a served page, but never in git: each config says what it gets (empty
+// by default, which means no card).
+export const GMAPS_PLACEHOLDER = '__GOOGLE_MAPS_BROWSER_KEY__';
+export function sitePlugin(slug, opts = {}) {
   const site = readSite(slug);
   const vars = {
     name: site.name,
@@ -52,7 +56,8 @@ export function sitePlugin(slug) {
     shareImage: site.shareImage || site.logo || 'logo-head.png',
     logo: site.logo || 'logo-head.png',
     metaColor: site.theme.paper || '#FFFFFF',
-    lang: site.languages[0] || 'en'
+    lang: site.languages[0] || 'en',
+    gmapsKey: opts.gmapsKey || ''
   };
   const FONTS = 'virtual:site-fonts', PRESET = 'virtual:site-preset', CREDITS = 'virtual:site-credits';
   const preset = site.theme.preset || 'bauhaus';

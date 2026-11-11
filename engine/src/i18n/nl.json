@@ -328,6 +328,7 @@
   "crHours": "Openingstijden en prijzen zijn gelezen op de eigen website van elke plek.",
   "crGoogleH": "Google Maps",
   "crGoogle": "De Google Maps-knoppen openen Google Maps. Google Maps is een handelsmerk van Google LLC.",
+  "crGoogleCard": "De regel die zegt of een plek nu open is, met ‘Google Maps’ eronder, komt van Google op het moment dat je die plek opent, dus je telefoon maakt dan verbinding met Google. De gids bewaart die niet.",
   "crWordsH": "Foto's en teksten",
   "crPhotos": "De foto's van het huis zijn van de hosts zelf.",
   "crPhotosFrom": "De foto's van het huis zijn van de hosts zelf, uit hun advertentie op {src}.",

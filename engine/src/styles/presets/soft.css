@@ -57,3 +57,6 @@ h2.title{font-weight:600;letter-spacing:-.02em}
 .hero .back,.langsel{box-shadow:var(--shadow)!important}
 .gphotos img{border-radius:16px}
 .gt[data-k="nightlife"]::before{box-shadow:none!important}   /* Nightlife: this layout's own shape, not the Bauhaus crescent */
+
+/* Google's open-now line (gcard.js): its Maps button takes this look's thin border, like our own buttons. */
+gmp-place-details-compact{--gmp-button-border-width:1.5px;--gmp-button-border-color:var(--line)}

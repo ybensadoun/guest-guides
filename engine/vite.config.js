@@ -37,7 +37,8 @@ export default defineConfig({
   resolve: { alias: { '@site': SD } },
   build: { outDir: resolve(SD, 'dist'), emptyOutDir: true, target: 'es2020' },
   plugins: [
-    sitePlugin(SITE),
+    // Google's hours card: the key from the build's environment (Netlify's variable, or the shell for the dev server), never from git.
+    sitePlugin(SITE, { gmapsKey: process.env.GOOGLE_MAPS_BROWSER_KEY || '' }),
     vendorMaplibre(),
     VitePWA({
       registerType: 'autoUpdate',

@@ -5,6 +5,7 @@ import { stHTML } from '../ui.js';
 import { hav, kmMe, gSearch, gDir } from '../geo.js';
 import { esc, ICON, itemIcon } from '../ui.js';
 import { miniMap, overviewMap } from './map.js';
+import { wantsCard, sectionHTML, slotHTML } from '../gcard.js';
 
 // Place page (#p/<id>) for the Home quick tiles: see where it is, what it is, when it is open,
 // then decide to call, get directions or open the official page.
@@ -35,7 +36,11 @@ export function renderPlace(V, id, icons) {
     hours = `${stHTML(live || closedStatus(m, now))}
       <div class="when">${hoursText(m).map(h => `<span>${esc(h.days)} <span class="t">${esc(h.time)}</span></span>`).join('')}</div>`;
   }
-  const hoursBlock = hours || p.hours ? `<section class="pl-sec"><h3 class="section-h">${esc(t('hoursLabel'))}</h3><div class="pl-hours">${hours}${p.hours ? `<p>${esc(tx(p.hours))}</p>` : ''}${p.price ? `<p><b>${esc(t('perPerson', { p: p.price }))}</b>${p.priceNote ? `. ${esc(tx(p.priceNote))}` : ''}</p>` : ''}</div></section>` : '';
+  // No hours of ours but a Google id: Google's open-now line (engine/src/gcard.js) where the hours would be, shown only
+  // once it has something to say; our "Google Maps" button goes last (data-gbtn), kept back until we know no line comes.
+  // A page that already has its hours block (a note, a price) keeps it and gets the line under it, under the same heading.
+  const gc = wantsCard(p) && !!mapsUrl;
+  const hoursBlock = hours || p.hours ? `<section class="pl-sec"><h3 class="section-h">${esc(t('hoursLabel'))}</h3><div class="pl-hours">${hours}${p.hours ? `<p>${esc(tx(p.hours))}</p>` : ''}${p.price ? `<p><b>${esc(t('perPerson', { p: p.price }))}</b>${p.priceNote ? `. ${esc(tx(p.priceNote))}` : ''}</p>` : ''}</div>${gc ? slotHTML(p) : ''}</section>` : gc ? sectionHTML(p, t('hoursLabel')) : '';
 
   V.innerHTML = `<div class="wrap place" style="gap:16px" data-q="${esc(p.id)}">
     <div class="pl-head"><span class="qi">${icons(p)}</span>
@@ -44,8 +49,9 @@ export function renderPlace(V, id, icons) {
     <div class="pl-actions">
       ${p.phone ? `<a class="ccall" href="${tel(p.phone)}">${PHONE}<span>${esc(t('callNow'))} ${esc(p.phone)}</span></a>` : ''}
       ${dirUrl ? `<a class="btn primary" href="${esc(dirUrl)}" target="_blank" rel="noopener">${ICON.dir}${esc(t(hasPt || byName ? 'directions' : 'openInMaps'))}</a>` : ''}
-      ${mapsUrl ? `<a class="btn" href="${esc(mapsUrl)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
-      ${p.web ? `<a class="btn" href="${esc(p.web)}" target="_blank" rel="noopener">${WEB}${esc(t('website'))}</a>` : ''}
+      ${mapsUrl && !gc ? `<a class="btn" href="${esc(mapsUrl)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
+      ${p.web ? `<a class="btn" href="${esc(p.web)}" target="_blank" rel="noopener">${WEB}${esc(t('website'))}</a>` : ''}${gc ? `
+      <a class="btn" data-gbtn hidden href="${esc(mapsUrl)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
     </div>
     ${p.what ? `<p class="pl-what">${esc(tx(p.what))}</p>` : ''}
     ${hoursBlock}

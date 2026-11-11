@@ -6,6 +6,7 @@ import { esc } from '../ui.js';
 import { SECTIONS, HOUSE, REVIEWS, SITE } from '../content.js';
 import { COVER_PHOTO } from './home.js';
 import { SITE_FONTS, FONT_NAMES } from 'virtual:site-credits';
+import { hasKey } from '../gcard.js';
 
 const G = typeof window !== 'undefined' ? window.__GUIDE__ : null;   // the shared viewer (/g/<slug>): its fonts come from the CDN, no Workbox
 // Names that stay whole: never hyphenated at a line's end, and the short ones with a space or a hyphen inside on one line.
@@ -38,7 +39,7 @@ export function renderCredits(V) {
       + p(say('crSearch', { photon: ext('https://photon.komoot.io', 'Photon') })))}
     ${sec('crPlacesH', p(say('crPlaces', { overture: ext('https://overturemaps.org', 'Overture Maps Foundation'), cdla: ext('https://cdla.dev/permissive-2-0/', 'Community Data License Agreement Permissive 2.0'), geonames: ext('https://www.geonames.org', 'GeoNames'), ccby: ext('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0') }))
       + p(say('crHours')) + `<p class="cr-q" lang="en">${esc(FOURSQUARE)}</p>`)}
-    ${sec('crGoogleH', p(say('crGoogle')))}
+    ${sec('crGoogleH', p(say('crGoogle')) + (hasKey() ? p(say('crGoogleCard')) : ''))}
     ${sec('crWordsH', (photos ? p(listing ? say('crPhotosFrom', {}, { src: listing }) : say('crPhotos')) : '') + p(say('crAi')) + (aiCover ? p(say('crAiCover')) : ''))}
     ${sec('crSoftH', `<ul class="glist cr-l">
         <li>${say('crMaplibre')}</li>
