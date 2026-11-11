@@ -571,6 +571,16 @@ body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .st.later,.status.later,.chours .st.later,.pl-hours .st.later{color:var(--blue)!important}
 .st.closed,.status.closed,.chours .st.closed,.pl-hours .st.closed{color:var(--red)!important}
 .st small{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+/* Home's short rows (.mini > a): a closed market's status is wide in some languages ("Geschlossen", "Öffnet morgen um 8:00") and
+   left 105 px for the name at 360 px, so German names were cut mid-word. It goes under the name as one line, in the size
+   of the lines above it; an open market keeps its status at the right. In these rows a name breaks only between words or
+   at a soft hyphen of its own, as in the lists (the browser's own hyphenation cut "Gemüse-markt" even with room). */
+.mini > a .nm,.mini > a .nm small{hyphens:manual;-webkit-hyphens:manual;overflow-wrap:normal}
+.mini > a:has(> .st.closed){grid-template-columns:40px minmax(0,1fr);row-gap:1px}
+.mini > a:has(> .st.closed) > .dot{grid-row:1/span 2}
+.mini > a:has(> .st.closed) > .st{display:block;grid-column:2;justify-self:start;max-width:none;white-space:normal;text-align:left;line-height:1.3}
+.mini > a:has(> .st.closed) > .st small{display:inline;font-size:15px;font-weight:400;hyphens:manual;-webkit-hyphens:manual;overflow-wrap:normal}
+.mini > a:has(> .st.closed) > .st small::before{content:" · "}
 .st.plain{color:var(--muted)}
 .chours .st,.pl-hours .st,.status{align-items:flex-start;text-align:left}
 /* Header v3: no logo or site name. Round language button with just the code; greeting on Home. */
