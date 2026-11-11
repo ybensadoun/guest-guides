@@ -348,7 +348,13 @@ Left for the maker's side of 3d: researched cards in the deck no longer get a ph
 **Decisions.**
 | # | Question | Answer |
 |---|---|---|
-| 6.1 | The monthly check stops asking Google whether a place is closed, and stops acting on it. | asked 11 Nov |
+| 6.1 | The monthly check stops asking Google whether a place is closed, and stops acting on it. | **Keep it for now** (Yohann, 11 Nov): the check stays as it is until the terms pass (proposal 19) looks at it. |
+
+**Step 6 with the monthly check kept (11 Nov 2026).** What the answer changes:
+- **6a waits for the terms pass.** `check-guides.mjs`, `monthly.mjs`, `makeGoogle`, `FIELDS`, `check-places.js` and the report stay as they are. Only the weekly renewal of positions is added at the merge (its timer). Before 1 Dec the check must be run once dry on the merged code (a few Google requests), since step 3 changed what a place holds.
+- **6b shrinks to what the check does not write back.** The check writes `checked`, `gmaps` (when missing or a search link), and for guides built by the maker Google's hours (`hoursSource: 'google'`), a `check` flag and removals: cleaning those now would be undone on the 1st, so they stay until 6a is decided. It never writes a rating. Counted in the database: place ratings exist only in Ca La Kimberly (36, in `todo.json` and `restaurants.json`); Google-marked hours on two test guides (2 each). So: the 36 ratings are removed from the guide's folder on the branch (the database follows at the merge's `guide:push`, asked first), and no cleaning command is needed. The house's own Airbnb rating (`house-page.json`, `reviews.json`) is the listing's, not Google's, and stays.
+- **6c unchanged** (deletions, asked one by one): old answers' Google fields, old job results, old reports, the Netlify Forms copies, build folders, and the code paths that bring ratings back (a rebuild reusing an old `research` result, `cmFindAdd`).
+- **6d unchanged,** building: "Open now" keeps the places whose hours we do not hold, under a quiet line; a market's 4th and last week of the month (`week_of_month` 4 and -1).
 
 **Desktop, a first look (11 Nov 2026).** Five maker screens at 1280 px (the builder’s first steps, The look, Rooms and photos, the editor’s first step): nothing broken. For the final desktop pass (proposal 21): the list of steps on the left cuts long step names with “…” (“Name, address, la…”, “What the place of…”, “Ratings and revie…”).
 
