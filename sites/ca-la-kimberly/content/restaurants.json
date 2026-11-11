@@ -63,10 +63,6 @@
           "close": "23:30"
         }
       ],
-      "rating": {
-        "stars": 4.7,
-        "count": 1277
-      },
       "gmaps": "https://www.google.com/maps/place/La+Locanda+dei+Sapori/data=!4m2!3m1!1s0x12a38b237f1c227f:0x5588072edcbdf82",
       "url": "https://www.facebook.com/LaLocandaElVendrell",
       "icon": "pizza",
@@ -159,10 +155,6 @@
           "close": "20:30"
         }
       ],
-      "rating": {
-        "stars": 4.5,
-        "count": 425
-      },
       "gmaps": "https://www.google.com/maps/place/L%27Obrador+d%27Oriol+Rossell/data=!4m2!3m1!1s0x12a38b2344d76479:0xdbdf4466666d5ad2",
       "icon": "croissant",
       "price": "5-15",
@@ -240,10 +232,6 @@
           "close": "16:00"
         }
       ],
-      "rating": {
-        "stars": 4.8,
-        "count": 20650
-      },
       "gmaps": "https://www.google.com/maps/place/Casinet/data=!4m2!3m1!1s0x12a38c9bea80d6b3:0x177d14ea1d7111f9",
       "icon": "paella",
       "price": "30-45",
@@ -308,10 +296,6 @@
       ],
       "phone": "977 68 88 88",
       "url": "https://restaurantulldellebre.com/",
-      "rating": {
-        "stars": 4.5,
-        "count": 1238
-      },
       "schedule": [
         {
           "days": [
@@ -396,10 +380,6 @@
       "tags": [],
       "flags": [],
       "phone": "877 64 03 49",
-      "rating": {
-        "stars": 4.9,
-        "count": 494
-      },
       "schedule": [
         {
           "days": [
@@ -474,10 +454,6 @@
       "flags": [],
       "phone": "617 49 46 54",
       "url": "https://ancoradelserrallo.es/",
-      "rating": {
-        "stars": 4.2,
-        "count": 9255
-      },
       "schedule": [
         {
           "days": [
@@ -541,10 +517,6 @@
       "flags": [],
       "phone": "669 20 52 93",
       "url": "https://fabricadelpernil.com/",
-      "rating": {
-        "stars": 4.2,
-        "count": 527
-      },
       "schedule": [
         {
           "days": [
@@ -624,10 +596,6 @@
       "flags": [],
       "phone": "640 69 29 09",
       "url": "https://www.lacuinadelamarga.com/",
-      "rating": {
-        "stars": 4.5,
-        "count": 4017
-      },
       "gmaps": "https://www.google.com/maps/place/La+Cuina+de+la+Marga/data=!4m2!3m1!1s0x12a38ca11df2c82f:0xc3d484415286ded8",
       "hours": {
         "en": "Closed on Tuesdays. Kitchen 13:00-16:00. Google also shows some Friday and Saturday evenings: check before going.",
@@ -699,10 +667,6 @@
       "flags": [],
       "phone": "977 16 87 42",
       "url": "https://grup101.com/",
-      "rating": {
-        "stars": 4.3,
-        "count": 12
-      },
       "gmaps": "https://www.google.com/maps/place/101+Restaurante/data=!4m2!3m1!1s0x12a38b7a23b9b6c1:0xb7defca9509a1b03",
       "schedule": [
         {
@@ -783,10 +747,6 @@
       ],
       "phone": "609 78 99 20",
       "url": "https://llepol.com/",
-      "rating": {
-        "stars": 4.7,
-        "count": 296
-      },
       "gmaps": "https://www.google.com/maps/place/Ll%C3%A9pol/data=!4m2!3m1!1s0x12a407d2127922a1:0x203e9f43212b8552",
       "hours": {
         "en": "Open Friday to Sunday only.",
@@ -881,10 +841,6 @@
       "flags": [],
       "phone": "675 18 14 21",
       "icon": "beachbar",
-      "rating": {
-        "stars": 4.2,
-        "count": 526
-      },
       "gmaps": "https://www.google.com/maps/place/Quijote+Beach/data=!4m2!3m1!1s0x12a3f39f4be6ca0b:0x669f4d66326cc1ef",
       "price": "20-30",
       "priceNote": {
@@ -959,10 +915,6 @@
           "to": "10-31"
         }
       ],
-      "rating": {
-        "stars": 3.8,
-        "count": 86
-      },
       "gmaps": "https://www.google.com/maps/place/La+Brisa+Beach+Club/data=!4m2!3m1!1s0x12a38dbfd9df20b5:0x290afc9eaae10c6c",
       "price": "15-25",
       "priceNote": {

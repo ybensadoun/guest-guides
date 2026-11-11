@@ -96,10 +96,6 @@
       ],
       "tone": "red",
       "group": "fun",
-      "rating": {
-        "stars": 3.5,
-        "count": 5937
-      },
       "gmaps": "https://www.google.com/maps/place/Aqualeon/data=!4m2!3m1!1s0x12a3f50ecf498d79:0xd229d7b858521f8a",
       "gid": "ChIJeY1Jzw71oxIRih9SWLjXKdI",
       "checked": "2026-10-23"
@@ -165,10 +161,6 @@
       "icon": "bowling",
       "tone": "red",
       "group": "fun",
-      "rating": {
-        "stars": 4,
-        "count": 1324
-      },
       "gmaps": "https://www.google.com/maps/place/Bowling+El+Vendrell/data=!4m2!3m1!1s0x12a38b1eb6f643e3:0x920b1d3fdd897ab",
       "gid": "ChIJ40P2th6LoxIRq5fY_dOxIAk",
       "checked": "2026-10-23"
@@ -246,10 +238,6 @@
       "icon": "trampoline",
       "tone": "red",
       "group": "fun",
-      "rating": {
-        "stars": 3.9,
-        "count": 271
-      },
       "gmaps": "https://www.google.com/maps/place/Salting/data=!4m2!3m1!1s0x12a38b26c757895d:0xbb100b11de703146",
       "gid": "ChIJXYlXxyaLoxIRRjFw3hELELs",
       "checked": "2026-10-23"
@@ -332,10 +320,6 @@
       "icon": "kart",
       "tone": "red",
       "group": "fun",
-      "rating": {
-        "stars": 4.5,
-        "count": 905
-      },
       "gmaps": "https://www.google.com/maps/place/Karting+Coma-ruga/data=!4m2!3m1!1s0x12a38b30a72263cb:0x556ce06e75a62c1a",
       "gid": "ChIJy2MipzCLoxIRGiymdW7gbFU",
       "checked": "2026-10-23"
@@ -412,10 +396,6 @@
       "icon": "kart",
       "tone": "red",
       "group": "fun",
-      "rating": {
-        "stars": 4.3,
-        "count": 2876
-      },
       "gmaps": "https://www.google.com/maps/place/Karting+Vendrell/data=!4m2!3m1!1s0x12a38b505ce6e4fb:0xfdcf344837c1c3d0",
       "gid": "ChIJ--TmXFCLoxIR0MPBN0g0z_0",
       "checked": "2026-10-23"
@@ -473,10 +453,6 @@
       "icon": "golf",
       "tone": "red",
       "group": "fun",
-      "rating": {
-        "stars": 4.4,
-        "count": 637
-      },
       "gmaps": "https://www.google.com/maps/place/Pitch+and+Putt+Golf+el+Vendrell/data=!4m2!3m1!1s0x12a38b6da2bd7229:0xec6e109160e2f91f",
       "gid": "ChIJKXK9om2LoxIRH_niYJEQbuw",
       "checked": "2026-10-23"
@@ -528,10 +504,6 @@
       ],
       "url": "https://www.portaventuraworld.com/",
       "flags": [],
-      "rating": {
-        "stars": 4.1,
-        "count": 34912
-      },
       "gmaps": "https://www.google.com/maps/place/PortAventura/data=!4m2!3m1!1s0x12a159bb97a24019:0x9bb01aabaec2d626",
       "checked": "2026-10-23"
     },
@@ -611,10 +583,6 @@
       ],
       "phone": "977 68 48 08",
       "url": "https://www.hotelbalnearioplayadecomarruga.com/es-ES/balneario.aspx",
-      "rating": {
-        "stars": 4,
-        "count": 2460
-      },
       "gmaps": "https://www.google.com/maps/place/Balneari+de+Coma-ruga/data=!4m2!3m1!1s0x12a1583585e8b8f5:0x1de2a6d17457c1dc",
       "gid": "ChIJ9bjohTVYoRIR3MFXdNGm4h0",
       "checked": "2026-10-23"
@@ -668,10 +636,6 @@
       "always": true,
       "tone": "blue",
       "group": "beach",
-      "rating": {
-        "stars": 4.4,
-        "count": 906
-      },
       "gmaps": "https://www.google.com/maps/place/El+Riuet/data=!4m2!3m1!1s0x12a38d0046d98bfd:0xd5f410b5f63ffdbf",
       "checked": "2026-10-23"
     },
@@ -722,10 +686,6 @@
       },
       "tone": "blue",
       "group": "beach",
-      "rating": {
-        "stars": 4.5,
-        "count": 179
-      },
       "gmaps": "https://www.google.com/maps/place/Platja+de+Creixell/data=!4m2!3m1!1s0x12a3f17e5fd4fc85:0xbbfa2790e3dd600c",
       "checked": "2026-10-23"
     },
@@ -776,10 +736,6 @@
       },
       "tone": "blue",
       "group": "beach",
-      "rating": {
-        "stars": 4.4,
-        "count": 2395
-      },
       "gmaps": "https://www.google.com/maps/place/Platja+de+Coma-ruga/data=!4m2!3m1!1s0x12a3f34dac8af585:0x3aa5c63ddfff877c",
       "gid": "ChIJhfWKrE3zoxIRfIf_3z3GpTo",
       "checked": "2026-10-23"
@@ -831,10 +787,6 @@
       },
       "tone": "blue",
       "group": "beach",
-      "rating": {
-        "stars": 4.5,
-        "count": 838
-      },
       "gmaps": "https://www.google.com/maps/place/Platja+de+Sant+Salvador/data=!4m2!3m1!1s0x12a38ca4d08bf98d:0x3cbc06e60982e2d6",
       "gid": "ChIJjfmL0KSMoxIR1uKCCeYGvDw",
       "checked": "2026-10-23"
@@ -879,10 +831,6 @@
         "free"
       ],
       "flags": [],
-      "rating": {
-        "stars": 4.4,
-        "count": 30
-      },
       "gmaps": "https://www.google.com/maps/place/Platja+per+a+gossos+de+Coma-ruga/data=!4m2!3m1!1s0x12a38d00626e54b3:0x1c96191fc2d45489",
       "gid": "ChIJs1RuYgCNoxIRiVTUwh8Zlhw",
       "checked": "2026-10-23"
@@ -984,10 +932,6 @@
       "group": "wine",
       "tone": "wine",
       "flags": [],
-      "rating": {
-        "stars": 4.5,
-        "count": 1813
-      },
       "gmaps": "https://www.google.com/maps/place/Codorn%C3%ADu/data=!4m2!3m1!1s0x12a47cd299c6f307:0xb8d6fc3febc832b5",
       "gid": "ChIJB_PGmdJ8pBIRtTLI6z_81rg",
       "checked": "2026-10-23"
@@ -1038,10 +982,6 @@
         "de": "Besuche nur mit Reservierung über die Website des Weinguts.",
         "nl": "Bezoek alleen op reservering, via de website van de wijnmakerij."
       },
-      "rating": {
-        "stars": 4.8,
-        "count": 304
-      },
       "gmaps": "https://www.google.com/maps/place/Gramona/data=!4m2!3m1!1s0x12a47cd3c5c71465:0x867c1adf38ff6fe7",
       "gid": "ChIJZRTHxdN8pBIR52__ON8afIY",
       "checked": "2026-10-23"
@@ -1091,10 +1031,6 @@
         "ca": "Visites només amb reserva, a la web del celler.",
         "de": "Besuche nur mit Reservierung über die Website des Weinguts.",
         "nl": "Bezoek alleen op reservering, via de website van de wijnmakerij."
-      },
-      "rating": {
-        "stars": 4.9,
-        "count": 328
       },
       "gmaps": "https://www.google.com/maps/place/Recaredo/data=!4m2!3m1!1s0x12a47cd37148efc3:0x4b1cebbf10967f84",
       "gid": "ChIJw-9IcdN8pBIRhH-WEL_rHEs",
@@ -1289,10 +1225,6 @@
       "group": "sights",
       "tone": "purple",
       "flags": [],
-      "rating": {
-        "stars": 4.7,
-        "count": 60488
-      },
       "gmaps": "https://www.google.com/maps/place/Montserrat/data=!4m2!3m1!1s0x12a4f5513a53dd33:0xf3a841dba1734af1",
       "gid": "ChIJM91TOlH1pBIR8UpzodtBqPM",
       "checked": "2026-10-23"
@@ -1378,10 +1310,6 @@
       "group": "sights",
       "tone": "purple",
       "flags": [],
-      "rating": {
-        "stars": 4.6,
-        "count": 5347
-      },
       "gmaps": "https://www.google.com/maps/place/Monestir+de+Santes+Creus/data=!4m2!3m1!1s0x12a40603ad308c3f:0xa6719c909c687c47",
       "gid": "ChIJP4wwrQMGpBIRR3xonJCccaY",
       "checked": "2026-10-23"
@@ -1431,10 +1359,6 @@
       "group": "sights",
       "tone": "purple",
       "flags": [],
-      "rating": {
-        "stars": 4.6,
-        "count": 8510
-      },
       "gmaps": "https://www.google.com/maps/place/Monestir+de+Poblet/data=!4m2!3m1!1s0x12a6ae43fb104f4d:0x21267493d4daaff3",
       "gid": "ChIJTU8Q-0OuphIR86_a1JN0JiE",
       "checked": "2026-10-23"
@@ -1477,10 +1401,6 @@
       "group": "sights",
       "tone": "purple",
       "flags": [],
-      "rating": {
-        "stars": 4.6,
-        "count": 92
-      },
       "gmaps": "https://www.google.com/maps/place/Montblanc/data=!4m2!3m1!1s0x12a6a96cd8dc1a0f:0xd655a785204079be",
       "wiki": "Montblanc Conca de Barberà",
       "checked": "2026-10-23"
@@ -1579,10 +1499,6 @@
       "group": "sights",
       "tone": "purple",
       "flags": [],
-      "rating": {
-        "stars": 4.4,
-        "count": 1754
-      },
       "gmaps": "https://www.google.com/maps/place/Ciutadella+Ib%C3%A8rica+de+Calafell/data=!4m2!3m1!1s0x12a38bf573c35029:0xbbdde16743050ef9",
       "gid": "ChIJKVDDc_WLoxIR-Q4FQ2fh3bs",
       "checked": "2026-10-23"
@@ -1706,10 +1622,6 @@
       "group": "sights",
       "tone": "purple",
       "flags": [],
-      "rating": {
-        "stars": 4.5,
-        "count": 3793
-      },
       "gmaps": "https://www.google.com/maps/place/Museu+del+Ferrocarril+de+Vilanova/data=!4m2!3m1!1s0x12a386e6f52e1cf1:0xf950013d7ecf391",
       "gid": "ChIJ8Rwu9eaGoxIRkfPs1xMAlQ8",
       "checked": "2026-10-23"
@@ -1837,10 +1749,6 @@
       "group": "sights",
       "tone": "purple",
       "flags": [],
-      "rating": {
-        "stars": 4.6,
-        "count": 2045
-      },
       "gmaps": "https://www.google.com/maps/place/Museu+Pau+Casals/data=!4m2!3m1!1s0x12a38c98e62384bb:0xd448bdcb4ed3b6c5",
       "gid": "ChIJu4Qj5piMoxIRxbbTTsu9SNQ",
       "checked": "2026-10-23"
@@ -2008,10 +1916,6 @@
       "group": "sights",
       "tone": "purple",
       "flags": [],
-      "rating": {
-        "stars": 4.6,
-        "count": 839
-      },
       "gmaps": "https://www.google.com/maps/place/Fundaci%C3%B3+Mas+Mir%C3%B3/data=!4m2!3m1!1s0x12a1443b7b95ca3d:0x37e77b0ab9c0fb62",
       "gid": "ChIJPcqVeztEoRIRYvvAuQp75zc",
       "checked": "2026-10-23"
