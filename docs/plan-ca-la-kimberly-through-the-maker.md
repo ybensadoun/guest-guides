@@ -422,6 +422,12 @@ Left for the maker's side of 3d: researched cards in the deck no longer get a ph
 
 **Asked by Yohann for the build and ready screens, to do as one piece next:** a second line that changes every few seconds and says what is going into the host's own guide; the estimate from real times (two minutes a language); when the guide is ready, the places we found shown there to keep or skip, before "Open my guide".
 
+### Where the work stopped (12 Nov 2026, paused by Yohann for the day)
+- **In the working folder, not committed:** the fix for faults 9 and 10 (the name after a pick: the typed town dropped, a search phrase never kept as a name, an empty name taken from the open directory or flagged; a place with no match gets no town and a link with the host's words alone). Built by Opus, its checks were still running. To do on return: read its report, look at the pictures at 1280 and 360 px, run the checks, commit.
+- **Committed on main, not pushed:** the four small maker fixes (8bd55a0), the season without hours and "See hours" (f0ed358), hidden out of season with assumed seasons and the weekly reading (db6edfc), and plan commits. A push puts them live and hides Quijote Beach, La Brisa and Aqualeon for the winter.
+- **After that push:** install the timer `guide-worker-reread` on the server; a first `reread-places.mjs --list` (free), then one real run (1 USD at most) to see it work with the real Claude.
+- **Next in order:** the build and ready screens (the lively lines, the estimate at two minutes a language, the found places to keep or skip before "Open my guide"); then the dry run of the monthly check before 1 Dec; the desktop pass (proposal 21).
+
 ### Places closed for the season (built 11 to 12 Nov 2026, f0ed358 and db6edfc, not pushed)
 **Asked by Yohann** on Quijote Beach ("It's closed for the season, let's make it clear in the list"), then: "if a place is temporary closed, we just dont display it … checked more frequently towards the opening … we can assume it's a summer place … Not me having to add it manually."
 - **A place's season, three sources in order** (`engine/src/season.js`): its own hours when every row has dates (Aqualeon, La Brisa); its own `season` (from its website by the lookup, or the host); else **assumed from its kind** (a beach bar, a water park: summer, 1 Jun to 30 Sep, Spain's dates for now; a tag `summer` says the same; no winter kind exists yet) and said as "expected". Never Google's status, which we may not keep and which gives no date.
