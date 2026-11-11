@@ -49,6 +49,7 @@ A local build without `sites/<site>/private/wifi.json` simply has no Wi-Fi sheet
 - Things to do hold only what the host chose (Yohann, 30 Oct 2026): swiped yes or typed, one list, no badge. Researched places are shown first: cards in the deck after sign-up, then in the editor. Never add them to a guide without the host seeing them.
 - Listing reading (`/api/listing`): copy what the page states, never guess; only tagline and welcome text are written by Claude and marked as such.
 - The onboarding and editor follow the same UX, typography and no em-dash rules as the guides.
+- Desktop and phone (Yohann, 11 Nov 2026): most hosts use the maker on a desktop computer, most guests open the guide on a phone. The maker (builder and editor) is designed and checked at both widths, about 1280 px with the phone preview beside it and 360 px, with pictures of both before saying something is done; the guide stays mobile first.
 - Phase 2 safety (before real hosts): see `../GITHUB-SETUP.md` (separate code from customer data, GDPR, keys per purpose).
 
 ## Engine conventions
