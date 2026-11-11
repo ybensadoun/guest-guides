@@ -377,6 +377,29 @@ Left for the maker's side of 3d: researched cards in the deck no longer get a ph
 - **Ca La Kimberly's data pushed to the database (Yohann: yes, 11 Nov 20:11):** `guide:push` went through without `--force`, so nothing had changed there since the last pull. Its database copy holds no rating any more (0 of 36), is published, with its 44 markets and its Wi-Fi kept. Live at `/g/ca-la-kimberly`: Things to do in French, 29 places, 6 of them with room for Google's line.
 - **The key on Ca La Kimberly's own address (11 Nov, about 20:15):** Yohann added `GOOGLE_MAPS_BROWSER_KEY` to the Netlify project ca-la-kimberly, without the secret flag; a deploy without cache published it (a plain push or deploy is skipped there when neither the site nor the engine changed). Seen live in German at phone width: Quijote Beach shows Google's line ("Vorübergehend geschlossen"), no error. **The places work is live everywhere.**
 - **Left:** the dry run of the monthly check before 1 Dec; then the acceptance test (proposal 18) and the desktop pass (proposal 21).
+
+### The acceptance test, first part: the builder's screens (11 Nov 2026, evening)
+**How.** In Yohann's account on porta-guides (the live maker, at 1280 px): "Add a house", Ca La Kimberly's Airbnb link, then the steps as a host would: six languages, the look left as chosen, Your area, 12 cards of the deck (5 recommended), two typed attractions, four eating places with comments, arrival, rubbish, the taxi, the town. **Not sent.** The test house is the draft `ca-la-kimberly-pool-house` (id 4ac370ad), to delete at the end. Cost so far: 2.12 USD on the server (research 1.96, place facts 0.16) plus the listing read at the link; the estimate of 1.5 USD was too low.
+
+**What works.**
+- The listing is read in about 40 seconds: name, cover, welcome line, 16 rooms, the facts. The look is Ca La Kimberly's own.
+- **The research on the new code:** 22 markets, nearest first, the house's own village market (La Bisbal, 4 km) among them this time. 11 things to do, each with its icon, group and marks; phone for 7, website for 8, hours or "always open", a price, and where each fact came from (Overture, its own website). 8 events, each with a kind from the eighteen.
+- **What is saved is what should be:** an eating place is the host's words and Google's id, nothing else; a swiped card holds no rating and no photo.
+- A typed place Google does not match says so, and that it may have no pin.
+
+**Faults and things to decide.**
+1. **The research runs before the host has said anything.** It was queued at 19:17, as the account was there; "Your area" (which says it steers the search) and the town (asked at step 8, marked "needed", empty: the listing only says "Can Gordei") came after. Proposal 11.
+2. **A town cannot be picked:** "Barcelona" offers the airport and a company. Proposal 12.
+3. **The deck's two buttons move** about 40 px down on a card that has a line of description (the researched ones), so a host clicking through misses. The count also changed under the hand, from "3 of 25" to "3 of 33", when the research arrived.
+4. **The name stays as typed after a pick:** "La Locanda dei Sapori El Vendrell", town and all, is what guests would read.
+5. **Words:** the step "Name, address, languages" has no address (it means the web address); "Press Done when you are happy with it" beside a button that says "Later"; Eat and drink still says "we add the map and the opening hours"; "1 more place to look at … found them"; "Suggested by Claude: please check" (Yohann, 11 Nov: no need to name Claude, "Suggested for you: please check" or the like).
+6. **Desktop:** step names cut with "…"; the guide-name field is narrow and its hint leaves one word on a line; the screen "Your guide is written" has a wide empty left half.
+7. **"Your area" from the listing** left out Beaches (the sea is 10 km away) and ticked Wellness.
+8. **For the terms pass (19):** a swiped card keeps Google's name, its kind and its distance in the answers; a researched place keeps the words "Temporarily closed on Google" in the job result.
+
+**Not tested:** Wi-Fi, photo uploads and the logo (Claude types no password and uploads no file there); What the place offers, How things work, Check-in and rules (not touched by the places work); the Send, the built guide and the editor on it.
+
+**Noted by Yohann during the test, to do next:** a place closed for the season (Quijote Beach) shows nothing on the right of its row in the list, where one with a season says "Closed, opens 1 Apr": make it clear in the list. The badge "Suggested by Claude" (fault 5).
 - **Not changed, seen on the way:** the map's "Open today only" and the markets page's day strip hide a market with no schedule (they read `runsOn`); a market always has one today.
 
 **Desktop, a first look (11 Nov 2026).** Five maker screens at 1280 px (the builder’s first steps, The look, Rooms and photos, the editor’s first step): nothing broken. For the final desktop pass (proposal 21): the list of steps on the left cuts long step names with “…” (“Name, address, la…”, “What the place of…”, “Ratings and revie…”).
