@@ -28,7 +28,10 @@ import { makeStore, isGid } from './place-store.mjs';
 import { seasonOf, seasonKinds, inSeasonOn, nextStart, daysBetween } from '../engine/src/season.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
-export const KINDS = seasonKinds(JSON.parse(readFileSync(resolve(ROOT, 'engine/src/kinds.json'), 'utf8')));
+const KINDS_FILE = JSON.parse(readFileSync(resolve(ROOT, 'engine/src/kinds.json'), 'utf8'));
+export const KINDS = seasonKinds(KINDS_FILE);
+// Kinds with no door, so no opening hours to look for (kinds.json "hours": false: beach, town, city), as engine/src/gcard.js.
+export const NO_DOOR = new Set(Object.values(KINDS_FILE).filter(l => l && typeof l === 'object').flatMap(l => Object.entries(l)).filter(([, v]) => v && v.hours === false).map(([k]) => k));
 // The host's lists, and which kinds each may have (place-facts.mjs).
 export const HOST_FILES = { restaurants: 'eat', nightlife: 'eat', todo: 'todo' };
 export const WEEKLY_BEFORE_DAYS = 60, WEEKLY = 7, MONTHLY = 28, REREAD_USD = 1;
@@ -36,11 +39,15 @@ const day = d => d.toISOString().slice(0, 10);
 const asDate = s => /^\d{4}-\d\d-\d\d$/.test(String(s || '')) ? new Date(s + 'T12:00:00') : null;
 // No hours of ours: no row of hours with a day, and not open all day.
 export const noHours = it => !!it && !it.always && !(it.schedule || []).some(r => r && (r.days || []).length);
+// Worth a reading: a place with a door (not a beach, a town, a city) that can be told from another of its name, by its
+// Google id or its own website. "Barcelona" typed by a host with no match has neither: a web search for a town's hours
+// costs and finds nothing (seen on the first list, 12 Nov 2026: 7 of 25 places due were towns).
+export const readable = it => !!it && !NO_DOOR.has(it.icon) && !NO_DOOR.has(it.kind) && !!(it.gid || it.url);
 
 // Whether a place is due today: null when it is not read at all here (it has hours, or is open all day), else { due, every,
 // why }. Pure: no network, no clock unless now is left out.
 export function readDue(it, { kinds = KINDS, now = new Date() } = {}) {
-  if (!noHours(it)) return null;
+  if (!noHours(it) || !readable(it)) return null;
   const S = seasonOf({ ...it, schedule: [] }, kinds);
   const n = S ? nextStart(S, now) : null;
   const near = !!S && (inSeasonOn(S, now) || (n && daysBetween(now, n) <= WEEKLY_BEFORE_DAYS));
@@ -93,6 +100,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const f = resolve(HERE, '.env.local');
   if (existsSync(f)) for (const l of readFileSync(f, 'utf8').split('\n')) { const m = l.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/); if (m && !(m[1] in env)) env[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); }
   const URL_ = (env.SUPABASE_URL || 'https://dmoxszfwulolqkgxtxcp.supabase.co').replace(/\/$/, '');
+  // An option it does not know stops it before anything is asked: a run with no option reads with Claude (paid), and on
+  // 12 Nov 2026 "--help" started one by mistake.
+  const KNOWN = new Set(['--list', '--apply', '--slug']), odd = process.argv.slice(2).filter((x, i, all) => x.startsWith('-') ? !KNOWN.has(x) : all[i - 1] !== '--slug');
+  if (odd.length) { console.error(`Unknown option: ${odd.join(' ')}\nnode worker/reread-places.mjs [--list] [--apply] [--slug <slug>]   --list asks nothing; no option reads with Claude and writes nothing; --apply writes.`); process.exit(2); }
   const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
   const APPLY = process.argv.includes('--apply'), LIST = process.argv.includes('--list'), SLUG = arg('--slug'), LIMIT = +(env.REREAD_USD || REREAD_USD);
   const SB = env.SUPABASE_SERVICE_KEY;

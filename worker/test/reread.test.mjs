@@ -3,7 +3,7 @@
 // through the chain with a stand-in for Claude. No network: fetch itself refuses.   node --test 'worker/test/*.test.mjs'
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readDue, readResult, readPlace, placesOf, noHours, KINDS } from '../reread-places.mjs';
+import { readDue, readResult, readPlace, placesOf, noHours, readable, KINDS } from '../reread-places.mjs';
 import { NET } from '../place-facts.mjs';
 
 globalThis.fetch = async () => { throw new Error('no network in tests'); };
@@ -31,10 +31,10 @@ test('readDue: only places with no hours, never read first, weekly from 60 days 
   // Its own season wins over the kind's; "Open all year" or no season: every 28 days.
   assert.equal(readDue(bar({ season: { from: '04-01', to: '10-31' }, filled: { readAt: '2026-01-25' } }), { now: D(2026, 2, 1) }).every, 7);
   assert.equal(readDue(bar({ tags: ['allyear'], filled: { readAt: '2026-05-20' } }), { now: D(2026, 5, 25) }).every, 28);
-  assert.equal(readDue({ name: { en: 'Bar X' }, icon: 'fork', filled: { readAt: '2026-05-20' } }, { now: D(2026, 5, 25) }).every, 28);
+  assert.equal(readDue({ name: { en: 'Bar X' }, icon: 'fork', gid: 'Gbarx0000001', filled: { readAt: '2026-05-20' } }, { now: D(2026, 5, 25) }).every, 28);
   // A winter place over the new year (its own season 12-01 to 03-31): weekly from 2 October.
-  assert.equal(readDue({ icon: 'x', season: { from: '12-01', to: '03-31' }, filled: { readAt: '2026-09-25' } }, { now: D(2026, 10, 2) }).every, 7);
-  assert.equal(readDue({ icon: 'x', season: { from: '12-01', to: '03-31' }, filled: { readAt: '2027-02-20' } }, { now: D(2027, 3, 1) }).every, 7);
+  assert.equal(readDue({ icon: 'x', gid: 'Gwint0000001', season: { from: '12-01', to: '03-31' }, filled: { readAt: '2026-09-25' } }, { now: D(2026, 10, 2) }).every, 7);
+  assert.equal(readDue({ icon: 'x', gid: 'Gwint0000001', season: { from: '12-01', to: '03-31' }, filled: { readAt: '2027-02-20' } }, { now: D(2027, 3, 1) }).every, 7);
 });
 
 test('readResult: hours fill a place with none, else a season; nothing the place has is replaced; the date is kept', () => {
@@ -79,4 +79,14 @@ test('placesOf and readPlace: the host lists only; one reading with the guide\'s
   // The guide's own website goes to the chain as the host's page (read first).
   const { place: p2 } = await readPlace(bar({ url: 'https://quijote.example/' }), 'eat', ask, { meter: {} });
   assert.equal(p2.website, 'https://quijote.example/');
+});
+
+test('readable: a town, a city or a beach is not read, nor a place with neither a Google id nor a website', () => {
+  assert.equal(readable({ icon: 'city', gid: 'g1' }), false);
+  assert.equal(readable({ icon: 'town', url: 'https://sitges.cat' }), false);
+  assert.equal(readable({ icon: 'beach', gid: 'g2' }), false);
+  assert.equal(readable({ icon: 'castle' }), false);                       // "Altafulla" typed by hand: nothing to tell it by
+  assert.equal(readable({ icon: 'wine', gid: 'g3' }), true);
+  assert.equal(readable({ icon: 'themepark', url: 'https://www.portaventuraworld.com' }), true);
+  assert.equal(readDue({ icon: 'city', gid: 'g1' }), null);
 });
