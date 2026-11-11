@@ -1317,7 +1317,18 @@ try {
         await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, ''); const w2 = await item(MP + '/schedule/0');
         await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, String(M0.schedule[0].week_of_month || '')); await p.waitForTimeout(100);
         const wopts = await p.$$eval(card(MP) + ` [data-cweek="${MP}/schedule/0"] option`, os => os.map(o => o.value));
-        ok('market card: "Which weeks" writes week_of_month (3), "Every week" deletes it; it offers every week and the 1st to 3rd', !!w1 && w1.week_of_month === 3 && !!w2 && !('week_of_month' in w2) && cmpSame(wopts, ['', '1', '2', '3']), JSON.stringify([w1, w2, wopts]));
+        ok('market card: "Which weeks" writes week_of_month (3), "Every week" deletes it; it offers every week, the 1st to 4th and the last', !!w1 && w1.week_of_month === 3 && !!w2 && !('week_of_month' in w2) && cmpSame(wopts, ['', '1', '2', '3', '4', '-1']), JSON.stringify([w1, w2, wopts]));
+        // The 4th and the last (11 Nov 2026): -1 is kept as it is (engine/src/weeks.js), and the panel says it in the guide's words
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, '4'); const w4 = await item(MP + '/schedule/0');
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, '-1'); const wl = await item(MP + '/schedule/0'), wkl = await weeksAt(p, card(MP));
+        ok('market card, 360 px: "4th week of the month" writes 4, "Last week of the month" writes -1 and shows whole, nothing overlaps', !!w4 && w4.week_of_month === 4 && !!wl && wl.week_of_month === -1 && !!wkl && wkl.fits && (await p.$eval(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, s => s.selectedOptions[0].textContent)) === 'Last week of the month' && !(await clash(p, card(MP))).length, JSON.stringify([w4, wl, wkl]));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-last-week-360.png'), style: NO_BAR });
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        const pl = (await p.textContent(card(MP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+        ok('market card, 360 px: with the last week chosen the panel says "Last Sun of the month 10:00-14:00", nothing overlaps', pl.includes('Last Sun of the month 10:00-14:00') && !(await clash(p, card(MP))).length, pl);
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-last-week-panel-360.png'), style: NO_BAR });
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, String(M0.schedule[0].week_of_month || '')); await p.waitForTimeout(100);
         // Not held on public holidays
         await p.click(card(MP) + ' [data-cflag][data-f="holidays"]'); const f1 = await item(MP);
         await p.click(card(MP) + ' [data-cflag][data-f="holidays"]'); const f2 = await item(MP);
@@ -1383,6 +1394,16 @@ try {
         // A fixed bound, not "shorter than the last commit": once the new card is committed the two are the same.
         ok(`market card, desktop: ${d1} px with Change closed (${was.h1280 || '?'} px in the last commit) and ${d2} px open, nothing overlaps or sticks out, the phone preview beside the editor`, d1 > 0 && d1 <= 700 && !c1.length && !c2.length && await beside(), [...c1, ...c2].join('; '));
         ok(`market card, desktop: what it sells in ${cr.rows} full rows at most 3, "Which weeks" on the line of "Only part of the year"`, cr.n === 16 && cr.rows <= 3 && !!wk && wk.same && wk.fits, JSON.stringify([cr, wk]));
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, '-1'); await p.waitForTimeout(100);
+        const wkl = await weeksAt(p, card(MP)), cl = await clash(p, card(MP));
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-last-week-desktop.png'), style: NO_BAR });
+        ok('market card, desktop: "Last week of the month" chosen sits whole on the line of "Only part of the year", nothing overlaps', !!wkl && wkl.same && wkl.fits && !cl.length, JSON.stringify([wkl, cl]));
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        const pld = (await p.textContent(card(MP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+        ok('market card, desktop: the panel says "Last Sun of the month 10:00-14:00"', pld.includes('Last Sun of the month 10:00-14:00'), pld);
+        await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-last-week-panel-desktop.png'), style: NO_BAR });
+        await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        await p.selectOption(card(MP) + ` [data-cweek="${MP}/schedule/0"]`, String(M0.schedule[0].week_of_month || '')); await p.waitForTimeout(100);
         await p.click(card(MP) + ' [data-ckinds]'); await p.waitForTimeout(200);
         const kd = await kindsOk(p, card(MP)), c3 = await clash(p, card(MP));
         ok('market card, desktop: the five kinds on one row, nothing overlapping', kd.n === 5 && kd.cols === 5 && kd.across <= 0 && !kd.bad.length && !c3.length, JSON.stringify({ ...kd, c3 }));

@@ -559,8 +559,12 @@ body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .guide .mrow .dot svg{width:22px;height:22px}
 .guide .mrow[data-tone=yellow] .dot{color:var(--ink)}
 .guide .mbody .note{font-size:15px;line-height:1.45}
-.events .evm{font-size:15px;font-weight:700;margin:0;padding:14px 16px 6px;color:var(--muted);background:var(--white)}
+.events .evm,.mlist > .mgh{font-size:15px;font-weight:700;margin:0;padding:14px 16px 6px;color:var(--muted);background:var(--white)}
 .events .evm:first-child{padding-top:12px}
+/* A second group in the same list (places whose hours we do not hold, under Open now): the month heading's look, the row
+   divider above it rather than under it, so the heading reads as the start of its rows, not the end of the ones above. */
+.mlist > .mgh{border-top:1.5px solid var(--line);text-wrap:balance}
+.mlist > .mgh + .mrow{border-top:0}
 .events .mrow .dot svg{width:22px;height:22px}
 .gt[data-k="events"]::before{width:120px;height:60px;border-radius:120px 120px 0 0;background:var(--red);right:-20px;bottom:-4px}
 .gt[data-k="events"]{flex-direction:row;align-items:center;gap:14px;min-height:0;padding:18px 64px 18px 18px}
@@ -857,6 +861,7 @@ body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) +
 .mlist > .mrow[open] > .mbody{margin:0 12px 14px;border-radius:14px;padding-top:14px}
 .mlist > .mrow[open] + .mrow{border-top:6px solid var(--paper)!important}
 .mlist > .mrow + .mrow[open]{border-top:6px solid var(--paper)!important}
+.mlist > .mrow[open] + .mgh{border-top:6px solid var(--paper)!important}
 #mapview .maplist .mrow[open] > .mbody{padding-left:14px;padding-right:14px}
 .mlist > .mrow[open] > .mbody{padding-left:16px;padding-right:16px}
 

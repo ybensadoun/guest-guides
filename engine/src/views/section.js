@@ -166,13 +166,16 @@ export function renderSection(V, id) {
     const groups = [...new Set(all.map(s => s.group).filter(g => g in GROUPS))];   // only groups with a label (engine/src/groups.json)
     const gsel = groups.includes(st.sgroup[id]) ? st.sgroup[id] : 'all';
     // Open now first, then places opening later today, then the rest; each block by distance.
+    // 3: no hours of ours (on purpose for many: Google's live line shows when the row opens, gcard.js), so not known. Open now
+    // and Opens later today keep them after the ones we know, under a quiet heading, so a guest never loses the host's picks.
     const now0 = new Date(), nmin = now0.getHours() * 60 + now0.getMinutes();
     const tm = h => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
     const stateOf = s => {
       if (s.always) return 0;
-      const lab = s.s && s.s.length ? statusLabel(s, now0) : null;
+      if (!(s.s && s.s.length)) return 3;
+      const lab = statusLabel(s, now0);
       if (lab && lab.cls === 'open') return 0;
-      return s.s && runsOn(s, now0).some(x => tm(x.o) > nmin) ? 1 : 2;
+      return runsOn(s, now0).some(x => tm(x.o) > nmin) ? 1 : 2;
     };
     const timed = all.some(s => s.s && s.s.length);
     let ofsel = timed && ['now', 'later'].includes(st.openf[id]) ? st.openf[id] : 'any';
@@ -184,12 +187,14 @@ export function renderSection(V, id) {
     const feats = (FEAT_SECS[id] || []).filter(k => all.some(FEATS[k]));
     const fsel = (st.featf[id] || []).filter(k => feats.includes(k));
     const byFeat = byGroup.filter(s => fsel.every(k => FEATS[k](s)));
-    const nNow = byFeat.filter(s => stateOf(s) === 0).length, nLater = byFeat.filter(s => stateOf(s) === 1).length;
+    const nNow = byFeat.filter(s => stateOf(s) === 0).length, nLater = byFeat.filter(s => stateOf(s) === 1).length;   // what we know only
     // A filter with nothing in it is hidden, and falls back to Any time if it was selected.
     if ((ofsel === 'now' && !nNow) || (ofsel === 'later' && !nLater)) ofsel = 'any';
-    const filtered0 = ofsel === 'now' ? byFeat.filter(s => stateOf(s) === 0) : ofsel === 'later' ? byFeat.filter(s => stateOf(s) === 1) : byFeat;
-    const filtered = filtered0;
-    const l = timed ? sorted(filtered).map((s, i) => ({ s, i, k: stateOf(s) })).sort((a, b) => a.k - b.k || a.i - b.i).map(x => x.s) : sorted(filtered);
+    const filtered = ofsel === 'any' ? byFeat : byFeat.filter(s => [ofsel === 'now' ? 0 : 1, 3].includes(stateOf(s)));
+    // The guest's sort inside each block; Any time keeps the not known among the closed, as before.
+    const kOf = s => (ofsel === 'any' ? Math.min(stateOf(s), 2) : stateOf(s));
+    const l = timed ? sorted(filtered).map((s, i) => ({ s, i, k: kOf(s) })).sort((a, b) => a.k - b.k || a.i - b.i).map(x => x.s) : sorted(filtered);
+    const k3 = ofsel === 'any' ? -1 : l.findIndex(s => stateOf(s) === 3);
     const ochips = timed ? `<div class="gchips ochips" role="group">${[['any', 'f_anyTime', byFeat.length], ['now', 'f_openNow', nNow], ['later', 'f_openLater', nLater]].filter(([k, , n]) => k === 'any' || n).map(([k, key, n]) => `<button class="gchip" data-openf="${k}" data-sec="${id}" aria-pressed="${k === ofsel}"${k === 'now' ? ' style="--cc:var(--green)"' : k === 'later' ? ' style="--cc:var(--blue)"' : ''}>${esc(t(key))}<span class="n">${n}</span></button>`).join('')}</div>` : '';
     const fchips = feats.length ? `<div class="gchips fchips" role="group">${feats.map(k => `<button class="gchip" data-featf="${k}" data-sec="${id}" aria-pressed="${fsel.includes(k)}">${esc(t('ff_' + k))}<span class="n">${byGroup.filter(FEATS[k]).length}</span></button>`).join('')}</div>` : '';
     const toneOf = g => GROUPS[g] || all.find(s => s.group === g)?.tone;
@@ -201,7 +206,7 @@ export function renderSection(V, id) {
     const hl = hq ? `<div class="qcalls"><a class="qcall wide" data-q="${hq.id}" href="#p/${hq.id}"><span class="qi">${quickIcon(hq)}</span><span class="qt"><b>${esc(tx(hq.name))}</b>${hq.sub ? `<small>${esc(tx(hq.sub))}</small>` : ''}</span></a></div>` : '';
     body = all.length ? `${hl}<a class="pl-map secmap" href="#map" data-mapcat="${esc(all[0].cat)}" aria-label="${esc(t('openMap'))}"><div id="secmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openMap'))}</span></a>
       ${gchips}${ochips}${fchips}${sortRow()}
-      ${l.length ? `<div class="mlist">${l.map(m => row(m, { date: now, live: true, gcard: true })).join('')}</div>` : `<p class="empty">${esc(t('f_noneOpen'))}</p>`}` : `<div class="empty">${esc(t('soon'))}</div>`;
+      ${l.length ? `<div class="mlist">${l.map((m, i) => (i === k3 ? `<h3 class="mgh">${esc(t('f_noHours'))}</h3>` : '') + row(m, { date: now, live: true, gcard: true })).join('')}</div>` : `<p class="empty">${esc(t('f_noneOpen'))}</p>`}` : `<div class="empty">${esc(t('soon'))}</div>`;
   } else {
     // Info page (House guide): one expandable row per topic, same look as the other lists.
     const tone = k => k === 'ink' ? 'var(--ink)' : k === 'yellow' ? 'var(--tone-taxi)' : `var(--tone-${k})`;

@@ -7466,6 +7466,16 @@
 "es": "3.ª semana del mes",
 "fr": "3e semaine du mois"
 },
+"4th week of the month": {
+"ca": "4a setmana del mes",
+"es": "4.ª semana del mes",
+"fr": "4e semaine du mois"
+},
+"Last week of the month": {
+"ca": "Última setmana del mes",
+"es": "Última semana del mes",
+"fr": "Dernière semaine du mois"
+},
 "Week {n} of the month": {
 "ca": "Setmana {n} del mes",
 "es": "Semana {n} del mes",

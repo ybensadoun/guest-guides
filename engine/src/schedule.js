@@ -1,4 +1,5 @@
 import { t, tx, locale, typo } from './i18n.js';
+import { onWeek, nthKey } from './weeks.js';
 
 export const dayName = (d, w) => new Intl.DateTimeFormat(locale(), { weekday: w || 'long' }).format(new Date(2026, 0, 4 + d));
 export const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -6,19 +7,18 @@ const min = h => { const [a, b] = h.split(':').map(Number); return a * 60 + b; }
 // Closing time in minutes; a close earlier than the open (17:00-02:00) means after midnight.
 const cl = x => { const c = min(x.c); return c <= min(x.o) ? c + 1440 : c; };
 const fmtT = h => (h === '00:00' ? '00:00' : h.replace(/^0/, ''));
-const weekOfMonth = dt => Math.ceil(dt.getDate() / 7);
 // Seasonal slots: from/to as "MM-DD" (a season may wrap the new year).
 const md = dt => (dt.getMonth() + 1) * 100 + dt.getDate();
 const mdNum = v => { const [m, d] = v.split('-').map(Number); return m * 100 + d; };
 export const inSeason = (x, dt) => !x.from || (mdNum(x.from) <= mdNum(x.to) ? md(dt) >= mdNum(x.from) && md(dt) <= mdNum(x.to) : md(dt) >= mdNum(x.from) || md(dt) <= mdNum(x.to));
-const slotOn = (x, dt) => x.d.includes(dt.getDay()) && (!x.nth || weekOfMonth(dt) === x.nth) && inSeason(x, dt);
+const slotOn = (x, dt) => x.d.includes(dt.getDay()) && onWeek(dt, x.nth) && inSeason(x, dt);
 // True when the place only opens in a season and today is outside it.
 export const offSeason = (m, dt = new Date()) => m.s.length > 0 && m.s.every(x => x.from) && !m.s.some(x => inSeason(x, dt));
 
 export const runsOn = (m, dt) => m.s.filter(x => slotOn(x, dt));
 
-export function nextDate(x) {
-  const d = new Date(); d.setHours(0, 0, 0, 0);
+export function nextDate(x, from = new Date()) {
+  const d = new Date(from); d.setHours(0, 0, 0, 0);
   for (let i = 0; i < 70; i++) { if (slotOn(x, d)) return new Date(d); d.setDate(d.getDate() + 1); }
   return null;
 }
@@ -94,7 +94,7 @@ export function hoursText(m) {
   if (!m.s.length) return tx(m.occasional_when);
   return m.s.map(x => {
     let days;
-    if (x.nth) days = t('nth', { nth: t('nth' + x.nth), day: dayName(x.d[0]) });
+    if (x.nth) days = t('nth', { nth: t(nthKey(x.nth)), day: dayName(x.d[0]) });
     else {
       const ord = [1, 2, 3, 4, 5, 6, 0];
       const ds = ord.filter(d => x.d.includes(d));

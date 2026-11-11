@@ -199,9 +199,11 @@ function plDays(days) {
   const runs = []; for (const i of ix) { const r = runs[runs.length - 1]; if (r && r[1] === i - 1) r[1] = i; else runs.push([i, i]); }
   return `<span translate="no">${esc(runs.map(([a, b]) => b - a >= 2 ? `${plDay(ED_DAYS[a][0])}-${plDay(ED_DAYS[b][0])}` : ED_DAYS.slice(a, b + 1).map(x => plDay(x[0])).join(' ')).join(' '))}</span>`;
 }
-// A market held one week of the month, in the guide's own words: "2nd Sun of the month" (engine i18n nth, nth1 to nth3).
-const plNth = r => { const n = r.week_of_month, w = engT('nth' + n), d = ED_DAYS.map(x => x[0]).filter(x => (r.days || []).includes(x)).map(plDay).join(' ');
-  return `<span translate="no">${esc(engT('nth').split('{nth}').join(w === 'nth' + n ? n + '.' : w).split('{day}').join(d))}</span>`; };
+// A market held one week of the month, in the guide's own words: "2nd Sun of the month", "Last Sun of the month" (engine
+// i18n nth, nth1 to nth4 and nthLast through the engine's nthKey; a capital first, as the guide's hoursText puts one).
+const plNth = r => { const n = r.week_of_month, w = engT(nthKey(n)), d = ED_DAYS.map(x => x[0]).filter(x => (r.days || []).includes(x)).map(plDay).join(' '),
+  x = engT('nth').split('{nth}').join(w === nthKey(n) ? n + '.' : w).split('{day}').join(d);
+  return `<span translate="no">${esc(x.charAt(0).toUpperCase() + x.slice(1))}</span>`; };
 // One line per group of days (and season, and week of the month): "Tue-Sat 13:00-16:00, 20:00-23:30".
 function plHours(sch) {
   const g = new Map();
@@ -270,15 +272,15 @@ function plMine(p, k) {
   delete f.from[k]; if (!Object.keys(f.from).length) delete it.filled;
 }
 // "Only part of the year" on a row of opening hours: two dates on one line, each a day and a month (from and to, MM-DD).
-// weeks (markets): "Which weeks" on the same line, in the values engine/src/schedule.js understands and names (week_of_month
-// 1 to 3: the engine's guide says "1st", "2nd", "3rd" only; any other value a market already has is kept and offered as it is).
+// weeks (markets): "Which weeks" on the same line, in the values engine/src/weeks.js understands and names (week_of_month
+// 1 to 4, and -1 for the last one of the month; any other value a market already has is kept and offered as it is).
 function plSeason(rp, r, weeks = false) {
   const on = !!(r.from || r.to), sel = (end, md) => { const [m, d] = String(md || '').split('-').map(Number);
     return `<select data-cseas="${rp}" data-end="${end}" data-part="d" aria-label="Day">${Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}"${i + 1 === d ? ' selected' : ''}>${i + 1}</option>`).join('')}</select><select data-cseas="${rp}" data-end="${end}" data-part="m" aria-label="Month" translate="no">${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}"${i + 1 === m ? ' selected' : ''}>${esc(plMonth(i + 1))}</option>`).join('')}</select>`; };
   const chip = `<button class="chip" type="button" data-cseason="${rp}" aria-pressed="${on}"><span>Only part of the year</span></button>`;
   return `<div class="pl-part">${weeks ? `<div class="pl-when">${chip}${plWeeks(rp, r)}</div>` : chip}${on ? `<div class="pl-season"><span>Between</span>${sel('from', r.from)}<span>and</span>${sel('to', r.to)}</div>` : ''}</div>`;
 }
-const PL_WEEKS = [[0, 'Every week'], [1, '1st week of the month'], [2, '2nd week of the month'], [3, '3rd week of the month']];
+const PL_WEEKS = [[0, 'Every week'], [1, '1st week of the month'], [2, '2nd week of the month'], [3, '3rd week of the month'], [4, '4th week of the month'], [-1, 'Last week of the month']];
 function plWeeks(rp, r) {
   const n = +r.week_of_month || 0, o = PL_WEEKS.some(x => x[0] === n) ? PL_WEEKS : [...PL_WEEKS, [n, `Week ${n} of the month`]];
   return `<select class="pl-wk" data-cweek="${rp}" aria-label="Which weeks">${o.map(([v, l]) => `<option value="${v || ''}"${v === n ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
