@@ -1380,7 +1380,8 @@ try {
         await p.click(card(MP) + ' [data-cchg]'); await p.waitForTimeout(300);
         const d2 = await height(p, card(MP)), c2 = await clash(p, card(MP)), cr = await chipRows(p, card(MP)), wk = await weeksAt(p, card(MP));
         await p.locator(card(MP)).screenshot({ path: join(SHOTS, 'market-card-change-desktop.png'), style: NO_BAR });
-        ok(`market card, desktop: ${d1} px with Change closed (${was.h1280 || '?'} px in the last commit) and ${d2} px open, nothing overlaps or sticks out, the phone preview beside the editor`, d1 > 0 && d1 < (was.h1280 || 9e9) && !c1.length && !c2.length && await beside(), [...c1, ...c2].join('; '));
+        // A fixed bound, not "shorter than the last commit": once the new card is committed the two are the same.
+        ok(`market card, desktop: ${d1} px with Change closed (${was.h1280 || '?'} px in the last commit) and ${d2} px open, nothing overlaps or sticks out, the phone preview beside the editor`, d1 > 0 && d1 <= 700 && !c1.length && !c2.length && await beside(), [...c1, ...c2].join('; '));
         ok(`market card, desktop: what it sells in ${cr.rows} full rows at most 3, "Which weeks" on the line of "Only part of the year"`, cr.n === 16 && cr.rows <= 3 && !!wk && wk.same && wk.fits, JSON.stringify([cr, wk]));
         await p.click(card(MP) + ' [data-ckinds]'); await p.waitForTimeout(200);
         const kd = await kindsOk(p, card(MP)), c3 = await clash(p, card(MP));

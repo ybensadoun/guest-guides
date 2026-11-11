@@ -413,7 +413,8 @@ function mkPick(p, k) {
 /* --- An event's kind (type): its tile in the row and one line under its name, with the grid of the ten kinds behind Change.
    Icons and colours are the guide's (engine section.js EVENT_ICON, EVENT_TONE, pasted as ENG_EV_ICON, ENG_EV_TONE); the
    engine has no names for them, so these are the maker's (i18n/ui.json). --- */
-const EV_KINDS = [['castells', 'Human towers'], ['festa', 'Local festival'], ['carnival', 'Carnival'], ['parade', 'Parade'], ['food', 'Food and wine'], ['fair', 'Fair'], ['film', 'Film'], ['music', 'Music'], ['historical', 'History'], ['tradition', 'Tradition']];
+// In the order hosts most often need them (Yohann, 11 Nov 2026); what belongs to one region (human towers: Catalonia) comes last.
+const EV_KINDS = [['festa', 'Local festival'], ['music', 'Music'], ['food', 'Food and wine'], ['fair', 'Fair'], ['tradition', 'Tradition'], ['parade', 'Parade'], ['carnival', 'Carnival'], ['historical', 'History'], ['film', 'Film'], ['castells', 'Human towers']];
 const EV_HEX = { ...PL_TONE, taxi: '#F5C400' };
 function evColour(ty) {
   const v = ENG_EV_TONE[ty] || '', m = v.match(/^var\(--tone-(\w+)\)$/), bg = m ? EV_HEX[m[1]] : v === 'var(--ink)' ? '#121212' : 'var(--pine)';
