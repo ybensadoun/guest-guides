@@ -1,0 +1,10 @@
+[Unit]
+Description=The guide worker's weekly reading of places' own websites (worker/reread-places.mjs): weekly near a place's season, else every 28 days
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/guest-guides
+ExecStart=/usr/bin/docker compose -f worker/compose.yaml run --rm -T worker node worker/reread-places.mjs --apply
+TimeoutStartSec=2h

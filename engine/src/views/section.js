@@ -1,5 +1,5 @@
 import { t, tx, locale } from '../i18n.js';
-import { SECTIONS, SPOTS, slots } from '../content.js';
+import { SECTIONS, SPOTS, slots, shownNow, quickShown } from '../content.js';
 import { hoursText, statusLabel, nextOpenText, closedStatus, runsOn, offSeason } from '../schedule.js';
 import { esc, ICON, row, card, SECTION_LOOK, stHTML } from '../ui.js';
 import { sorted, sortRow } from './markets.js';
@@ -161,7 +161,9 @@ export function renderSection(V, id) {
   else if (sec.kind === 'spots') {
     // Same pattern as Markets: an overview map, then rows ranked by distance (from the house or from you). A place with no
     // hours of ours shows Google's card when its row opens (gcard: true, engine/src/gcard.js).
-    const all = SPOTS.filter(s => s.section === id);
+    // A place closed for the season and opening in more than 30 days is not shown (content.js shownNow): the counts, the
+    // chips, the filters and the overview map follow, since they all start from this list.
+    const all = SPOTS.filter(s => s.section === id && shownNow(s));
     // Quick filters when items have a "group" (What to do: Kids & fun, Beach, Sights & towns).
     const groups = [...new Set(all.map(s => s.group).filter(g => g in GROUPS))];   // only groups with a label (engine/src/groups.json)
     const gsel = groups.includes(st.sgroup[id]) ? st.sgroup[id] : 'all';
@@ -203,7 +205,7 @@ export function renderSection(V, id) {
     V.dataset.secf = gsel + '|' + ofsel;
     const now = new Date();
     // A Home quick tile shown on top of the page ("highlight" in sections.json), e.g. the bar next door.
-    const hq = sec.highlight && QUICK.find(q => q.id === sec.highlight);
+    const hq = sec.highlight && QUICK.find(q => q.id === sec.highlight && quickShown(q));
     const hl = hq ? `<div class="qcalls"><a class="qcall wide" data-q="${hq.id}" href="#p/${hq.id}"><span class="qi">${quickIcon(hq)}</span><span class="qt"><b>${esc(tx(hq.name))}</b>${hq.sub ? `<small>${esc(tx(hq.sub))}</small>` : ''}</span></a></div>` : '';
     body = all.length ? `${hl}<a class="pl-map secmap" href="#map" data-mapcat="${esc(all[0].cat)}" aria-label="${esc(t('openMap'))}"><div id="secmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openMap'))}</span></a>
       ${gchips}${ochips}${fchips}${sortRow()}
@@ -245,8 +247,8 @@ export function renderSection(V, id) {
   if (window.__openRow) { const r = V.querySelector(`.mrow[data-id="${window.__openRow}"]`); window.__openRow = null; if (r) { r.open = true; setTimeout(() => r.scrollIntoView({ block: 'center' }), 50); } }
   const box = V.querySelector('#secmap');
   if (box && oldMap && prevF === V.dataset.secf) box.replaceWith(oldMap);
-  else if (box) { const gs = (V.dataset.secf || '').split('|')[0]; const extra = id === 'restaurants' ? QUICK.filter(q => q.id === 'shop' && q.lat).map(q => ({ lat: q.lat, lng: q.lng, pinHtml: quickIcon('shop'), pinColor: 'var(--green)' })) : [];
-    overviewMap(box, SPOTS.filter(s => s.section === id && !s.nomap && (gs === 'all' || !gs || s.group === gs)).concat(extra)); }
+  else if (box) { const gs = (V.dataset.secf || '').split('|')[0]; const extra = id === 'restaurants' ? QUICK.filter(q => q.id === 'shop' && q.lat && quickShown(q)).map(q => ({ lat: q.lat, lng: q.lng, pinHtml: quickIcon('shop'), pinColor: 'var(--green)' })) : [];
+    overviewMap(box, SPOTS.filter(s => s.section === id && !s.nomap && shownNow(s) && (gs === 'all' || !gs || s.group === gs)).concat(extra)); }
 }
 
 // Full-screen photo viewer: swipe through the group, tap the cross or the backdrop to close.

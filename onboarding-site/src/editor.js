@@ -119,9 +119,9 @@ function cPhotos(path, arr) {
   return `${(arr || []).length ? `<div class="thumbs">${arr.map((n, i) => `<div class="thumb"><img src="${esc(edImg(n))}" alt="" loading="lazy"><div class="cm-phb"><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="-1" aria-label="Move earlier">‹</button><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="1" aria-label="Move later">›</button></div><button class="x" type="button" data-cdel="${path}/${i}" data-now="1" aria-label="Remove photo ${i + 1}">×</button></div>`).join('')}</div>` : ''}
     <label class="btn small cm-file"><input class="sr" type="file" accept="image/*" multiple data-phadd="${path}">+ Add photos</label>`;
 }
-function cCard(p, title, meta, inner, order, lead = '') {   // lead: what goes before the name in the row (a place's kind)   // order: [this card's place, how many there are], for a list the host can put in order
+function cCard(p, title, meta, inner, order, lead = '', note = '') {   // note: a quiet line under the row's meta (a place hidden from guests for the season)   // lead: what goes before the name in the row (a place's kind)   // order: [this card's place, how many there are], for a list the host can put in order
   const mv = order ? `<div class="cm-ord"><button type="button" data-cardmove="${esc(p)}" data-dir="-1" aria-label="Move ${esc(title)} up"${order[0] ? '' : ' disabled'}>↑</button><button type="button" data-cardmove="${esc(p)}" data-dir="1" aria-label="Move ${esc(title)} down"${order[0] < order[1] - 1 ? '' : ' disabled'}>↓</button></div>` : '';
-  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary>${lead}<span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}</span>${mv}<i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
+  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary>${lead}<span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}${note ? `<small class="pl-hid">${esc(note)}</small>` : ''}</span>${mv}<i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
 }
 
 /* --- One place, contact or tile: its texts, links, position, hours or dates --- */
@@ -226,9 +226,12 @@ function plFound(p, sec, it) {
   const out = [], kind = it.icon && ENG_ICON[it.icon], K = plKind(sec, it.icon), say = (x, o) => `<p class="pl-note${o ? ' pl-clip" translate="no' : ''}">${esc(x)}</p>`;   // the guide's own notes: two lines at most here, whole in the form
   if (kind || plType(sec, it)) out.push(`<div class="pl-l pl-lk">${plTile(sec, it, true)}<div translate="no">${esc(plType(sec, it))}</div></div>`);
   const hrs = it.always ? ['<span>Open 24 hours</span>'] : plHours(it.schedule), note = edShown(it.hours || {}), facts = [it.price, (it.setMenus || []).length, it.phone, it.url, plMarks(sec, it).length, note, edShown(it.priceNote || {})].some(x => x && String(x).trim());
-  // A season of its own and no hours: the season, then (with a Google id) that guests get the hours from Google's line.
-  const ss = !it.always && !hrs.length && plOwnSeason(it);
-  if (ss) out.push(line(I.clock, `<span class="pl-hl">${esc(`Open from ${plDate(ss.from)} to ${plDate(ss.to)}`)}</span>${it.gid ? say('Guests see Google’s own line for the hours.') : ''}${note ? say(note, 1) : ''}`));
+  // A season and no hours: its own ("Open from 1 Jun to 30 Sept") or the one assumed from its kind ("A summer place: expected
+  // open June to September", with one tap to say it is open all year), the day guests see it again while it is hidden, then
+  // (with a Google id) that guests get the hours from Google's line.
+  const S = !it.always && !hrs.length ? plSeasonOf(it) : null, sr = S && S.ranges[0], back = S ? plBack(it) : null;
+  const sHead = !S ? '' : S.confirmed ? `Open from ${plDate(sr.from)} to ${plDate(sr.to)}` : `A ${S.kind} place: expected open ${plMonthOf(sr.from)} to ${plMonthOf(sr.to)}.`;
+  if (S) out.push(line(I.clock, `<span class="pl-hl">${esc(sHead)}</span>${back ? say(`Shown to guests from ${plDateOf(back)}.`) : ''}${it.gid ? say('Guests see Google’s own line for the hours.') : ''}${note ? say(note, 1) : ''}${S.confirmed ? '' : `<button class="pl-more pl-ally" type="button" data-callyear="${p}">Open all year</button>`}`));
   else if (hrs.length || note) out.push(line(I.clock, hrs.join('') + (note ? say(note, 1) : '')));
   else if ((kind || facts) && (!K || K.hours !== false)) out.push(line(I.clock, say(it.gid ? 'No opening hours found. Guests see Google’s own line saying whether it is open.' : 'No opening hours found.')));
   const price = [it.price ? engT('perPerson', it.price) : '', ...(it.setMenus || []).filter(m => m && m.price).map(m => engT('sm_' + m.kind, m.price))].filter(Boolean), pn = edShown(it.priceNote || {});
@@ -272,14 +275,25 @@ function plFrom(it) {
 function plMine(p, k) {
   const m = String(p || '').match(/^files\/(?:restaurants|nightlife|todo)\/items\/\d+/); if (!m) return;
   const it = edGet(edC(), edPath(m[0])), f = it && it.filled; if (!f || !f.from || !(k in f.from)) return;
-  delete f.from[k]; if (!Object.keys(f.from).length) delete it.filled;
+  delete f.from[k]; if (!Object.keys(f.from).length) { if (f.readAt) delete f.from; else delete it.filled; }   // readAt: when the worker last read its site (worker/reread-places.mjs), kept
 }
 // A place's own season (it.season { from, to }, MM-DD), meaningful while it has no rows of hours: the guide then says "Closed,
 // Opens 1 Jun" out of season and Google's line gives the hours. The first row of hours added takes it (from/to on the row)
 // and it goes; the last row removed gives it back when every row removed carried that same season (plSeasonBack).
 const plOwnSeason = it => it && it.season && it.season.from && it.season.to ? it.season : null;
+// The guide's own rule for a place's season, pasted from engine/src/season.js: its hours' seasons, its own, or the one assumed
+// from its kind (kinds.json "season") or its tag "summer"; out of it and opening in more than 30 days, it is hidden from guests.
+const PL_SK = seasonKinds(ENG_KINDS);
+const plSeasonOf = it => seasonOf(it, PL_SK);
+const plBack = it => backOn(it, PL_SK, new Date());   // the day a place hidden today comes back for guests, or null
+const plMonthOf = md => new Intl.DateTimeFormat(plLoc(), { month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, +String(md).slice(0, 2) - 1, 1)));
+const plDateOf = d => new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short' }).format(d).replace(/ /g, '\u00a0');   // "2 May" never split over two lines
+// The row's quiet note while a place is hidden from guests: "Hidden from guests until 2 May: closed for the season".
+const plHidNote = it => { const b = plBack(it); return b ? `Hidden from guests until ${plDateOf(b)}: closed for the season` : ''; };
 const plRowsSeason = rows => { const k = [...new Set((rows || []).map(r => r && r.from && r.to ? r.from + '|' + r.to : ''))]; return k.length === 1 && k[0] ? k[0] : ''; };
 function plSeasonBack(it, gone, left = (it.schedule || []).length) { const k = plRowsSeason(gone); if (k && !left && !plOwnSeason(it)) { const [from, to] = k.split('|'); it.season = { from, to }; } }
+// "Open all year" (the tag allyear, the research's own word and a guest's "All year" mark): never hidden by an assumed season.
+function plAllYear(it, on) { const tg = (it.tags || []).filter(x => x !== 'allyear' && !(on && x === 'summer')); if (on) tg.push('allyear'); it.tags = tg; }
 const PL_GONE = new Map();   // a place (its id) -> the rows of hours removed one by one in this visit, until the last goes
 // "Only part of the year" on a row of opening hours: two dates on one line, each a day and a month (from and to, MM-DD).
 // weeks (markets): "Which weeks" on the same line, in the values engine/src/weeks.js understands and names (week_of_month
@@ -342,7 +356,7 @@ function plForm(p, sec, it, rest, where) {
     ${sec === 'eat' ? `<div class="f full"><span class="lab">Set menus</span>${sm.map((m, k) => `<div class="pl-sm"><select id="${cmId(`${p}/setMenus/${k}/kind`)}" data-p="${p}/setMenus/${k}/kind" data-t="str" aria-label="Set menus" translate="no">${[...new Set(['menuDia', 'tasting', m.kind])].filter(Boolean).map(x => smOpt(x, m.kind)).join('')}</select><input type="text" inputmode="decimal" id="${cmId(`${p}/setMenus/${k}/price`)}" data-p="${p}/setMenus/${k}/price" data-t="str" aria-label="Price (€)" placeholder="12-15" value="${esc(m.price || '')}"><button class="cm-x" type="button" data-csmdel="${p}/setMenus/${k}" aria-label="Remove this set menu">×</button></div>`).join('')}<button class="btn small pl-add" type="button" data-csmadd="${p}">+ Add a set menu</button></div>` : ''}
     ${cf('Phone', `${p}/phone`, it.phone, { type: 'tel', half: true })}${cf('Official website', `${p}/url`, it.url, { type: 'url', half: true })}
     <div class="full">${cSwitch(`data-calways="${p}"`, 'Open 24 hours', !!it.always)}</div>
-    ${it.always ? '' : cSchedule(`${p}/schedule`, it.schedule, true, false, plSeason(`${p}/season`, it.season || {}))}
+    ${it.always ? '' : cSchedule(`${p}/schedule`, it.schedule, true, false, plSeason(`${p}/season`, plOwnSeason(it) || (plSeasonOf(it) || { ranges: [{}] }).ranges[0]))}
     ${hasOwn('hours') ? cf('Opening hours, in words', `${p}/hours`, it.hours, { long: true, rows: 2 }) : ''}
     <div class="full">${cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.')}</div>
     <div class="f full pl-sub"><span class="lab">Where it is</span></div>
@@ -358,7 +372,7 @@ function cPlace(base, it, i) {
   return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${cf('Name', `${p}/name`, it.name, { i18n: true })}${cf('Your comment', `${p}/description`, it.description, { long: true, i18n: true })}</div>
     ${cSwitch(`data-cfav="${p}"`, 'Our favourite', !!it.topPick, 'Guests see it marked Unmissable. Keep it for two or three places.')}
     ${plFound(p, sec, it)}${CM.chg.has(p) ? plForm(p, sec, it, rest, (first ? '' : find) + pin) : ''}
-    ${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this place</button></div>`, null, plTile(sec, it));
+    ${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this place</button></div>`, null, plTile(sec, it), plHidNote(it));
 }
 // A kind picked: its icon; its name as the line under the name unless the host wrote their own; for Attractions its quick
 // filter (and tone) and "Great for kids" when the kind is for kids (taken off again only if the host did not set it here).
@@ -383,7 +397,10 @@ function plPrice(t) {
   plMine(t.dataset.cprice, 'price'); cmQueue();
 }
 function plSeasonSet(t) {
-  const r = edGet(edC(), edPath(t.dataset.cseas)), end = t.dataset.end; if (!r) return;
+  let r = edGet(edC(), edPath(t.dataset.cseas)); const end = t.dataset.end;
+  // A place's assumed season (no season of its own yet): a date changed makes it the place's own, from the assumed dates.
+  if (!r && /\/season$/.test(t.dataset.cseas)) { const it = edGet(edC(), edPath(t.dataset.cseas).slice(0, -1)), S = it && plSeasonOf(it); if (S) r = it.season = { ...S.ranges[0] }; }
+  if (!r) return;
   const md = String(r[end] || (end === 'from' ? '06-01' : '09-30')).split('-').map(Number);
   md[t.dataset.part === 'm' ? 0 : 1] = +t.value;
   md[1] = Math.min(md[1], [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][md[0] - 1]);
@@ -638,7 +655,7 @@ function pfApply(id) {
     if (edIs18(it.name)) { for (const l of Object.keys(it.name)) if (it.name[l] === j.words) it.name[l] = e.name; } else it.name = e.name; }
   const from = Object.fromEntries(Object.entries((e.filled || {}).from || {}).filter(([k]) => took.includes(k)));
   if (Object.keys(from).length) { const o = it.filled && it.filled.from ? it.filled : null, web = Object.values(from).some(v => v === 'site' || v === 'search');
-    it.filled = { at: [o && o.at, e.filled.at].filter(Boolean).sort().pop(), from: { ...(o ? o.from : {}), ...from }, ...(web && e.filled.page ? { page: e.filled.page } : o && o.page ? { page: o.page } : {}) }; }
+    it.filled = { at: [o && o.at, e.filled.at].filter(Boolean).sort().pop(), from: { ...(o ? o.from : {}), ...from }, ...(web && e.filled.page ? { page: e.filled.page } : o && o.page ? { page: o.page } : {}), ...(it.filled && it.filled.readAt ? { readAt: it.filled.readAt } : {}) }; }
   return true;
 }
 function edParseMaps(url) {
@@ -1668,7 +1685,7 @@ document.addEventListener('click', e => {
   if (d.cdiscard !== undefined) return cmDiscard(t);
   if (!t.closest('.edz')) return;
   // A place's fact changed by hand (its kind, the hours or Open 24 hours, Book ahead) is the host's: no source said for it.
-  { const own = d.ckind ? [d.ckind, 'kind'] : d.cflag && d.f === 'book' ? [d.cflag, 'book'] : d.cseason && /\/season$/.test(d.cseason) ? [d.cseason, 'season'] : d.calways || d.daytog || d.cseason || d.addsch ? [d.calways || d.daytog || d.cseason || d.addsch, 'schedule']
+  { const own = d.ckind ? [d.ckind, 'kind'] : d.cflag && d.f === 'book' ? [d.cflag, 'book'] : d.cseason && /\/season$/.test(d.cseason) ? [d.cseason, 'season'] : d.callyear ? [d.callyear, 'season'] : d.calways || d.daytog || d.cseason || d.addsch ? [d.calways || d.daytog || d.cseason || d.addsch, 'schedule']
       : d.cdel && /\/schedule\/\d+$/.test(d.cdel) ? [d.cdel, 'schedule'] : null; if (own) plMine(...own); }
   if (d.pflook) return pfStart(d.pflook);
   if (d.pfagain) { const it = edGet(edC(), edPath(d.pfagain)), j = it && CM.pf[it.id]; return pfStart(d.pfagain, (j && j.website) || ''); }
@@ -1697,7 +1714,13 @@ document.addEventListener('click', e => {
   if (d.csmdel) { const q = edPath(d.csmdel), it = edGet(edC(), q.slice(0, -2)); if (it && Array.isArray(it.setMenus)) { it.setMenus.splice(q[q.length - 1], 1); if (!it.setMenus.length) delete it.setMenus; done(); } return; }
   if (d.calways) { const it = edGet(edC(), edPath(d.calways)); if (it) { if (it.always) delete it.always; else it.always = true; done(); } return; }   // the hours stay, only hidden
   // A place's own season (no rows of hours): on, June to September as on a row; off, it goes.
-  if (d.cseason && /\/season$/.test(d.cseason)) { const it = edGet(edC(), edPath(d.cseason).slice(0, -1)); if (it) { if (it.season) delete it.season; else it.season = { from: '06-01', to: '09-30' }; done(); } return; }
+  // Off: its own season goes, and if its kind would still assume one, the place is open all year (the tag allyear). On: that
+  // assumption back, else June to September as on a row.
+  if (d.cseason && /\/season$/.test(d.cseason)) { const it = edGet(edC(), edPath(d.cseason).slice(0, -1)); if (it) {
+    if (plSeasonOf(it)) { delete it.season; if (plSeasonOf(it)) plAllYear(it, true); }
+    else { plAllYear(it, false); if (!plSeasonOf(it)) it.season = { from: '06-01', to: '09-30' }; }
+    done(); } return; }
+  if (d.callyear) { const it = edGet(edC(), edPath(d.callyear)); if (it) { delete it.season; plAllYear(it, true); done(); } return; }
   if (d.cseason) { const r = edGet(edC(), edPath(d.cseason)); if (r) { if (r.from || r.to) { delete r.from; delete r.to; } else { r.from = '06-01'; r.to = '09-30'; } done(); } return; }
   if (d.addsch) { const a = arr(d.addsch), it = edGet(edC(), edPath(d.addsch).slice(0, -1)), ss = !a.length && plOwnSeason(it);
     a.push({ days: [], open: '09:00', close: '14:00', ...(ss ? { from: ss.from, to: ss.to } : {}) });   // the first row takes the place's season
@@ -1963,6 +1986,9 @@ function cmInit() {
 .pl-sws{display:flex;flex-direction:column;gap:10px}
 .pl-sells{gap:6px}.pl-sells .chip span{padding:6px 12px;font-size:14px}   /* sixteen chips: as few rows as the width allows */
 .pl-kindrow:has([data-ckinds^="files/markets/"]) .pl-kn{flex:1 1 0;min-width:0}   /* "Antiques and crafts" wraps, Change stays on the row */
-.cmi textarea[data-p^="files/markets/"]{field-sizing:content;min-height:0}   /* a market's name and description: as tall as their words */`;
+.cmi textarea[data-p^="files/markets/"]{field-sizing:content;min-height:0}   /* a market's name and description: as tall as their words */
+/* A place out of season (season.js): the row's quiet note while guests do not see it; "Open all year" under the season line */
+.cmi>summary small.pl-hid{color:var(--muted);font-style:italic}
+.pl-l .pl-ally{display:block;margin-top:2px}`;
   document.head.appendChild(st);
 })();

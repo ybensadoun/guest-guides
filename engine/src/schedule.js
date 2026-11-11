@@ -1,5 +1,7 @@
 import { t, tx, locale, typo } from './i18n.js';
 import { onWeek, nthKey } from './weeks.js';
+import KINDS from './kinds.json';
+import { seasonOf, seasonKinds, inSeasonOn, nextStart, hiddenOn } from './season.js';
 
 export const dayName = (d, w) => new Intl.DateTimeFormat(locale(), { weekday: w || 'long' }).format(new Date(2026, 0, 4 + d));
 export const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -12,15 +14,27 @@ const md = dt => (dt.getMonth() + 1) * 100 + dt.getDate();
 const mdNum = v => { const [m, d] = v.split('-').map(Number); return m * 100 + d; };
 export const inSeason = (x, dt) => !x.from || (mdNum(x.from) <= mdNum(x.to) ? md(dt) >= mdNum(x.from) && md(dt) <= mdNum(x.to) : md(dt) >= mdNum(x.from) || md(dt) <= mdNum(x.to));
 const slotOn = (x, dt) => x.d.includes(dt.getDay()) && onWeek(dt, x.nth) && inSeason(x, dt);
-// A season of our own and no hours (the item's season { from, to }, MM-DD, no schedule rows): we know the part of the year it
-// opens, not its times, which Google's line gives when the row opens (gcard.js). Hours with their own season stay rows.
-export const seasonOnly = m => !!(m && !(m.s || []).length && m.season && m.season.from && m.season.to);
+// A place's season (engine/src/season.js): its hours' seasons, its own season, or the one assumed from its kind or its tag
+// "summer", with whether it is confirmed. Kinds of place say theirs in kinds.json ("season").
+const SK = seasonKinds(KINDS);
+export const placeSeason = m => seasonOf(m, SK);
+// A season and no hours of ours (its own season { from, to }, or the assumed one): we know the part of the year it opens, not
+// its times, which Google's line gives when the row opens (gcard.js). Hours with their own season stay rows.
+export const seasonOnly = m => !!(m && !(m.s || []).length && placeSeason(m));
 // True when the place only opens in a season and today is outside it.
-export const offSeason = (m, dt = new Date()) => (seasonOnly(m) ? !inSeason(m.season, dt) : m.s.length > 0 && m.s.every(x => x.from) && !m.s.some(x => inSeason(x, dt)));
-// A day of the year as the guide says it, "1 Jun" (Intl, the guide's language).
+export const offSeason = (m, dt = new Date()) => { const S = placeSeason(m); return !!S && !inSeasonOn(S, dt); };
+// Not shown to guests today: out of its season and opening more than SHOW_BEFORE_DAYS (30) days from now.
+export const hiddenNow = (m, dt = new Date()) => hiddenOn(m, SK, dt);
+// A day of the year as the guide says it, "1 Jun" (Intl, the guide's language); a month, "June".
 const fmtMD = v => { const [mm, dd] = v.split('-').map(Number); return new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short' }).format(new Date(2026, mm - 1, dd)); };
-// The season in the words a seasonal row of hours prints its dates in (hoursText): "1 Jun - 30 Sep".
-export const seasonText = m => (seasonOnly(m) ? typo(`${fmtMD(m.season.from)} - ${fmtMD(m.season.to)}`) : '');
+const fmtMonth = d => new Intl.DateTimeFormat(locale(), { month: 'long' }).format(d);
+// The season in the words a seasonal row of hours prints its dates in (hoursText): "1 Jun - 30 Sep"; an assumed one by its
+// months and the guide's word for what is not confirmed: "June - September · Expected".
+export const seasonText = m => {
+  if (!seasonOnly(m)) return '';
+  const S = placeSeason(m), r = S.ranges[0], mo = v => fmtMonth(new Date(2026, +v.slice(0, 2) - 1, 1));
+  return typo(S.confirmed ? `${fmtMD(r.from)} - ${fmtMD(r.to)}` : `${cap(mo(r.from))} - ${mo(r.to)} · ${t('expected')}`);
+};
 
 export const runsOn = (m, dt) => m.s.filter(x => slotOn(x, dt));
 
@@ -66,15 +80,17 @@ export function statusLabel(m, dt) {
 export function closedStatus(m, now = new Date()) {
   return { cls: 'closed', text: t('closed'), sub: nextShort(m, now) };
 }
-// A season and no hours: "Closed" + "Opens 1 Jun" out of season, nothing in season (we do not know whether it is open now).
+// A season and no hours: "Closed" + "Opens 1 Jun" out of season ("Expected from June" when the season is assumed), nothing in
+// season (we do not know whether it is open now).
 export const seasonStatus = (m, now = new Date()) => (seasonOnly(m) && offSeason(m, now) ? closedStatus(m, now) : null);
 export function nextShort(m, from = new Date()) {
-  // A season and no hours: only the day it opens again, as for a seasonal place with hours ("Opens 1 Jun").
+  // A season and no hours: only the day it opens again, as for a seasonal place with hours ("Opens 1 Jun"), or the month it
+  // is expected to when the season is assumed from its kind.
   if (seasonOnly(m)) {
-    if (inSeason(m.season, from)) return '';
-    const [mm, dd] = m.season.from.split('-').map(Number), d0 = new Date(from); d0.setHours(0, 0, 0, 0);
-    const d = new Date(d0.getFullYear(), mm - 1, dd); if (d < d0) d.setFullYear(d.getFullYear() + 1);
-    return t('opensDate', { date: new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short' }).format(d) });
+    const S = placeSeason(m), d = nextStart(S, from);
+    if (!d) return '';
+    // The month keeps its word before it ("ab Juni", "en juin"): the line may wrap, never leaving the month alone.
+    return S.confirmed ? t('opensDate', { date: new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short' }).format(d) }) : t('expectedFrom', { month: fmtMonth(d) }).replace(/ (\S+)$/, '\u00a0$1');
   }
   const nx = nextOpen(m, from);
   if (!nx) return '';

@@ -219,6 +219,7 @@
   "opensDayM": "Opent {day} 's ochtends",
   "opensDate": "Opent {date}",
   "seeHours": "Tijden bekijken",
+  "expectedFrom": "Verwacht vanaf {month}",
   "greetMorning": "Goedemorgen",
   "greetAfternoon": "Goedemiddag",
   "greetEvening": "Goedenavond",

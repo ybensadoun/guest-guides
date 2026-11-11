@@ -219,6 +219,7 @@
   "opensDayM": "Obre {day} al matí",
   "opensDate": "Obre el {date}",
   "seeHours": "Veure horari",
+  "expectedFrom": "Previst: {month}",
   "greetMorning": "Bon dia",
   "greetAfternoon": "Bona tarda",
   "greetEvening": "Bona nit",

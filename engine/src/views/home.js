@@ -1,6 +1,6 @@
 import qrcode from 'qrcode-generator';
 import { t, tx, locale } from '../i18n.js';
-import { MARKETS, MAP_ITEMS, SECTIONS, CATS, QUICK, HOUSE, slots, SITE, MODULE_ON, TRANSPORT } from '../content.js';
+import { MARKETS, mapItems, SECTIONS, CATS, QUICK, HOUSE, slots, SITE, MODULE_ON, TRANSPORT, quickShown } from '../content.js';
 import { runsOn, statusLabel, cap, nextOpen, closedStatus, seasonStatus } from '../schedule.js';
 import { esc, title, catIcon, SECTION_LOOK, stHTML, distHTML } from '../ui.js';
 import { sorted } from './markets.js';
@@ -144,7 +144,8 @@ const QI = {
 const qsvg = d => `<svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const qKey = q => [q.icon, q.id, String(q.id || '').split('-')[0]].find(k => k && QI[k]) || 'shop';
 export const quickIcon = q => qsvg(QI[typeof q === 'string' ? qKey({ id: q }) : qKey(q)]);
-const quickRow = () => QUICK.length ? `<div class="qcalls">${QUICK.map(q => `<a class="qcall${q.wide ? ' wide' : ''}" data-q="${q.id}" href="${q.href || '#p/' + q.id}">
+// A tile closed for the season and opening in more than 30 days is left out (content.js quickShown); its page still opens.
+const quickRow = () => QUICK.some(q => quickShown(q)) ? `<div class="qcalls">${QUICK.filter(q => quickShown(q)).map(q => `<a class="qcall${q.wide ? ' wide' : ''}" data-q="${q.id}" href="${q.href || '#p/' + q.id}">
   <span class="qi">${quickIcon(q)}</span><span class="qt"><b>${esc(tx(q.name))}</b>${q.sub ? `<small>${esc(tx(q.sub))}</small>` : ''}${qStatus(q)}</span></a>`).join('')}</div>` : '';
 // Live status on the quick tiles that have opening hours (the bar next door, the pizzeria), or a season of ours and no
 // hours: then only "Closed · Opens 1 Jun" out of season, as on its page and in the lists.
@@ -206,7 +207,7 @@ function sectionGrid(now, todayCount) {
    <div class="ggrid">${wideHouse.map(one).join('')}${smallHouse.map(one).join('')}</div>
    <h2 class="sh">${esc(t('aroundHouse'))}</h2>
    ${quickRow()}
-   <div class="ggrid mosaic">${mosaic.map((x, i) => one(x, alone(i) ? 'wide' : '')).join('')}${MODULE_ON('map') ? tile('map', t('mapTile'), '#map', t('nPlaces', { n: MAP_ITEMS.length }), false, 'wide') : ''}</div>`;
+   <div class="ggrid mosaic">${mosaic.map((x, i) => one(x, alone(i) ? 'wide' : '')).join('')}${MODULE_ON('map') ? tile('map', t('mapTile'), '#map', t('nPlaces', { n: mapItems(now).length }), false, 'wide') : ''}</div>`;
 }
 
 export function renderMore(V) {

@@ -184,10 +184,12 @@ test('kinds.json: groups, six names, icons', () => {
     if (list === 'todo') assert.ok(v.group in groups, `${k}: group ${v.group} is not in groups.json`); else assert.equal(v.group, undefined);
     assert.ok(v.kids === undefined || v.kids === true, `${list}.${k}: kids only when true`);
     assert.ok(v.hours === undefined || (v.hours === false && list === 'todo'), `${list}.${k}: hours only false, on a kind of todo with no door`);
+    assert.ok(v.season === undefined || v.season === 'summer' || v.season === 'winter', `${list}.${k}: season only summer or winter (engine/src/season.js)`);
   }
   for (const k of MISSING) assert.ok(!icons.has(k), `${k} now has an icon: take it off the missing list`);
   assert.deepEqual(Object.keys(K.todo).filter(k => K.todo[k].kids), ['waterpark', 'themepark', 'kart', 'bowling', 'trampoline']);
   assert.deepEqual(Object.keys(K.todo).filter(k => K.todo[k].hours === false), ['beach', 'town', 'city']);
+  assert.deepEqual([...Object.keys(K.eat).filter(k => K.eat[k].season).map(k => 'eat.' + k), ...Object.keys(K.todo).filter(k => K.todo[k].season).map(k => 'todo.' + k)], ['eat.beachbar', 'todo.waterpark', 'todo.beachbar']);
 });
 
 test('hostPlaces: a place read lately but never for this list gets only the match question, and keeps its last full look', async () => {

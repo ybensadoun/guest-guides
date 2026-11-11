@@ -6,8 +6,10 @@
 // <gmp-place-details-compact> whose height and answer this check chooses per place (125 px then gmp-load, a card with a
 // status line; 105 px then gmp-load, Google's card with nothing to say; gmp-error; never answering). Any other request to a Google host fails the check. At 360 px in de and fr.
 // The quiet "See hours" on a row (ui.js, .st.quiet) is checked with it: there only when the card can come, out of sight in
-// an opened row and once the card is dropped. The patched copy also gives quijote a season of ours that today is out of
-// (Closed + Opens <date>, the season above the card) and a place of Things to do one that today is in (the quiet word).
+// an opened row and once the card is dropped. The patched copy also gives quijote a season of ours that opens in 20 days
+// (Closed + Opens <date>, the season above the card), a place of Things to do one that today is in (the quiet word) and
+// another one that opens in 60 days (hidden). Quijote, a beach bar, is otherwise made "open all year" in the copies, so the
+// season assumed for beach bars does not hide it on a winter run.
 // Needs Playwright (as ux-check.mjs): node engine/scripts/gcard-check.mjs <site> [chromium path]
 import { createServer } from 'http'; import { spawnSync } from 'child_process';
 import { readFileSync, writeFileSync, existsSync, statSync, mkdtempSync, rmSync, cpSync } from 'fs'; import { join, extname, resolve } from 'path'; import { tmpdir } from 'os';
@@ -34,13 +36,17 @@ const build = (name, siteArg, key) => {
   if (r.status) throw new Error(`build ${name} failed`);
   return out;
 };
-// The patched copy: content, i18n, public files, site.json and theme.css only (never private/).
+// A copy of the site: content, i18n, public files, site.json and theme.css only (never private/).
+const copy = name => { const d = join(TMP, name); for (const f of ['site.json', 'theme.css', 'content', 'i18n', 'public']) if (existsSync(join(SD, f))) cpSync(join(SD, f), join(d, f), { recursive: true });
+  return { d, edit: (f, fn) => { const p = join(d, 'content', f + '.json'), j = JSON.parse(readFileSync(p, 'utf8')); fn(j); writeFileSync(p, JSON.stringify(j)); } }; };
+// The site as it is, except that quijote (a beach bar with no hours: a summer place, hidden out of season by engine/src/
+// season.js) is open all year, so the card is tried on it whatever the day of the run.
+const asIs = () => { const { d, edit } = copy('asis'); edit('restaurants', j => { for (const x of j.items) if (x.id === 'quijote') x.tags = [...(x.tags || []), 'allyear']; }); return d; };
+// The patched copy.
 const patched = () => {
-  const d = join(TMP, 'site');
-  for (const f of ['site.json', 'theme.css', 'content', 'i18n', 'public']) if (existsSync(join(SD, f))) cpSync(join(SD, f), join(d, f), { recursive: true });
-  const edit = (f, fn) => { const p = join(d, 'content', f + '.json'), j = JSON.parse(readFileSync(p, 'utf8')); fn(j); writeFileSync(p, JSON.stringify(j)); };
-  edit('todo', j => { for (const x of j.items) { if (x.id === 'beach-comaruga') delete x.always; if (x.icon === 'town' && !x.gid) x.gid = TOWN_GID; if (x.icon === 'city' && !x.gid) x.gid = CITY_GID; if (x.id === 'vilafranca') x.season = SEASON(-10, 10); } });
-  edit('restaurants', j => { for (const x of j.items) if (x.id === 'quijote') x.season = SEASON(40, 100); });
+  const { d, edit } = copy('site');
+  edit('todo', j => { for (const x of j.items) { if (x.id === 'beach-comaruga') delete x.always; if (x.icon === 'town' && !x.gid) x.gid = TOWN_GID; if (x.icon === 'city' && !x.gid) x.gid = CITY_GID; if (x.id === 'vilafranca') x.season = SEASON(-10, 10); if (x.id === 'codorniu') x.season = SEASON(60, 120); } });
+  edit('restaurants', j => { for (const x of j.items) if (x.id === 'quijote') x.season = SEASON(20, 100); });   // opens in 20 days: shown, closed
   let tile = null;
   edit('quick', j => { const q = j.items.find(x => !x.trains && x.phone !== undefined) || j.items.find(x => !x.trains); if (q) { tile = q.id; delete q.schedule; delete q.always; delete q.hours; delete q.price; q.gid = TILE_GID; q.lat = q.lat || 41.2; q.lng = q.lng || 1.5; } });
   const t = JSON.parse(readFileSync(join(d, 'content', 'todo.json'), 'utf8')).items;
@@ -131,7 +137,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const rel = btns => { const p = btns.map(x => x.split(',').map(Number)); return p.map(([x, y, w, h]) => [x, y - p[0][1], w, h].join(',')); };
 
 try {
-  const withKey = build('key', site, FAKE_KEY), noKey = build('nokey', site, ''), P = patched(), patchedKey = build('patched', P.dir, FAKE_KEY);
+  const A = asIs(), withKey = build('key', A, FAKE_KEY), noKey = build('nokey', A, ''), P = patched(), patchedKey = build('patched', P.dir, FAKE_KEY);
   for (const [i, root] of [withKey, noKey, patchedKey].entries()) serve(root, 5310 + i);
   const [KEY, NOKEY, PATCH] = [5310, 5311, 5312].map(p => `http://localhost:${p}/`);
   if (!readFileSync(join(withKey, 'index.html'), 'utf8').includes(`content="${FAKE_KEY}"`)) fail('build', 'the key build has no key in its page');
@@ -236,6 +242,8 @@ try {
       for (const id of ['beach-comaruga', P.town, P.city].filter(Boolean)) if (await pg.evaluate(s => document.querySelector(s + ' [data-gcard]'), sel('todo-' + id))) fail(at('todo-' + id), 'a place with no door has a slot');
       if (!P.town || !P.city) fail(at('patched'), 'no town or city to try');
       // In season, a season and no hours: the quiet word, as any place with no hours of ours.
+      // Out of season and opening in more than 30 days: not in the list at all (engine/src/season.js).
+      if (await rowState(pg, 'todo-codorniu')) fail(at('todo-codorniu'), 'a place opening in 60 days is still in the list');
       { const v = await rowState(pg, 'todo-vilafranca'); if (!v || !v.quiet || !v.quiet.seen || v.status) fail(at('todo-vilafranca'), `in season: ${JSON.stringify(v && { quiet: v.quiet, status: v.status })}`); }
       for (const id of ['beach-comaruga', P.town, P.city].filter(Boolean)) if ((await rowState(pg, 'todo-' + id))?.quiet) fail(at('todo-' + id), 'a place with no door has the quiet word');
       // Out of season: Closed and the day it opens, no quiet word; opened, the season above Google's card, which still comes.

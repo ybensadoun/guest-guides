@@ -1,6 +1,7 @@
 // All guest-facing content lives in sites/<site>/content/*.json and is bundled at build time,
 // so it works offline. New files are picked up automatically.
 import { SITE, FILES as files, PRIVATE } from './site-data.js';
+import { hiddenNow } from './schedule.js';
 const get = name => files[name];
 export { SITE };
 // Modules switched off in site.json ("modules": { "events": false }) disappear everywhere: tile, page, map pins.
@@ -77,6 +78,12 @@ const QSHOP = (QUICK_FILE?.items || []).filter(q => q.id === 'shop' && q.lat && 
   groupKey: HOUSE.name, groupSlug: slug(HOUSE.name) + '-bar', s: slots(q.schedule)
 }));
 export const MAP_ITEMS = [...MARKETS.filter(m => !m.nomap), ...SPOTS.filter(s => !s.nomap), ...QSHOP];
+// Closed for the season and opening more than 30 days from now (schedule.js hiddenNow, our own season only, never Google's):
+// not shown to guests, asked at each drawing so a guide left open finds them back on the day. Markets have no season of this
+// kind (their own rows say their days). A Home tile is read as a place: its rows of hours, its season, its tags.
+export const shownNow = (m, now = new Date()) => !hiddenNow(m, now);
+export const mapItems = (now = new Date()) => MAP_ITEMS.filter(m => m.kind === 'market' || shownNow(m, now));
+export const quickShown = (q, now = new Date()) => shownNow({ ...q, s: slots(q.schedule) }, now);
 export const byId = id => MAP_ITEMS.find(m => m.id === id);
 
 export const GARBAGE = get('garbage');

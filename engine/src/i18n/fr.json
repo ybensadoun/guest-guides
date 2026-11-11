@@ -219,6 +219,7 @@
   "opensDayM": "Ouvre {day} matin",
   "opensDate": "Ouvre le {date}",
   "seeHours": "Voir horaires",
+  "expectedFrom": "Prévu en {month}",
   "greetMorning": "Bonjour",
   "greetAfternoon": "Bon après-midi",
   "greetEvening": "Bonsoir",

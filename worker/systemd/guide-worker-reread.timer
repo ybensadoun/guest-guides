@@ -1,0 +1,9 @@
+[Unit]
+Description=The guide worker's reading of places' own websites, every Monday at 5:30 (Madrid)
+
+[Timer]
+OnCalendar=Mon *-*-* 05:30:00 Europe/Madrid
+Persistent=true
+
+[Install]
+WantedBy=timers.target

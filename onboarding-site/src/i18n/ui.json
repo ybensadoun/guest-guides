@@ -7316,6 +7316,31 @@
 "es": "Los huéspedes ven la línea de Google para el horario.",
 "fr": "Les voyageurs voient la ligne de Google pour les horaires."
 },
+"Hidden from guests until {x}: closed for the season": {
+"ca": "Amagat als hostes fins al {x}: tancat per temporada",
+"es": "Oculto a los huéspedes hasta el {x}: cerrado por temporada",
+"fr": "Masqué aux voyageurs jusqu’au {x} : fermé pour la saison"
+},
+"A summer place: expected open {x} to {y}.": {
+"ca": "Un lloc d’estiu: previst obert de {x} a {y}.",
+"es": "Un lugar de verano: abierto previsiblemente de {x} a {y}.",
+"fr": "Un lieu d’été : ouverture prévue de {x} à {y}."
+},
+"A winter place: expected open {x} to {y}.": {
+"ca": "Un lloc d’hivern: previst obert de {x} a {y}.",
+"es": "Un lugar de invierno: abierto previsiblemente de {x} a {y}.",
+"fr": "Un lieu d’hiver : ouverture prévue de {x} à {y}."
+},
+"Shown to guests from {x}.": {
+"ca": "Visible per als hostes a partir del {x}.",
+"es": "Visible para los huéspedes a partir del {x}.",
+"fr": "Visible pour les voyageurs à partir du {x}."
+},
+"Open all year": {
+"ca": "Obert tot l’any",
+"es": "Abierto todo el año",
+"fr": "Ouvert toute l’année"
+},
 "Only part of the year": {
 "ca": "Només una part de l’any",
 "es": "Solo una parte del año",

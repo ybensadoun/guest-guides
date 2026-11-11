@@ -1,5 +1,5 @@
 import { t, tx, lang } from '../i18n.js';
-import { HOUSE, CATS, MAP_ITEMS, byId, SITE } from '../content.js';
+import { HOUSE, CATS, MAP_ITEMS, mapItems, byId, SITE } from '../content.js';
 // The search box looks for places in this box (site.json area.searchBbox), default about 150 km around the house.
 const BBOX = (SITE.area?.searchBbox || [HOUSE.lng - 1.5, HOUSE.lat - 1.2, HOUSE.lng + 1.5, HOUSE.lat + 1.2]).join(',');
 const RADIUS = SITE.area?.radiusKm || 40;
@@ -39,11 +39,12 @@ const countLabel = items => t(items.every(m => m.kind === 'market') ? 'nMarkets'
 export const MAP_TABS = ['all', 'eat', 'markets', 'todo', 'night', 'useful'];   // a tab without places is not shown (Nightlife is optional)
 const TAB_LABEL = { all: 'mapAll', eat: 'mapEat', markets: 'mapMarkets', todo: 'mapDo', night: 'mapNight', useful: 'mapUseful' };
 export const tabOf = m => (m.kind === 'market' || CATS.includes(m.cat) ? 'markets' : m.section === 'restaurants' || m.cat === 'restaurants' ? 'eat' : m.section === 'nightlife' ? 'night' : ['todo', 'kids', 'daytrips'].includes(m.section) || m.cat === 'todo' ? 'todo' : 'useful');
-const tabHasItems = k => k === 'all' || MAP_ITEMS.some(m => tabOf(m) === k);
+// The places shown today: one closed for the season and opening in more than 30 days has no pin (content.js mapItems).
+const tabHasItems = k => k === 'all' || mapItems().some(m => tabOf(m) === k);
 
 function visibleItems() {
   const now = new Date(), tab = st.mapTab || 'all';
-  return MAP_ITEMS.filter(m => (tab === 'all' || tabOf(m) === tab) && !(tab === 'markets' && st.mapToday && !runsOn(m, now).length));
+  return mapItems(now).filter(m => (tab === 'all' || tabOf(m) === tab) && !(tab === 'markets' && st.mapToday && !runsOn(m, now).length));
 }
 
 function groupsOf(items) {
@@ -190,7 +191,7 @@ async function loadInline(src) {
 // or the 5 nearest when none are that close. Bounds are mirrored around the centre so it stays in the middle.
 function overviewBounds() {
   const a = anchor();
-  const vis = (visibleItems().length ? visibleItems() : MAP_ITEMS).map(m => ({ m, d: hav(a.lat, a.lng, m.lat, m.lng) })).sort((x, y) => x.d - y.d);
+  const vis = (visibleItems().length ? visibleItems() : mapItems()).map(m => ({ m, d: hav(a.lat, a.lng, m.lat, m.lng) })).sort((x, y) => x.d - y.d);
   const near = vis.filter(x => x.d <= RADIUS);
   const pick = (near.length >= 3 ? near : vis.slice(0, 5)).map(x => x.m);
   const b = new ml.LngLatBounds([a.lng, a.lat], [a.lng, a.lat]);

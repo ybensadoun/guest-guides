@@ -1134,9 +1134,11 @@ try {
     // A place's own season (11 Nov 2026, "It's closed for the season, let's make it clear in the list"): a place with no rows of
     // hours gets "Only part of the year" in its hours, written to the place (season); the first row of hours added takes it,
     // the last one removed gives it back; the panel says it in one line. At 360 px and on the desktop beside the phone.
+    // The place is made a plain restaurant here (kind fork), so no season is assumed for it: the assumed one is checked below.
     { const si = items('restaurants').findIndex(x => !(x.schedule || []).length && !x.always), SP = `files/restaurants/items/${si}`;
+      const cF = JSON.parse(JSON.stringify(c2)); if (si >= 0) cF.files.restaurants.items[si].icon = 'fork'; const GF = { ...G, content: cF };
       for (const [w, h, tag] of [[360, 780, '360'], [1280, 860, 'desktop']]) {
-        const { ctx, p, errors, item } = await run(w, h);
+        const { ctx, p, errors, item } = await run(w, h, {}, GF);
         await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
         if (si < 0 || !(await p.$(card(SP)))) { ok(`place season, ${tag}: a place with no hours to try`, false); await ctx.close(); continue; }
         await p.click(card(SP) + ' > summary'); await p.click(card(SP) + ' [data-cchg]'); await p.waitForTimeout(250);
@@ -1169,6 +1171,50 @@ try {
         await p.click(chip); const s5 = await item(SP);
         ok(`place season, ${tag}: off, the season goes`, !!s5 && !('season' in s5), JSON.stringify(s5 && s5.season));
         ok(`place season, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+        await ctx.close(); }
+    }
+    // A season assumed from the kind (11 Nov 2026, part two): a beach bar with no hours and no season of its own is a summer place,
+    // hidden from guests out of season until 30 days before 1 June. On 12 Nov its row says so, its panel says the assumed
+    // season and when guests see it again, "Open all year" in one tap stops it (the tag allyear), and a date changed in the form
+    // (pre-filled with the assumed dates) makes the season its own. At 360 px and on the desktop beside the phone.
+    { const ai = items('restaurants').findIndex(x => x.icon === 'beachbar' && !(x.schedule || []).length && !x.always && !x.season && !(x.tags || []).includes('allyear')), AP = `files/restaurants/items/${ai}`;
+      const NOV12 = new Date('2026-11-12T10:00:00');
+      for (const [w, h, tag] of [[360, 780, '360'], [1280, 860, 'desktop']]) {
+        const o = await run(w, h), { ctx, p, errors, item } = o;
+        await p.clock.install({ time: NOV12 });
+        await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
+        if (ai < 0 || !(await p.$(card(AP)))) { ok(`assumed season, ${tag}: a beach bar with no hours to try`, false); await ctx.close(); continue; }
+        const note = (await p.textContent(card(AP) + ' > summary .pl-hid').catch(() => '')).replace(/\u00a0/g, ' ').trim();   // the date is held together by no-break spaces
+        ok(`assumed season, ${tag}: on 12 Nov the row says "Hidden from guests until 2 May: closed for the season"; a place open all year (La Locanda) has no note`, note === 'Hidden from guests until 2 May: closed for the season' && !(await p.$(card(RP) + ' > summary .pl-hid')), note);
+        const rowOk = await p.evaluate(sel => { const s = document.querySelector(sel + ' > summary'), r = s.getBoundingClientRect(), n = s.querySelector('.pl-hid'); if (!n) return false; const b = n.getBoundingClientRect(); return b.right <= r.right + 0.5 && document.documentElement.scrollWidth <= innerWidth; }, card(AP));
+        ok(`assumed season, ${tag}: the note sits inside its row, no sideways scroll`, rowOk);
+        await p.$eval(card(AP), e => e.scrollIntoView({ block: 'center' })); await p.screenshot({ path: join(SHOTS, `season-hidden-row-${tag}.png`) });
+        await p.click(card(AP) + ' > summary'); await p.waitForTimeout(250);
+        const said = (await p.textContent(card(AP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+        ok(`assumed season, ${tag}: the panel says "A summer place: expected open June to September.", "Shown to guests from 2 May." and offers "Open all year"`, /A summer place: expected open June to September\./.test(said) && /Shown to guests from 2 May\./.test(said) && !!(await p.$(card(AP) + ` [data-callyear="${AP}"]`)), said.slice(0, 200));
+        const c1 = await clash(p, card(AP));
+        ok(`assumed season, ${tag}: the panel, nothing overlaps or sticks out`, !c1.length, c1.join('; '));
+        await p.locator(card(AP)).screenshot({ path: join(SHOTS, `season-assumed-panel-${tag}.png`), style: NO_BAR });
+        // The form: the season pre-filled with the assumed dates, nothing written until a date is changed.
+        await p.click(card(AP) + ' [data-cchg]'); await p.waitForTimeout(250);
+        const chip = card(AP) + ` [data-cseason="${AP}/season"]`, sel = (end, part) => card(AP) + ` [data-cseas="${AP}/season"][data-end="${end}"][data-part="${part}"]`;
+        const pre = { on: await p.getAttribute(chip, 'aria-pressed').catch(() => null), fm: await p.$eval(sel('from', 'm'), e => e.value).catch(() => ''), td: await p.$eval(sel('to', 'd'), e => e.value).catch(() => ''), tm: await p.$eval(sel('to', 'm'), e => e.value).catch(() => '') };
+        ok(`assumed season, ${tag}: Change shows "Only part of the year" on, pre-filled 1 June to 30 September`, pre.on === 'true' && pre.fm === '6' && pre.td === '30' && pre.tm === '9', JSON.stringify(pre));
+        const c2b = await clash(p, card(AP));
+        ok(`assumed season, ${tag}: the form, nothing overlaps or sticks out`, !c2b.length, c2b.join('; '));
+        await p.$eval(card(AP) + ' .cm-sch', e => e.closest('.f').scrollIntoView({ block: 'center' })); await p.waitForTimeout(150); await p.screenshot({ path: join(SHOTS, `season-assumed-form-${tag}.png`) });
+        await p.selectOption(sel('from', 'm'), '5'); const a1 = await item(AP);
+        ok(`assumed season, ${tag}: a date changed makes it the place's own season (05-01 to 09-30)`, !!a1 && JSON.stringify(a1.season) === '{"from":"05-01","to":"09-30"}', JSON.stringify(a1 && a1.season));
+        await p.click(chip); const a2 = await item(AP);
+        ok(`assumed season, ${tag}: "Only part of the year" off: its season goes and it is open all year (allyear), the row's note goes`, !!a2 && !a2.season && (a2.tags || []).includes('allyear') && !(await p.$(card(AP) + ' > summary .pl-hid')), JSON.stringify(a2 && [a2.season, a2.tags]));
+        await p.click(chip); const a3 = await item(AP);
+        ok(`assumed season, ${tag}: on again, the assumption is back (no allyear, no season of its own)`, !!a3 && !a3.season && !(a3.tags || []).includes('allyear') && (await p.getAttribute(chip, 'aria-pressed')) === 'true', JSON.stringify(a3 && [a3.season, a3.tags]));
+        // One tap in the panel: "Open all year".
+        await p.click(card(AP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        await p.click(card(AP) + ` [data-callyear="${AP}"]`); const a4 = await item(AP);
+        const after = (await p.textContent(card(AP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+        ok(`assumed season, ${tag}: "Open all year" in the panel sets allyear and sticks: no assumed line, no note, never hidden`, !!a4 && (a4.tags || []).includes('allyear') && !/A summer place/.test(after) && !(await p.$(card(AP) + ' > summary .pl-hid')), JSON.stringify(a4 && a4.tags));
+        ok(`assumed season, ${tag}: no page errors`, !errors.length, errors.join(' | '));
         await ctx.close(); }
     }
     // A place's facts, looked up in the editor (job place-facts, 11 Nov 2026): picked on Google, the place gets one job; its
