@@ -400,6 +400,27 @@ Left for the maker's side of 3d: researched cards in the deck no longer get a ph
 **Not tested:** Wi-Fi, photo uploads and the logo (Claude types no password and uploads no file there); What the place offers, How things work, Check-in and rules (not touched by the places work); the Send, the built guide and the editor on it.
 
 **Noted by Yohann during the test, to do next:** a place closed for the season (Quijote Beach) shows nothing on the right of its row in the list, where one with a season says "Closed, opens 1 Apr": make it clear in the list. The badge "Suggested by Claude" (fault 5).
+
+### The acceptance test, second part: sent for real (11 Nov 2026, 20:29 to 20:45)
+**How.** Yohann ticked the consent box and pressed Send (Claude may not give that consent for him). The server built and published the test guide at `/g/ca-la-kimberly-pool-house` in 11 min 48 s: contacts research 85 s, translation into five languages 600 s (about two minutes a language), saving 13 s. Then the guide at 360 px and the editor at 1280 px, and one place added in the editor. Cost of the whole test on the server: **2.72 USD** (research 1.96, place facts 0.16, the build 0.57 of which contacts 0.48 and translation 0.09, the editor's lookup 0.06), plus the listing read at the link.
+
+**What comes out, against gap H of the first half ("a place a host adds has almost nothing but its hours").**
+- **Eat and drink, 4 places:** each has its own icon and kind (pizza, bakery and café, fine dining, beach bar), its town, a phone (4 of 4), a website (3 of 4), a price where its website gives one. Hours for 2, read from the places' own websites; the 2 without show Google's live line when opened. No rating anywhere. Every position is ours (the open directory), none is Google's. Each fact says where it came from.
+- **Things to do, 7:** icons, groups and marks on all but one; hours or "always open"; prices.
+- **Contacts:** 7 in 2 groups, with the village's own pharmacy and health centre now that the town was given; still no police, town hall or vet (the live guide has 11 in 4).
+- **The editor on the built guide:** the place card shows "Filled in for you" with the kind, the price, the phone, the website and "From llepol.com and an open directory, 10 Nov 2026"; a place with no hours says guests see Google's own line.
+- **The lookup for a place added in the editor ran with the real Claude for the first time:** 30 seconds, "Details found", 0.058 USD (two tries), the kind and the town filled in, the position Google's with its date.
+
+**More faults.**
+9. **The name is whatever was typed to search.** A host who searches "restaurant La Bisbal del Penedès" and picks "Restaurant la Societat" gets a place called "Restaurant La Bisbal del Penedès", and the lookup then searches for that name and finds no website, phone or hours. Same root as fault 4. The pick should leave the name for the host to give (or keep the typed words only when they match the place), without keeping Google's name.
+10. **"Barcelona", typed and not matched, is in the guide with a pin and the house's own village as its town.** A place with no match should have no pin and no town.
+11. **The estimate on the progress screen is far off for six languages:** it said "less than a minute left" during ten minutes of translation. The bar's scale assumes the build does the research, so it starts half full (fixed in the source, with the three small fixes below).
+12. **A place with no hours of ours shows nothing on the right of its row** (Llépol, Quijote Beach): the guest has to open it to see Google's line. This is Yohann's note about Quijote Beach, seen again here.
+13. **Home has one small tile alone** (the taxi), half its row empty (gap M of the first half, still there).
+
+**Fixed during the test, in the maker (not live until pushed):** the badge reads "Suggested for you: please check"; "Build it again" shows only after a failed build, nothing under the bar while building; the houses menu closes on a click outside or Escape and shows the house's real name and state; the build's bar starts near empty when the research was done before.
+
+**Asked by Yohann for the build and ready screens, to do as one piece next:** a second line that changes every few seconds and says what is going into the host's own guide; the estimate from real times (two minutes a language); when the guide is ready, the places we found shown there to keep or skip, before "Open my guide".
 - **Not changed, seen on the way:** the map's "Open today only" and the markets page's day strip hide a market with no schedule (they read `runsOn`); a market always has one today.
 
 **Desktop, a first look (11 Nov 2026).** Five maker screens at 1280 px (the builder’s first steps, The look, Rooms and photos, the editor’s first step): nothing broken. For the final desktop pass (proposal 21): the list of steps on the left cuts long step names with “…” (“Name, address, la…”, “What the place of…”, “Ratings and revie…”).
