@@ -4,13 +4,16 @@
 // wrote in the draft (Google's, kept 30 days at most), so Google is not asked again; only an item with no pin is located
 // by its id. A place kept in place_facts and looked at less than 30 days ago costs nothing. Nothing is written to the
 // guide here: the result waits in the job for the open editor, which fills only what the place does not have yet.
-//   params: { item: the item's id, list: 'eat'|'todo', gid, words: the host's name for it, about: their comment,
-//             website?: a page the host pasted, read instead of looking for one }
+//   params: { item: the item's id, list: 'eat'|'todo', gid, words: the host's name for it (never the words typed to search:
+//             the maker keeps only those that name the place, placename.js), or none: a place picked with no name yet is
+//             looked up like a card kept in the deck, its name compared in memory with our directory's (hostPlaces,
+//             nameMatch), and the directory's own name, when it has one, is the one searched for on the web and returned,
+//             about: their comment, website?: a page the host pasted, read instead of looking for one }
 //   result: { item, entry } with entry as hostPlaces gives it (its filled included), or { item, entry: null } when
 //           nothing was found.
 import { hostPlaces } from './host-places.mjs';
 import { isGid } from './place-store.mjs';
-import { locateById } from './places.mjs';
+import { locateById, nameById } from './places.mjs';
 
 export const PLACE_FACTS_PER_DAY = 30;   // per guide: each place not kept yet is about 0.02 USD of Claude
 const FILES = { eat: ['restaurants', 'nightlife'], todo: ['todo'] };
@@ -28,7 +31,7 @@ export async function placeFactsJob(j, jp, { rest, store, ask = null, again = nu
   if (!ask) throw new Error('Looking up places is not switched on yet.');
   const p = j.params || {}, item = String(p.item || '').slice(0, 80), list = p.list === 'todo' || p.list === 'eat' ? p.list : null;
   const words = String(p.words || '').trim().slice(0, 120), about = String(p.about || '').trim().slice(0, 600), website = p.website ? webUrl(p.website) : null;
-  if (!item || !list || !isGid(p.gid) || !words) throw new Error('This place cannot be looked up.');
+  if (!item || !list || !isGid(p.gid)) throw new Error('This place cannot be looked up.');
   const since = new Date(Date.now() - 864e5).toISOString();
   const recent = await rest(`/rest/v1/guide_jobs?select=id&guide_id=eq.${j.guide_id}&kind=eq.place-facts&id=neq.${j.id}&created_at=gt.${encodeURIComponent(since)}`);
   if ((recent || []).length >= PLACE_FACTS_PER_DAY) throw new Error('You have looked up a lot of places today. Try again tomorrow.');
@@ -38,7 +41,7 @@ export async function placeFactsJob(j, jp, { rest, store, ask = null, again = nu
   // The pin the host's pick wrote (the draft is saved before the job is queued); else Google, by the id.
   const it = FILES[list].flatMap(f => (files[f] || {}).items || []).find(x => x && x.id === item);
   const pin = it && it.gid === p.gid && num(it.lat) && num(it.lng) && !it.nomap ? { gid: p.gid, lat: it.lat, lng: it.lng } : null;
-  const L = locate || { byId: async id => (pin && id === pin.gid ? pin : GK ? locateById(GK, id) : null), byWords: async () => null };
+  const L = locate || { byId: async id => (pin && id === pin.gid ? pin : GK ? locateById(GK, id) : null), byWords: async () => null, ...(GK ? { name: (id, lang) => nameById(GK, id, lang) } : {}) };
   await jp({ message: 'Looking for its website' });
   // "Reading its website" as soon as the chain opens a page: the first question to Claude with the web.
   // Claude not answering (the day's budget spent, the API out of reach) is a failure for the host, not "nothing found".
@@ -46,9 +49,12 @@ export async function placeFactsJob(j, jp, { rest, store, ask = null, again = nu
   const tell = f => f && (async (prompt, o = {}) => { if (o.what === 'site facts' && !reading) { reading = true; await jp({ message: 'Reading its website' }); }
     try { return await f(prompt, o); } catch (e) { broke = broke || e; throw e; } });
   const before = +meter.usd || 0;
-  const geo = await hostPlaces({ rows: [{ p: words, gid: p.gid, list, ...(about ? { c: about } : {}), ...(website ? { website } : {}) }], house: { lat: h.lat, lng: h.lng }, town: ((g && g.answers) || {}).town || '' },
-    { store, ask: tell(ask), again: tell(again), locate: L, near, gaz, python, log, meter, nameMatch: false });
-  const e = geo[words] || null, entry = factsFound(e) ? e : null, usd = (+meter.usd || 0) - before;
+  // With the host's name, a row (the name is theirs, Google's is not read); without, a card (named from our directory).
+  const rows = words ? [{ p: words, gid: p.gid, list, ...(about ? { c: about } : {}), ...(website ? { website } : {}) }] : [];
+  const cards = words ? [] : [{ id: p.gid, list, ...(about ? { c: about } : {}) }];
+  const geo = await hostPlaces({ rows, cards, house: { lat: h.lat, lng: h.lng }, town: ((g && g.answers) || {}).town || '' },
+    { store, ask: tell(ask), again: tell(again), locate: L, near, gaz, python, log, meter, nameMatch: !words });
+  const e = geo[words || 'gid:' + p.gid] || null, entry = factsFound(e) || (!words && e && e.name) ? e : null, usd = (+meter.usd || 0) - before;
   if (!entry && broke) { log(`  place facts for ${item}: not looked up (${broke.message}), about ${usd.toFixed(3)} USD`);
     throw new Error(/paused/i.test(broke.message) ? 'Looking up places is paused for today. Try again tomorrow.' : 'Try again in a few minutes.'); }
   log(`  place facts for ${item}: ${entry ? Object.keys((entry.filled || {}).from || {}).join(', ') || 'a position of ours' : 'nothing found'}, about ${usd.toFixed(3)} USD`);

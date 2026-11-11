@@ -677,32 +677,42 @@ def resolve_short(url):
         out['km'] = max(1, round(math.hypot((out['lat'] - args.lat) * 111, (out['lng'] - args.lng) * 111 * math.cos(math.radians(args.lat))) * 1.3))
     return out
 # The host's own places (bars and restaurants, and Nightlife when they switched it on), each list into its own file.
+# A row picked on Google with no name (the words typed to find it did not name it, and the host left it empty: psPick in
+# the maker) is read like a kept card, gid:<id>, as worker/host-places.mjs placesOf keys it: named from our directory or waiting.
 def host_list(key):
-    return [r for r in (A.get(key) or []) if isinstance(r, dict) and (r.get('p') or '').strip()]
+    return [r if (r.get('p') or '').strip() else {**r, 'p': 'gid:' + str(r['gid'])} for r in (A.get(key) or [])
+            if isinstance(r, dict) and ((r.get('p') or '').strip() or (r.get('gid') and not str(r['gid']).startswith('r:')))]
 # The one list of kinds (engine/src/kinds.json): a place's kind gives its icon, its type in six languages (no translation),
 # and for Things to do its quick filter and "Great for kids".
 KINDS = json.loads((ROOT / 'engine/src/kinds.json').read_text())
-no_name = []   # cards the host kept whose place has no name of ours yet: left out until it has one
-def host_items(rows, filters=False):   # filters: Things to do (kinds of todo, with their filters); else the kinds of eat
+# A card or a picked row whose place has no name of ours yet is not published nameless and does not vanish either: it waits
+# in its file's "unnamed" list (never read by the guide), which the editor shows under "Needs you" for the host to name it.
+no_name = []
+def host_items(rows, filters=False, unnamed=None):   # filters: Things to do (kinds of todo, with their filters); else the kinds of eat
     kinds, items = KINDS['todo' if filters else 'eat'], []
     for r in rows:
-        key = r['p'].strip(); card = key.startswith('gid:')   # gid:<id>: a card kept in the swipe deck, only its Google id is known
+        key = r['p'].strip(); card = key.startswith('gid:')   # gid:<id>: a card kept in the swipe deck, or a row picked with no name: only its Google id is known
         g = GEO.get(key) or ({} if card else resolve_short(key))
-        if card and not (g.get('name') or '').strip(): no_name.append(key); continue
+        waits = card and not (g.get('name') or '').strip()
         # Our name for the place (geocode.json: the host's words tidied, or our record's for a card), else the typed words.
-        nm = (g.get('name') or '').strip() or ((place_name_from(key) if key.startswith('http') else key))
+        nm = '' if waits else (g.get('name') or '').strip() or ((place_name_from(key) if key.startswith('http') else key))
         isurl = key.startswith('http'); ismaps = bool(re.search(r'google\.[a-z.]+/maps|maps\.app\.goo\.gl|goo\.gl/maps', key))
         kind = g.get('kind') if g.get('kind') in kinds else None; K = kinds.get(kind) or {}
         # Located by the worker (geocode.json): position, distance, town, kind and the facts we keep. Not found: no position
         # (nomap: no pin, no distance, directions by name; the house's point only satisfies the content check), no kind, no
-        # warning (the host vouches for their own places).
-        it = {'id': re.sub(r'[^a-z0-9]+', '-', nm.lower()).strip('-')[:40] or 'place', 'name': {l: nm for l in LANGS},
-              **({'type': {l: K['name'].get(l) or K['name']['en'] for l in LANGS}, 'icon': kind} if kind else {}), 'town': g.get('town') or town, 'place': g.get('place', ''),
+        # warning (the host vouches for their own places), and no town: the house's would be said as the place's (Barcelona
+        # in the house's village), so it is empty, and Google Maps searches for the host's words alone.
+        found = bool(g.get('lat') is not None or g.get('gid'))
+        gid = g.get('gid') or (key[4:] if card else None)
+        it = {'id': (re.sub(r'[^a-z0-9]+', '-', nm.lower()).strip('-')[:40] if nm else 'place-' + re.sub(r'[^a-z0-9]+', '-', str(gid).lower()).strip('-')[:30]) or 'place',
+              **({'name': {l: nm for l in LANGS}} if nm else {}),
+              **({'type': {l: K['name'].get(l) or K['name']['en'] for l in LANGS}, 'icon': kind} if kind else {}), 'town': g.get('town') or (town if found else ''), 'place': g.get('place', ''),
               'lat': g.get('lat', args.lat), 'lng': g.get('lng', args.lng), 'km_from_house': g.get('km'),
               'tags': ['kidsfun'] if filters and K.get('kids') else [], **({'group': K['group']} if filters and K.get('group') else {}),
               'flags': [], 'hostPick': True,
-              **({'gid': g['gid']} if g.get('gid') else {}), **({'pos': g['pos']} if g.get('pos') else {}), **({'always': True} if g.get('always') else {}), **({} if g.get('lat') else {'nomap': True}),
-              'gmaps': g.get('gmaps') or (key if ismaps else 'https://www.google.com/maps/search/?api=1&query=' + __import__('urllib.parse').parse.quote_plus(nm + ' ' + (g.get('town') or town)))}
+              **({'gid': gid} if gid else {}), **({'pos': g['pos']} if g.get('pos') else {}), **({'always': True} if g.get('always') else {}), **({} if g.get('lat') else {'nomap': True}),
+              'gmaps': g.get('gmaps') or (key if ismaps else 'https://www.google.com/maps/search/?api=1&query=' + __import__('urllib.parse').parse.quote_plus(nm or f"{args.lat},{args.lng}")
+                                          + ('&query_place_id=' + __import__('urllib.parse').parse.quote_plus(gid) if gid else ''))}
         if (r.get('c') or '').strip(): it['description'] = L(r['c'].strip())   # the host's own words; no comment, no description
         if isurl and not ismaps: it['url'] = key
         elif g.get('url'): it['url'] = g['url']   # its own website, from our sources
@@ -720,10 +730,18 @@ def host_items(rows, filters=False):   # filters: Things to do (kinds of todo, w
             if isurl and not ismaps: (fl.get('from') or {}).pop('url', None)
             if 'season' not in it: (fl.get('from') or {}).pop('season', None)
             if fl.get('from'): it['filled'] = fl
+        if waits:
+            no_name.append(key)
+            if unnamed is not None: unnamed.append(it)
+            continue
         items.append(it)
     return items
+UNNAMED_DOC = ' unnamed: places the host picked or kept whose name nobody has given yet (no words of theirs, none in our directory): never shown to guests; the editor asks the host to name each one, which moves it into items.'
 def write_host_places(rows, file):
-    (SITE / f'content/{file}.json').write_text(json.dumps({'_doc': "The host's own list, written by generate-site.py. No researched places are added here. season: {from, to} as MM-DD, a place open only part of the year with no hours of ours (no schedule).", 'items': host_items(rows)}, ensure_ascii=False, indent=1))
+    waiting = []
+    doc = {'_doc': "The host's own list, written by generate-site.py. No researched places are added here. season: {from, to} as MM-DD, a place open only part of the year with no hours of ours (no schedule)." + UNNAMED_DOC, 'items': host_items(rows, unnamed=waiting)}
+    if waiting: doc['unnamed'] = waiting
+    (SITE / f'content/{file}.json').write_text(json.dumps(doc, ensure_ascii=False, indent=1))
 fav, night = host_list('favEat'), host_list('favNight')
 if fav: write_host_places(fav, 'restaurants')
 if night: write_host_places(night, 'nightlife')
@@ -748,19 +766,21 @@ turned_down = {plain(s['name']) for s in swipes if s.get('d') == 'no' and (s.get
 todo_file = SITE / 'content/todo.json'
 if todo_file.exists() or kept or added:
     todo_doc = json.loads(todo_file.read_text()) if todo_file.exists() else {'_doc': "The host's places, written by generate-site.py."}
-    found, picks = [x for x in todo_doc.get('items') or [] if plain(en_name(x)) not in turned_down], []
-    for it in host_items(kept + added, True):
+    found, picks, waiting = [x for x in todo_doc.get('items') or [] if plain(en_name(x)) not in turned_down], [], []
+    for it in host_items(kept + added, True, waiting):
         key = plain(en_name(it))
         twin = next((x for x in found if len(key) >= 5 and (key in plain(en_name(x)) or plain(en_name(x)) in key)), None)
         if twin:
             found.remove(twin); it = {**twin, 'hostPick': True, **({'description': it['description']} if it.get('description') else {})}
         if not any(plain(en_name(x)) == plain(en_name(it)) for x in picks): picks.append(it)
     todo_doc['items'] = [{k: v for k, v in x.items() if k not in ('_card', '_google')} for x in picks]
+    if waiting: todo_doc['unnamed'] = waiting; todo_doc['_doc'] = (todo_doc.get('_doc') or '') + ('' if UNNAMED_DOC in (todo_doc.get('_doc') or '') else UNNAMED_DOC)
+    else: todo_doc.pop('unnamed', None)
     todo_file.write_text(json.dumps(todo_doc, ensure_ascii=False, indent=1))
     (SITE / 'docs').mkdir(parents=True, exist_ok=True)
     for x in found: x.setdefault('id', re.sub(r'[^a-z0-9]+', '-', en_name(x).lower()).strip('-')[:40] or 'place'); x.pop('_card', None)
     (SITE / 'docs/more-places.json').write_text(json.dumps(found, ensure_ascii=False, indent=1))
-if no_name: print(f'{len(no_name)} kept cards have no name yet')
+if no_name: print(f'{len(no_name)} places have no name yet: waiting in the editor for the host to name them')
 
 # Sections, in Home order. Researched ones start as "soon" until their content file has items.
 def has_items(f):

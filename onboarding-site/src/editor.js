@@ -243,7 +243,7 @@ function plFound(p, sec, it) {
   // Its facts being looked up (job place-facts, below): one calm line in place of the lines, the form open or not. Then, at
   // the foot of the lines: where they came from, the search that did not work, or "Look for its details".
   const j = it.id ? CM.pf[it.id] : null, none = j && j.status === 'done' && !(j.result || {}).entry, failed = j && j.status === 'failed';
-  const empty = none ? `<p class="pl-note">Nothing found for this place. Guests still get the map pin and the Google Maps button.</p>${pfWebHTML(p)}`
+  const empty = none ? `<p class="pl-note">Nothing found for this place. Guests still get the map pin and the Google Maps button.</p>${String(edShown(it.name || {})).trim() ? pfWebHTML(p) : ''}`
     : failed ? '' : '<p class="pl-note">Nothing found for this place yet. Guests still get the map pin and the Google Maps button.</p>';
   const foot = failed ? `<p class="pl-foot pl-note"><span>The search did not work.</span>${j.message ? ` <span>${esc(j.message)}</span>` : ''} <button class="pl-more" type="button" data-pfagain="${p}">Try again</button></p>`
     : plFrom(it) || (pfCan(it, j) ? `<p class="pl-foot"><button class="pl-more" type="button" data-pflook="${p}">Look for its details</button></p>` : '');
@@ -368,8 +368,8 @@ function cPlace(base, it, i) {
   const rest = Object.keys(it).filter(k => !C_SKIP.has(k) && !PL_DONE.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'))).sort((a, b) => ord(a) - ord(b));
   const ty = plType(sec, it), town = typeof it.town === 'string' ? it.town : '';   // a line that already names the town does not get it twice
   const meta = [ty, town && !ty.toLowerCase().includes(town.toLowerCase()) ? town : '', cKm(it), (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
-  const { find, pin, first } = cWhere(p, it);
-  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${cf('Name', `${p}/name`, it.name, { i18n: true })}${cf('Your comment', `${p}/description`, it.description, { long: true, i18n: true })}</div>
+  const { find, pin, first } = cWhere(p, it), nameless = !String(edShown(it.name || {})).trim() && !!it.gid;   // found on Google, no name yet: asked for
+  return cCard(p, nameless ? 'No name yet' : cName(it), meta, `<div class="grid">${first ? find : ''}${cf('Name', `${p}/name`, it.name, { i18n: true, ...(nameless ? { ph: 'Now type its name' } : {}) })}${cf('Your comment', `${p}/description`, it.description, { long: true, i18n: true })}</div>
     ${cSwitch(`data-cfav="${p}"`, 'Our favourite', !!it.topPick, 'Guests see it marked Unmissable. Keep it for two or three places.')}
     ${plFound(p, sec, it)}${CM.chg.has(p) ? plForm(p, sec, it, rest, (first ? '' : find) + pin) : ''}
     ${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this place</button></div>`, null, plTile(sec, it), plHidNote(it));
@@ -541,8 +541,12 @@ const edKm = (a, b, c, d) => { const R = 6371, r = x => x * Math.PI / 180, dl = 
 function edUpdateKm(ip) { const it = edGet(edC(), ip), h = edF().house || {}; if (!it || !h.lat || !it.lat) return; if ('km_from_house' in it) it.km_from_house = edKm(h.lat, h.lng, it.lat, it.lng); if ('km' in it) it.km = edKm(h.lat, h.lng, it.lat, it.lng); }
 // "Find it on Google": the place picked from what Google suggests as the host types (psPick in start.js), read by its id
 // (/api/places?id=). Google's terms: only its id is kept for good, and its position for 30 days (pos: from and the day, so
-// the monthly run renews it), with the distance and the Google Maps link made from them. The name stays the host's: a
-// place with none takes the words they typed to find it. Google's name is said for this session only (CM.gfind, cItem).
+// the monthly run renews it), with the distance and the Google Maps link made from them. The name stays the host's: a place
+// that has one keeps it (only the pin moves); a place with none takes the words typed that name it (placeNameFrom, the
+// builder's rule: "La Locanda dei Sapori El Vendrell" gives "La Locanda dei Sapori"), and when they do not ("restaurant La
+// Bisbal del Penedès") its Name field is left empty and asked for, the place found said just above it. Its facts are looked
+// up at once all the same: with no name, the lookup names it from our directory if the host has not meanwhile.
+// Google's name is said for this session only (CM.gfind, cItem).
 const gPos = () => ({ from: 'google', at: new Date().toISOString().slice(0, 10) });
 async function cmFindById(p, id, s = {}, typed = '') {
   const it = edGet(edC(), edPath(p)), h = edF().house || {};
@@ -551,11 +555,14 @@ async function cmFindById(p, id, s = {}, typed = '') {
     const d = await fetch(`/api/places?id=${encodeURIComponent(id)}&lat=${h.lat}&lng=${h.lng}`).then(r => r.json());
     const f = d.ok && d.place;
     if (!f) { CM.gfind[p] = d.ok ? 'Not found on Google. Paste its Google Maps link below.' : d.message || 'Google could not be reached.'; return render(); }
-    if (!edShown(it.name || {}) && psWords(typed)) it.name = L6(psWords(typed));
-    const words = edShown(it.name || {}) || psWords(typed);
+    const own = psWords(placeNameFrom(typed, s));
+    if (!edShown(it.name || {}) && own) it.name = L6(own);
+    const words = edShown(it.name || {});
+    if (!words) CM.askName = p;   // the Name field is focused after this render, with its placeholder
     Object.assign(it, { gid: f.id, lat: f.lat, lng: f.lng, pos: gPos(), km_from_house: f.km, gmaps: gmLink(words, f.id) }); delete it.nomap;
     CM.gfind[p] = { name: s.name || '', where: s.where || '', km: f.km, gid: f.id, words };
     cmQueue(); render();
+    if (CM.askName === p) setTimeout(() => { const x = document.getElementById(cmId(p + '/name')); if (x) { x.focus({ preventScroll: true }); x.scrollIntoView({ block: 'center' }); } }, 0);   // centred: the bottom bar would cover it at the foot of a phone
   } catch (e) { CM.gfind[p] = 'Google could not be reached. Try again.'; return render(); }
   if (plSec(p)) pfStart(p);   // a place to eat, a night out or an attraction: its facts are looked up at once
 }
@@ -575,7 +582,7 @@ const pfMark = id => { try { localStorage.setItem('cmpf:' + id, '1'); } catch (e
 // The place's path now from its id (the host may have moved or deleted it meanwhile).
 function pfPath(id) { for (const base of Object.keys(PL_SEC)) { const i = (edGet(edC(), edPath(base)) || []).findIndex(x => x && x.id === id); if (i >= 0) return `${base}/${i}`; } return null; }
 // "Look for its details": a place on Google with no hours, phone or website and nothing filled, and no lookup of its own yet.
-const pfCan = (it, j) => CM.pfLoaded === true && !j && !!it.gid && !!it.id && !it.filled && !it.always && !(it.schedule || []).length && !it.phone && !it.url && !!String(edShown(it.name || {})).trim();
+const pfCan = (it, j) => CM.pfLoaded === true && !j && !!it.gid && !!it.id && !it.filled && !it.always && !(it.schedule || []).length && !it.phone && !it.url;
 function pfWaitHTML(id) {
   const p = progOf(CM.pf[id], 'facts') || { pct: 2 };
   return `<div class="pl-wait" data-prog="pf:${esc(id)}"><p class="pl-note">Looking for its website and hours…</p><div class="cm-prog" role="progressbar" aria-label="Looking for its website and hours" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p.pct)}"><i style="width:${p.pct.toFixed(1)}%"></i></div><p class="cm-progt" hidden translate="no"></p></div>`;   // the bar's own words stay unsaid: the line says it
@@ -602,7 +609,7 @@ function pfLoad() {
 async function pfStart(p, website = '') {
   if (CM.pfLoaded !== true) await pfLoad();   // one may be running for it already (another tab, before a reload)
   const it = edGet(edC(), edPath(p)), sec = plSec(p), words = it ? String(edShown(it.name || {})).trim() : '';
-  if (!it || !sec || !it.id || !it.gid || !words || pfBusy(CM.pf[it.id])) return;
+  if (!it || !sec || !it.id || !it.gid || pfBusy(CM.pf[it.id])) return;   // no name: looked up by its id, named from our directory (worker/place-job.mjs)
   const j = CM.pf[it.id] = { status: 'queued', since: Date.now(), words, gid: it.gid, website };
   pfRefresh(it.id);
   try {
@@ -653,6 +660,7 @@ function pfApply(id) {
   if (!e.pos && typeof e.lat === 'number' && typeof e.lng === 'number') { it.lat = e.lat; it.lng = e.lng; if (e.km != null) it.km_from_house = e.km; else edUpdateKm(edPath(p)); delete it.pos; delete it.nomap; }
   if (typeof e.name === 'string' && e.name.trim() && j.words && edShown(it.name || {}) === j.words) {
     if (edIs18(it.name)) { for (const l of Object.keys(it.name)) if (it.name[l] === j.words) it.name[l] = e.name; } else it.name = e.name; }
+  else if (typeof e.name === 'string' && e.name.trim() && !j.words && !String(edShown(it.name || {})).trim()) { it.name = L6(e.name.trim()); if (it.gid) it.gmaps = gmLink(e.name.trim(), it.gid); if (CM.askName === p) CM.askName = null; }   // looked up with no name, still none: our directory's
   const from = Object.fromEntries(Object.entries((e.filled || {}).from || {}).filter(([k]) => took.includes(k)));
   if (Object.keys(from).length) { const o = it.filled && it.filled.from ? it.filled : null, web = Object.values(from).some(v => v === 'site' || v === 'search');
     it.filled = { at: [o && o.at, e.filled.at].filter(Boolean).sort().pop(), from: { ...(o ? o.from : {}), ...from }, ...(web && e.filled.page ? { page: e.filled.page } : o && o.page ? { page: o.page } : {}), ...(it.filled && it.filled.readAt ? { readAt: it.filled.readAt } : {}) }; }
@@ -835,10 +843,33 @@ function edAddTile(icon) {
 function cmPlaces(path, what) {
   const arr = edGet(edC(), edPath(path)) || [];
   if (PL_SEC[path] && CM.pfLoaded !== true) pfLoad();   // lookups of a place's facts still running, or done while away
-  return `${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
+  return `${PL_SEC[path] ? cmUnnamed(path) : ''}${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
     <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
     <p class="hint">A new ${esc(what)} has no pin yet: find it on Google, or paste its Google Maps link. The distance from the house follows the pin.</p>`;
+}
+
+// Places the build could not name (generate-site.py, "unnamed" beside the file's items: picked on Google or kept in the deck,
+// no words of the host that name them, none in our directory). Never shown to guests, never published nameless: each one
+// waits here, first in its step and under "Needs you", with what is known of it (matched on Google Maps by its id, the
+// distance, the host's comment) and a Name field. A name moves it into the list, open, and its facts are looked up.
+const unPath = path => path.replace(/\/items$/, '/unnamed');
+const cmUnnamedOf = (c, path) => { const f = (c.files || {})[path.split('/')[1]] || {}; return Array.isArray(f.unnamed) ? f.unnamed : []; };
+function cmUnnamed(path) {
+  const arr = cmUnnamedOf(edC(), path), base = unPath(path); if (!arr.length) return '';
+  return `<section class="cm-unn" aria-label="Waiting for a name"><b>Waiting for a name</b><p class="hint">Our open directory has no name for ${arr.length > 1 ? 'these places' : 'this place'}. Guests see ${arr.length > 1 ? 'each one' : 'it'} once you name it.</p>
+    ${arr.map((it, i) => { const q = `${base}/${i}`, c = edShown(it.description || {}), km = cKm(it);
+      return `<div class="cm-unr"><p class="cm-unl"><span aria-hidden="true">✓</span> Matched on <a href="${esc(it.gid ? gmLink('', it.gid) : it.gmaps || '')}" target="_blank" rel="noopener" translate="no">Google Maps</a>${km ? `<span class="pl-nw" translate="no"> · ${esc(km)}</span>` : ''}${c ? `<span class="cm-unc" translate="no">${esc(c)}</span>` : ''}</p>
+        <input type="text" id="${cmId(q + '/n')}" data-unname="${esc(q)}" placeholder="Type its name" aria-label="Name of this place" autocomplete="off" enterkeyhint="done"><button class="cm-x" type="button" data-cdel="${esc(q)}" data-now="1" aria-label="Delete this place">×</button></div>`; }).join('')}</section>`;
+}
+function cmUnname(t) {
+  const v = t.value.trim(), q = t.dataset.unname, ip = edPath(q), a = edGet(edC(), ip.slice(0, -1)), it = a && a[ip[ip.length - 1]]; if (!v || !it) return;
+  a.splice(ip[ip.length - 1], 1);
+  const f = edGet(edC(), ip.slice(0, -2)); if (f && !a.length) delete f.unnamed;
+  const items = f.items = f.items || [], p = `${ip.slice(0, -2).join('/')}/items/${items.length}`;
+  it.name = L6(v); if (it.gid) it.gmaps = gmLink(v, it.gid); if (!it.id || items.some(x => x.id === it.id)) it.id = 'custom-' + Date.now().toString(36);
+  items.push(it); CM.open.add(p); cmQueue(); render();
+  if (!it.filled) pfStart(p);
 }
 
 /* --- Getting around: taxis, then stations and stops, on their own page (content/transport.json, section kind "transport") ---
@@ -1307,7 +1338,7 @@ function cmRemember(r) { try { const o = JSON.parse(localStorage.getItem(CM_LAST
 // For a guide that exists this is the Wi-Fi: rubbish and contacts pages only exist once they are filled.
 // A step with an entry that has words but no name needs the host too: Publish waits for it (cmNameless).
 const CM_NEEDS = { wifi: c => { const w = (c.private || {}).wifi || {}; return !w.password || !(w.networks || []).some(n => n.ssid); } };
-for (const id of ['todo', 'restaurants', 'nightlife', 'markets', 'events', 'tiles', 'contacts', 'transport', 'housepage']) CM_NEEDS[id] = c => cmNameless(c, id).length > 0;
+for (const id of ['todo', 'restaurants', 'nightlife', 'markets', 'events', 'tiles', 'contacts', 'transport', 'housepage']) CM_NEEDS[id] = c => cmNameless(c, id).length > 0 || cmUnnamedOf(c, `files/${id}/items`).length > 0;   // places waiting for a name (cmUnnamed) too, without stopping Publish: guests do not see them
 const cmNeeds = m => !!(CM_NEEDS[m.id] && CM_NEEDS[m.id](edC()));
 function cmStepList(cur) {
   const item = m => { const ch = cmChanged(m); return `<a class="si s-${ch ? 'chk' : 'new'}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${ch ? STATUS_ICON.chk : I[m.icon] || ''}</span><span class="st">${esc(m.title)}</span><span class="sl">${ch ? 'Changed' : cmNeeds(m) ? 'Needs you' : ''}</span></a>`; };
@@ -1652,6 +1683,7 @@ document.addEventListener('change', e => {
   if (!inEd(t)) return;
   if (t.dataset.cseas) return plSeasonSet(t);
   if (t.dataset.cweek) { const r = edGet(edC(), edPath(t.dataset.cweek)); if (!r) return; if (+t.value) r.week_of_month = +t.value; else delete r.week_of_month; return cmQueue(); }   // a market's "Which weeks"
+  if (t.dataset.unname) return cmUnname(t);   // a place waiting for a name, named
   if (t.dataset.pfweb) {   // nothing found, and the host knows its website: it is theirs, and read for the hours
     const v = t.value.trim(), u = pfUrl(v), it = edGet(edC(), edPath(t.dataset.pfweb)); if (!v || !it) return;
     if (!u) return toast('That does not look like a web address.');
@@ -1973,6 +2005,12 @@ function cmInit() {
 .pl-ls>.pl-src,.pl-ls>.pl-foot,.pl-ls>.pl-web{grid-column:1/-1}
 .pl-src{margin:1px 0 0;color:var(--muted);font-size:13px;line-height:1.4}
 .pl-src a{color:inherit;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+.cm-unn{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:var(--r-s);background:var(--sunk);box-shadow:inset 3px 0 0 var(--warn)}   /* places waiting for a name (cmUnnamed) */
+.cm-unn>b{font-size:16px}.cm-unn>.hint{margin:-4px 0 0}
+.cm-unr{display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:6px 8px;align-items:center;padding-top:10px;border-top:1px solid var(--line)}
+.cm-unl{grid-column:1/-1;margin:0;font-size:14px;line-height:1.4;color:var(--muted)}
+.cm-unl a{color:inherit;white-space:nowrap}
+.cm-unc{display:block;color:var(--ink);overflow-wrap:anywhere}
 .pl-foot{margin:0;display:flex;flex-wrap:wrap;align-items:center;column-gap:6px}
 .pl-more{border:0;background:none;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:2px;cursor:pointer;padding:0;min-height:32px}
 .pl-wait{display:flex;flex-direction:column;gap:8px;padding:4px 0 2px}

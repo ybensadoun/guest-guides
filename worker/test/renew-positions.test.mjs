@@ -107,3 +107,10 @@ test('townPoint: a town or village of that name near the point, never another ki
   assert.equal(await townPoint('El Vendrell', { lat: 41.2, lng: 1.5 }, { gaz: async () => { throw new Error('down'); }, log: () => {} }), null);
   assert.equal(await townPoint('', { lat: 41.2, lng: 1.5 }, { gaz }), null); assert.equal(asked.length, 1);   // no name: GeoNames not asked
 });
+
+// A place waiting for a name (generate-site.py's "unnamed": never shown to guests) still holds Google's position: renewed
+// like any other, so it is never kept past 30 days.
+test('dueOf: a place waiting for a name is renewed too', () => {
+  const F = { house: { lat: 41.2, lng: 1.5 }, todo: { items: [], unnamed: [{ id: 'place-g7', gid: gid(7), lat: 41.3, lng: 1.55, km_from_house: 19, pos: { ...old } }] } };
+  assert.deepEqual(dueOf(F, { days: 20, now }).map(x => [x.file, x.key, x.it.id, x.gid]), [['todo', 'unnamed', 'place-g7', gid(7)]]);
+});

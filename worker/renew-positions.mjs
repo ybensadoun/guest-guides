@@ -32,10 +32,11 @@ const age = (at, now) => /^\d{4}-\d{2}-\d{2}$/.test(String(at || '')) ? Math.rou
 const kmTo = (house, lat, lng) => Math.max(1, Math.round(hav(house.lat, house.lng, lat, lng) * 1.3));
 
 // Every list of places a guide's files hold: items (places to eat, things to do, nightlife, home tiles...), stations
-// (Getting around), markets. [file, key, list].
+// (Getting around), markets, and the places waiting for a name (unnamed, generate-site.py: never shown, but their position
+// is Google's all the same, so it is kept no longer than any other). [file, key, list].
 export function listsOf(files) {
   const out = [];
-  for (const [file, F] of Object.entries(files || {})) if (F && typeof F === 'object') for (const key of ['items', 'stations', 'markets']) if (Array.isArray(F[key])) out.push([file, key, F[key]]);
+  for (const [file, F] of Object.entries(files || {})) if (F && typeof F === 'object') for (const key of ['items', 'stations', 'markets', 'unnamed']) if (Array.isArray(F[key])) out.push([file, key, F[key]]);
   return out;
 }
 // A place's Google id: its own, or for a home tile pinned from a place (from: that place's id), the place's.

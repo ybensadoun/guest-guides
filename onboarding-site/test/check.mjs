@@ -573,6 +573,59 @@ try {
     await p.locator('#pl_favEat .pl-row >> nth=1').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'place-matched-360.png') });
     ok('place lookup, after a reload: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // ---- The name a pick keeps (11 Nov 2026, found on the live maker: "La Locanda dei Sapori El Vendrell" became the name, town
+  // included, and "restaurant La Bisbal del Penedès", picked as Restaurant la Societat, its name). Only the typed words that
+  // name the place are kept (placename.js); a search phrase keeps none, and the empty field asks for the name, the place found
+  // said under it. Left empty, Review says so. At 1280 px (phone beside) and 360 px. ----
+  const PN_LOC = { id: 'g-loc', name: 'Restaurant La Locanda dei Sapori', where: 'Carrer de Mar, El Vendrell, Spain', km: 9 }, PN_SOC = { id: 'g-soc', name: 'Restaurant la Societat', where: 'Carrer Major, La Múnia, Spain', km: 18 };
+  const pnPlaces = route => { const q = new URL(route.request().url()).searchParams, t = q.get('suggest') || '';
+    return json(route, q.get('id') ? { ok: true, place: { id: q.get('id'), lat: q.get('id') === 'g-soc' ? 41.33 : 41.19, lng: q.get('id') === 'g-soc' ? 1.6 : 1.53, km: q.get('id') === 'g-soc' ? 18 : 9 } }
+      : t ? { ok: true, places: /locanda/i.test(t) ? [PN_LOC] : /bisbal|societat/i.test(t) ? [PN_SOC] : [PN_LOC, PN_SOC] } : { ok: true, enabled: true }); };
+  // What in a row (or a card) touches something else, sticks out of it, and a page wider than the screen.
+  const rowClash = (p, sel, parts) => p.evaluate(([sel, parts]) => { const r0 = document.querySelector(sel); if (!r0) return ['no row'];
+    const cr = r0.getBoundingClientRect(), els = parts.flatMap(x => [...r0.querySelectorAll(x)]).filter(e => e.getClientRects().length && getComputedStyle(e).display !== 'none'), r = els.map(e => e.getBoundingClientRect()), bad = [];
+    const nm = e => (e.getAttribute('placeholder') || e.textContent || e.tagName).trim().replace(/\s+/g, ' ').slice(0, 24);
+    els.forEach((e, i) => { if (r[i].right > cr.right + 0.5 || r[i].left < cr.left - 0.5) bad.push('outside: ' + nm(e)); });
+    for (let i = 0; i < els.length; i++) for (let j = i + 1; j < els.length; j++) { if (els[i].contains(els[j]) || els[j].contains(els[i])) continue;
+      const a = r[i], b = r[j]; if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1) bad.push(`${nm(els[i])} / ${nm(els[j])}`); }
+    if (document.documentElement.scrollWidth > innerWidth) bad.push('sideways scroll');
+    return bad; }, [sel, parts]);
+  // A placeholder shorter than its field (not cut).
+  const phFits = (p, sel) => p.$eval(sel, e => { const c = document.createElement('canvas').getContext('2d'), s = getComputedStyle(e); c.font = s.font; return c.measureText(e.placeholder).width <= e.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight); }).catch(() => false);
+  for (const [w, h, tag] of [[1280, 860, '1280 px'], [360, 780, '360 px']]) {
+    const { ctx, p, errors } = await open(browser, B, w, h);
+    await ctx.route('**/api/places**', pnPlaces);
+    await p.goto('http://editor.test/#favourites'); await ready(p);
+    const rows = '#pl_favEat .pl-row', field = n => `${rows}:nth-child(${n}) input`, at = n => `${rows}:nth-child(${n}) .pl-at`;
+    const pick = async (n, words) => { await p.locator(field(n)).click(); await p.locator(field(n)).fill(''); await p.locator(field(n)).pressSequentially(words, { delay: 15 });
+      await p.waitForSelector(`${rows}:nth-child(${n}) .pl-sug button`, { timeout: 3000 }).catch(() => {}); await p.waitForTimeout(150); await p.click(`${rows}:nth-child(${n}) .pl-sug button`); await p.waitForTimeout(250); };
+    await p.click('[data-pladd="favEat"]'); await p.waitForTimeout(150);
+    const n1 = await p.$$eval(rows, r => r.length);
+    await pick(n1, 'La Locanda dei Sapori El Vendrell');
+    ok(`name of a pick, builder, ${tag}: the name typed with its town keeps the name, as typed, and the town goes`, (await p.inputValue(field(n1))) === 'La Locanda dei Sapori' && /Restaurant La Locanda dei Sapori · Carrer de Mar, El Vendrell, Spain · 9 km/.test(await p.textContent(at(n1)).catch(() => '')), await p.inputValue(field(n1)));
+    await p.$eval(`${rows}:nth-child(${n1})`, e => e.scrollIntoView({ block: 'center' })); await p.waitForTimeout(600); await p.screenshot({ path: join(SHOTS, `builder-name-kept-${w}.png`) });
+    await p.click('[data-pladd="favEat"]'); await p.waitForTimeout(150);
+    const n2 = n1 + 1; await pick(n2, 'restaurant La Bisbal del Penedès');
+    const asked = await p.evaluate(([f, a]) => { const i = document.querySelector(f), l = document.querySelector(a); return { value: i.value, focused: document.activeElement === i, ph: i.placeholder, line: l && l.textContent.replace(/\s+/g, ' ').trim(), seen: !!l && l.getBoundingClientRect().bottom <= innerHeight && l.getBoundingClientRect().top >= 0, below: !!l && l.getBoundingClientRect().top >= i.getBoundingClientRect().bottom }; }, [field(n2), at(n2)]);
+    ok(`name of a pick, builder, ${tag}: a search phrase is not kept: the field is empty, focused, says what to do, and the place found stays in view under it`, asked.value === '' && asked.focused && asked.ph === 'Now type its name' && /Restaurant la Societat · Carrer Major, La Múnia, Spain · 18 km Google Maps/.test(asked.line || '') && asked.seen && asked.below, JSON.stringify(asked));
+    ok(`name of a pick, builder, ${tag}: nothing in the row overlaps, nothing sticks out, the placeholder is whole`, !(await rowClash(p, `${rows}:nth-child(${n2})`, ['input', '.pl-at', 'textarea', '.x', '.pl-sug:not([hidden])'])).length && await phFits(p, field(n2)), (await rowClash(p, `${rows}:nth-child(${n2})`, ['input', '.pl-at', 'textarea', '.x'])).join('; '));
+    await p.$eval(`${rows}:nth-child(${n2})`, e => e.scrollIntoView({ block: 'center' })); await p.waitForTimeout(600); await p.screenshot({ path: join(SHOTS, `builder-name-asked-${w}.png`) });
+    await p.waitForTimeout(1200);
+    { const A = await stored(p), r1 = (A.favEat || []).find(x => x.gid === 'g-loc') || {}, r2 = (A.favEat || []).find(x => x.gid === 'g-soc') || {}, all = JSON.stringify(A);
+      ok(`name of a pick, builder, ${tag}: the rows keep the host's name or none, and Google's id; never the search phrase, never Google's name`, r1.p === 'La Locanda dei Sapori' && r2.p === '' && !/Bisbal del Pened|Restaurant la Societat|Restaurant La Locanda|Carrer/.test(all), JSON.stringify([r1, r2])); }
+    await p.click(`${rows}:nth-child(${n2}) textarea`); await p.waitForTimeout(250);
+    ok(`name of a pick, builder, ${tag}: left empty, the row says so under the place found, once the host moves on`, /No name yet: type it, or we look it up in an open directory\./.test(await p.textContent(at(n2)).catch(() => '')) && await p.isVisible(`${at(n2)} .pl-nn`));
+    await go(p, '#send'); await p.waitForTimeout(300);
+    const rv = await p.$$eval('.rv-nn', els => els.map(e => ({ t: e.textContent.replace(/\s+/g, ' ').trim(), links: [...e.querySelectorAll('a')].map(a => a.getAttribute('href')) }))).catch(() => []);
+    ok(`name of a pick, builder, ${tag}: Review lists the places with no name, in one sentence, with a link to their step`, rv.length === 1 && /^Places with no name yet\s*We look their names up in an open directory; any we do not find waits in your editor for you to name it\./.test(rv[0].t) && rv[0].links.join() === '#favourites', JSON.stringify(rv));
+    ok(`name of a pick, builder, ${tag}: Review, nothing overlaps`, !(await rowClash(p, '.rv-nn', ['b', '.hint', 'a'])).length, (await rowClash(p, '.rv-nn', ['b', '.hint', 'a'])).join('; '));
+    await p.$eval('.rv-nn', e => e.scrollIntoView({ block: 'center' })).catch(() => {}); await p.waitForTimeout(300); await p.screenshot({ path: join(SHOTS, `review-nameless-${w}.png`) });
+    await go(p, '#favourites'); await p.waitForTimeout(250);
+    await p.locator(field(n2)).click(); await p.locator(field(n2)).pressSequentially('Cal Societat', { delay: 15 }); await p.keyboard.press('Escape'); await p.waitForTimeout(1300);
+    { const A = await stored(p), r2 = (A.favEat || []).find(x => x.p === 'Cal Societat') || {};
+      ok(`name of a pick, builder, ${tag}: the name typed when asked keeps the place picked`, r2.gid === 'g-soc' && !!(await p.$(`${at(n2)}.ok`)), JSON.stringify(r2)); }
+    ok(`name of a pick, builder, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // ---- Rooms and photos: each room its own card, as guests see it, in the host's order; the phone follows (Yohann, 30 Oct 2026) ----
   { const rooms = [['Salón', 'Living room'], ['Salón', 'Living room'], ['Cocina completa', 'Kitchen'], ['Dormitorio 1', 'Bedroom'], ['Dormitorio 2', 'Bedroom'], ['Zona para hacer la colada muy larga', 'Laundry'], ['Piscina', 'Pool']];
     const G = { ...B, answers: { ...B.answers, rooms: undefined, welcome: 'A bright house with a pool.', sleeping: 'Bedroom 1: king bed\nBedroom 2: double bed',
@@ -917,21 +970,87 @@ try {
     const card = 'details.cmi[open]:has([data-gsp])', field = card + ' [data-gsp]';
     ok('editor, finding a place: one search field, no second button', !!(await p.$(field)) && !(await p.$('[data-gfind]')));
     ok('editor, finding a place: a new place starts with it, above the name it will fill in', await p.evaluate(sel => { const f = document.querySelector(sel), n = f.closest('details').querySelector('input[data-p$="/name"]'); return !!n && f.getBoundingClientRect().top < n.getBoundingClientRect().top; }, field));
-    await p.locator(field).pressSequentially('llul de ll', { delay: 20 });
+    await p.locator(field).pressSequentially('llul de llebre', { delay: 20 });
     await p.waitForSelector(card + ' .pl-sug button', { timeout: 3000 }).catch(() => {});
     await p.locator(card + ' .pl-sug').scrollIntoViewIfNeeded().catch(() => {}); await p.screenshot({ path: join(SHOTS, 'editor-place-lookup-360.png') });
     await p.click(card + ' .pl-sug button').catch(() => {});
-    await p.waitForFunction(() => [...document.querySelectorAll('details.cmi')].some(d => /Llul de Ll/.test(d.querySelector('summary').textContent)), null, { timeout: 5000 }).catch(() => {});
-    const got = await p.evaluate(() => { const d = [...document.querySelectorAll('details.cmi')].find(x => /Llul de Ll/.test(x.querySelector('summary').textContent)); return d ? { head: d.querySelector('summary').textContent, text: d.textContent, link: (d.querySelector('[data-glive] a') || {}).textContent, name: d.querySelector('input[data-p$="/name"]') && d.querySelector('input[data-p$="/name"]').value } : {}; });
-    ok('editor, finding a place: the pick is read by its id, fills the empty name with the host\'s words and the distance, and no town of Google\'s', read[0] === 'g-ull' && got.name === 'Llul de Ll' && /3 km/.test(got.head || '') && !/La Bisbal/.test(got.head || ''), JSON.stringify({ read, ...got, text: undefined }));
+    await p.waitForFunction(() => [...document.querySelectorAll('details.cmi')].some(d => /Llul de Llebre/.test(d.querySelector('summary').textContent)), null, { timeout: 5000 }).catch(() => {});
+    const got = await p.evaluate(() => { const d = [...document.querySelectorAll('details.cmi')].find(x => /Llul de Llebre/.test(x.querySelector('summary').textContent)); return d ? { head: d.querySelector('summary').textContent, text: d.textContent, link: (d.querySelector('[data-glive] a') || {}).textContent, name: d.querySelector('input[data-p$="/name"]') && d.querySelector('input[data-p$="/name"]').value } : {}; });
+    ok('editor, finding a place: the pick is read by its id, fills the empty name with the host\'s words and the distance, and no town of Google\'s', read[0] === 'g-ull' && got.name === 'Llul de Llebre' && /3 km/.test(got.head || '') && !/La Bisbal/.test(got.head || ''), JSON.stringify({ read, ...got, text: undefined }));
     await p.locator('details.cmi[open] [data-glive]').scrollIntoViewIfNeeded().catch(() => {}); await p.screenshot({ path: join(SHOTS, 'editor-place-found-360.png') });
     ok('editor, finding a place: it says what it found on Google, with Google Maps beside it, so the host can tell', /Found: Restaurant Ull de Llebre, La Bisbal del Penedès, Spain, 3 km from the house/.test(got.text || '') && got.link === 'Google Maps');
     await p.waitForTimeout(2500);
     { let it = null; try { const c = JSON.parse(saved[saved.length - 1] || '{}').draft.content; it = c.files.restaurants.items.find(x => x.gid === 'g-ull'); } catch (e) { /* not saved */ }
       const day = new Date().toISOString().slice(0, 10), en = it && (typeof it.name === 'object' ? it.name.en || Object.values(it.name)[0] : it.name);
-      ok('editor, finding a place: the guide keeps Google\'s id, its dated position, the distance and a Google Maps link by the id, and no name, town, kind or hours of Google\'s', !!it && en === 'Llul de Ll' && it.lat === 41.28 && it.pos && it.pos.from === 'google' && it.pos.at === day && it.km_from_house === 3 && /query=Llul%20de%20Ll&query_place_id=g-ull/.test(it.gmaps || '') && !it.town && !(it.schedule || []).length && !(it.type && Object.values(it.type).some(Boolean)) && !JSON.stringify(it).includes('Restaurant Ull de Llebre'), JSON.stringify(it)); }
+      ok('editor, finding a place: the guide keeps Google\'s id, its dated position, the distance and a Google Maps link by the id, and no name, town, kind or hours of Google\'s', !!it && en === 'Llul de Llebre' && it.lat === 41.28 && it.pos && it.pos.from === 'google' && it.pos.at === day && it.km_from_house === 3 && /query=Llul%20de%20Llebre&query_place_id=g-ull/.test(it.gmaps || '') && !it.town && !(it.schedule || []).length && !(it.type && Object.values(it.type).some(Boolean)) && !JSON.stringify(it).includes('Restaurant Ull de Llebre'), JSON.stringify(it)); }
     ok('editor, finding a place, 360 px: no sideways scroll', (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0);
     ok('editor, finding a place: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // The editor's "Find it on Google", the same rule (cmFindById): a new place keeps the typed words that name it; a search
+  // phrase leaves the Name empty, focused and asking, under the place found; its lookup is sent no words (our directory names
+  // it) and Publish stops while it has none. A place that has a name only moves its pin. At 1280 px and 360 px.
+  for (const [w, h, tag] of [[1280, 860, '1280 px'], [360, 780, '360 px']]) {
+    const { ctx, p, errors } = await open(browser, E, w, h), jobs = [], saved = [];
+    p.on('request', r => { if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(r.url())) saved.push(r.postData()); });
+    await ctx.route(u => u.pathname === '/api/places', pnPlaces);
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), route => { const req = route.request(); if (req.method() === 'POST') { jobs.push(JSON.parse(req.postData() || '{}')); return json(route, [{ id: 'job-pn-' + jobs.length }]); } return json(route, []); });
+    await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(300);
+    const pickIn = async (card, words) => { const f = card + ' [data-gsp]'; await p.locator(f).click(); await p.locator(f).pressSequentially(words, { delay: 15 });
+      await p.waitForSelector(card + ' .pl-sug button', { timeout: 3000 }).catch(() => {}); await p.waitForTimeout(150); await p.click(card + ' .pl-sug button').catch(() => {}); await p.waitForTimeout(900); };
+    await p.click('[data-addit="files/restaurants/items"]'); await p.waitForTimeout(300);
+    const n = await p.$$eval('details.cmi[data-open^="files/restaurants/items/"]', d => d.length), P1 = `files/restaurants/items/${n - 1}`, C1 = `details.cmi[data-open="${P1}"]`;
+    await pickIn(C1, 'restaurant La Bisbal del Penedès');
+    const st = await p.evaluate(c => { const d = document.querySelector(c), i = d && d.querySelector('input[data-p$="/name"]'), f = d && d.querySelector('[data-glive]');
+      return d ? { head: d.querySelector('summary').textContent.replace(/\s+/g, ' ').trim(), value: i && i.value, focused: document.activeElement === i, ph: i && i.placeholder, found: f && f.textContent.replace(/\s+/g, ' ').trim(), above: !!f && !!i && f.getBoundingClientRect().bottom <= i.getBoundingClientRect().top, inView: !!f && f.getBoundingClientRect().top >= 0 && i.getBoundingClientRect().bottom <= innerHeight } : {}; }, C1);
+    ok(`name of a pick, editor, ${tag}: a search phrase is not kept: the Name is empty, focused and asks, the place found just above it, in view`, st.value === '' && st.focused && st.ph === 'Now type its name' && /^Found: Restaurant la Societat, Carrer Major, La Múnia, Spain, 18 km from the house/.test(st.found || '') && st.above && st.inView && /^No name yet/.test(st.head || ''), JSON.stringify(st));
+    ok(`name of a pick, editor, ${tag}: nothing in the card overlaps, the placeholder is whole`, !(await rowClash(p, C1 + ' .cmb', ['label', 'input', '.hint', 'textarea', 'button', 'a'])).length && await phFits(p, C1 + ' input[data-p$="/name"]'), (await rowClash(p, C1 + ' .cmb', ['label', 'input', '.hint', 'textarea', 'button', 'a'])).join('; '));
+    await p.screenshot({ path: join(SHOTS, `editor-name-asked-${w}.png`) });   // as the pick left it: the Name centred, the place found above
+    await p.waitForTimeout(1500);
+    const j1 = jobs.find(j => j.kind === 'place-facts' && j.params && j.params.gid === 'g-soc');
+    ok(`name of a pick, editor, ${tag}: its lookup is sent no words (our directory names it), never the search phrase`, !!j1 && !('words' in j1.params && j1.params.words) && !/Bisbal/.test(JSON.stringify(j1)), JSON.stringify(j1 && j1.params));
+    { let it = null; for (const b of saved.slice().reverse()) { try { it = JSON.parse(b).draft.content.files.restaurants.items.find(x => x.gid === 'g-soc'); if (it) break; } catch (e) { /* another save */ } }
+      ok(`name of a pick, editor, ${tag}: the place keeps Google's id and pin, no name, nothing of the search phrase or Google's name`, !!it && it.lat === 41.33 && !Object.values(it.name || {}).some(Boolean) && !/Bisbal|Societat/.test(JSON.stringify(it)), JSON.stringify(it && { name: it.name, gmaps: it.gmaps })); }
+    await p.click('[data-addit="files/restaurants/items"]'); await p.waitForTimeout(300);
+    const P2 = `files/restaurants/items/${n}`, C2 = `details.cmi[data-open="${P2}"]`;
+    await pickIn(C2, 'La Locanda dei Sapori El Vendrell');
+    const v2 = await p.$eval(C2 + ' input[data-p$="/name"]', e => e.value).catch(() => null);
+    ok(`name of a pick, editor, ${tag}: the name typed with its town keeps the name, and its lookup is given that name`, v2 === 'La Locanda dei Sapori' && /^La Locanda dei Sapori/.test(await p.textContent(C2 + ' summary').catch(() => '')), String(v2));
+    await p.$eval(C2 + ' [data-glive]', e => e.scrollIntoView({ block: 'center' })).catch(() => {}); await p.waitForTimeout(300); await p.screenshot({ path: join(SHOTS, `editor-name-kept-${w}.png`) });
+    await p.waitForTimeout(1500);
+    const j2 = jobs.find(j => j.kind === 'place-facts' && j.params && j.params.gid === 'g-loc');
+    ok(`name of a pick, editor, ${tag}: the lookup of the named place is given the host's name, not the words typed`, !!j2 && j2.params.words === 'La Locanda dei Sapori', JSON.stringify(j2 && j2.params));
+    // A place that has a name: Find it on Google moves its pin, its name stays.
+    const ri = E.content.files.restaurants.items.findIndex(x => typeof x.lat === 'number' && x.name && (x.name.en || '').trim()), R = `files/restaurants/items/${ri}`, CR = `details.cmi[data-open="${R}"]`, was = E.content.files.restaurants.items[ri].name.en;
+    await p.$eval(CR + ' > summary', e => e.scrollIntoView({ block: 'center' })); await p.click(CR + ' > summary'); await p.waitForTimeout(300);
+    await p.click(CR + ' [data-cchg]'); await p.waitForTimeout(250);   // a place with a pin has its search in the form, behind Change
+    await pickIn(CR, 'restaurant La Bisbal del Penedès');
+    const v3 = await p.$eval(CR + ' input[data-p$="/name"]', e => e.value).catch(() => null);
+    ok(`name of a pick, editor, ${tag}: on a place that has a name, a pick only moves the pin`, v3 === was && /Now at 41\.3300, 1\.6000/.test(await p.textContent(CR).catch(() => '')), `${v3} / ${was}`);
+    await go(p, '#publish'); await p.click('.card [data-cpublish]').catch(() => {}); await p.waitForTimeout(500);
+    ok(`name of a pick, editor, ${tag}: Publish stops while it has no name, and says where`, /Not published: 1 entry in Eat and drink has no name\. Name it or delete it\./.test(await p.textContent('#toast').catch(() => '')), await p.textContent('#toast').catch(() => ''));
+    ok(`name of a pick, editor, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // A place the build could not name (generate-site.py "unnamed": no words of the host, none in our directory): never shown to
+  // guests, it waits first in its step, under "Needs you", with a Name field; a name moves it into the list.
+  for (const [w, h, tag] of [[1280, 860, '1280 px'], [360, 780, '360 px']]) {
+    const c2 = JSON.parse(JSON.stringify(E.content)), hs = c2.files.house || {};
+    c2.files.todo.unnamed = [{ id: 'place-g-view', gid: 'g-view', lat: (hs.lat || 41.2) + 0.1, lng: (hs.lng || 1.5) + 0.05, km_from_house: 19, town: '', tags: [], flags: [], hostPick: true, pos: { from: 'google', at: new Date().toISOString().slice(0, 10) },
+      gmaps: 'https://www.google.com/maps/search/?api=1&query=41.3%2C1.55&query_place_id=g-view', description: Object.fromEntries((c2.site.languages || ['en']).map(l => [l, 'The view at sunset, worth the climb.'])) }];
+    const { ctx, p, errors } = await open(browser, { ...E, content: c2 }, w, h), saved = [];
+    p.on('request', r => { if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(r.url())) saved.push(r.postData()); });
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), route => json(route, route.request().method() === 'POST' ? [{ id: 'job-un-1' }] : []));
+    await p.goto('http://editor.test/#todo'); await ready(p); await p.waitForTimeout(400);
+    const un = await p.evaluate(() => { const s = document.querySelector('.cm-unn'), first = document.querySelector('.edz .cm-unn, .edz details.cmi'); return s ? { t: s.textContent.replace(/\s+/g, ' ').trim(), first: first === s, link: (s.querySelector('a') || {}).href || '' } : null; });
+    const rail = w >= 900 ? await p.$$eval('.rail p.sg, .rail a.si .st', els => els.map(e => (e.matches('.sg') ? '#' : '') + e.textContent.trim())).catch(() => []) : null, ni = rail ? rail.indexOf('#Needs you') : -1, nx = rail ? rail.findIndex((x, i) => i > ni && x[0] === '#') : -1;
+    ok(`a place with no name, editor, ${tag}: it waits first in its step, says why in one sentence, with Google Maps by its id and the host's comment`, !!un && un.first && /^Waiting for a name\s*Our open directory has no name for this place\. Guests see it once you name it\.\s*✓ Matched on Google Maps · 19 km/.test(un.t) && /The view at sunset/.test(un.t) && /query_place_id=g-view/.test(un.link), JSON.stringify(un));
+    if (rail) ok(`a place with no name, editor, ${tag}: Attractions is under "Needs you"`, ni >= 0 && rail.slice(ni, nx < 0 ? undefined : nx).includes('Attractions'), rail.slice(0, 6).join(' > '));
+    ok(`a place with no name, editor, ${tag}: nothing in it overlaps, the placeholder is whole`, !(await rowClash(p, '.cm-unn', ['b', '.hint', '.cm-unl', 'input', 'button'])).length && await phFits(p, '.cm-unn input'), (await rowClash(p, '.cm-unn', ['b', '.hint', '.cm-unl', 'input', 'button'])).join('; '));
+    await p.$eval('.cm-unn', e => e.scrollIntoView({ block: 'center' })); await p.waitForTimeout(300); await p.screenshot({ path: join(SHOTS, `editor-unnamed-${w}.png`) });
+    await p.fill('.cm-unn input', 'Mirador del Montmell'); await p.press('.cm-unn input', 'Enter'); await p.waitForTimeout(1500);
+    const moved = await p.evaluate(() => ({ box: !!document.querySelector('.cm-unn'), card: [...document.querySelectorAll('details.cmi')].some(d => d.open && /Mirador del Montmell/.test(d.querySelector('summary').textContent)) }));
+    let it = null, left = null; for (const b of saved.slice().reverse()) { try { const t = JSON.parse(b).draft.content.files.todo; it = t.items.find(x => x.gid === 'g-view'); left = t.unnamed; if (it) break; } catch (e) { /* another save */ } }
+    ok(`a place with no name, editor, ${tag}: a name moves it into the list, open, with its pin and comment`, !moved.box && moved.card && !!it && it.name.en === 'Mirador del Montmell' && it.km_from_house === 19 && /sunset/.test(it.description.en) && !left, JSON.stringify({ moved, name: it && it.name, left }));
+    ok(`a place with no name, editor, ${tag}: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close(); }
   // Getting around: the host types a station's name; Google places it, the worker finds its lines (mocked here), the card shows them.
   { const { ctx, p, errors } = await open(browser, E, 360, 780), jobs = [];

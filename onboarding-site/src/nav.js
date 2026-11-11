@@ -67,11 +67,15 @@ function moduleHTML(m){
 }
 function sendHTML(){
   const miss = sendMissing(), open = visible().filter(m => ['pre', 'new', 'chk'].includes(statusOf(m).k) && statusOf(m).label !== 'Optional');
+  // Places picked on Google with no name (psPick in start.js): never published under the words typed to find them.
+  const nameless = [['favEat', 'favourites'], ['favNight', 'nightlife'], ['favDo', 'nearby']].filter(([k]) => (Array.isArray(A[k]) ? A[k] : []).some(r => r && r.gid && !String(r.p || '').trim()))
+    .map(([, id]) => visible().find(m => m.id === id)).filter(Boolean);
   return `<div class="split">${railHTML('send')}<div class="col">
     <section class="mhead" style="--tc:var(--ink);--ti:var(--paper);--sh:var(--sun)">
       <h1>Review and send</h1><p>We build your guide from your answers. You can change anything afterwards.</p></section>
     <section class="card">
       <div id="rvMore">${moreNote()}</div>
+      ${nameless.length ? `<div class="rv-open rv-nn"><b>Places with no name yet</b><p class="hint">We look their names up in an open directory; any we do not find waits in your editor for you to name it.</p><div class="rv-links">${nameless.map(m => `<a href="#${m.id}">${esc(m.title)}</a>`).join('')}</div></div>` : ''}
       ${open.length ? `<div class="rv-open"><b>Still worth a look</b><div class="rv-links">${open.map(m => `<a href="#${m.id}">${esc(m.title)}</a>`).join('')}</div></div>` : ''}
       <div class="grid">${field('slug')}
         <label class="f full" style="flex-direction:row;gap:10px;align-items:flex-start"><input type="checkbox" data-check="consent"${A.consent ? ' checked' : ''} style="width:20px;height:20px;margin-top:2px;flex:none"><span>I own these photos and texts or may use them, and I understand the guide is visible to anyone who has its link.</span></label></div>

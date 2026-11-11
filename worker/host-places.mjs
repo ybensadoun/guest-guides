@@ -23,14 +23,17 @@ const LIST = l => l === 'todo' ? 'todo' : 'eat';   // nightlife's kinds are thos
 
 // The host's places in a guide's answers: rows they typed or picked (Eat and drink and Nightlife: list eat; what they
 // added to Attractions: todo) and the cards they kept in the swipe deck (only the Google id is known: its name is not kept).
-// Researched cards (ids starting with r:) are ours already and are not located.
+// A row picked on Google whose name the host left empty (the words they typed to find it were a search, not its name:
+// psPick in the maker) is a card too, in its own list: named from our directory like one, keyed gid:<id> (the generator
+// reads host rows the same way). Researched cards (ids starting with r:) are ours already and are not located.
 export function placesOf(A) {
   const added = Array.isArray(A.favDo) ? A.favDo : String(A.favDo || '').split(/[,\n]+/).map(p => ({ p }));
-  const rows = [...(A.favEat || []).map(r => [r, 'eat']), ...(A.favNight || []).map(r => [r, 'eat']), ...added.map(r => [r, 'todo'])]
-    .filter(([r]) => r && String(r.p || '').trim()).map(([r, list]) => ({ p: String(r.p), ...(r.gid ? { gid: r.gid } : {}), list, ...(r.c ? { c: r.c } : {}) }));
+  const all = [...(A.favEat || []).map(r => [r, 'eat']), ...(A.favNight || []).map(r => [r, 'eat']), ...added.map(r => [r, 'todo'])].filter(([r]) => r);
+  const rows = all.filter(([r]) => String(r.p || '').trim()).map(([r, list]) => ({ p: String(r.p), ...(r.gid ? { gid: r.gid } : {}), list, ...(r.c ? { c: r.c } : {}) }));
+  const unnamed = all.filter(([r]) => !String(r.p || '').trim() && r.gid && !String(r.gid).startsWith('r:')).map(([r, list]) => ({ id: String(r.gid), list, ...(r.c ? { c: r.c } : {}) }));
   const cards = Object.values(A.swipes || {}).filter(s => s && s.d === 'yes' && s.cat === 'todo' && s.id && !String(s.id).startsWith('r:'))
     .map(s => ({ id: String(s.id), list: 'todo', ...(s.c ? { c: s.c } : {}) }));
-  return { rows, cards };
+  return { rows, cards: [...unnamed, ...cards] };
 }
 
 // A few at a time: each place waits on Claude for some seconds, and the day's limit is shared with the rest of the worker.

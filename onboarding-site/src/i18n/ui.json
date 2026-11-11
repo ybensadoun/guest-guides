@@ -7620,5 +7620,55 @@
 "ca": "Cap tipus no hi coincideix. Prova una altra paraula.",
 "es": "Ningún tipo coincide. Prueba otra palabra.",
 "fr": "Aucun type ne correspond. Essayez un autre mot."
+},
+"Now type its name": {
+"ca": "Ara escriu-ne el nom",
+"es": "Ahora escribe su nombre",
+"fr": "Tapez maintenant son nom"
+},
+"No name yet: type it, or we look it up in an open directory.": {
+"ca": "Encara sense nom: escriu-lo, o el busquem en un directori obert.",
+"es": "Aún sin nombre: escríbelo, o lo buscamos en un directorio abierto.",
+"fr": "Pas encore de nom : tapez-le, ou nous le cherchons dans un annuaire ouvert."
+},
+"Places with no name yet": {
+"ca": "Llocs encara sense nom",
+"es": "Sitios aún sin nombre",
+"fr": "Lieux encore sans nom"
+},
+"We look their names up in an open directory; any we do not find waits in your editor for you to name it.": {
+"ca": "Busquem els seus noms en un directori obert; el que no trobem t’espera a l’editor perquè li posis nom.",
+"es": "Buscamos sus nombres en un directorio abierto; el que no encontremos te espera en el editor para que le pongas nombre.",
+"fr": "Nous cherchons leur nom dans un annuaire ouvert ; celui que nous ne trouvons pas vous attend dans l’éditeur, pour que vous le nommiez."
+},
+"No name yet": {
+"ca": "Encara sense nom",
+"es": "Aún sin nombre",
+"fr": "Pas encore de nom"
+},
+"Waiting for a name": {
+"ca": "Esperant un nom",
+"es": "Esperando un nombre",
+"fr": "En attente d’un nom"
+},
+"Our open directory has no name for this place. Guests see it once you name it.": {
+"ca": "El nostre directori obert no en té el nom. Els hostes el veuran quan li posis nom.",
+"es": "Nuestro directorio abierto no tiene su nombre. Los huéspedes lo verán cuando le pongas nombre.",
+"fr": "Notre annuaire ouvert n’a pas son nom. Les voyageurs le verront dès que vous l’aurez nommé."
+},
+"Our open directory has no name for these places. Guests see each one once you name it.": {
+"ca": "El nostre directori obert no en té els noms. Els hostes veuran cada lloc quan li posis nom.",
+"es": "Nuestro directorio abierto no tiene sus nombres. Los huéspedes verán cada sitio cuando le pongas nombre.",
+"fr": "Notre annuaire ouvert n’a pas leur nom. Les voyageurs verront chaque lieu dès que vous l’aurez nommé."
+},
+"Type its name": {
+"ca": "Escriu-ne el nom",
+"es": "Escribe su nombre",
+"fr": "Tapez son nom"
+},
+"Name of this place": {
+"ca": "Nom d’aquest lloc",
+"es": "Nombre de este sitio",
+"fr": "Nom de ce lieu"
 }
 }

@@ -87,7 +87,25 @@ test('place-facts: at most 30 a day per guide, and nothing without the Claude AP
   await assert.rejects(run({ ask: claude(SITE), recent: 30 }), /You have looked up a lot of places today\. Try again tomorrow\./);
   await assert.rejects(run({ ask: null }), /Looking up places is not switched on yet\./);
   await assert.rejects(run({ ask: claude(SITE), params: { gid: 'not an id' } }), /cannot be looked up/);
-  await assert.rejects(run({ ask: claude(SITE), params: { words: '  ' } }), /cannot be looked up/);
+  await assert.rejects(run({ ask: claude(SITE), params: { gid: '', words: 'la locanda' } }), /cannot be looked up/);
+});
+
+// A place picked in the editor with no name (the words typed to find it were a search phrase, so the maker kept none): no
+// words are sent, and the job looks it up like a kept card. Google's name is compared with our directory's in memory; the
+// directory's own name is the one searched for and returned, and the editor puts it in the empty name. None: entry null.
+test('place-facts: a place with no name is named from our directory, and that name is the one searched for', async () => {
+  const asked = [], GOOGLE = 'Restaurante La Locanda dei Sapori (Google)';
+  const locate = { byId: async id => ({ gid: id, lat: 41.21, lng: 1.51 }), byWords: async () => null, name: async () => GOOGLE };
+  const near2 = () => async (h, pins) => ({ release: 'r1', towns: {}, pins: Object.fromEntries(pins.map(p => [p.id, [{ ...record, name: 'La Locanda dei Sapori' }]])) });
+  const ask = async (prompt, o) => { asked.push([o.what, prompt]); return o.what === 'place match' ? '{"venue": true, "entry": 1, "sure": true, "name": "La Locanda dei Sapori", "kind": "pizza"}' : JSON.stringify(SITE); };
+  const g = guide(); g.draft.content.files.restaurants.items[0].name = { en: '' };
+  const { r, done } = await run({ ask, g, locate, near: near2(), params: { words: '' } });
+  assert.equal(r.entry.name, 'La Locanda dei Sapori'); assert.equal(r.entry.kind, 'pizza'); assert.equal(done[0].status, 'done');
+  assert.ok(asked.length && asked.every(([, p]) => !p.includes('(Google)')));   // Google's name went to no prompt
+  assert.ok(!JSON.stringify(done).includes('(Google)'));
+  // No record of that name around the pin: nothing to name it with, entry null (the editor keeps asking the host).
+  const none = await run({ ask, g, locate: { ...locate, name: async () => 'Bar Nobody Lists' }, near: near2(), params: { words: '' } });
+  assert.equal(none.r.entry, null);
 });
 
 test('place-facts: a page the host pasted is read, even for a place kept lately, and becomes its website from the site', async () => {

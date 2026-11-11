@@ -253,3 +253,22 @@ test('hostPlaces: each entry says where its facts came from (filled), and nothin
   const g2 = await hostPlaces({ cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore({}), ask, locate, near, gaz: noGaz, log: () => {} });
   assert.deepEqual(g2['gid:G2aaaaaaaaaa'].filled, { at: today, from: { kind: 'claude', phone: 'overture' } });
 });
+
+// A row picked on Google whose name the host left empty (the words typed to find it were a search phrase: the maker kept
+// none, onboarding-site/src/placename.js) is a card of its own list: named from our directory by comparing Google's name in
+// memory, its record's name searched for, never the search words; no record of that name: noname, for the editor to ask.
+test('placesOf and hostPlaces: a picked row with no name is looked up like a kept card, in its own list', async () => {
+  const { rows, cards } = placesOf({ favEat: [{ p: '', gid: 'G2aaaaaaaaaa', c: 'Sunday lunch' }, { p: ' ', gid: 'r:research' }, { p: '' }], favDo: [{ p: '', gid: 'G3aaaaaaaaaa' }] });
+  assert.deepEqual(rows, []);
+  assert.deepEqual(cards, [{ id: 'G2aaaaaaaaaa', list: 'eat', c: 'Sunday lunch' }, { id: 'G3aaaaaaaaaa', list: 'todo' }]);
+  const prompts = [], saved = [];
+  const ask = async (prompt, o) => { prompts.push(prompt); return o.what === 'place match' ? '{"venue": true, "entry": 1, "sure": true, "name": "Restaurant la Societat", "kind": "fork"}' : '{"website": null, "about": false}'; };
+  const loc2 = { ...locate, name: async id => id === 'G2aaaaaaaaaa' ? 'Restaurant La Societat' : 'Somewhere Google Knows' };
+  const near2 = async (h, p) => ({ release: 'r', towns: { G2aaaaaaaaaa: 'La Múnia' }, pins: { G2aaaaaaaaaa: [{ id: 'ov5', name: 'Restaurant la Societat', kind: 'restaurant', metres: 8, lat: 41.2503, lng: 1.5503, phones: [], websites: [], socials: [] }], G3aaaaaaaaaa: [] } });
+  const geo = await hostPlaces({ rows, cards, house, town: 'La Bisbal del Penedès' }, { store: fakeStore({}, saved), ask, locate: loc2, near: near2, gaz: noGaz, log: () => {} });
+  const e = geo['gid:G2aaaaaaaaaa'];
+  assert.equal(e.name, 'Restaurant la Societat'); assert.equal(e.town, 'La Múnia'); assert.equal(e.kind, 'fork');   // eat's kinds: its own list
+  assert.ok(prompts.some(x => /Sunday lunch/.test(x)));
+  assert.equal(geo['gid:G3aaaaaaaaaa'].noname, true); assert.equal(geo['gid:G3aaaaaaaaaa'].name, undefined);
+  assert.ok(!/Somewhere Google Knows/.test(JSON.stringify([geo, saved, prompts])));
+});

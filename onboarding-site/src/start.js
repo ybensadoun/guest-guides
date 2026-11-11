@@ -404,11 +404,12 @@ document.addEventListener('input', e => { const id = e.target.dataset && e.targe
 const DAYS7 = [['mon', 'Mon'], ['tue', 'Tue'], ['wed', 'Wed'], ['thu', 'Thu'], ['fri', 'Fri'], ['sat', 'Sat'], ['sun', 'Sun']];
 const BIN_ROWS = [['organic', 'Organic (food scraps)'], ['packaging', 'Packaging (plastic, cans)'], ['paper', 'Paper and cardboard'], ['glass', 'Glass'], ['rest', 'General waste']];
 const placeRowsRaw = k => (Array.isArray(A[k]) && A[k].length ? A[k] : [{ p: '', c: '' }]);
-const placeRows = k => (Array.isArray(A[k]) ? A[k] : []).filter(r => r && String(r.p || '').trim());
+// A row counts with a name, or with a place picked on Google and no name yet (its name is asked, else looked up at the build).
+const placeRows = k => (Array.isArray(A[k]) ? A[k] : []).filter(r => r && (String(r.p || '').trim() || r.gid));
 document.addEventListener('input', e => {
   const t = e.target; if (!t.dataset || !t.dataset.pl) return;
-  const k = t.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+t.dataset.i]; r[t.dataset.f] = t.value;
-  if (t.dataset.f === 'p') { delete r.gid; delete r.at; delete r.km; plShow(t, r); }   // another name: no longer the place picked
+  const k = t.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+t.dataset.i], was = r[t.dataset.f]; r[t.dataset.f] = t.value;
+  if (t.dataset.f === 'p') { if (!psKeeps(k, r, was)) { delete r.gid; delete r.at; delete r.km; } plShow(t, r); }   // another name: no longer the place picked
   set(k, rows);
 });
 document.addEventListener('click', e => {
@@ -422,7 +423,7 @@ document.addEventListener('click', e => {
 // host's own words and the place's Google id, nothing else of Google's (its terms: the id may be kept, not the name or the
 // address); the worker locates it by the id and names it from our own sources. Google's name and address are shown for this
 // session only, from PS.seen, in memory. A name typed and not picked, or a link, the worker searches as before.
-const PS = { el: null, list: [], on: -1, timer: 0, turn: 0, seen: new Map() };
+const PS = { el: null, list: [], on: -1, timer: 0, turn: 0, seen: new Map(), ask: new Set() };
 // The host's words, with a capital to each word when they typed all in small letters ("ull de llebre": "Ull de Llebre").
 const PS_SMALL = new Set('a al d de del dels des du el els en i la las le les los of the y'.split(' '));
 const psWords = x => { const t = String(x || '').trim().replace(/\s+/g, ' '); return t !== t.toLowerCase() ? t : t.split(' ').map((w, i) => i && PS_SMALL.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' '); };
@@ -460,21 +461,33 @@ function psType(el){
   if (el.value.trim().length < 3 || psIsLink(el.value) || window.__placesOff) { PS.turn++; PS.list = []; return psDraw(); }
   PS.timer = setTimeout(() => psAsk(el), 300);
 }
+// A pick keeps of the words typed only those that name the place (placeNameFrom, placename.js): "La Locanda dei Sapori El
+// Vendrell" keeps "La Locanda dei Sapori"; a search phrase ("restaurant La Bisbal del Penedès") keeps nothing, and the field,
+// empty now, asks for the name, the place found still said under it. Left empty, the build looks the name up in our directory.
+const PS_ASK = 'Now type its name';
 function psPick(i){
   const s = PS.list[i], el = PS.el; if (!s) return; psClose();
   PS.seen.set(s.id, s);
   if (el.dataset.gsp) return cmFindById(el.dataset.gsp, s.id, s, el.value);
-  const k = el.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+el.dataset.i], words = psWords(el.value);
+  const k = el.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+el.dataset.i], words = psWords(placeNameFrom(el.value, s));
   r.p = words; r.gid = s.id; delete r.at; delete r.km;   // at and km: what rows picked before 10 Nov 2026 kept of Google's
-  set(k, rows); el.value = words; plShow(el, r); softRefresh(); phoneSoon();
-  el.closest('.pl-row').querySelector('textarea').focus();
+  if (!words) PS.ask.add(k + ':' + s.id);
+  set(k, rows); el.value = words; el.placeholder = words ? 'Start typing the name' : PS_ASK; plShow(el, r); softRefresh(); phoneSoon();
+  if (words) el.closest('.pl-row').querySelector('textarea').focus(); else el.focus();
+}
+// While the host types in the name field of a row picked on Google, the pick stays when the name was asked for (it was empty,
+// now or after a reload: what is typed is its name, until they pick again); a row that had a name is searched again, as before.
+function psKeeps(k, r, was){
+  if (!r.gid || !(PS.ask.has(k + ':' + r.gid) || !String(was || '').trim())) return false;
+  PS.ask.add(k + ':' + r.gid); return true;
 }
 // Under the name: which place it is, with "Google Maps" opening it by its id, or that it is not matched yet (not while typing:
 // see theme2.css). Google's name and address only while this session remembers the pick; after a reload, that it is matched.
 function plAt(r){
   const none = !String(r.p || '').trim() || psIsLink(r.p) || window.__placesOff;
+  // No name yet (asked for, or left empty): said under the line once the host has moved on (theme2.css); the build looks it up.
   if (r.gid) { const s = PS.seen.get(r.gid), link = `<a href="${esc(gmLink(r.p, r.gid))}" target="_blank" rel="noopener" translate="no">Google Maps</a>`;
-    return `<p class="pl-at ok"${s ? ' data-glive' : ''}><span aria-hidden="true">✓</span> ${s ? `<span translate="no">${esc([s.name, s.where, s.km ? s.km + ' km' : ''].filter(Boolean).join(' · '))}</span>` : 'Matched on'} ${link}</p>`; }
+    return `<p class="pl-at ok"${s ? ' data-glive' : ''}><span aria-hidden="true">✓</span> ${s ? `<span translate="no">${esc([s.name, s.where, s.km ? s.km + ' km' : ''].filter(Boolean).join(' · '))}</span>` : 'Matched on'} ${link}${String(r.p || '').trim() ? '' : '<span class="pl-nn">No name yet: type it, or we look it up in an open directory.</span>'}</p>`; }
   return `<p class="pl-at${none ? '' : ' miss'}">${none ? '' : 'Not matched on Google. Pick it from the list, or keep it as typed: it may have no map pin.'}</p>`;
 }
 function plShow(el, r){ el.parentElement.querySelector('.pl-at').outerHTML = plAt(r); }
