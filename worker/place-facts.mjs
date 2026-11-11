@@ -151,9 +151,10 @@ export async function siteAlive(url) {
 
 // What Claude must say about the site, and how to read it. For a place to eat, also its kind as its own menu or
 // description shows it (measured 10 Nov 2026: from a bare name the match gave plain "Restaurant" to 7 of 12 places).
-const SHAPE = list => `{"website": "the address of the place's own site that you read, or null", "about": true if that site is clearly this place's own site else false, "phone": "as written on its site, or null", "hours": the opening hours of the place itself, or null if the site does not state them, "price": "typical price per person in euros if the site shows prices (menu, set menu, tickets), like 20-30 or 8, or null", "book": true if the site says booking is needed or recommended, else null${list === 'eat' ? `, "kind": the one key from this list that the site's own menu or description shows: ${Object.entries(KINDS.eat).map(([k, v]) => `${k} (${v.name.en})`).join(', ')}; or null` : ''}}
-Opening hours: a list of lines like [{"days":["tue","wed","thu"],"open":"10:00","close":"14:00"},{"days":["tue","wed","thu"],"open":"16:00","close":"19:00"}]. Days as mon tue wed thu fri sat sun. Times HH:MM in 24 h; a close earlier than the open means after midnight. Only the hours of this place, never those of a restaurant, hotel, café or shop inside it or beside it, nor those of its office or phone line. When the site gives different hours by season or part of the year, give one line per season and time span, each with "from":"MM-DD","to":"MM-DD" (like "from":"06-15","to":"09-15"). null when the site does not state them. Never guess.`;
-const READ = `read its phone number, opening hours, prices and whether booking is asked. You may open up to two more pages of that same site (contact, hours, prices, menu, tickets). Use only the place's own site, never a directory, a map or a review site. Never guess.`;
+const SHAPE = list => `{"website": "the address of the place's own site that you read, or null", "about": true if that site is clearly this place's own site else false, "phone": "as written on its site, or null", "hours": the opening hours of the place itself, or null if the site does not state them, "price": "typical price per person in euros if the site shows prices (menu, set menu, tickets), like 20-30 or 8, or null", "book": true if the site says booking is needed or recommended, else null, "season": the part of the year the place is open, {"from":"MM-DD","to":"MM-DD"}, only when the site states it plainly (see below), else null${list === 'eat' ? `, "kind": the one key from this list that the site's own menu or description shows: ${Object.entries(KINDS.eat).map(([k, v]) => `${k} (${v.name.en})`).join(', ')}; or null` : ''}}
+Opening hours: a list of lines like [{"days":["tue","wed","thu"],"open":"10:00","close":"14:00"},{"days":["tue","wed","thu"],"open":"16:00","close":"19:00"}]. Days as mon tue wed thu fri sat sun. Times HH:MM in 24 h; a close earlier than the open means after midnight. Only the hours of this place, never those of a restaurant, hotel, café or shop inside it or beside it, nor those of its office or phone line. When the site gives different hours by season or part of the year, give one line per season and time span, each with "from":"MM-DD","to":"MM-DD" (like "from":"06-15","to":"09-15"). null when the site does not state them. Never guess.
+Season: only for a place that opens part of the year, when its site says between which dates or months in plain words, like "open from June to September" ({"from":"06-01","to":"09-30"}: a month alone means its first day for the opening and its last day for the closing) or "temporada de verano del 15 de junio al 15 de septiembre" ({"from":"06-15","to":"09-15"}). A season may run over the new year ({"from":"11-01","to":"03-31"}). null when the place is open all year, when the site only says "summer", "in season" or "check our social media" without dates or months, or when the dates are those of one event. Copy what the page states, never guess.`;
+const READ = `read its phone number, opening hours, the part of the year it opens if it does not open all year, prices and whether booking is asked. You may open up to two more pages of that same site (contact, hours, prices, menu, tickets). Use only the place's own site, never a directory, a map or a review site. Never guess.`;
 const where = p => `"${p.name}"${p.town ? ` in ${p.town}` : ''}, ${p.country || 'Spain'}`;
 // The kinds a place can have, by list (engine/src/kinds.json, the builder's and the generator's list too): the match picks
 // one from the host's words and the record, never from Google.
@@ -177,6 +178,13 @@ export function cleanHours(h) {
     const key = JSON.stringify(line); if (!seen.has(key)) { seen.add(key); out.push(line); }
   }
   return out.length ? out : null;
+}
+// A season of the place's own (no hours of the same read): { from, to }, real days of the year, two different days.
+const LAST = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+export function cleanSeason(s) {
+  if (!s || typeof s !== 'object') return null;
+  const from = mmdd(s.from), to = mmdd(s.to), ok = v => +v.slice(3) <= LAST[+v.slice(0, 2) - 1];
+  return from && to && from !== to && ok(from) && ok(to) ? { from, to } : null;
 }
 const cleanPrice = p => { if (p == null) return null; const s = String(p).replace(/€|eur(os)?|\s/gi, '').replace(/[‒-―]/g, '-');
   return /^\d+([.,]\d+)?(-\d+([.,]\d+)?)?$/.test(s) ? s : null; };
@@ -246,7 +254,7 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
   const ours = { name, nameFrom, ourKind, kindFrom, feature: fl, posFrom, town, townFrom };
   const given = place.website ? webUrl(/^https?:/i.test(String(place.website)) ? place.website : 'http://' + place.website) : null;   // a page the host gave: a place with a door
   if (!a.venue && !given) return { entry: pos(entry), venue: false, ...ours, phone: null, phoneFrom: null, website: null, websiteFrom: null, facebook: null, instagram: null,
-    category: entry && entry.kind || null, hours: null, price: null, book: null, page: null, read: new Date().toISOString().slice(0, 10),
+    category: entry && entry.kind || null, hours: null, price: null, book: null, season: null, page: null, read: new Date().toISOString().slice(0, 10),
     usd: cost(), tries: 1, matchTries: a.tries, gained: [], ...(errors.length ? { error: errors[0] } : {}) };
   // The site is read and searched by a name: the host's, else ours from the entry or the feature. A kept card with none
   // has nothing to search by, so nothing is read.
@@ -277,7 +285,7 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
     const r2 = await read(q2, alive);
     if (!ok(r2)) return { site: first, from: first ? from : null, tries: 2, gained: [] };
     const pick = (k, clean) => clean(r2[k]) ? r2[k] : first ? first[k] : null;
-    const site = first ? { ...first, phone: pick('phone', cleanText), hours: pick('hours', cleanHours), price: pick('price', cleanPrice), kind: pick('kind', eatKind), book: r2.book === true ? true : first.book } : r2;
+    const site = first ? { ...first, phone: pick('phone', cleanText), hours: pick('hours', cleanHours), price: pick('price', cleanPrice), kind: pick('kind', eatKind), season: pick('season', cleanSeason), book: r2.book === true ? true : first.book } : r2;
     const gained = [!first && 'site', cleanHours(site.hours) && !(first && cleanHours(first.hours)) && 'hours', cleanPrice(site.price) && !(first && cleanPrice(first.price)) && 'price'].filter(Boolean);
     return { site, from: first ? from : alive ? aliveFrom : 'search', tries: 2, gained };
   };
@@ -295,6 +303,8 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
     facebook: social(/(^|\.)(facebook\.com|fb\.com|fb\.me)$/), instagram: social(/(^|\.)instagram\.com$/),
     category: entry && entry.kind || null,
     hours: site ? cleanHours(site.hours) : null, price: site ? cleanPrice(site.price) : null, book: site && site.book === true ? true : null,
+    // A season only for a place with no hours from the same read: hours with their own season stay lines with from/to.
+    season: site && !cleanHours(site.hours) ? cleanSeason(site.season) : null,
     page, read: new Date().toISOString().slice(0, 10), usd: cost(), tries, matchTries: a.tries, gained };
   if (errors.length) res.error = errors[0];
   return res;
@@ -380,7 +390,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       + ` | name ${r.name || '-'} | kind ${r.ourKind ? `${r.ourKind} (${r.kindFrom})` : '-'}${g.icon ? (g.icon === r.ourKind ? ' =' : ` (guide: ${g.icon})`) : ''}`
       + ` | site ${r.website ? host(r.website) + ' (' + r.websiteFrom + ')' : '-'}${g.url ? (siteSame ? ' =' : ` (guide: ${host(g.url)})`) : ''}`
       + ` | phone ${r.phone ? r.phone + ' (' + r.phoneFrom + ')' : '-'}${g.phone ? (phoneSame ? ' =' : ` (guide: ${g.phone})`) : ''}`
-      + ` | hours ${r.hours ? r.hours.length + ' lines' : '-'}${g.schedule ? (hoursSame ? ' =' : ` (guide: ${g.schedule.length} lines)`) : ''}`
+      + ` | hours ${r.hours ? r.hours.length + ' lines' : '-'}${g.schedule ? (hoursSame ? ' =' : ` (guide: ${g.schedule.length} lines)`) : ''}${r.season ? ` | season ${r.season.from} to ${r.season.to}` : ''}`
       + ` | price ${r.price || '-'}${g.price ? ` (guide ${g.price})` : ''} | book ${r.book ? 'yes' : '-'}${r.facebook ? ' | facebook' : ''}${r.instagram ? ' | instagram' : ''}`
       + ` | ${sec} s, ${r.usd.toFixed(3)} USD${r.tries === 2 ? ' | 2 tries' : ''}${r.matchTries === 2 ? ' | match asked twice' : ''}${r.error ? ' | ' + r.error : ''}${note}`);
     for (const s of r.hours || []) console.log(`${' '.repeat(19)}${span(s.days)} ${s.open}-${s.close}${s.from ? ` (${s.from} to ${s.to})` : ''}`);

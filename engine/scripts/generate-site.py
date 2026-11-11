@@ -709,16 +709,21 @@ def host_items(rows, filters=False):   # filters: Things to do (kinds of todo, w
         for k2 in ('phone', 'hours', 'schedule', 'price', 'priceNote', 'wiki'):
             if g.get(k2): it[k2] = L(g[k2]) if k2 in ('hours', 'priceNote') else g[k2]
         if g.get('book') is True: it['flags'] = ['book']   # its own site asks to book: the engine's "Book ahead"
+        # Open only part of the year and no hours of ours (its own site, or the host's entry): the season, MM-DD at both ends.
+        # Hours with their own season stay rows (from/to on each), so a place with hours never gets it.
+        ss = next((x for x in (g.get('season'), r.get('season')) if isinstance(x, dict) and all(re.fullmatch(r'(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])', str(x.get(k) or '')) for k in ('from', 'to')) and x['from'] != x['to']), None)
+        if ss and not it.get('schedule') and not it.get('always'): it['season'] = {'from': ss['from'], 'to': ss['to']}
         # Where those facts came from (the worker's filled: {at, from: {field: source}, page?}), for the editor's line under
         # "Filled in for you"; guests never see it. A website the host typed as the place is theirs, not a source's.
         if isinstance(g.get('filled'), dict):
             fl = json.loads(json.dumps(g['filled']))
             if isurl and not ismaps: (fl.get('from') or {}).pop('url', None)
+            if 'season' not in it: (fl.get('from') or {}).pop('season', None)
             if fl.get('from'): it['filled'] = fl
         items.append(it)
     return items
 def write_host_places(rows, file):
-    (SITE / f'content/{file}.json').write_text(json.dumps({'_doc': "The host's own list, written by generate-site.py. No researched places are added here.", 'items': host_items(rows)}, ensure_ascii=False, indent=1))
+    (SITE / f'content/{file}.json').write_text(json.dumps({'_doc': "The host's own list, written by generate-site.py. No researched places are added here. season: {from, to} as MM-DD, a place open only part of the year with no hours of ours (no schedule).", 'items': host_items(rows)}, ensure_ascii=False, indent=1))
 fav, night = host_list('favEat'), host_list('favNight')
 if fav: write_host_places(fav, 'restaurants')
 if night: write_host_places(night, 'nightlife')

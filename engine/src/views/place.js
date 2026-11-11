@@ -1,6 +1,6 @@
 import { t, tx } from '../i18n.js';
 import { HOUSE, QUICK_ALL, TRANSPORT, slots } from '../content.js';
-import { hoursText, statusLabel, nextOpenText, closedStatus } from '../schedule.js';
+import { hoursText, statusLabel, nextOpenText, closedStatus, seasonStatus, seasonText } from '../schedule.js';
 import { stHTML } from '../ui.js';
 import { hav, kmMe, gSearch, gDir } from '../geo.js';
 import { esc, ICON, itemIcon } from '../ui.js';
@@ -36,6 +36,9 @@ export function renderPlace(V, id, icons) {
     hours = `${stHTML(live || closedStatus(m, now))}
       <div class="when">${hoursText(m).map(h => `<span>${esc(h.days)} <span class="t">${esc(h.time)}</span></span>`).join('')}</div>`;
   }
+  // A season of ours and no hours, as in a list row: "Closed" + "Opens 1 Jun" out of season, then the season.
+  else if (seasonText({ s: [], season: p.season })) { const m = { s: [], season: p.season };
+    hours = `${stHTML(seasonStatus(m, now))}<div class="when"><span>${esc(seasonText(m))}</span></div>`; }
   // No hours of ours but a Google id: Google's open-now line (engine/src/gcard.js) where the hours would be, shown only
   // once it has something to say; our "Google Maps" button goes last (data-gbtn), kept back until we know no line comes.
   // A page that already has its hours block (a note, a price) keeps it and gets the line under it, under the same heading.

@@ -1,7 +1,7 @@
 import qrcode from 'qrcode-generator';
 import { t, tx, locale } from '../i18n.js';
 import { MARKETS, MAP_ITEMS, SECTIONS, CATS, QUICK, HOUSE, slots, SITE, MODULE_ON, TRANSPORT } from '../content.js';
-import { runsOn, statusLabel, cap, nextOpen, closedStatus } from '../schedule.js';
+import { runsOn, statusLabel, cap, nextOpen, closedStatus, seasonStatus } from '../schedule.js';
 import { esc, title, catIcon, SECTION_LOOK, stHTML, distHTML } from '../ui.js';
 import { sorted } from './markets.js';
 import { st, DEFAULT_CATS } from '../state.js';
@@ -146,10 +146,11 @@ const qKey = q => [q.icon, q.id, String(q.id || '').split('-')[0]].find(k => k &
 export const quickIcon = q => qsvg(QI[typeof q === 'string' ? qKey({ id: q }) : qKey(q)]);
 const quickRow = () => QUICK.length ? `<div class="qcalls">${QUICK.map(q => `<a class="qcall${q.wide ? ' wide' : ''}" data-q="${q.id}" href="${q.href || '#p/' + q.id}">
   <span class="qi">${quickIcon(q)}</span><span class="qt"><b>${esc(tx(q.name))}</b>${q.sub ? `<small>${esc(tx(q.sub))}</small>` : ''}${qStatus(q)}</span></a>`).join('')}</div>` : '';
-// Live status on the quick tiles that have opening hours (the bar next door, the pizzeria).
+// Live status on the quick tiles that have opening hours (the bar next door, the pizzeria), or a season of ours and no
+// hours: then only "Closed · Opens 1 Jun" out of season, as on its page and in the lists.
 function qStatus(q) {
-  if (!q.schedule) return '';
-  const m = { s: slots(q.schedule) }, now = new Date();
+  const m = { s: slots(q.schedule), season: q.season }, now = new Date();
+  if (!m.s.length) { const ss = seasonStatus(m, now); return ss ? `<span class="qst ${ss.cls}">${esc(ss.text)}${ss.sub ? `<small> · ${esc(ss.sub)}</small>` : ''}</span>` : ''; }
   const s = statusLabel(m, now) || closedStatus(m, now);
   return `<span class="qst ${s.cls}">${esc(s.text)}${s.sub ? `<small> · ${esc(s.sub)}</small>` : ''}</span>`;
 }

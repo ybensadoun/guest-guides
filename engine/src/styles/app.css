@@ -1049,3 +1049,10 @@ body:not(.is-home) .pl-head .pl-dist{grid-column:2;grid-row:3;align-self:start}
 .credits a,.credits [lang="en"]{-webkit-hyphens:manual;hyphens:manual}   /* names, licences and the quoted notices are never hyphenated */
 .credits .pn{-webkit-hyphens:manual;hyphens:manual}
 .credits .nw{white-space:nowrap}
+
+/* "See hours" (ui.js row): a quiet word where a status would be, for a place whose hours Google's line gives when the row
+   opens. The status's box, width and alignment (it may take two lines), muted and regular, no colour of its own. */
+.st.quiet{color:var(--muted);font-weight:400}
+/* In an opened row Google's line says it under the address: the word goes out of sight, keeping its room so the name does
+   not move when the row opens. */
+.mrow[open] > summary .st.quiet{visibility:hidden}

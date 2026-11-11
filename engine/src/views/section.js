@@ -1,6 +1,6 @@
 import { t, tx, locale } from '../i18n.js';
 import { SECTIONS, SPOTS, slots } from '../content.js';
-import { hoursText, statusLabel, nextOpenText, closedStatus, runsOn } from '../schedule.js';
+import { hoursText, statusLabel, nextOpenText, closedStatus, runsOn, offSeason } from '../schedule.js';
 import { esc, ICON, row, card, SECTION_LOOK, stHTML } from '../ui.js';
 import { sorted, sortRow } from './markets.js';
 import { overviewMap } from './map.js';
@@ -170,9 +170,10 @@ export function renderSection(V, id) {
     // and Opens later today keep them after the ones we know, under a quiet heading, so a guest never loses the host's picks.
     const now0 = new Date(), nmin = now0.getHours() * 60 + now0.getMinutes();
     const tm = h => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
+    // A season of ours and no hours (schedule.js seasonOnly): closed out of season, not known in season.
     const stateOf = s => {
       if (s.always) return 0;
-      if (!(s.s && s.s.length)) return 3;
+      if (!(s.s && s.s.length)) return offSeason(s, now0) ? 2 : 3;
       const lab = statusLabel(s, now0);
       if (lab && lab.cls === 'open') return 0;
       return runsOn(s, now0).some(x => tm(x.o) > nmin) ? 1 : 2;

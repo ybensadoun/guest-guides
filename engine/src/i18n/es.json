@@ -218,6 +218,7 @@
   "opensDay": "Abre el {day} a las {time}",
   "opensDayM": "Abre el {day} por la mañana",
   "opensDate": "Abre el {date}",
+  "seeHours": "Ver horario",
   "greetMorning": "Buenos días",
   "greetAfternoon": "Buenas tardes",
   "greetEvening": "Buenas noches",

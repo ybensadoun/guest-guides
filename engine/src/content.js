@@ -73,7 +73,7 @@ const QUICK_FILE = QUICK_ON ? locate(get('quick')) : null;
 const QSHOP = (QUICK_FILE?.items || []).filter(q => q.id === 'shop' && q.lat && !q.nomap).map(q => ({
   id: 'quick-shop', kind: 'spot', section: 'restaurants', cat: 'restaurants', icon: 'mug', tone: 'green',
   name: q.name, type: q.kind, town: HOUSE.name, km: 0.1, lat: q.lat, lng: q.lng, gid: q.gid,
-  description: q.what, hours: q.hours, price: q.price, priceNote: q.priceNote, gmaps: q.gmaps, phone: q.phone || undefined, flags: [], tags: [],
+  description: q.what, hours: q.hours, price: q.price, priceNote: q.priceNote, gmaps: q.gmaps, phone: q.phone || undefined, flags: [], tags: [], season: q.season,
   groupKey: HOUSE.name, groupSlug: slug(HOUSE.name) + '-bar', s: slots(q.schedule)
 }));
 export const MAP_ITEMS = [...MARKETS.filter(m => !m.nomap), ...SPOTS.filter(s => !s.nomap), ...QSHOP];

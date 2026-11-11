@@ -13,7 +13,7 @@ export const t = (k, p) => Object.entries(p || {}).reduce((s, [a, b]) => s.split
 export const tx = v => (v && typeof v === 'object' ? v.en : v || ''); export const locale = () => 'en-GB'; export const typo = s => s;`;
 registerHooks({ resolve: (spec, ctx, next) => (spec === './i18n.js' && /\/engine\/src\/schedule\.js$/.test(ctx.parentURL || '') ? { url: 'data:text/javascript,' + encodeURIComponent(I18N), shortCircuit: true } : next(spec, ctx)) });
 const { weekOfMonth, lastOfMonth, onWeek, nthKey } = await import('../src/weeks.js');
-const { runsOn, nextOpen, nextDate, hoursText } = await import('../src/schedule.js');
+const { runsOn, nextOpen, nextDate, hoursText, offSeason, seasonOnly, seasonStatus, seasonText, closedStatus, statusLabel } = await import('../src/schedule.js');
 
 const D = (y, m, d, h = 0, mi = 0) => new Date(y, m - 1, d, h, mi);
 const ymd = dt => dt && `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
@@ -56,4 +56,30 @@ test('the words: nth1 to nth4 and nthLast in every language, read the guide way'
   }
   assert.equal(hoursText(mk(-1))[0].days, 'Last Sunday of the month');
   assert.equal(hoursText(mk(4))[0].days, '4th Sunday of the month');
+});
+
+// A season of our own and no hours (content: season { from, to }, MM-DD): closed out of season with the day it opens again,
+// as a seasonal place with hours says it; in season nothing of ours (Google's line gives the hours).
+const summer = { s: [], season: { from: '06-01', to: '09-30' } }, winter = { s: [], season: { from: '11-01', to: '03-31' } };
+test('a season without hours: out of season it is closed and says when it opens', () => {
+  assert.ok(seasonOnly(summer) && !seasonOnly({ s: [] }) && !seasonOnly({ s: [sun(0)], season: summer.season }));   // hours win: their own seasons stay rows
+  assert.ok(offSeason(summer, D(2026, 11, 11, 12)));
+  assert.deepEqual(seasonStatus(summer, D(2026, 11, 11, 12)), { cls: 'closed', text: 'Closed', sub: 'Opens 1 Jun' });
+  assert.deepEqual(closedStatus(summer, D(2026, 11, 11, 12)), seasonStatus(summer, D(2026, 11, 11, 12)));   // the same words wherever it is shown
+  assert.equal(statusLabel(summer, D(2026, 11, 11, 12)), null);
+  assert.ok(offSeason(summer, D(2026, 5, 31, 23, 59)) && offSeason(summer, D(2026, 10, 1)));   // the day before and the day after
+  assert.equal(seasonStatus(summer, D(2026, 5, 31)).sub, 'Opens 1 Jun');                      // tomorrow: still the date, we hold no time
+});
+test('a season without hours: in season nothing of ours is said', () => {
+  for (const d of [D(2026, 6, 1), D(2026, 7, 15, 13), D(2026, 9, 30, 23)]) { assert.ok(!offSeason(summer, d)); assert.equal(seasonStatus(summer, d), null); }
+  assert.equal(seasonText(summer), '1 Jun - 30 Sept');
+  assert.equal(seasonText({ s: [sun(0)], season: summer.season }), '');
+});
+test('a season without hours that wraps the new year', () => {
+  for (const d of [D(2026, 11, 1), D(2026, 12, 31), D(2027, 1, 1), D(2027, 3, 31)]) assert.ok(!offSeason(winter, d), d.toDateString());
+  assert.ok(offSeason(winter, D(2026, 7, 1)) && offSeason(winter, D(2027, 4, 1)) && offSeason(winter, D(2026, 10, 31)));
+  assert.equal(seasonStatus(winter, D(2026, 7, 1)).sub, 'Opens 1 Nov');
+  // A summer season seen in December: it opens next year.
+  assert.equal(seasonStatus(summer, D(2026, 12, 20)).sub, 'Opens 1 Jun');
+  assert.equal(seasonStatus({ s: [], season: { from: '01-15', to: '02-15' } }, D(2026, 12, 20)).sub, 'Opens 15 Jan');
 });

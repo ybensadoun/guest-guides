@@ -96,7 +96,7 @@ export async function fillPlaces(found, kept, ov, feats, { store, ask = null, ag
 // the fields given only; at is the latest date among them; page is the page the hours or the price were read on (a site or
 // a search), else the page any other fact was read on. Google is never a source here: its facts are not kept. GeoNames
 // (a beach's kind) is not one of the editor's words yet, so a kind from it is left out. null when nothing was filled.
-const FILLED = { phone: 'phone', url: 'website', schedule: 'hours', price: 'price', book: 'book' }, SAID = new Set(['overture', 'site', 'search', 'claude']);
+const FILLED = { phone: 'phone', url: 'website', schedule: 'hours', price: 'price', book: 'book', season: 'season' }, SAID = new Set(['overture', 'site', 'search', 'claude']);
 export function filledOf(fields, sources, list) {
   const from = {}, ats = [], pages = {};
   for (const k of fields) {
@@ -106,7 +106,7 @@ export function filledOf(fields, sources, list) {
     if (s.page && (s.from === 'site' || s.from === 'search')) pages[k] = s.page;
   }
   if (!Object.keys(from).length) return null;
-  const page = pages.schedule || pages.price || Object.values(pages)[0];
+  const page = pages.schedule || pages.season || pages.price || Object.values(pages)[0];
   return { at: ats.sort().pop() || today(), from, ...(page ? { page } : {}) };
 }
 
@@ -193,10 +193,12 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
     if (f.phone) e.phone = f.phone;
     if (f.website) e.url = f.website;
     if (Array.isArray(f.hours) && f.hours.length) e.schedule = f.hours;
+    // Its site's season, only with no hours of ours (a later read may have found hours: they win, with their own seasons).
+    else if (f.season && f.season.from && f.season.to) e.season = { from: f.season.from, to: f.season.to };
     if (f.price) e.price = f.price;
     if (f.book === true) e.book = true;
     if (!ours) e.pos = { from: 'google', at: today() };
-    const filled = filledOf(['kind', 'phone', 'url', 'schedule', 'price', 'book'].filter(k => k in e), (kept[p.gid] || {}).sources, p.list);
+    const filled = filledOf(['kind', 'phone', 'url', 'schedule', 'season', 'price', 'book'].filter(k => k in e), (kept[p.gid] || {}).sources, p.list);
     if (filled) e.filled = filled;
     geo[p.key] = e;
   }

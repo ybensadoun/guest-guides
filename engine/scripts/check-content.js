@@ -41,6 +41,10 @@ for (const k of Object.keys(base)) for (const l of LANGS) if (!(k in i18n[l])) e
 
 // A position Google gave carries its date (pos: { from: 'google', at: 'YYYY-MM-DD' }; the engine drops it after 30 days).
 const posBad = it => it.pos !== undefined && !(it.pos && typeof it.pos.from === 'string' && /^\d{4}-\d\d-\d\d$/.test(it.pos.at || ''));
+// A season of our own for a place with no hours (schedule.js seasonOnly): { from, to } as real MM-DD days, both ends, two
+// different days (a season may wrap the new year: 11-01 to 03-31).
+const MD = v => { const m = /^(\d\d)-(\d\d)$/.exec(v || ''); return !!m && +m[1] >= 1 && +m[1] <= 12 && +m[2] >= 1 && +m[2] <= [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][+m[1] - 1]; };
+const seasonBad = it => it.season !== undefined && !(it.season && typeof it.season === 'object' && MD(it.season.from) && MD(it.season.to) && it.season.from !== it.season.to);
 const four = (o, what) => { for (const l of LANGS) if (!o || !String(o[l] || '').trim()) errors.push(`${what} is missing ${l}`); };
 
 let nMarkets = 0;
@@ -79,6 +83,7 @@ for (const s of read(C('sections')).sections) {
       if (posBad(it)) errors.push(`${s.id} "${it.id}" pos must be { from, at: YYYY-MM-DD }`);
       if (it.gid !== undefined && (typeof it.gid !== 'string' || !it.gid.trim())) errors.push(`${s.id} "${it.id}" gid must be a Google place id`);
       if (it.group && !(it.group in GROUPS)) errors.push(`${s.id} "${it.id}" group "${it.group}" is not a filter group (engine/src/groups.json)`);
+      if (seasonBad(it)) errors.push(`${s.id} "${it.id}" season must be { from: "MM-DD", to: "MM-DD" }, both ends, two different days`);
     }
   }
   // Event dates: YYYY-MM-DD, the end not before the start; "time" (start) and "until" (end on the last day) are optional HH:MM.
@@ -90,6 +95,9 @@ for (const s of read(C('sections')).sections) {
     }
   }
 }
+
+// Home quick tiles may carry the same season (their page and tile say it like a list row).
+if (on('quick') && existsSync(C('quick'))) for (const q of read(C('quick')).items || []) if (seasonBad(q)) errors.push(`quick "${q.id}" season must be { from: "MM-DD", to: "MM-DD" }, both ends, two different days`);
 
 // Typography (docs/TYPOGRAPHY.md): Spanish ¿ ¡, Catalan punt volat, Dutch IJ, German quotes, German du (not Sie).
 const formal = [];

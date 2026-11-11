@@ -1,12 +1,12 @@
 import { t, tx, lang } from './i18n.js';
-import { offSeason, hoursText, statusLabel, nextOpenText, runsOn, closedStatus } from './schedule.js';
+import { hoursText, statusLabel, nextOpenText, runsOn, closedStatus, seasonStatus, seasonText } from './schedule.js';
 // Live status as text, like Google Maps: green "Open until 23:00", red "Closed" with when it next opens.
 // Status on the right of a row. Times never break ("14:00" stays whole), so a long label like
 // "Ouvert jusqu'à 14:00" wraps onto two lines instead of squeezing the place name.
 const nwT = x => esc(x).replace(/(\d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?)/g, '<span class="nw">$1</span>');
 export const stHTML = s => s ? `<span class="st ${s.cls}">${nwT(s.text)}${s.sub ? `<small>${nwT(s.sub)}</small>` : ''}</span>` : '';
 import { kmMe, gDir, gSearch } from './geo.js';
-import { wantsCard, slotHTML } from './gcard.js';
+import { wantsCard, slotHTML, cardGone } from './gcard.js';
 import FLAGS_FILE from './flags.json';
 // Warnings only: anything else in "flags" (a filter label, a typo) is never shown.
 const FLAGS = FLAGS_FILE.flags;
@@ -182,6 +182,10 @@ const wikiUrl = q => `https://${lang}.wikipedia.org/w/index.php?search=${encodeU
 // under the address, and its "Google Maps" button goes last in the actions (data-gbtn), kept back until we know no
 // line of Google's comes (that line has Google's own Maps button), so no other button ever moves. Every other row is
 // drawn exactly as before.
+// A place with a season of ours and no hours (seasonStatus) says "Closed" + "Opens 1 Jun" out of season, like a seasonal
+// place with hours, and its season where our hours go, above Google's line. With no status of ours and Google's line to
+// come, a quiet "See hours" stands where a status would (.st.quiet): the hours are one tap away. Never when the line
+// cannot show (no key, offline, no door, a card already dropped this visit): nothing there, as before.
 export function row(m, opts = {}) {
   const gc = !!opts.gcard && wantsCard(m);
   const live = opts.date && opts.live ? statusLabel(m, opts.date) : null;
@@ -201,11 +205,11 @@ export function row(m, opts = {}) {
    <summary>
      <span class="dot">${itemIcon(m)}</span>
      <span class="nm">${nameWithWarn(title(m), warn)}<small>${esc(catLabel(m))}<span class="dl">${dist}${price}</span></small></span>
-     <span class="rt">${live ? stHTML(live) : hrs ? `<span class="st plain">${esc(hrs)}</span>` : m.kind === 'spot' && opts.live && m.always ? `<span class="st open">${esc(t('open24'))}</span>` : m.kind === 'spot' && opts.live && m.s.length ? stHTML(closedStatus(m, opts.date)) : ''}<span class="chev" aria-hidden="true"></span></span>
+     <span class="rt">${live ? stHTML(live) : hrs ? `<span class="st plain">${esc(hrs)}</span>` : m.kind === 'spot' && opts.live && m.always ? `<span class="st open">${esc(t('open24'))}</span>` : m.kind === 'spot' && opts.live && m.s.length ? stHTML(closedStatus(m, opts.date)) : m.kind === 'spot' && opts.live && seasonStatus(m, opts.date) ? stHTML(seasonStatus(m, opts.date)) : gc && opts.live && !cardGone(m.gid) ? `<span class="st quiet">${esc(t('seeHours'))}</span>` : ''}<span class="chev" aria-hidden="true"></span></span>
      ${tagStrip(m)}
    </summary>
    <div class="mbody">
-     <div class="where">${where.map(esc).join('<br>')}</div>${gc ? slotHTML(m) : ''}
+     <div class="where">${where.map(esc).join('<br>')}</div>${seasonText(m) ? `<div class="when season"><span>${esc(seasonText(m))}</span></div>` : ''}${gc ? slotHTML(m) : ''}
      ${m.stalls_approx ? `<div class="row"><span class="size">${esc(t('stalls', { n: m.stalls_approx }))}</span></div>` : ''}
      ${m.s.length ? when : ''}${m.hours ? `<p class="hnote">${esc(tx(m.hours))}</p>` : ''}
      ${m.description ? `<div class="note">${esc(tx(m.description))}</div>` : ''}

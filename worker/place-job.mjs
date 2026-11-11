@@ -18,7 +18,7 @@ const num = v => typeof v === 'number' && Number.isFinite(v);
 const some = v => v != null && v !== '' && !(Array.isArray(v) && !v.length);
 const webUrl = u => { try { const x = new URL(/^https?:\/\//i.test(String(u || '').trim()) ? String(u).trim() : 'https://' + String(u || '').trim()); return x.hostname.includes('.') ? x.href : null; } catch (e) { return null; } };
 // Something found: a fact for the guide, or a position of ours (an entry still on Google's pin carries pos).
-export const factsFound = e => !!e && (['kind', 'phone', 'url', 'schedule', 'price', 'book'].some(k => some(e[k])) || !e.pos);
+export const factsFound = e => !!e && (['kind', 'phone', 'url', 'schedule', 'season', 'price', 'book'].some(k => some(e[k])) || !e.pos);
 
 // j: the job row ({ id, guide_id, params }); jp(patch): writes to the job (messages for the host, the result).
 // rest: Supabase's REST helper; store: makeStore(rest); ask, again: the worker's Haiku chain (placeAsk, placeAgain), null

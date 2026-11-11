@@ -99,11 +99,11 @@ function cf(label, path, obj, o = {}) {
 // An on/off setting: a switch with its state written next to it, so it is clear whether it is on.
 const cSwitch = (attrs, label, on, hint = '') => `<div class="cm-swrow"><button type="button" class="cm-switch" role="switch" aria-checked="${!!on}" ${attrs}><span class="cm-sw-track" aria-hidden="true"><span class="cm-sw-knob"></span></span><span class="cm-sw-label">${esc(label)}</span><span class="cm-sw-state" aria-hidden="true">${on ? 'On' : 'Off'}</span></button>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}</div>`;
 const cDays = (path, days) => ED_DAYS.map(([d, l]) => `<button class="chip" type="button" data-daytog="${esc(path)}" data-d="${d}" aria-pressed="${(days || []).includes(d)}"><span>${l}</span></button>`).join('');
-function cSchedule(path, arr, season = false, weeks = false) {   // season: each row says whether it is only part of the year (places, markets); weeks: and which weeks of the month (markets)
+function cSchedule(path, arr, season = false, weeks = false, own = '') {   // season: each row says whether it is only part of the year (places, markets); weeks: and which weeks of the month (markets); own: what stands above the Add button while there is no row (a place's own season, plSeason)
   return `<div class="f full"><span class="lab">Opening days and hours</span><div class="cm-sch">${(arr || []).map((r, k) => `<div class="cm-sr"><div class="cm-dayrow"><div class="chips" role="group" aria-label="Days">${cDays(`${path}/${k}`, r.days)}</div><button class="cm-x" type="button" data-cdel="${path}/${k}" data-now="1" aria-label="Remove these hours">×</button></div>
     <div class="cm-times"><input type="time" aria-label="Opens" data-p="${path}/${k}/open" data-t="str" value="${esc(r.open || '')}"><span>to</span><input type="time" aria-label="Closes" data-p="${path}/${k}/close" data-t="str" value="${esc(r.close || '')}"></div>
     ${season ? plSeason(`${path}/${k}`, r, weeks) : r.from || r.to ? `<p class="hint">Only from ${esc(r.from || '?')} to ${esc(r.to || '?')} (month-day).</p>` : ''}</div>`).join('')}
-    <button class="btn small" type="button" data-addsch="${path}">+ Add opening hours</button></div></div>`;
+    ${(arr || []).length ? '' : own}<button class="btn small" type="button" data-addsch="${path}">+ Add opening hours</button></div></div>`;
 }
 function cDates(path, arr) {
   return `<div class="f full"><span class="lab">Dates</span><div class="cm-sch">${(arr || []).map((r, k) => `<div class="cm-sr"><div class="cm-dates"><label><span class="hint">Starts</span><input type="date" data-p="${path}/${k}/start" data-t="str" value="${esc(r.start || '')}"></label><label><span class="hint">Ends</span><input type="date" data-p="${path}/${k}/end" data-t="str" value="${esc(r.end || '')}"></label></div>
@@ -125,7 +125,7 @@ function cCard(p, title, meta, inner, order, lead = '') {   // lead: what goes b
 }
 
 /* --- One place, contact or tile: its texts, links, position, hours or dates --- */
-const C_SKIP = new Set(['id', 'from', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx', 'pos', 'filled']);   // filled: where a place's facts came from, said under "Filled in for you", never a field
+const C_SKIP = new Set(['id', 'from', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx', 'pos', 'filled', 'season']);   // filled: where a place's facts came from, said under "Filled in for you", never a field; season: a place's own part of the year (plSeason)
 const C_STR = ['town', 'place', 'phone', 'web', 'url', 'map', 'gmaps', 'venue', 'address', 'comarca', 'price'];
 const C_LONG = ['description', 'what', 'examples', 'priceNote', 'hours', 'occasional_when'];
 const C_LBL = { name: 'Name', name_local: 'Name in the local language', title: 'Title on its page', sub: 'Line under the name', type: 'Type', kind: 'Kind', what: 'What guests need to know', description: 'Description', hours: 'Opening hours, in words', occasional_when: 'When it runs', town: 'Town', place: 'Where exactly', venue: 'Where exactly', address: 'Address', comarca: 'County', phone: 'Phone', url: 'Official website', web: 'Website', gmaps: 'Google Maps link', map: 'Map link', price: 'Price (€)', priceNote: 'About the price', taxiName: 'Taxi name', taxiSub: 'Line under the taxi' };
@@ -226,7 +226,10 @@ function plFound(p, sec, it) {
   const out = [], kind = it.icon && ENG_ICON[it.icon], K = plKind(sec, it.icon), say = (x, o) => `<p class="pl-note${o ? ' pl-clip" translate="no' : ''}">${esc(x)}</p>`;   // the guide's own notes: two lines at most here, whole in the form
   if (kind || plType(sec, it)) out.push(`<div class="pl-l pl-lk">${plTile(sec, it, true)}<div translate="no">${esc(plType(sec, it))}</div></div>`);
   const hrs = it.always ? ['<span>Open 24 hours</span>'] : plHours(it.schedule), note = edShown(it.hours || {}), facts = [it.price, (it.setMenus || []).length, it.phone, it.url, plMarks(sec, it).length, note, edShown(it.priceNote || {})].some(x => x && String(x).trim());
-  if (hrs.length || note) out.push(line(I.clock, hrs.join('') + (note ? say(note, 1) : '')));
+  // A season of its own and no hours: the season, then (with a Google id) that guests get the hours from Google's line.
+  const ss = !it.always && !hrs.length && plOwnSeason(it);
+  if (ss) out.push(line(I.clock, `<span class="pl-hl">${esc(`Open from ${plDate(ss.from)} to ${plDate(ss.to)}`)}</span>${it.gid ? say('Guests see Google’s own line for the hours.') : ''}${note ? say(note, 1) : ''}`));
+  else if (hrs.length || note) out.push(line(I.clock, hrs.join('') + (note ? say(note, 1) : '')));
   else if ((kind || facts) && (!K || K.hours !== false)) out.push(line(I.clock, say(it.gid ? 'No opening hours found. Guests see Google’s own line saying whether it is open.' : 'No opening hours found.')));
   const price = [it.price ? engT('perPerson', it.price) : '', ...(it.setMenus || []).filter(m => m && m.price).map(m => engT('sm_' + m.kind, m.price))].filter(Boolean), pn = edShown(it.priceNote || {});
   if (price.length || pn) out.push(line(I.euro, (price.length ? `<span translate="no">${esc(price.join(' · '))}</span>` : '') + (pn ? say(pn, 1) : '')));
@@ -249,7 +252,7 @@ function plFound(p, sec, it) {
 // read; Overture is "an open directory"; a kind Claude guessed from the name alone says nothing. A fact the host changed is
 // theirs and left out (plMine). The sentence is put together here, in the maker's language (its template and words from
 // i18n/ui.json, Intl for the list and the date), so the line is not translated again on its way (translate="no").
-const PF_HAS = { kind: it => !!it.icon, phone: it => !!it.phone, url: it => !!it.url, schedule: it => !it.always && (it.schedule || []).some(r => (r.days || []).length), price: it => !!it.price, book: it => (it.flags || []).includes('book') };
+const PF_HAS = { kind: it => !!it.icon, phone: it => !!it.phone, url: it => !!it.url, schedule: it => !it.always && (it.schedule || []).some(r => (r.days || []).length), season: it => !it.always && !(it.schedule || []).length && !!plOwnSeason(it), price: it => !!it.price, book: it => (it.flags || []).includes('book') };
 function plFrom(it) {
   const f = it.filled; if (!f || !f.from || typeof f.from !== 'object') return '';
   const src = new Set(Object.entries(f.from).filter(([k]) => PF_HAS[k] && PF_HAS[k](it)).map(([, v]) => v)), parts = [];
@@ -271,6 +274,13 @@ function plMine(p, k) {
   const it = edGet(edC(), edPath(m[0])), f = it && it.filled; if (!f || !f.from || !(k in f.from)) return;
   delete f.from[k]; if (!Object.keys(f.from).length) delete it.filled;
 }
+// A place's own season (it.season { from, to }, MM-DD), meaningful while it has no rows of hours: the guide then says "Closed,
+// Opens 1 Jun" out of season and Google's line gives the hours. The first row of hours added takes it (from/to on the row)
+// and it goes; the last row removed gives it back when every row removed carried that same season (plSeasonBack).
+const plOwnSeason = it => it && it.season && it.season.from && it.season.to ? it.season : null;
+const plRowsSeason = rows => { const k = [...new Set((rows || []).map(r => r && r.from && r.to ? r.from + '|' + r.to : ''))]; return k.length === 1 && k[0] ? k[0] : ''; };
+function plSeasonBack(it, gone, left = (it.schedule || []).length) { const k = plRowsSeason(gone); if (k && !left && !plOwnSeason(it)) { const [from, to] = k.split('|'); it.season = { from, to }; } }
+const PL_GONE = new Map();   // a place (its id) -> the rows of hours removed one by one in this visit, until the last goes
 // "Only part of the year" on a row of opening hours: two dates on one line, each a day and a month (from and to, MM-DD).
 // weeks (markets): "Which weeks" on the same line, in the values engine/src/weeks.js understands and names (week_of_month
 // 1 to 4, and -1 for the last one of the month; any other value a market already has is kept and offered as it is).
@@ -332,7 +342,7 @@ function plForm(p, sec, it, rest, where) {
     ${sec === 'eat' ? `<div class="f full"><span class="lab">Set menus</span>${sm.map((m, k) => `<div class="pl-sm"><select id="${cmId(`${p}/setMenus/${k}/kind`)}" data-p="${p}/setMenus/${k}/kind" data-t="str" aria-label="Set menus" translate="no">${[...new Set(['menuDia', 'tasting', m.kind])].filter(Boolean).map(x => smOpt(x, m.kind)).join('')}</select><input type="text" inputmode="decimal" id="${cmId(`${p}/setMenus/${k}/price`)}" data-p="${p}/setMenus/${k}/price" data-t="str" aria-label="Price (€)" placeholder="12-15" value="${esc(m.price || '')}"><button class="cm-x" type="button" data-csmdel="${p}/setMenus/${k}" aria-label="Remove this set menu">×</button></div>`).join('')}<button class="btn small pl-add" type="button" data-csmadd="${p}">+ Add a set menu</button></div>` : ''}
     ${cf('Phone', `${p}/phone`, it.phone, { type: 'tel', half: true })}${cf('Official website', `${p}/url`, it.url, { type: 'url', half: true })}
     <div class="full">${cSwitch(`data-calways="${p}"`, 'Open 24 hours', !!it.always)}</div>
-    ${it.always ? '' : cSchedule(`${p}/schedule`, it.schedule, true)}
+    ${it.always ? '' : cSchedule(`${p}/schedule`, it.schedule, true, false, plSeason(`${p}/season`, it.season || {}))}
     ${hasOwn('hours') ? cf('Opening hours, in words', `${p}/hours`, it.hours, { long: true, rows: 2 }) : ''}
     <div class="full">${cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.')}</div>
     <div class="f full pl-sub"><span class="lab">Where it is</span></div>
@@ -378,7 +388,7 @@ function plSeasonSet(t) {
   md[t.dataset.part === 'm' ? 0 : 1] = +t.value;
   md[1] = Math.min(md[1], [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][md[0] - 1]);
   r[end] = md.map(x => String(x).padStart(2, '0')).join('-');
-  plMine(t.dataset.cseas, 'schedule'); cmQueue(); render();
+  plMine(t.dataset.cseas, /\/season$/.test(t.dataset.cseas) ? 'season' : 'schedule'); cmQueue(); render();
 }
 /* --- A market (Yohann, 11 Nov 2026): the place card's shape. The row starts with the kind's tile (the guide's icon, engine
    CAT_ICON, pasted by build.py as ENG_CAT; one colour for every market: the engine colours markets by kind, so none of its
@@ -620,6 +630,7 @@ function pfApply(id) {
   if (!it.icon && e.kind && plKind(sec, e.kind)) { plPick(p, e.kind); took.push('kind'); }
   for (const k of ['phone', 'url', 'price']) if (none(it[k]) && typeof e[k] === 'string' && e[k].trim()) { it[k] = e[k]; took.push(k); }
   if (none(it.schedule) && !it.always && Array.isArray(e.schedule) && e.schedule.length) { it.schedule = cmClone(e.schedule); took.push('schedule'); }
+  else if (none(it.schedule) && !it.always && !plOwnSeason(it) && plOwnSeason(e)) { it.season = { from: e.season.from, to: e.season.to }; took.push('season'); }
   if (e.book === true && !(it.flags || []).includes('book')) { it.flags = [...(it.flags || []), 'book']; took.push('book'); }
   if (typeof e.town === 'string' && e.town && (it.town == null || (typeof it.town === 'string' && !it.town.trim()))) it.town = e.town;
   if (!e.pos && typeof e.lat === 'number' && typeof e.lng === 'number') { it.lat = e.lat; it.lng = e.lng; if (e.km != null) it.km_from_house = e.km; else edUpdateKm(edPath(p)); delete it.pos; delete it.nomap; }
@@ -1359,7 +1370,11 @@ const cmNoName = it => edBlank(it.name) && edBlank(it.title) && edBlank(it.t);
 function cmTidy(c) {
   const f = c.files || {}, h = f.house || {}; let n = 0;
   const drop = (a, empty) => { if (Array.isArray(a)) for (let i = a.length - 1; i >= 0; i--) if (empty(a[i])) { a.splice(i, 1); n++; } };
-  for (const [, a] of cmEntries(c)) for (const it of a) for (const k of Object.keys(CM_ROWS)) drop(it[k], CM_ROWS[k]);   // rows inside entries first
+  for (const [w, a] of cmEntries(c)) for (const it of a) {   // rows inside entries first
+    const rows = ['todo', 'restaurants', 'nightlife'].includes(w) && Array.isArray(it.schedule) && it.schedule.length ? [...it.schedule] : null;
+    for (const k of Object.keys(CM_ROWS)) drop(it[k], CM_ROWS[k]);
+    if (rows && !it.schedule.length) plSeasonBack(it, rows);   // only rows nobody filled in: a season one of them carried stays the place's
+  }
   for (const b of (f.message || {}).blocks || []) drop(b.items, edBlank);                 // a line of text empty in every language: house guide,
   drop((f.garbage || {}).steps, edBlank); drop((f['house-page'] || {}).beds, edBlank);    // how to sort, beds,
   for (const g of (f['house-page'] || {}).amenities || []) drop(g.items, edBlank);        // amenities
@@ -1653,7 +1668,7 @@ document.addEventListener('click', e => {
   if (d.cdiscard !== undefined) return cmDiscard(t);
   if (!t.closest('.edz')) return;
   // A place's fact changed by hand (its kind, the hours or Open 24 hours, Book ahead) is the host's: no source said for it.
-  { const own = d.ckind ? [d.ckind, 'kind'] : d.cflag && d.f === 'book' ? [d.cflag, 'book'] : d.calways || d.daytog || d.cseason || d.addsch ? [d.calways || d.daytog || d.cseason || d.addsch, 'schedule']
+  { const own = d.ckind ? [d.ckind, 'kind'] : d.cflag && d.f === 'book' ? [d.cflag, 'book'] : d.cseason && /\/season$/.test(d.cseason) ? [d.cseason, 'season'] : d.calways || d.daytog || d.cseason || d.addsch ? [d.calways || d.daytog || d.cseason || d.addsch, 'schedule']
       : d.cdel && /\/schedule\/\d+$/.test(d.cdel) ? [d.cdel, 'schedule'] : null; if (own) plMine(...own); }
   if (d.pflook) return pfStart(d.pflook);
   if (d.pfagain) { const it = edGet(edC(), edPath(d.pfagain)), j = it && CM.pf[it.id]; return pfStart(d.pfagain, (j && j.website) || ''); }
@@ -1681,8 +1696,13 @@ document.addEventListener('click', e => {
   if (d.csmadd) { const it = edGet(edC(), edPath(d.csmadd)); if (it) { (it.setMenus = it.setMenus || []).push({ kind: 'menuDia', price: '' }); done(); const x = document.getElementById(cmId(`${d.csmadd}/setMenus/${it.setMenus.length - 1}/price`)); if (x) x.focus(); } return; }
   if (d.csmdel) { const q = edPath(d.csmdel), it = edGet(edC(), q.slice(0, -2)); if (it && Array.isArray(it.setMenus)) { it.setMenus.splice(q[q.length - 1], 1); if (!it.setMenus.length) delete it.setMenus; done(); } return; }
   if (d.calways) { const it = edGet(edC(), edPath(d.calways)); if (it) { if (it.always) delete it.always; else it.always = true; done(); } return; }   // the hours stay, only hidden
+  // A place's own season (no rows of hours): on, June to September as on a row; off, it goes.
+  if (d.cseason && /\/season$/.test(d.cseason)) { const it = edGet(edC(), edPath(d.cseason).slice(0, -1)); if (it) { if (it.season) delete it.season; else it.season = { from: '06-01', to: '09-30' }; done(); } return; }
   if (d.cseason) { const r = edGet(edC(), edPath(d.cseason)); if (r) { if (r.from || r.to) { delete r.from; delete r.to; } else { r.from = '06-01'; r.to = '09-30'; } done(); } return; }
-  if (d.addsch) { arr(d.addsch).push({ days: [], open: '09:00', close: '14:00' }); return done(); }
+  if (d.addsch) { const a = arr(d.addsch), it = edGet(edC(), edPath(d.addsch).slice(0, -1)), ss = !a.length && plOwnSeason(it);
+    a.push({ days: [], open: '09:00', close: '14:00', ...(ss ? { from: ss.from, to: ss.to } : {}) });   // the first row takes the place's season
+    if (ss) { delete it.season; plMine(d.addsch, 'season'); }
+    return done(); }
   if (d.adddate) { arr(d.adddate).push({ start: '', end: '', status: 'expected' }); return done(); }
   if (d.translate !== undefined) return cmTranslate();
   if (d.cardmove) { e.preventDefault();   // the arrows sit in the card's title: they must not open it
@@ -1721,6 +1741,10 @@ document.addEventListener('click', e => {
     const p = edPath(d.cdel), a = edGet(edC(), p.slice(0, -1));
     const ev = d.cdel.startsWith('files/events/items/') && p.length === 4 && a && a[p[3]];
     if (ev && ev.auto) cmEvAutoSet({ removed: [...(evAuto().removed || []), { name: (ev.name || {}).en || edShown(ev.name), at: new Date().toISOString().slice(0, 10) }] });
+    // A place's last row of hours removed: its season comes back to the place when every row removed carried the same one.
+    const pl = /^files\/(?:restaurants|nightlife|todo)\/items\/\d+\/schedule\/\d+$/.test(d.cdel) && edGet(edC(), p.slice(0, -2));
+    if (pl && Array.isArray(a) && a[p[p.length - 1]]) { const key = pl.id || d.cdel, gone = [...(PL_GONE.get(key) || []), a[p[p.length - 1]]];
+      if (a.length > 1) PL_GONE.set(key, gone); else { PL_GONE.delete(key); plSeasonBack(pl, gone, 0); } }
     if (Array.isArray(a)) { a.splice(p[p.length - 1], 1); for (const S of [CM.open, CM.chg, CM.kpick]) for (const k of [...S]) if (k.startsWith(d.cdel)) S.delete(k); for (const k of [...CM.kq.keys()]) if (k.startsWith(d.cdel)) CM.kq.delete(k); if (p[0] === 'private') cmWifiQr(); done(); }
   }
 });

@@ -34,6 +34,10 @@ export const hasKey = () => !!key();
 // A place asks for the card only with no hours of ours (slots or open all day), a Google id, a door, a key and a connection.
 export const wantsCard = m => !!(m && m.gid && hasKey() && navigator.onLine && !m.always && !((m.s || m.schedule || []).length) && !NO_DOOR.has(m.icon));
 
+// This visit already knows no card comes for this place (Google had nothing to say, an error, no answer, or Google's script
+// could not load): a row drawn again does not offer it ("See hours").
+export const cardGone = gid => LIBFAIL || CARDS.get(gid)?.state === 'drop';
+
 // The slot: in a row's body where our own hours lines go, under the address. On the quick tile page it is a section of
 // its own with the hours heading, unless the page already has its hours block (a note or a price), which then holds it
 // under its own heading.
@@ -65,9 +69,12 @@ const ourButton = slot => slot.closest('.mrow, .place')?.querySelector('[data-gb
 const shown = el => !!(el && el.isConnected && el.getClientRects().length);
 
 // No card for this place: the slot goes and our own "Google Maps" button, kept back while a card could come, is shown.
+// The row's quiet "See hours" (ui.js) promised hours that are not coming: it goes out of sight, keeping its room so the
+// name does not move under the guest's eyes, and is not drawn again this visit (cardGone).
 function noCard(slot) {
   slot.hidden = true;
   const b = ourButton(slot); if (b) b.hidden = false;
+  const q = slot.closest('.mrow')?.querySelector(':scope > summary .st.quiet'); if (q) q.style.visibility = 'hidden';
 }
 function drop(c) {
   c.state = 'drop'; clearTimeout(c.timer);

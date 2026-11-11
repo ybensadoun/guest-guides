@@ -5,6 +5,9 @@
 // host is routed: Google's script gets a fake that defines google.maps.importLibrary and a fake
 // <gmp-place-details-compact> whose height and answer this check chooses per place (125 px then gmp-load, a card with a
 // status line; 105 px then gmp-load, Google's card with nothing to say; gmp-error; never answering). Any other request to a Google host fails the check. At 360 px in de and fr.
+// The quiet "See hours" on a row (ui.js, .st.quiet) is checked with it: there only when the card can come, out of sight in
+// an opened row and once the card is dropped. The patched copy also gives quijote a season of ours that today is out of
+// (Closed + Opens <date>, the season above the card) and a place of Things to do one that today is in (the quiet word).
 // Needs Playwright (as ux-check.mjs): node engine/scripts/gcard-check.mjs <site> [chromium path]
 import { createServer } from 'http'; import { spawnSync } from 'child_process';
 import { readFileSync, writeFileSync, existsSync, statSync, mkdtempSync, rmSync, cpSync } from 'fs'; import { join, extname, resolve } from 'path'; import { tmpdir } from 'os';
@@ -16,6 +19,9 @@ const FAKE_KEY = 'test-key-not-real-000000';
 const content = f => JSON.parse(readFileSync(join(SD, 'content', f + '.json'), 'utf8'));
 const gidOf = (f, id) => { const x = content(f).items.find(i => i.id === id); if (!x || !x.gid) throw new Error(`${f}/${id} has no gid: the check needs it`); return x.gid; };
 const G = { quijote: gidOf('restaurants', 'quijote'), gramona: gidOf('todo', 'gramona'), montserrat: gidOf('todo', 'montserrat'), poblet: gidOf('todo', 'poblet'), codorniu: gidOf('todo', 'codorniu'), recaredo: gidOf('todo', 'recaredo'), comaruga: gidOf('todo', 'beach-comaruga') };
+// A season as MM-DD from today plus a number of days at each end (today's clock: the guide reads the phone's date).
+const MMDD = n => { const d = new Date(); d.setDate(d.getDate() + n); return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const SEASON = (a, b) => ({ from: MMDD(a), to: MMDD(b) });
 const TOWN_GID = 'TestTownGid0000000000', CITY_GID = 'TestCityGid0000000000', TILE_GID = 'TestTileGid0000000000';
 // What the fake card does for each place: [answer, height in px]. Anything not listed: a card with a status line.
 const PLAN = { [G.gramona]: ['load', 105], [G.montserrat]: ['error', 0], [G.poblet]: ['never', 0] };
@@ -33,7 +39,8 @@ const patched = () => {
   const d = join(TMP, 'site');
   for (const f of ['site.json', 'theme.css', 'content', 'i18n', 'public']) if (existsSync(join(SD, f))) cpSync(join(SD, f), join(d, f), { recursive: true });
   const edit = (f, fn) => { const p = join(d, 'content', f + '.json'), j = JSON.parse(readFileSync(p, 'utf8')); fn(j); writeFileSync(p, JSON.stringify(j)); };
-  edit('todo', j => { for (const x of j.items) { if (x.id === 'beach-comaruga') delete x.always; if (x.icon === 'town' && !x.gid) x.gid = TOWN_GID; if (x.icon === 'city' && !x.gid) x.gid = CITY_GID; } });
+  edit('todo', j => { for (const x of j.items) { if (x.id === 'beach-comaruga') delete x.always; if (x.icon === 'town' && !x.gid) x.gid = TOWN_GID; if (x.icon === 'city' && !x.gid) x.gid = CITY_GID; if (x.id === 'vilafranca') x.season = SEASON(-10, 10); } });
+  edit('restaurants', j => { for (const x of j.items) if (x.id === 'quijote') x.season = SEASON(40, 100); });
   let tile = null;
   edit('quick', j => { const q = j.items.find(x => !x.trains && x.phone !== undefined) || j.items.find(x => !x.trains); if (q) { tile = q.id; delete q.schedule; delete q.always; delete q.hours; delete q.price; q.gid = TILE_GID; q.lat = q.lat || 41.2; q.lng = q.lng || 1.5; } });
   const t = JSON.parse(readFileSync(join(d, 'content', 'todo.json'), 'utf8')).items;
@@ -91,7 +98,11 @@ const rowState = (pg, id) => pg.evaluate(s => {
   const r = document.querySelector(s); if (!r) return null;
   const B = r.querySelector('.mbody'), T = B.getBoundingClientRect(), slot = B.querySelector(':scope > [data-gcard]');
   return {
-    open: r.open, h: Math.round(T.height), placed: !!slot && !!slot.previousElementSibling && slot.previousElementSibling.classList.contains('where'),
+    // Under the address, or under our season line that is itself under the address.
+    open: r.open, h: Math.round(T.height), placed: !!slot && !!slot.previousElementSibling && (slot.previousElementSibling.classList.contains('where') || (slot.previousElementSibling.classList.contains('season') && !!slot.previousElementSibling.previousElementSibling?.classList.contains('where'))),
+    quiet: (() => { const q = r.querySelector(':scope > summary .st.quiet'); return q ? { text: q.textContent.trim(), seen: getComputedStyle(q).visibility !== 'hidden' } : null; })(),
+    status: r.querySelector(':scope > summary .rt .st:not(.quiet)')?.innerText.replace(/\n/g, ' / ') || '',
+    season: B.querySelector(':scope > .when.season')?.textContent.trim() || '',
     slotShown: !!(slot && slot.getClientRects().length), vis: slot ? getComputedStyle(slot).visibility : '',
     btns: [...B.querySelectorAll('.actions .btn')].filter(a => !a.hasAttribute('data-gbtn')).map(a => { const x = a.getBoundingClientRect(); return [Math.round(x.left - T.left), Math.round(x.top - T.top), Math.round(x.width), Math.round(x.height)].join(','); }),
     gbtn: (() => { const g = B.querySelector('[data-gbtn]'); return g ? { shown: !!g.getClientRects().length, last: g === g.parentElement.lastElementChild } : null; })(),
@@ -139,7 +150,10 @@ try {
         if (!s0.placed) fail(at(id), 'the slot is not under the address, where our hours go');
         if (!s0.gbtn || !s0.gbtn.last) fail(at(id), 'our Google Maps button is not last in the actions');
         if (net.script || (await counts(pg)).req.length) fail(at(id), 'Google was asked before the row was opened');
+        if (!s0.quiet || !s0.quiet.seen || !s0.quiet.text) fail(at(id), 'no quiet "See hours" on a closed row whose card can come');
+        if (await pg.evaluate(() => document.querySelector('.mrow[data-id="restaurants-locanda"] .st.quiet'))) fail(at(id), 'a place with hours of ours has the quiet word');
         await click(pg, id); const before = await rowState(pg, id);
+        if (before.quiet && before.quiet.seen) fail(at(id), 'the quiet word still shows in the opened row');
         if (before.on || before.vis !== 'hidden') fail(at(id), 'the card shows before it loaded');
         if (!before.slotShown) fail(at(id), 'the row keeps no room for the card while it loads');
         if (before.gbtn.shown) fail(at(id), 'our Google Maps button shows while a card may still come');
@@ -176,6 +190,7 @@ try {
       for (const id of ids) { const a = await rowState(pg, id), x = before[id];
         if (!x.slot) { fail(at(id), 'no slot'); continue; }
         if (a.on || a.el) fail(at(id), 'a card without hours, failed or silent is still there');
+        if (a.quiet && a.quiet.seen) fail(at(id), 'the quiet word still promises hours after the card was dropped');
         if (!a.gbtn.shown) fail(at(id), 'our Google Maps button was hidden');
         if (a.slotShown) fail(at(id), 'the slot still takes room');
         if (a.h >= x.h || !same(rel(a.btns), rel(x.btns))) fail(at(id), `the row did not close up as it was: ${x.h} ${x.btns} / ${a.h} ${a.btns}`); }
@@ -195,6 +210,7 @@ try {
       await ctx.setOffline(true);
       await pg.evaluate(() => { location.hash = '#s/todo'; }); await pg.waitForTimeout(500);
       if (await pg.evaluate(() => document.querySelectorAll('[data-gcard]').length)) fail(at('offline'), 'slots drawn offline');
+      if (await pg.evaluate(() => document.querySelectorAll('.st.quiet').length)) fail(at('offline'), 'the quiet word offline');
       await click(pg, 'todo-recaredo'); await pg.waitForTimeout(800);
       if (net.script || net.real.length) fail(at('offline'), 'Google was asked offline');
       if (!(await rowState(pg, 'todo-recaredo')).btns.length) fail(at('offline'), 'the row lost its buttons');
@@ -202,7 +218,7 @@ try {
 
     // 4. Without the variable: no slot anywhere, no request at all, and the credits say nothing of the card.
     { const { ctx, pg, net } = await open(NOKEY, l, '#s/todo');
-      if (await pg.evaluate(() => document.querySelectorAll('[data-gcard], [data-gbtn]').length)) fail(at('no key'), 'slots without a key');
+      if (await pg.evaluate(() => document.querySelectorAll('[data-gcard], [data-gbtn], .st.quiet').length)) fail(at('no key'), 'slots or the quiet word without a key');
       for (const id of ['todo-gramona', 'todo-codorniu']) await click(pg, id);
       await pg.evaluate(() => { location.hash = '#s/restaurants'; }); await pg.waitForTimeout(400); await click(pg, 'restaurants-quijote'); await pg.waitForTimeout(800);
       if (await pg.evaluate(() => document.querySelectorAll('[data-gcard], [data-gbtn]').length)) fail(at('no key'), 'slots without a key');
@@ -219,6 +235,19 @@ try {
     { const { ctx, pg, net } = await open(PATCH, l, '#s/todo');
       for (const id of ['beach-comaruga', P.town, P.city].filter(Boolean)) if (await pg.evaluate(s => document.querySelector(s + ' [data-gcard]'), sel('todo-' + id))) fail(at('todo-' + id), 'a place with no door has a slot');
       if (!P.town || !P.city) fail(at('patched'), 'no town or city to try');
+      // In season, a season and no hours: the quiet word, as any place with no hours of ours.
+      { const v = await rowState(pg, 'todo-vilafranca'); if (!v || !v.quiet || !v.quiet.seen || v.status) fail(at('todo-vilafranca'), `in season: ${JSON.stringify(v && { quiet: v.quiet, status: v.status })}`); }
+      for (const id of ['beach-comaruga', P.town, P.city].filter(Boolean)) if ((await rowState(pg, 'todo-' + id))?.quiet) fail(at('todo-' + id), 'a place with no door has the quiet word');
+      // Out of season: Closed and the day it opens, no quiet word; opened, the season above Google's card, which still comes.
+      await pg.evaluate(() => { location.hash = '#s/restaurants'; }); await pg.waitForTimeout(400);
+      { const id = 'restaurants-quijote', q = await rowState(pg, id);
+        if (!q || q.quiet || !/ \/ \S/.test(q.status)) fail(at(id), `out of season it does not say Closed and when it opens: ${q && q.status}`);
+        await click(pg, id);
+        await pg.waitForSelector(`${sel(id)} .gcard.on`, { timeout: 4000 }).catch(() => fail(at(id), 'out of season the card was not shown'));
+        const o = await rowState(pg, id);
+        if (!o.season || !o.placed) fail(at(id), `the season is not above the card, under the address: "${o.season}"`);
+        for (const x of await layout(pg)) fail(at(id), x); }
+      await pg.evaluate(() => { location.hash = '#s/todo'; }); await pg.waitForTimeout(400);
       if (P.tile) {
         await pg.evaluate(t => { location.hash = '#p/' + t; }, P.tile); await pg.waitForTimeout(150);
         const st = () => pg.evaluate(() => { const s = document.querySelector('.place [data-gcard]'), g = document.querySelector('.place [data-gbtn]'), W = document.querySelector('.place').getBoundingClientRect();

@@ -218,6 +218,7 @@
   "opensDay": "Obre {day} a les {time}",
   "opensDayM": "Obre {day} al matí",
   "opensDate": "Obre el {date}",
+  "seeHours": "Veure horari",
   "greetMorning": "Bon dia",
   "greetAfternoon": "Bona tarda",
   "greetEvening": "Bona nit",

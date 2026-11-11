@@ -8,11 +8,12 @@
 // gazetteer's point: a GeoNames value never replaces an Overture one, the other way round it does.
 // category: Overture's own raw category. name: the record's name as the place writes it. kind_eat, kind_todo: our kind
 // (a key of engine/src/kinds.json) for each list the place was looked at for; a place can be in both.
-export const FACTS = ['name', 'phone', 'website', 'facebook', 'instagram', 'town', 'category', 'kind_eat', 'kind_todo', 'hours', 'price', 'book', 'lat', 'lng'];
+// season: { from, to } (MM-DD), the part of the year a place with no hours on its site opens (a key of facts: no new column).
+export const FACTS = ['name', 'phone', 'website', 'facebook', 'instagram', 'town', 'category', 'kind_eat', 'kind_todo', 'hours', 'price', 'book', 'season', 'lat', 'lng'];
 export const LISTS = ['eat', 'todo'];
 
 // Facts only a place with a door has: one of them kept means we know it is a venue, whatever one answer says.
-const VENUE_FACTS = ['phone', 'website', 'facebook', 'instagram', 'hours', 'price', 'book'];
+const VENUE_FACTS = ['phone', 'website', 'facebook', 'instagram', 'hours', 'price', 'book', 'season'];
 const has = v => v !== null && v !== undefined;
 const day = d => d.toISOString().slice(0, 10);
 const num = v => typeof v === 'number' && Number.isFinite(v) ? v : null;
@@ -22,7 +23,7 @@ const num = v => typeof v === 'number' && Number.isFinite(v) ? v : null;
 const POS = r => r.posFrom === 'geonames' ? 'geonames' : 'overture';
 const FROM = { name: r => r.nameFrom || 'overture', phone: r => r.phoneFrom, website: r => r.websiteFrom, facebook: () => 'overture', instagram: () => 'overture',
   town: r => r.townFrom || 'overture', category: () => 'overture', kind_eat: r => r.kindFrom || 'claude', kind_todo: r => r.kindFrom || 'claude', lat: POS, lng: POS,
-  hours: () => 'site', price: () => 'site', book: () => 'site' };
+  hours: () => 'site', price: () => 'site', book: () => 'site', season: () => 'site' };
 // A new value that does not replace a kept one: GeoNames' over anything else (Overture's position, name or town; Claude's
 // or the site's kind), and a plain "Restaurant" (fork) from the match over the kind a site's menu showed.
 const weaker = (k, from, v, old) => !!old && !old.none && ((from === 'geonames' && old.from !== 'geonames') || (k.startsWith('kind_') && from === 'claude' && v === 'fork' && old.from === 'site'));

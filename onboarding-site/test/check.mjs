@@ -1131,6 +1131,46 @@ try {
       ok('place card, desktop: a new kind is saved and the phone beside the editor reloads with it', !!k1 && k1.icon === 'kart' && (ctx.viewer || 0) > loads && await beside(), `${loads} -> ${ctx.viewer}`);
       ok('place card, desktop: no page errors', !errors.length, errors.join(' | '));
       await ctx.close(); }
+    // A place's own season (11 Nov 2026, "It's closed for the season, let's make it clear in the list"): a place with no rows of
+    // hours gets "Only part of the year" in its hours, written to the place (season); the first row of hours added takes it,
+    // the last one removed gives it back; the panel says it in one line. At 360 px and on the desktop beside the phone.
+    { const si = items('restaurants').findIndex(x => !(x.schedule || []).length && !x.always), SP = `files/restaurants/items/${si}`;
+      for (const [w, h, tag] of [[360, 780, '360'], [1280, 860, 'desktop']]) {
+        const { ctx, p, errors, item } = await run(w, h);
+        await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
+        if (si < 0 || !(await p.$(card(SP)))) { ok(`place season, ${tag}: a place with no hours to try`, false); await ctx.close(); continue; }
+        await p.click(card(SP) + ' > summary'); await p.click(card(SP) + ' [data-cchg]'); await p.waitForTimeout(250);
+        const chip = card(SP) + ` [data-cseason="${SP}/season"]`, sch = card(SP) + ' .cm-sch';
+        const place = await p.evaluate(([sel, c]) => { const s = document.querySelector(sel), ch = document.querySelector(c), add = s && s.querySelector('[data-addsch]'); if (!ch || !add) return null;
+          return { inHours: s.contains(ch), above: ch.getBoundingClientRect().bottom <= add.getBoundingClientRect().top, off: ch.getAttribute('aria-pressed') }; }, [sch, chip]);
+        ok(`place season, ${tag}: a place with no hours has "Only part of the year" in its hours, above Add opening hours, off`, !!place && place.inHours && place.above && place.off === 'false', JSON.stringify(place));
+        const shotHours = async name => { await p.$eval(sch, e => e.closest('.f').scrollIntoView({ block: 'center' })); await p.waitForTimeout(150); await p.screenshot({ path: join(SHOTS, name) }); };
+        await shotHours(`place-season-off-${tag}.png`);
+        await p.click(chip); const s1 = await item(SP);
+        const line = await p.evaluate(sel => { const s = document.querySelector(sel + ' .pl-season'); if (!s) return false; const mids = [...s.children].map(c => { const r = c.getBoundingClientRect(); return Math.round(r.top + r.height / 2); }); return s.children.length === 6 && Math.max(...mids) - Math.min(...mids) <= 2; }, sch);
+        ok(`place season, ${tag}: on, it writes the place's season (06-01 to 09-30) and shows both dates on one line`, !!s1 && JSON.stringify(s1.season) === '{"from":"06-01","to":"09-30"}' && !(s1.schedule || []).length && line, JSON.stringify(s1 && s1.season));
+        await p.selectOption(card(SP) + ` [data-cseas="${SP}/season"][data-end="from"][data-part="m"]`, '5'); const s2 = await item(SP);
+        ok(`place season, ${tag}: a month picked changes it (05-01), no source said for it`, !!s2 && !!s2.season && s2.season.from === '05-01' && !(s2.filled && s2.filled.from && 'season' in s2.filled.from), JSON.stringify(s2 && [s2.season, s2.filled]));
+        const c1 = await clash(p, card(SP));
+        ok(`place season, ${tag}: on, nothing overlaps or sticks out`, !c1.length, c1.join('; '));
+        await shotHours(`place-season-on-${tag}.png`);
+        // The panel: the season in one line, then that guests see Google's line for the hours.
+        await p.click(card(SP) + ' [data-cchg]'); await p.waitForTimeout(200); const said = (await p.textContent(card(SP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+        ok(`place season, ${tag}: the panel says "Open from 1 May to 30 Sep" and, with a Google id, that guests see Google's line`, /Open from 1 May to 30 Sept?/.test(said) && (!(s2 || {}).gid || /Guests see Google’s own line for the hours\./.test(said)), said.slice(0, 160));
+        const c2 = await clash(p, card(SP));
+        ok(`place season, ${tag}: the panel, nothing overlaps or sticks out`, !c2.length, c2.join('; '));
+        await p.locator(card(SP)).screenshot({ path: join(SHOTS, `place-season-panel-${tag}.png`), style: NO_BAR });
+        await p.click(card(SP) + ' [data-cchg]'); await p.waitForTimeout(200);
+        // The first row of hours takes the season; the last one removed gives it back.
+        await p.click(card(SP) + ` [data-addsch="${SP}/schedule"]`); const s3 = await item(SP);
+        ok(`place season, ${tag}: the first row of hours added takes the season and the place's goes`, !!s3 && !s3.season && (s3.schedule || []).length === 1 && s3.schedule[0].from === '05-01' && s3.schedule[0].to === '09-30', JSON.stringify(s3 && [s3.season, s3.schedule]));
+        await p.click(card(SP) + ` [data-cdel="${SP}/schedule/0"]`); const s4 = await item(SP);
+        ok(`place season, ${tag}: the last row removed gives the season back to the place`, !!s4 && JSON.stringify(s4.season) === '{"from":"05-01","to":"09-30"}' && !(s4.schedule || []).length, JSON.stringify(s4 && [s4.season, s4.schedule]));
+        await p.click(chip); const s5 = await item(SP);
+        ok(`place season, ${tag}: off, the season goes`, !!s5 && !('season' in s5), JSON.stringify(s5 && s5.season));
+        ok(`place season, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+        await ctx.close(); }
+    }
     // A place's facts, looked up in the editor (job place-facts, 11 Nov 2026): picked on Google, the place gets one job; its
     // panel says it is looking (through a re-render, another step and a reload), then fills only what is empty, once, and says
     // in one quiet line where the facts came from. Nothing found: the host may paste its website; a failure offers Try again.

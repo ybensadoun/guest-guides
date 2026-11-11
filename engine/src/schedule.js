@@ -12,8 +12,15 @@ const md = dt => (dt.getMonth() + 1) * 100 + dt.getDate();
 const mdNum = v => { const [m, d] = v.split('-').map(Number); return m * 100 + d; };
 export const inSeason = (x, dt) => !x.from || (mdNum(x.from) <= mdNum(x.to) ? md(dt) >= mdNum(x.from) && md(dt) <= mdNum(x.to) : md(dt) >= mdNum(x.from) || md(dt) <= mdNum(x.to));
 const slotOn = (x, dt) => x.d.includes(dt.getDay()) && onWeek(dt, x.nth) && inSeason(x, dt);
+// A season of our own and no hours (the item's season { from, to }, MM-DD, no schedule rows): we know the part of the year it
+// opens, not its times, which Google's line gives when the row opens (gcard.js). Hours with their own season stay rows.
+export const seasonOnly = m => !!(m && !(m.s || []).length && m.season && m.season.from && m.season.to);
 // True when the place only opens in a season and today is outside it.
-export const offSeason = (m, dt = new Date()) => m.s.length > 0 && m.s.every(x => x.from) && !m.s.some(x => inSeason(x, dt));
+export const offSeason = (m, dt = new Date()) => (seasonOnly(m) ? !inSeason(m.season, dt) : m.s.length > 0 && m.s.every(x => x.from) && !m.s.some(x => inSeason(x, dt)));
+// A day of the year as the guide says it, "1 Jun" (Intl, the guide's language).
+const fmtMD = v => { const [mm, dd] = v.split('-').map(Number); return new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short' }).format(new Date(2026, mm - 1, dd)); };
+// The season in the words a seasonal row of hours prints its dates in (hoursText): "1 Jun - 30 Sep".
+export const seasonText = m => (seasonOnly(m) ? typo(`${fmtMD(m.season.from)} - ${fmtMD(m.season.to)}`) : '');
 
 export const runsOn = (m, dt) => m.s.filter(x => slotOn(x, dt));
 
@@ -59,7 +66,16 @@ export function statusLabel(m, dt) {
 export function closedStatus(m, now = new Date()) {
   return { cls: 'closed', text: t('closed'), sub: nextShort(m, now) };
 }
+// A season and no hours: "Closed" + "Opens 1 Jun" out of season, nothing in season (we do not know whether it is open now).
+export const seasonStatus = (m, now = new Date()) => (seasonOnly(m) && offSeason(m, now) ? closedStatus(m, now) : null);
 export function nextShort(m, from = new Date()) {
+  // A season and no hours: only the day it opens again, as for a seasonal place with hours ("Opens 1 Jun").
+  if (seasonOnly(m)) {
+    if (inSeason(m.season, from)) return '';
+    const [mm, dd] = m.season.from.split('-').map(Number), d0 = new Date(from); d0.setHours(0, 0, 0, 0);
+    const d = new Date(d0.getFullYear(), mm - 1, dd); if (d < d0) d.setFullYear(d.getFullYear() + 1);
+    return t('opensDate', { date: new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short' }).format(d) });
+  }
   const nx = nextOpen(m, from);
   if (!nx) return '';
   const d0 = new Date(from); d0.setHours(0, 0, 0, 0);
@@ -102,7 +118,7 @@ export function hoursText(m) {
       days = run ? cap(dayName(ds[0], 'short')) + '-' + dayName(ds[ds.length - 1], 'short') : ds.map(d => cap(dayName(d, 'short'))).join(', ');
     }
     if (x.from) {
-      const f = v => { const [mm, dd] = v.split('-').map(Number); return new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short' }).format(new Date(2026, mm - 1, dd)); };
+      const f = fmtMD;
       days = x.d.length === 7 ? `${f(x.from)} - ${f(x.to)}` : `${f(x.from)} - ${f(x.to)}: ${days}`;
     }
     return { days: typo(cap(days)), time: x.m ? t('morning') : fmtT(x.o) + '\u2060-\u2060' + fmtT(x.c) }; // word joiners: a time range never splits

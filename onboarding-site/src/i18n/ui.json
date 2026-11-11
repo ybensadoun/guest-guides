@@ -7306,6 +7306,16 @@
 "es": "Quitar este menú",
 "fr": "Retirer ce menu"
 },
+"Open from {x} to {y}": {
+"ca": "Obert del {x} al {y}",
+"es": "Abierto del {x} al {y}",
+"fr": "Ouvert du {x} au {y}"
+},
+"Guests see Google’s own line for the hours.": {
+"ca": "Els hostes veuen la línia de Google per a l’horari.",
+"es": "Los huéspedes ven la línea de Google para el horario.",
+"fr": "Les voyageurs voient la ligne de Google pour les horaires."
+},
 "Only part of the year": {
 "ca": "Només una part de l’any",
 "es": "Solo una parte del año",

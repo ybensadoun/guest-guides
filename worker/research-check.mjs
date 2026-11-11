@@ -74,6 +74,9 @@ export async function checkResearch(items, file, { locate = null, house = null, 
       // Hours from the place's own site: no hoursSource (they are ours). As with Google's hours before, a place that gains
       // them loses the research's "check" unless Google said it is temporarily closed.
       if (empty(it.schedule) && !it.always && Array.isArray(f.hours) && f.hours.length) { it.schedule = f.hours; ours.push('schedule'); if (it._google === 'On Google') it.flags = (it.flags || []).filter(x => x !== 'check'); }
+      // Its site's season, for a place still with no hours (its hours, with their own seasons, win): the guide says "Closed,
+      // Opens 1 Jun" out of season and Google's line gives the hours.
+      if (empty(it.schedule) && !it.always && !it.season && f.season && f.season.from && f.season.to) { it.season = { from: f.season.from, to: f.season.to }; ours.push('season'); }
       if (empty(it.price) && f.price) { it.price = f.price; ours.push('price'); }
       if (f.book === true && !(it.flags || []).includes('book')) { it.flags = [...new Set([...(it.flags || []), 'book'])]; ours.push('book'); }
       if (num(f.lat) && num(f.lng)) { it.lat = f.lat; it.lng = f.lng; if (house) it.km_from_house = Math.round(hav(house.lat, house.lng, f.lat, f.lng) * 10) / 10; }
