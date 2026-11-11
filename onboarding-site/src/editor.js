@@ -3,7 +3,7 @@
    (groups, tiles, rail, bottom bar), but each step shows and changes the guide's own content and look.
    Changes save as a draft (guides.draft) that guests never see: Preview shows it to the host, "Publish changes"
    makes it live. Plan and rules: docs/plan-single-editor.md */
-const CM = { on: false, g: null, live: null, lang: 'en', timer: null, marks: null, saving: null, again: false, open: new Set() };
+const CM = { on: false, g: null, live: null, lang: 'en', timer: null, marks: null, saving: null, again: false, open: new Set(), chg: new Set(), kpick: new Set(), kidsHand: new Set() };
 const ED_LANGS = { en: 'English', es: 'Español', fr: 'Français', ca: 'Català', de: 'Deutsch', nl: 'Nederlands' };
 const ED_DAYS = [['mon', 'Mo'], ['tue', 'Tu'], ['wed', 'We'], ['thu', 'Th'], ['fri', 'Fr'], ['sat', 'Sa'], ['sun', 'Su']];
 const ED_FONTS = [['jost', 'Jost'], ['inter', 'Inter'], ['cormorant-garamond', 'Cormorant Garamond'], ['dm-sans', 'DM Sans'], ['dm-serif-display', 'DM Serif Display', [400]], ['fraunces', 'Fraunces'], ['geist', 'Geist'], ['instrument-serif', 'Instrument Serif', [400]], ['nunito', 'Nunito'], ['outfit', 'Outfit'], ['space-grotesk', 'Space Grotesk'], ['bricolage-grotesque', 'Bricolage Grotesque']];
@@ -99,10 +99,10 @@ function cf(label, path, obj, o = {}) {
 // An on/off setting: a switch with its state written next to it, so it is clear whether it is on.
 const cSwitch = (attrs, label, on, hint = '') => `<div class="cm-swrow"><button type="button" class="cm-switch" role="switch" aria-checked="${!!on}" ${attrs}><span class="cm-sw-track" aria-hidden="true"><span class="cm-sw-knob"></span></span><span class="cm-sw-label">${esc(label)}</span><span class="cm-sw-state" aria-hidden="true">${on ? 'On' : 'Off'}</span></button>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}</div>`;
 const cDays = (path, days) => ED_DAYS.map(([d, l]) => `<button class="chip" type="button" data-daytog="${esc(path)}" data-d="${d}" aria-pressed="${(days || []).includes(d)}"><span>${l}</span></button>`).join('');
-function cSchedule(path, arr) {
+function cSchedule(path, arr, season = false) {   // season: each row says whether it is only part of the year (places; markets keep the hint)
   return `<div class="f full"><span class="lab">Opening days and hours</span><div class="cm-sch">${(arr || []).map((r, k) => `<div class="cm-sr"><div class="cm-dayrow"><div class="chips" role="group" aria-label="Days">${cDays(`${path}/${k}`, r.days)}</div><button class="cm-x" type="button" data-cdel="${path}/${k}" data-now="1" aria-label="Remove these hours">×</button></div>
     <div class="cm-times"><input type="time" aria-label="Opens" data-p="${path}/${k}/open" data-t="str" value="${esc(r.open || '')}"><span>to</span><input type="time" aria-label="Closes" data-p="${path}/${k}/close" data-t="str" value="${esc(r.close || '')}"></div>
-    ${r.from || r.to ? `<p class="hint">Only from ${esc(r.from || '?')} to ${esc(r.to || '?')} (month-day).</p>` : ''}</div>`).join('')}
+    ${season ? plSeason(`${path}/${k}`, r) : r.from || r.to ? `<p class="hint">Only from ${esc(r.from || '?')} to ${esc(r.to || '?')} (month-day).</p>` : ''}</div>`).join('')}
     <button class="btn small" type="button" data-addsch="${path}">+ Add opening hours</button></div></div>`;
 }
 function cDates(path, arr) {
@@ -119,9 +119,9 @@ function cPhotos(path, arr) {
   return `${(arr || []).length ? `<div class="thumbs">${arr.map((n, i) => `<div class="thumb"><img src="${esc(edImg(n))}" alt="" loading="lazy"><div class="cm-phb"><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="-1" aria-label="Move earlier">‹</button><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="1" aria-label="Move later">›</button></div><button class="x" type="button" data-cdel="${path}/${i}" data-now="1" aria-label="Remove photo ${i + 1}">×</button></div>`).join('')}</div>` : ''}
     <label class="btn small cm-file"><input class="sr" type="file" accept="image/*" multiple data-phadd="${path}">+ Add photos</label>`;
 }
-function cCard(p, title, meta, inner, order) {   // order: [this card's place, how many there are], for a list the host can put in order
+function cCard(p, title, meta, inner, order, lead = '') {   // lead: what goes before the name in the row (a place's kind)   // order: [this card's place, how many there are], for a list the host can put in order
   const mv = order ? `<div class="cm-ord"><button type="button" data-cardmove="${esc(p)}" data-dir="-1" aria-label="Move ${esc(title)} up"${order[0] ? '' : ' disabled'}>↑</button><button type="button" data-cardmove="${esc(p)}" data-dir="1" aria-label="Move ${esc(title)} down"${order[0] < order[1] - 1 ? '' : ' disabled'}>↓</button></div>` : '';
-  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary><span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}</span>${mv}<i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
+  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary>${lead}<span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}</span>${mv}<i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
 }
 
 /* --- One place, contact or tile: its texts, links, position, hours or dates --- */
@@ -133,23 +133,166 @@ const C_ORDER = ['name', 'name_local', 'title', 'sub', 'type', 'kind', 'what', '
 const cLabel = k => C_LBL[k] || k.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/^./, x => x.toUpperCase());
 const cName = it => edShown(it.name) || edShown(it.title) || edShown(it.where) || (it.id && !String(it.id).startsWith('custom-') ? it.id : 'New');
 function cItem(base, it, i, what) {
+  if (PL_SEC[base]) return cPlace(base, it, i);
   const p = `${base}/${i}`, ord = k => { const n = C_ORDER.indexOf(k); return n < 0 ? 99 : n; };
   const keys = Object.keys(it).filter(k => !C_SKIP.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'))).sort((a, b) => ord(a) - ord(b));
-  const km = it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
+  const km = cKm(it);
   const meta = [typeof it.town === 'string' ? it.town : '', km, (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
-  const said = (CM.gfind || {})[p], has = typeof it.lat === 'number';
+  const { find, pin, first } = cWhere(p, it);
+  const check = Array.isArray(it.flags) || what !== 'contact' ? cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.') : '';
+  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], cOpt(it, k))).join('')}
+    ${'stalls_approx' in it ? cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx, { type: 'number', half: true }) : ''}${first ? '' : find}${pin}
+    ${'schedule' in it || base.includes('markets') ? cSchedule(`${p}/schedule`, it.schedule) : ''}${'dates' in it || base.includes('events') ? cDates(`${p}/dates`, it.dates) : ''}</div>
+    ${what === 'contact' ? '' : check}${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`);
+}
+const cKm = it => it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
+const cOpt = (it, k) => ({ long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' });
+// "Find it on Google" and "Or move the pin"; first: a place with no pin yet starts with the search.
+function cWhere(p, it) {
+  const km = cKm(it), said = (CM.gfind || {})[p], has = typeof it.lat === 'number';
   // What was found: Google's name and address, from this session's memory, with Google Maps beside them (data-glive: the phone
   // shows no map meanwhile, gLiveSync in start.js). Nothing of it is in the guide.
   const saidHTML = said && typeof said === 'object' ? `<p class="hint" data-glive>${esc(`Found: ${[said.name, said.where].filter(Boolean).join(', ') || said.words}, ${said.km} km from the house. Not the right one? Search again, or paste its Google Maps link below.`)} <a href="${esc(gmLink(said.words, said.gid))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>`
     : `<p class="hint">${esc(said || (it.nomap ? 'Not on the map yet: pick it from the list to get its pin and distance.' : 'Pick it from the list to update its pin and distance.'))}</p>`;
   const find = has ? `<div class="f full"><label for="${cmId(p + '/gs')}">Find it on Google</label><input id="${cmId(p + '/gs')}" type="text" ${psAttrs(cmId(p + '/sug'))} data-gsp="${p}" placeholder="Start typing the name"><div class="pl-sug" id="${cmId(p + '/sug')}" role="listbox" aria-label="Places on Google" hidden></div>${saidHTML}</div>` : '';
   const pin = has ? `<div class="f full"><label for="${cmId(p + '/gm')}">Or move the pin: paste a Google Maps link</label><p class="hint">${it.lat && !it.nomap ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
-  const first = it.nomap || said;   // a place with no pin yet starts here: finding it fills in the rest
-  const check = Array.isArray(it.flags) || what !== 'contact' ? cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.') : '';
-  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${keys.map(k => cf(cLabel(k), `${p}/${k}`, it[k], { long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' })).join('')}
-    ${'stalls_approx' in it ? cf('Stalls (about)', `${p}/stalls_approx`, it.stalls_approx, { type: 'number', half: true }) : ''}${first ? '' : find}${pin}
-    ${'schedule' in it || base.includes('markets') ? cSchedule(`${p}/schedule`, it.schedule) : ''}${'dates' in it || base.includes('events') ? cDates(`${p}/dates`, it.dates) : ''}</div>
-    ${what === 'contact' ? '' : check}${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`);
+  return { find, pin, first: !!(it.nomap || said) };   // a place with no pin yet starts here: finding it fills in the rest
+}
+/* --- A place in Eat and drink, Nightlife or Attractions (Yohann, 11 Nov 2026): the host gives the least possible, everything
+   else is filled in and shown to look at once, never a form to complete. So an opened place starts with what only the host
+   knows (name, comment, favourite), then a quiet summary of what was filled in, and the form behind "Change". The kinds,
+   groups and the guide's own words come from engine/src (ENG_KINDS, ENG_GROUPS, ENG_T, pasted by build.py). --- */
+const PL_SEC = { 'files/restaurants/items': 'eat', 'files/nightlife/items': 'eat', 'files/todo/items': 'todo' };
+// The marks a host can switch on, by list: tags (t) and the one flag (f) that is a choice, "Book ahead".
+const PL_MARKS = { eat: [['t', 'dogs'], ['t', 'veggie'], ['t', 'glutenfree'], ['t', 'terrace'], ['t', 'seaview'], ['f', 'book']], todo: [['t', 'kidsfun'], ['t', 'dogs'], ['t', 'free'], ['t', 'rainy'], ['f', 'book']] };
+const PL_DONE = new Set(['name', 'description', 'type', 'town', 'place', 'address', 'comarca', 'phone', 'url', 'price', 'priceNote', 'hours']);   // the card's own fields; what is left keeps the generic list, at the end
+// The guide's default colour for each tone of groups.json (engine app.css), and one colour for every place to eat.
+const PL_TONE = { red: '#D52B1E', blue: '#1D4FA0', orange: '#EC6A1C', purple: '#6E4A7E', green: '#0E7C46', wine: '#8E1B4A' }, PL_FOOD = 'var(--tomato)';
+I.clock = svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>');
+I.globe = svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>');
+I.euro = svg('<path d="M17 6.5A6.5 6.5 0 1 0 17 17.5"/><path d="M4 10.5h9M4 13.5h9"/>');
+// The engine's words in the maker's language (French spaces as the guide's typo() puts them).
+function engT(k, p) {
+  let x = (ENG_T[UIL] || {})[k] || ENG_T.en[k] || k; if (p != null) x = x.split('{p}').join(p);
+  return UIL === 'fr' ? x.replace(/(\d) (€|%)/g, '$1 $2').replace(/ ([?!;])/g, ' $1').replace(/ :/g, ' :') : x;
+}
+const plSec = p => PL_SEC[p.replace(/\/\d+$/, '')];
+const plKind = (sec, icon) => (ENG_KINDS[sec] || {})[icon];
+const plKindName = (sec, icon, l) => { const k = plKind(sec, icon); return k ? k.name[l] || k.name.en : ''; };
+// The row and the summary say the place's own line under the name, else its kind, in the language being edited.
+const plType = (sec, it) => (edIs18(it.type) ? edShown(it.type) : typeof it.type === 'string' ? it.type : '').trim() || plKindName(sec, it.icon, CM.lang);
+const plColour = (sec, it) => sec === 'eat' ? PL_FOOD : PL_TONE[ENG_GROUPS.groups[it.group || (plKind('todo', it.icon) || {}).group]] || 'var(--pine)';
+const plTile = (sec, it, small) => it.icon && ENG_ICON[it.icon] ? `<i class="pl-ic${small ? ' s' : ''}" style="--kc:${plColour(sec, it)}" aria-hidden="true">${ENG_ICON[it.icon]}</i>` : `<i class="pl-ic none${small ? ' s' : ''}" aria-hidden="true"></i>`;
+// Dates and days in the maker's language, never written by hand (docs/TYPOGRAPHY.md).
+const plLoc = () => UIL === 'en' ? 'en-GB' : UIL;
+const plDay = d => new Intl.DateTimeFormat(plLoc(), { weekday: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, 0, 1 + ED_DAYS.findIndex(x => x[0] === d))));   // 1 Jan 2024 was a Monday
+const plDate = md => { const [m, d] = String(md || '').split('-').map(Number); return m && d ? new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, m - 1, d))) : '?'; };
+const plMonth = m => new Intl.DateTimeFormat(plLoc(), { month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, m - 1, 1)));
+// Days as runs: "Tue-Sat", "Mon Wed", or "Every day".
+function plDays(days) {
+  const ix = ED_DAYS.map(x => x[0]).filter(d => (days || []).includes(d)).map(d => ED_DAYS.findIndex(x => x[0] === d));
+  if (ix.length === 7) return '<span>Every day</span>';
+  const runs = []; for (const i of ix) { const r = runs[runs.length - 1]; if (r && r[1] === i - 1) r[1] = i; else runs.push([i, i]); }
+  return `<span translate="no">${esc(runs.map(([a, b]) => b - a >= 2 ? `${plDay(ED_DAYS[a][0])}-${plDay(ED_DAYS[b][0])}` : ED_DAYS.slice(a, b + 1).map(x => plDay(x[0])).join(' ')).join(' '))}</span>`;
+}
+// One line per group of days (and season): "Tue-Sat 13:00-16:00, 20:00-23:30".
+function plHours(sch) {
+  const g = new Map();
+  for (const r of sch || []) { if (!(r.days || []).length) continue; const k = [(r.days || []).join(), r.from || '', r.to || ''].join('|'); if (!g.has(k)) g.set(k, { r, t: [] }); g.get(k).t.push(`${r.open || ''}${r.close ? '-' + r.close : ''}`); }
+  return [...g.values()].map(({ r, t }) => `<span class="pl-hl">${plDays(r.days)} ${t.filter(Boolean).map(x => `<span class="pl-nw">${esc(x)}</span>`).join(', ')}${r.from || r.to ? ` <small>${esc(`from ${plDate(r.from)} to ${plDate(r.to)}`)}</small>` : ''}</span>`);
+}
+const plHost = u => { try { return new URL(/^https?:/.test(u) ? u : 'https://' + u).hostname.replace(/^www\./, ''); } catch (e) { return u; } };
+const plMarks = (sec, it) => PL_MARKS[sec].filter(([t, k]) => (t === 't' ? it.tags || [] : it.flags || []).includes(k));
+const plMark = ([t, k]) => engT(t === 't' ? 't_' + k : 'f_' + k);
+// "Filled in for you": what the place has, one line each, only the lines with a value (two columns where there is room).
+// "Change" sits on the title row; while the form is open the lines go, since the form under it shows the same things.
+function plFound(p, sec, it) {
+  const line = (ic, html, c = "") => `<div class="pl-l${c}"><i aria-hidden="true">${ic}</i><div>${html}</div></div>`;
+  const out = [], kind = it.icon && ENG_ICON[it.icon], K = plKind(sec, it.icon), say = (x, o) => `<p class="pl-note${o ? ' pl-clip" translate="no' : ''}">${esc(x)}</p>`;   // the guide's own notes: two lines at most here, whole in the form
+  if (kind || plType(sec, it)) out.push(`<div class="pl-l pl-lk">${plTile(sec, it, true)}<div translate="no">${esc(plType(sec, it))}</div></div>`);
+  const hrs = it.always ? ['<span>Open 24 hours</span>'] : plHours(it.schedule), note = edShown(it.hours || {}), facts = [it.price, (it.setMenus || []).length, it.phone, it.url, plMarks(sec, it).length, note, edShown(it.priceNote || {})].some(x => x && String(x).trim());
+  if (hrs.length || note) out.push(line(I.clock, hrs.join('') + (note ? say(note, 1) : '')));
+  else if ((kind || facts) && (!K || K.hours !== false)) out.push(line(I.clock, say(it.gid ? 'No opening hours found. Guests see Google’s own line saying whether it is open.' : 'No opening hours found.')));
+  const price = [it.price ? engT('perPerson', it.price) : '', ...(it.setMenus || []).filter(m => m && m.price).map(m => engT('sm_' + m.kind, m.price))].filter(Boolean), pn = edShown(it.priceNote || {});
+  if (price.length || pn) out.push(line(I.euro, (price.length ? `<span translate="no">${esc(price.join(' · '))}</span>` : '') + (pn ? say(pn, 1) : '')));
+  if (it.phone) out.push(line(I.phone, `<a href="tel:${esc(String(it.phone).replace(/[^\d+]/g, ''))}" translate="no">${esc(it.phone)}</a>`));
+  if (it.url) out.push(line(I.globe, `<a href="${esc(/^https?:/.test(it.url) ? it.url : 'https://' + it.url)}" target="_blank" rel="noopener" translate="no">${esc(plHost(it.url))}</a>`));
+  const mk = plMarks(sec, it); if (mk.length) out.push(line(I.tag, `<span class="pl-mks">${mk.map(m => `<span class="pl-mk" translate="no">${esc(plMark(m))}</span>`).join('')}</span>`, " pl-lm"));
+  const open = CM.chg.has(p), btn = `<button class="pl-link pl-chg" type="button" data-cchg="${p}" aria-expanded="${open}">${open ? 'Done' : 'Change'}</button>`;
+  return `<div class="cm-found pl-found"><div class="pl-hd"><b class="pl-h">Filled in for you</b>${btn}</div>${open ? '' : `<div class="pl-ls">${out.length ? out.join('') : '<p class="pl-note">Nothing found for this place yet. Guests still get the map pin and the Google Maps button.</p>'}</div>`}</div>`;
+}
+// "Only part of the year" on a row of opening hours: two dates on one line, each a day and a month (from and to, MM-DD).
+function plSeason(rp, r) {
+  const on = !!(r.from || r.to), sel = (end, md) => { const [m, d] = String(md || '').split('-').map(Number);
+    return `<select data-cseas="${rp}" data-end="${end}" data-part="d" aria-label="Day">${Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}"${i + 1 === d ? ' selected' : ''}>${i + 1}</option>`).join('')}</select><select data-cseas="${rp}" data-end="${end}" data-part="m" aria-label="Month" translate="no">${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}"${i + 1 === m ? ' selected' : ''}>${esc(plMonth(i + 1))}</option>`).join('')}</select>`; };
+  return `<div class="pl-part"><button class="chip" type="button" data-cseason="${rp}" aria-pressed="${on}"><span>Only part of the year</span></button>${on ? `<div class="pl-season"><span>Between</span>${sel('from', r.from)}<span>and</span>${sel('to', r.to)}</div>` : ''}</div>`;
+}
+function plKinds(p, sec, it) {
+  const tile = ([k, x]) => `<button class="pl-k" type="button" data-ckind="${p}" data-k="${k}" aria-pressed="${it.icon === k}">${plTile(sec, { icon: k, group: x.group })}<span translate="no">${esc(x.name[UIL] || x.name.en)}</span></button>`;
+  const all = Object.entries(ENG_KINDS[sec]);
+  return `<div class="pl-kinds-w" role="group" aria-label="Kind">${sec === 'eat' ? `<div class="pl-kinds">${all.map(tile).join('')}</div>`
+    : Object.keys(ENG_GROUPS.groups).map(g => { const ks = all.filter(([, x]) => x.group === g); return ks.length ? `<p class="pl-kg" translate="no">${esc(engT('g_' + g))}</p><div class="pl-kinds">${ks.map(tile).join('')}</div>` : ''; }).join('')}</div>`;
+}
+function plForm(p, sec, it, rest, where) {
+  const sm = it.setMenus || [], [pf, pt] = String(it.price || '').split('-').map(x => x.trim());
+  const smOpt = (k, cur) => `<option value="${k}"${k === cur ? ' selected' : ''}>${esc(ENG_T.en['ff_' + k] ? engT('ff_' + k) : engT('sm_' + k).replace(/\s*(€\s*\{p\}|\{p\}\s*€)\s*/g, ' ').trim())}</option>`;
+  const hasOwn = k => k in it;
+  return `<div class="pl-form grid">
+    <div class="f full"><div class="pl-kindrow"><span class="lab">Kind</span>${plTile(sec, it, true)}<span class="pl-kn" translate="no">${esc(plKindName(sec, it.icon, UIL))}</span><button class="pl-link" type="button" data-ckinds="${p}" aria-expanded="${CM.kpick.has(p)}">Change</button></div>${CM.kpick.has(p) ? plKinds(p, sec, it) : ''}</div>
+    ${cf('Line under the name', `${p}/type`, it.type, { i18n: true, long: false })}
+    <div class="f full"><span class="lab">Marks</span><div class="chips pl-marks">${PL_MARKS[sec].map(m => { const [t, k] = m, on = (t === 't' ? it.tags || [] : it.flags || []).includes(k); return `<button class="chip" type="button" ${t === 't' ? `data-ctag="${p}" data-m="${k}"` : `data-cflag="${p}" data-f="${k}"`} aria-pressed="${on}"><span translate="no">${esc(plMark(m))}</span></button>`; }).join('')}</div></div>
+    <div class="f full"><span class="lab">Price per person</span><div class="pl-price"><span>From</span><input type="number" step="any" min="0" inputmode="decimal" id="${cmId(p + '/pf')}" data-cprice="${p}" data-end="from" aria-label="From" value="${esc(pf || '')}"><span>to</span><input type="number" step="any" min="0" inputmode="decimal" id="${cmId(p + '/pt')}" data-cprice="${p}" data-end="to" aria-label="to" value="${esc(pt || '')}"><span>€</span></div></div>
+    ${hasOwn('priceNote') ? cf('About the price', `${p}/priceNote`, it.priceNote, { long: true, rows: 2 }) : ''}
+    ${sec === 'eat' ? `<div class="f full"><span class="lab">Set menus</span>${sm.map((m, k) => `<div class="pl-sm"><select id="${cmId(`${p}/setMenus/${k}/kind`)}" data-p="${p}/setMenus/${k}/kind" data-t="str" aria-label="Set menus" translate="no">${[...new Set(['menuDia', 'tasting', m.kind])].filter(Boolean).map(x => smOpt(x, m.kind)).join('')}</select><input type="text" inputmode="decimal" id="${cmId(`${p}/setMenus/${k}/price`)}" data-p="${p}/setMenus/${k}/price" data-t="str" aria-label="Price (€)" placeholder="12-15" value="${esc(m.price || '')}"><button class="cm-x" type="button" data-csmdel="${p}/setMenus/${k}" aria-label="Remove this set menu">×</button></div>`).join('')}<button class="btn small pl-add" type="button" data-csmadd="${p}">+ Add a set menu</button></div>` : ''}
+    ${cf('Phone', `${p}/phone`, it.phone, { type: 'tel', half: true })}${cf('Official website', `${p}/url`, it.url, { type: 'url', half: true })}
+    <div class="full">${cSwitch(`data-calways="${p}"`, 'Open 24 hours', !!it.always)}</div>
+    ${it.always ? '' : cSchedule(`${p}/schedule`, it.schedule, true)}
+    ${hasOwn('hours') ? cf('Opening hours, in words', `${p}/hours`, it.hours, { long: true, rows: 2 }) : ''}
+    <div class="full">${cSwitch(`data-cflag="${p}" data-f="check"`, 'Check before going', (it.flags || []).includes('check'), 'Tells guests to check the hours or the dates before they go.')}</div>
+    <div class="f full pl-sub"><span class="lab">Where it is</span></div>
+    ${['town', 'place', 'address', 'comarca'].filter(k => hasOwn(k) && (edIs18(it[k]) || typeof it[k] === 'string')).map(k => cf(cLabel(k), `${p}/${k}`, it[k], { ...cOpt(it, k), half: true })).join('')}
+    ${where}${rest.map(k => cf(cLabel(k), `${p}/${k}`, it[k], cOpt(it, k))).join('')}</div>`;
+}
+function cPlace(base, it, i) {
+  const p = `${base}/${i}`, sec = PL_SEC[base], ord = k => { const n = C_ORDER.indexOf(k); return n < 0 ? 99 : n; };
+  const rest = Object.keys(it).filter(k => !C_SKIP.has(k) && !PL_DONE.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'))).sort((a, b) => ord(a) - ord(b));
+  const ty = plType(sec, it), town = typeof it.town === 'string' ? it.town : '';   // a line that already names the town does not get it twice
+  const meta = [ty, town && !ty.toLowerCase().includes(town.toLowerCase()) ? town : '', cKm(it), (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
+  const { find, pin, first } = cWhere(p, it);
+  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${cf('Name', `${p}/name`, it.name, { i18n: true })}${cf('Your comment', `${p}/description`, it.description, { long: true, i18n: true })}</div>
+    ${cSwitch(`data-cfav="${p}"`, 'Our favourite', !!it.topPick, 'Guests see it marked Unmissable. Keep it for two or three places.')}
+    ${plFound(p, sec, it)}${CM.chg.has(p) ? plForm(p, sec, it, rest, (first ? '' : find) + pin) : ''}
+    ${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this place</button></div>`, null, plTile(sec, it));
+}
+// A kind picked: its icon; its name as the line under the name unless the host wrote their own; for Attractions its quick
+// filter (and tone) and "Great for kids" when the kind is for kids (taken off again only if the host did not set it here).
+function plPick(p, k) {
+  const it = edGet(edC(), edPath(p)), sec = plSec(p), was = plKind(sec, it && it.icon), nk = plKind(sec, k); if (!it || !nk) return;
+  const ty = it.type, own = edIs18(ty) ? Object.entries(ty) : typeof ty === 'string' ? [['en', ty]] : [];
+  if (own.every(([, s]) => !String(s || '').trim()) || (was && own.every(([l, s]) => !s || s === (was.name[l] || was.name.en)))) it.type = Object.fromEntries(edLangs().map(l => [l, nk.name[l] || nk.name.en]));
+  it.icon = k;
+  if (sec === 'todo') {
+    it.group = nk.group; if ('tone' in it && ENG_GROUPS.groups[nk.group]) it.tone = ENG_GROUPS.groups[nk.group];
+    const tg = [...(it.tags || [])];
+    if (nk.kids && !tg.includes('kidsfun')) tg.push('kidsfun');
+    else if (!nk.kids && was && was.kids && !CM.kidsHand.has(p)) { const j = tg.indexOf('kidsfun'); if (j >= 0) tg.splice(j, 1); }
+    it.tags = tg;
+  }
+  CM.kpick.delete(p);
+}
+// Price per person from two numbers: "20-25", "20" when only one is given, none when both are empty.
+function plPrice(t) {
+  const it = edGet(edC(), edPath(t.dataset.cprice)), box = t.closest('.pl-price'), v = e => (box.querySelector(`[data-end="${e}"]`).value || '').trim(), a = v('from'), b = v('to');
+  const s = a && b ? (a === b ? a : `${a}-${b}`) : a || b; if (s) it.price = s; else delete it.price;
+  cmQueue();
+}
+function plSeasonSet(t) {
+  const r = edGet(edC(), edPath(t.dataset.cseas)), end = t.dataset.end; if (!r) return;
+  const md = String(r[end] || (end === 'from' ? '06-01' : '09-30')).split('-').map(Number);
+  md[t.dataset.part === 'm' ? 0 : 1] = +t.value;
+  md[1] = Math.min(md[1], [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][md[0] - 1]);
+  r[end] = md.map(x => String(x).padStart(2, '0')).join('-');
+  cmQueue(); render();
 }
 // A restaurant pinned to the home page becomes a Home tile (one tap, its own page), a copy of the restaurant that the
 // host can reword in Home tiles: "from" remembers which restaurant it came from.
@@ -898,7 +1041,8 @@ async function cmSave() {
 const edBlank = x => x == null || x === 0 || (typeof x === 'string' ? !x.trim() : Array.isArray(x) ? x.every(edBlank) : typeof x === 'object' ? Object.values(x).every(edBlank) : false);
 // The rows inside an entry, and when one is empty
 const CM_ROWS = {
-  badges: b => edBlank(b.t),                                            // a station's line with no name ("R4"): its colour alone says nothing
+  badges: b => edBlank(b.t),
+  setMenus: m => edBlank(m.price),                                      // a set menu with no price ("Menú del día €")                                            // a station's line with no name ("R4"): its colour alone says nothing
   to: d => edBlank(d.dest) && edBlank(d.time),                          // a journey time with no destination and no time
   alt: a => edBlank(a.phone),                                           // a taxi's other number with no phone
   schedule: r => !(r.days || []).length && (edBlank(r.open) && edBlank(r.close) || r.open === '09:00' && r.close === '14:00'),   // opening hours with no day, and no time or the times Add puts in
@@ -1171,6 +1315,7 @@ function edApplyDesign(kind, el) {
 const inEd = t => CM.on && t.closest && t.closest('.edz');
 document.addEventListener('input', e => {
   const t = e.target; if (!inEd(t)) return;
+  if (t.dataset.cprice) return plPrice(t);
   if (t.dataset.p) return edEdit(t);
   if (t.dataset.cfilter !== undefined) { const q = t.value.toLowerCase().trim(); t.closest('.edz').querySelectorAll('details.cmi').forEach(d => { d.hidden = !!q && !d.querySelector('summary').textContent.toLowerCase().includes(q); }); }
 });
@@ -1178,6 +1323,7 @@ document.addEventListener('change', e => {
   const t = e.target; if (!CM.on || !t.dataset) return;
   if (t.dataset.cmlang !== undefined) { CM.lang = t.value; return render(); }
   if (!inEd(t)) return;
+  if (t.dataset.cseas) return plSeasonSet(t);
   if (t.dataset.gm) {   // a pasted Google Maps link: the pin moves when it holds a position, and the link becomes the place's map button
     const ip = edPath(t.dataset.gm), it = edGet(edC(), ip), pos = edParseMaps(t.value), url = t.value.trim();
     if (pos) { it.lat = pos.lat; it.lng = pos.lng; delete it.nomap; edUpdateKm(ip); }
@@ -1189,6 +1335,7 @@ document.addEventListener('change', e => {
   else if (t.dataset.phadd !== undefined || t.dataset.phset !== undefined) edPhotoInput(t);
   else if (t.dataset.clang) { const s = edC().site = edC().site || {}; s.languages = [...(s.languages || ['en'])]; const l = t.dataset.clang, i = s.languages.indexOf(l); if (t.checked && i < 0) s.languages.push(l); else if (!t.checked && i > 0) s.languages.splice(i, 1); cmQueue(); render(); }
 });
+addEventListener('porta-lang', () => { if (CM.on) render(); });   // kinds, marks, days and months are written in the maker's language
 document.addEventListener('toggle', e => { const d = e.target; if (CM.on && d.matches && d.matches('details.cmi,details.cm-more[data-open]')) d.open ? CM.open.add(d.dataset.open) : CM.open.delete(d.dataset.open); }, true);
 document.addEventListener('keydown', e => { if (CM.on && e.key === 'Enter' && e.target && e.target.id === 'c_stopq') { e.preventDefault(); cmStopAdd(document.querySelector('[data-stopadd]')); } });
 document.addEventListener('click', e => {
@@ -1215,6 +1362,16 @@ document.addEventListener('click', e => {
   if (d.artuse !== undefined && CM.artRes) { edSet(edC(), ['files', 'house', 'photo'], CM.artRes.path); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(CM.artRes.path); CM.artRes = null; toast('Your new cover is set. Preview to see it.'); return done(); }
   if (d.daytog) { const o = edGet(edC(), edPath(d.daytog)); if (o) { const s = new Set(o.days || []); s.has(d.d) ? s.delete(d.d) : s.add(d.d); o.days = ED_DAYS.map(x => x[0]).filter(x => s.has(x)); done(); } return; }
   if (d.cflag) { const it = edGet(edC(), edPath(d.cflag)); if (it) { const s = new Set(it.flags || []); s.has(d.f) ? s.delete(d.f) : s.add(d.f); it.flags = [...s]; done(); } return; }
+  // A place (cPlace): favourite, the form behind Change, its kind, marks, set menus, open 24 hours, part of the year.
+  if (d.cfav) { const it = edGet(edC(), edPath(d.cfav)); if (it) { if (it.topPick) delete it.topPick; else it.topPick = true; done(); } return; }
+  if (d.cchg) { CM.chg.has(d.cchg) ? CM.chg.delete(d.cchg) : CM.chg.add(d.cchg); return render(); }
+  if (d.ckinds) { CM.kpick.has(d.ckinds) ? CM.kpick.delete(d.ckinds) : CM.kpick.add(d.ckinds); return render(); }
+  if (d.ckind) { plPick(d.ckind, d.k); return done(); }
+  if (d.ctag) { const it = edGet(edC(), edPath(d.ctag)); if (it) { const tg = [...(it.tags || [])], j = tg.indexOf(d.m); j >= 0 ? tg.splice(j, 1) : tg.push(d.m); it.tags = tg; if (d.m === 'kidsfun') CM.kidsHand.add(d.ctag); done(); } return; }
+  if (d.csmadd) { const it = edGet(edC(), edPath(d.csmadd)); if (it) { (it.setMenus = it.setMenus || []).push({ kind: 'menuDia', price: '' }); done(); const x = document.getElementById(cmId(`${d.csmadd}/setMenus/${it.setMenus.length - 1}/price`)); if (x) x.focus(); } return; }
+  if (d.csmdel) { const q = edPath(d.csmdel), it = edGet(edC(), q.slice(0, -2)); if (it && Array.isArray(it.setMenus)) { it.setMenus.splice(q[q.length - 1], 1); if (!it.setMenus.length) delete it.setMenus; done(); } return; }
+  if (d.calways) { const it = edGet(edC(), edPath(d.calways)); if (it) { if (it.always) delete it.always; else it.always = true; done(); } return; }   // the hours stay, only hidden
+  if (d.cseason) { const r = edGet(edC(), edPath(d.cseason)); if (r) { if (r.from || r.to) { delete r.from; delete r.to; } else { r.from = '06-01'; r.to = '09-30'; } done(); } return; }
   if (d.addsch) { arr(d.addsch).push({ days: [], open: '09:00', close: '14:00' }); return done(); }
   if (d.adddate) { arr(d.adddate).push({ start: '', end: '', status: 'expected' }); return done(); }
   if (d.translate !== undefined) return cmTranslate();
@@ -1254,7 +1411,7 @@ document.addEventListener('click', e => {
     const p = edPath(d.cdel), a = edGet(edC(), p.slice(0, -1));
     const ev = d.cdel.startsWith('files/events/items/') && p.length === 4 && a && a[p[3]];
     if (ev && ev.auto) cmEvAutoSet({ removed: [...(evAuto().removed || []), { name: (ev.name || {}).en || edShown(ev.name), at: new Date().toISOString().slice(0, 10) }] });
-    if (Array.isArray(a)) { a.splice(p[p.length - 1], 1); for (const k of [...CM.open]) if (k.startsWith(d.cdel)) CM.open.delete(k); if (p[0] === 'private') cmWifiQr(); done(); }
+    if (Array.isArray(a)) { a.splice(p[p.length - 1], 1); for (const S of [CM.open, CM.chg, CM.kpick]) for (const k of [...S]) if (k.startsWith(d.cdel)) S.delete(k); if (p[0] === 'private') cmWifiQr(); done(); }
   }
 });
 
@@ -1399,6 +1556,58 @@ function cmInit() {
 .cm-switch[aria-checked=true] .cm-sw-state{color:var(--ok)}
 .cm-topic span{gap:4px;padding-right:6px}
 .cm-topic button{border:0;background:none;font:inherit;font-size:17px;line-height:1;padding:0 4px;cursor:pointer;color:inherit}
-.cm-fstop{align-self:center;border:0;background:none;font:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer;padding:6px}`;
+.cm-fstop{align-self:center;border:0;background:none;font:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer;padding:6px}
+/* A place (cPlace): the kind's tile, the summary filled in for the host, the form behind Change */
+.pl-ic{flex:none;width:40px;height:40px;border-radius:12px;background:var(--kc,var(--pine));color:#fff;display:grid;place-items:center;font-style:normal}
+.pl-ic svg{width:24px;height:24px}
+.pl-ic.s{width:28px;height:28px;border-radius:8px}.pl-ic.s svg{width:18px;height:18px}
+.pl-ic.none{background:none;box-shadow:inset 0 0 0 1.5px var(--line)}
+.cmi>summary .pl-ic{margin-right:-2px}
+.cmi>summary .pl-ic+span{flex:1}
+.pl-found{gap:6px;margin:0;padding:8px 14px 14px}
+.pl-found:not(:has(.pl-ls)){padding-bottom:8px}
+.pl-hd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pl-h{font-size:15px}
+.pl-ls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:7px 24px}   /* two columns on a wide screen, one on a phone */
+.pl-ls>.pl-lk,.pl-ls>.pl-lm,.pl-ls>.pl-note{grid-column:1/-1}
+.pl-clip{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pl-l{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;font-size:15px;line-height:1.35}
+.pl-l>i{display:grid;place-items:center;height:21px;color:var(--muted);font-style:normal}
+.pl-l>i svg{width:18px;height:18px}
+.pl-l.pl-lk{align-items:center;font-weight:600}
+.pl-l a{color:inherit;overflow-wrap:anywhere}
+.pl-hl{display:block}.pl-nw{white-space:nowrap}
+.pl-hl small{color:var(--muted);font-size:13.5px}
+.pl-note{margin:0;color:var(--muted);font-size:13.5px}
+.pl-mks{display:flex;flex-wrap:wrap;gap:4px 6px}
+.pl-mk{font-size:13.5px;font-weight:600;line-height:1.3;padding:1px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.pl-found .pl-chg{margin-right:-4px}
+.pl-chg,.pl-add{min-height:40px}
+.pl-form{gap:16px 20px}
+.pl-kindrow{display:flex;align-items:center;gap:10px;min-height:40px;flex-wrap:wrap}
+.pl-kn{font-weight:600}
+.pl-link{border:0;background:none;font:inherit;font-weight:700;color:var(--ink);text-decoration:underline;cursor:pointer;padding:8px 4px;min-height:40px;margin-left:auto}
+.pl-kinds-w{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.pl-kinds{display:grid;grid-template-columns:repeat(auto-fill,104px);gap:8px}
+@media (max-width:480px){.pl-kinds-w{margin-inline:-4px}.pl-kinds{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}}   /* three across at 360 px: "Montagne et" still on one line */
+.pl-kg{margin:6px 0 0;font-size:13.5px;font-weight:700;color:var(--muted)}
+.pl-k{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;min-height:96px;padding:10px 2px 8px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.pl-k span{font-size:13.5px;font-weight:500;line-height:1.25;text-align:center;overflow-wrap:normal;word-break:normal;hyphens:manual}
+.pl-k[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.pl-k:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.pl-marks .chip span,.pl-part .chip span{min-height:40px}
+.pl-price{display:flex;align-items:center;gap:8px}
+.pl-price input{width:84px;flex:none;padding-inline:10px}
+.pl-sm{display:grid;grid-template-columns:minmax(0,1fr) 70px 40px;gap:6px;align-items:center;margin-bottom:8px}
+.pl-sm select{padding-inline:8px 4px;max-width:320px}
+.pl-sm input{padding-inline:8px}
+.pl-add{align-self:flex-start}
+.pl-part{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.pl-season{display:flex;align-items:center;gap:3px;max-width:100%}
+.pl-season select{width:auto;flex:none;min-height:40px;padding:6px 5px;-webkit-appearance:none;appearance:none;text-align:center;background:var(--surface)}
+.pl-season span{font-size:15px;font-weight:500}
+.pl-form .cm-sch{padding:0!important;background:none}   /* one surface: the hours are not a box inside the card */
+.pl-sub{margin-top:4px;padding-top:14px;border-top:1px solid var(--line)}
+.pl-form .cm-times{max-width:360px}   /* two times, not two long empty fields on a wide screen */`;
   document.head.appendChild(st);
 })();

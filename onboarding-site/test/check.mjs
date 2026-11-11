@@ -9,6 +9,7 @@
 // Needs SUPABASE_SERVICE_KEY (worker/.env.local or the environment) and Playwright (npm i --no-save playwright).
 import { createRequire } from 'node:module';
 import { deflateSync } from 'node:zlib';
+import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -53,6 +54,7 @@ const json = (route, body) => route.fulfill({ status: 200, contentType: 'applica
 // The database on a web address: what slug_check answers (the real function is checked against real rows, not here).
 const slugAnswer = (route, b, taken) => { const free = !taken.has(b.p_wanted); return json(route, { free, options: free ? [] : [b.p_town ? `${b.p_wanted}-${b.p_town}` : `${b.p_wanted}-2`, `${b.p_wanted}-3`, `${b.p_wanted}-4`] }); };
 const plainKey = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');   // start.js plainName: a researched card's id is 'r:' + this
+const cmpSame = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const slugOf = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 async function open(browser, G, w, h, stored = {}, listing = null) {
@@ -944,6 +946,192 @@ try {
     await p.screenshot({ path: join(SHOTS, 'transport-360.png'), fullPage: true });
     ok('Getting around: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // The opened place card in Eat and drink, Nightlife and Attractions (11 Nov 2026, Yohann: "never a form to complete"): the
+  // kind's tile in the row, the host's own words first (name, comment, Our favourite), "Filled in for you" to look at, and the
+  // form behind Change. Markets and events keep their card.
+  { const items = s => E.content.files[s].items, ri = items('restaurants').findIndex(x => x.id === 'locanda'), ti = items('todo').findIndex(x => x.id === 'aqualeon'), tn = items('todo').length;
+    const RP = `files/restaurants/items/${ri}`, TP = `files/todo/items/${ti}`, NP = `files/todo/items/${tn}`, card = x => `details.cmi[data-open="${x}"]`;
+    // A tag the card does not offer, to see it kept ("tapas" on La Locanda).
+    const c2 = JSON.parse(JSON.stringify(E.content)); c2.files.restaurants.items[ri].tags = [...(c2.files.restaurants.items[ri].tags || []), 'tapas'];
+    const G = { ...E, content: c2 }, L0 = c2.files.restaurants.items[ri];
+    // Anything in the opened card that touches something else (a label, a field, a button, a line of the summary), or that
+    // sticks out of the card, and the page wider than the screen.
+    const clash = (p, sel) => p.evaluate(sel => {
+      const c = document.querySelector(sel); if (!c) return ['no card'];
+      const cr = c.getBoundingClientRect(), bad = [];
+      const els = [...c.querySelectorAll('label, .lab, input, textarea, select, button, .hint, .pl-note, .pl-hl, .pl-mk, .pl-ic, .pl-l > div, .pl-k span, .pl-kg, summary b, summary small, .pl-season > span, .pl-price > span, .cm-times > span, .pl-h')].filter(e => e.getClientRects().length && !e.closest('[hidden]'));
+      const r = els.map(e => e.getBoundingClientRect()), nm = e => (e.getAttribute('aria-label') || e.textContent || e.tagName).trim().replace(/\s+/g, ' ').slice(0, 28);
+      els.forEach((e, i) => { if (r[i].right > cr.right + 0.5 || r[i].left < cr.left - 0.5) bad.push('outside: ' + nm(e)); });
+      for (let i = 0; i < els.length; i++) for (let j = i + 1; j < els.length; j++) { if (els[i].contains(els[j]) || els[j].contains(els[i])) continue;
+        const a = r[i], b = r[j]; if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1) bad.push(`${nm(els[i])} / ${nm(els[j])}`); }
+      if (document.documentElement.scrollWidth > innerWidth) bad.push('sideways scroll');
+      return bad.slice(0, 4); }, sel);
+    const NO_BAR = '#navbar{visibility:hidden}';   // a whole card in one picture: the bottom bar would sit on it
+    const height = (p, sel) => p.$eval(sel, e => Math.round(e.getBoundingClientRect().height)).catch(() => 0);
+    const kindsOk = (p, sel) => p.evaluate(sel => { const ks = [...document.querySelectorAll(sel + ' .pl-k')], cv = document.createElement('canvas').getContext('2d');
+      const bad = ks.map(k => k.querySelector('span')).filter(s => { cv.font = getComputedStyle(s).font; const lines = Math.round(s.getBoundingClientRect().height / parseFloat(getComputedStyle(s).lineHeight));
+        return lines > 2 || s.scrollWidth > s.clientWidth + 1 || s.textContent.split(/\s+/).some(w => cv.measureText(w).width > s.clientWidth + 0.5) || parseFloat(getComputedStyle(s).fontSize) < 13.5; }).map(s => s.textContent);
+      const xs = new Set(ks.slice(0, 6).map(k => Math.round(k.getBoundingClientRect().left)));
+      return { n: ks.length, heads: [...document.querySelectorAll(sel + ' .pl-kg')].map(h => h.textContent), across: ks.length ? ks.findIndex(k => Math.round(k.getBoundingClientRect().top) > Math.round(ks[0].getBoundingClientRect().top)) : 0, cols: xs.size, bad, tall: Math.min(...ks.map(k => k.getBoundingClientRect().height)) }; }, sel);
+    const run = async (w, h, stored = {}) => { const o = await open(browser, G, w, h, stored); o.saved = [];
+      await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); o.saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
+      // The place as last saved in the draft (each change is saved within a second).
+      // A change back to what is live saves no draft (draft: null): the place is then the live one.
+      o.item = async path => { await o.p.waitForTimeout(1300); for (const b of o.saved.slice().reverse()) { try { const j = JSON.parse(b); if (!('draft' in j)) continue; const c = j.draft ? j.draft.content : G.content; return path.split('/').reduce((a, k) => a == null ? a : a[/^\d+$/.test(k) ? +k : k], c); } catch (e) { /* not a draft */ } } return null; };
+      return o; };
+    { const { ctx, p, errors, item } = await run(360, 780);
+      await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(300);
+      const rows = await p.$$eval('.edz details.cmi > summary', ss => ss.map(s => ({ tile: !!s.querySelector('i.pl-ic'), svg: !!s.querySelector('i.pl-ic svg'), meta: (s.querySelector('small') || {}).textContent || '' })));
+      const lr = rows[ri] || {};
+      ok('place card: every row of Eat and drink starts with its kind\'s tile, drawn with the guide\'s icon when it has a kind', rows.length > 3 && rows.every(r => r.tile) && rows.filter(r => r.svg).length === items('restaurants').filter(x => x.icon).length, `${rows.filter(r => r.svg).length} of ${rows.length}`);
+      ok('place card: the row says kind · town · km, and never the town twice', lr.meta === [L0.type.en, L0.type.en.toLowerCase().includes(L0.town.toLowerCase()) ? '' : L0.town, L0.km_from_house + ' km'].filter(Boolean).join(' · '), lr.meta);
+      await p.$eval(card(RP), e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -10)); await p.screenshot({ path: join(SHOTS, 'place-card-closed-list-360.png') });
+      await p.click(card(RP) + ' > summary'); await p.waitForTimeout(300);
+      const order = await p.evaluate(sel => { const c = document.querySelector(sel), y = s => { const e = c.querySelector(s); return e ? e.getBoundingClientRect().top : -1; };
+        return [y(`[data-p$="/name"]`), y(`[data-p$="/description"]`), y('[data-cfav]'), y('.pl-found')]; }, card(RP));
+      ok('place card: Name, Your comment, Our favourite, then "Filled in for you", in that order', order.every(x => x > 0) && order.every((x, i) => !i || x > order[i - 1]) && /Your comment/.test(await p.textContent(card(RP) + ' label[for$="_description"]').catch(() => '')), order.map(Math.round).join(' < '));
+      const panel = (await p.textContent(card(RP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+      ok('place card, La Locanda: the panel has the kind, the hours by days, the price, the phone, the website, the marks, the note on the price and Change', ['Filled in for you', L0.type.en, 'Tue-Sat 13:00-16:00, 20:00-23:30', '€20-25 per person', L0.phone, 'facebook.com', 'Vegetarian options', 'Book ahead', 'A pizza each', 'Change'].every(x => panel.includes(x)) && !panel.includes('tapas') && !/Our favourite/.test(panel), panel.slice(0, 200));
+      const pnH = await height(p, card(RP) + ' .pl-found'), h1 = await height(p, card(RP));
+      ok(`place card, 360 px: the opened card with Change closed is about one and a half screens (${h1} px, its panel ${pnH} px)`, h1 > 0 && h1 <= 1250, `${h1} px`);
+      ok('place card, 360 px, Change closed: nothing overlaps, nothing sticks out, no sideways scroll', !(await clash(p, card(RP))).length, (await clash(p, card(RP))).join('; '));
+      await p.locator(card(RP)).screenshot({ path: join(SHOTS, 'place-card-360.png'), style: NO_BAR });
+      // Our favourite: topPick set and deleted
+      await p.click(card(RP) + ' [data-cfav]'); const f1 = await item(RP); await p.click(card(RP) + ' [data-cfav]'); const f2 = await item(RP);
+      ok('place card: Our favourite deletes topPick, and sets it again', f1 && !('topPick' in f1) && f2 && f2.topPick === true, `${f1 && f1.topPick} -> ${f2 && f2.topPick}`);
+      // Change opens the form in place, stays open across a re-render, and closes
+      await p.click(card(RP) + ' [data-cchg]'); await p.waitForTimeout(200);
+      ok('place card: Change opens the form under the panel and becomes Done', !!(await p.$(card(RP) + ' .pl-form')) && (await p.textContent(card(RP) + ' [data-cchg]')).trim() === 'Done' && await p.evaluate(sel => { const c = document.querySelector(sel); return c.querySelector('.pl-found').getBoundingClientRect().bottom <= c.querySelector('.pl-form').getBoundingClientRect().top; }, card(RP)));
+      // Marks: a tag chip and the flag "Book ahead"; a tag the card does not offer stays
+      await p.click(card(RP) + ' [data-ctag][data-m="dogs"]'); const m1 = await item(RP);
+      ok('place card: a mark chip adds its tag, keeps the others (also one it does not offer), and the form stays open across the redraw', !!m1 && ['veggie', 'tapas', 'dogs'].every(t => (m1.tags || []).includes(t)) && !!(await p.$(card(RP) + ' .pl-form')) && (await p.getAttribute(card(RP) + ' [data-ctag][data-m="dogs"]', 'aria-pressed')) === 'true', JSON.stringify(m1 && m1.tags));
+      await p.click(card(RP) + ' [data-ctag][data-m="dogs"]'); await p.click(card(RP) + ' [data-cflag][data-f="book"].chip'); const m2 = await item(RP);
+      ok('place card: tapped again the tag goes; "Book ahead" is the flag book', !!m2 && !(m2.tags || []).includes('dogs') && (m2.tags || []).includes('tapas') && !(m2.flags || []).includes('book'), JSON.stringify([m2 && m2.tags, m2 && m2.flags]));
+      await p.click(card(RP) + ' [data-cflag][data-f="book"].chip'); await p.waitForTimeout(100);
+      // Price per person
+      const pf = card(RP) + ' [data-cprice][data-end="from"]', pt = card(RP) + ' [data-cprice][data-end="to"]';
+      await p.fill(pf, '18'); await p.fill(pt, '30'); const pr1 = (await item(RP) || {}).price;
+      await p.fill(pt, ''); const pr2 = (await item(RP) || {}).price; await p.fill(pf, ''); const pr3 = await item(RP);
+      ok('place card: price from and to write "18-30", "18" with one, nothing with none', pr1 === '18-30' && pr2 === '18' && !!pr3 && !('price' in pr3), `${pr1}, ${pr2}, ${pr3 && pr3.price}`);
+      await p.fill(pf, '20'); await p.fill(pt, '25'); await p.waitForTimeout(100);
+      // Set menus
+      await p.click(card(RP) + ' [data-csmadd]'); await p.waitForTimeout(200);
+      const smP = card(RP) + ` [data-p="${RP}/setMenus/0/price"]`, smK = card(RP) + ` select[data-p="${RP}/setMenus/0/kind"]`;
+      await p.fill(smP, '12-15'); await p.selectOption(smK, 'tasting'); const s1 = await item(RP);
+      const smLine = await p.evaluate(sel => { const r = document.querySelector(sel + ' .pl-sm'), m = [...r.children].map(e => { const x = e.getBoundingClientRect(); return x.top + x.height / 2; }); return m.length === 3 && Math.max(...m) - Math.min(...m) < 2; }, card(RP));
+      await p.click(card(RP) + ` [data-csmdel="${RP}/setMenus/0"]`); const s2 = await item(RP);
+      ok('place card: a set menu added (Tasting menu, 12-15) on one line, then removed takes the property away', !!s1 && JSON.stringify(s1.setMenus) === '[{"kind":"tasting","price":"12-15"}]' && smLine && !!s2 && !('setMenus' in s2), JSON.stringify([s1 && s1.setMenus, s2 && s2.setMenus]));
+      // Open 24 hours: the rows hidden, not deleted
+      await p.click(card(RP) + ' [data-calways]'); const a1 = await item(RP); const rowsHidden = !(await p.$(card(RP) + ' .cm-sch'));
+      await p.click(card(RP) + ' [data-calways]'); const a2 = await item(RP);
+      ok('place card: Open 24 hours sets always and hides the hours, which stay; off again it goes', !!a1 && a1.always === true && (a1.schedule || []).length === 2 && rowsHidden && !!a2 && !('always' in a2) && !!(await p.$(card(RP) + ' .cm-sch')), `${a1 && a1.always}, ${a1 && (a1.schedule || []).length} rows`);
+      // Only part of the year, on the first row of hours
+      await p.click(card(RP) + ` [data-cseason="${RP}/schedule/0"]`); const se1 = await item(RP + '/schedule/0');
+      await p.selectOption(card(RP) + ` [data-cseas="${RP}/schedule/0"][data-end="to"][data-part="m"]`, '10'); await p.selectOption(card(RP) + ` [data-cseas="${RP}/schedule/0"][data-end="from"][data-part="d"]`, '15'); const se2 = await item(RP + '/schedule/0');
+      const oneLine = await p.evaluate(sel => { const s = document.querySelector(sel + ' .pl-season'); if (!s) return false; const mids = [...s.children].map(c => { const r = c.getBoundingClientRect(); return Math.round(r.top + r.height / 2); }); return s.children.length === 6 && Math.max(...mids) - Math.min(...mids) <= 2 && s.scrollWidth <= s.clientWidth; }, card(RP));
+      ok('place card, 360 px: "Only part of the year" shows both dates on one line and writes from and to (06-01 to 09-30, then 06-15 to 10-30)', !!se1 && se1.from === '06-01' && se1.to === '09-30' && !!se2 && se2.from === '06-15' && se2.to === '10-30' && oneLine, JSON.stringify([se1, se2].map(x => x && [x.from, x.to])));
+      // the panel's lines show while the form is closed: closed to read them, then open again
+      await p.click(card(RP) + ' [data-cchg]'); const seasonSaid = await p.textContent(card(RP) + ' .pl-found').catch(() => ''); await p.click(card(RP) + ' [data-cchg]');
+      ok('place card: the panel prints the season in words', /from 15 Jun to 30 Oct/.test(seasonSaid));
+      await p.click(card(RP) + ` [data-cseason="${RP}/schedule/0"]`); const se3 = await item(RP + '/schedule/0');
+      ok('place card: switched off, the season goes from the row', !!se3 && !('from' in se3) && !('to' in se3));
+      const h2 = await height(p, card(RP));
+      ok(`place card, 360 px, Change open: nothing overlaps, nothing sticks out (${h2} px)`, !(await clash(p, card(RP))).length, (await clash(p, card(RP))).join('; '));
+      await p.locator(card(RP)).screenshot({ path: join(SHOTS, 'place-card-change-360.png'), style: NO_BAR });
+      // The kind picker for a place to eat: 12 kinds, three across
+      await p.click(card(RP) + ` [data-ckinds]`); await p.waitForTimeout(200);
+      const ke = await kindsOk(p, card(RP));
+      ok('place card, kind picker (Eat and drink): the 12 kinds, three across at 360 px, names on at most two lines, no word cut, tiles 40 px or more', ke.n === 12 && ke.across === 3 && !ke.bad.length && ke.tall >= 40 && !ke.heads.length, JSON.stringify(ke));
+      ok('place card, kind picker open: nothing overlaps', !(await clash(p, card(RP))).length, (await clash(p, card(RP))).join('; '));
+      await p.$eval(card(RP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -12)); await p.screenshot({ path: join(SHOTS, 'place-card-kinds-eat-360.png') });
+      await p.click(card(RP) + ' [data-ckind][data-k="fish"]'); const k1 = await item(RP);
+      ok('place card: a kind picked sets the icon, keeps the host\'s own line under the name, and closes the grid', !!k1 && k1.icon === 'fish' && cmpSame(k1.type, L0.type) && !(await p.$(card(RP) + ' .pl-k')), `${k1 && k1.icon}: ${k1 && k1.type && k1.type.en}`);
+      await p.click(card(RP) + ' [data-cchg]'); await p.waitForTimeout(200);
+      ok('place card: Done closes the form', !(await p.$(card(RP) + ' .pl-form')) && (await p.textContent(card(RP) + ' [data-cchg]')).trim() === 'Change');
+      ok('place card (restaurants): no page errors', !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // Attractions: the panel of a rich place, the 21 kinds under their five groups, the line under the name and Great for kids
+    { const { ctx, p, errors, item } = await run(360, 780);
+      await p.goto('http://editor.test/#todo'); await ready(p); await p.waitForTimeout(300);
+      const A1 = items('todo')[ti];
+      await p.click(card(TP) + ' > summary'); await p.waitForTimeout(200);
+      const panel = (await p.textContent(card(TP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' '), hl = await p.$$eval(card(TP) + ' .pl-hl', e => e.length);
+      ok('place card, Aqualeon: the panel has its kind, one line per season of hours with its dates, the phone, the website by its name, Great for kids', panel.includes(A1.type.en) && hl === 3 && /Every day 11:00-18:00 from 13 Jun to 12 Jul/.test(panel) && panel.includes('aqualeon.es') && panel.includes('Great for kids') && !/https?:/.test(panel), `${hl} lines: ${panel.slice(0, 160)}`);
+      const wine = items('todo').findIndex(x => x.icon === 'wine' && !(x.schedule || []).length && !x.always && !x.hours), WP = `files/todo/items/${wine}`;
+      if (wine >= 0) { await p.click(card(WP) + ' > summary'); await p.waitForTimeout(200);
+        const wt = (await p.textContent(card(WP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' '), wc = await p.$eval(card(WP) + ' summary .pl-ic', e => e.style.getPropertyValue('--kc')).catch(() => '');
+        ok('place card, a winery: its tile in the wine group\'s colour, and with no hours of ours, the panel says so', wc.toUpperCase() === '#8E1B4A' && /No opening hours found\./.test(wt), `${wc}: ${wt.slice(0, 140)}`); }
+      // A new place: empty panel, "Find it on Google" first whatever the state of Change
+      await p.$eval('[data-addit="files/todo/items"]', e => e.scrollIntoView({ block: 'center' })); await p.click('[data-addit="files/todo/items"]'); await p.waitForTimeout(300);
+      const nt = (await p.textContent(card(NP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
+      const firstFind = () => p.evaluate(sel => { const c = document.querySelector(sel), f = c.querySelectorAll('[data-gsp]'), n = c.querySelector('[data-p$="/name"]'); return f.length === 1 && f[0].getBoundingClientRect().top < n.getBoundingClientRect().top; }, card(NP));
+      ok('place card, a new place: the panel says nothing was found yet, with Change; "Find it on Google" comes first, above Name', /Nothing found for this place yet\. Guests still get the map pin and the Google Maps button\./.test(nt) && /Change/.test(nt) && await firstFind(), nt);
+      await p.locator(card(NP)).screenshot({ path: join(SHOTS, 'place-card-empty-360.png'), style: NO_BAR });
+      await p.click(card(NP) + ' [data-cchg]'); await p.waitForTimeout(200);
+      ok('place card, a new place with the form open: still one "Find it on Google", at the top', await firstFind());
+      await p.click(card(NP) + ' [data-ckinds]'); await p.waitForTimeout(200);
+      const kt = await kindsOk(p, card(NP));
+      ok('place card, kind picker (Attractions): the 21 kinds under the five groups, as the guide names its filters, three across, no name cut', kt.n === 21 && JSON.stringify(kt.heads) === JSON.stringify(['Activities', 'Beaches', 'Sights & towns', 'Nature & walks', 'Wine & cava']) && kt.across === 3 && !kt.bad.length, JSON.stringify(kt));
+      ok('place card, kind picker (Attractions), 360 px: nothing overlaps', !(await clash(p, card(NP))).length, (await clash(p, card(NP))).join('; '));
+      await p.$eval(card(NP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -12)); await p.screenshot({ path: join(SHOTS, 'place-card-kinds-todo-360.png') });
+      await p.click(card(NP) + ' [data-ckind][data-k="waterpark"]'); const n1 = await item(NP);
+      await p.click(card(NP) + ' [data-ckinds]'); await p.click(card(NP) + ' [data-ckind][data-k="castle"]'); const n2 = await item(NP);
+      ok('place card: a kind picked on a new place gives its name as the line under the name, its group, and Great for kids for a kids\' kind; another kind replaces them', !!n1 && n1.icon === 'waterpark' && (n1.type || {}).en === 'Water park' && n1.group === 'fun' && (n1.tags || []).includes('kidsfun') && !!n2 && n2.icon === 'castle' && (n2.type || {}).en === 'Castle' && n2.group === 'sights' && !(n2.tags || []).includes('kidsfun'), JSON.stringify([n1, n2].map(x => x && [x.icon, (x.type || {}).en, x.group, x.tags])));
+      await p.click(card(NP) + ' [data-ckinds]'); await p.click(card(NP) + ' [data-ckind][data-k="waterpark"]'); await p.waitForTimeout(150);
+      await p.click(card(NP) + ' [data-ctag][data-m="kidsfun"]'); await p.click(card(NP) + ' [data-ctag][data-m="kidsfun"]'); await p.waitForTimeout(150);
+      await p.click(card(NP) + ' [data-ckinds]'); await p.click(card(NP) + ' [data-ckind][data-k="castle"]'); const n3 = await item(NP);
+      ok('place card: Great for kids set by hand stays when the kind changes', !!n3 && n3.icon === 'castle' && (n3.tags || []).includes('kidsfun'), JSON.stringify(n3 && n3.tags));
+      await p.click(card(TP) + ' [data-cchg]'); await p.click(card(TP) + ' [data-ckinds]'); await p.click(card(TP) + ' [data-ckind][data-k="themepark"]'); const t1 = await item(TP);
+      ok('place card: on Aqualeon a new kind keeps the host\'s line under the name ("Water park, Albinyana")', !!t1 && t1.icon === 'themepark' && cmpSame(t1.type, A1.type) && t1.group === 'fun', `${t1 && t1.icon}: ${t1 && t1.type && t1.type.en}`);
+      ok('place card (Attractions): no page errors', !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // Editing in German and French, and the maker itself in French: the opened card closed and open, nothing overlapping.
+    for (const [lang, maker] of [['de', 'en'], ['fr', 'en'], [null, 'fr']]) {
+      const { ctx, p, errors } = await run(360, 780, { 'porta-lang-v1': maker }), tag = maker === 'fr' ? 'the maker in French' : `editing in ${lang}`;
+      await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(300);
+      if (lang) { await p.selectOption('#c_lang', lang).catch(() => {}); await p.waitForTimeout(300); }
+      await p.click(card(RP) + ' > summary'); await p.waitForTimeout(200);
+      const b1 = await clash(p, card(RP));
+      if (maker === 'fr') await p.locator(card(RP)).screenshot({ path: join(SHOTS, 'place-card-fr-360.png'), style: NO_BAR });
+      await p.click(card(RP) + ' [data-cchg]'); await p.click(card(RP) + ` [data-cseason="${RP}/schedule/0"]`); await p.click(card(RP) + ' [data-csmadd]'); await p.waitForTimeout(300);
+      const b2 = await clash(p, card(RP));
+      // The set menu's name is not cut: the select's text fits inside it
+      const cut = await p.$eval(card(RP) + ' .pl-sm select', s => { const cv = document.createElement('canvas').getContext('2d'), cs = getComputedStyle(s); cv.font = cs.font; return cv.measureText(s.options[s.selectedIndex].text).width + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 18 > s.clientWidth; }).catch(() => true);
+      await p.click(card(RP) + ' [data-ckinds]'); await p.waitForTimeout(200); const b3 = await clash(p, card(RP)), k = await kindsOk(p, card(RP));
+      ok(`place card, 360 px, ${tag}: nothing overlaps with Change closed, open (with a season and a set menu) and with the kinds; no name cut`, !b1.length && !b2.length && !b3.length && !cut && !k.bad.length, [...b1, ...b2, ...b3, cut ? 'set menu cut' : '', ...k.bad].filter(Boolean).join('; '));
+      if (maker === 'fr') { const kindsFr = await p.textContent(card(RP) + ' .pl-kinds'), marksFr = await p.textContent(card(RP) + ' .pl-marks'); await p.click(card(RP) + ' [data-cchg]'); const panelFr = await p.textContent(card(RP) + ' .pl-found'); await p.click(card(RP) + ' [data-cchg]');
+        ok('place card, the maker in French: the panel, the kinds and the marks are in French', /Rempli pour vous/.test(panelFr) && /Poisson et fruits de mer/.test(kindsFr) && /Options végétariennes/.test(marksFr) && /20-25 € par personne/.test(panelFr)); }
+      ok(`place card, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // Desktop, with the guide in the phone beside the editor
+    { const { ctx, p, errors, item } = await run(1280, 860);
+      await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(600);
+      const beside = () => p.evaluate(() => { const a = document.querySelector('.split .col').getBoundingClientRect(), b = document.querySelector('.side-phone').getBoundingClientRect(); return getComputedStyle(document.querySelector('.side-phone')).display !== 'none' && a.right <= b.left && b.right <= innerWidth; });
+      await p.click(card(RP) + ' > summary'); await p.waitForTimeout(300);
+      const d1 = await height(p, card(RP)), c1 = await clash(p, card(RP));
+      await p.locator(card(RP)).screenshot({ path: join(SHOTS, 'place-card-desktop.png'), style: NO_BAR });
+      await p.click(card(RP) + ' [data-cchg]'); await p.waitForTimeout(300);
+      const d2 = await height(p, card(RP)), c2 = await clash(p, card(RP)), half = await p.evaluate(sel => { const c = document.querySelector(sel), a = c.querySelector('[data-p$="/phone"]').getBoundingClientRect(), b = c.querySelector('[data-p$="/url"]').getBoundingClientRect(); return Math.abs(a.top - b.top) < 2 && a.right < b.left; }, card(RP));
+      await p.locator(card(RP)).screenshot({ path: join(SHOTS, 'place-card-change-desktop.png'), style: NO_BAR });
+      ok(`place card, desktop: nothing overlaps or sticks out with Change closed (${d1} px) and open (${d2} px), phone and website side by side, the phone preview beside the editor`, !c1.length && !c2.length && half && await beside(), [...c1, ...c2].join('; '));
+      await go(p, '#todo'); await p.waitForTimeout(500);
+      await p.click(card(TP) + ' > summary'); await p.click(card(TP) + ' [data-cchg]'); await p.click(card(TP) + ' [data-ckinds]'); await p.waitForTimeout(300);
+      const kd = await kindsOk(p, card(TP)), c3 = await clash(p, card(TP));
+      ok('place card, desktop: the kind picker shows more than three tiles a row, at their own size, nothing overlapping', kd.n === 21 && kd.cols > 3 && !kd.bad.length && !c3.length && await beside(), JSON.stringify({ ...kd, c3 }));
+      await p.$eval(card(TP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -12)); await p.screenshot({ path: join(SHOTS, 'place-card-kinds-todo-desktop.png') });
+      await p.waitForTimeout(1500); const loads = ctx.viewer || 0;
+      await p.click(card(TP) + ' [data-ckind][data-k="kart"]'); const k1 = await item(TP); await p.waitForTimeout(1200);
+      ok('place card, desktop: a new kind is saved and the phone beside the editor reloads with it', !!k1 && k1.icon === 'kart' && (ctx.viewer || 0) > loads && await beside(), `${loads} -> ${ctx.viewer}`);
+      ok('place card, desktop: no page errors', !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // Markets and events keep their card: the same markup as the page of the last commit, for the first of each.
+    { let before = null; try { before = execSync('git show HEAD:onboarding-site/index.html', { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', 'ignore'] }); } catch (e) { /* no git here */ }
+      const markup = async html => { const { ctx, p } = await open(browser, E, 360, 780); if (html) await ctx.route(u => u.host === 'editor.test' && !u.pathname.startsWith('/api/') && !u.pathname.startsWith('/g/'), r => r.fulfill({ status: 200, contentType: 'text/html', body: html })); let out = '';
+        for (const [step, path] of [['markets', 'files/markets/markets/0'], ['events', 'files/events/items/0']]) { await p.goto('http://editor.test/#' + step); await ready(p); await p.click(card(path) + ' > summary').catch(() => {}); await p.waitForTimeout(250); out += await p.$eval(card(path), e => e.outerHTML).catch(() => 'none'); }
+        await ctx.close(); return out; };
+      if (before) { const a = await markup(before), b = await markup(null); const at = [...a].findIndex((x, i) => x !== b[i]);
+        ok('markets and events: their opened card is the same markup as in the last commit', a === b && !/class="pl-(found|form|ic)/.test(b) && a.length > 1000, at < 0 ? `${a.length}` : `${a.slice(at - 60, at + 60)} / ${b.slice(at - 60, at + 60)}`); } }
+  }
   // The editor never publishes an empty thing (10 Nov 2026). A new place starts blank (no icon, quick filter or marks of the
   // first one). On Publish, what nobody filled in is dropped (a line with no name on a station, a station with nothing in
   // it, a new place left as it came); a place with words but no name stops Publish and says where.

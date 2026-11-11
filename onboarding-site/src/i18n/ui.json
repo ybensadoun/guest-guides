@@ -7210,5 +7210,125 @@
 "ca": "Foto:",
 "es": "Foto:",
 "fr": "Photo :"
+},
+"Filled in for you": {
+"ca": "Omplert per a tu",
+"es": "Rellenado para ti",
+"fr": "Rempli pour vous"
+},
+"Change": {
+"ca": "Canvia",
+"es": "Cambiar",
+"fr": "Modifier"
+},
+"Our favourite": {
+"ca": "El nostre preferit",
+"es": "Nuestro favorito",
+"fr": "Notre coup de cœur"
+},
+"Guests see it marked Unmissable. Keep it for two or three places.": {
+"ca": "Els hostes el veuen marcat com a Imprescindible. Fes-lo servir per a dos o tres llocs.",
+"es": "Los huéspedes lo ven marcado como Imprescindible. Úsalo para dos o tres sitios.",
+"fr": "Les voyageurs le voient marqué Incontournable. Gardez-le pour deux ou trois lieux."
+},
+"Your comment": {
+"ca": "El teu comentari",
+"es": "Tu comentario",
+"fr": "Votre commentaire"
+},
+"Nothing found for this place yet. Guests still get the map pin and the Google Maps button.": {
+"ca": "Encara no hem trobat res d’aquest lloc. Els hostes tenen igualment el punt al mapa i el botó de Google Maps.",
+"es": "Aún no hemos encontrado nada de este sitio. Los huéspedes tienen igualmente el punto en el mapa y el botón de Google Maps.",
+"fr": "Rien trouvé pour ce lieu pour l’instant. Les voyageurs ont quand même le repère sur la carte et le bouton Google Maps."
+},
+"No opening hours found. Guests see Google’s own line saying whether it is open.": {
+"ca": "No hem trobat l’horari. Els hostes veuen la línia de Google que diu si és obert.",
+"es": "No hemos encontrado el horario. Los huéspedes ven la línea de Google que dice si está abierto.",
+"fr": "Aucun horaire trouvé. Les voyageurs voient la ligne de Google qui dit si c’est ouvert."
+},
+"No opening hours found.": {
+"ca": "No hem trobat l’horari.",
+"es": "No hemos encontrado el horario.",
+"fr": "Aucun horaire trouvé."
+},
+"Open 24 hours": {
+"ca": "Obert 24 hores",
+"es": "Abierto 24 horas",
+"fr": "Ouvert 24 h sur 24"
+},
+"Every day": {
+"ca": "Cada dia",
+"es": "Todos los días",
+"fr": "Tous les jours"
+},
+"from {x} to {y}": {
+"ca": "del {x} al {y}",
+"es": "del {x} al {y}",
+"fr": "du {x} au {y}"
+},
+"Marks": {
+"ca": "Etiquetes",
+"es": "Etiquetas",
+"fr": "Étiquettes"
+},
+"Price per person": {
+"ca": "Preu per persona",
+"es": "Precio por persona",
+"fr": "Prix par personne"
+},
+"From": {
+"ca": "De",
+"es": "De",
+"fr": "De"
+},
+"Between": {
+"ca": "Entre",
+"es": "Entre",
+"fr": "Entre"
+},
+"and": {
+"ca": "i",
+"es": "y",
+"fr": "et"
+},
+"Set menus": {
+"ca": "Menús",
+"es": "Menús",
+"fr": "Menus"
+},
+"+ Add a set menu": {
+"ca": "+ Afegeix un menú",
+"es": "+ Añadir un menú",
+"fr": "+ Ajouter un menu"
+},
+"Remove this set menu": {
+"ca": "Treu aquest menú",
+"es": "Quitar este menú",
+"fr": "Retirer ce menu"
+},
+"Only part of the year": {
+"ca": "Només una part de l’any",
+"es": "Solo una parte del año",
+"fr": "Une partie de l’année seulement"
+},
+"Day": {
+"ca": "Dia",
+"es": "Día",
+"fr": "Jour"
+},
+"Month": {
+"ca": "Mes",
+"es": "Mes",
+"fr": "Mois"
+},
+"Where it is": {
+"ca": "Ubicació",
+"es": "Ubicación",
+"fr": "Emplacement"
+},
+"Delete this place": {
+"ca": "Esborra aquest lloc",
+"es": "Borrar este sitio",
+"fr": "Supprimer ce lieu"
 }
 }
