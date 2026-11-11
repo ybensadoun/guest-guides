@@ -17,6 +17,7 @@ import { hostPlaces, placesOf } from './host-places.mjs';   // a host's own plac
 import { townPoint } from './place-facts.mjs';   // the house's town in GeoNames, when its position is Google's
 import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
+import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
 const env = { ...process.env };
@@ -789,8 +790,14 @@ function mergeQuick(dir, quick) {
   writeFileSync(f, JSON.stringify(o, null, 1)); log(`  ${add.length} market(s) from the quick search added`);
 }
 
+// A place the host added or found in the editor (Eat and drink, Nightlife, Attractions): its facts through the build's own
+// chain (worker/place-job.mjs), returned in the job for the open editor, which fills only what the place does not have.
+// Claude API only (placeAsk), at most 30 a day per guide; the chain's cost goes on the worker's daily budget.
+const placeJob = (j, jp) => placeFactsJob(j, jp, { rest, store: makeStore(rest), ask: placeAsk, again: placeAgain, GK: env.GOOGLE_PLACES_KEY || null,
+  python: env.OVERTURE_PYTHON || 'python3', log: (...a) => log(' ', ...a) });
+
 // Up to three jobs run side by side (each one mostly waits for Claude). Two jobs that write the same guide (translate,
-// automatic events) never run together; searches for suggestions write nothing to the guide, so they never wait.
+// automatic events) never run together; searches for suggestions and place facts write nothing to the guide, so they never wait.
 const RUNNING = new Map(), MAX_JOBS = 3, WRITES = k => k === 'translate' || k === 'auto-events' || k === 'find-transport';
 let STOPPING = false;   // set by SIGTERM: no new jobs or builds
 async function runJobs() {
@@ -800,11 +807,11 @@ async function runJobs() {
     if (RUNNING.size >= MAX_JOBS) break;
     if (WRITES(j.kind) && [...RUNNING.values()].some(r => r.guide === j.guide_id && WRITES(r.kind))) continue;
     const jp = b => rest('/rest/v1/guide_jobs?id=eq.' + j.id, { method: 'PATCH', body: b, headers: { Prefer: 'return=minimal' } }).catch(() => {});
-    const won = await rest('/rest/v1/guide_jobs?id=eq.' + j.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running', message: j.kind === 'translate' ? 'Translating' : j.kind === 'cover-art' ? 'Starting the drawing' : 'Starting the search' }, headers: { Prefer: 'return=representation' } });
+    const won = await rest('/rest/v1/guide_jobs?id=eq.' + j.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running', message: j.kind === 'translate' ? 'Translating' : j.kind === 'cover-art' ? 'Starting the drawing' : j.kind === 'place-facts' ? 'Starting to look' : 'Starting the search' }, headers: { Prefer: 'return=representation' } });
     if (!won || !won[0]) continue;
-    log(j.kind === 'translate' ? 'translating' : j.kind === 'cover-art' ? 'drawing' : 'searching', 'job', j.id.slice(0, 8), j.kind === 'translate' ? (j.langs || []).join(',') : j.kind);
+    log(j.kind === 'translate' ? 'translating' : j.kind === 'cover-art' ? 'drawing' : j.kind === 'place-facts' ? 'looking up a place,' : 'searching', 'job', j.id.slice(0, 8), j.kind === 'translate' ? (j.langs || []).join(',') : j.kind);
     const work = (async () => {
-      try { if (j.kind === 'translate') await translateJob(j, jp); else if (j.kind === 'cover-art') await coverArtJob(j, jp); else if (j.kind === 'auto-events') await autoEventsJob(j, jp); else if (j.kind === 'find-transport') await transportJob(j, jp); else if (j.kind === 'research') await researchJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
+      try { if (j.kind === 'translate') await translateJob(j, jp); else if (j.kind === 'cover-art') await coverArtJob(j, jp); else if (j.kind === 'auto-events') await autoEventsJob(j, jp); else if (j.kind === 'find-transport') await transportJob(j, jp); else if (j.kind === 'research') await researchJob(j, jp); else if (j.kind === 'place-facts') await placeJob(j, jp); else if (FIND[j.kind]) await findJob(j, jp); else throw new Error('Unknown job: ' + j.kind); }
       catch (e) { log('  job FAILED:', e.message); await jp({ status: 'failed', message: String(e.message).slice(0, 200), finished_at: new Date().toISOString() }); }
     })();
     RUNNING.set(j.id, { guide: j.guide_id, kind: j.kind, work });

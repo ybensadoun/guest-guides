@@ -709,6 +709,12 @@ def host_items(rows, filters=False):   # filters: Things to do (kinds of todo, w
         for k2 in ('phone', 'hours', 'schedule', 'price', 'priceNote', 'wiki'):
             if g.get(k2): it[k2] = L(g[k2]) if k2 in ('hours', 'priceNote') else g[k2]
         if g.get('book') is True: it['flags'] = ['book']   # its own site asks to book: the engine's "Book ahead"
+        # Where those facts came from (the worker's filled: {at, from: {field: source}, page?}), for the editor's line under
+        # "Filled in for you"; guests never see it. A website the host typed as the place is theirs, not a source's.
+        if isinstance(g.get('filled'), dict):
+            fl = json.loads(json.dumps(g['filled']))
+            if isurl and not ismaps: (fl.get('from') or {}).pop('url', None)
+            if fl.get('from'): it['filled'] = fl
         items.append(it)
     return items
 def write_host_places(rows, file):

@@ -72,11 +72,12 @@ export async function fillPlaces(found, kept, ov, feats, { store, ask = null, ag
       // A row with only Google's position and a GeoNames feature around its pin: the light look gives it one of ours.
       const placed = !!(row && row.facts && num(row.facts.lat) && num(row.facts.lng));
       const gains = !placed && !!featureFor(feats(p.gid), { venue: !!(row && row.venue === true) });
-      if (!ask || p.unnamed || (fresh && lookedFor(row, p.list) && named && !gains)) { facts[p.key] = row && row.facts || {}; return; }   // without Claude, or a card no record names: what is kept, nothing asked
+      // A page the host gave (p.website, from the editor) is always read, however fresh the row.
+      if (!ask || p.unnamed || (fresh && lookedFor(row, p.list) && named && !gains && !p.website)) { facts[p.key] = row && row.facts || {}; return; }   // without Claude, or a card no record names: what is kept, nothing asked
       try {
-        const place = { name: p.words, town: p.town || towns[p.gid] || undefined, about: p.about || undefined, list: p.list };
+        const place = { name: p.words, town: p.town || towns[p.gid] || undefined, about: p.about || undefined, list: p.list, ...(p.website ? { website: p.website } : {}) };
         // Its site was read lately but never for this list (or before names and kinds were kept): only the match is asked.
-        const r = await placeFacts(place, pins[p.gid] || [], ask, { meter: {}, again, matchOnly: fresh, features: feats(p.gid) });
+        const r = await placeFacts(place, pins[p.gid] || [], ask, { meter: {}, again, matchOnly: fresh && !p.website, features: feats(p.gid) });
         if (meter) meter.usd = +((meter.usd || 0) + (r.usd || 0)).toFixed(4);
         // A look cut short (the day's limit, the API out of reach) is not kept: it would wait 30 days to be asked again.
         if (r.error) { log(`place facts incomplete (${p.key.slice(0, 40)}): ${r.error}`); facts[p.key] = row && row.facts || {}; return; }
@@ -90,7 +91,27 @@ export async function fillPlaces(found, kept, ov, feats, { store, ask = null, ag
   return facts;
 }
 
-// rows: [{ p, gid?, list, c? }], cards: [{ id, list, c? }] (c: the host's comment, which helps the kind), house: { lat, lng },
+// Where the facts handed to the guide came from, for the editor's line under "Filled in for you" (Piece B of the places
+// work): from maps the item's own fields (kind, phone, url, schedule, price, book) to the source the kept row says, for
+// the fields given only; at is the latest date among them; page is the page the hours or the price were read on (a site or
+// a search), else the page any other fact was read on. Google is never a source here: its facts are not kept. GeoNames
+// (a beach's kind) is not one of the editor's words yet, so a kind from it is left out. null when nothing was filled.
+const FILLED = { phone: 'phone', url: 'website', schedule: 'hours', price: 'price', book: 'book' }, SAID = new Set(['overture', 'site', 'search', 'claude']);
+export function filledOf(fields, sources, list) {
+  const from = {}, ats = [], pages = {};
+  for (const k of fields) {
+    const s = sources && sources[k === 'kind' ? 'kind_' + LIST(list) : FILLED[k]];
+    if (!s || s.none || !SAID.has(s.from)) continue;
+    from[k] = s.from; if (typeof s.at === 'string') ats.push(s.at);
+    if (s.page && (s.from === 'site' || s.from === 'search')) pages[k] = s.page;
+  }
+  if (!Object.keys(from).length) return null;
+  const page = pages.schedule || pages.price || Object.values(pages)[0];
+  return { at: ats.sort().pop() || today(), from, ...(page ? { page } : {}) };
+}
+
+// rows: [{ p, gid?, list, c?, website? }], cards: [{ id, list, c? }] (c: the host's comment, which helps the kind; website: a
+// page the host gave in the editor, read instead of looking for one), house: { lat, lng },
 // town: the house's town (the generator's fallback for a place with no town; not asked for here). GK: the Google key;
 // store: makeStore(rest); ask, again: makeClaude(...) at low and medium effort.
 // Without store: located only, nothing filled. Without ask: filled from what is already kept, nothing asked. locate (tests): { byId(id), byWords(words, house) } instead of Google;
@@ -105,7 +126,7 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
   if (!L || !house) return {};
   // 1. Located by Google: the id and the position, nothing else. The same place typed twice is located once.
   const want = [], seen = new Set();
-  for (const r of rows) { const key = String(r.p || '').trim(); if (key && !seen.has(key)) { seen.add(key); want.push({ key, list: LIST(r.list), words: key, about: r.c || '', gid: r.gid || null }); } }
+  for (const r of rows) { const key = String(r.p || '').trim(); if (key && !seen.has(key)) { seen.add(key); want.push({ key, list: LIST(r.list), words: key, about: r.c || '', gid: r.gid || null, ...(r.website ? { website: r.website } : {}) }); } }
   for (const c of cards) { const key = 'gid:' + c.id; if (c.id && !seen.has(key)) { seen.add(key); want.push({ key, list: LIST(c.list), words: '', about: c.c || '', gid: c.id, card: true }); } }
   const found = [];
   await each(want, 4, async (w, i) => {
@@ -120,8 +141,8 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
   // 2. Filled from our own table, or by the chain and then kept. A place looked at less than 30 days ago for this list
   // costs nothing. A failure for one place is logged, and its entry keeps what Google located.
   const facts = {}, towns = {};
+  let kept = {};
   if (store && found.length) {
-    let kept = {};
     try { kept = await store.get([...new Set(found.map(p => p.gid))]); } catch (e) { log(`place_facts not read: ${e.message}`); }
     // A kept card has no words of the host. Its name on Google is read here for one comparison, in memory: it picks the
     // record of the same name in Overture, and that record's own name becomes the place's. Google's name is not kept, not
@@ -175,6 +196,8 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
     if (f.price) e.price = f.price;
     if (f.book === true) e.book = true;
     if (!ours) e.pos = { from: 'google', at: today() };
+    const filled = filledOf(['kind', 'phone', 'url', 'schedule', 'price', 'book'].filter(k => k in e), (kept[p.gid] || {}).sources, p.list);
+    if (filled) e.filled = filled;
     geo[p.key] = e;
   }
   return geo;

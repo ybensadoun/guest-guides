@@ -8,7 +8,7 @@
 // its own reading of the web, ours to keep, so it gets no pos mark.
 import { hav, nameOf } from './places.mjs';
 import { nearby, gazetteer, kindsOf } from './place-facts.mjs';
-import { fillPlaces } from './host-places.mjs';
+import { fillPlaces, filledOf } from './host-places.mjs';
 
 const num = v => typeof v === 'number' && Number.isFinite(v);
 const empty = v => v == null || v === '' || (Array.isArray(v) && !v.length);
@@ -68,22 +68,25 @@ export async function checkResearch(items, file, { locate = null, house = null, 
     const facts = await fillPlaces(found, rows, ov, feats, { store, ask, again, meter, log, started: () => { Promise.resolve(progress(++n, found.length, 'fill')).catch(() => {}); } });
     const K = kindsOf('todo');
     pick.forEach((p, k) => {
-      const f = facts[String(k)] || {}, it = p.it;
-      if (empty(it.phone) && f.phone) it.phone = f.phone;
-      if (empty(it.url) && f.website) it.url = f.website;
+      const f = facts[String(k)] || {}, it = p.it, ours = [];   // ours: the item's fields filled here, for the editor's source line
+      if (empty(it.phone) && f.phone) { it.phone = f.phone; ours.push('phone'); }
+      if (empty(it.url) && f.website) { it.url = f.website; ours.push('url'); }
       // Hours from the place's own site: no hoursSource (they are ours). As with Google's hours before, a place that gains
       // them loses the research's "check" unless Google said it is temporarily closed.
-      if (empty(it.schedule) && !it.always && Array.isArray(f.hours) && f.hours.length) { it.schedule = f.hours; if (it._google === 'On Google') it.flags = (it.flags || []).filter(x => x !== 'check'); }
-      if (empty(it.price) && f.price) it.price = f.price;
-      if (f.book === true) it.flags = [...new Set([...(it.flags || []), 'book'])];
+      if (empty(it.schedule) && !it.always && Array.isArray(f.hours) && f.hours.length) { it.schedule = f.hours; ours.push('schedule'); if (it._google === 'On Google') it.flags = (it.flags || []).filter(x => x !== 'check'); }
+      if (empty(it.price) && f.price) { it.price = f.price; ours.push('price'); }
+      if (f.book === true && !(it.flags || []).includes('book')) { it.flags = [...new Set([...(it.flags || []), 'book'])]; ours.push('book'); }
       if (num(f.lat) && num(f.lng)) { it.lat = f.lat; it.lng = f.lng; if (house) it.km_from_house = Math.round(hav(house.lat, house.lng, f.lat, f.lng) * 10) / 10; }
       // The kind, as the generator gives a host's place one: its icon, its quick filter and "Great for kids".
       const kind = f.kind_todo;
       if (!it.icon && kind && K && K[kind]) {
-        it.icon = kind;
+        it.icon = kind; ours.push('kind');
         if (!it.group && K[kind].group) it.group = K[kind].group;
         if (K[kind].kids) it.tags = [...new Set([...(it.tags || []), 'kidsfun'])];
       }
+      // Where they came from (the kept row's sources), as a host's place at the build: never Google, which keeps nothing here.
+      const filled = filledOf(ours, (rows[it.gid] || {}).sources, 'todo');
+      if (filled) it.filled = filled;
     });
   } catch (e) { log(`research places not filled: ${e.message}`); }
   return kept;

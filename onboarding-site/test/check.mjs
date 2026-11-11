@@ -1124,6 +1124,147 @@ try {
       ok('place card, desktop: a new kind is saved and the phone beside the editor reloads with it', !!k1 && k1.icon === 'kart' && (ctx.viewer || 0) > loads && await beside(), `${loads} -> ${ctx.viewer}`);
       ok('place card, desktop: no page errors', !errors.length, errors.join(' | '));
       await ctx.close(); }
+    // A place's facts, looked up in the editor (job place-facts, 11 Nov 2026): picked on Google, the place gets one job; its
+    // panel says it is looking (through a re-render, another step and a reload), then fills only what is empty, once, and says
+    // in one quiet line where the facts came from. Nothing found: the host may paste its website; a failure offers Try again.
+    // The database is played here: the guide (its draft as last saved, so a reload finds the new place), the jobs, Google.
+    { const PF_AT = '2026-11-10', PF_H = [{ days: ['tue', 'wed', 'thu', 'fri', 'sat'], open: '13:00', close: '16:00' }], today = new Date().toISOString().slice(0, 10);
+      const ENTRY = more => ({ name: 'La Locanda Nòva', lat: 41.2102, lng: 1.5102, km: 4, town: 'Calafell', gid: 'gPlaceNova01', kind: 'pizza', phone: '977 66 16 25', url: 'https://locanda-nova.example/', schedule: PF_H, price: '20-30', book: true,
+        filled: { at: PF_AT, from: { kind: 'site', phone: 'overture', url: 'search', schedule: 'site', price: 'site', book: 'site' }, page: 'https://locanda-nova.example/horari' }, ...more });
+      const pfRun = async (w, h, G0 = E, stored = {}) => {
+        const o = await open(browser, { ...G0, draft: null }, w, h, stored); o.jobs = []; o.posts = []; o.draft = null;
+        await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { const req = route.request();
+          if (req.method() === 'PATCH') { try { const j = JSON.parse(req.postData() || '{}'); if ('draft' in j) o.draft = j.draft; } catch (e) { /* not a save */ } return route.fulfill({ status: 204, body: '' }); }
+          if (req.method() === 'GET' && !/select=id(%2C|,)slug/.test(new URL(req.url()).search)) return json(route, [{ ...G0, draft: o.draft }]);
+          return route.fallback(); });
+        await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), route => { const req = route.request(), q = new URL(req.url()).searchParams;
+          if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'), j = { id: 'pf-' + (o.posts.length + 1), status: 'queued', message: null, result: null, params: b.params, created_at: new Date().toISOString() };
+            o.posts.push(b); if (b.kind === 'place-facts') o.jobs.push(j); return json(route, [j]); }
+          const id = (q.get('id') || '').replace(/^eq\./, '');
+          if (id) return json(route, o.jobs.filter(j => j.id === id));
+          return json(route, q.get('kind') === 'eq.place-facts' ? o.jobs.slice().reverse() : []); });
+        await o.ctx.route(u => u.pathname === '/api/places', route => { const q = new URL(route.request().url()).searchParams;
+          return json(route, q.get('id') ? { ok: true, place: { id: q.get('id'), lat: 41.2111, lng: 1.5111, km: 3 } } : q.get('suggest') ? { ok: true, places: [{ id: 'gPlaceNova01', name: 'Pizzeria La Locanda Nova', where: 'Calafell, Spain', km: 3 }] } : { ok: true, enabled: true }); });
+        // The place as last saved, by its id (each change is saved within a second).
+        o.item = async (id, file = 'restaurants') => { await o.p.waitForTimeout(1300); const c = o.draft ? o.draft.content : G0.content; return (((c.files || {})[file] || {}).items || []).find(x => x.id === id) || null; };
+        o.job = (i, st) => Object.assign(o.jobs[i], st);
+        o.panel = sel => o.p.textContent(sel + ' .pl-found').then(t => t.replace(/\s+/g, ' ').trim()).catch(() => '');
+        // A new place in Eat and drink, picked on Google from what the host types: its path.
+        o.pick = async () => { const { p } = o, n = (await p.$$('[data-open^="files/restaurants/items/"]')).length, NP = `files/restaurants/items/${n}`;
+          await p.$eval('[data-addit="files/restaurants/items"]', e => e.scrollIntoView({ block: 'center' })); await p.click('[data-addit="files/restaurants/items"]'); await p.waitForTimeout(300);
+          await p.locator(card(NP) + ' [data-gsp]').pressSequentially('la locanda nova', { delay: 15 }); await p.waitForSelector(card(NP) + ' .pl-sug button', { timeout: 3000 }).catch(() => {});
+          await p.click(card(NP) + ' .pl-sug button'); await p.waitForTimeout(1600); return NP; };
+        o.wait = (sel, re, ms = 9000) => o.p.waitForFunction(([s, r]) => new RegExp(r).test(((document.querySelector(s) || {}).textContent || '').replace(/\s+/g, ' ')), [sel + ' .pl-found', re.source], { timeout: ms }).catch(() => {});
+        o.wide = () => o.p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+        o.beside = () => o.p.evaluate(() => { const a = document.querySelector('.split .col').getBoundingClientRect(), b = document.querySelector('.side-phone').getBoundingClientRect(); return getComputedStyle(document.querySelector('.side-phone')).display !== 'none' && a.right <= b.left && b.right <= innerWidth; });
+        return o; };
+      const LOOKING = /Looking for its website and hours…/, FOUND_LINE = 'From locanda-nova.example, an open directory and a web search, 10 Nov 2026.';
+      for (const [w, h, tag] of [[360, 780, '360'], [1280, 860, 'desktop']]) {
+        const o = await pfRun(w, h), { p, errors } = o, wide = w > 400;
+        await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
+        const NP = await o.pick(), q = (o.posts[0] || {}).params || {}, ID = q.item;
+        await o.wait(card(NP), LOOKING, 4000);
+        if (!wide) ok('place facts: a place picked on Google queues one place-facts job with its id, list, Google id and the host\'s words', o.posts.length === 1 && o.posts[0].kind === 'place-facts' && /^custom-/.test(ID || '') && q.list === 'eat' && q.gid === 'gPlaceNova01' && q.words === 'La Locanda Nova' && q.about === '' && !('website' in q), JSON.stringify(o.posts));
+        o.job(0, { status: 'running', message: 'Looking for its website' }); await p.waitForTimeout(2600);
+        const t1 = await o.panel(card(NP)), c1 = await clash(p, card(NP));
+        ok(`place facts, ${tag}: while it runs, the panel's lines are one calm line, "Looking for its website and hours…", nothing overlapping, no sideways scroll`, LOOKING.test(t1) && !(await p.$(card(NP) + ' .pl-ls')) && !!(await p.$(card(NP) + ' .pl-wait .cm-prog')) && !c1.length && (await o.wide()) <= 0 && (!wide || await o.beside()), [t1.slice(0, 90), ...c1].join('; '));
+        await p.locator(card(NP)).screenshot({ path: join(SHOTS, `place-facts-looking-${tag}.png`), style: NO_BAR });
+        if (!wide) {
+          // Picked again while it runs: still one job for the place.
+          await p.locator(card(NP) + ' [data-gsp]').pressSequentially('la locanda nova', { delay: 15 }); await p.waitForSelector(card(NP) + ' .pl-sug button', { timeout: 3000 }).catch(() => {});
+          await p.click(card(NP) + ' .pl-sug button').catch(() => {}); await p.waitForTimeout(1500);
+          ok('place facts: never two jobs for one place (picked again while it runs)', o.posts.length === 1, `${o.posts.length} jobs`);
+          // A re-render (closed and opened), another step and back, a reload: the same line, the job found again by its place.
+          await p.click(card(NP) + ' > summary'); await p.click(card(NP) + ' > summary'); await p.waitForTimeout(200); const r1 = LOOKING.test(await o.panel(card(NP)));
+          await go(p, '#todo'); await go(p, '#restaurants'); await p.waitForTimeout(300); const r2 = LOOKING.test(await o.panel(card(NP)));
+          await p.reload(); await ready(p); await p.waitForTimeout(800); await p.click(card(NP) + ' > summary').catch(() => {}); await o.wait(card(NP), LOOKING, 4000); const r3 = LOOKING.test(await o.panel(card(NP)));
+          ok('place facts: the "looking" line survives a re-render, another step and a reload (the job is found again by its place)', r1 && r2 && r3 && o.posts.length === 1, `${r1} ${r2} ${r3}, ${o.posts.length} jobs`);
+        }
+        const before = await height(p, card(NP));
+        o.job(0, { status: 'done', message: 'Details found', result: { item: ID, entry: ENTRY() } });
+        await o.wait(card(NP), /From locanda-nova/); await p.waitForTimeout(300);
+        const t2 = await o.panel(card(NP)), src = await p.$eval(card(NP) + ' .pl-src', e => ({ t: e.textContent.replace(/\s+/g, ' ').trim(), a: (e.querySelector('a') || {}).href, lines: Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)), last: e === e.parentElement.lastElementChild })).catch(() => ({}));
+        const it = await o.item(ID), c2 = await clash(p, card(NP));
+        ok(`place facts, ${tag}: the result shows its facts and, at the foot, "${FOUND_LINE}", the site linked to the page read, on one line when there is room`, src.t === FOUND_LINE && src.a === 'https://locanda-nova.example/horari' && src.last && (src.lines === 1 || !wide) && /Tue-Sat 13:00-16:00/.test(t2) && /977 66 16 25/.test(t2) && !c2.length && (await o.wide()) <= 0 && (!wide || await o.beside()), [src.t, src.lines, ...c2].join('; '));
+        await p.locator(card(NP)).screenshot({ path: join(SHOTS, `place-facts-found-${tag}.png`), style: NO_BAR });
+        if (!wide) {
+          ok('place facts: the result fills the empty place (kind, phone, website, hours, price, Book ahead, town), our position replaces Google\'s and drops pos, our spelling of the name, and where each fact came from',
+            !!it && it.icon === 'pizza' && (it.type || {}).en === 'Pizza' && it.phone === '977 66 16 25' && it.url === 'https://locanda-nova.example/' && JSON.stringify(it.schedule) === JSON.stringify(PF_H) && it.price === '20-30' && (it.flags || []).includes('book') && it.town === 'Calafell'
+            && it.lat === 41.2102 && it.lng === 1.5102 && it.km_from_house === 4 && !('pos' in it) && it.gid === 'gPlaceNova01' && Object.values(it.name).every(x => x === 'La Locanda Nòva') && JSON.stringify(it.filled) === JSON.stringify(ENTRY().filled), JSON.stringify(it));
+          ok(`place facts: the panel's own change of height only (${before} px with the line, ${await height(p, card(NP))} px with the facts)`, before > 0);
+          // Applied once: the host empties the phone, reloads; the result is not used again, and the phone's source is gone from the line.
+          await p.click(card(NP) + ' [data-cchg]'); await p.fill(card(NP) + ` [data-p="${NP}/phone"]`, ''); await p.click(card(NP) + ' [data-cchg]'); await p.waitForTimeout(1500);
+          await p.reload(); await ready(p); await p.waitForTimeout(2500); await p.click(card(NP) + ' > summary').catch(() => {}); await p.waitForTimeout(300);
+          const it2 = await o.item(ID), t3 = await p.textContent(card(NP) + ' .pl-src').catch(() => '');
+          ok('place facts: a result is used once (after a reload the emptied phone stays empty), and the line no longer names the directory', !!it2 && !it2.phone && !('phone' in ((it2.filled || {}).from || {})) && t3.trim() === 'From locanda-nova.example and a web search, 10 Nov 2026.' && o.posts.length === 1, `${it2 && it2.phone} | ${t3}`);
+        }
+        // Nothing found: said so, with the field for its website (and nothing else to fill in).
+        const N2 = await o.pick(), i2 = o.jobs.length - 1, ID2 = o.jobs[i2].params.item;
+        o.job(i2, { status: 'done', message: 'Nothing found', result: { item: ID2, entry: null } });
+        await o.wait(card(N2), /Nothing found for this place\. Guests/); await p.waitForTimeout(200);
+        const t4 = await o.panel(card(N2)), c4 = await clash(p, card(N2));
+        ok(`place facts, ${tag}: nothing found says so ("Guests still get the map pin and the Google Maps button.") with "Know its website? Paste it and we read its hours.", nothing overlapping`, /Nothing found for this place\. Guests still get the map pin and the Google Maps button\./.test(t4) && !/yet\./.test(t4) && /Know its website\? Paste it and we read its hours\./.test(t4) && !!(await p.$(card(N2) + ' [data-pfweb]')) && !c4.length && (await o.wide()) <= 0 && (!wide || await o.beside()), [t4.slice(0, 120), ...c4].join('; '));
+        await p.locator(card(N2)).screenshot({ path: join(SHOTS, `place-facts-none-${tag}.png`), style: NO_BAR });
+        if (!wide) {
+          await p.fill(card(N2) + ' [data-pfweb]', 'not a web address'); await p.press(card(N2) + ' [data-pfweb]', 'Enter'); await p.waitForTimeout(600); const n0 = o.posts.length;
+          await p.fill(card(N2) + ' [data-pfweb]', 'locanda-nova.example'); await p.press(card(N2) + ' [data-pfweb]', 'Enter'); await o.wait(card(N2), LOOKING, 4000);
+          const j3 = o.posts[o.posts.length - 1] || {}, it3 = await o.item(ID2);
+          ok('place facts: a pasted website is written as the place\'s and looked up again with it (a typo is refused)', n0 === 2 && o.posts.length === 3 && (j3.params || {}).website === 'https://locanda-nova.example/' && (j3.params || {}).item === ID2 && !!it3 && it3.url === 'https://locanda-nova.example/' && !it3.filled, JSON.stringify([n0, j3.params, it3 && it3.url]));
+          o.job(o.jobs.length - 1, { status: 'failed', message: 'You have looked up a lot of places today. Try again tomorrow.' });
+          await o.wait(card(N2), /The search did not work\./);
+          const t5 = await o.panel(card(N2));
+          await p.click(card(N2) + ' [data-pfagain]').catch(() => {}); await o.wait(card(N2), LOOKING, 4000);
+          ok('place facts: a failed lookup says "The search did not work." with why, and Try again starts it again with the same website', /The search did not work\. You have looked up a lot of places today\. Try again tomorrow\. Try again/.test(t5) && o.posts.length === 4 && (o.posts[3].params || {}).website === 'https://locanda-nova.example/', `${t5.slice(0, 140)} | ${o.posts.length}`);
+        }
+        ok(`place facts, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+        await o.ctx.close(); }
+      // The host changes the name or a fact while it runs; Google's position kept when the entry has none of ours.
+      { const o = await pfRun(360, 780), { p, errors } = o;
+        await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
+        const NP = await o.pick(), ID = o.jobs[0].params.item;
+        await p.fill(card(NP) + ` [data-p="${NP}/name"]`, 'Locanda di Marco'); await p.click(card(NP) + ' [data-cchg]'); await p.fill(card(NP) + ` [data-p="${NP}/phone"]`, '600 00 00 00'); await p.waitForTimeout(1200);
+        o.job(0, { status: 'done', message: 'Details found', result: { item: ID, entry: ENTRY({ lat: 41.3, lng: 1.6, pos: { from: 'google', at: today }, filled: { at: PF_AT, from: { phone: 'overture', schedule: 'site' }, page: 'https://locanda-nova.example/horari' } }) } });
+        let it = null; for (let k = 0; k < 8 && !((it = await o.item(ID)) && it.filled); k++);   // the result, once used and saved
+        ok('place facts: a result keeps a name and a phone the host changed meanwhile, fills the rest, and keeps the pick\'s position when the entry has only Google\'s',
+          !!it && Object.values(it.name).every(x => x === 'Locanda di Marco') && it.phone === '600 00 00 00' && JSON.stringify(it.schedule) === JSON.stringify(PF_H) && it.lat === 41.2111 && it.pos && it.pos.from === 'google' && JSON.stringify(it.filled) === JSON.stringify({ at: PF_AT, from: { schedule: 'site' }, page: 'https://locanda-nova.example/horari' }), JSON.stringify(it));
+        ok('place facts (changed meanwhile): no page errors', !errors.length, errors.join(' | '));
+        await o.ctx.close(); }
+      // The source line for each kind of source, a hand change taking a fact off it, and "Look for its details" on a place built
+      // before lookups existed (a Google id and no facts). Never a field of its own.
+      { const c3 = JSON.parse(JSON.stringify(E.content)), R3 = c3.files.restaurants.items, at = id => R3.findIndex(x => x.id === id), P3 = id => `files/restaurants/items/${at(id)}`;
+        Object.assign(R3[at('locanda')], { phone: '977 66 16 25', schedule: PF_H, always: undefined, filled: { at: PF_AT, from: { phone: 'overture', schedule: 'site', kind: 'claude' }, page: 'https://locanda.es/horari' } });
+        Object.assign(R3[at('obrador')], { phone: '977 00 00 01', filled: { at: PF_AT, from: { phone: 'overture' } } });
+        Object.assign(R3[at('casinet')], { url: 'https://casinet.example/', filled: { at: '2026-11-03', from: { url: 'search' } } });
+        Object.assign(R3[at('ulldellebre')], { icon: 'pot', filled: { at: PF_AT, from: { kind: 'claude' } } });
+        const Q = R3[at('quijote')]; for (const k of ['phone', 'url', 'schedule', 'hours', 'always', 'filled']) delete Q[k]; Q.gid = 'gQuijote0001';
+        const G3 = { ...E, content: c3 };
+        for (const [maker, lines] of [['en', ['From locanda.es and an open directory, 10 Nov 2026.', 'From an open directory, 10 Nov 2026.', 'From a web search, 3 Nov 2026.']], ['fr', ['D’après locanda.es et un annuaire ouvert, 10 nov. 2026.', 'D’après un annuaire ouvert, 10 nov. 2026.', 'D’après une recherche sur le web, 3 nov. 2026.']]]) {
+          const o = await pfRun(360, 780, G3, { 'porta-lang-v1': maker }), { p, errors } = o, said = [];
+          await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
+          for (const id of ['locanda', 'obrador', 'casinet', 'ulldellebre']) { await p.click(card(P3(id)) + ' > summary'); await p.waitForTimeout(150); said.push((await p.textContent(card(P3(id)) + ' .pl-src').catch(() => '')).replace(/\s+/g, ' ').trim()); }
+          ok(`place facts, the maker in ${maker === 'en' ? 'English' : 'French'}: the source line says the site's name and an open directory, a directory alone, a web search, and nothing for a kind Claude guessed; the date in the maker's language`, JSON.stringify(said) === JSON.stringify([...lines, '']), JSON.stringify(said));
+          if (maker === 'en') {
+            await p.locator(card(P3('locanda'))).screenshot({ path: join(SHOTS, 'place-facts-source-360.png'), style: NO_BAR });
+            const L = P3('locanda');
+            ok('place facts: filled is never a field of the form', !(await p.$(`${card(L)} [data-p="${L}/filled"]`)) && !/filled/i.test(await p.$$eval(card(L) + ' label, ' + card(L) + ' .lab', ls => ls.map(l => l.textContent).join(' ')).catch(() => '')));
+            await p.click(card(L) + ' [data-cchg]'); await p.fill(card(L) + ` [data-p="${L}/phone"]`, '977 66 16 26'); await p.click(card(L) + ' [data-cchg]'); await p.waitForTimeout(200);
+            const s1 = (await p.textContent(card(L) + ' .pl-src').catch(() => '')).trim(), f1 = (await o.item('locanda')).filled;
+            await p.click(card(L) + ' [data-cchg]'); await p.click(card(L) + ` [data-daytog="${L}/schedule/0"][data-d="mon"]`); await p.click(card(L) + ' [data-cchg]'); await p.waitForTimeout(200);
+            const s2 = await p.$(card(L) + ' .pl-src'), f2 = (await o.item('locanda')).filled;
+            ok('place facts: a fact changed by hand leaves the line (the phone: only the site is said), and the last one said takes filled with it (a kind Claude guessed stays, unsaid)', s1 === 'From locanda.es, 10 Nov 2026.' && !!f1 && !('phone' in f1.from) && 'schedule' in f1.from && !s2 && !!f2 && JSON.stringify(f2.from) === '{"kind":"claude"}', JSON.stringify([s1, f1, f2]));
+            await p.click(card(P3('ulldellebre')) + ' [data-cchg]'); await p.click(card(P3('ulldellebre')) + ' [data-ckinds]'); await p.click(card(P3('ulldellebre')) + ' [data-ckind][data-k="fish"]'); const u1 = await o.item('ulldellebre');
+            ok('place facts: the kind picked by hand is the host\'s, and filled goes with the last fact it said', !!u1 && u1.icon === 'fish' && !('filled' in u1), JSON.stringify(u1 && u1.filled));
+            // An older place with a Google id and no facts: "Look for its details" queues one job for it.
+            const QP = P3('quijote'); await p.click(card(QP) + ' > summary'); await p.waitForTimeout(200);
+            const has = !!(await p.$(card(QP) + ' [data-pflook]')), c5 = await clash(p, card(QP));
+            await p.click(card(QP) + ' [data-pflook]').catch(() => {}); await o.wait(card(QP), LOOKING, 4000);
+            const j = o.posts[0] || {};
+            ok('place facts: a place with a Google id and no hours, phone, website or filled offers "Look for its details", which queues one job for it', has && !c5.length && o.posts.length === 1 && j.kind === 'place-facts' && (j.params || {}).item === 'quijote' && (j.params || {}).gid === 'gQuijote0001' && !(await p.$(card(QP) + ' [data-pflook]')), JSON.stringify(j.params || {}));
+            ok('place facts: places that have facts, or a lookup, never offer it', !(await p.$(card(L) + ' [data-pflook]')) && !(await p.$(card(P3('obrador')) + ' [data-pflook]')));
+          }
+          ok(`place facts (source lines, ${maker}): no page errors`, !errors.length, errors.join(' | '));
+          await o.ctx.close(); } }
+    }
     // Markets and events keep their card: the same markup as the page of the last commit, for the first of each.
     { let before = null; try { before = execSync('git show HEAD:onboarding-site/index.html', { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', 'ignore'] }); } catch (e) { /* no git here */ }
       const markup = async html => { const { ctx, p } = await open(browser, E, 360, 780); if (html) await ctx.route(u => u.host === 'editor.test' && !u.pathname.startsWith('/api/') && !u.pathname.startsWith('/g/'), r => r.fulfill({ status: 200, contentType: 'text/html', body: html })); let out = '';

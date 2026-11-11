@@ -17,6 +17,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 import { nameOf } from './places.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
@@ -110,13 +112,39 @@ const webUrl = u => { if (typeof u !== 'string') return null; try { const x = ne
 // Our own check of a website (from Overture: some are dead or now lead elsewhere): it must answer within 12 s and land on
 // a site of the same name (recaredo.es -> recaredo.com is fine, calafellhistoric.org -> x-andra.ro is not). When the page
 // fails, its home page is tried. Returns the address it landed on, or null.
+// The worker opens addresses that come from outside (Overture's records, and since the editor's "paste its website" a
+// host's own typing), so it only ever opens a public web address: http or https on its usual port, a name and not a
+// number, no sign-in part, and a name that resolves to public addresses only (never this machine, the server's private
+// network or its provider's metadata address). Each redirect is checked the same way before it is followed.
+// NET.lookup is replaced in tests, which have no network.
+export const NET = { lookup: h => lookup(h, { all: true }) };
+const private4 = ip => { const [a, b] = ip.split('.').map(Number); return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && (b === 168 || b === 0)) || (a === 198 && (b === 18 || b === 19)) || a >= 224; };
+const private6 = ip => { const s = ip.toLowerCase(); return s === '::' || s === '::1' || /^f[cd]/.test(s) || /^fe[89ab]/.test(s) || s.startsWith('::ffff:') || s.startsWith('64:ff9b:') || s.startsWith('2002:'); };
+export async function publicUrl(u) {
+  try {
+    const x = new URL(u), h = x.hostname.replace(/^\[|\]$/g, '');
+    if (!/^https?:$/.test(x.protocol) || x.username || x.password || (x.port && x.port !== '80' && x.port !== '443') || isIP(h) || !h.includes('.')) return false;
+    const as = await NET.lookup(h);
+    return Array.isArray(as) && as.length > 0 && as.every(a => a && (a.family === 4 ? !private4(a.address) : a.family === 6 ? !private6(a.address) : false));
+  } catch (e) { return false; }
+}
+async function openPublic(u, hops = 4) {
+  for (let i = 0; i < hops; i++) {
+    if (!(await publicUrl(u))) return null;
+    const r = await fetch(u, { redirect: 'manual', signal: AbortSignal.timeout(12000), headers: { 'user-agent': 'Mozilla/5.0 (guest guide website check)' } });
+    r.body?.cancel().catch(() => {});
+    const to = r.status >= 300 && r.status < 400 && r.headers && r.headers.get('location');
+    if (!to) return { status: r.status, url: u };
+    u = new URL(to, u).href;
+  }
+  return null;
+}
 export async function siteAlive(url) {
   const first = webUrl(/^https?:/i.test(String(url || '')) ? url : 'http://' + url);
   if (!first) return null;
   for (const u of new Set([first, new URL(first).origin + '/'])) {
-    try { const r = await fetch(u, { redirect: 'follow', signal: AbortSignal.timeout(12000), headers: { 'user-agent': 'Mozilla/5.0 (guest guide website check)' } });
-      r.body?.cancel().catch(() => {});
-      if (r.status < 400 && label(host(r.url)) === label(host(first))) return r.url; } catch (e) { /* next */ }
+    try { const r = await openPublic(u);
+      if (r && r.status < 400 && label(host(r.url)) === label(host(first))) return r.url; } catch (e) { /* next */ }
   }
   return null;
 }
@@ -159,7 +187,8 @@ export const showPhone = t => { const s = cleanText(t); if (!s) return null; con
   return /^[6789]\d{8}$/.test(d) ? `${d.slice(0, 3)} ${d.slice(3, 5)} ${d.slice(5, 7)} ${d.slice(7)}` : s; };
 
 // One place: place = { name, town, about? (the host's own words, they help the match), country? (default Spain),
-// list? ('eat' or 'todo': which kinds it may have; without it no kind is asked) }. name may be empty: a card the host
+// list? ('eat' or 'todo': which kinds it may have; without it no kind is asked), website? (a page the host pasted in the
+// editor: read first, before Overture's, and kept as the place's website with source 'site') }. name may be empty: a card the host
 // kept without typing anything, matched on the entries alone. cands = Overture's records near its pin (nearby()),
 // ask = makeClaude(...) from worker/claude-api.mjs.
 // again (optional): a second ask, with more effort. Reading a site does not always work the first time, so a place that
@@ -215,7 +244,8 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
   const gk = place.list === 'todo' && !a.kind ? featureKind(fl) : null;
   const ourKind = a.kind || (gk && K && Object.hasOwn(K, gk) ? gk : null), kindFrom = a.kind ? 'claude' : ourKind ? 'geonames' : null;
   const ours = { name, nameFrom, ourKind, kindFrom, feature: fl, posFrom, town, townFrom };
-  if (!a.venue) return { entry: pos(entry), venue: false, ...ours, phone: null, phoneFrom: null, website: null, websiteFrom: null, facebook: null, instagram: null,
+  const given = place.website ? webUrl(/^https?:/i.test(String(place.website)) ? place.website : 'http://' + place.website) : null;   // a page the host gave: a place with a door
+  if (!a.venue && !given) return { entry: pos(entry), venue: false, ...ours, phone: null, phoneFrom: null, website: null, websiteFrom: null, facebook: null, instagram: null,
     category: entry && entry.kind || null, hours: null, price: null, book: null, page: null, read: new Date().toISOString().slice(0, 10),
     usd: cost(), tries: 1, matchTries: a.tries, gained: [], ...(errors.length ? { error: errors[0] } : {}) };
   // The site is read and searched by a name: the host's, else ours from the entry or the feature. A kept card with none
@@ -227,10 +257,12 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
   const social = re => links.map(webUrl).find(u => u && re.test(host(u))) || null;
   const own = entry ? (entry.websites || []).map(u => webUrl(/^https?:/i.test(u) ? u : 'http://' + u)).find(u => u && !denied(u)) || null : null;
 
-  // c. Its website: Overture's, if it answers on its own address, read by Claude; else, or if that read finds nothing of
+  // c. Its website: the host's page or else Overture's, if it answers on its own address, read by Claude; else, or if that read finds nothing of
   // its own, one web search. A pass that ends with no site, or a site with neither hours nor price, is read once more
   // with more effort; the second read fills what it holds, the first keeps the rest.
-  const alive = own && !matchOnly ? await siteAlive(own) : null, searchable = !!place.name;
+  // The host's own page, when they gave one: it must answer like Overture's (a directory or a social site is not read).
+  const theirs = given && !denied(given) && !matchOnly ? await siteAlive(given) : null;
+  const alive = theirs || (own && !matchOnly ? await siteAlive(own) : null), aliveFrom = theirs ? 'site' : 'overture', searchable = !!place.name;
   const ok = x => x && x.about === true && webUrl(x.website) && !denied(x.website);
   const read = (f, url) => f(url ? `Open ${url} : it should be the website of ${where(place)}. From it, ${READ}\nAnswer with JSON only: ${SHAPE(place.list)}`
     : `Search the web for the official website of ${where(place)}. Open it and ${READ}\nAnswer with JSON only: ${SHAPE(place.list)}`, { web: true, what: 'site facts', searches: 3 }).then(json);
@@ -238,7 +270,7 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
   const siteStep = async () => {
     let r = null, from = null;
     if (!searchable) return { site: null, from: null, tries: 0, gained: [] };
-    if (alive) { r = await read(q, alive); from = 'overture'; }
+    if (alive) { r = await read(q, alive); from = aliveFrom; }
     if (!ok(r)) { r = await read(q, null); from = 'search'; }
     const first = ok(r) ? r : null;
     if (!q2 || !thin(r)) return { site: first, from: first ? from : null, tries: 1, gained: [] };
@@ -247,7 +279,7 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
     const pick = (k, clean) => clean(r2[k]) ? r2[k] : first ? first[k] : null;
     const site = first ? { ...first, phone: pick('phone', cleanText), hours: pick('hours', cleanHours), price: pick('price', cleanPrice), kind: pick('kind', eatKind), book: r2.book === true ? true : first.book } : r2;
     const gained = [!first && 'site', cleanHours(site.hours) && !(first && cleanHours(first.hours)) && 'hours', cleanPrice(site.price) && !(first && cleanPrice(first.price)) && 'price'].filter(Boolean);
-    return { site, from: first ? from : alive ? 'overture' : 'search', tries: 2, gained };
+    return { site, from: first ? from : alive ? aliveFrom : 'search', tries: 2, gained };
   };
   const { site, from: websiteFrom, tries, gained } = matchOnly ? { site: null, from: null, tries: 0, gained: [] } : await siteStep();
 
@@ -259,7 +291,7 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
   const sitePhone = site ? cleanText(site.phone) : null, ovPhone = entry ? cleanText((entry.phones || [])[0]) : null;
   const res = { entry: pos(entry), venue: true, ...ours,
     phone: showPhone(ovPhone || sitePhone), phoneFrom: ovPhone ? 'overture' : sitePhone ? 'site' : null,   // Overture's matched the hand-checked phone more often
-    website: site ? (websiteFrom === 'overture' ? alive : page) : null, websiteFrom,
+    website: site ? (alive && websiteFrom === aliveFrom ? alive : page) : null, websiteFrom,
     facebook: social(/(^|\.)(facebook\.com|fb\.com|fb\.me)$/), instagram: social(/(^|\.)instagram\.com$/),
     category: entry && entry.kind || null,
     hours: site ? cleanHours(site.hours) : null, price: site ? cleanPrice(site.price) : null, book: site && site.book === true ? true : null,

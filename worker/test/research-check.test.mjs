@@ -140,3 +140,18 @@ test('checkResearch: at most 12 places filled, the nearest first; the rest only 
   assert.ok(msgs.includes('locate 15/15') && msgs.includes('fill 12/12') && !msgs.includes('fill 13/12'));
 });
 
+
+test('checkResearch: a filled item says where its facts came from (filled), only for the fields filled here', async () => {
+  const P = 'https://aqualeon.example/horaris';
+  const rows = { [gid(1)]: { gid: gid(1), tried_at: fresh, facts: { phone: '977 68 76 80', website: 'https://aqualeon.example/', hours: H, price: '30', book: true, kind_todo: 'waterpark' },
+    sources: { phone: { from: 'overture', at: '2026-11-01' }, website: { from: 'overture', at: '2026-11-01' }, hours: { from: 'site', at: '2026-11-09', page: P }, price: { from: 'site', at: '2026-11-09', page: P }, book: { from: 'site', at: '2026-11-09', page: P }, kind_todo: { from: 'claude', at: '2026-11-08' } } },
+    [gid(2)]: { gid: gid(2), tried_at: fresh, facts: { phone: '977 11 11 11', hours: H }, sources: { phone: { from: 'search', at: '2026-11-07', page: 'https://ermita.example/' }, hours: { from: 'site', at: '2026-11-07', page: 'https://ermita.example/' }, kind_todo: { from: 'claude', at: '2026-11-07', none: true } } } };
+  const items = [item('aqualeon', 41.25, 1.55), item('ermita', 41.21, 1.51, { schedule: [{ days: ['sun'], open: '11:00', close: '13:00' }] }), item('cove', 41.22, 1.52)];
+  const out = await checkResearch(items, 'todo', opts({ locate: fakeLocate({ aqualeon: { gid: gid(1), lat: 41.2501, lng: 1.5501 }, ermita: { gid: gid(2), lat: 41.2101, lng: 1.5101 }, cove: { gid: gid(3), lat: 41.22, lng: 1.52 } }),
+    store: fakeStore(rows), near: noNear, gaz: noGaz }));
+  assert.deepEqual(out[0].filled, { at: '2026-11-09', from: { phone: 'overture', url: 'overture', schedule: 'site', price: 'site', book: 'site', kind: 'claude' }, page: P });
+  // The research's own hours stay, so only the phone is ours (from a search's page).
+  assert.deepEqual(out[1].filled, { at: '2026-11-07', from: { phone: 'search' }, page: 'https://ermita.example/' });
+  assert.equal(out[2].filled, undefined);   // nothing kept for it: nothing filled, nothing said
+  assert.ok(!/google/i.test(JSON.stringify(out.map(x => x.filled || null))));
+});

@@ -220,3 +220,34 @@ test('hostPlaces: a kept card is named by comparing Google\'s name with our reco
   await hostPlaces({ cards: [{ id: 'G3aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore({}), ask, locate: loc2, near: near2, gaz: noGaz, log: () => {}, nameMatch: false });
   assert.deepEqual(asked, []);
 });
+
+// Where a fact came from, for the editor's line under "Filled in for you" (Piece B): the kept row's sources, for the fields
+// the entry hands over only, never Google.
+test('hostPlaces: each entry says where its facts came from (filled), and nothing when nothing was filled', async () => {
+  const P = 'https://locanda.example/horari';
+  const rows = {
+    G1aaaaaaaaaa: { gid: 'G1aaaaaaaaaa', tried_at: fresh, facts: { kind_eat: 'fish', phone: '977 00 00 00', website: 'https://locanda.example/', hours: H, price: '20-30', book: true, lat: 41.2101, lng: 1.5101 },
+      sources: { kind_eat: { from: 'site', at: '2026-11-05', page: 'https://locanda.example/carta' }, phone: { from: 'overture', at: '2026-11-01', release: 'r' }, website: { from: 'search', at: '2026-11-02', page: 'https://locanda.example/' },
+        hours: { from: 'site', at: '2026-11-10', page: P }, price: { from: 'site', at: '2026-11-10', page: P }, book: { from: 'site', at: '2026-11-10', page: P }, lat: { from: 'overture', at: '2026-11-01' }, lng: { from: 'overture', at: '2026-11-01' } } },
+    G2aaaaaaaaaa: { gid: 'G2aaaaaaaaaa', tried_at: fresh, facts: { kind_todo: 'beach', lat: 41.2502, lng: 1.5502 }, sources: { kind_todo: { from: 'geonames', at: '2026-11-03', ref: '1' }, lat: { from: 'geonames', at: '2026-11-03' } } },
+    G3aaaaaaaaaa: { gid: 'G3aaaaaaaaaa', tried_at: fresh, facts: { kind_todo: 'castle' }, sources: { kind_todo: { from: 'claude', at: '2026-11-04' } } },
+    G4aaaaaaaaaa: { gid: 'G4aaaaaaaaaa', tried_at: fresh, facts: { town: 'Calafell' }, sources: { town: { from: 'overture', at: '2026-11-04' }, kind_eat: { from: 'claude', at: '2026-11-04', none: true } } },
+  };
+  const loc2 = { byId: locate.byId, byWords: async w => ({ 'ull de llebre': loc.G1, 'platja': loc.G2, 'castell': loc.G3, 'can pep': loc.G4 })[w] || null };
+  const geo = await hostPlaces({ rows: [{ p: 'ull de llebre', list: 'eat' }, { p: 'platja', list: 'todo' }, { p: 'castell', list: 'todo' }, { p: 'can pep', list: 'eat' }], house },
+    { store: fakeStore(rows), locate: loc2, near: () => { throw new Error('not asked'); }, gaz: () => { throw new Error('not asked'); } });
+  // Every source kind: the site (with the page the hours were read on), the open directory, a web search.
+  assert.deepEqual(geo['ull de llebre'].filled, { at: '2026-11-10', from: { kind: 'site', phone: 'overture', url: 'search', schedule: 'site', price: 'site', book: 'site' }, page: P });
+  // GeoNames' kind is not one of the editor's sources yet: left out, so nothing is said.
+  assert.equal(geo.platja.kind, 'beach'); assert.equal(geo.platja.filled, undefined);
+  // A kind guessed by Claude from the name alone: said as claude (the editor shows no line for it).
+  assert.deepEqual(geo.castell.filled, { at: '2026-11-04', from: { kind: 'claude' } });
+  // Nothing filled (a town is not one of the facts said), and Google's position never is.
+  assert.equal(geo['can pep'].filled, undefined); assert.equal(geo['can pep'].pos.from, 'google');
+  assert.ok(!/google/.test(JSON.stringify(Object.values(geo).map(e => e.filled || null))));
+  // A place the chain looks at now: the new row's sources (Overture's phone, Claude's kind), dated today.
+  const today = new Date().toISOString().slice(0, 10);
+  const ask = async (prompt, o) => o.what === 'place match' ? '{"venue": true, "entry": 1, "sure": true, "name": "Aqualeon", "kind": "waterpark"}' : '{"website": null, "about": false}';
+  const g2 = await hostPlaces({ cards: [{ id: 'G2aaaaaaaaaa', list: 'todo' }], house }, { store: fakeStore({}), ask, locate, near, gaz: noGaz, log: () => {} });
+  assert.deepEqual(g2['gid:G2aaaaaaaaaa'].filled, { at: today, from: { kind: 'claude', phone: 'overture' } });
+});

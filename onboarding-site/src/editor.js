@@ -125,7 +125,7 @@ function cCard(p, title, meta, inner, order, lead = '') {   // lead: what goes b
 }
 
 /* --- One place, contact or tile: its texts, links, position, hours or dates --- */
-const C_SKIP = new Set(['id', 'from', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx', 'pos']);
+const C_SKIP = new Set(['id', 'from', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx', 'pos', 'filled']);   // filled: where a place's facts came from, said under "Filled in for you", never a field
 const C_STR = ['town', 'place', 'phone', 'web', 'url', 'map', 'gmaps', 'venue', 'address', 'comarca', 'price'];
 const C_LONG = ['description', 'what', 'examples', 'priceNote', 'hours', 'occasional_when'];
 const C_LBL = { name: 'Name', name_local: 'Name in the local language', title: 'Title on its page', sub: 'Line under the name', type: 'Type', kind: 'Kind', what: 'What guests need to know', description: 'Description', hours: 'Opening hours, in words', occasional_when: 'When it runs', town: 'Town', place: 'Where exactly', venue: 'Where exactly', address: 'Address', comarca: 'County', phone: 'Phone', url: 'Official website', web: 'Website', gmaps: 'Google Maps link', map: 'Map link', price: 'Price (€)', priceNote: 'About the price', taxiName: 'Taxi name', taxiSub: 'Line under the taxi' };
@@ -219,7 +219,42 @@ function plFound(p, sec, it) {
   if (it.url) out.push(line(I.globe, `<a href="${esc(/^https?:/.test(it.url) ? it.url : 'https://' + it.url)}" target="_blank" rel="noopener" translate="no">${esc(plHost(it.url))}</a>`));
   const mk = plMarks(sec, it); if (mk.length) out.push(line(I.tag, `<span class="pl-mks">${mk.map(m => `<span class="pl-mk" translate="no">${esc(plMark(m))}</span>`).join('')}</span>`, " pl-lm"));
   const open = CM.chg.has(p), btn = `<button class="pl-link pl-chg" type="button" data-cchg="${p}" aria-expanded="${open}">${open ? 'Done' : 'Change'}</button>`;
-  return `<div class="cm-found pl-found"><div class="pl-hd"><b class="pl-h">Filled in for you</b>${btn}</div>${open ? '' : `<div class="pl-ls">${out.length ? out.join('') : '<p class="pl-note">Nothing found for this place yet. Guests still get the map pin and the Google Maps button.</p>'}</div>`}</div>`;
+  // Its facts being looked up (job place-facts, below): one calm line in place of the lines, the form open or not. Then, at
+  // the foot of the lines: where they came from, the search that did not work, or "Look for its details".
+  const j = it.id ? CM.pf[it.id] : null, none = j && j.status === 'done' && !(j.result || {}).entry, failed = j && j.status === 'failed';
+  const empty = none ? `<p class="pl-note">Nothing found for this place. Guests still get the map pin and the Google Maps button.</p>${pfWebHTML(p)}`
+    : failed ? '' : '<p class="pl-note">Nothing found for this place yet. Guests still get the map pin and the Google Maps button.</p>';
+  const foot = failed ? `<p class="pl-foot pl-note"><span>The search did not work.</span>${j.message ? ` <span>${esc(j.message)}</span>` : ''} <button class="pl-more" type="button" data-pfagain="${p}">Try again</button></p>`
+    : plFrom(it) || (pfCan(it, j) ? `<p class="pl-foot"><button class="pl-more" type="button" data-pflook="${p}">Look for its details</button></p>` : '');
+  const body = pfBusy(j) ? pfWaitHTML(it.id) : open ? '' : `<div class="pl-ls">${out.length ? out.join('') : empty}${foot}</div>`;
+  return `<div class="cm-found pl-found"><div class="pl-hd"><b class="pl-h">Filled in for you</b>${btn}</div>${body}</div>`;
+}
+// Where the facts still shown came from (filled, from the worker: the build, Find more or a lookup here), one quiet line:
+// "From locanda.es and an open directory, 10 Nov 2026." The place's own site is said by its name, as a link to the page
+// read; Overture is "an open directory"; a kind Claude guessed from the name alone says nothing. A fact the host changed is
+// theirs and left out (plMine). The sentence is put together here, in the maker's language (its template and words from
+// i18n/ui.json, Intl for the list and the date), so the line is not translated again on its way (translate="no").
+const PF_HAS = { kind: it => !!it.icon, phone: it => !!it.phone, url: it => !!it.url, schedule: it => !it.always && (it.schedule || []).some(r => (r.days || []).length), price: it => !!it.price, book: it => (it.flags || []).includes('book') };
+function plFrom(it) {
+  const f = it.filled; if (!f || !f.from || typeof f.from !== 'object') return '';
+  const src = new Set(Object.entries(f.from).filter(([k]) => PF_HAS[k] && PF_HAS[k](it)).map(([, v]) => v)), parts = [];
+  if (src.has('site')) { const u = /^https?:\/\//.test(f.page || '') ? f.page : it.url ? (/^https?:/.test(it.url) ? it.url : 'https://' + it.url) : ''; if (u) parts.push({ t: plHost(u), u }); }
+  if (src.has('overture')) parts.push({ t: tr('an open directory') });
+  if (src.has('search')) parts.push({ t: tr('a web search') });
+  if (!parts.length) return '';
+  let k = 0;
+  const list = new Intl.ListFormat(plLoc(), { type: 'conjunction' }).formatToParts(parts.map(x => x.t)).map(x => { if (x.type !== 'element') return esc(x.value); const q = parts[k++];
+    return q.u ? `<a href="${esc(q.u)}" target="_blank" rel="noopener">${esc(q.t)}</a>` : esc(q.t); }).join('');
+  const d = /^\d{4}-\d\d-\d\d$/.test(f.at || '') ? new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(f.at + 'T00:00:00Z')) : '';
+  // ‹a› and ‹d› are filled here: a {gap} would make the sentence a pattern that any text starting with "From" would match.
+  return `<p class="pl-src" translate="no">${esc(tr(d ? 'From ‹a›, ‹d›.' : 'From ‹a›.')).split('‹a›').join(list).split('‹d›').join(esc(d))}</p>`;
+}
+// A fact the host changes by hand (kind, phone, website, the hours or Open 24 hours, the price, Book ahead) is theirs: its
+// source leaves filled, and filled goes with the last one. p: any path inside the place.
+function plMine(p, k) {
+  const m = String(p || '').match(/^files\/(?:restaurants|nightlife|todo)\/items\/\d+/); if (!m) return;
+  const it = edGet(edC(), edPath(m[0])), f = it && it.filled; if (!f || !f.from || !(k in f.from)) return;
+  delete f.from[k]; if (!Object.keys(f.from).length) delete it.filled;
 }
 // "Only part of the year" on a row of opening hours: two dates on one line, each a day and a month (from and to, MM-DD).
 function plSeason(rp, r) {
@@ -284,7 +319,7 @@ function plPick(p, k) {
 function plPrice(t) {
   const it = edGet(edC(), edPath(t.dataset.cprice)), box = t.closest('.pl-price'), v = e => (box.querySelector(`[data-end="${e}"]`).value || '').trim(), a = v('from'), b = v('to');
   const s = a && b ? (a === b ? a : `${a}-${b}`) : a || b; if (s) it.price = s; else delete it.price;
-  cmQueue();
+  plMine(t.dataset.cprice, 'price'); cmQueue();
 }
 function plSeasonSet(t) {
   const r = edGet(edC(), edPath(t.dataset.cseas)), end = t.dataset.end; if (!r) return;
@@ -292,7 +327,7 @@ function plSeasonSet(t) {
   md[t.dataset.part === 'm' ? 0 : 1] = +t.value;
   md[1] = Math.min(md[1], [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][md[0] - 1]);
   r[end] = md.map(x => String(x).padStart(2, '0')).join('-');
-  cmQueue(); render();
+  plMine(t.dataset.cseas, 'schedule'); cmQueue(); render();
 }
 // A restaurant pinned to the home page becomes a Home tile (one tap, its own page), a copy of the restaurant that the
 // host can reword in Home tiles: "from" remembers which restaurant it came from.
@@ -323,7 +358,7 @@ function edNewItem(arr, path) {
   const clear = o => { for (const k of Object.keys(o)) { const x = o[k]; if (['icon', 'group', 'tone', 'category', 'type', 'wide'].includes(k) && !edIs18(x)) { delete o[k]; continue; } if (edIs18(x)) o[k] = Object.fromEntries(Object.keys(x).map(l => [l, ''])); else if (typeof x === 'string') o[k] = ''; else if (Array.isArray(x)) o[k] = []; else if (typeof x === 'number' && k !== 'lat' && k !== 'lng') o[k] = 0; else if (typeof x === 'boolean') delete o[k]; } return o; };   // switches too: a new event is not "added automatically" because the first one was
   const n = clear(clone); n.id = 'custom-' + Date.now().toString(36);
   if ('lat' in n) { n.lat = h.lat || 0; n.lng = h.lng || 0; n.km_from_house = null; n.nomap = true; }   // no position yet: never "0 km", never a pin at the house
-  for (const k of ['verify', 'always', 'gid', 'pos', 'checked', 'hoursSource', 'rating', 'topPick', 'wiki', 'sources', 'setMenus']) delete n[k];
+  for (const k of ['verify', 'always', 'gid', 'pos', 'checked', 'hoursSource', 'rating', 'topPick', 'wiki', 'sources', 'setMenus', 'filled']) delete n[k];
   Object.assign(n, cmClone(ED_NEW_DEFAULT[path] || {}));
   const fl = path && n.category ? edGet(edC(), edPath(path).slice(0, -1)) : null;   // the market's category is one of the file's, as in cmFindAdd
   if (fl) { fl.categories = fl.categories || []; if (!fl.categories.includes(n.category)) fl.categories.push(n.category); }
@@ -348,7 +383,106 @@ async function cmFindById(p, id, s = {}, typed = '') {
     Object.assign(it, { gid: f.id, lat: f.lat, lng: f.lng, pos: gPos(), km_from_house: f.km, gmaps: gmLink(words, f.id) }); delete it.nomap;
     CM.gfind[p] = { name: s.name || '', where: s.where || '', km: f.km, gid: f.id, words };
     cmQueue(); render();
-  } catch (e) { CM.gfind[p] = 'Google could not be reached. Try again.'; render(); }
+  } catch (e) { CM.gfind[p] = 'Google could not be reached. Try again.'; return render(); }
+  if (plSec(p)) pfStart(p);   // a place to eat, a night out or an attraction: its facts are looked up at once
+}
+/* --- A place's facts, looked up for it (job place-facts, worker/place-job.mjs; the places work, Piece C, 11 Nov 2026) ---
+   A place picked on Google in the editor has a pin and nothing else: the worker gives it what the first build gives a
+   host's place (kind, phone, website, hours, price, book ahead, a position of ours), through the same chain. The job is
+   queued right after the pick, or with "Look for its details" on a place built before this existed; one at a time per
+   place. While it runs the panel says so; the host may close the card, change step or reload: the job is found again by
+   its place (params.item, as Find more is found again). Its result fills only what the place does not have, once (this
+   device remembers which results it used, cmpf:<job>), through the normal change path. Nothing found: the host may paste
+   the place's website, and it is looked up again with it. */
+CM.pf = {};
+const pfBusy = j => !!j && (j.status === 'queued' || j.status === 'running');
+const pfUrl = v => { try { const x = new URL(/^https?:\/\//i.test(v) ? v : 'https://' + v); return /^https?:$/.test(x.protocol) && /\.[a-z]{2,}$/i.test(x.hostname) && !/\s/.test(v) ? x.href : null; } catch (e) { return null; } };
+const pfSeen = id => { try { return !!localStorage.getItem('cmpf:' + id); } catch (e) { return false; } };
+const pfMark = id => { try { localStorage.setItem('cmpf:' + id, '1'); } catch (e) { /* storage blocked: applied once in this visit */ } };
+// The place's path now from its id (the host may have moved or deleted it meanwhile).
+function pfPath(id) { for (const base of Object.keys(PL_SEC)) { const i = (edGet(edC(), edPath(base)) || []).findIndex(x => x && x.id === id); if (i >= 0) return `${base}/${i}`; } return null; }
+// "Look for its details": a place on Google with no hours, phone or website and nothing filled, and no lookup of its own yet.
+const pfCan = (it, j) => CM.pfLoaded === true && !j && !!it.gid && !!it.id && !it.filled && !it.always && !(it.schedule || []).length && !it.phone && !it.url && !!String(edShown(it.name || {})).trim();
+function pfWaitHTML(id) {
+  const p = progOf(CM.pf[id], 'facts') || { pct: 2 };
+  return `<div class="pl-wait" data-prog="pf:${esc(id)}"><p class="pl-note">Looking for its website and hours…</p><div class="cm-prog" role="progressbar" aria-label="Looking for its website and hours" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p.pct)}"><i style="width:${p.pct.toFixed(1)}%"></i></div><p class="cm-progt" hidden translate="no"></p></div>`;   // the bar's own words stay unsaid: the line says it
+}
+const pfWebHTML = p => `<div class="f full pl-web"><label for="${cmId(p + '/pfweb')}">Know its website? Paste it and we read its hours.</label><input id="${cmId(p + '/pfweb')}" type="url" inputmode="url" autocomplete="off" data-pfweb="${esc(p)}" placeholder="https://"></div>`;
+// The jobs of the last week, the latest for each place: one still running is followed again, one done is used (once).
+function pfLoad() {
+  if (CM.pfLoaded === true) return Promise.resolve();
+  return CM.pfLoading = CM.pfLoading || (async () => {
+    try {
+      await ensureFresh();
+      const since = new Date(Date.now() - 7 * 864e5).toISOString();
+      const r = await sb(`/rest/v1/guide_jobs?select=id,status,message,result,params,created_at&guide_id=eq.${CM.g.id}&kind=eq.place-facts&created_at=gt.${encodeURIComponent(since)}&order=created_at.desc&limit=200`);
+      for (const x of r || []) { const q = x.params || {}, id = q.item; if (!id || CM.pf[id]) continue;
+        CM.pf[id] = { id: x.id, status: x.status, message: x.message, result: x.result, words: q.words || '', gid: q.gid || '', website: q.website || '', since: Date.parse(x.created_at) || Date.now() }; }
+    } catch (e) { /* not found: each place shows as it is */ }
+    CM.pfLoaded = true; CM.pfLoading = null;
+    let used = false;
+    for (const [id, j] of Object.entries(CM.pf)) { if (pfBusy(j)) pfPoll(id); else if (pfApply(id)) used = true; }
+    if (used) { cmQueue(); render(); } else for (const id of Object.keys(CM.pf)) pfRefresh(id);
+    for (const el of document.querySelectorAll('.edz .pl-found')) { const d = el.closest('details.cmi'), q = d && d.dataset.open, it = q && edGet(edC(), edPath(q)); if (it && pfCan(it, null)) el.outerHTML = plFound(q, plSec(q), it); }   // "Look for its details" once we know none is running
+  })();
+}
+async function pfStart(p, website = '') {
+  if (CM.pfLoaded !== true) await pfLoad();   // one may be running for it already (another tab, before a reload)
+  const it = edGet(edC(), edPath(p)), sec = plSec(p), words = it ? String(edShown(it.name || {})).trim() : '';
+  if (!it || !sec || !it.id || !it.gid || !words || pfBusy(CM.pf[it.id])) return;
+  const j = CM.pf[it.id] = { status: 'queued', since: Date.now(), words, gid: it.gid, website };
+  pfRefresh(it.id);
+  try {
+    await cmSave(); await ensureFresh();   // the worker reads the pin from the draft
+    const r = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'place-facts',
+      params: { item: it.id, list: sec, gid: it.gid, words, about: String(edShown(it.description || {})).trim().slice(0, 600), ...(website ? { website } : {}) } } });
+    j.id = r && r[0] && r[0].id; if (!j.id) throw new Error('Could not start');
+    pfPoll(it.id);
+  } catch (e) { if (CM.pf[it.id] === j) { j.status = 'failed'; j.message = ''; pfRefresh(it.id); } }
+}
+async function pfPoll(id) {
+  const j = CM.pf[id]; if (!j || !j.id || j.polling) return; j.polling = true;
+  for (let i = 0; i < 150 && CM.pf[id] === j; i++) {
+    await new Promise(r => setTimeout(r, i < 15 ? 2000 : 5000));
+    try {
+      await ensureFresh();
+      const st = ((await sb('/rest/v1/guide_jobs?select=status,message,result&id=eq.' + j.id)) || [])[0]; if (!st) continue;
+      progSet(j, st);
+      if (st.status === 'done') { j.result = st.result; if (pfApply(id)) { cmQueue(); render(); } else pfRefresh(id); break; }
+      if (st.status === 'failed') { pfRefresh(id); break; }
+    } catch (e) { /* offline for a moment: asked again */ }
+  }
+  j.polling = false;
+}
+// The panel of that place only (the rest of the step as it is: a field being typed in keeps its focus).
+function pfRefresh(id) {
+  const p = pfPath(id), el = p && document.querySelector(`details.cmi[data-open="${p}"] .pl-found`);
+  if (el) el.outerHTML = plFound(p, plSec(p), edGet(edC(), edPath(p)));
+}
+// A result used once: only what the place does not have. Its kind as a pick would set it, its town, our position in place
+// of Google's (with the entry's pos, Google's still, the pick's stays), our spelling of the name while it is still the
+// words that were sent, then where the facts taken came from. Returns whether the place changed.
+function pfApply(id) {
+  const j = CM.pf[id]; if (!j || j.status !== 'done' || j.applied) return false;
+  j.applied = true;
+  if (!j.id || pfSeen(j.id)) return false;
+  pfMark(j.id);
+  const e = (j.result || {}).entry, p = pfPath(id), it = p && edGet(edC(), edPath(p)), sec = p && plSec(p);
+  if (!e || !it) return false;
+  if (e.gid && it.gid !== e.gid) { setTimeout(() => pfStart(p), 0); return false; }   // picked again meanwhile: looked up again for the new one
+  const took = [], none = v => v == null || (typeof v === 'string' && !v.trim()) || (Array.isArray(v) && !v.length);
+  if (!it.icon && e.kind && plKind(sec, e.kind)) { plPick(p, e.kind); took.push('kind'); }
+  for (const k of ['phone', 'url', 'price']) if (none(it[k]) && typeof e[k] === 'string' && e[k].trim()) { it[k] = e[k]; took.push(k); }
+  if (none(it.schedule) && !it.always && Array.isArray(e.schedule) && e.schedule.length) { it.schedule = cmClone(e.schedule); took.push('schedule'); }
+  if (e.book === true && !(it.flags || []).includes('book')) { it.flags = [...(it.flags || []), 'book']; took.push('book'); }
+  if (typeof e.town === 'string' && e.town && (it.town == null || (typeof it.town === 'string' && !it.town.trim()))) it.town = e.town;
+  if (!e.pos && typeof e.lat === 'number' && typeof e.lng === 'number') { it.lat = e.lat; it.lng = e.lng; if (e.km != null) it.km_from_house = e.km; else edUpdateKm(edPath(p)); delete it.pos; delete it.nomap; }
+  if (typeof e.name === 'string' && e.name.trim() && j.words && edShown(it.name || {}) === j.words) {
+    if (edIs18(it.name)) { for (const l of Object.keys(it.name)) if (it.name[l] === j.words) it.name[l] = e.name; } else it.name = e.name; }
+  const from = Object.fromEntries(Object.entries((e.filled || {}).from || {}).filter(([k]) => took.includes(k)));
+  if (Object.keys(from).length) { const o = it.filled && it.filled.from ? it.filled : null, web = Object.values(from).some(v => v === 'site' || v === 'search');
+    it.filled = { at: [o && o.at, e.filled.at].filter(Boolean).sort().pop(), from: { ...(o ? o.from : {}), ...from }, ...(web && e.filled.page ? { page: e.filled.page } : o && o.page ? { page: o.page } : {}) }; }
+  return true;
 }
 function edParseMaps(url) {
   const m = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || url.match(/[?&](?:q|query|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
@@ -526,6 +660,7 @@ function edAddTile(icon) {
 }
 function cmPlaces(path, what) {
   const arr = edGet(edC(), edPath(path)) || [];
+  if (PL_SEC[path] && CM.pfLoaded !== true) pfLoad();   // lookups of a place's facts still running, or done while away
   return `${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
     <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
@@ -681,6 +816,7 @@ const PROG_STEPS = {
   events: [[/Searching the web/, 4, 85, 240], [/Translating/, 85, 98, 60]],
   translate: [[/Translating (\d+) of (\d+)/, 5, 97, 45]],
   art: [[/Reading your photo/, 3, 8, 8], [/Drawing your cover/, 8, 94, 70], [/Saving your cover/, 94, 99, 5]],
+  facts: [[/Looking for its website/, 4, 45, 12], [/Reading its website/, 45, 97, 20]],   // a place's facts (place-facts): about 20 s
   build: [[/Reading your answers/, 3, 8, 20], [/Researching: markets/, 8, 30, 180], [/Researching: todo/, 30, 52, 180], [/Researching: emergency/, 52, 62, 90], [/Building the guide/, 62, 78, 40], [/Translating/, 78, 92, 90], [/Saving the guide/, 92, 99, 30]]
 };
 const progEase = (t, tau) => 1 - Math.exp(-Math.max(0, t) / tau);
@@ -706,8 +842,8 @@ function progOf(j, kind) {
 // The bar itself; its key says which job it follows (see progJob).
 const progBar = (key, label, dark) => { const p = progOf(progJob(key), progKind(key)) || { pct: 2, text: '' };
   return `<div class="cm-progw${dark ? ' dark' : ''}" data-prog="${key}"><div class="cm-prog" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p.pct)}"><i style="width:${p.pct.toFixed(1)}%"></i></div><p class="hint cm-progt">${esc(p.text)}</p></div>`; };
-const progJob = key => key === 'auto' ? CM.evJob : key === 'tr' ? CM.trJob : key === 'art' ? CM.artJob : key === 'build' ? window.__buildJob : (CM.find || {})[key];
-const progKind = key => key === 'tr' ? 'translate' : key === 'build' ? 'build' : key === 'art' ? 'art' : key === 'find-todo' || key === 'find-markets' ? 'places' : 'events';
+const progJob = key => key === 'auto' ? CM.evJob : key === 'tr' ? CM.trJob : key === 'art' ? CM.artJob : key === 'build' ? window.__buildJob : key.startsWith('pf:') ? (CM.pf || {})[key.slice(3)] : (CM.find || {})[key];
+const progKind = key => key === 'tr' ? 'translate' : key === 'build' ? 'build' : key === 'art' ? 'art' : key.startsWith('pf:') ? 'facts' : key === 'find-todo' || key === 'find-markets' ? 'places' : 'events';
 // A job's new state from the database: a new step restarts the clock of that step.
 function progSet(j, st) { if (st.message !== j.message || st.status !== j.status) j.phaseAt = Date.now(); j.status = st.status; j.message = st.message; }
 setInterval(() => document.querySelectorAll('[data-prog]').forEach(el => {
@@ -1272,6 +1408,7 @@ function edEdit(t) {
     o[CM.lang] = val;
   } else if (kind === 'num') edSet(c, p, val === '' ? 0 : Number(val));
   else edSet(c, p, val);
+  const own = t.dataset.p.match(/^files\/(?:restaurants|nightlife|todo)\/items\/\d+\/(phone|url|schedule)(\/|$)/); if (own) plMine(t.dataset.p, own[1]);   // typed by the host: theirs
   if (p[0] === 'private' && p[1] === 'wifi') cmWifiQr();
   if (p[p.length - 1] === 'c' && p[p.length - 3] === 'badges' && /^#[0-9a-f]{6}$/i.test(val)) { const n = parseInt(val.slice(1), 16), lum = (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; edGet(c, p.slice(0, -1)).ink = lum > 0.62; }
   cmQueue();
@@ -1324,6 +1461,11 @@ document.addEventListener('change', e => {
   if (t.dataset.cmlang !== undefined) { CM.lang = t.value; return render(); }
   if (!inEd(t)) return;
   if (t.dataset.cseas) return plSeasonSet(t);
+  if (t.dataset.pfweb) {   // nothing found, and the host knows its website: it is theirs, and read for the hours
+    const v = t.value.trim(), u = pfUrl(v), it = edGet(edC(), edPath(t.dataset.pfweb)); if (!v || !it) return;
+    if (!u) return toast('That does not look like a web address.');
+    it.url = u; cmQueue(); return pfStart(t.dataset.pfweb, u);
+  }
   if (t.dataset.gm) {   // a pasted Google Maps link: the pin moves when it holds a position, and the link becomes the place's map button
     const ip = edPath(t.dataset.gm), it = edGet(edC(), ip), pos = edParseMaps(t.value), url = t.value.trim();
     if (pos) { it.lat = pos.lat; it.lng = pos.lng; delete it.nomap; edUpdateKm(ip); }
@@ -1337,7 +1479,8 @@ document.addEventListener('change', e => {
 });
 addEventListener('porta-lang', () => { if (CM.on) render(); });   // kinds, marks, days and months are written in the maker's language
 document.addEventListener('toggle', e => { const d = e.target; if (CM.on && d.matches && d.matches('details.cmi,details.cm-more[data-open]')) d.open ? CM.open.add(d.dataset.open) : CM.open.delete(d.dataset.open); }, true);
-document.addEventListener('keydown', e => { if (CM.on && e.key === 'Enter' && e.target && e.target.id === 'c_stopq') { e.preventDefault(); cmStopAdd(document.querySelector('[data-stopadd]')); } });
+document.addEventListener('keydown', e => { if (CM.on && e.key === 'Enter' && e.target && e.target.id === 'c_stopq') { e.preventDefault(); cmStopAdd(document.querySelector('[data-stopadd]')); }
+  if (CM.on && e.key === 'Enter' && e.target && e.target.dataset && e.target.dataset.pfweb) { e.preventDefault(); e.target.blur(); } });   // the pasted website: Enter reads it
 document.addEventListener('click', e => {
   if (!CM.on) return;
   const t = e.target.closest && e.target.closest('button,a[data-cpreview]'); if (!t) return;
@@ -1350,6 +1493,11 @@ document.addEventListener('click', e => {
   if (d.cunpublish !== undefined) return cmUnpublish(t);
   if (d.cdiscard !== undefined) return cmDiscard(t);
   if (!t.closest('.edz')) return;
+  // A place's fact changed by hand (its kind, the hours or Open 24 hours, Book ahead) is the host's: no source said for it.
+  { const own = d.ckind ? [d.ckind, 'kind'] : d.cflag && d.f === 'book' ? [d.cflag, 'book'] : d.calways || d.daytog || d.cseason || d.addsch ? [d.calways || d.daytog || d.cseason || d.addsch, 'schedule']
+      : d.cdel && /\/schedule\/\d+$/.test(d.cdel) ? [d.cdel, 'schedule'] : null; if (own) plMine(...own); }
+  if (d.pflook) return pfStart(d.pflook);
+  if (d.pfagain) { const it = edGet(edC(), edPath(d.pfagain)), j = it && CM.pf[it.id]; return pfStart(d.pfagain, (j && j.website) || ''); }
   if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); edCoverMade(d.cover === 'photo' ? ((edC().files || {}).house || {}).photo : ''); return done(); }
   if (d.allpics !== undefined) { CM.allPics = true; return render(); }
   if (d.coverpic) { edSet(edC(), ['files', 'house', 'photo'], d.coverpic); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(d.coverpic); return done(); }
@@ -1608,6 +1756,16 @@ function cmInit() {
 .pl-season span{font-size:15px;font-weight:500}
 .pl-form .cm-sch{padding:0!important;background:none}   /* one surface: the hours are not a box inside the card */
 .pl-sub{margin-top:4px;padding-top:14px;border-top:1px solid var(--line)}
-.pl-form .cm-times{max-width:360px}   /* two times, not two long empty fields on a wide screen */`;
+.pl-form .cm-times{max-width:360px}   /* two times, not two long empty fields on a wide screen */
+/* Where the facts came from, and a lookup of them (pfWaitHTML, plFrom): quiet lines at the foot of the panel, never a box */
+.pl-ls>.pl-src,.pl-ls>.pl-foot,.pl-ls>.pl-web{grid-column:1/-1}
+.pl-src{margin:1px 0 0;color:var(--muted);font-size:13px;line-height:1.4}
+.pl-src a{color:inherit;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+.pl-foot{margin:0;display:flex;flex-wrap:wrap;align-items:center;column-gap:6px}
+.pl-more{border:0;background:none;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:2px;cursor:pointer;padding:0;min-height:32px}
+.pl-wait{display:flex;flex-direction:column;gap:8px;padding:4px 0 2px}
+.pl-wait .cm-prog{height:4px;max-width:240px}
+.pl-web{margin-top:4px}
+.pl-web input{max-width:420px}`;
   document.head.appendChild(st);
 })();
