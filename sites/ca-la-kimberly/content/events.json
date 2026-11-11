@@ -1,5 +1,5 @@
 {
-  "_doc": "Local events. Item shape: id, type (castells/festa/carnival/parade/food/fair/film/music/historical/tradition), name{6}, town, venue, lat, lng, url, dates[{start,end (YYYY-MM-DD), time and until (optional HH:MM: when it starts, when it ends on the last day), status: confirmed|expected}], scale (automatic events: local, town, regional or major), description{6}, sources[]. Past dates hide themselves; add next year's dates in the monthly check.",
+  "_doc": "Local events. Item shape: id, type (castells/festa/carnival/parade/food/fair/film/music/historical/tradition/sports/theatre/art/fireworks/religious/christmas/kids/flowers; engine section.js EVENT_ICON, EVENT_TONE), name{6}, town, venue, lat, lng, url, dates[{start,end (YYYY-MM-DD), time and until (optional HH:MM: when it starts, when it ends on the last day), status: confirmed|expected}], scale (automatic events: local, town, regional or major), description{6}, sources[]. Past dates hide themselves; add next year's dates in the monthly check.",
   "items": [
     {
       "id": "santa-teresa",

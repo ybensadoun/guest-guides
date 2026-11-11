@@ -7530,5 +7530,50 @@
 "ca": "Tradició",
 "es": "Tradición",
 "fr": "Tradition"
+},
+"Theatre and dance": {
+"ca": "Teatre i dansa",
+"es": "Teatro y danza",
+"fr": "Théâtre et danse"
+},
+"Art and exhibitions": {
+"ca": "Art i exposicions",
+"es": "Arte y exposiciones",
+"fr": "Art et expositions"
+},
+"For kids": {
+"ca": "Per als infants",
+"es": "Para niños",
+"fr": "Pour les enfants"
+},
+"Christmas": {
+"ca": "Nadal",
+"es": "Navidad",
+"fr": "Noël"
+},
+"Religious celebration": {
+"ca": "Celebració religiosa",
+"es": "Celebración religiosa",
+"fr": "Fête religieuse"
+},
+"Fireworks": {
+"ca": "Focs artificials",
+"es": "Fuegos artificiales",
+"fr": "Feux d’artifice"
+},
+"Flowers and gardens": {
+"ca": "Flors i jardins",
+"es": "Flores y jardines",
+"fr": "Fleurs et jardins"
+},
+"Search a kind": {
+"ca": "Cerca un tipus",
+"es": "Busca un tipo",
+"fr": "Chercher un type"
+},
+"No kind matches. Try another word.": {
+"ca": "Cap tipus no hi coincideix. Prova una altra paraula.",
+"es": "Ningún tipo coincide. Prueba otra palabra.",
+"fr": "Aucun type ne correspond. Essayez un autre mot."
 }
 }

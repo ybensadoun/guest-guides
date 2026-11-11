@@ -1349,10 +1349,10 @@ try {
         ok('market card, 360 px, the maker in French: nothing overlaps with Change closed, open and with the kinds; no kind name cut', !b1.length && !b2.length && !b3.length && !kn.bad.length, [...b1, ...b2, ...b3, ...kn.bad].join('; '));
         ok('market card (French): no page errors', !errors.length, errors.join(' | '));
         await ctx.close(); }
-      // Events: the kind's tile in the row, "Kind" under the name, the ten kinds; the rest of the card and Finding events as before
+      // Events: the kind's tile in the row, "Kind" under the name, the eighteen kinds; the rest of the card and Finding events as before
       { const { ctx, p, errors, item } = await run(360, 780);
         await p.goto('http://editor.test/#events'); await ready(p); await p.waitForTimeout(300);
-        const KN = ['castells', 'festa', 'carnival', 'parade', 'food', 'fair', 'film', 'music', 'historical', 'tradition'], rows = await tiles(p);
+        const KN = ['castells', 'festa', 'carnival', 'parade', 'food', 'fair', 'film', 'music', 'historical', 'tradition', 'sports', 'theatre', 'art', 'fireworks', 'religious', 'christmas', 'kids', 'flowers'], rows = await tiles(p);
         ok('event card: every row starts with its kind\'s tile, in its colour (the fair\'s yellow with a dark icon)', rows.length === EV.length && rows.every(r => r.tile) && rows.filter(r => r.svg).length === EV.filter(x => KN.includes(x.type)).length && rows[fi].kc.toUpperCase() === '#F5C400' && rows[fi].ink === 'rgb(18, 18, 18)', `${rows.filter(r => r.svg).length} of ${rows.length}, ${rows[fi] && rows[fi].kc}`);
         const now = await evCard(p);
         ok('event card: apart from the kind, the opened card and the "Finding events" panel are the same markup as in the last commit', !before || (now.card === was.ev.card && now.find === was.ev.find && now.card.length > 1000), before ? `${now.card.length} / ${was.ev.card.length}` : 'no git');
@@ -1360,7 +1360,7 @@ try {
         ok('event card: right under Name, one line "Kind" with the kind\'s icon, its name and Change', pos.after && pos.text === 'Kind Fair Change', JSON.stringify(pos));
         await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(200);
         const kn = await kindsOk(p, card(FP));
-        ok('event card, kind picker: the 10 kinds, three across at 360 px, no name cut, nothing overlaps', kn.n === 10 && kn.across === 3 && !kn.bad.length && kn.tall >= 40 && !(await clash(p, card(FP))).length, JSON.stringify(kn));
+        ok('event card, kind picker: the 18 kinds, three across at 360 px, no name cut, nothing overlaps', kn.n === 18 && kn.across === 3 && !kn.bad.length && kn.tall >= 40 && !(await clash(p, card(FP))).length, JSON.stringify(kn));
         await p.$eval(card(FP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -80)); await p.screenshot({ path: join(SHOTS, 'event-card-kinds-360.png') });
         await p.click(card(FP) + ' [data-ckind][data-k="music"]'); const e1 = await item(FP), r1 = (await tiles(p))[fi];
         ok('event card: a kind picked writes type, closes the grid and changes the row\'s tile (music, in wine)', !!e1 && e1.type === 'music' && !(await p.$(card(FP) + ' .pl-k')) && r1.html !== rows[fi].html && r1.kc.toUpperCase() === '#8E1B4A', `${e1 && e1.type}, ${r1 && r1.kc}`);
@@ -1390,9 +1390,134 @@ try {
         await p.click(card(FP) + ' > summary'); await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(300);
         const ke = await kindsOk(p, card(FP)), c4 = await clash(p, card(FP));
         await p.$eval(card(FP) + ' .pl-kindrow', e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -80)); await p.screenshot({ path: join(SHOTS, 'event-card-kinds-desktop.png') });
-        ok('event card, desktop: the ten kinds more than three a row, nothing overlapping, no sideways scroll, the phone beside', ke.n === 10 && ke.cols > 3 && !ke.bad.length && !c4.length && (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0 && await beside(), JSON.stringify({ ...ke, c4 }));
+        ok('event card, desktop: the eighteen kinds more than three a row, nothing overlapping, no sideways scroll, the phone beside', ke.n === 18 && ke.cols > 3 && !ke.bad.length && !c4.length && (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0 && await beside(), JSON.stringify({ ...ke, c4 }));
         ok('market and event cards, desktop: no page errors', !errors.length, errors.join(' | '));
         await ctx.close(); } }
+  }
+  // The kinds of event (11 Nov 2026): eighteen, human towers last, and a search above every grid of more than 12 kinds (events,
+  // attractions; not eating places or markets). Typing hides what does not match without redrawing the card; Enter picks the
+  // only kind left, Escape clears; nothing kept once the grid closes. Then one sheet of the eighteen icons as they are used.
+  { const EV = E.content.files.events.items, fi = Math.max(0, EV.findIndex(x => x.type === 'fair')), FP = `files/events/items/${fi}`;
+    const ti = E.content.files.todo.items.findIndex(x => x.id === 'aqualeon'), TP = `files/todo/items/${ti}`;
+    const ri = E.content.files.restaurants.items.findIndex(x => x.id === 'locanda'), RP = `files/restaurants/items/${ri}`;
+    const MKS = E.content.files.markets.markets, MP = `files/markets/markets/${Math.max(0, MKS.findIndex(x => x.id === 'vilafranca-art'))}`;
+    const card = x => `details.cmi[data-open="${x}"]`, NO_BAR = '#navbar{visibility:hidden}';
+    const ORDER = ['festa', 'music', 'food', 'fair', 'tradition', 'sports', 'theatre', 'art', 'kids', 'parade', 'carnival', 'christmas', 'religious', 'fireworks', 'flowers', 'historical', 'film', 'castells'];
+    const NAMES = ['Local festival', 'Music', 'Food and wine', 'Fair', 'Tradition', 'Sports', 'Theatre and dance', 'Art and exhibitions', 'For kids', 'Parade', 'Carnival', 'Christmas', 'Religious celebration', 'Fireworks', 'Flowers and gardens', 'History', 'Film', 'Human towers'];
+    const NEW = new Set(['sports', 'theatre', 'art', 'fireworks', 'religious', 'christmas', 'kids', 'flowers']);
+    const run = async (w, h, stored = {}) => { const o = await open(browser, E, w, h, stored); o.saved = [];
+      await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); o.saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
+      o.item = async path => { await o.p.waitForTimeout(1300); for (const b of o.saved.slice().reverse()) { try { const j = JSON.parse(b); if (!j.draft) continue; return path.split('/').reduce((a, k) => a == null ? a : a[/^\d+$/.test(k) ? +k : k], j.draft.content); } catch (e) { /* not a draft */ } } return null; };
+      return o; };
+    // What the grid shows: the kinds left, the headings left, the line for no match, the field (and whether it has the focus).
+    const grid = (p, sel) => p.evaluate(sel => { const c = document.querySelector(sel), w = c && c.querySelector('.pl-kinds-w'); if (!w) return null; const q = w.querySelector('.pl-kq'), on = e => !!e.getClientRects().length;
+      return { keys: [...w.querySelectorAll('.pl-k')].filter(on).map(b => b.dataset.k), names: [...w.querySelectorAll('.pl-k')].filter(on).map(b => b.querySelector('span').textContent.trim()), heads: [...w.querySelectorAll('.pl-kg')].filter(on).map(h => h.textContent.trim()), allHeads: w.querySelectorAll('.pl-kg').length,
+        none: !!w.querySelector('.pl-knone') && on(w.querySelector('.pl-knone')), noneText: (w.querySelector('.pl-knone') || {}).textContent || '', field: !!q, value: q ? q.value : null, focus: !!q && document.activeElement === q, ph: q ? q.placeholder : '', h: q ? Math.round(q.getBoundingClientRect().height) : 0, width: Math.round(w.getBoundingClientRect().width) }; }, sel);
+    // Anything in the kind field that touches something else or sticks out of the card, and the page wider than the screen.
+    const clash = (p, sel) => p.evaluate(sel => { const c = document.querySelector(sel); if (!c) return ['no card']; const cr = c.getBoundingClientRect(), bad = [];
+      const els = [...c.querySelectorAll('.pl-kindrow > *, .pl-kq, .pl-knone, .pl-kg, .pl-k, .pl-k span, .lab, input, textarea, button')].filter(e => e.getClientRects().length);
+      const r = els.map(e => e.getBoundingClientRect()), nm = e => (e.getAttribute('placeholder') || e.getAttribute('aria-label') || e.textContent || e.tagName).trim().replace(/\s+/g, ' ').slice(0, 28);
+      els.forEach((e, i) => { if (r[i].right > cr.right + 0.5 || r[i].left < cr.left - 0.5) bad.push('outside: ' + nm(e)); });
+      for (let i = 0; i < els.length; i++) for (let j = i + 1; j < els.length; j++) { if (els[i].contains(els[j]) || els[j].contains(els[i])) continue;
+        const a = r[i], b = r[j]; if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1) bad.push(`${nm(els[i])} / ${nm(els[j])}`); }
+      const w = c.querySelector('.pl-kinds-w'); if (w) for (const s of w.querySelectorAll('.pl-k span')) if (s.getClientRects().length && s.scrollWidth > s.clientWidth + 1) bad.push('cut: ' + s.textContent);
+      if (document.documentElement.scrollWidth > innerWidth) bad.push('sideways scroll');
+      return bad.slice(0, 4); }, sel);
+    const field = sel => sel + ' .pl-kq';
+    const typeIn = async (p, sel, text) => { await p.fill(field(sel), ''); await p.type(field(sel), text, { delay: 15 }); await p.waitForTimeout(120); };
+    const rowTile = (p, i) => p.$$eval('.edz details.cmi > summary', (ss, i) => { const t = ss[i] && ss[i].querySelector('i.pl-ic'); return t ? { html: t.innerHTML, kc: t.style.getPropertyValue('--kc') } : null; }, i);
+    for (const [w, h, tag] of [[360, 780, '360 px'], [1280, 860, 'desktop']]) {
+      const { ctx, p, errors, item } = await run(w, h), shot = n => join(SHOTS, `${n}-${w === 360 ? '360' : 'desktop'}.png`);
+      await p.goto('http://editor.test/#events'); await ready(p); await p.waitForTimeout(400);
+      await p.click(card(FP) + ' > summary'); await p.waitForTimeout(250);
+      const tile0 = await rowTile(p, fi);
+      await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(250);
+      const g0 = await grid(p, card(FP)), c0 = await clash(p, card(FP));
+      ok(`event kinds, ${tag}: the eighteen kinds in the hosts' order, human towers last, and the search above them, its field ${g0 && g0.h} px`, !!g0 && cmpSame(g0.keys, ORDER) && cmpSame(g0.names, NAMES) && g0.field && g0.value === '' && g0.ph === 'Search a kind' && g0.h >= 40 && !g0.none, JSON.stringify(g0).slice(0, 300));
+      ok(`event kinds, ${tag}: the search has the focus as the grid opens (a mouse and a keyboard here, no touch screen)`, !!g0 && g0.focus);
+      ok(`event kinds, ${tag}, grid open and nothing typed: nothing overlaps, no name cut, no sideways scroll`, !c0.length, c0.join('; '));
+      await p.locator(card(FP) + ' .f:has(.pl-kindrow)').screenshot({ path: shot('event-kinds'), style: NO_BAR });
+      // Typing: the same field, with the focus, in the same card (nothing redrawn), the grid as wide as before
+      const before = await p.$(field(card(FP))); await p.$eval(card(FP), c => { c.__kept = 1; });
+      await typeIn(p, card(FP), 'concert'); const g1 = await grid(p, card(FP));
+      const same = await p.evaluate(([el, sel]) => el === document.querySelector(sel + ' .pl-kq') && document.activeElement === el && document.querySelector(sel).__kept === 1, [before, card(FP)]);
+      ok(`event kinds, ${tag}: "concert" leaves Music; the field is the same element, keeps the focus, and the card is not redrawn`, !!g1 && cmpSame(g1.keys, ['music']) && same && g1.width === g0.width, JSON.stringify(g1 && g1.keys));
+      await typeIn(p, card(FP), 'CONCÉRT'); const g2 = await grid(p, card(FP));
+      await typeIn(p, card(FP), 'Procesión'); const g2b = await grid(p, card(FP));
+      ok(`event kinds, ${tag}: case and accents do not matter ("CONCÉRT", "Procesión")`, !!g2 && cmpSame(g2.keys, ['music']) && !!g2b && cmpSame(g2b.keys, ['religious']), JSON.stringify([g2 && g2.keys, g2b && g2b.keys]));
+      await typeIn(p, card(FP), 'con'); const g3 = await grid(p, card(FP)), c3 = await clash(p, card(FP));
+      ok(`event kinds, ${tag}, filtered by "con" (${g3 && g3.keys.join(', ')}): nothing overlaps, no sideways scroll, the grid keeps its width`, !!g3 && g3.keys.includes('music') && g3.keys.length < 18 && !c3.length && g3.width === g0.width, c3.join('; '));
+      await p.locator(card(FP) + ' .f:has(.pl-kindrow)').screenshot({ path: shot('event-kinds-search'), style: NO_BAR });
+      await typeIn(p, card(FP), 'xyzzy'); const g4 = await grid(p, card(FP)), c4 = await clash(p, card(FP));
+      ok(`event kinds, ${tag}: no match hides every tile and says so in one line, nothing overlapping`, !!g4 && !g4.keys.length && g4.none && g4.noneText.trim() === 'No kind matches. Try another word.' && !c4.length, JSON.stringify(g4).slice(0, 200) + ' ' + c4.join('; '));
+      await p.keyboard.press('Escape'); await p.waitForTimeout(100); const g5 = await grid(p, card(FP));
+      ok(`event kinds, ${tag}: Escape clears the field and the eighteen come back`, !!g5 && g5.value === '' && g5.keys.length === 18 && !g5.none && g5.focus, JSON.stringify(g5 && [g5.value, g5.keys.length]));
+      await typeIn(p, card(FP), 'f'); await p.keyboard.press('Enter'); await p.waitForTimeout(150); const g6 = await grid(p, card(FP));
+      ok(`event kinds, ${tag}: Enter with several kinds left picks none`, !!g6 && g6.keys.length > 1 && g6.value === 'f', JSON.stringify(g6 && g6.keys));
+      // Closed with Change and opened again: the words are gone
+      await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(150); await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(200); const g7 = await grid(p, card(FP));
+      ok(`event kinds, ${tag}: the search is not kept once the grid closes`, !!g7 && g7.value === '' && g7.keys.length === 18, JSON.stringify(g7 && g7.value));
+      // Enter with one kind left picks it: a new kind is written and the row's tile changes (sports, in red)
+      await typeIn(p, card(FP), w === 360 ? 'marathon' : 'regata'); await p.keyboard.press('Enter'); const e1 = await item(FP), t1 = await rowTile(p, fi);
+      ok(`event kinds, ${tag}: Enter with one kind left picks it: type "sports", the grid closes and the row's tile changes to the new icon in red`, !!e1 && e1.type === 'sports' && !(await p.$(card(FP) + ' .pl-k')) && !!t1 && t1.html !== tile0.html && t1.kc.toUpperCase() === '#D52B1E' && /Sports/.test(await p.textContent(card(FP) + ' .pl-kindrow')), `${e1 && e1.type}, ${t1 && t1.kc}`);
+      if (w === 360) {
+        // A tap on a new kind writes it too (For kids, in red)
+        await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(200); await p.click(card(FP) + ' [data-ckind][data-k="kids"]'); const e2 = await item(FP), t2 = await rowTile(p, fi);
+        ok('event kinds: a tap on a new kind writes it and the row\'s tile changes (For kids, in wine)', !!e2 && e2.type === 'kids' && !!t2 && t2.html !== t1.html && t2.kc.toUpperCase() === '#8E1B4A', `${e2 && e2.type}, ${t2 && t2.kc}`);
+      }
+      // Eating places and markets: no search; attractions: a search that hides the headings with nothing left
+      await go(p, '#restaurants'); await p.waitForTimeout(400); await p.click(card(RP) + ' > summary'); await p.click(card(RP) + ' [data-cchg]'); await p.click(card(RP) + ' [data-ckinds]'); await p.waitForTimeout(250);
+      const gr = await grid(p, card(RP));
+      await go(p, '#markets'); await p.waitForTimeout(400); await p.click(card(MP) + ' > summary'); await p.click(card(MP) + ' [data-cchg]'); await p.click(card(MP) + ' [data-ckinds]'); await p.waitForTimeout(250);
+      const gm = await grid(p, card(MP));
+      ok(`kind grids, ${tag}: eating places (12 kinds) and markets (5) have no search`, !!gr && gr.keys.length === 12 && !gr.field && !!gm && gm.keys.length === 5 && !gm.field, JSON.stringify([gr && gr.field, gm && gm.field]));
+      await go(p, '#todo'); await p.waitForTimeout(400); await p.click(card(TP) + ' > summary'); await p.click(card(TP) + ' [data-cchg]'); await p.click(card(TP) + ' [data-ckinds]'); await p.waitForTimeout(250);
+      const ga = await grid(p, card(TP)), ca = await clash(p, card(TP));
+      await typeIn(p, card(TP), 'plage'); const gb = await grid(p, card(TP)), cb = await clash(p, card(TP));
+      ok(`attraction kinds, ${tag}: the search above the 21 kinds; "plage" leaves the beach kinds and hides the other groups' headings`, !!ga && ga.field && ga.keys.length === 21 && ga.heads.length === ga.allHeads && !!gb && cmpSame([...gb.keys].sort(), ['beach', 'beachbar']) && gb.heads.length === 1 && gb.allHeads > 1, JSON.stringify(gb && [gb.keys, gb.heads]));
+      ok(`attraction kinds, ${tag}: nothing overlaps or sticks out, empty and filtered`, !ca.length && !cb.length, [...ca, ...cb].join('; '));
+      if (w > 360) await p.locator(card(TP) + ' .f:has(.pl-kindrow)').screenshot({ path: join(SHOTS, 'todo-kinds-search-desktop.png'), style: NO_BAR });
+      ok(`event kinds, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // The maker in Spanish: the new names in Spanish, "procesión" leaves the religious kind
+    { const { ctx, p, errors } = await run(360, 780, { 'porta-lang-v1': 'es' });
+      await p.goto('http://editor.test/#events'); await ready(p); await p.waitForTimeout(400);
+      await p.click(card(FP) + ' > summary'); await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(300);
+      const g0 = await grid(p, card(FP)), c0 = await clash(p, card(FP));
+      await typeIn(p, card(FP), 'procesión'); const g1 = await grid(p, card(FP));
+      await typeIn(p, card(FP), 'cabalgata'); const g2 = await grid(p, card(FP));
+      ok('event kinds, the maker in Spanish: the names and the field in Spanish, nothing overlapping; "procesión" leaves "Celebración religiosa"; "cabalgata" the parade and Christmas', !!g0 && g0.names.includes('Celebración religiosa') && g0.names.includes('Para niños') && g0.ph === 'Busca un tipo' && !c0.length && !!g1 && cmpSame(g1.keys, ['religious']) && cmpSame(g1.names, ['Celebración religiosa']) && !!g2 && cmpSame(g2.keys, ['parade', 'christmas']), JSON.stringify([g1 && g1.names, g2 && g2.keys, c0]));
+      ok('event kinds (Spanish): no page errors', !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // One sheet of the eighteen icons as they are used: 18 px in the maker's 28 px tile (a row), 24 px in its 40 px tile (the
+    // grid), and in the guide's row dot with the guide's own rules (engine app.css .dot, .events .mrow .dot svg); new ones marked.
+    { const { ctx, p } = await run(1280, 860); await p.goto('http://editor.test/#events'); await ready(p); await p.waitForTimeout(300);
+      await p.click(card(FP) + ' > summary'); await p.click(card(FP) + ' [data-ckinds]'); await p.waitForTimeout(250);   // the maker's own tiles, as its grid draws them
+      const sec = readFileSync(join(ROOT, 'engine/src/views/section.js'), 'utf8'), GI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+      const icon = Object.fromEntries([...sec.slice(sec.indexOf('const EVENT_ICON = {')).split('\n};')[0].matchAll(/^\s+([a-z]+): GI\('(.*)'\),?$/gm)].map(m => [m[1], GI(m[2])]));
+      const tone = Object.fromEntries([...sec.match(/\nconst EVENT_TONE = \{([^\n]*)\};/)[1].matchAll(/([a-z]+): '([^']+)'/g)].map(m => [m[1], m[2]]));
+      const css = readFileSync(join(ROOT, 'engine/src/styles/app.css'), 'utf8'), rule = sel => { const i = css.indexOf('\n' + sel + '{'); return i < 0 ? '' : css.slice(i + 1, css.indexOf('}', i) + 1); };
+      const vars = [...css.matchAll(/--(red|blue|yellow|orange|green|ink|tone-[a-z]+):([^;}]+)/g)].map(m => `--${m[1]}:${m[2]}`).join(';');
+      const guide = [rule('.dot'), rule('.events .mrow .dot svg')].join('\n');
+      ok('icon sheet: the guide\'s own rules for an event\'s dot are found in the engine', /\.dot\{width:\d+px/.test(guide) && /\.events \.mrow \.dot svg\{width:\d+px/.test(guide), guide);
+      await p.evaluate(([vars, guide, NEW, icon, tone, sel]) => {
+        const kinds = [...document.querySelectorAll(sel + ' .pl-k')].map(b => [b.dataset.k, b.querySelector('span').textContent.trim(), b.querySelector('i.pl-ic').outerHTML]);
+        const small = h => h.replace('class="pl-ic"', 'class="pl-ic s"');
+        const sec = document.createElement('section'); sec.className = 'sheet-ev';
+        const st = document.createElement('style'); st.textContent = `.sheet-ev{position:fixed;inset:0;z-index:999;overflow:auto;background:#fff;padding:24px 28px;font:15px/1.3 system-ui,sans-serif;color:#121212}
+          .sheet-ev .gv{${vars}}.sheet-ev h1{font-size:20px;margin:0 0 4px}.sheet-ev p{margin:0 0 18px;color:#4A4A4A;font-size:13.5px}
+          .sheet-ev .gr{display:grid;grid-template-columns:repeat(6,1fr);gap:22px 12px}.sheet-ev .c{display:flex;flex-direction:column;align-items:center;gap:8px}
+          .sheet-ev .t{display:flex;align-items:center;gap:12px}.sheet-ev .n{font-size:13.5px;font-weight:600;text-align:center}.sheet-ev .n i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#D52B1E;margin-right:5px;vertical-align:2px}
+          .sheet-ev .k{font-size:11.5px;color:#6E6A63}.sheet-ev .gv .events{display:contents}${guide.replace(/(^|\n)\./g, '$1.sheet-ev .gv .')}`;
+        const cell = ([k, n, t]) => `<div class="c"><div class="t">${small(t)}${t}<span class="gv"><span class="events"><span class="mrow" style="display:contents"><span class="dot" style="--cc:${tone[k]}">${icon[k]}</span></span></span></span></div><div class="n" translate="no">${NEW.includes(k) ? '<i></i>' : ''}${n}</div><div class="k" translate="no">${k}</div></div>`;
+        sec.innerHTML = `<h1 translate="no">The eighteen kinds of event</h1><p translate="no">Each: the maker's row tile (18 px in 28 px), the maker's grid tile (24 px in 40 px), the guide's row dot (its own CSS). A red dot: new on 11 Nov 2026.</p><div class="gr">${kinds.map(cell).join('')}</div>`;
+        document.body.append(st, sec); }, [vars, guide, [...NEW], icon, tone, card(FP)]);
+      await p.waitForTimeout(200);
+      const box = await p.$eval('.sheet-ev', s => { const g = s.querySelector('.gr').getBoundingClientRect(); return { n: s.querySelectorAll('.c').length, h: Math.ceil(g.bottom + 24), svgs: s.querySelectorAll('.c svg').length }; });
+      await p.setViewportSize({ width: 1280, height: Math.max(400, box.h) }); await p.waitForTimeout(100);
+      await p.screenshot({ path: join(SHOTS, 'event-icons-sheet.png'), clip: { x: 0, y: 0, width: 1280, height: box.h } });
+      ok('icon sheet: the eighteen kinds, each drawn three times (event-icons-sheet.png)', box.n === 18 && box.svgs === 54, JSON.stringify(box));
+      await ctx.close(); }
   }
   // The editor never publishes an empty thing (10 Nov 2026). A new place starts blank (no icon, quick filter or marks of the
   // first one). On Publish, what nobody filled in is dropped (a line with no name on a station, a station with nothing in

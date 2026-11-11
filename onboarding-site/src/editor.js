@@ -3,7 +3,7 @@
    (groups, tiles, rail, bottom bar), but each step shows and changes the guide's own content and look.
    Changes save as a draft (guides.draft) that guests never see: Preview shows it to the host, "Publish changes"
    makes it live. Plan and rules: docs/plan-single-editor.md */
-const CM = { on: false, g: null, live: null, lang: 'en', timer: null, marks: null, saving: null, again: false, open: new Set(), chg: new Set(), kpick: new Set(), kidsHand: new Set() };
+const CM = { on: false, g: null, live: null, lang: 'en', timer: null, marks: null, saving: null, again: false, open: new Set(), chg: new Set(), kpick: new Set(), kq: new Map(), kidsHand: new Set() };
 const ED_LANGS = { en: 'English', es: 'Español', fr: 'Français', ca: 'Català', de: 'Deutsch', nl: 'Nederlands' };
 const ED_DAYS = [['mon', 'Mo'], ['tue', 'Tu'], ['wed', 'We'], ['thu', 'Th'], ['fri', 'Fr'], ['sat', 'Sa'], ['sun', 'Su']];
 const ED_FONTS = [['jost', 'Jost'], ['inter', 'Inter'], ['cormorant-garamond', 'Cormorant Garamond'], ['dm-sans', 'DM Sans'], ['dm-serif-display', 'DM Serif Display', [400]], ['fraunces', 'Fraunces'], ['geist', 'Geist'], ['instrument-serif', 'Instrument Serif', [400]], ['nunito', 'Nunito'], ['outfit', 'Outfit'], ['space-grotesk', 'Space Grotesk'], ['bricolage-grotesque', 'Bricolage Grotesque']];
@@ -284,15 +284,36 @@ function plWeeks(rp, r) {
   return `<select class="pl-wk" data-cweek="${rp}" aria-label="Which weeks">${o.map(([v, l]) => `<option value="${v || ''}"${v === n ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
 }
 // The grid of kinds, behind a kind's "Change" (places, markets, events): groups of tiles, each with a heading or none.
-// A tile: { k, tile, name, on, no } (no: the name is already in the maker's language, never translated on its way).
+// A tile: { k, tile, name, on, no, kw } (no: the name is already in the maker's language, never translated on its way).
+// More than 12 tiles (events, attractions; not eating places or markets): a search field above them (Yohann, 11 Nov 2026).
+// kw: the words a tile is found by, folded (kFold): its name in every language we have for it, and for events other words
+// (EV_WORDS). Typing hides what does not match, and a heading with nothing left, without redrawing (kFilter): the field
+// keeps its focus and the grid its width. The words typed live in CM.kq while the grid is open, so a redraw keeps them.
+const kFold = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const kHit = (kw, q) => !q || (' ' + kw).includes(' ' + q);   // at the start of a word: "con" finds concert, not "icon"
 function kGrid(p, groups) {
-  const tile = x => `<button class="pl-k" type="button" data-ckind="${p}" data-k="${x.k}" aria-pressed="${x.on}">${x.tile}<span${x.no ? ' translate="no"' : ''}>${esc(x.name)}</span></button>`;
-  return `<div class="pl-kinds-w" role="group" aria-label="Kind">${groups.filter(g => g.tiles.length).map(g => `${g.head ? `<p class="pl-kg" translate="no">${esc(g.head)}</p>` : ''}<div class="pl-kinds">${g.tiles.map(tile).join('')}</div>`).join('')}</div>`;
+  const gs = groups.filter(g => g.tiles.length), find = gs.reduce((n, g) => n + g.tiles.length, 0) > 12, q = find ? kFold(CM.kq.get(p)) : '';
+  const hit = x => !find || kHit(x.kw, q), any = gs.some(g => g.tiles.some(hit));
+  const tile = x => `<button class="pl-k" type="button" data-ckind="${p}" data-k="${x.k}" aria-pressed="${x.on}"${find ? ` data-kw="${esc(x.kw)}"` : ''}${hit(x) ? '' : ' hidden'}>${x.tile}<span${x.no ? ' translate="no"' : ''}>${esc(x.name)}</span></button>`;
+  const field = find ? `<input type="text" class="pl-kq" id="${cmId(p + '/kq')}" data-ckq="${p}" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Search a kind" aria-label="Search a kind" value="${esc(CM.kq.get(p) || '')}"><p class="pl-note pl-knone" aria-live="polite"${any ? ' hidden' : ''}>No kind matches. Try another word.</p>` : '';
+  return `<div class="pl-kinds-w" role="group" aria-label="Kind">${field}${gs.map(g => { const h = g.tiles.some(hit) ? '' : ' hidden';
+    return `${g.head ? `<p class="pl-kg" translate="no"${h}>${esc(g.head)}</p>` : ''}<div class="pl-kinds"${h}>${g.tiles.map(tile).join('')}</div>`; }).join('')}</div>`;
 }
+function kFilter(t) {
+  const p = t.dataset.ckq, w = t.closest('.pl-kinds-w'), q = kFold(t.value); if (!w) return;
+  if (t.value.trim()) CM.kq.set(p, t.value); else CM.kq.delete(p);
+  let n = 0;
+  w.querySelectorAll('.pl-kinds').forEach(g => { let m = 0;
+    g.querySelectorAll('.pl-k').forEach(b => { const on = kHit(b.dataset.kw || '', q); b.hidden = !on; m += on; });
+    g.hidden = !m; const h = g.previousElementSibling; if (h && h.classList.contains('pl-kg')) h.hidden = !m; n += m; });
+  const none = w.querySelector('.pl-knone'); if (none) none.hidden = n > 0;
+}
+// The grid closed (picked, Change again, the place deleted): its search goes with it.
+const kClose = p => { CM.kpick.delete(p); CM.kq.delete(p); };
 // "Kind <tile> <name> Change", and the grid under it while it is open.
 const kRow = (p, tile, name, grid) => `<div class="f full"><div class="pl-kindrow"><span class="lab">Kind</span>${tile}${name}<button class="pl-link" type="button" data-ckinds="${p}" aria-expanded="${CM.kpick.has(p)}">Change</button></div>${CM.kpick.has(p) ? grid() : ''}</div>`;
 function plKinds(p, sec, it) {
-  const tile = ([k, x]) => ({ k, tile: plTile(sec, { icon: k, group: x.group }), name: x.name[UIL] || x.name.en, on: it.icon === k, no: true });
+  const tile = ([k, x]) => ({ k, tile: plTile(sec, { icon: k, group: x.group }), name: x.name[UIL] || x.name.en, on: it.icon === k, no: true, kw: kFold(Object.values(x.name).join(' ')) });
   const all = Object.entries(ENG_KINDS[sec]);
   return kGrid(p, sec === 'eat' ? [{ tiles: all.map(tile) }] : Object.keys(ENG_GROUPS.groups).map(g => ({ head: engT('g_' + g), tiles: all.filter(([, x]) => x.group === g).map(tile) })));
 }
@@ -341,7 +362,7 @@ function plPick(p, k) {
     else if (!nk.kids && was && was.kids && !CM.kidsHand.has(p)) { const j = tg.indexOf('kidsfun'); if (j >= 0) tg.splice(j, 1); }
     it.tags = tg;
   }
-  CM.kpick.delete(p);
+  kClose(p);
 }
 // Price per person from two numbers: "20-25", "20" when only one is given, none when both are empty.
 function plPrice(t) {
@@ -408,13 +429,37 @@ function mkPick(p, k) {
   const it = edGet(edC(), edPath(p)); if (!it || !ENG_CAT[k]) return;
   it.category = k; const fl = edGet(edC(), edPath(p).slice(0, -2));
   if (fl) { fl.categories = fl.categories || []; if (!fl.categories.includes(k)) fl.categories.push(k); }
-  CM.kpick.delete(p);
+  kClose(p);
 }
-/* --- An event's kind (type): its tile in the row and one line under its name, with the grid of the ten kinds behind Change.
+/* --- An event's kind (type): its tile in the row and one line under its name, with the grid of the eighteen kinds behind Change.
    Icons and colours are the guide's (engine section.js EVENT_ICON, EVENT_TONE, pasted as ENG_EV_ICON, ENG_EV_TONE); the
    engine has no names for them, so these are the maker's (i18n/ui.json). --- */
 // In the order hosts most often need them (Yohann, 11 Nov 2026); what belongs to one region (human towers: Catalonia) comes last.
-const EV_KINDS = [['festa', 'Local festival'], ['music', 'Music'], ['food', 'Food and wine'], ['fair', 'Fair'], ['tradition', 'Tradition'], ['parade', 'Parade'], ['carnival', 'Carnival'], ['historical', 'History'], ['film', 'Film'], ['castells', 'Human towers']];
+// Eight more kinds the same day: sports to flowers. The keys are the guide's (engine section.js) and the worker's research.
+const EV_KINDS = [['festa', 'Local festival'], ['music', 'Music'], ['food', 'Food and wine'], ['fair', 'Fair'], ['tradition', 'Tradition'], ['sports', 'Sports'], ['theatre', 'Theatre and dance'], ['art', 'Art and exhibitions'], ['kids', 'For kids'], ['parade', 'Parade'], ['carnival', 'Carnival'], ['christmas', 'Christmas'], ['religious', 'Religious celebration'], ['fireworks', 'Fireworks'], ['flowers', 'Flowers and gardens'], ['historical', 'History'], ['film', 'Film'], ['castells', 'Human towers']];
+// Other words a host may type in the grid's search to find a kind, in the maker's four languages: the words a host of that
+// language would use, not translations of each other. Its names (EV_KINDS and their translations in ui.json) count too.
+const EV_WORDS = {
+  festa: { en: 'town festival, feast, party, fiesta, festivities, patron saint festival', ca: 'festa major, festes, festa, revetlla, ball de festa major', es: 'fiesta, fiestas, fiestas patronales, verbena, fiesta mayor', fr: 'fête, fête du village, fête patronale, festivités, bal' },
+  music: { en: 'concert, festival, band, orchestra, jazz, choir, gig, live music, opera', ca: 'concert, festival, banda, orquestra, jazz, coral, cobla, havaneres', es: 'concierto, festival, banda, orquesta, jazz, coro, flamenco, habaneras', fr: 'concert, festival, groupe, orchestre, jazz, chorale, opéra' },
+  food: { en: 'wine, harvest, tasting, gastronomy, grape harvest, cava, olive oil, calçotada', ca: 'vi, verema, tast, gastronomia, cava, oli, calçotada, vermut', es: 'vino, vendimia, degustación, cata, gastronomía, cava, aceite, calçotada, tapas', fr: 'vin, vendanges, dégustation, gastronomie, cava, huile d’olive, terroir' },
+  fair: { en: 'market, crafts, trade fair, craft fair', ca: 'mercat, artesania, fira, mostra', es: 'mercado, mercadillo, artesanía, feria, muestra', fr: 'marché, artisanat, foire, salon, brocante' },
+  tradition: { en: 'folklore, dances, giants, sardana, folk', ca: 'folklore, gegants, capgrossos, sardanes, ball de bastons, cultura popular', es: 'folclore, bailes, gigantes, cabezudos, sardanas, cultura popular', fr: 'folklore, danses, géants, sardane, traditions populaires' },
+  sports: { en: 'race, run, marathon, cycling, football, regatta, match, triathlon, tournament', ca: 'cursa, marató, ciclisme, futbol, regata, partit, torneig, bicicleta', es: 'carrera, maratón, ciclismo, fútbol, regata, partido, torneo, bici', fr: 'course, marathon, cyclisme, football, régate, match, tournoi, vélo' },
+  theatre: { en: 'dance, play, show, circus, ballet, comedy', ca: 'teatre, dansa, obra, espectacle, circ, ballet', es: 'teatro, danza, obra, espectáculo, circo, ballet', fr: 'théâtre, danse, pièce, spectacle, cirque, ballet' },
+  art: { en: 'exhibition, museum, gallery, photography, painting, sculpture', ca: 'exposició, museu, galeria, fotografia, pintura, escultura', es: 'exposición, museo, galería, fotografía, pintura, escultura', fr: 'exposition, musée, galerie, photographie, peinture, sculpture, vernissage' },
+  kids: { en: 'family, children, puppets, games', ca: 'família, nens, infants, canalla, titelles, jocs', es: 'familia, niños, infantil, títeres, marionetas, juegos', fr: 'famille, enfants, marionnettes, jeux, jeune public' },
+  christmas: { en: 'Three Kings, nativity, crib, New Year, Santa', ca: 'Nadal, Reis, cavalcada de Reis, pessebre, pessebre vivent, Cap d’Any, tió', es: 'Navidad, Reyes, cabalgata de Reyes, belén, belén viviente, Nochevieja, Año Nuevo', fr: 'Noël, Rois mages, crèche, crèche vivante, Nouvel An, réveillon' },
+  religious: { en: 'procession, pilgrimage, Easter, Holy Week, patron saint, mass', ca: 'processó, romeria, aplec, Setmana Santa, Pasqua, patró, missa', es: 'procesión, romería, Semana Santa, Pascua, patrón, patrona, misa, Virgen', fr: 'procession, pèlerinage, Pâques, Semaine sainte, saint patron, pardon, messe' },
+  fireworks: { en: 'fire run, bonfire, correfoc, fire, pyrotechnics', ca: 'focs, correfoc, foguera, revetlla de Sant Joan, piromusical', es: 'fuegos, correfoc, hoguera, pirotecnia, mascletà, San Juan', fr: 'feu d’artifice, feux, correfoc, feu de la Saint-Jean, pyrotechnie' },
+  flowers: { en: 'garden, blossom, flower show, spring, roses', ca: 'jardí, flors, floració, primavera, roses, temps de flors', es: 'jardín, flores, floración, primavera, rosas', fr: 'jardin, fleurs, floraison, printemps, roses' },
+  historical: { en: 'medieval, Roman, re-enactment, history, heritage', ca: 'medieval, romà, recreació, història, patrimoni', es: 'medieval, romano, recreación, historia, patrimonio', fr: 'médiéval, romain, reconstitution, histoire, patrimoine' },
+  film: { en: 'cinema, open-air cinema, movie, screening, film festival', ca: 'cinema, cinema a la fresca, pel·lícula, projecció', es: 'cine, cine de verano, cine al aire libre, película, proyección', fr: 'cinéma, cinéma en plein air, séance, projection' },
+  parade: { en: 'cavalcade, floats, march', ca: 'cercavila, cavalcada, carrosses, desfilada, rua', es: 'cabalgata, carrozas, desfile, pasacalles', fr: 'cavalcade, chars, défilé, corso' },
+  carnival: { en: 'masks, costumes, fancy dress, Mardi Gras', ca: 'carnestoltes, disfresses, màscares, rua', es: 'carnaval, disfraces, máscaras, comparsas', fr: 'carnaval, déguisements, masques, Mardi gras' },
+  castells: { en: 'castellers, towers, human tower', ca: 'castellers, colla, diada castellera, pilars', es: 'castellers, torres humanas, castillos humanos', fr: 'castellers, tours humaines, pyramides humaines' }
+};
+const evKw = (k, n) => kFold([n, ...['ca', 'es', 'fr'].map(l => (UI_T[n] || {})[l] || ''), ...Object.values(EV_WORDS[k] || {})].join(' '));
 const EV_HEX = { ...PL_TONE, taxi: '#F5C400' };
 function evColour(ty) {
   const v = ENG_EV_TONE[ty] || '', m = v.match(/^var\(--tone-(\w+)\)$/), bg = m ? EV_HEX[m[1]] : v === 'var(--ink)' ? '#121212' : 'var(--pine)';
@@ -424,9 +469,9 @@ function evColour(ty) {
 const evTile = (ty, small) => { const c = evColour(ty); return kTile(typeof ty === 'string' && ENG_EV_ICON[ty], c.bg, small, c.ink); };
 function evKind(p, it) {
   const ty = typeof it.type === 'string' ? it.type : '', nm = (EV_KINDS.find(x => x[0] === ty) || [])[1];
-  return kRow(p, evTile(ty, true), `<span class="pl-kn"${nm ? '' : ' translate="no"'}>${esc(nm || ty)}</span>`, () => kGrid(p, [{ tiles: EV_KINDS.map(([k, n]) => ({ k, tile: evTile(k), name: n, on: ty === k })) }]));
+  return kRow(p, evTile(ty, true), `<span class="pl-kn"${nm ? '' : ' translate="no"'}>${esc(nm || ty)}</span>`, () => kGrid(p, [{ tiles: EV_KINDS.map(([k, n]) => ({ k, tile: evTile(k), name: n, on: ty === k, kw: evKw(k, n) })) }]));
 }
-function evPick(p, k) { const it = edGet(edC(), edPath(p)); if (!it || !EV_KINDS.some(x => x[0] === k)) return; it.type = k; CM.kpick.delete(p); }
+function evPick(p, k) { const it = edGet(edC(), edPath(p)); if (!it || !EV_KINDS.some(x => x[0] === k)) return; it.type = k; kClose(p); }
 const kPick = p => p.startsWith(MK_PATH + '/') ? mkPick : p.startsWith(EV_PATH + '/') ? evPick : plPick;
 // A restaurant pinned to the home page becomes a Home tile (one tap, its own page), a copy of the restaurant that the
 // host can reword in Home tiles: "from" remembers which restaurant it came from.
@@ -1152,6 +1197,13 @@ async function cmEvPoll(job) {
   }
 }
 document.addEventListener('keydown', e => { const t = e.target; if (CM.on && e.key === 'Enter' && t.dataset && t.dataset.evin) { e.preventDefault(); cmEvTopic(t.dataset.evin); } });
+// A kind grid's search: Enter picks the only tile left, Escape clears the field.
+document.addEventListener('keydown', e => {
+  const t = e.target; if (!CM.on || !t.dataset || t.dataset.ckq === undefined) return;
+  if (e.key === 'Escape' && t.value) { e.preventDefault(); e.stopPropagation(); t.value = ''; kFilter(t); return; }
+  if (e.key !== 'Enter') return;
+  e.preventDefault(); const left = [...t.closest('.pl-kinds-w').querySelectorAll('.pl-k:not([hidden])')]; if (left.length === 1) left[0].click();
+});
 
 /* --- Pages: overview, one step, publish --- */
 function cmTile(m) {
@@ -1552,6 +1604,7 @@ const inEd = t => CM.on && t.closest && t.closest('.edz');
 document.addEventListener('input', e => {
   const t = e.target; if (!inEd(t)) return;
   if (t.dataset.cprice) return plPrice(t);
+  if (t.dataset.ckq !== undefined) return kFilter(t);   // a kind grid's search: filters in place, nothing saved, no redraw
   if (t.dataset.p) return edEdit(t);
   if (t.dataset.cfilter !== undefined) { const q = t.value.toLowerCase().trim(); t.closest('.edz').querySelectorAll('details.cmi').forEach(d => { d.hidden = !!q && !d.querySelector('summary').textContent.toLowerCase().includes(q); }); }
 });
@@ -1613,7 +1666,10 @@ document.addEventListener('click', e => {
   // A place (cPlace): favourite, the form behind Change, its kind, marks, set menus, open 24 hours, part of the year.
   if (d.cfav) { const it = edGet(edC(), edPath(d.cfav)); if (it) { if (it.topPick) delete it.topPick; else it.topPick = true; done(); } return; }
   if (d.cchg) { CM.chg.has(d.cchg) ? CM.chg.delete(d.cchg) : CM.chg.add(d.cchg); return render(); }
-  if (d.ckinds) { CM.kpick.has(d.ckinds) ? CM.kpick.delete(d.ckinds) : CM.kpick.add(d.ckinds); return render(); }
+  if (d.ckinds) { const p = d.ckinds, open = !CM.kpick.has(p); if (open) CM.kpick.add(p); else kClose(p); render();
+    // On a desktop the search has the focus at once; on a touch screen it would raise the keyboard over the tiles.
+    if (open && matchMedia('(pointer:fine)').matches) setTimeout(() => { const q = document.getElementById(cmId(p + '/kq')); if (q) q.focus({ preventScroll: true }); }, 0);
+    return; }
   if (d.ckind) { kPick(d.ckind)(d.ckind, d.k); return done(); }   // a place's, a market's or an event's kind
   if (d.ctag) { const it = edGet(edC(), edPath(d.ctag)); if (it) { const tg = [...(it.tags || [])], j = tg.indexOf(d.m); j >= 0 ? tg.splice(j, 1) : tg.push(d.m); it.tags = tg; if (d.m === 'kidsfun') CM.kidsHand.add(d.ctag); done(); } return; }
   if (d.csmadd) { const it = edGet(edC(), edPath(d.csmadd)); if (it) { (it.setMenus = it.setMenus || []).push({ kind: 'menuDia', price: '' }); done(); const x = document.getElementById(cmId(`${d.csmadd}/setMenus/${it.setMenus.length - 1}/price`)); if (x) x.focus(); } return; }
@@ -1659,7 +1715,7 @@ document.addEventListener('click', e => {
     const p = edPath(d.cdel), a = edGet(edC(), p.slice(0, -1));
     const ev = d.cdel.startsWith('files/events/items/') && p.length === 4 && a && a[p[3]];
     if (ev && ev.auto) cmEvAutoSet({ removed: [...(evAuto().removed || []), { name: (ev.name || {}).en || edShown(ev.name), at: new Date().toISOString().slice(0, 10) }] });
-    if (Array.isArray(a)) { a.splice(p[p.length - 1], 1); for (const S of [CM.open, CM.chg, CM.kpick]) for (const k of [...S]) if (k.startsWith(d.cdel)) S.delete(k); if (p[0] === 'private') cmWifiQr(); done(); }
+    if (Array.isArray(a)) { a.splice(p[p.length - 1], 1); for (const S of [CM.open, CM.chg, CM.kpick]) for (const k of [...S]) if (k.startsWith(d.cdel)) S.delete(k); for (const k of [...CM.kq.keys()]) if (k.startsWith(d.cdel)) CM.kq.delete(k); if (p[0] === 'private') cmWifiQr(); done(); }
   }
 });
 
@@ -1839,6 +1895,9 @@ function cmInit() {
 .pl-kinds{display:grid;grid-template-columns:repeat(auto-fill,104px);gap:8px}
 @media (max-width:480px){.pl-kinds-w{margin-inline:-4px}.pl-kinds{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}}   /* three across at 360 px: "Montagne et" still on one line */
 .pl-kg{margin:6px 0 0;font-size:13.5px;font-weight:700;color:var(--muted)}
+.pl-kinds-w>.pl-kq{margin-bottom:2px}   /* the kinds' search (kGrid): the maker's own field, right above the tiles */
+@media (max-width:480px){.pl-kinds-w>.pl-kq,.pl-kinds-w>.pl-knone{width:auto;margin-inline:4px}}   /* in line with the card's fields, not with the wider grid */
+.pl-knone{margin:2px 0 0}
 .pl-k{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;min-height:96px;padding:10px 2px 8px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
 .pl-k span{font-size:13.5px;font-weight:500;line-height:1.25;text-align:center;overflow-wrap:normal;word-break:normal;hyphens:manual}
 .pl-k[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}

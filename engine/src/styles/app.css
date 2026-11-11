@@ -502,6 +502,8 @@ gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;borde
 #trmap{position:absolute;inset:0}
 :root{--tone-taxi:#F5C400}
 .transport .mrow[style*="tone-taxi"] .dot{color:#121212}
+/* The same for an event on the yellow tone (a fair): a white icon on yellow could hardly be seen. */
+.events .mrow[style*="tone-taxi"] .dot{color:#121212}
 .lbadges{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0 3px}
 .lbadge{font-style:normal;display:inline-block;padding:2px 7px;border-radius:6px;background:var(--lc);color:#fff;font-weight:700;font-size:14px;line-height:1.3}
 .lbadge.ink{color:#121212}
