@@ -488,7 +488,7 @@ const placeRows = k => (Array.isArray(A[k]) ? A[k] : []).filter(r => r && (Strin
 document.addEventListener('input', e => {
   const t = e.target; if (!t.dataset || !t.dataset.pl) return;
   const k = t.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+t.dataset.i], was = r[t.dataset.f]; r[t.dataset.f] = t.value;
-  if (t.dataset.f === 'p') { if (!psKeeps(k, r, was)) { delete r.gid; delete r.at; delete r.km; } plShow(t, r); }   // another name: no longer the place picked
+  if (t.dataset.f === 'p') { if (!psKeeps(k, r, was)) { delete r.gid; delete r.at; delete r.km; } if (twRow(r) && !twFold(r.p).includes(twFold(r.town))) twDrop(r); plShow(t, r); }   // another name: no longer the place picked (a town stays while its name is still in the words)
   set(k, rows);
 });
 document.addEventListener('click', e => {
@@ -502,7 +502,7 @@ document.addEventListener('click', e => {
 // host's own words and the place's Google id, nothing else of Google's (its terms: the id may be kept, not the name or the
 // address); the worker locates it by the id and names it from our own sources. Google's name and address are shown for this
 // session only, from PS.seen, in memory. A name typed and not picked, or a link, the worker searches as before.
-const PS = { el: null, list: [], on: -1, timer: 0, turn: 0, seen: new Map(), ask: new Set() };
+const PS = { el: null, list: [], towns: [], on: -1, timer: 0, turn: 0, seen: new Map(), ask: new Set() };
 // The host's words, with a capital to each word when they typed all in small letters ("ull de llebre": "Ull de Llebre").
 const PS_SMALL = new Set('a al d de del dels des du el els en i la las le les los of the y'.split(' '));
 const psWords = x => { const t = String(x || '').trim().replace(/\s+/g, ' '); return t !== t.toLowerCase() ? t : t.split(' ').map((w, i) => i && PS_SMALL.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' '); };
@@ -511,33 +511,41 @@ const psIsLink = x => /^(https?:|www\.)/i.test(String(x || '').trim());
 const psHouse = () => (CM.on ? edF().house : A) || {};
 function psDraw(){
   const el = PS.el, box = el && document.getElementById(el.getAttribute('aria-controls')); if (!box) return;
-  // Google's places with "Google Maps" written at the foot of the list, as its terms ask of content shown from it.
-  box.innerHTML = PS.list.map((s, i) => `<button type="button" role="option" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}"><b>${esc(s.name)}</b><small>${esc([s.where, s.km ? s.km + ' km' : ''].filter(Boolean).join(' · '))}</small></button>`).join('')
+  // Our towns first (towns.js, from memory, so they are there before Google answers and stay where they are when it does),
+  // "GeoNames" under them; then Google's places with "Google Maps" written at the foot of the list, as its terms ask of
+  // content shown from it. One count for the keyboard: the towns, then Google's.
+  const T = PS.towns, n = T.length + PS.list.length;
+  box.innerHTML = T.map((t, i) => `<button type="button" role="option" class="pl-tw" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}">${twTile(t.kind)}<span><b translate="no">${esc(t.n)}</b><small translate="no">${esc(twLine(t))}</small></span></button>`).join('')
+    + (T.length ? '<span class="pl-gm pl-gn" aria-hidden="true" translate="no">GeoNames</span>' : '')
+    + PS.list.map((s, j) => { const i = T.length + j; return `<button type="button" role="option" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}"><b>${esc(s.name)}</b><small>${esc([s.where, s.km ? s.km + ' km' : ''].filter(Boolean).join(' · '))}</small></button>`; }).join('')
     + (PS.list.length ? '<span class="pl-gm" aria-hidden="true" translate="no">Google Maps</span>' : '');
-  box.hidden = !PS.list.length; el.setAttribute('aria-expanded', String(!!PS.list.length));
+  if (PS.list.length) box.dataset.g = '1'; else delete box.dataset.g;   // Google's content on screen (gLiveNow)
+  box.hidden = !n; el.setAttribute('aria-expanded', String(!!n));
   if (PS.on >= 0) el.setAttribute('aria-activedescendant', `${box.id}_${PS.on}`); else el.removeAttribute('aria-activedescendant');
   gLiveSync();
 }
 // Google's content may not sit on screen with a map that is not Google's. The builder's phone is drawn by preview.js and has
 // no map; the editor's is the guide itself, whose lists have one. So while Google's suggestions or the place just found
 // (data-glive) are in view, the editor's phone shows the guide's Home, which has none, and goes back to the step's screen after.
-const gLiveNow = () => [...document.querySelectorAll('.pl-sug:not([hidden]),[data-glive]')].some(e => !e.closest('details:not([open])') && (e.checkVisibility ? e.checkVisibility() : e.getClientRects().length > 0));   // a closed card's content keeps its boxes in Chrome
+const gLiveNow = () => [...document.querySelectorAll('.pl-sug[data-g]:not([hidden]),[data-glive]')].some(e => !e.closest('details:not([open])') && (e.checkVisibility ? e.checkVisibility() : e.getClientRects().length > 0));   // a closed card's content keeps its boxes in Chrome
 function gLiveSync(){
   const s = document.getElementById('cmPhone'), f = s && s.querySelector('iframe'); if (!f) return;
   const want = gLiveNow() ? 'home' : s.dataset.screen; if (f.dataset.shown === want) return;
   f.dataset.shown = want; try { f.contentWindow.location.replace(f.src.split('#')[0] + '#' + want); } catch (e) { /* gone meanwhile */ }   // the whole address: a bare '#home' would resolve against the builder's page
 }
 document.addEventListener('toggle', gLiveSync, true);   // a card opened or closed shows or hides what it found
-function psClose(){ clearTimeout(PS.timer); PS.turn++; PS.list = []; PS.on = -1; psDraw(); PS.el = null; }
+function psClose(){ clearTimeout(PS.timer); PS.turn++; PS.list = []; PS.towns = []; PS.on = -1; psDraw(); PS.el = null; }
 async function psAsk(el){
   const turn = ++PS.turn, h = psHouse(), text = el.value.trim(), q = new URLSearchParams({ suggest: h.lat ? text : [text, v('town')].filter(Boolean).join(', ') });
   if (h.lat) { q.set('lat', h.lat); q.set('lng', h.lng); }
   const d = await fetch('/api/places?' + q).then(r => r.json()).catch(() => ({}));   // no answer, no list: the host just goes on typing
-  if (turn === PS.turn) { PS.list = d.ok ? d.places || [] : []; PS.on = -1; psDraw(); }
+  if (turn === PS.turn) { PS.list = d.ok ? d.places || [] : []; if (PS.on >= PS.towns.length) PS.on = -1; psDraw(); }   // a town the keyboard is on stays chosen
 }
 function psType(el){
   clearTimeout(PS.timer); if (PS.el && PS.el !== el) psClose(); PS.el = el;
+  PS.towns = twNow(el); PS.on = -1;   // ours, from memory: at once, also when Google fails or is not set up
   if (el.value.trim().length < 3 || psIsLink(el.value) || window.__placesOff) { PS.turn++; PS.list = []; return psDraw(); }
+  psDraw();   // the towns now; Google's rows of the words before stay under them until its answer replaces them
   PS.timer = setTimeout(() => psAsk(el), 300);
 }
 // A pick keeps of the words typed only those that name the place (placeNameFrom, placename.js): "La Locanda dei Sapori El
@@ -545,7 +553,9 @@ function psType(el){
 // empty now, asks for the name, the place found still said under it. Left empty, the build looks the name up in our directory.
 const PS_ASK = 'Now type its name';
 function psPick(i){
-  const s = PS.list[i], el = PS.el; if (!s) return; psClose();
+  const el = PS.el, nt = PS.towns.length;
+  if (i < nt) { const t = PS.towns[i]; if (!t) return; psClose(); return twPick(t, el); }
+  const s = PS.list[i - nt]; if (!s) return; psClose();
   PS.seen.set(s.id, s);
   if (el.dataset.gsp) return cmFindById(el.dataset.gsp, s.id, s, el.value);
   const k = el.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+el.dataset.i], words = psWords(placeNameFrom(el.value, s));
@@ -563,6 +573,7 @@ function psKeeps(k, r, was){
 // Under the name: which place it is, with "Google Maps" opening it by its id, or that it is not matched yet (not while typing:
 // see theme2.css). Google's name and address only while this session remembers the pick; after a reload, that it is matched.
 function plAt(r){
+  if (twRow(r)) return twAt(r);
   const none = !String(r.p || '').trim() || psIsLink(r.p) || window.__placesOff;
   // No name yet (asked for, or left empty): said under the line once the host has moved on (theme2.css); the build looks it up.
   if (r.gid) { const s = PS.seen.get(r.gid), link = `<a href="${esc(gmLink(r.p, r.gid))}" target="_blank" rel="noopener" translate="no">Google Maps</a>`;
@@ -571,16 +582,53 @@ function plAt(r){
 }
 function plShow(el, r){ el.parentElement.querySelector('.pl-at').outerHTML = plAt(r); }
 document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.gs !== undefined) psType(e.target); });
-document.addEventListener('focusin', e => { const t = e.target; if (t.dataset && t.dataset.gs !== undefined && t.value.trim() && !(placeRowsRaw(t.dataset.pl)[+t.dataset.i] || {}).gid) psType(t); });
+document.addEventListener('focusin', e => { const t = e.target; if (!t.dataset || t.dataset.gs === undefined) return; if (twOn(t)) twLoad();
+  const r = placeRowsRaw(t.dataset.pl)[+t.dataset.i] || {}; if (t.value.trim() && !r.gid && !twRow(r)) psType(t); });
 document.addEventListener('focusout', e => { if (e.target === PS.el) setTimeout(() => { if (PS.el && document.activeElement !== PS.el) psClose(); }, 200); });
 document.addEventListener('mousedown', e => { if (e.target.closest && e.target.closest('.pl-sug')) e.preventDefault(); });   // the field keeps the focus, so the list stays for the click
 document.addEventListener('click', e => { const o = e.target.closest && e.target.closest('[data-psi]'); if (o) psPick(+o.dataset.psi); });
 document.addEventListener('keydown', e => {
-  if (e.target !== PS.el) return; const n = PS.list.length;
-  if (e.key === 'Escape' && n) { e.preventDefault(); e.stopPropagation(); PS.turn++; PS.list = []; psDraw(); }
+  if (e.target !== PS.el) return; const n = PS.towns.length + PS.list.length;
+  if (e.key === 'Escape' && n) { e.preventDefault(); e.stopPropagation(); PS.turn++; PS.list = []; PS.towns = []; psDraw(); }
   else if (e.key === 'Enter' && PS.on >= 0) { e.preventDefault(); psPick(PS.on); }
   else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && n) { e.preventDefault(); PS.on = (PS.on + (e.key === 'ArrowDown' ? 1 : n)) % n; psDraw(); }
 });
+/* ---------- Towns as things to do (fault 2 of the acceptance test, 12 Nov 2026) ----------
+   A host who types "Barcelona" to add it was offered the airport and a company: Google's suggestions are businesses and
+   sights within 50 km. The towns of Spain come from our own list (towns-es.json, GeoNames, written by src/towns.py), loaded
+   once in the background the first time a field that adds a thing to do gets focus (never on page load; failing, the list
+   is Google's as before), matched in memory (towns.js) and shown first, at once, at most 3. Only where a thing to do is
+   added: the builder's Attractions ("Missing one? Add it below", favDo) and the editor's search field of a place in Things
+   to do. A town picked is the host's own choice, like a typed place: its name (theirs to change), GeoNames' position, ours
+   to keep (pos: { from: 'geonames' }, no date), the town or city kind for its icon, no Google id and no request to Google;
+   the build writes it as it is (worker/host-places.mjs, ownEntries). */
+const TW = { data: null, asked: null };
+const twOn = el => !!el && !!el.dataset && (el.dataset.pl === 'favDo' || (!!el.dataset.gsp && PL_SEC[el.dataset.gsp.replace(/\/\d+$/, '')] === 'todo'));
+function twLoad(){
+  if (TW.asked) return;
+  TW.asked = fetch('/towns-es.json').then(r => r.ok ? r.json() : null).then(d => { TW.data = twPrep(d);
+    if (TW.data && PS.el && twOn(PS.el) && document.activeElement === PS.el) { PS.towns = twNow(PS.el); psDraw(); } })   // typed before the file came: shown now
+    .catch(() => { /* no towns: Google's list as before */ });
+}
+const twNow = el => TW.data && twOn(el) && !psIsLink(el.value) ? twFind(TW.data, el.value, psHouse()) : [];
+const twRow = r => !!r && !!r.pos && r.pos.from === 'geonames' && typeof r.lat === 'number' && typeof r.lng === 'number';
+const twDrop = r => { for (const k of ['lat', 'lng', 'kind', 'town', 'province', 'pos']) delete r[k]; };
+// Its kind in the guide's own words (engine/src/kinds.json, "Town or village", "City"), its province, its distance by road.
+const twKindName = k => { const x = ((ENG_KINDS || {}).todo || {})[k]; return x ? x.name[UIL] || x.name.en : ''; };
+const twLine = t => [twKindName(t.kind), t.prov ? tr(`${t.prov} province`) : '', t.km != null ? t.km + '\u00a0km' : ''].filter(Boolean).join(' · ');
+const twTile = k => kTile(ENG_ICON[k], plColour('todo', { icon: k }), true);
+const twMaps = t => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([t.n, t.prov].filter(Boolean).join(', '));   // a link, no request
+// Under the name of a row that is a town: what it is, from the list we credit.
+const twOf = r => ({ n: r.town, kind: r.kind, prov: r.province, km: twKm(psHouse(), r) });
+const twAt = r => `<p class="pl-at ok"><span aria-hidden="true">✓</span> <span translate="no">${esc(twLine(twOf(r)))}</span> <span class="pl-cr" translate="no">GeoNames</span></p>`;
+function twPick(t, el){
+  if (el.dataset.gsp) return cmTownPick(el.dataset.gsp, t);
+  const k = el.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+el.dataset.i];
+  delete r.gid; delete r.at; delete r.km; twDrop(r);
+  Object.assign(r, { p: t.n, lat: t.lat, lng: t.lng, kind: t.kind, town: t.n, ...(t.prov ? { province: t.prov } : {}), pos: { from: 'geonames' } });
+  set(k, rows); el.value = t.n; el.placeholder = 'Start typing the name'; plShow(el, r); softRefresh(); phoneSoon(); log('town', 'picked');
+  el.closest('.pl-row').querySelector('textarea').focus();
+}
 document.addEventListener('change', e => {
   const t = e.target; if (!t.dataset || !t.dataset.plan) return;
   const k = t.dataset.plan, cur = { ...(A[k] || {}) }, s = new Set(cur[t.dataset.bin] || []); t.checked ? s.add(t.value) : s.delete(t.value);

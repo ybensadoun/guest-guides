@@ -8230,5 +8230,20 @@
 "ca": "De la posició de la casa · GeoNames",
 "es": "De la posición de la casa · GeoNames",
 "fr": "De la position de la maison · GeoNames"
+},
+"{x} province": {
+"ca": "província de {x}",
+"es": "provincia de {x}",
+"fr": "province de {x}"
+},
+"Find it: a town, or a place on Google": {
+"ca": "Troba’l: un poble, o un lloc a Google",
+"es": "Encuéntralo: un pueblo, o un lugar en Google",
+"fr": "Trouvez-le : une ville, ou un lieu sur Google"
+},
+"Towns, and places on Google": {
+"ca": "Pobles, i llocs a Google",
+"es": "Pueblos, y lugares en Google",
+"fr": "Villes, et lieux sur Google"
 }
 }

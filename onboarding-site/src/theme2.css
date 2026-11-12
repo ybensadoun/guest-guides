@@ -203,6 +203,12 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .pl-sug b,.pl-sug small{display:block;overflow-wrap:break-word}
 .pl-sug .pl-gm{display:block;padding:5px 12px 6px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;text-align:right}
 .pl-sug small{margin-top:1px;color:var(--muted);font-size:13px}
+/* Our towns, first in the list (towns.js): the guide's own icon for a town or a city, the name, then what it is, its province
+   and how far; "GeoNames" under them, as Google's credit is under its rows */
+.pl-sug button.pl-tw{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start}
+.pl-sug button.pl-tw .pl-ic{margin-top:1px}
+.pl-sug button.pl-tw > span{min-width:0}
+.pl-at .pl-cr{white-space:nowrap}
 .pl-at{grid-column:1/-1;margin:0;font-size:13px;line-height:1.4;color:var(--muted)}
 .pl-at:empty{display:none}
 .pl-at a{white-space:nowrap}

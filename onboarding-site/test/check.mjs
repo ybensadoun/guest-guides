@@ -37,6 +37,7 @@ if (!CHILD && existsSync(ef)) for (const l of readFileSync(ef, 'utf8').split('\n
 if (!CHILD && !env.SUPABASE_SERVICE_KEY) { console.error('Missing SUPABASE_SERVICE_KEY (worker/.env.local).'); process.exit(1); }
 const { chromium } = createRequire(join(ROOT, 'package.json'))('playwright');
 const SB = 'https://dmoxszfwulolqkgxtxcp.supabase.co', HTML = readFileSync(env.CHECK_HTML ? resolve(env.CHECK_HTML) : join(ROOT, 'onboarding-site/index.html'), 'utf8');
+const TOWNS = readFileSync(join(ROOT, 'onboarding-site/towns-es.json'), 'utf8');   // the towns the maker offers (GeoNames), served as the site serves it
 const row = async slug => (await (await fetch(`${SB}/rest/v1/guides?select=id,owner,answers,status,slug,origin,content,theme,draft&slug=eq.${encodeURIComponent(slug)}`, { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: 'Bearer ' + env.SUPABASE_SERVICE_KEY } })).json())[0];
 // The two guides: read once by the runner, handed to each group's process (in memory, never on disk).
 const { E, B0 } = CHILD ? await new Promise(r => process.once('message', r)) : { E: await row(process.argv[2] || 'ca-la-kimberly'), B0: await row(process.argv[3] || 'home-in-tordera') };
@@ -88,6 +89,7 @@ async function open(browser, G, w, h, stored = {}, listing = null) {
     if (u.host === 'editor.test' && u.pathname === '/api/listing' && listing) return listing(route, JSON.parse(req.postData() || '{}'));
     if (u.host === 'editor.test' && u.pathname.startsWith('/g/')) { ctx.viewer = (ctx.viewer || 0) + 1; return route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><meta charset="utf-8"><body style="margin:0;font:18px sans-serif"><div id="view" style="padding:24px">The guide itself</div><div style="height:3000px"></div>' }); }
     if (u.host === 'editor.test' && req.method() === 'POST' && u.pathname === '/' && ctx.formsDown) return route.fulfill({ status: 500, body: '' });
+    if (u.host === 'editor.test' && u.pathname === '/towns-es.json') { ctx.towns = (ctx.towns || 0) + 1; return ctx.townsDown ? route.fulfill({ status: 503, body: '' }) : route.fulfill({ status: 200, contentType: 'application/json', body: TOWNS }); }
     if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
     if (u.origin !== SB) return route.continue();   // fonts, public pictures
     if (u.pathname.startsWith('/auth/v1/user')) return json(route, { id: G.owner, email: 'test@example.org' });
@@ -214,7 +216,7 @@ function groupList() {
   return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'research-deck': gResearchDeck, 'build-ready': gBuildReady, 'web-address': gWebAddress,
     'houses': gHouses, 'builder': gBuilder, 'rooms-offers': gRoomsOffers, 'nearby': gNearby, 'wow': gWow, 'editor': gEditor, 'editor-names': gEditorNames,
     'place-card': gPlaceCard, 'place-season': gPlaceSeason, 'still-open': gStillOpen, 'place-facts': gPlaceFacts, 'market-event': gMarketEvent,
-    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'nightlife-colours': gNightlifeColours, 'layout': gLayout };
+    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'nightlife-colours': gNightlifeColours, 'layout': gLayout, 'towns': gTowns };
 }
 
   // Inside a navy start card (sel): nothing touches anything (the eyebrow, title and text by their words, the panel, the moon
@@ -1094,6 +1096,162 @@ async function gBuilder() {
     { const A = await stored(p), r2 = (A.favEat || []).find(x => x.p === 'Cal Societat') || {};
       ok(`name of a pick, builder, ${tag}: the name typed when asked keeps the place picked`, r2.gid === 'g-soc' && !!(await p.$(`${at(n2)}.ok`)), JSON.stringify(r2)); }
     ok(`name of a pick, builder, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
+}
+// ---- Towns as things to do (fault 2 of the acceptance test, 12 Nov 2026): a host typing "Barcelona" was offered the airport
+// and a company. Our towns (towns-es.json, GeoNames) show first, from memory, before Google answers and when it fails; Google's
+// rows come under them without moving them; a town picked is the host's own place with GeoNames' position, its kind, and no
+// request to Google. Builder (Attractions) and editor (Things to do), at 1280 px and 360 px, and the list in French.
+async function gTowns() {
+  const GOOGLE = [{ id: 'g-air', name: 'Josep Tarradellas Barcelona-El Prat Airport', where: 'El Prat de Llobregat, Barcelona, Spain', km: 41 }, { id: 'g-co', name: 'Barcelona Logistics Company SL', where: 'Carrer de la Indústria, Vilafranca del Penedès, Spain', km: 30 }];
+  // The fake Google: suggestions held until the check lets them go (or failing), every request counted by kind.
+  const fakeGoogle = (ctx, o = {}) => { const asked = { suggest: [], id: [], other: 0 }; let let_go = null; const held = new Promise(r => { let_go = r; });
+    ctx.route('**/api/places**', r => { const q = new URL(r.request().url()).searchParams;
+      if (q.get('probe')) return json(r, o.off ? { ok: false } : { ok: true, enabled: true });
+      if (q.get('id')) { asked.id.push(q.get('id')); return json(r, { ok: true, place: { id: q.get('id'), lat: 41.3, lng: 2.08, km: 41 } }); }
+      if (q.get('suggest')) { asked.suggest.push(q.get('suggest')); if (o.fail) return r.fulfill({ status: 500, body: '' }); return (o.hold ? held : Promise.resolve()).then(() => json(r, { ok: true, places: GOOGLE }).catch(() => {})); }
+      asked.other++; return json(r, { ok: true, lat: A0.lat, lng: A0.lng, places: [] }); });
+    return { asked, letGo: () => let_go() }; };
+  // The open list: its rows in order (town or Google, name, line), the credits, and where the first row is.
+  const listNow = (p, box) => p.evaluate(box => { const b = document.querySelector(box); if (!b || b.hidden) return null;
+    return { rows: [...b.children].map(e => e.matches('button') ? { k: e.classList.contains('pl-tw') ? 'town' : 'google', n: (e.querySelector('b') || {}).textContent, l: (e.querySelector('small') || {}).textContent, icon: !!e.querySelector('.pl-ic svg') } : { k: 'credit', n: e.textContent }),
+      top: b.querySelector('button') ? Math.round(b.querySelector('button').getBoundingClientRect().top) : null }; }, box);
+  // Nothing in the list overlaps, nothing is cut or wider than its row, no word broken, no sideways scroll.
+  const listClear = (p, box) => p.evaluate(box => { const b = document.querySelector(box); if (!b) return ['no list']; const out = [], br = b.getBoundingClientRect();
+    const hit = (a, c) => Math.min(a.right, c.right) - Math.max(a.left, c.left) > 1 && Math.min(a.bottom, c.bottom) - Math.max(a.top, c.top) > 1;
+    for (const btn of b.querySelectorAll('button')) { const parts = [...btn.querySelectorAll('.pl-ic, b, small')].map(e => [e, e.getBoundingClientRect()]);
+      for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++) if (!parts[i][0].contains(parts[j][0]) && hit(parts[i][1], parts[j][1])) out.push(`${parts[i][0].textContent.slice(0, 20)} / ${parts[j][0].textContent.slice(0, 20)}`);
+      for (const [e, r] of parts) { if (r.right > br.right + 0.5 || r.left < br.left - 0.5) out.push('outside: ' + e.textContent.slice(0, 24)); if (e.scrollWidth > e.clientWidth + 1 && e.tagName !== 'I') out.push('cut: ' + e.textContent.slice(0, 24));
+        // a word broken over two lines: a word's first and last letters on different lines
+        if (e.tagName !== 'I') for (const m of e.textContent.matchAll(/[\p{L}\p{N}'’·-]{4,}/gu)) { const t = e.firstChild && e.firstChild.nodeType === 3 ? e.firstChild : null; if (!t) break; const g = document.createRange(); g.setStart(t, m.index); g.setEnd(t, m.index + m[0].length); if (g.getClientRects().length > 1) out.push('word broken: ' + m[0]); } } }
+    if (document.documentElement.scrollWidth > innerWidth) out.push('sideways scroll');
+    return out; }, box);
+
+  // ---- The builder: Attractions, "Missing one? Add it below" ----
+  for (const [w, h, tag] of [[1280, 860, '1280 px'], [360, 780, '360 px']]) {
+    const { ctx, p, errors } = await open(browser, B, w, h), g = fakeGoogle(ctx, { hold: true });
+    await p.goto('http://editor.test/#nearby'); await ready(p); await settle(p, 400);
+    const row = '#pl_favDo .pl-row:last-child', field = row + ' input', box = row + ' .pl-sug';
+    ok(`towns, builder, ${tag}: the list of towns is not loaded with the page`, !ctx.towns, String(ctx.towns));
+    await p.click(field); await settle(p, 300);
+    ok(`towns, builder, ${tag}: it is loaded once, in the background, when the field gets focus`, ctx.towns === 1, String(ctx.towns));
+    await p.locator(field).pressSequentially('Barc', { delay: 25 }); await settle(p, 150, { net: false });
+    const before = await listNow(p, box);
+    ok(`towns, builder, ${tag}: "Barc" offers Barcelona first, with its line, before Google answers`, !!before && before.rows[0].k === 'town' && before.rows[0].n === 'Barcelona' && /^City · Barcelona province · \d+ km$/.test(before.rows[0].l) && before.rows[0].icon && !before.rows.some(r => r.k === 'google'), JSON.stringify(before));
+    ok(`towns, builder, ${tag}: at most 3 towns, "GeoNames" under them`, !!before && before.rows.filter(r => r.k === 'town').length <= 3 && before.rows.some(r => r.k === 'credit' && r.n === 'GeoNames'), JSON.stringify(before && before.rows.map(r => r.n)));
+    g.letGo(); await p.waitForSelector(box + ' button:not(.pl-tw)', { timeout: 3000 }).catch(() => {}); await settle(p, 150);
+    const after = await listNow(p, box), kinds = after ? after.rows.map(r => r.k).join(' ') : '';
+    ok(`towns, builder, ${tag}: Google's rows come under the towns without moving them, with "Google Maps" at the foot`, !!after && after.top === before.top && after.rows[0].n === 'Barcelona' && /^(town )+credit (google )+credit$/.test(kinds) && after.rows[after.rows.length - 1].n === 'Google Maps', `${before && before.top} > ${after && after.top}: ${kinds}`);
+    ok(`towns, builder, ${tag}: nothing in the list overlaps, is cut, or breaks a word`, !(await listClear(p, box)).length, (await listClear(p, box)).join('; '));
+    await p.locator(row).scrollIntoViewIfNeeded(); await settle(p, 200); await p.screenshot({ path: join(SHOTS, `towns-builder-list-${w}.png`) });
+    // Picked with the keyboard (desktop) or a tap (phone).
+    if (w > 900) { await p.keyboard.press('ArrowDown'); await p.keyboard.press('Enter'); } else await p.click(box + ' button.pl-tw');
+    await settle(p, 1300);
+    const A = await stored(p), r = (A.favDo || []).find(x => x.p === 'Barcelona') || {};
+    ok(`towns, builder, ${tag}: picking it adds Barcelona as the host's place, with GeoNames' position, the city kind and no Google id`, r.kind === 'city' && r.town === 'Barcelona' && r.province === 'Barcelona' && r.pos && r.pos.from === 'geonames' && !('at' in r.pos) && Math.abs(r.lat - 41.3888) < 0.001 && Math.abs(r.lng - 2.159) < 0.001 && !r.gid, JSON.stringify(r));
+    ok(`towns, builder, ${tag}: no request to Google for it (no id read, no new search)`, !g.asked.id.length && g.asked.suggest.length === 1, JSON.stringify(g.asked));
+    const at = await textNow(p, row + ' .pl-at');
+    ok(`towns, builder, ${tag}: the row says what it is, credited to GeoNames, and nothing about Google`, /^✓ City · Barcelona province · \d+ km GeoNames$/.test(at.replace(/\s+/g, ' ').trim().replace(/ (\d+) km/, ' $1 km')) && !(await p.$(row + ' .pl-at.miss')) && (await p.inputValue(field)) === 'Barcelona' && (await p.evaluate(() => document.activeElement.tagName)) === 'TEXTAREA', at);
+    ok(`towns, builder, ${tag}: the row overlaps nothing`, !(await rowClash(p, row, ['input', '.pl-at', 'textarea', '.x'])).length, (await rowClash(p, row, ['input', '.pl-at', 'textarea', '.x'])).join('; '));
+    await p.locator(row).scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, `towns-builder-picked-${w}.png`) });
+    if (w > 900) {
+      await inPhone(p, d => { const b = d.querySelector('[data-pv="todo"]'); b && b.click(); return 1; }); await settle(p, 500);
+      const ph = ((await inPhone(p, d => d.body.textContent)) || '').replace(/\s+/g, ' ');
+      ok(`towns, builder, ${tag}: the phone shows Barcelona in Things to do, as a city with its province and distance`, /Barcelona\s*City · Barcelona province · \d+.km/.test(ph), ph.slice(0, 200));
+    }
+    // The name is the host's to change: still with the town's name in it, it stays the town; another name drops it.
+    await p.click(field); await p.keyboard.press('End'); await p.keyboard.type(' old town'); await p.keyboard.press('Escape'); await settle(p, 1300);
+    { const r2 = ((await stored(p)).favDo || []).find(x => x.p === 'Barcelona old town') || {}; ok(`towns, builder, ${tag}: renamed "Barcelona old town", it keeps its pin`, r2.pos && r2.pos.from === 'geonames' && r2.lat === r.lat, JSON.stringify(r2)); }
+    await p.fill(field, 'Somewhere else'); await p.keyboard.press('Escape'); await settle(p, 1300);
+    { const r3 = ((await stored(p)).favDo || []).find(x => x.p === 'Somewhere else') || {}; ok(`towns, builder, ${tag}: another name is no longer the town`, !r3.pos && !('lat' in r3) && !r3.kind, JSON.stringify(r3)); }
+    // "bisbal" finds la Bisbal del Penedès; Google failing: the towns all the same.
+    await p.fill(field, ''); await p.locator(field).pressSequentially('bisbal', { delay: 20 }); await settle(p, 150, { net: false });
+    { const l = await listNow(p, box); ok(`towns, builder, ${tag}: "bisbal" finds la Bisbal del Penedès`, !!l && l.rows.some(x => x.k === 'town' && x.n === 'la Bisbal del Penedès' && /Tarragona province/.test(x.l)), JSON.stringify(l && l.rows)); }
+    await p.keyboard.press('Escape');
+    ok(`towns, builder, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // Google failing, or not set up at all: the towns still come, alone, with their credit and no "Google Maps".
+  for (const [o, tag] of [[{ fail: true }, 'Google fails'], [{ off: true }, 'Google not set up']]) {
+    const { ctx, p, errors } = await open(browser, B, 360, 780), g = fakeGoogle(ctx, o);
+    await p.goto('http://editor.test/#nearby'); await ready(p); await settle(p, 400);
+    const row = '#pl_favDo .pl-row:last-child', box = row + ' .pl-sug';
+    await p.click(row + ' input'); await settle(p, 300); await p.locator(row + ' input').pressSequentially('Barc', { delay: 25 }); await settle(p, 800);
+    const l = await listNow(p, box);
+    ok(`towns, builder, ${tag}: "Barc" still offers Barcelona first, credited to GeoNames, and no "Google Maps"`, !!l && l.rows[0].n === 'Barcelona' && l.rows.every(r => r.k !== 'google') && l.rows.some(r => r.n === 'GeoNames') && !l.rows.some(r => r.n === 'Google Maps'), JSON.stringify(l) + ' ' + JSON.stringify(g.asked));
+    ok(`towns, builder, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // The list of towns not loading: everything as before (Google's rows only, no error). Not in Eat and drink.
+  { const { ctx, p, errors } = await open(browser, B, 360, 780); ctx.townsDown = true; fakeGoogle(ctx);
+    await p.goto('http://editor.test/#nearby'); await ready(p); await settle(p, 400);
+    const row = '#pl_favDo .pl-row:last-child', box = row + ' .pl-sug';
+    await p.click(row + ' input'); await settle(p, 300); await p.locator(row + ' input').pressSequentially('Barc', { delay: 25 }); await p.waitForSelector(box + ' button', { timeout: 3000 }).catch(() => {}); await settle(p, 200);
+    const l = await listNow(p, box);
+    ok('towns, builder: the list of towns failing to load, Google\'s rows show as before, with no error', ctx.towns === 1 && !!l && l.rows.length && l.rows.every(r => r.k !== 'town' && r.n !== 'GeoNames') && !errors.length, JSON.stringify(l) + errors.join(' | '));
+    await ctx.close(); }
+  { const { ctx, p, errors } = await open(browser, B, 360, 780); fakeGoogle(ctx);
+    await p.goto('http://editor.test/#favourites'); await ready(p); await settle(p, 400);
+    await p.click('[data-pladd="favEat"]'); await settle(p, 150);
+    const row = '#pl_favEat .pl-row:last-child', box = row + ' .pl-sug';
+    await p.click(row + ' input'); await settle(p, 300); await p.locator(row + ' input').pressSequentially('Barc', { delay: 25 }); await p.waitForSelector(box + ' button', { timeout: 3000 }).catch(() => {}); await settle(p, 200);
+    const l = await listNow(p, box);
+    ok('towns, builder: Eat and drink offers no towns and does not load them', !ctx.towns && !!l && l.rows.every(r => r.k !== 'town'), `${ctx.towns} ${JSON.stringify(l)}`);
+    ok('towns, builder, Eat and drink: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // The list in French at 360 px: the town's line in French, nothing overlaps; a long name wraps between words.
+  { const { ctx, p, errors } = await open(browser, B, 360, 780, { 'porta-lang-v1': 'fr' }), g = fakeGoogle(ctx);
+    await p.goto('http://editor.test/#nearby'); await ready(p); await settle(p, 400);
+    const row = '#pl_favDo .pl-row:last-child', field = row + ' input', box = row + ' .pl-sug';
+    await p.click(field); await settle(p, 300); await p.locator(field).pressSequentially('Barc', { delay: 25 }); await p.waitForSelector(box + ' button:not(.pl-tw)', { timeout: 3000 }).catch(() => {}); await settle(p, 200);
+    const l = await listNow(p, box);
+    ok('towns, builder, French, 360 px: the town\'s line in French', !!l && l.rows[0].n === 'Barcelona' && /^Grande ville · province de Barcelona · \d+ km$/.test(l.rows[0].l), JSON.stringify(l && l.rows[0]));
+    ok('towns, builder, French, 360 px: nothing in the list overlaps, is cut, or breaks a word', !(await listClear(p, box)).length, (await listClear(p, box)).join('; '));
+    await p.locator(row).scrollIntoViewIfNeeded(); await settle(p, 200); await p.screenshot({ path: join(SHOTS, 'towns-builder-list-fr-360.png') });
+    await p.fill(field, ''); await p.locator(field).pressSequentially("l'hospitalet de llob", { delay: 15 }); await settle(p, 900);
+    const l2 = await listNow(p, box);
+    ok('towns, builder, French, 360 px: "L\'Hospitalet de Llobregat" whole, its line too, nothing overlaps or breaks a word', !!l2 && l2.rows[0].n === "L'Hospitalet de Llobregat" && !(await listClear(p, box)).length, JSON.stringify(l2 && l2.rows[0]) + (await listClear(p, box)).join('; '));
+    await p.fill(field, ''); await p.locator(field).pressSequentially('sant carles de la', { delay: 15 }); await settle(p, 900);
+    const l3 = await listNow(p, box);
+    ok('towns, builder, French, 360 px: "Sant Carles de la Ràpita" whole, nothing overlaps or breaks a word', !!l3 && l3.rows.some(r => r.n === 'Sant Carles de la Ràpita') && !(await listClear(p, box)).length, JSON.stringify(l3 && l3.rows.map(r => r.n)) + (await listClear(p, box)).join('; '));
+    await p.locator(row).scrollIntoViewIfNeeded(); await settle(p, 200); await p.screenshot({ path: join(SHOTS, 'towns-builder-long-fr-360.png') });
+    ok('towns, builder, French: no page errors', !errors.length && g.asked.id.length === 0, errors.join(' | '));
+    await ctx.close(); }
+
+  // ---- The editor: a new place in Things to do ----
+  for (const [w, h, tag] of [[1280, 860, '1280 px'], [360, 780, '360 px']]) {
+    const { ctx, p, errors } = await open(browser, E, w, h), g = fakeGoogle(ctx, { hold: true }), saved = [], jobs = [];
+    p.on('request', r => { if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(r.url())) saved.push(r.postData()); if (r.method() === 'POST' && /guide_jobs/.test(r.url())) jobs.push(r.postData()); });
+    await p.goto('http://editor.test/#todo'); await ready(p); await settle(p, 400);
+    ok(`towns, editor, ${tag}: the list of towns is not loaded with the page`, !ctx.towns);
+    await p.click('[data-addit="files/todo/items"]'); await settle(p, 300);
+    const card = 'details.cmi[open]:has([data-gsp])', field = card + ' [data-gsp]', box = card + ' .pl-sug';
+    await p.click(field); await settle(p, 300);
+    await p.locator(field).pressSequentially('Barc', { delay: 25 }); await settle(p, 150, { net: false });
+    const before = await listNow(p, box);
+    ok(`towns, editor, ${tag}: the towns are loaded on focus, and "Barc" offers Barcelona first, with its line, before Google answers`, ctx.towns === 1 && !!before && before.rows[0].n === 'Barcelona' && /^City · Barcelona province · \d+ km$/.test(before.rows[0].l) && !before.rows.some(r => r.k === 'google'), `${ctx.towns} ${JSON.stringify(before)}`);
+    g.letGo(); await p.waitForSelector(box + ' button:not(.pl-tw)', { timeout: 3000 }).catch(() => {}); await settle(p, 150);
+    const after = await listNow(p, box);
+    ok(`towns, editor, ${tag}: Google's rows come under the towns without moving them`, !!after && after.top === before.top && after.rows[0].n === 'Barcelona' && after.rows.some(r => r.k === 'google') && after.rows[after.rows.length - 1].n === 'Google Maps', `${before && before.top} > ${after && after.top}`);
+    ok(`towns, editor, ${tag}: nothing in the list overlaps, is cut, or breaks a word`, !(await listClear(p, box)).length, (await listClear(p, box)).join('; '));
+    await p.locator(box).scrollIntoViewIfNeeded(); await settle(p, 200); await p.screenshot({ path: join(SHOTS, `towns-editor-list-${w}.png`) });
+    await p.click(box + ' button.pl-tw'); await settle(p, 2500);
+    const got = await p.evaluate(() => { const d = document.querySelector('details.cmi[open]:has([data-gsp])'); return d ? { head: d.querySelector('summary').textContent.replace(/\s+/g, ' ').trim(), icon: !!d.querySelector('summary .pl-ic svg'), at: (d.querySelector('.pl-at.ok') || {}).textContent, name: (d.querySelector('input[data-p$="/name"]') || {}).value, glive: !!d.querySelector('[data-glive]') } : null; });
+    ok(`towns, editor, ${tag}: picking it names the new place Barcelona, with the city's tile, its kind and distance, credited to GeoNames`, !!got && got.name === 'Barcelona' && got.icon && /City/.test(got.head) && /\d+\s?km/.test(got.head) && /City · Barcelona province · \d+.km GeoNames/.test((got.at || '').replace(/\s+/g, ' ')) && !got.glive, JSON.stringify(got));
+    { let it = null; try { const c = JSON.parse(saved[saved.length - 1] || '{}').draft.content; it = c.files.todo.items.find(x => /^custom-/.test(x.id) && x.name && (x.name.en || Object.values(x.name)[0]) === 'Barcelona'); } catch (e) { /* not saved */ }   // the new place, not the guide's own Barcelona
+      ok(`towns, editor, ${tag}: the draft keeps GeoNames' position (no date), the city kind, the distance, and no Google id`, !!it && Math.abs(it.lat - 41.3888) < 0.001 && it.icon === 'city' && it.group === 'sights' && it.town === 'Barcelona' && typeof it.km_from_house === 'number' && it.km_from_house > 0 && !it.gid && !it.pos && !it.nomap && /query=Barcelona%2C%20Barcelona$/.test(it.gmaps || ''), JSON.stringify(it)); }
+    ok(`towns, editor, ${tag}: no request to Google for it, and no lookup of its facts`, !g.asked.id.length && g.asked.suggest.length === 1 && !jobs.some(j => /place-facts/.test(j || '')), JSON.stringify(g.asked) + ' ' + jobs.join(' | '));
+    if (w > 900) {
+      await go(p, '#publish'); await settle(p, 300); const n0 = saved.length;
+      await p.click('[data-cpublish]').catch(() => {}); await settle(p, 1500);
+      let it = null; try { const c = JSON.parse(saved.slice(n0).find(x => /"content"/.test(x) && !/"draft":\{/.test(x)) || '{}').content; it = c.files.todo.items.find(x => /^custom-/.test(x.id) && x.icon === 'city' && x.town === 'Barcelona'); } catch (e) { /* not published */ }
+      ok(`towns, editor, ${tag}: Publish changes takes the town as it is in the draft`, !!it && !it.gid && !it.pos && Math.abs(it.lat - 41.3888) < 0.001, JSON.stringify(it));
+    } else {
+      await p.locator('details.cmi[open] .pl-at.ok').scrollIntoViewIfNeeded().catch(() => {}); await p.screenshot({ path: join(SHOTS, 'towns-editor-picked-360.png') });
+    }
+    // Eat and drink in the editor: no towns there.
+    await go(p, '#restaurants'); await settle(p, 300); await p.click('[data-addit="files/restaurants/items"]'); await settle(p, 300);
+    await p.locator('details.cmi[open]:has([data-gsp]) [data-gsp]').pressSequentially('Barc', { delay: 25 }); await p.waitForSelector('details.cmi[open]:has([data-gsp]) .pl-sug button', { timeout: 3000 }).catch(() => {}); await settle(p, 200);
+    { const l = await listNow(p, 'details.cmi[open]:has([data-gsp]) .pl-sug'); ok(`towns, editor, ${tag}: Eat and drink offers no towns`, !!l && l.rows.every(r => r.k !== 'town'), JSON.stringify(l)); }
+    ok(`towns, editor, ${tag}: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close(); }
 }
 async function gRoomsOffers() {

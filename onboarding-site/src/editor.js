@@ -158,9 +158,12 @@ function cWhere(p, it) {
   const km = cKm(it), said = (CM.gfind || {})[p], has = typeof it.lat === 'number';
   // What was found: Google's name and address, from this session's memory, with Google Maps beside them (data-glive: the phone
   // shows no map meanwhile, gLiveSync in start.js). Nothing of it is in the guide.
-  const saidHTML = said && typeof said === 'object' ? `<p class="hint" data-glive>${esc(`Found: ${[said.name, said.where].filter(Boolean).join(', ') || said.words}, ${said.km} km from the house. Not the right one? Search again, or paste its Google Maps link below.`)} <a href="${esc(gmLink(said.words, said.gid))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>`
+  // A town picked from our list (cmTownPick): what it is, credited to GeoNames, ours (no data-glive: nothing of Google's).
+  const saidHTML = said && said.town ? twAt({ town: said.town.n, kind: said.town.kind, province: said.town.prov, lat: said.town.lat, lng: said.town.lng })
+    : said && typeof said === 'object' ? `<p class="hint" data-glive>${esc(`Found: ${[said.name, said.where].filter(Boolean).join(', ') || said.words}, ${said.km} km from the house. Not the right one? Search again, or paste its Google Maps link below.`)} <a href="${esc(gmLink(said.words, said.gid))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>`
     : `<p class="hint">${esc(said || (it.nomap ? 'Not on the map yet: pick it from the list to get its pin and distance.' : 'Pick it from the list to update its pin and distance.'))}</p>`;
-  const find = has ? `<div class="f full"><label for="${cmId(p + '/gs')}">Find it on Google</label><input id="${cmId(p + '/gs')}" type="text" ${psAttrs(cmId(p + '/sug'))} data-gsp="${p}" placeholder="Start typing the name"><div class="pl-sug" id="${cmId(p + '/sug')}" role="listbox" aria-label="Places on Google" hidden></div>${saidHTML}</div>` : '';
+  const tw = PL_SEC[p.replace(/\/\d+$/, '')] === 'todo';   // Things to do: our towns come first in the list (twNow in start.js)
+  const find = has ? `<div class="f full"><label for="${cmId(p + '/gs')}">${tw ? 'Find it: a town, or a place on Google' : 'Find it on Google'}</label><input id="${cmId(p + '/gs')}" type="text" ${psAttrs(cmId(p + '/sug'))} data-gsp="${p}" placeholder="Start typing the name"><div class="pl-sug" id="${cmId(p + '/sug')}" role="listbox" aria-label="${tw ? 'Towns, and places on Google' : 'Places on Google'}" hidden></div>${saidHTML}</div>` : '';
   const pin = has ? `<div class="f full"><label for="${cmId(p + '/gm')}">Or move the pin: paste a Google Maps link</label><p class="hint">${it.lat && !it.nomap ? `Now at ${(+it.lat).toFixed(4)}, ${(+it.lng).toFixed(4)}${km ? `, ${km} from the house` : ''}.` : 'No position yet.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div>` : '';
   return { find, pin, first: !!(it.nomap || said) };   // a place with no pin yet starts here: finding it fills in the rest
 }
@@ -608,6 +611,20 @@ async function cmFindById(p, id, s = {}, typed = '') {
     if (CM.askName === p) setTimeout(() => { const x = document.getElementById(cmId(p + '/name')); if (x) { x.focus({ preventScroll: true }); x.scrollIntoView({ block: 'center' }); } }, 0);   // centred: the bottom bar would cover it at the foot of a phone
   } catch (e) { CM.gfind[p] = 'Google could not be reached. Try again.'; return render(); }
   if (plSec(p)) pfStart(p);   // a place to eat, a night out or an attraction: its facts are looked up at once
+}
+// A town picked from our own list in Things to do (twPick in start.js, towns.js): the host's own choice, as in the builder.
+// An empty name takes the town's; a new place (or one already a town) takes its kind, town or city, for the icon and the
+// line under the name (plPick); GeoNames' position, ours to keep (no pos, no date), the distance by road, a Google Maps
+// link that searches for it by name. No Google id and no request to Google, and no lookup of its facts: a town has no
+// door, phone or hours of its own (kinds.json hours: false), so it shows no hours and is never hidden for a season.
+function cmTownPick(p, t) {
+  const it = edGet(edC(), edPath(p)), h = edF().house || {}; if (!it) return;
+  if (!String(edShown(it.name || {})).trim()) it.name = L6(t.n);
+  if (it.nomap || !it.icon || it.icon === 'town' || it.icon === 'city') plPick(p, t.kind);
+  Object.assign(it, { lat: t.lat, lng: t.lng, km_from_house: twKm(h, t), town: t.n, gmaps: twMaps(t) });
+  for (const k of ['gid', 'pos', 'nomap']) delete it[k];
+  CM.gfind = CM.gfind || {}; CM.gfind[p] = { town: t };
+  cmQueue(); render();
 }
 /* --- A place's facts, looked up for it (job place-facts, worker/place-job.mjs; the places work, Piece C, 11 Nov 2026) ---
    A place picked on Google in the editor has a pin and nothing else: the worker gives it what the first build gives a

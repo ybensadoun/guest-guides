@@ -26,14 +26,40 @@ const LIST = l => l === 'todo' ? 'todo' : 'eat';   // nightlife's kinds are thos
 // A row picked on Google whose name the host left empty (the words they typed to find it were a search, not its name:
 // psPick in the maker) is a card too, in its own list: named from our directory like one, keyed gid:<id> (the generator
 // reads host rows the same way). Researched cards (ids starting with r:) are ours already and are not located.
+// A town the host picked from our own list (the maker's towns, from GeoNames: towns.js, twPick in start.js) is ours too:
+// { p, c, lat, lng, kind: 'town' | 'city', town, province, pos: { from: 'geonames' } }. It goes in own, never to Google,
+// Overture or Claude (a town has no door, no phone and no hours of its own), with its position, kind and the host's comment.
+const TOWN_KINDS = new Set(['town', 'city']);
+const num0 = v => typeof v === 'number' && Number.isFinite(v);
+export const ownTown = r => !!r && !!r.pos && r.pos.from === 'geonames' && num0(r.lat) && num0(r.lng) && Math.abs(r.lat) <= 90 && Math.abs(r.lng) <= 180 && !(r.lat === 0 && r.lng === 0);
 export function placesOf(A) {
   const added = Array.isArray(A.favDo) ? A.favDo : String(A.favDo || '').split(/[,\n]+/).map(p => ({ p }));
   const all = [...(A.favEat || []).map(r => [r, 'eat']), ...(A.favNight || []).map(r => [r, 'eat']), ...added.map(r => [r, 'todo'])].filter(([r]) => r);
-  const rows = all.filter(([r]) => String(r.p || '').trim()).map(([r, list]) => ({ p: String(r.p), ...(r.gid ? { gid: r.gid } : {}), list, ...(r.c ? { c: r.c } : {}) }));
+  const own = all.filter(([r]) => String(r.p || '').trim() && ownTown(r)).map(([r, list]) => ({ p: String(r.p), list, lat: r.lat, lng: r.lng,
+    ...(list === 'todo' && TOWN_KINDS.has(r.kind) ? { kind: r.kind } : {}), ...(typeof r.town === 'string' && r.town.trim() ? { town: r.town.trim() } : {}),
+    ...(typeof r.province === 'string' && r.province.trim() ? { province: r.province.trim() } : {}), ...(r.c ? { c: r.c } : {}) }));
+  const rows = all.filter(([r]) => String(r.p || '').trim() && !ownTown(r)).map(([r, list]) => ({ p: String(r.p), ...(r.gid ? { gid: r.gid } : {}), list, ...(r.c ? { c: r.c } : {}) }));
   const unnamed = all.filter(([r]) => !String(r.p || '').trim() && r.gid && !String(r.gid).startsWith('r:')).map(([r, list]) => ({ id: String(r.gid), list, ...(r.c ? { c: r.c } : {}) }));
   const cards = Object.values(A.swipes || {}).filter(s => s && s.d === 'yes' && s.cat === 'todo' && s.id && !String(s.id).startsWith('r:'))
     .map(s => ({ id: String(s.id), list: 'todo', ...(s.c ? { c: s.c } : {}) }));
-  return { rows, cards: [...unnamed, ...cards] };
+  return { rows, cards: [...unnamed, ...cards], own };
+}
+
+// The entries of the towns the host picked: our position (GeoNames'), no Google id and no date (ours to keep for good), the
+// distance by road from the house as for the others, the town's own name as its town, its kind for Things to do, and a
+// Google Maps link that searches for it by name and province (a link, no request). The host's words are its name.
+export function ownEntries(own, house) {
+  const geo = {}, h = house && num0(house.lat) && num0(house.lng) ? house : null;
+  for (const r of own || []) {
+    const key = String(r.p || '').trim(); if (!key || geo[key]) continue;
+    const e = { name: key, lat: r.lat, lng: r.lng };
+    if (h) e.km = Math.max(1, Math.round(hav(h.lat, h.lng, r.lat, r.lng) * 1.3));
+    e.town = r.town || key;
+    if (r.kind) e.kind = r.kind;
+    e.gmaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([r.town || key, r.province].filter(Boolean).join(', '))}`;
+    geo[key] = e;
+  }
+  return geo;
 }
 
 // A few at a time: each place waits on Claude for some seconds, and the day's limit is shared with the rest of the worker.
@@ -124,11 +150,14 @@ export function filledOf(fields, sources, list) {
 // and a card our sources cannot name from its spot waits for the host to name it. nameLangs: the languages Google's name
 // is asked in, the place's own first (Spain for now; with the countries, from the country's profile). country: the
 // GeoNames file read (Spain for now; it will come from the house's country).
-export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { GK, store = null, ask = null, again = null, python, log = console.error, locate = null, near = nearby, gaz = gazetteer, country = 'ES', meter = null, nameMatch = true, nameLangs = ['ca', 'es', 'en'] } = {}) {
+// own: the towns the host picked from our list (placesOf), written first, with no key and no house needed: never located,
+// never filled, a row typed elsewhere with the same words is that town.
+export async function hostPlaces({ rows = [], cards = [], own = [], house, town = '' }, { GK, store = null, ask = null, again = null, python, log = console.error, locate = null, near = nearby, gaz = gazetteer, country = 'ES', meter = null, nameMatch = true, nameLangs = ['ca', 'es', 'en'] } = {}) {
+  const mine = ownEntries(own, house);
   const L = locate || (GK ? { byId: id => locateById(GK, id), byWords: (w, h) => locateByWords(GK, w, h), name: (id, lang) => nameById(GK, id, lang) } : null);
-  if (!L || !house) return {};
+  if (!L || !house) return mine;
   // 1. Located by Google: the id and the position, nothing else. The same place typed twice is located once.
-  const want = [], seen = new Set();
+  const want = [], seen = new Set(Object.keys(mine));
   for (const r of rows) { const key = String(r.p || '').trim(); if (key && !seen.has(key)) { seen.add(key); want.push({ key, list: LIST(r.list), words: key, about: r.c || '', gid: r.gid || null, ...(r.website ? { website: r.website } : {}) }); } }
   for (const c of cards) { const key = 'gid:' + c.id; if (c.id && !seen.has(key)) { seen.add(key); want.push({ key, list: LIST(c.list), words: '', about: c.c || '', gid: c.id, card: true }); } }
   const found = [];
@@ -205,7 +234,7 @@ export async function hostPlaces({ rows = [], cards = [], house, town = '' }, { 
     if (filled) e.filled = filled;
     geo[p.key] = e;
   }
-  return geo;
+  return { ...mine, ...geo };
 }
 
 /* ---------- Dry run over a file of answers: printed; with --save, facts kept in place_facts, nothing else ---------- */
@@ -221,7 +250,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (save && !env.SUPABASE_SERVICE_KEY) { console.error('--save needs SUPABASE_SERVICE_KEY in worker/.env.local.'); process.exit(1); }
   const j = JSON.parse(readFileSync(file, 'utf8')), A = j.answers || j;
   if (typeof A.lat !== 'number' || typeof A.lng !== 'number') { console.error('The answers need the house\'s lat and lng.'); process.exit(1); }
-  const { rows, cards } = placesOf(A);
+  const { rows, cards, own } = placesOf(A);
   // The table through Supabase's REST API, as the worker reaches it. Without --save a look is merged in memory only.
   let store = null;
   if (env.SUPABASE_SERVICE_KEY) {
@@ -242,9 +271,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const claude = (effort, usd) => makeClaude({ ...env, RESEARCH_MODEL: 'claude-haiku-5-5', TRANSLATE_MODEL: 'claude-haiku-5-5', RESEARCH_EFFORT: effort, RESEARCH_MAX_SEARCHES: '3', RESEARCH_USD_PER_DAY: usd }, quiet);
     ask = claude('low', '2'); again = claude('medium', '1');
   }
-  console.error(`${rows.length} typed places, ${cards.length} kept cards. ${ask ? (save ? 'Facts found are kept in place_facts.' : 'Nothing is written.') : 'No Claude key or no database key: located only.'}`);
+  console.error(`${rows.length} typed places, ${cards.length} kept cards, ${own.length} towns of ours. ${ask ? (save ? 'Facts found are kept in place_facts.' : 'Nothing is written.') : 'No Claude key or no database key: located only.'}`);
   const meter = {};
-  const geo = await hostPlaces({ rows, cards, house: { lat: A.lat, lng: A.lng }, town: A.town || '' },
+  const geo = await hostPlaces({ rows, cards, own, house: { lat: A.lat, lng: A.lng }, town: A.town || '' },
     { GK: env.GOOGLE_PLACES_KEY, store, ask, again, python: env.OVERTURE_PYTHON || 'python3', meter, nameMatch: env.GOOGLE_NAME_MATCH !== '0' });
   console.log(JSON.stringify(geo, null, 1));
   console.error(`${Object.keys(geo).length} entries; Claude about ${(meter.usd || 0).toFixed(3)} USD.`);
