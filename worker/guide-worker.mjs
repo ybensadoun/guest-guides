@@ -264,13 +264,13 @@ async function build(g) {
   // locates them (id and position), and their name, town, kind, phone, website and hours come from our own table
   // place_facts or the chain (worker/host-places.mjs), never from Google. src/geocode.json is read by the generator. Not
   // found: the generator says less. Without Claude (RESEARCH not api): what is already kept, nothing asked. A failure never stops the build.
-  // A town the host picked from our own list (own) is written as it is, with our position and kind: no Google, no Claude,
+  // A town the host picked from our own list (towns) is written as it is, with our position and kind: no Google, no Claude,
   // so it needs no key either.
-  const { rows, cards, own } = placesOf(A);
-  if (((rows.length || cards.length) && env.GOOGLE_PLACES_KEY) || own.length) {
+  const { rows, cards, own: towns } = placesOf(A);
+  if (((rows.length || cards.length) && env.GOOGLE_PLACES_KEY) || towns.length) {
     say(id, 'Finding your favourite places');
     try {
-      const geo = await hostPlaces({ rows, cards, own, house: { lat: A.lat, lng: A.lng }, town: A.town || '' },
+      const geo = await hostPlaces({ rows, cards, own: towns, house: { lat: A.lat, lng: A.lng }, town: A.town || '' },
         { GK: env.GOOGLE_PLACES_KEY, store: makeStore(rest), ask: placeAsk, again: placeAgain, python: env.OVERTURE_PYTHON || 'python3', log: (...a) => log(' ', ...a), nameMatch: env.GOOGLE_NAME_MATCH !== '0' });
       writeFileSync(join(job, 'src/geocode.json'), JSON.stringify(geo));
     } catch (e) { log('  favourite places not looked up:', e.message); }
