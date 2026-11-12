@@ -348,7 +348,7 @@ Left for the maker's side of 3d: researched cards in the deck no longer get a ph
 **Decisions.**
 | # | Question | Answer |
 |---|---|---|
-| 6.1 | The monthly check stops asking Google whether a place is closed, and stops acting on it. | **Keep it for now** (Yohann, 11 Nov): the check stays as it is until the terms pass (proposal 19) looks at it. |
+| 6.1 | The monthly check stops asking Google whether a place is closed, and stops acting on it. | **Keep it for now** (Yohann, 11 Nov): the check stays as it is until the terms pass (proposal 19) looks at it.  **Changed on 12 Nov, after the dry run showed what it would write on 1 Dec: "why not go for the real thing, and mark this as done?" The check asks Google nothing any more (6a), and each guide is brought in line once (6b). Building.** |
 
 **Step 6 with the monthly check kept (11 Nov 2026).** What the answer changes:
 - **6a waits for the terms pass.** `check-guides.mjs`, `monthly.mjs`, `makeGoogle`, `FIELDS`, `check-places.js` and the report stay as they are. Only the weekly renewal of positions is added at the merge (its timer). Before 1 Dec the check must be run once dry on the merged code (a few Google requests), since step 3 changed what a place holds.
