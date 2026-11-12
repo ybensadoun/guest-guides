@@ -2771,10 +2771,10 @@
 "es": "Guía de la casa por estancias",
 "fr": "Guide de la maison par pièce"
 },
-"How far should we look?": {
-"ca": "Fins on hem de buscar?",
-"es": "¿Hasta dónde buscamos?",
-"fr": "Jusqu’où chercher ?"
+"How far should your guide reach?": {
+"ca": "Fins on ha d’arribar la teva guia?",
+"es": "¿Hasta dónde debe llegar tu guía?",
+"fr": "Jusqu’où votre guide doit-il aller ?"
 },
 "How guests get around": {
 "ca": "Com es mouen els hostes",
@@ -4411,10 +4411,10 @@
 "es": "Esta guía aún no tiene tarjeta de wifi.",
 "fr": "Ce guide n’a pas encore de carte wifi."
 },
-"This steers the search: the places you swipe next, and the markets and events in your guide.": {
-"ca": "Això orienta la cerca: els llocs que veuràs a continuació, i els mercats i esdeveniments de la teva guia.",
-"es": "Esto orienta la búsqueda: los sitios que verás a continuación, y los mercados y eventos de tu guía.",
-"fr": "Cela oriente la recherche : les lieux que vous verrez ensuite, et les marchés et événements de votre guide."
+"This steers what comes next: the places you swipe, and how far the markets and events in your guide reach.": {
+"ca": "Això orienta el que ve després: els llocs que veuràs, i fins on arriben els mercats i els esdeveniments de la teva guia.",
+"es": "Esto orienta lo que viene después: los sitios que verás, y hasta dónde llegan los mercados y los eventos de tu guía.",
+"fr": "Cela oriente la suite : les lieux que vous verrez, et jusqu’où vont les marchés et les événements de votre guide."
 },
 "This step is done. You can still change anything.": {
 "ca": "Aquest pas està fet. Encara pots canviar el que vulguis.",
@@ -8225,5 +8225,10 @@
 "ca": "No s’ha pogut copiar",
 "es": "No se ha podido copiar",
 "fr": "Copie impossible"
+},
+"From the house’s position · GeoNames": {
+"ca": "De la posició de la casa · GeoNames",
+"es": "De la posición de la casa · GeoNames",
+"fr": "De la position de la maison · GeoNames"
 }
 }

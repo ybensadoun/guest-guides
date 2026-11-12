@@ -155,10 +155,43 @@ async function areaWatch(){
   } catch (e) { wait = true; }   // no connection: try again
   const before = JSON.stringify(AREA.result);
   AREA.result = (AREA.quick || AREA.full) ? { ...(AREA.quick || {}), ...(AREA.full || {}) } : null;
+  townFromResearch();
   if (JSON.stringify(AREA.result) !== before) phoneSoon();
   moreRefresh();
   if (wait && ++AREA.tries < 150) AREA.timer = setTimeout(areaWatch, AREA.tries < 30 ? 6000 : 20000);
 }
+// The research needs nothing from the host (Yohann, 12 Nov 2026): it starts with the house's position and searches a reach
+// of its own (worker/research-brief.mjs). The host's answers in Your area act on what it found at once, without a new
+// search: the distance (v('radius'), the generator's table) cuts the deck's researched cards and the markets the phone
+// shows, as the build cuts the guide's markets and events (the 4 nearest markets always stay).
+const RADIUS_KM = { '15 min': 15, '30 min': 30, '45 min': 45, '1 hour': 60 }, reachNow = () => RADIUS_KM[v('radius')] || 30;
+const kmNum = x => x != null && x !== '' && Number.isFinite(+x) ? +x : null;
+// A market's distance by road, as the build writes it: about 1.3 times the line from the house; no position, its own km.
+const roadKm = m => { if (typeof m.lat === 'number' && typeof m.lng === 'number' && A.lat && A.lng) { const R = 6371, r = x => x * Math.PI / 180, a = +A.lat, b = +A.lng,
+  x = Math.sin(r(m.lat - a) / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(m.lat)) * Math.sin(r(m.lng - b) / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)) * 1.3; } return kmNum(m.km_from_house); };
+function marketsInReach(list){
+  const L = Array.isArray(list) ? list : [], max = reachNow(), at = L.map((m, i) => ({ m, i, km: roadKm(m) }));
+  const nearest = new Set(at.filter(x => x.km != null).sort((p, q) => p.km - q.km || p.i - q.i).slice(0, 4).map(x => x.i));
+  return at.filter(x => x.km == null || x.km <= max || nearest.has(x.i)).map(x => x.m);
+}
+// The town the research found (the municipality the house lies in, from GeoNames: worker/place-facts.mjs municipalityAt)
+// fills the host's town when neither they nor the listing gave one, and the region with its province when that is empty
+// too. Only the guide's own research: the quick one's point is the area's, shared with the houses around it. Not while
+// the listing is being read (it may still give a town); a town the listing gives later replaces it (applyDraft).
+function townFromResearch(){
+  const P = (AREA.full || {}).place; if (!P || !P.town || START.busy || v('town').trim()) return;
+  A.town = String(P.town).slice(0, 80); A._townAuto = A.town; A._pre = { ...(A._pre || {}), town: 'place' };
+  if (P.province && !v('region').trim()) { A.region = String(P.province).slice(0, 80); A._regionAuto = A.region; A._pre = { ...A._pre, region: 'place' }; }
+  queueSave(); log('town', 'research');
+  document.querySelectorAll('[data-k="town"],[data-k="region"]').forEach(el => { if (el !== document.activeElement) el.value = v(el.dataset.k); });
+  for (const k of ['town', 'region']) { const el = document.getElementById('f_' + k), lab = el && el.closest('.f') && el.closest('.f').querySelector('label');
+    if (lab && placeAuto(k) && !lab.querySelector('.frm')) lab.insertAdjacentHTML('beforeend', PLACE_MARK); }
+  softRefresh(); refreshSend();
+}
+// GeoNames is credited where its content shows: a mark beside the town it filled (and the region), where a listing's
+// answer says "From your listing" (the field's label, build.py), until the host changes it.
+const placeAuto = k => (k === 'town' && !!A._townAuto && A.town === A._townAuto) || (k === 'region' && !!A._regionAuto && A.region === A._regionAuto);
+const PLACE_MARK = ' <span class="frm">From the house’s position · GeoNames</span>';
 // What the listing page says, before Claude: its name (for the phone only, Claude writes the real one), its photos,
 // cover, rating and position.
 function applyEarly(d){
@@ -222,7 +255,8 @@ function applyDraft(d){
     let val = D[k]; if (val == null || val === '' || (Array.isArray(val) && !val.length)) continue;
     if (k === 'sleeps' || k === 'bedrooms' || k === 'bathrooms' || k === 'beds') val = String(val);
     const empty = Array.isArray(A[k]) ? !A[k].length : !String(A[k] ?? '').trim();
-    if (!empty) continue;
+    const auto = (k === 'town' && A._townAuto && A[k] === A._townAuto) || (k === 'region' && A._regionAuto && A[k] === A._regionAuto);   // the research's town: the listing's own wins
+    if (!empty && !auto) continue;
     A[k] = val; pre[k] = mod;
   }
   // Every amenity the listing has (all of them, by Airbnb's codes, when its page was read): ticked in What the place offers.
@@ -262,9 +296,12 @@ const addedPlaces = () => (Array.isArray(A.favDo) ? placeRows('favDo').map(r => 
 // Markets have their own section: never a card among the attractions (the same words as /api/places).
 const MARKET = /(?<!\p{L})(markets?|mercados?|mercats?|mercadillos?|mercadets?|march[ée]s?|m[äa]rkte?|mercato|mercati|markthal)(?!\p{L})/iu;
 const shownText = x => (typeof x === 'string' ? x : (x && (x[UIL] || x.en || Object.values(x)[0])) || '');
+// Only the cards within the host's distance (Your area): widened, the farther ones come in at once, with no search. A card
+// with no distance stays, and so does one the host already decided on.
 function researchCards(){
-  const S = swipes(), chosen = [...Object.values(S).filter(x => !String(x.id).startsWith('r:')).map(x => (SW.mem.get(x.id) || {}).name).filter(Boolean), ...addedPlaces()];
-  return (((AREA.full || {}).todo || {}).items || []).filter(it => shownText(it.name) && !MARKET.test(shownText(it.name) + ' ' + shownText(it.type)) && !chosen.some(n => samePlace(n, shownText(it.name)))).map(it => { const name = shownText(it.name);
+  const S = swipes(), chosen = [...Object.values(S).filter(x => !String(x.id).startsWith('r:')).map(x => (SW.mem.get(x.id) || {}).name).filter(Boolean), ...addedPlaces()], max = reachNow();
+  const near = it => { const k = kmNum(it.km_from_house); return k == null || k <= max || !!S['r:' + plainName(shownText(it.name))]; };
+  return (((AREA.full || {}).todo || {}).items || []).filter(it => shownText(it.name) && !MARKET.test(shownText(it.name) + ' ' + shownText(it.type)) && !chosen.some(n => samePlace(n, shownText(it.name))) && near(it)).map(it => { const name = shownText(it.name);
     return { id: 'r:' + plainName(name), name, type: shownText(it.type), km: it.km_from_house, lat: it.lat, lng: it.lng, summary: shownText(it.description),
       maps: it.gmaps || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([name, it.town].filter(Boolean).join(' ')),
       ...(it.gid ? { gid: it.gid } : {}), ...(it.icon ? { icon: it.icon } : {}) }; });

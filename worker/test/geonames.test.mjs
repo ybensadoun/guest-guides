@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { gazetteer, placeFacts, featureFor, featureKind, townPoint } from '../place-facts.mjs';
+import { gazetteer, placeFacts, featureFor, featureKind, townPoint, municipalityAt } from '../place-facts.mjs';
 import { mergeFacts } from '../place-store.mjs';
 import { hostPlaces } from '../host-places.mjs';
 
@@ -252,4 +252,68 @@ test('townPoint: the house\'s town from geonames.py, the town itself and not its
   const t = await townPoint('El Vendrell', { lat: 41.219, lng: 1.5355 }, { log: () => {} });
   assert.equal(t.name, 'El Vendrell'); assert.equal(t.lat, 41.21861); assert.equal(t.lng, 1.535); assert.ok(t.metres < 100);
   assert.equal(await townPoint('Nowhere Town', { lat: 41.219, lng: 1.5355 }, { log: () => {} }), null);
+});
+
+// The second question of geonames.py: the municipality a point lies in. A made-up file of its own: two municipalities with
+// a seat and a hamlet, one with an inverted name, a place whose codes name no municipality, an abandoned one.
+const row = (id, name, lat, lng, cls, code, a3, pop = 0, a2 = 'T') => [id, name, name, '', lat, lng, cls, code, 'ES', '', '56', a2, a3, '', pop, '', '10', 'Europe/Madrid', '2024-01-01'].join('\t');
+const MUNI = [
+  row('9000001', 'Província de Tarragona', 41.1, 1.1, 'A', 'ADM2', '', 800000),
+  row('9000002', 'Vilaprova', 41.3, 1.5, 'A', 'ADM3', '43900', 1000),
+  row('9000003', 'Vilaprova', 41.3, 1.5, 'P', 'PPLA3', '43900', 1000),
+  row('9000004', 'Can Provet', 41.32, 1.52, 'P', 'PPL', '43900'),
+  row('9000005', 'Despoblat del Provet', 41.3201, 1.5201, 'P', 'PPLQ', '43900'),   // abandoned: never the nearest place
+  row('9000006', 'Rosari, El', 41.4, 1.6, 'A', 'ADM3', '43901', 300),
+  row('9000007', 'El Rosari', 41.4, 1.6, 'P', 'PPLA3', '43901', 300),
+  row('9000008', 'Masos, Els', 41.45, 1.7, 'A', 'ADM3', '43903', 50),
+  row('9000009', 'Mas de Dalt', 41.45, 1.7, 'P', 'PPL', '43903'),                   // a municipality with no seat in the file
+  row('9000010', 'Urbanització Sense Codi', 41.5, 1.8, 'P', 'PPLX', ''),            // no admin3 code: the nearest town stands in
+  row('9000011', 'Poble Gran', 41.52, 1.8, 'P', 'PPL', '43902', 500),               // its codes name no ADM3 row
+].join('\n') + '\n';
+const muniCache = () => { const d = mkdtempSync(join(tmpdir(), 'geonames-muni-')); writeFileSync(join(d, 'ES.txt'), MUNI); writeFileSync(join(d, 'ES.json'), JSON.stringify({ fetched: today })); return d; };
+const POINTS = [
+  { id: 'hamlet', lat: 41.3205, lng: 1.5205 }, { id: 'seat', lat: 41.4005, lng: 1.6 }, { id: 'noseat', lat: 41.4505, lng: 1.7 },
+  { id: 'nocode', lat: 41.5005, lng: 1.8 }, { id: 'far', lat: 40.0, lng: 0.5 },
+];
+
+test('geonames.py, municipality: the nearest place\'s municipality, its province and seat, the hamlet named; nothing within 10 km gives null', () => {
+  const r = py({ country: 'ES', points: POINTS }, { GEONAMES_CACHE: muniCache() });
+  assert.equal(r.status, 0, r.stderr);
+  const out = JSON.parse(r.stdout);
+  assert.deepEqual(Object.keys(out), ['fetched', 'places']); assert.equal(out.fetched, today);
+  const h = out.places.hamlet;
+  assert.deepEqual({ ...h, metres: 0 }, { town: 'Vilaprova', province: 'Tarragona', seat: 'Vilaprova', near: 'Can Provet', near_code: 'PPL', metres: 0, by: 'adm3' });
+  assert.ok(h.metres > 0 && h.metres < 100);   // the abandoned place nearer to it is not the nearest place
+  assert.equal(out.places.seat.town, 'El Rosari'); assert.equal(out.places.seat.near, 'El Rosari'); assert.equal(out.places.seat.seat, 'El Rosari');
+  assert.equal(out.places.noseat.town, 'Els Masos'); assert.equal(out.places.noseat.seat, null); assert.equal(out.places.noseat.near, 'Mas de Dalt');
+  assert.deepEqual({ ...out.places.nocode, metres: 0 }, { town: 'Poble Gran', province: 'Tarragona', seat: null, near: 'Urbanització Sense Codi', near_code: 'PPLX', metres: 0, by: 'nearest' });
+  assert.equal(out.places.far, null);
+  assert.match(r.stderr, /4 of 5 points in a municipality/);
+});
+
+test('geonames.py, municipality: with pins in the same call, and with no points nothing is fetched', () => {
+  const both = py({ country: 'ES', pins: [{ id: 'x', lat: 41.32, lng: 1.52, names: ['can provet'] }], points: POINTS.slice(0, 1) }, { GEONAMES_CACHE: muniCache() });
+  assert.equal(both.status, 0, both.stderr);
+  const o = JSON.parse(both.stdout);
+  assert.deepEqual(Object.keys(o), ['fetched', 'pins', 'places']); assert.equal(o.pins.x[0].name, 'Can Provet'); assert.equal(o.places.hamlet.town, 'Vilaprova');
+  const empty = mkdtempSync(join(tmpdir(), 'geonames-empty-')), none = py({ country: 'ES', points: [] }, { GEONAMES_CACHE: empty });
+  assert.equal(none.status, 0); assert.deepEqual(JSON.parse(none.stdout), { fetched: null, places: {} }); assert.ok(!existsSync(join(empty, 'ES.txt')));
+});
+
+test('municipalityAt: from geonames.py, from an injected gazetteer, and null rather than a throw', async () => {
+  process.env.GEONAMES_CACHE = muniCache();
+  assert.deepEqual(await municipalityAt({ lat: 41.3205, lng: 1.5205 }, { log: () => {} }), { town: 'Vilaprova', province: 'Tarragona', near: 'Can Provet', metres: (await municipalityAt({ lat: 41.3205, lng: 1.5205 }, { log: () => {} })).metres, fetched: today });
+  assert.equal(await municipalityAt({ lat: 40, lng: 0.5 }, { log: () => {} }), null);
+  const calls = [], gaz = async (country, pins, o) => { calls.push({ country, pins, points: o.points }); return { fetched: '2026-11-10', pins: {}, places: { house: { town: 'la Prova', province: 'Barcelona', near: 'Urbanització del Pi', metres: 640 } } }; };
+  assert.deepEqual(await municipalityAt({ lat: '41.1', lng: 1.9 }, { gaz, country: 'ES' }), { town: 'la Prova', province: 'Barcelona', near: 'Urbanització del Pi', metres: 640, fetched: '2026-11-10' });
+  assert.deepEqual(calls, [{ country: 'ES', pins: [], points: [{ id: 'house', lat: 41.1, lng: 1.9 }] }]);
+  assert.equal(await municipalityAt({ lat: 41.1, lng: 1.9 }, { gaz: async () => ({ fetched: null, pins: {}, places: {} }) }), null);
+  assert.equal(await municipalityAt({ lat: 41.1, lng: 1.9 }, { gaz: async () => ({ places: { house: { town: '  ' } } }) }), null);
+  const logs = []; assert.equal(await municipalityAt({ lat: 41.1, lng: 1.9 }, { gaz: async () => { throw new Error('boom'); }, log: m => logs.push(m) }), null);
+  assert.match(logs[0], /^geonames: the municipality not looked up \(boom\)/);
+  let asked = 0; const counted = async () => { asked++; return {}; };
+  for (const at of [null, {}, { lat: 41 }, { lat: 'x', lng: 1 }]) assert.equal(await municipalityAt(at, { gaz: counted }), null);
+  assert.equal(asked, 0);
+  const l2 = [], gone = await municipalityAt({ lat: 41.1, lng: 1.9 }, { python: 'no-such-python-here', log: m => l2.push(m) });
+  assert.equal(gone, null); assert.match(l2[0], /^geonames: no features/);
 });

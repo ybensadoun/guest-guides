@@ -14,7 +14,8 @@ import { spawnSync, spawn } from 'node:child_process';
 import { hav, nameOf, sameName, locateItem } from './places.mjs';
 import { checkResearch } from './research-check.mjs';   // the research's check: Google locates, our own sources fill
 import { hostPlaces, placesOf } from './host-places.mjs';   // a host's own places: located by Google, filled from our own table
-import { townPoint } from './place-facts.mjs';   // the house's town in GeoNames, when its position is Google's
+import { townPoint, municipalityAt } from './place-facts.mjs';   // the house's town in GeoNames, when its position is Google's; the municipality it lies in
+import { researchPrompt, HOURS_RULE, MARKETS_RULE, TODO_RULE, earlyRules, EV_REACH, EV_MAIN, EV_EARLY, evFits, inReach, eventsInReach } from './research-brief.mjs';   // the research's brief, how far it reaches
 import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
 import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
@@ -111,22 +112,7 @@ async function claudeJson(prompt, what, meter, searches) {
   if (a < 0 || b < a) throw new Error(`Claude returned no JSON for ${what}`);
   try { return JSON.parse(out.slice(a, b + 1)); } catch (e) { throw new Error(`Claude's JSON for ${what} did not parse`); }
 }
-function example(name, n = 2) {
-  const f = resolve(HERE, 'examples', name + '.json'); if (!existsSync(f)) return '{}';
-  const j = JSON.parse(readFileSync(f, 'utf8'));
-  const cut = x => Array.isArray(x) ? x.slice(0, n).map(cut) : (x && typeof x === 'object' ? Object.fromEntries(Object.entries(x).map(([k, v]) => [k, cut(v)])) : x);
-  return JSON.stringify(cut(j), null, 1);
-}
-function researchPrompt(kind, A, rules) {
-  const area = `${A.town || ''}${A.region ? ', ' + A.region : ''}`, km = ({ '15 min': 15, '30 min': 30, '45 min': 45, '1 hour': 60 })[A.radius] || +A.radius || 30;   // the builder's answer, or the guide's radius in km
-  return `You research one module of a guest guide for a holiday home. Place: ${A.placeName || 'the house'}, ${area}. Approximate point: ${A.lat}, ${A.lng}. ${A.city ? `Guests get around on foot, by bike or by public transport, up to ${km} km.` : `Guests drive up to ${km} km.`} The host likes: ${[A.interests, A.feelWords, A.tone].flat().filter(Boolean).join('; ') || 'no preference given'}.
-Use web search. Only include things you confirmed exist from a web source. Never invent names, addresses, phone numbers, hours or distances. When unsure, leave the field out or set "verify": true. Write every text in English, as {"en": "..."}. No em-dashes.
-${rules}
-Answer with ONE JSON object and nothing else. It must follow the shape of this example (only its first items are shown):
-${example(kind)}`;
-}
-// Hours and the Google Maps link, for every place (markets and things to do).
-const HOURS_RULE = 'For each place: "name_local" is its name exactly as Google Maps lists it (in the local language, e.g. "Jardí Botànic Marimurtra"), so the guide\'s Google Maps button opens its listing. Put "gmaps" only if a source gives the place\'s own Google Maps link. Opening hours: look for them on the official website first (the venue, the operator, the town hall or its tourist office), then in recent local press, and write them as "schedule", a list of rows shaped exactly {"days":["tue","wed"],"open":"10:00","close":"14:00"} (days as mon..sun, times HH:MM, plus "from" and "to" as MM-DD for a season), with "url" set to that official page. Opening that is not weekly (the third Sunday of the month, guided tours) goes in "hours" as words, not in "schedule". Use the flag "check" only when no official or recent source gives the days and hours, or sources disagree. A place open to everyone at any time (beach, viewpoint, old town, path, ruin) gets "always": true and no "check".';
+// The brief (researchPrompt), its rules and how far the research reaches: worker/research-brief.mjs.
 // What research may write: tags, flags and groups the guide knows, places with a position, market categories it has a label for.
 function researchTools() {
   const en = JSON.parse(readFileSync(join(ROOT, 'engine/src/i18n/en.json'), 'utf8'));
@@ -183,13 +169,12 @@ function normSchedule(it) {
   if (words.length) { if (!it.hours) it.hours = { en: words.join('; ') }; it.flags = [...new Set([...(it.flags || []), 'check'])]; }
   return it;
 }
-const MARKETS_RULE = 'Find the weekly and notable local markets within the radius (street markets, covered markets, fairs). Same shape as the example: {"categories":[...],"markets":[...]} with schedule days as mon..sun. Every market MUST have numeric lat and lng: use the exact spot if a source gives it, otherwise the centre of the town or the market square from Wikipedia or OpenStreetMap, and add "verify": true when approximate. Its "category" must be one of: covered, street, flea, antiques, events. ' + HOURS_RULE;
-const TODO_RULE = 'Find 8 to 12 things to do within the radius that fit the host\'s taste: sights, nature, fun, culture. No markets (they have their own section) and no restaurants, cafés or bars (the host\'s own list). Same shape: {"items":[...]} with lat, lng, km_from_house, an icon and group as in the example. ' + HOURS_RULE;
 // A part already in outDir (areaResearch) is not searched again. id: the guide whose progress message follows the research
 // (none for an area or a research job). opt.meter adds up what it costs; opt.parts, opt.rules and opt.searches change which parts
 // are searched, in what order, how, and with how many web searches; opt.together asks them side by side (the quick search at the
 // listing link: small questions; the big ones stay one after the other, within the API's tokens per minute). opt.onPart(kind)
-// runs as soon as a part is written.
+// runs as soon as a part is written. opt.early: the brief of the research that starts before the host answers (no distance,
+// no interests of the host: research-brief.mjs).
 async function research(A, outDir, id, opt = {}) {
   mkdirSync(outDir, { recursive: true });
   const { clean, located, allowed, normSchedule } = researchTools();
@@ -203,7 +188,7 @@ async function research(A, outDir, id, opt = {}) {
     if (existsSync(join(outDir, kind + '.json'))) return;
     if (id) say(id, `Researching: ${kind}`);
     const rules = (opt.rules || {})[kind] || rules0;
-    try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed), kind, opt.meter, (opt.searches || {})[kind]))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); if (opt.onPart) await opt.onPart(kind); }
+    try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed, { early: !!opt.early }), kind, opt.meter, (opt.searches || {})[kind]))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); if (opt.onPart) await opt.onPart(kind); }
     catch (e) { log(`  research ${kind} skipped:`, e.message); }
   };
   if (opt.together) await Promise.all(list.map(one)); else for (const j of list) await one(j);
@@ -292,7 +277,7 @@ async function build(g) {
   const gen = ['engine/scripts/generate-site.py', join(job, 'src'), '--slug', tmp, '--lat', String(A.lat), '--lng', String(A.lng), '--src', srcLang];
 
   let researchDir = null;
-  if (RESEARCHING) { researchDir = join(job, 'research'); const quick = await areaResearch(A, researchDir, id); await research(A, researchDir, id); mergeQuick(researchDir, quick); gen.push('--research', researchDir); }
+  if (RESEARCHING) { researchDir = join(job, 'research'); const quick = await areaResearch(A, researchDir, id); await research(A, researchDir, id); mergeQuick(researchDir, quick); reachCut(researchDir, A); gen.push('--research', researchDir); }
   say(id, 'Building the guide');
   let out = run('python3', gen).stdout;
   if (RESEARCHING) {
@@ -422,14 +407,8 @@ async function findJob(j, jp) {
    passed is dropped; one the host deleted is listed in "removed" and never added again. Topics to skip and to look for can
    be in any language: Claude reads them as topics, and the skip topics are also checked, in English, on what it found. */
 const EV_DAYS = 92;
-// How far events reach. Where guests drive: every event within 10 km of the house however small (hyper-local), and
-// further out, up to the guide's radius, only the ones people travel to. In a city, where guests walk, bike or take the
-// metro: small ones within 2 km (about 10 minutes by bike), the main ones within 8 km (about 30 minutes).
-const EV_REACH = { car: { near: 10 }, city: { near: 2, far: 8 } }, EV_MAIN = ['regional', 'major'];
+// How far events reach (EV_REACH, EV_MAIN, evFits: worker/research-brief.mjs, where the build's cut of the first events uses them too).
 function evReach(site, auto) { const mode = (auto || {}).reach === 'city' ? 'city' : 'car', r = EV_REACH[mode]; return { mode, near: r.near, far: r.far || ((site || {}).area || {}).radiusKm || 30 }; }
-// An event fits when it is close to the house, whatever its size, or within reach and one of the area's main ones.
-// Unknown size or distance: kept (never removed on a guess).
-const evFits = (e, R) => typeof e.km_from_house !== 'number' || (e.km_from_house <= R.far && (e.km_from_house <= R.near || !e.scale || EV_MAIN.includes(e.scale)));
 const reachRule = R => `How far: every event within ${R.near} km of the house, however small (a village's or a neighbourhood's own festival, a colla's own diada). Further out, up to ${R.far} km, only the area's main events, the ones people travel to (a town's best-known festival, a regional or national highlight): leave out the small ones there.`;
 const dayStr = d => d.toISOString().slice(0, 10);
 const windowRule = (now = new Date()) => `Today is ${dayStr(now)}: only events with a date between ${dayStr(now)} and ${dayStr(new Date(now.getTime() + EV_DAYS * 864e5))}.`;
@@ -492,7 +471,7 @@ function eventsLive(content) {
 // One general search (the area's own traditions) and, side by side, one focused search per topic the host wants
 // (up to three): a topic like "Castellers" gets every diada in the window, not a share of ten events. Same event found
 // twice: kept once.
-async function searchEvents(A, { exclude = [], update = [], want = [], skip = [], reach, meter = null } = {}) {
+async function searchEvents(A, { exclude = [], update = [], want = [], skip = [], reach, meter = null, early = false } = {}) {
   const { clean, located, allowed } = researchTools();
   const R = reach || { near: 10, far: A.radius || 30 }, win = `${windowRule()} ${reachRule(R)}`;
   const skipRule = skip.length ? ` Never include events about: ${skip.join('; ')} (topics, maybe written in another language: leave them out whatever the language of the source).` : '';
@@ -502,7 +481,7 @@ async function searchEvents(A, { exclude = [], update = [], want = [], skip = []
     ...want.slice(0, 3).map(w => `The host specifically wants events about "${w}". It is a topic, maybe written in another language: say it in the local language(s) yourself and search with those words too. Find every event about it with a date in this window (the small ones only close to the house, as below), up to 20, town by town, starting with the closest towns: the schedules of the groups or bodies that organise it, the town halls' agendas, the local press. ${win} ${EVENT_SHAPE} ${LOCAL_EVENTS.split('. ').slice(-1)[0]}${known}${skipRule}`)
   ];
   let failed = null;
-  const outs = await Promise.all(passes.map(r => claudeJson(researchPrompt('events', A, `${r} ${CURATION} ${allowed}`), 'events', meter).then(o => located(clean(o)).items || []).catch(e => { failed = e; log('  an events search did not work:', e.message); return []; })));
+  const outs = await Promise.all(passes.map(r => claudeJson(researchPrompt('events', A, `${r} ${CURATION} ${allowed}`, { early }), 'events', meter).then(o => located(clean(o)).items || []).catch(e => { failed = e; log('  an events search did not work:', e.message); return []; })));
   if (failed && outs.every(o => !o.length)) throw failed;
   const all = [];
   for (const it of outs.flat()) {
@@ -708,9 +687,12 @@ async function runArea(only) {
     const dir = join(HERE, 'jobs', 'area-' + row.id), meter = { usd: 0 };
     try {
       rmSync(dir, { recursive: true, force: true });
-      await research({ town: row.town, region: row.region, lat: row.lat, lng: row.lng }, dir, null, { meter, parts: AREA_KINDS, rules: { markets: QUICK_MARKETS }, searches: QUICK_SEARCHES, together: true });
+      // The municipality of the row's point (GeoNames, ours to keep): the brief names it, nothing of the host's is needed.
+      const m = await muniSoon({ lat: +row.lat, lng: +row.lng });
+      await research({ town: row.town, region: row.region, lat: row.lat, lng: row.lng, ...(m ? { place: m } : {}) }, dir, null, { meter, parts: AREA_KINDS, rules: { markets: QUICK_MARKETS }, searches: QUICK_SEARCHES, together: true, early: true });
       const result = Object.fromEntries(AREA_KINDS.filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))]));
       if (!Object.keys(result).length) throw new Error('Nothing came back from the research');
+      if (m) result.place = { town: m.town, province: m.province, source: 'geonames', fetched: m.fetched };   // the row's point is the area's, not exactly the house's: the builder does not fill a town from it
       const reach = Math.max(0, ...(((result.markets || {}).markets) || []).filter(m => m.lat != null && m.lng != null).map(m => kmBetween(+row.lat, +row.lng, +m.lat, +m.lng)));   // the database shares it within half of this
       await ap({ status: 'done', result, reach_km: reach ? +reach.toFixed(2) : null, usd: claudeApi ? +meter.usd.toFixed(3) : null, message: null, finished_at: new Date().toISOString() });
       log(`  area researched (reach ${reach.toFixed(1)} km): ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
@@ -721,6 +703,11 @@ async function runArea(only) {
   work.finally(() => RUNNING.delete(row.id));
   return { work };   // in an object: returned as it is, the promise would make the caller wait for the whole research
 }
+// The municipality a research's point lies in (GeoNames, worker/place-facts.mjs), for its brief: a few tenths of a second
+// from the country file kept on disk. When the file is being fetched again (every 30 days, or the first time), the research
+// does not wait more than 20 s for it: it goes on without (the download goes on and serves the next one).
+const muniSoon = at => new Promise(done => { const t = setTimeout(() => { log('  the municipality not found in time, the research goes on without it'); done(null); }, 20000); t.unref?.();
+  municipalityAt(at, { log: (...a) => log(' ', ...a) }).then(m => { clearTimeout(t); done(m); }); });
 // The full research of a guide (job "research"), queued by the browser once the guide has an account. The place comes
 // with the job (where the host's device had it), else from the answers.
 async function researchJob(j, jp) {
@@ -733,9 +720,17 @@ async function researchJob(j, jp) {
   const dir = join(HERE, 'jobs', 'research-' + j.id), meter = { usd: 0 };
   try {
     rmSync(dir, { recursive: true, force: true }); await jp({ message: 'Researching your area' });
-    const read = () => Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))]));
+    // It needs nothing from the host (Yohann, 12 Nov 2026): it starts with the listing's position, before any answer. The
+    // municipality the house lies in (GeoNames, ours to keep) goes into the brief, and to the builder at once (start.js
+    // fills the town with it when the host and the listing gave none). The host's distance cuts what was found later, in
+    // the deck and at the build (research-brief.mjs); their interests stay out of it.
+    const m = await muniSoon({ lat: +A.lat, lng: +A.lng });
+    const place = m ? { town: m.town, province: m.province, source: 'geonames', fetched: m.fetched } : null;
+    if (m) { A.place = m; await jp({ result: { place } }); }
+    const read = () => ({ ...Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))])), ...(place ? { place } : {}) });
     // Things to do first: as soon as they are checked the host gets them as cards (start.js, researchCards), the rest goes on.
-    await research(A, dir, null, { meter, parts: ['todo', 'markets'], onPart: async kind => {
+    // One after the other, not side by side: the big questions stay within the API's tokens per minute (see research()).
+    await research(A, dir, null, { meter, parts: ['todo', 'markets'], rules: earlyRules(A), early: true, onPart: async kind => {
       if (kind === 'todo') { const f = join(dir, 'todo.json'), o = JSON.parse(readFileSync(f, 'utf8')), ids = new Set();
         for (const it of o.items || []) { let n = slugOf(it.name_local || nameOf(it.name)); while (ids.has(n)) n += '-2'; ids.add(n); it.id = n; }
         o.items = await checkOnGoogle(o.items || [], 'todo', { lat: +A.lat, lng: +A.lng }, () => {}); writeFileSync(f, JSON.stringify(o, null, 1)); }
@@ -743,16 +738,17 @@ async function researchJob(j, jp) {
     const result = read();
     const events = await firstEvents(A, meter).catch(e => { log('  events search skipped:', e.message); return null; });
     if (events) result.events = events;
-    if (!Object.keys(result).length) throw new Error('Nothing came back from the research. Try again later.');
+    if (!Object.keys(result).filter(k => k !== 'place').length) throw new Error('Nothing came back from the research. Try again later.');
     await jp({ status: 'done', result, message: Object.keys(result).join(', '), finished_at: new Date().toISOString() });
     log(`  guide area researched: ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 // The first events of a new guide, found with the rest of its research (Yohann, 30 Oct 2026: a new guide opens with events,
-// about 0.95 USD). The same search as the monthly run; the build takes them like the markets.
+// about 0.95 USD). The same search as the monthly run, with the early research's reach (EV_EARLY: the main ones up to
+// 60 km, nothing of the host's); the build takes them like the markets, cut to the host's distance (eventsInReach).
 async function firstEvents(A, meter = null) {
-  const R = evReach({}, { reach: A.city ? 'city' : 'car' }), today = dayStr(new Date());
-  const found = (await searchEvents({ ...A, radius: R.far }, { reach: R, meter })).filter(f => (f.dates || []).some(d => (d.end || d.start) >= today));
+  const R = A.city ? EV_REACH.city : EV_EARLY, today = dayStr(new Date());
+  const found = (await searchEvents({ ...A, radius: R.far }, { reach: R, meter, early: true })).filter(f => (f.dates || []).some(d => (d.end || d.start) >= today));
   for (const f of found) f.id = slugOf(f.name_local || nameOf(f.name));
   const file = { items: [] }; mergeEvents(file, found, today, R);
   return file.items.length ? { items: file.items } : null;
@@ -790,6 +786,16 @@ function mergeQuick(dir, quick) {
   o.markets = [...(o.markets || []), ...add];
   if (Array.isArray(o.categories)) o.categories = [...new Set([...o.categories, ...add.map(m => m.category).filter(Boolean)])];
   writeFileSync(f, JSON.stringify(o, null, 1)); log(`  ${add.length} market(s) from the quick search added`);
+}
+// The host's distance ("Your area") on what the research found, which searched a reach of its own: the markets beyond it
+// are left out, the 4 nearest always stay; the events as the monthly run keeps them (research-brief.mjs). Things to do need
+// no cut: only what the host chose goes in the guide.
+function reachCut(dir, A) {
+  const house = { lat: +A.lat, lng: +A.lng }, mf = join(dir, 'markets.json'), ef = join(dir, 'events.json');
+  if (existsSync(mf)) { const o = JSON.parse(readFileSync(mf, 'utf8')), r = inReach(o.markets, house, A.radius);
+    if (r.dropped) { o.markets = r.markets; if (Array.isArray(o.categories)) o.categories = o.categories.filter(c => o.markets.some(m => m.category === c)); writeFileSync(mf, JSON.stringify(o, null, 1)); log(`  ${r.dropped} market(s) beyond the host's distance left out`); } }
+  if (existsSync(ef)) { const o = JSON.parse(readFileSync(ef, 'utf8')), r = eventsInReach(o.items, A.radius, { city: !!A.city });
+    if (r.dropped) { o.items = r.items; writeFileSync(ef, JSON.stringify(o, null, 1)); log(`  ${r.dropped} event(s) beyond the host's distance left out`); } }
 }
 
 // A place the host added or found in the editor (Eat and drink, Nightlife, Attractions): its facts through the build's own

@@ -68,10 +68,12 @@ export function nearby(house, pins, { km = 60, python = process.env.OVERTURE_PYT
 // guide credits GeoNames): towns, beaches, mountains, springs, monuments, which Overture does not list. country: two
 // capital letters (the file fetched). pins: as for nearby(). Returns { fetched, pins: { id: [features] } }; if Python or
 // the download fails, no features. python: any Python 3.9 or later (standard library only).
-export function gazetteer(country, pins, { python = process.env.GEONAMES_PYTHON || 'python3', log = console.error } = {}) {
-  return runPython('geonames.py', { country, pins }, { python, log, tag: 'geonames', none: 'no features',
-    empty: () => ({ fetched: null, pins: {} }),
-    take: r => ({ fetched: r.fetched || null, pins: r.pins && typeof r.pins === 'object' ? r.pins : {} }) });
+// points (optional): [{ id, lat, lng }], the second question of geonames.py: the municipality each lies in, given back as
+// places: { id: { town, province, seat, near, near_code, metres, by } or null } (see municipalityAt).
+export function gazetteer(country, pins, { python = process.env.GEONAMES_PYTHON || 'python3', log = console.error, points = null } = {}) {
+  return runPython('geonames.py', { country, pins, ...(points ? { points } : {}) }, { python, log, tag: 'geonames', none: 'no features',
+    empty: () => ({ fetched: null, pins: {}, ...(points ? { places: {} } : {}) }),
+    take: r => ({ fetched: r.fetched || null, pins: r.pins && typeof r.pins === 'object' ? r.pins : {}, ...(points ? { places: r.places && typeof r.places === 'object' ? r.places : {} } : {}) }) });
 }
 
 // Which GeoNames feature a place is, among those around its pin: the nearest within the reach of its class (P: towns and
@@ -95,6 +97,23 @@ export async function townPoint(town, at, { country = 'ES', gaz = gazetteer, pyt
     const f = featureFor((((g && g.pins) || {}).house || []).filter(x => x && x.cls === 'P'));
     return f ? { lat: f.lat, lng: f.lng, name: f.name || name, metres: f.metres } : null;
   } catch (e) { log(`geonames: the town not looked up (${e.message})`); return null; }
+}
+// The municipality the house lies in, from GeoNames (open data, ours to keep; the guide credits GeoNames): the area
+// research names it in its brief, nearest villages first (worker/guide-worker.mjs), and the builder fills the host's town
+// with it when they gave none (onboarding-site/src/start.js). at: the house's point. Returns { town, province, near,
+// metres, fetched }: town the municipality ("la Bisbal del Penedès"), province its province or null, near the nearest
+// town, village, hamlet or housing estate GeoNames lists ("Can Gordei", or the town itself) and metres its distance from
+// the point; or null (no town or village within 10 km, no point, GeoNames not reachable). Never throws. gaz (tests): in
+// place of gazetteer().
+export async function municipalityAt(at, { country = 'ES', gaz = gazetteer, python, log = console.error } = {}) {
+  const lat = +(at && at.lat), lng = +(at && at.lng);
+  if (!at || at.lat == null || at.lng == null || !isNum(lat) || !isNum(lng)) return null;
+  try {
+    const g = await gaz(country, [], { log, points: [{ id: 'house', lat, lng }], ...(python ? { python } : {}) });
+    const m = ((g && g.places) || {}).house, text = x => typeof x === 'string' && x.trim() ? x.trim().slice(0, 80) : null;
+    if (!m || !text(m.town)) return null;
+    return { town: text(m.town), province: text(m.province), near: text(m.near), metres: isNum(m.metres) ? m.metres : null, fetched: (g && g.fetched) || null };
+  } catch (e) { log(`geonames: the municipality not looked up (${e.message})`); return null; }
 }
 // Our kind (engine/src/kinds.json, todo) from a feature's class and code, for a place Claude gave no kind.
 const CODE_KIND = { 'T.BCH': 'beach', 'T.MT': 'mountain', 'T.MTS': 'mountain', 'T.PK': 'mountain', 'T.HLL': 'mountain', 'H.SPNG': 'spring',

@@ -334,7 +334,7 @@ const MODULES = [
   {id:'nightlife',group:'area',title:'Nightlife',sub:'Bars, clubs, live music',icon:'moon',tc:'var(--ink)',ti:'#fff',sh:'var(--sun)',shape:'half',sec:'nightlife',
    lead:'Late bars, cocktail bars, clubs and live music: where you send friends for the evening and the night. We add none of our own.',need:[],fields:['favNight']},
   {id:'area',group:'area',title:'Your area',sub:'Interests and distance',icon:'link',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'circle',
-   lead:'This steers the search: the places you swipe next, and the markets and events in your guide.',need:[],fields:['interests','guests','radius']},
+   lead:'This steers what comes next: the places you swipe, and how far the markets and events in your guide reach.',need:[],fields:['interests','guests','radius']},
 ];
 const GROUPS = [['basics','The basics'],['house','The house'],['practical','Practical'],['area','Around you']];
 
@@ -390,7 +390,7 @@ const Q = {
   voiceNotes:{t:'area',rows:3,label:'Anything about your style with guests?',opt:true,full:true,ph:'We use first names, we love dogs, we always leave a bottle of local wine…'},
   localTips:{t:'area',rows:4,label:'Local tips only you know',opt:true,full:true,ph:'When the market is quietest, where to park for the old town, the best spot for sunset…',hint:'One per line. Guests see them in the House guide, under Local tips.'},
   interests:{t:'chips',label:'What your guests come for',opts:INTERESTS},
-  radius:{t:'radio',label:'How far should we look?',opts:['15 min','30 min','45 min','1 hour'],suffix:' by car'},
+  radius:{t:'radio',label:'How far should your guide reach?',opts:['15 min','30 min','45 min','1 hour'],suffix:' by car'},
   kidsAges:{t:'chips',label:'Kids who usually stay',opts:['Babies','Toddlers','4 to 8','9 to 12','Teenagers']},
   kidsGear:{t:'chips',label:'Kids gear at the house',opts:['Cot','High chair','Stair gate','Pool fence','Toys and games','Bike seats'],opt:true},
   kidsNotes:{t:'area',rows:2,label:'Anything for parents to know?',opt:true,full:true,ph:'The pool has no fence, the stairs are steep…'},

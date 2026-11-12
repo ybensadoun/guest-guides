@@ -41,7 +41,8 @@ function applyListing(){
   for (const [k, mod] of Object.entries(FIELD_MODULE)) {
     if (r[k] == null) continue;
     const empty = Array.isArray(A[k]) ? !A[k].length : !String(A[k] ?? '').trim();
-    if (!empty) continue;
+    const auto = (k === 'town' && A._townAuto && A[k] === A._townAuto) || (k === 'region' && A._regionAuto && A[k] === A._regionAuto);   // the research's town (start.js townFromResearch): the listing's own wins
+    if (!empty && !auto) continue;
     A[k] = r[k]; got.push(k);
     A._pre = { ...(A._pre || {}), [k]: mod };
   }

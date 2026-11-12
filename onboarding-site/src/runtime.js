@@ -277,7 +277,7 @@ function blLines(){
   const said = eat.find(r => String(r.c || '').trim() && String(r.p || '').trim().length <= 40); add(said, said && `${String(said.p).trim()}, in your own words.`);
   add(todo, todo === 1 ? 'The thing to do you chose, and nothing you did not.' : `The ${todo} things to do you chose, and nothing you did not.`);
   add(night.length, night.length === 1 ? 'Your place for the evening.' : `Your ${night.length} places for the evening.`);
-  const mk = ((AR.markets || {}).markets || []).filter(m => nm(m.name)).map(m => ({ m, km: blKm(m) })).sort((a, b) => (a.km ?? 999) - (b.km ?? 999));
+  const mk = marketsInReach((AR.markets || {}).markets).filter(m => nm(m.name)).map(m => ({ m, km: blKm(m) })).sort((a, b) => (a.km ?? 999) - (b.km ?? 999));
   const far = Math.max(...mk.map(x => x.km || 0));
   add(mk.length > 1 && far > 0, `${mk.length} markets within ${far}${NB}km of the house, nearest first.`);
   for (const { m, km } of mk.slice(0, 3)) { const d = blDay(((m.schedule || [])[0] || {}).days?.[0]); if (!d || !m.town) continue;

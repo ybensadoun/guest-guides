@@ -329,7 +329,7 @@ try {
   const TODO_G = { ...AREA_TODO, items: AREA_TODO.items.map((it, i) => i < 2 ? { ...it, gid: 'g-res' + i } : it) };
   const CARD_PHOTO = photos[1] || photos[0] || '/api/photo?name=res-0', CARD = { 'g-res0': { ok: true, photo: CARD_PHOTO, photoBy: [{ name: 'Bea Test', uri: 'https://maps.google.com/maps/contrib/456' }], rating: 4.7, reviews: 321 }, 'g-res1': { ok: true, photo: null, photoBy: [], rating: 4.2, reviews: 50 } };
   const cardAnswer = (r, asked, wait = 900) => { const id = new URL(r.request().url()).searchParams.get('card'); asked.push(id); setTimeout(() => json(r, CARD[id] || { ok: false }).catch(() => {}), id === 'g-res0' ? wait : 0); };
-  { const items = TODO_G.items, en = i => items[i].name.en, added = en(items.length - 1), G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, swipes: {}, favDo: [{ p: added, c: '' }] } };
+  { const items = TODO_G.items, en = i => items[i].name.en, added = en(items.length - 1), G = { ...B, answers: { ...B.answers, radius: '1 hour', _researchJob: JOB_ID, swipes: {}, favDo: [{ p: added, c: '' }] } };   // 1 hour: every researched card within reach (the distance cut has its own check)
     const { ctx, p, errors } = await open(browser, G, 360, 780); let job = { status: 'running', result: null };
     const asked = [], saved = [];
     await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [job]));
@@ -379,7 +379,7 @@ try {
     ok('cards after sign-up: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // The same researched cards at 360 px in French: one with Google's photo, its author and rating, one with its kind's icon.
-  { const items = TODO_G.items, G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, swipes: {}, favDo: [] } };
+  { const items = TODO_G.items, G = { ...B, answers: { ...B.answers, radius: '1 hour', _researchJob: JOB_ID, swipes: {}, favDo: [] } };
     const { ctx, p, errors } = await open(browser, G, 360, 780), asked = [];
     await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ status: 'done', result: { todo: TODO_G } }]));
     await ctx.route('**/api/places**', r => new URL(r.request().url()).searchParams.get('card') ? cardAnswer(r, asked, 0) : json(r, new URL(r.request().url()).searchParams.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: [] }));
@@ -398,12 +398,77 @@ try {
     await p.locator('.sw-card').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'cards-icon-fr-360.png') });
     ok('researched cards in French: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // The research needs nothing from the host (12 Nov 2026): it searched a reach of its own, and Your area's distance acts on
+  // what it found at once, with no new search. A researched card beyond the host's distance is not in the deck; widened in
+  // Your area, it comes in. A card with no distance stays.
+  { const noKm = { ...AREA_TODO.items[4] }; delete noKm.km_from_house;
+    const items = [{ ...AREA_TODO.items[0], km_from_house: 7 }, { ...AREA_TODO.items[3], km_from_house: 41 }, noKm];
+    const near = items[0].name.en, far = items[1].name.en, none = items[2].name.en, G = { ...B, answers: { ...B.answers, radius: '15 min', _researchJob: JOB_ID, swipes: {}, favDo: [] } };
+    const { ctx, p, errors } = await open(browser, G, 360, 780), asked = [], queued = [];
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => { if (r.request().method() === 'POST') queued.push(r.request().postData()); return json(r, [{ status: 'done', result: { todo: { ...AREA_TODO, items } } }]); });
+    await ctx.route('**/api/places**', r => { const q = new URL(r.request().url()).searchParams; if (!q.get('probe') && !q.get('card')) asked.push(q.get('radius')); return json(r, q.get('probe') ? { ok: true, enabled: true } : q.get('card') ? { ok: false } : { ok: true, lat: A0.lat, lng: A0.lng, places: [] }); });
+    await p.goto('http://editor.test/#nearby'); await ready(p);
+    await p.waitForSelector('.sw-card', { timeout: 8000 }).catch(() => {});
+    const deckNames = async () => { const out = []; for (let i = 0; i < 6; i++) { const h = await p.textContent('.sw-card h3').catch(() => null); if (!h) break; out.push(h); await p.click('[data-sw="no"]'); await p.waitForTimeout(450); } return out; };
+    const n15 = await p.textContent('.sw-count').catch(() => '');
+    const at15 = await deckNames();
+    ok('Your area, 15 min: a researched card beyond the distance is not in the deck; one within it and one with no distance are', at15.includes(near) && at15.includes(none) && !at15.includes(far) && /of 2\b/.test(n15), `${at15.join(', ')} | ${n15}`);
+    const before = asked.length;
+    await go(p, '#area'); await p.click('[data-radio="radius"][value="45 min"]', { force: true }); await p.waitForTimeout(200);
+    await go(p, '#nearby'); await p.waitForSelector('.sw-card', { timeout: 6000 }).catch(() => {});
+    const top = await p.textContent('.sw-card h3').catch(() => '');
+    ok('Your area, widened to 45 min: the farther card comes in at once, with nothing the host decided lost and no research asked again', top === far && Object.keys((await stored(p)).swipes || {}).length === 2 && !queued.length, `${top} | ${queued.length} research job(s) queued | Google's deck asked ${asked.length - before} more time(s), as before for a change of Your area`);
+    await go(p, '#area'); await p.click('[data-radio="radius"][value="15 min"]', { force: true }); await p.waitForTimeout(200);
+    await go(p, '#nearby'); await p.waitForTimeout(500);
+    ok('Your area, back to 15 min: the farther card leaves the deck again', !/Poblet/.test(await p.textContent('#swipe').catch(() => '')) && (await p.textContent('.sw-card h3').catch(() => '')) !== far, (await p.textContent('#swipe').catch(() => '')).replace(/\s+/g, ' ').slice(0, 120));
+    ok('Your area cut: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // The town from the research (12 Nov 2026): the municipality the house lies in (GeoNames), filled when the host and the
+  // listing gave none, with the province as the region, marked where it came from (A._pre, About the place); a town
+  // already given is left alone.
+  for (const [given, w, h] of [['', 360, 780], ['', 1280, 860], ['Vilagran de Prova', 360, 780]]) {
+    const G = { ...B, answers: { ...B.answers, town: given, region: '', _researchJob: JOB_ID, _seen: [], _done: {} } }, tag = `${w} px${given ? ', town given' : ''}`;
+    const { ctx, p, errors } = await open(browser, G, w, h);
+    let job = { status: 'running', result: null }, polled = 0;
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => { if (r.request().method() === 'GET') polled++; return json(r, [job]); });
+    await p.goto('http://editor.test/#place'); await ready(p); await p.waitForTimeout(400);   // About the place: the town's field
+    const req = () => p.evaluate(() => { const f = document.getElementById('f_town'), b = f && f.closest('.f') && f.closest('.f').querySelector('.req'); return b ? b.className : 'none'; });
+    const was = await req();
+    job = { status: 'running', result: { place: { town: 'Vilaprova del Test', province: 'Tarragona', source: 'geonames', fetched: '2026-11-10' } } };
+    { const n = polled; for (let i = 0; i < 60 && polled <= n; i++) await p.waitForTimeout(250); }   // the builder asks every 6 s: wait for its next look
+    await p.waitForTimeout(400);
+    const A = await stored(p), town = await p.inputValue('#f_town').catch(() => ''), region = await p.inputValue('#f_region').catch(() => ''), hint = await p.evaluate(() => ['f_town', 'f_region'].map(id => { const f = document.getElementById(id); const x = f && f.closest('.f').querySelector('label .frm'); return x ? x.textContent : ''; }).join(' | '));
+    if (!given) {
+      ok(`town from the research, ${tag}: the empty town and region are filled with the municipality and its province, the needed mark clears, GeoNames named beside both labels and no hint under them`,
+        town === 'Vilaprova del Test' && region === 'Tarragona' && A.town === 'Vilaprova del Test' && A.region === 'Tarragona' && (A._pre || {}).town === 'place' && /\bok\b/.test(await req()) && !/\bok\b/.test(was) && /GeoNames.*\|.*GeoNames/.test(hint) && !(await p.locator('.f:has(#f_town) .hint').count()), JSON.stringify({ town, region, was, now: await req(), hint }));
+      const clear = await p.evaluate(() => { const t = document.getElementById('f_town'); if (!t) return false; const f = t.closest('.f'), els = [...f.children].map(e => e.getBoundingClientRect()).filter(r => r.height);
+        const hit = els.some((a, i) => els.slice(i + 1).some(b => a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1));
+        return !hit && document.documentElement.scrollWidth <= innerWidth && [...f.querySelectorAll('.hint,label')].every(e => e.scrollWidth <= e.clientWidth + 1) && [...document.querySelectorAll('label .frm')].every(e => { const r = e.getBoundingClientRect(), l = e.closest('label').getBoundingClientRect(); return r.left >= l.left - 1 && r.right <= l.right + 1 && r.height < 30; }); });
+      ok(`town from the research, ${tag}: its line and the field touch nothing, no sideways scroll`, clear);
+      await p.locator('#f_town').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, `town-from-research-${w}.png`) });
+      await p.fill('#f_town', 'Vilaprova'); await p.waitForTimeout(700);
+      ok(`town from the research, ${tag}: once the host changes it, it is theirs (no mark)`, !((await stored(p))._pre || {}).town && (await stored(p)).town === 'Vilaprova');
+    } else ok(`town from the research, ${tag}: a town already given is left alone, the region too`, town === given && A.town === given && !A.region && !(A._pre || {}).town && !/GeoNames/.test(hint), JSON.stringify({ town, region }));
+    ok(`town from the research, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // The new words of Your area, at both widths: whole, touching nothing.
+  for (const [w, h] of [[1280, 860], [360, 780]]) {
+    const { ctx, p, errors } = await open(browser, B, w, h);
+    await p.goto('http://editor.test/#area'); await ready(p); await p.waitForTimeout(400);
+    const lead = await p.textContent('.mhead p').catch(() => '');
+    const c = await p.evaluate(() => { const hd = document.querySelector('.mhead'); if (!hd) return 'no head'; const els = [...hd.querySelectorAll('h1, p, .pill')].map(e => e.getBoundingClientRect()).filter(r => r.height);
+      const hit = els.some((a, i) => els.slice(i + 1).some(b => a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1));
+      return hit ? 'overlap' : [...hd.querySelectorAll('h1, p')].some(e => e.scrollWidth > e.clientWidth + 1) ? 'a word wider than its line' : document.documentElement.scrollWidth > innerWidth ? 'sideways scroll' : ''; });
+    ok(`Your area, ${w} px: the new words, whole, touching nothing`, lead.trim() === 'This steers what comes next: the places you swipe, and how far the markets and events in your guide reach.' && !c, `${lead} ${c}`);
+    await p.screenshot({ path: join(SHOTS, `area-lead-${w}.png`) });
+    ok(`Your area, ${w} px: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // A researched card Google says is closed (12 Nov 2026): asked live with its photo (?card=), never kept. Permanently closed:
   // the line with "Google Maps", what to do instead, Recommend unavailable (a tap, a swipe or the arrow key keep nothing and
   // say why), Not for us the main button. Temporarily closed: only the line, and a yes keeps it, with nothing of Google's.
   for (const [w, h, lang] of [[360, 780, 'en'], [1280, 860, 'en'], [360, 780, 'fr']]) {
     const items = AREA_TODO.items.slice(0, 3).map((it, i) => i < 2 ? { ...it, gid: ['g-dk-perm', 'g-dk-temp'][i] } : it), en = i => items[i].name.en, tag = `${w} px${lang === 'en' ? '' : ' in French'}`;
-    const G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, swipes: {}, favDo: [] } };
+    const G = { ...B, answers: { ...B.answers, radius: '1 hour', _researchJob: JOB_ID, swipes: {}, favDo: [] } };
     const { ctx, p, errors } = await open(browser, G, w, h), asked = [], opened = [];
     const LIVE = { 'g-dk-perm': { ok: true, photo: null, photoBy: [], rating: 4.4, reviews: 60, closed: 'permanent' }, 'g-dk-temp': { ok: true, photo: CARD_PHOTO, photoBy: [{ name: 'Bea Test', uri: 'https://maps.google.com/maps/contrib/456' }], rating: 4.5, reviews: 70, closed: 'temporary' } };
     await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ status: 'done', result: { todo: { ...AREA_TODO, items } } }]));
@@ -1081,7 +1146,7 @@ try {
     ok('builder: Check-out and the welcome page cannot be switched off, so they are not offered', !(await p.$('[data-sec="checkout"]')) && !(await p.$('[data-sec="welcome"]')));
     { const asked = []; await ctx.route('**/api/places**', r => { const q = new URL(r.request().url()).searchParams; if (!q.get('probe')) asked.push(`${q.get('radius')} ${q.get('want')}`); return json(r, q.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places }); });
       await go(p, '#area'); await p.waitForTimeout(300);
-      ok('Your area: it says what it steers, before the places', /swipe next/.test(await p.textContent('.mhead p').catch(() => '')));
+      ok('Your area: it says what it steers, before the places', /the places you swipe, and how far the markets and events in your guide reach/.test(await p.textContent('.mhead p').catch(() => '')));
       await p.click('[data-radio="radius"][value="1 hour"]', { force: true }); await p.$$eval('[data-multi="guests"]', els => { const f = els.find(e => e.value === 'Families with kids'); if (!f.checked) f.click(); });
       await go(p, '#nearby'); await p.waitForTimeout(600);
       ok('Your area: the deck follows the distance and who the guests are', asked.some(a => a.startsWith('30000 ') && /Families with kids/.test(a)), asked.join(' / ')); }
