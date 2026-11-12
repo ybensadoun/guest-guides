@@ -414,7 +414,11 @@ def localize(x):
     return {k: localize(v) for k, v in x.items()}
 # A researched market without fixed weekly hours (monthly, seasonal, unconfirmed) keeps an empty schedule and says when it
 # runs in words: occasional_when, or its hours text when that is all the research gave.
+# The monthly check's note for the host on a place (worker/check-guides.mjs), in every list it looks at. Never shown to guests.
+LOOK_DOC = " look: {at, why, ok?}, the monthly check's note for the host (worker/check-guides.mjs), never shown to guests: why is 'site' (its own website no longer answers) and/or 'directory' (our open directory marks it closed, or no longer lists it); at the day it was first seen; ok the day the host looked (the editor). It goes when the signal goes; the place itself is never changed."
+with_look = lambda doc: (doc or '') + ('' if LOOK_DOC in (doc or '') else LOOK_DOC)
 def fix_markets(d):
+    d['_doc'] = with_look(d.get('_doc'))
     for m in d.get('markets') or []:
         if not m.get('schedule'): m['schedule'] = []
         if not m['schedule'] and not m.get('occasional_when') and m.get('hours'):
@@ -739,7 +743,7 @@ def host_items(rows, filters=False, unnamed=None):   # filters: Things to do (ki
 UNNAMED_DOC = ' unnamed: places the host picked or kept whose name nobody has given yet (no words of theirs, none in our directory): never shown to guests; the editor asks the host to name each one, which moves it into items.'
 def write_host_places(rows, file):
     waiting = []
-    doc = {'_doc': "The host's own list, written by generate-site.py. No researched places are added here. season: {from, to} as MM-DD, a place open only part of the year with no hours of ours (no schedule)." + UNNAMED_DOC, 'items': host_items(rows, unnamed=waiting)}
+    doc = {'_doc': "The host's own list, written by generate-site.py. No researched places are added here. season: {from, to} as MM-DD, a place open only part of the year with no hours of ours (no schedule)." + UNNAMED_DOC + LOOK_DOC, 'items': host_items(rows, unnamed=waiting)}
     if waiting: doc['unnamed'] = waiting
     (SITE / f'content/{file}.json').write_text(json.dumps(doc, ensure_ascii=False, indent=1))
 fav, night = host_list('favEat'), host_list('favNight')
@@ -774,6 +778,7 @@ if todo_file.exists() or kept or added:
             found.remove(twin); it = {**twin, 'hostPick': True, **({'description': it['description']} if it.get('description') else {})}
         if not any(plain(en_name(x)) == plain(en_name(it)) for x in picks): picks.append(it)
     todo_doc['items'] = [{k: v for k, v in x.items() if k not in ('_card', '_google')} for x in picks]
+    todo_doc['_doc'] = with_look(todo_doc.get('_doc'))
     if waiting: todo_doc['unnamed'] = waiting; todo_doc['_doc'] = (todo_doc.get('_doc') or '') + ('' if UNNAMED_DOC in (todo_doc.get('_doc') or '') else UNNAMED_DOC)
     else: todo_doc.pop('unnamed', None)
     todo_file.write_text(json.dumps(todo_doc, ensure_ascii=False, indent=1))

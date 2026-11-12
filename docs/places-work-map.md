@@ -9,7 +9,7 @@ Two server keys, both in the Google project `guest-guides-checks` (seen in its c
 
 | Where | Request | Fields asked | Started by |
 |---|---|---|---|
-| `worker/places.mjs:49` `makeGoogle` | details by id, else text search | `FIELDS` (line 40): id, displayName, businessStatus, googleMapsUri, location, formattedAddress, regularOpeningHours, rating, userRatingCount, photos | `checkOnGoogle` (`guide-worker.mjs:354`: Find more for things to do and markets, area research), `check-guides.mjs` (monthly and `npm run check-guides`) |
+| ~~`worker/places.mjs:49` `makeGoogle`~~ | removed 12 Nov 2026 with `FIELDS` | | the monthly check asks Google nothing since then (`worker/check-guides.mjs`) |
 | `worker/places.mjs:88` `hostPlace` | text search | `HOST_FIELDS` (line 71): the same plus primaryType, primaryTypeDisplayName | guide build (`guide-worker.mjs:267`), places a host typed without picking a suggestion. Also follows a `maps.app.goo.gl` link |
 | `worker/places.mjs:109` `hostPlaceById` | details by id | `HOST_FIELDS` | guide build (`:266`, `:268`): picked suggestions and swipe cards kept |
 | `/api/places?suggest=` (`netlify/functions/places.mjs:42`) | autocomplete | placeId, structuredFormat, distanceMeters | as a host types a place (builder `start.js:382`, editor `editor.js:141`) |
@@ -18,7 +18,7 @@ Two server keys, both in the Google project `guest-guides-checks` (seen in its c
 | `/api/places` town (`:78`) | text search | location | swipe deck when the house has no position (`start.js:270`); saved as the house's `lat`/`lng` |
 | `/api/places` deck (`:84`) | nearby search, by popularity | id, displayName, rating, userRatingCount, priceLevel, primaryTypeDisplayName, location, googleMapsUri, shortFormattedAddress, photos, editorialSummary | swipe deck of Attractions (`start.js:265`); ratings filter and order it (`:88-95`) |
 | `/api/photo` (`photo.mjs:6`) | photo media | the photo | the deck card's picture (`start.js:294`) |
-| `engine/scripts/check-places.js:29` | text search | displayName, businessStatus, formattedAddress, location, googleMapsUri | `npm run check-places`, the cloud routine |
+| ~~`engine/scripts/check-places.js:29`~~ | removed 12 Nov 2026 with `npm run check-places` | | replaced by the weekly reading (`worker/reread-places.mjs`) and the monthly check (`worker/check-guides.mjs`), both without Google |
 
 `/api/places` answers and photo redirects are sent with `cache-control: public, max-age=86400` (`places.mjs:17`, `photo.mjs:9`): a day in the CDN and the browser.
 
@@ -45,13 +45,13 @@ Kept in:
 - Built copies to rebuild after any change: `onboarding-site/index.html`, `onboarding-site/g-app/assets/main-*.js`.
 
 ## 4. The monthly check
-`worker/check-guides.mjs`: markets, things to do and restaurants of published guides, when `checked` is 25 days old. Writes checked, gid, gmaps, flags, schedule, hoursSource, always (`CHECK_KEYS`, line 77), removes places closed for good, mirrors into the draft. Never writes position, name, town, type or rating. Hours from `hostFacts` and from the editor carry no `hoursSource`, so they later count as "official" when the item has a website (line 54). `worker/monthly.mjs` runs it with `--apply` and queues Find more for `MONTHLY_FIND`. The cloud routine's instructions rest on the comparison of hours with Google's.
+Since 12 Nov 2026 `worker/check-guides.mjs` asks Google nothing: a place's own website still answers, our open directory still lists it, and a signal is a note for the host (`look`), never a change guests see (`worker/README.md`). `worker/clean-google.mjs` takes out of today's guides what the old check wrote (Google's hours, its links where the place has an id, `checked`). What it did before, on 10 Nov: markets, things to do and restaurants of published guides, when `checked` was 25 days old; wrote checked, gid, gmaps, flags, schedule, hoursSource, always, removed places closed for good, mirrored into the draft.
 
 ## 5. Checks that will need to follow
 - `engine/scripts/check-content.js`: lines 54 and 74 need a numeric lat and lng for every market and spot (to square with positions that expire); 55-61 schedule, tags, flags; 75 group.
 - `onboarding-site/test/check.mjs`: the deck mocks with rating, reviews, type, photo (204, 215, 590-610); the suggestion and "Found:" lines (461-484, 785-798); the station's name (804-813); the Find more card (857-864).
 - `engine/scripts/ux-check.mjs:53-57`: a row's lines under the status pill.
-- No test covers `worker/places.mjs`, `check-guides.mjs` or the generator's Google paths.
+- No test covered (10 Nov) `worker/places.mjs`, `check-guides.mjs` or the generator's Google paths; since then `locateItem` and the new `check-guides.mjs` have tests.
 
 ## 6. Points to decide inside the steps
 1. The name: a picked suggestion and a swipe card carry Google's name into the guide. Whose name is kept.

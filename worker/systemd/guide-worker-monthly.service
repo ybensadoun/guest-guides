@@ -1,5 +1,5 @@
 [Unit]
-Description=The guide worker's monthly run (worker/monthly.mjs): Google check, automatic events, Find more for Ca La Kimberly, report by email
+Description=The guide worker's monthly run (worker/monthly.mjs): the check with our own sources, automatic events, Find more for Ca La Kimberly, report by email
 After=network-online.target docker.service
 Wants=network-online.target
 

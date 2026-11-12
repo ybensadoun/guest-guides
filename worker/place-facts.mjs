@@ -52,14 +52,16 @@ function runPython(script, question, { python, log, tag, none, empty, take }) {
 }
 
 // Overture's records near each pin (worker/overture.py). pins: [{ id, lat, lng, names: [] }]. Returns
-// { release, pins: { id: [candidates] }, towns: { id: town } } (towns: the town most records around the pin carry, for a
-// place with no record of its own). If Python or Overture fails, no candidates: the chain goes on with search only.
+// { release, pins: { id: [candidates] }, towns: { id: town }, looked: [ids] } (towns: the town most records around the pin
+// carry, for a place with no record of its own; looked: the pins whose records were really read, since a pin far from the
+// house past the first six is not, and "no record near it" must not be read as "gone": worker/check-guides.mjs). If Python
+// or Overture fails, no candidates and looked null: the chain goes on with search only.
 // python: the command that runs Python with pyarrow and overturemaps (OVERTURE_PYTHON, split on spaces; on the Mac
 // `uv run -q --no-project --with overturemaps==2.1.0 --with pyarrow python`).
 export function nearby(house, pins, { km = 60, python = process.env.OVERTURE_PYTHON || 'python3', log = console.error } = {}) {
   return runPython('overture.py', { house: { lat: house.lat, lng: house.lng }, km, pins }, { python, log, tag: 'overture', none: 'no records, search only',
-    empty: () => ({ release: null, pins: {}, towns: {} }),
-    take: r => ({ release: r.release || null, pins: r.pins || {}, towns: r.towns && typeof r.towns === 'object' ? r.towns : {} }) });
+    empty: () => ({ release: null, pins: {}, towns: {}, looked: null }),
+    take: r => ({ release: r.release || null, pins: r.pins || {}, towns: r.towns && typeof r.towns === 'object' ? r.towns : {}, looked: Array.isArray(r.looked) ? r.looked.map(String) : null }) });
 }
 
 // GeoNames' features near each pin that carry one of its names (worker/geonames.py, open data under CC BY 4.0: the
@@ -106,8 +108,8 @@ const label = h => { const p = h.split('.'); return (p.length > 2 && /^(co|com|o
 // Not a place's own website: directories, maps, reviews, booking and social sites. Facebook and Instagram are kept only
 // as links (their terms do not allow reading them by automated means).
 const DENY = /(^|\.)(google\.[a-z.]+|goo\.gl|g\.page|tripadvisor\.[a-z.]+|facebook\.com|fb\.com|fb\.me|instagram\.com|twitter\.com|x\.com|tiktok\.com|youtube\.com|linkedin\.com|thefork\.[a-z.]+|eltenedor\.[a-z.]+|yelp\.[a-z.]+|booking\.com|airbnb\.[a-z.]+|expedia\.[a-z.]+|hotels\.com|foursquare\.com|restaurantguru\.com|wikipedia\.org|wikiloc\.com|paginasamarillas\.es|cylex\.[a-z.]+|infoisinfo\.[a-z.]+|guiarepsol\.com|michelin\.com|openstreetmap\.org|bing\.com|apple\.com|waze\.com|linktr\.ee|wa\.me|whatsapp\.com)$/;
-const denied = u => !host(u) || DENY.test(host(u));
-const webUrl = u => { if (typeof u !== 'string') return null; try { const x = new URL(u.trim()); return /^https?:$/.test(x.protocol) && x.hostname.includes('.') ? x.href : null; } catch (e) { return null; } };
+export const denied = u => !host(u) || DENY.test(host(u));
+export const webUrl = u => { if (typeof u !== 'string') return null; try { const x = new URL(u.trim()); return /^https?:$/.test(x.protocol) && x.hostname.includes('.') ? x.href : null; } catch (e) { return null; } };
 
 // Our own check of a website (from Overture: some are dead or now lead elsewhere): it must answer within 12 s and land on
 // a site of the same name (recaredo.es -> recaredo.com is fine, calafellhistoric.org -> x-andra.ro is not). When the page
@@ -128,10 +130,12 @@ export async function publicUrl(u) {
     return Array.isArray(as) && as.length > 0 && as.every(a => a && (a.family === 4 ? !private4(a.address) : a.family === 6 ? !private6(a.address) : false));
   } catch (e) { return false; }
 }
-async function openPublic(u, hops = 4) {
+// Also the monthly check's look at a place's website (worker/check-guides.mjs), with a shorter wait (ms). null: not a public
+// address (or a name that does not resolve), or too many redirects; a failed connection throws.
+export async function openPublic(u, hops = 4, ms = 12000) {
   for (let i = 0; i < hops; i++) {
     if (!(await publicUrl(u))) return null;
-    const r = await fetch(u, { redirect: 'manual', signal: AbortSignal.timeout(12000), headers: { 'user-agent': 'Mozilla/5.0 (guest guide website check)' } });
+    const r = await fetch(u, { redirect: 'manual', signal: AbortSignal.timeout(ms), headers: { 'user-agent': 'Mozilla/5.0 (guest guide website check)' } });
     r.body?.cancel().catch(() => {});
     const to = r.status >= 300 && r.status < 400 && r.headers && r.headers.get('location');
     if (!to) return { status: r.status, url: u };

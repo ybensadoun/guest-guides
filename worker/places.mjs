@@ -1,11 +1,14 @@
-// Google Places (New) for one place, shared by the monthly check (check-guides.mjs) and "Find more" in the worker:
-// the same name and position rules decide whether Google's answer is our place, and its periods become our schedule.
-export const DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'], ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+// Google Places (New), asked by the worker to locate a place: a host's places at the build (worker/host-places.mjs), the
+// editor's place lookups (worker/place-job.mjs), the weekly renewal of positions (worker/renew-positions.mjs) and the check
+// of what Find more and the research suggest (worker/research-check.mjs). The same name and position rules decide whether
+// Google's answer is our place. The monthly check no longer asks Google anything (worker/check-guides.mjs, 12 Nov 2026), so
+// the full details request it made (makeGoogle, its FIELDS: hours, rating, photos, address) and the turning of Google's
+// opening periods into our hours are gone.
+export const ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 export const hav = (a, b, c, d) => { const R = 6371, r = Math.PI / 180, x = (c - a) * r, y = (d - b) * r; return 2 * R * Math.asin(Math.sqrt(Math.sin(x / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin(y / 2) ** 2)); };
 export const nameOf = n => (n && typeof n === 'object' ? n.ca || n.es || n.en || Object.values(n)[0] : n) || '';
-export const pad = n => String(n).padStart(2, '0');
 export const daysOf = sch => [...new Set((sch || []).flatMap(s => s.days || []))].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
-// Google's answer must share a real word with our name (not the town, not "market" alone), or be the listing we already link to.
+// Google's answer must share a real word with our name (not the town, not "market" alone).
 export const STOP = new Set('de del dels la les el els los las le du des a i y et and the of d l s sa es en al market mercat mercado marche setmanal semanal weekly'.split(' '));
 export const words = (s, town) => new Set(String(s || '').replace(/\u00ad/g, '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter(w => w.length > 2 && !STOP.has(w) && !String(town || '').toLowerCase().split(/\W+/).includes(w)));
 // Weekly markets are often listed as "Mercat setmanal de <town>": a market listing within 600 m counts, unless the two
@@ -18,48 +21,14 @@ export const sameMarket = (it, p, far) => { if (far > 0.6 || !/mercat|mercado|ma
   const a = wdays([it.name_local, ...Object.values(it.name || {}), ...daysOf(it.schedule).map(d => SCH[d])].join(' '));   // the guide's own days count too
   return [...a].some(d => b.has(d)) || [...b].some(d => ({ lunes: 'dilluns', martes: 'dimarts', miercoles: 'dimecres', jueves: 'dijous', viernes: 'divendres', sabado: 'dissabte', domingo: 'diumenge' })[d] && a.has(({ lunes: 'dilluns', martes: 'dimarts', miercoles: 'dimecres', jueves: 'dijous', viernes: 'divendres', sabado: 'dissabte', domingo: 'diumenge' })[d])); };
 export const sameName = (it, p) => { const a = new Set([...words(it.name_local, it.town), ...words(nameOf(it.name), it.town), ...Object.values(it.name || {}).flatMap(x => [...words(x, it.town)])]); return [...words(p.displayName?.text, it.town)].some(w => a.has(w)); };
-export const cidOf = u => { const m = String(u || '').match(/!1s0x[0-9a-f]+:0x([0-9a-f]+)/i); if (m) return BigInt('0x' + m[1]).toString(); const c = String(u || '').match(/[?&]cid=(\d+)/); return c ? c[1] : null; };
-export const md = d => (d.getMonth() + 1) * 100 + d.getDate(), mdn = s => +s.replace('-', '');
-export const inSeason = (s, d = new Date()) => !s.from || (mdn(s.from) <= mdn(s.to) ? md(d) >= mdn(s.from) && md(d) <= mdn(s.to) : md(d) >= mdn(s.from) || md(d) <= mdn(s.to));
-export const ago = d => d ? (Date.now() - Date.parse(d)) / 864e5 : Infinity;
 
-// Google's opening periods as the guide's schedule (close earlier than open = after midnight; one period without close = always open).
-export function schedule(periods) {
-  if (!periods || !periods.length) return null;
-  if (periods.length === 1 && !periods[0].close) return 'always';
-  const g = new Map();
-  for (const p of periods) {
-    if (!p.close) continue;
-    const k = `${pad(p.open.hour)}:${pad(p.open.minute)}-${pad(p.close.hour)}:${pad(p.close.minute)}`;
-    g.set(k, [...(g.get(k) || []), DAY[p.open.day]]);
-  }
-  return [...g].map(([k, d]) => ({ days: [...new Set(d)].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)), open: k.slice(0, 5), close: k.slice(6) }))
-    .sort((a, b) => ORDER.indexOf(a.days[0]) - ORDER.indexOf(b.days[0]) || a.open.localeCompare(b.open));
-}
-
-export const FIELDS = 'id,displayName,businessStatus,googleMapsUri,location,formattedAddress,regularOpeningHours,rating,userRatingCount,photos';
-// Each request: 15 s limit and up to 3 tries (a dropped connection must not stop the monthly run).
+// Each request: 15 s limit and up to 3 tries (a dropped connection must not stop a run).
 export async function get(url, init) {
   for (let i = 1; ; i++) {
     try { return await fetch(url, { ...init, signal: AbortSignal.timeout(15000) }); }
     catch (e) { if (i >= 3) throw e; await new Promise(r => setTimeout(r, 1500 * i)); }
   }
 }
-// One request for a place: details by its Google id when known, else a text search near its pin.
-export const makeGoogle = GK => async function google(it) {
-  const head = { 'X-Goog-Api-Key': GK, 'Content-Type': 'application/json' };
-  if (it.gid) {   // known place: details by id, no search
-    const r = await get(`https://places.googleapis.com/v1/places/${encodeURIComponent(it.gid)}`, { headers: { ...head, 'X-Goog-FieldMask': FIELDS } });
-    if (r.ok) return r.json();
-  }
-  const body = { textQuery: [it.name_local || nameOf(it.name), it.town].filter(Boolean).join(', '), maxResultCount: 1 };
-  if (typeof it.lat === 'number') body.locationBias = { circle: { center: { latitude: it.lat, longitude: it.lng }, radius: 3000 } };
-  const r = await get('https://places.googleapis.com/v1/places:searchText', { method: 'POST', headers: { ...head, 'X-Goog-FieldMask': FIELDS.split(',').map(f => 'places.' + f).join(',') }, body: JSON.stringify(body) });
-  const d = await r.json();
-  if (d.error) throw new Error(d.error.message);
-  return (d.places || [])[0] || null;
-};
-
 // Google only locates a host's place (the places work, step 3: docs/plan-ca-la-kimberly-through-the-maker.md, "Step 3,
 // the design"). Its terms let us keep a place's id for good and its position for 30 days, and nothing else: so these ask
 // for the id and the position only (and the name, for the search, which is compared in memory and never returned).

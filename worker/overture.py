@@ -3,7 +3,9 @@
 # docs/plan-ca-la-kimberly-through-the-maker.md). Open data we may keep (CDLA Permissive 2.0, Apache 2.0): phone,
 # website, social links, kind. Google only gives the pin; this finds the records that may be the same place.
 #   stdin:  {"house": {"lat", "lng"}, "km": 60, "pins": [{"id", "lat", "lng", "names": ["..."]}]}
-#   stdout: {"release": "...", "pins": {"<id>": [candidates...]}, "towns": {"<id>": "El Vendrell"}}, and nothing else (progress goes to stderr)
+#   stdout: {"release": "...", "pins": {"<id>": [candidates...]}, "towns": {"<id>": "El Vendrell"}, "looked": ["<id>", ...]}, and nothing
+#   else (progress goes to stderr). looked: the pins whose records were read (a pin far from the house past the first FAR_PINS
+#   is not: its empty list says nothing about the place, worker/check-guides.mjs must know).
 # towns: the town around each pin, from the records' own addresses (a place's town when its record is not found; never
 # from Google's address, which its terms do not let us keep). A pin with no town clear enough is left out.
 # Needs pyarrow and overturemaps==2.1.0 (that package wants Python 3.11+). On the Mac:
@@ -171,6 +173,7 @@ def main():
     if inside: look(read(fetch(main_box, rel)), inside)
     if len(outside) > FAR_PINS: say('overture: %d pins outside the box around the house, only the first %d looked up' % (len(outside), FAR_PINS))
     for p in outside[:FAR_PINS]: look(read(fetch(box(p['lat'], p['lng'], FAR_PAD, FAR_PAD, 0.01), rel)), [p])   # its small box: the 2 km for its town are cut at about 1 km
-    sys.stdout.write(json.dumps({'release': rel, 'pins': res, 'towns': towns}, ensure_ascii=False)); sys.stdout.flush()
+    looked = [p['id'] for p in inside] + [p['id'] for p in outside[:FAR_PINS]]
+    sys.stdout.write(json.dumps({'release': rel, 'pins': res, 'towns': towns, 'looked': looked}, ensure_ascii=False)); sys.stdout.flush()
 
 if __name__ == '__main__': main()

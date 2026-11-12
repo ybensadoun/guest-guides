@@ -45,6 +45,12 @@ const posBad = it => it.pos !== undefined && !(it.pos && typeof it.pos.from === 
 // different days (a season may wrap the new year: 11-01 to 03-31).
 const MD = v => { const m = /^(\d\d)-(\d\d)$/.exec(v || ''); return !!m && +m[1] >= 1 && +m[1] <= 12 && +m[2] >= 1 && +m[2] <= [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][+m[1] - 1]; };
 const seasonBad = it => it.season !== undefined && !(it.season && typeof it.season === 'object' && MD(it.season.from) && MD(it.season.to) && it.season.from !== it.season.to);
+// The monthly check's note for the host (worker/check-guides.mjs): look: { at, why: ['site'] | ['directory'] | both, ok? },
+// dates as YYYY-MM-DD. Never shown to guests (the engine does not read it); the maker's editor shows it under "Needs you".
+const DAY_RE = /^\d{4}-\d\d-\d\d$/;
+const lookBad = it => it.look !== undefined && !(it.look && typeof it.look === 'object' && DAY_RE.test(it.look.at || '') && Array.isArray(it.look.why) && it.look.why.length
+  && it.look.why.every(w => w === 'site' || w === 'directory') && new Set(it.look.why).size === it.look.why.length && (it.look.ok === undefined || DAY_RE.test(it.look.ok || '')));
+const LOOK_SHAPE = `look must be { at: YYYY-MM-DD, why: ['site' and/or 'directory'], ok?: YYYY-MM-DD }`;
 const four = (o, what) => { for (const l of LANGS) if (!o || !String(o[l] || '').trim()) errors.push(`${what} is missing ${l}`); };
 
 let nMarkets = 0;
@@ -59,6 +65,7 @@ if (on('markets') && existsSync(C('markets'))) {
     four(m.description, `${w} description`);
     if (typeof m.lat !== 'number' || typeof m.lng !== 'number') errors.push(`${w} needs lat/lng`);
     if (posBad(m)) errors.push(`${w} pos must be { from, at: YYYY-MM-DD }`);
+    if (lookBad(m)) errors.push(`${w} ${LOOK_SHAPE}`);
     if (!(m.schedule || []).length) four(m.occasional_when, `${w} occasional_when (no weekly schedule)`);
     for (const s of m.schedule || []) {
       if (!s.days.every(d => DAYS.includes(d))) errors.push(`${w} bad day in ${s.days}`);
@@ -84,6 +91,7 @@ for (const s of read(C('sections')).sections) {
       if (it.gid !== undefined && (typeof it.gid !== 'string' || !it.gid.trim())) errors.push(`${s.id} "${it.id}" gid must be a Google place id`);
       if (it.group && !(it.group in GROUPS)) errors.push(`${s.id} "${it.id}" group "${it.group}" is not a filter group (engine/src/groups.json)`);
       if (seasonBad(it)) errors.push(`${s.id} "${it.id}" season must be { from: "MM-DD", to: "MM-DD" }, both ends, two different days`);
+      if (lookBad(it)) errors.push(`${s.id} "${it.id}" ${LOOK_SHAPE}`);
     }
   }
   // Event dates: YYYY-MM-DD, the end not before the start; "time" (start) and "until" (end on the last day) are optional HH:MM.

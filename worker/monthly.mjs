@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // The monthly run on the server (docs/plan-worker-on-server.md, "The monthly check in the cloud"), started by the timer
-// guide-worker-monthly (worker/systemd) on the 1st at 9:00: the Google check of every published guide, applied; automatic
+// guide-worker-monthly (worker/systemd) on the 1st at 9:00: the check of every published guide with our own sources
+// (worker/check-guides.mjs: its website, our open directory; Google and Claude are not asked), its notes applied; automatic
 // events for every guide that has them on; Find more searches queued for Ca La Kimberly (the running worker does them, their
 // suggestions wait 14 days in the editor's Find more panels); then one report, saved in the database (events, kind
 // monthly_report, for the cloud routine) and emailed to Yohann through Resend.
@@ -17,6 +18,9 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
+// An option it does not know stops it before anything runs: a run with no option is the whole run, Claude included.
+const KNOWN = new Set(['--dry-run', '--email', '--steps']), odd = process.argv.slice(2).filter((x, i, all) => x.startsWith('-') ? !KNOWN.has(x) : all[i - 1] !== '--steps');
+if (odd.length) { console.error(`Unknown option: ${odd.join(' ')}\nnode worker/monthly.mjs [--dry-run] [--steps check,events,find] [--email]`); process.exit(2); }
 const env = { ...process.env };
 for (const f of [resolve(HERE, '.env.local'), resolve(ROOT, '.env')]) if (existsSync(f))
   for (const l of readFileSync(f, 'utf8').split('\n')) { const m = l.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/); if (m && !(m[1] in env)) env[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); }
@@ -36,13 +40,13 @@ function step(file, args, extraEnv = {}) {
   const out = [(r.stdout || '').trim(), (r.stderr || '').trim()].filter(Boolean).join('\n');
   return { ok: r.status === 0 && !r.error, out: out || (r.error ? r.error.message : ''), status: r.status };
 }
-const parts = [], sum = { humans: 0, google: 0, claudeUsd: 0, added: 0, queued: [] };
+const parts = [], sum = { humans: 0, sites: 0, claudeUsd: 0, added: 0, queued: [] };
 
 if (STEPS.includes('check')) {
-  const r = step('check-guides.mjs', [...(DRY ? [] : ['--apply']), ...(arg('--days') ? ['--days', arg('--days')] : [])]);   // --days: passed on to check-guides
+  const r = step('check-guides.mjs', DRY ? [] : ['--apply']);
   for (const m of r.out.matchAll(/, (\d+) for a human/g)) sum.humans += +m[1];
-  sum.google = +((r.out.match(/(\d+) Google requests/) || [])[1] || 0);
-  parts.push(`1. Google check of every published guide${DRY ? ' (dry run: nothing written)' : ', fixes applied'}${r.ok ? '' : ` (it stopped with an error, code ${r.status})`}\n${r.out}`);
+  sum.sites = +((r.out.match(/(\d+) website\(s\) opened in all/) || [])[1] || 0);
+  parts.push(`1. Our own check of every published guide: its website, our open directory. Google is not asked; a note for the host on a place, never a change guests see${DRY ? ' (dry run: nothing written)' : ', notes applied'}${r.ok ? '' : ` (it stopped with an error, code ${r.status})`}\n${r.out}`);
 }
 if (STEPS.includes('events')) {
   const r = step('guide-worker.mjs', ['--refresh-events', ...(DRY ? [] : ['--apply'])], { RESEARCH_USD_PER_DAY: env.MONTHLY_USD || '30', RESEARCH_BUDGET: 'monthly' });
@@ -63,7 +67,7 @@ if (STEPS.includes('find')) {
   }
   parts.push(`3. New places: Find more searches (things to do, markets). The worker runs them in the next minutes; their suggestions wait 14 days in the editor (Things to do > Find more, Markets > Find more), to keep or skip.\n${lines.join('\n')}`);
 }
-const head = `Monthly check, ${today}${DRY ? ' (dry run)' : ''}\n${sum.humans} line(s) for a human, ${sum.added} automatic event(s) added, ${sum.google} Google request(s), Claude about ${sum.claudeUsd.toFixed(2)} USD for the events search.`;
+const head = `Monthly check, ${today}${DRY ? ' (dry run)' : ''}\n${sum.humans} line(s) for a human, ${sum.added} automatic event(s) added, ${sum.sites} website(s) opened, no Google request in this run (Find more, queued, checks its suggestions on Google in the worker), Claude about ${sum.claudeUsd.toFixed(2)} USD for the events search.`;
 const text = `${head}\n\n${parts.join('\n\n')}\n`;
 console.log('\n' + text);
 
