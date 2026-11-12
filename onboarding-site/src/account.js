@@ -165,8 +165,21 @@ function niceError(e){
 #acct .small a{color:var(--k-blue);font-weight:600}
 @media (min-width:900px){#acct .ac2{grid-template-columns:minmax(0,1fr) 420px;grid-template-areas:"top top" "hero card" "tiles card";align-items:start;column-gap:28px;padding-top:28px}
   #acct .ac-card{position:sticky;top:24px}#acct .ac-art{height:210px}#acct .ac-art .s1{width:130px;height:130px}}
-/* Account row under the header: in the page flow, so it never sits on the step bar. */
-#acctbar{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:-4px 0 2px}
+/* Account row: inside the page header (acctBar), in the page flow, so it never sits on the step bar. On a phone it is the
+   header's second line (the houses menu left, Log out right); from 900 px it joins the header's one row: the logo, the
+   houses menu beside it, then at the right the save state, the language and Log out (or Log in). */
+#acctbar{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:0}
+header.top{display:grid;grid-template-columns:minmax(0,auto) minmax(8px,1fr) auto;column-gap:12px;row-gap:10px}   /* the logo as wide as it can be, the save state's words go first (i18n.js fitTop) */
+header.top>.brand{grid-area:1/1}header.top>.save{grid-area:1/2}header.top>.lpick{grid-area:1/3}
+header.top>#acctbar{grid-area:2/1/3/4}
+@media (min-width:900px){
+  header.top{grid-template-columns:auto auto minmax(8px,1fr) auto auto}
+  header.top>.save{grid-area:1/3}header.top>.lpick{grid-area:1/4}
+  header.top>#acctbar{display:contents}
+  header.top>#acctbar>.houses{grid-area:1/2;margin:0 0 0 10px}
+  header.top>#acctbar>.houses>summary{max-width:300px}
+  header.top>#acctbar>button{grid-area:1/5}
+}
 #acctbar:empty{display:none}
 #acctbar button{font:600 13px/1 inherit;font-family:inherit;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}
 /* Houses: one account, several houses; the one being edited, and a menu to pick another or add one */
@@ -586,10 +599,10 @@ document.addEventListener('click', e => {
   const d = b.closest('details'); if (d) d.open = false;
   if (b.dataset.delhouse) acctDeleteHouse(b.dataset.delhouse); else acctDeleteAccount();
 });
-// "Log out" lives in a row right under the page header.
+// The houses menu and "Log out" live in the page header: its second line on a phone, the header's own row on a wide screen.
 function acctBar() {
   let b = document.getElementById('acctbar');
-  if (!b) { b = document.createElement('div'); b.id = 'acctbar'; const h = document.querySelector('header.top'); if (h) h.after(b); else document.body.prepend(b); }
+  if (!b) { b = document.createElement('div'); b.id = 'acctbar'; const h = document.querySelector('header.top'); if (h) h.append(b); else document.body.prepend(b); }
   return b;
 }
 

@@ -336,3 +336,67 @@ header.top .save{flex:1 1 0;min-width:8px;overflow:hidden;justify-content:flex-e
 header.top .save>span:last-child{white-space:nowrap}
 /* No room for the words (phones, longer languages): the coloured dot alone, the words still read out (i18n.js fitTop) */
 header.top.tight .save>span:last-child{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- The wide layout (design review at 1280 x 860, 12 Nov 2026) ----------
+   One page grid for the whole journey: the step list (--railw), the step, the phone (--phonew), the same on every step,
+   Review and send and Publish changes included. The bottom bar lines up with the step's column, the step list scrolls in
+   the room above the bar (nav.js railFit), every step header is the compact one. Phones (up to 900 px) keep their layout. */
+:root{--railw:264px;--phonew:290px;--cgap:22px}
+@media (min-width:901px){
+  .split{grid-template-columns:var(--railw) minmax(0,1fr);gap:var(--cgap)}
+  /* the bar's three parts on the step's column: Back at its left edge, the count in its middle, Next at its right edge */
+  #navbar .nbin{max-width:1120px;padding-left:calc(var(--railw) + var(--cgap))}
+}
+@media (min-width:1240px){
+  .split.has-phone{grid-template-columns:var(--railw) minmax(0,1fr) var(--phonew)}
+  .split.has-phone.slim-step{grid-template-columns:var(--railw) minmax(0,1fr)}
+  .slim-step .col{grid-template-columns:minmax(0,1fr) var(--phonew);column-gap:var(--cgap)}
+  body:has(.split.has-phone) #navbar .nbin{max-width:1440px;padding-right:calc(var(--phonew) + var(--cgap))}
+}
+/* The step list: a name that does not fit wraps onto a second line (never cut), its status stays on the first line, right */
+.si{align-items:start}
+.si .st{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:normal;line-height:22px;text-wrap-style:pretty}
+.si .sl{line-height:22px;white-space:nowrap}
+.rail{overscroll-behavior:contain}
+/* a soft fade on the edge that has more steps (nav.js railEdges) */
+.rail.more-down{-webkit-mask-image:linear-gradient(#000 calc(100% - 32px),transparent);mask-image:linear-gradient(#000 calc(100% - 32px),transparent)}
+.rail.more-up{-webkit-mask-image:linear-gradient(transparent,#000 32px);mask-image:linear-gradient(transparent,#000 32px)}
+.rail.more-up.more-down{-webkit-mask-image:linear-gradient(transparent,#000 32px,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(transparent,#000 32px,#000 calc(100% - 32px),transparent)}
+/* The step header, one family on a wide screen: the title and its status on one row (the status at the row's end, before
+   the arch), the paragraph as wide as the card allows before the arch, an arch as tall as the header */
+@media (min-width:901px){
+  .mhead,.mhead.slim{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:16px;row-gap:6px;padding:20px 130px 22px 26px}
+  .mhead>h1{grid-area:1/1}
+  .mhead>.row1{grid-area:1/2;padding-right:0}
+  .mhead.slim>.row1{grid-area:1/1/2/3}
+  .mhead>p,.mhead.slim>p{grid-column:1/-1;max-width:55ch;padding-right:0}
+  .mhead h1,.mhead.slim h1{font-size:34px;max-width:none;padding-right:0}
+  .mhead::before,.mhead.slim::before{height:calc(100% - 20px);max-height:120px;right:24px}
+}
+/* Reading: lines of about 72 characters at most (55ch: "ch" is the width of a 0, wider than the average letter of Onest),
+   no word left alone on a last line, titles balanced */
+p,.hint,small,li,figcaption,dd,label,.todo{text-wrap-style:pretty}
+h1,h2,h3,.sg,.lab,.cm-h,.mood small{text-wrap-style:balance}   /* a layout's two-line description: two even lines */
+.card p,.card .hint,.todo,.resetrow p,.rv-more p,.note>div{max-width:55ch}
+.col .resetrow p{margin-inline:auto}   /* centred under Start over */
+.card p.pl-src{max-width:none}   /* where a place's facts came from: one quiet line under them whenever the panel has the room */
+/* Two fields side by side: their inputs on one line, whatever their labels and marks take above them */
+@media (min-width:621px){.grid>.f:not(.full){justify-content:flex-end}}
+/* Targets: 44 px under a finger (small buttons taller, the little x buttons with a larger hit area around them, so no
+   layout moves); at least 28 px under a mouse */
+.cm-topic button{min-width:28px;min-height:28px}
+.lk-x{width:28px;height:28px}
+@media (pointer:coarse){
+  .btn.small,.thumb .cm-phb .btn{min-height:44px}
+  .cm-topic button,.sw-pick .x{position:relative}
+  .cm-topic button::after,.thumb .x::after,.lk-x::after,.sw-pick .x::after{content:"";position:absolute;inset:-8px}
+}
+/* Screens of one card (the start page signed in, the guide written, the build and the ready screen) have no bottom bar:
+   no room kept for one under them, at any width. On a wide screen they sit at the optical centre of the window when
+   shorter than it, a little above the middle, not stuck to the top */
+body:has(#main > :is(.start,.yours,.bwrap)){padding-bottom:14px}
+body:has(#main > :is(.start,.yours,.bwrap)) #ver{padding-bottom:18px}
+@media (min-width:901px){
+  #main:has(> :is(.start,.yours,.bwrap)){min-height:calc(100dvh - 142px);justify-content:center}
+  #main:has(> :is(.start,.yours,.bwrap))::after{content:"";flex:0 0 8vh}
+}

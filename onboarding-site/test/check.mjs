@@ -121,6 +121,8 @@ const MISSING = new Map();
   browser.newContext = async (...x) => { const c = await nc(...x); await c.exposeBinding('__i18nReport', (_, s, where) => { if (!MISSING.has(s)) MISSING.set(s, where); });
     if (env.CHECK_LANG) await c.addInitScript(l => { try { localStorage.setItem('porta-lang-v1', l); } catch (e) {} }, env.CHECK_LANG);   // CHECK_LANG=fr: the maker in French (texts the checks look for stay English, so some fail)
     return c; }; }
+// WALK=1: no checks, only a picture of every screen a host meets, for a design review (walk.mjs, into shots/walk/).
+if (env.WALK) { try { await (await import('./walk.mjs')).default({ browser, open, ready, go, json, inPhone, E, B, N, A0, photos, PAGE, WRITE, HTML, SB, HERE }); } finally { await browser.close(); } process.exit(0); }
 try {
   // ---- Signed out: the first page, in the guides' look, with Google when it is switched on ----
   const signedOut = async (w, h, googleOn) => {
@@ -653,7 +655,7 @@ try {
   // ---- The builder, just after the listing was read ----
   { const { ctx, p, errors } = await open(browser, B, 360, 780);
     await p.goto('http://editor.test/'); await ready(p);
-    ok('builder: opens on the first step that needs the host (name, address, languages), no overview', (await p.evaluate(() => location.hash)) === '#guide' && !(await p.$('.hero')), await p.evaluate(() => location.hash));
+    ok('builder: opens on the first step that needs the host (name and languages), no overview', (await p.evaluate(() => location.hash)) === '#guide' && !(await p.$('.hero')), await p.evaluate(() => location.hash));
     await go(p, '#look'); await p.waitForTimeout(300);
     ok('builder: The look is one screen: cover, layout, colours, logo and what goes in the guide, the layout already picked',
       (await p.$$eval('.lk-card .lk-row b[id], .lk-card .lk-row .lk-hd b', els => [...new Set(els.map(e => e.textContent))].join(' | '))) === 'Cover picture | Layout | Colours | Your logo | What goes in your guide' && (await p.$eval('.lk-moods input:checked', e => e.value).catch(() => '')) === 'bold',
@@ -668,7 +670,7 @@ try {
     await p.screenshot({ path: join(SHOTS, 'builder-look-360.png') });
     await p.click('#openSteps'); await p.waitForSelector('.sheet .si-guide', { timeout: 3000 }).catch(() => {});
     const groups = await p.$$eval('.sheet .sg', els => els.map(e => e.textContent.trim()));
-    ok('builder: step list has "Needs you", then what we filled in, to review', /^Needs you/.test(groups[0] || '') && /^Filled in for you: please review/.test(groups[1] || ''), groups.join(' | '));
+    ok('builder: step list has "Needs you", then what we filled in, to review ("Filled in for you · 6 to review")', /^Needs you/.test(groups[0] || '') && /^Filled in for you( · \d+ to review)?$/.test(groups[1] || ''), groups.join(' | '));
     const readyLabels = await p.$$eval('.sheet .si', els => els.map(e => [e.querySelector('.st')?.textContent, e.querySelector('.sl')?.textContent]));
     await p.screenshot({ path: join(SHOTS, 'builder-steps-360.png') });
     await p.click('.sheet-x');
@@ -961,7 +963,7 @@ try {
     await p.$eval('[data-sec="nightlife"]', e => e.closest('label').scrollIntoView({ block: 'center' })); await p.click('[data-sec="nightlife"]', { force: true }); await p.waitForTimeout(400);   // in the middle: just into view, it is under the fixed bottom bar
     const path2 = await p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent));
     ok('builder: switched on, Nightlife is on the path right after Eat and drink', path2.indexOf('Nightlife') === path2.indexOf('Eat and drink') + 1, path2.slice(0, 7).join(' > '));
-    ok('builder: the path is the listing, the name and address, The look, Your area, then the places', path2.slice(0, 6).join(' > ') === 'Load your listing > Name, address, languages > The look > Your area > Attractions > Eat and drink', path2.slice(0, 6).join(' > '));
+    ok('builder: the path is the listing, the name and languages, The look, Your area, then the places', path2.slice(0, 6).join(' > ') === 'Load your listing > Name and languages > The look > Your area > Attractions > Eat and drink', path2.slice(0, 6).join(' > '));
     ok('builder: Guide sections and Your area are no longer under "Filled in for you"', !path2.includes('Guide sections') && path2.indexOf('Your area') < path2.indexOf('Only you know'));
     const stepOff = async id => { await p.$eval(`[data-sec="${id}"]`, e => e.closest('label').scrollIntoView({ block: 'center' })); const y = await p.evaluate(() => scrollY); await p.click(`[data-sec="${id}"]`, { force: true }); await p.waitForTimeout(500); return Math.abs((await p.evaluate(() => scrollY)) - y) < 2; };
     const steps = () => p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent)), tiles = () => inPhone(p, d => [...d.querySelectorAll('.pv-sec b')].map(e => e.textContent).join(' | '));
@@ -2235,6 +2237,80 @@ try {
     ok(`${tag}, desktop: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close();
   }
+  // ---- The wide layout (design review at 1280 x 860, 12 Nov 2026): the step list, the bar, the header, Copy link ----
+  // A step name is never cut: no ellipsis, no word split over two lines, its status on its first line (rail at 1280, the
+  // Steps sheet at 360), in English and French, builder and editor.
+  const namesWhole = p => p.evaluate(() => [...document.querySelectorAll('.rail a.si, .sheet a.si')].filter(a => a.offsetParent).flatMap(a => {
+    const st = a.querySelector('.st'), sl = a.querySelector('.sl'), cs = getComputedStyle(st), bad = [];
+    if (st.scrollWidth > st.clientWidth + 1 || cs.textOverflow === 'ellipsis' && cs.overflow !== 'visible') bad.push('cut');
+    const t = st.firstChild; if (t && t.nodeType === 3) for (const m of t.data.matchAll(/\S+/g)) { const r = document.createRange(); r.setStart(t, m.index); r.setEnd(t, m.index + m[0].length); if ([...r.getClientRects()].filter(x => x.width > 0).length > 1) bad.push('split ' + m[0]); }
+    if (sl && sl.textContent.trim() && Math.abs(sl.getBoundingClientRect().top - st.getBoundingClientRect().top) > 4) bad.push('status not on the first line');
+    return bad.map(x => `${st.textContent.trim()}: ${x}`); }));
+  for (const [G, tag] of [[B, 'builder'], [E, 'editor']]) for (const lang of ['en', 'fr']) for (const [w, h] of [[1280, 860], [360, 780]]) {
+    const { ctx, p } = await open(browser, G, w, h, { 'porta-lang-v1': lang });
+    await p.goto('http://editor.test/'); await ready(p); await p.waitForSelector(w > 900 ? '.rail a.si' : '#openSteps', { timeout: 15000 }).catch(() => {});
+    if (tag === 'editor') { await go(p, '#guide'); await p.fill('#c_site_name', 'Ca La Kimberly '); await p.waitForTimeout(600); }   // "Changed" beside the name, the longest row
+    if (w < 900) { await p.click('#openSteps'); await p.waitForSelector('.sheet .si', { timeout: 3000 }).catch(() => {}); }
+    const bad = await namesWhole(p), n = await p.$$eval('.rail a.si, .sheet a.si', els => els.filter(e => e.offsetParent).length);
+    ok(`${tag}, ${w} px, ${lang}: no step name cut or split mid-word, each status on its name's first line (${n} rows)`, n > 8 && !bad.length, bad.join('; '));
+    if (w > 900) { const sg = await p.$$eval('.rail .sg', els => els.filter(e => e.getClientRects().length > 1 || e.getBoundingClientRect().height > parseFloat(getComputedStyle(e).lineHeight) * 1.5).map(e => e.textContent.trim()));
+      ok(`${tag}, ${w} px, ${lang}: every group heading of the step list on one line`, n > 8 && !sg.length, sg.join('; ')); }
+    await ctx.close(); }
+  // The step list is never under the bottom bar: it scrolls in the room above it, its last step reachable, the current one in view.
+  for (const [G, tag, last] of [[B, 'builder', '#send'], [E, 'editor', '#publish']]) {
+    const { ctx, p } = await open(browser, G, 1280, 860);
+    await p.goto('http://editor.test/'); await ready(p); await p.waitForTimeout(300);
+    const railBar = () => p.evaluate(() => { const r = document.querySelector('.rail').getBoundingClientRect(), b = document.getElementById('navbar').getBoundingClientRect(); return { bottom: Math.round(r.bottom), bar: Math.round(b.top) }; });
+    const top0 = await railBar(); await p.evaluate(() => window.scrollTo(0, 400)); await p.waitForTimeout(200); const top1 = await railBar();
+    await p.$eval('.rail', r => { r.scrollTop = r.scrollHeight; }); await p.waitForTimeout(200);
+    const lastIn = await p.evaluate(sel => { const a = document.querySelector(`.rail a.si[href="${sel}"]`), r = a.getBoundingClientRect(), b = document.getElementById('navbar').getBoundingClientRect(), q = document.querySelector('.rail').getBoundingClientRect(); return r.bottom <= b.top && r.bottom <= q.bottom + 1 && r.top >= q.top - 1; }, last);
+    await go(p, last); await p.waitForTimeout(300);
+    const curIn = await p.evaluate(() => { const a = document.querySelector('.rail [aria-current]'), r = a.getBoundingClientRect(), q = document.querySelector('.rail').getBoundingClientRect(); return r.top >= q.top - 1 && r.bottom <= q.bottom + 1; });
+    const long = await p.$eval('.rail', r => r.scrollHeight > r.clientHeight + 4 ? (r.classList.contains('more-up') || r.classList.contains('more-down') ? 'fade' : 'no fade') : 'fits');
+    ok(`${tag}, 1280 x 860: the step list ends above the bottom bar, at the top of the page and scrolled, its last step reachable and the current step in view`, top0.bottom <= top0.bar && top1.bottom <= top1.bar && lastIn && curIn && long !== 'no fade', `${JSON.stringify(top0)} ${JSON.stringify(top1)} last ${lastIn} current ${curIn} ${long}`);
+    await ctx.close(); }
+  // The bar follows the list as it is shown: its count, Back and Next (the editor with Wi-Fi first, under Needs you).
+  for (const [G, tag] of [[B, 'builder'], [E, 'editor']]) {
+    const { ctx, p } = await open(browser, G, 1280, 860);
+    await p.goto('http://editor.test/'); await ready(p);
+    const order = [...new Set(await p.$$eval('.rail a.si', as => as.map(a => a.getAttribute('href'))))], bad = [];
+    if (tag === 'editor') ok('editor: Wi-Fi is the first step of the list, under Needs you', order[0] === '#wifi' && /^Needs you/.test(await p.textContent('.rail .sg').catch(() => '')), order.slice(0, 3).join(' '));
+    for (const [i, h] of order.entries()) {
+      await go(p, h);
+      const bar = await p.evaluate(() => ({ n: +(document.querySelector('#openSteps b') || {}).textContent, of: (document.getElementById('openSteps') || {}).textContent, back: (document.querySelector('#navbar .nb.ghost') || { getAttribute: () => null }).getAttribute('href'), next: (document.querySelector('#navbar a.nb.primary, #navbar a.nb:not(.ghost)') || { getAttribute: () => null }).getAttribute('href') }));
+      if (bar.n !== i + 1 || !new RegExp(`of ${order.length}`).test(bar.of || '') || bar.back !== (order[i - 1] || null) || (bar.next && bar.next !== order[i + 1])) bad.push(`${h}: ${bar.n} (${bar.of}), back ${bar.back}, next ${bar.next}`);
+    }
+    ok(`${tag}: on each of the ${order.length} steps the bar's count, Back and Next follow the list's order`, !bad.length, bad.slice(0, 4).join('; '));
+    await ctx.close(); }
+  // The bar's three parts on the step's column, the header in one row, Review and send with the phone, Copy link.
+  for (const [G, tag, steps] of [[B, 'builder', ['#guide', '#look', '#place', '#send']], [E, 'editor', ['#wifi', '#housepage', '#publish']]]) {
+    const { ctx, p } = await open(browser, G, 1280, 860);
+    await p.addInitScript(() => { window.__copied = []; const o = DataTransfer.prototype.setData; DataTransfer.prototype.setData = function (t, v) { window.__copied.push(v); return o.call(this, t, v); }; });
+    await p.goto('http://editor.test/'); await ready(p);
+    const head = await p.evaluate(() => { const h = document.querySelector('header.top'), els = [...h.querySelectorAll('.brand, .houses > summary, .save, .lpick, .logoutTop, .loginTop')].filter(e => e.getClientRects().length), mid = e => { const r = e.getBoundingClientRect(); return r.top + r.height / 2; };
+      return { n: els.length, h: Math.round(h.getBoundingClientRect().height), spread: Math.round(Math.max(...els.map(mid)) - Math.min(...els.map(mid))), order: els.map(e => e.className.split(' ')[0] || e.tagName).join(' ') }; });
+    ok(`${tag}, 1280 px: the header is one row (logo, houses, save state, language, Log out)`, head.n === 5 && head.h < 64 && head.spread <= 4, JSON.stringify(head));
+    const bad = [];
+    for (const h of steps) {
+      await go(p, h); await p.waitForTimeout(300);
+      const m = await p.evaluate(() => { const c = document.querySelector('.mhead').getBoundingClientRect(), b = document.querySelector('#navbar .nbin > :first-child').getBoundingClientRect(), n = document.querySelector('#navbar .nbin > :last-child').getBoundingClientRect(), k = document.getElementById('openSteps').getBoundingClientRect();
+        return { col: [Math.round(c.left), Math.round(c.right)], back: Math.round(b.left), next: Math.round(n.right), mid: Math.round((k.left + k.right) / 2 - (c.left + c.right) / 2) }; });
+      if (Math.abs(m.back - m.col[0]) > 2 || Math.abs(m.next - m.col[1]) > 2 || Math.abs(m.mid) > 2) bad.push(`${h}: ${JSON.stringify(m)}`);
+    }
+    ok(`${tag}, 1280 px: the bottom bar lines up with the step's column (Back at its left edge, the count in its middle, Next at its right edge)`, !bad.length, bad.join('; '));
+    if (tag === 'builder') {
+      await go(p, '#send'); await p.waitForTimeout(500);
+      const ph = await p.evaluate(() => { const s = document.querySelector('.side-phone'), c = document.querySelector('.split .col'); return !!s && getComputedStyle(s).display !== 'none' && !!document.getElementById('phoneFrame') && c.getBoundingClientRect().right <= s.getBoundingClientRect().left; });
+      ok('builder, 1280 px: Review and send keeps the three columns, the phone beside it', ph);
+    } else {
+      await go(p, '#publish'); await p.waitForTimeout(300);
+      const want = await p.$eval('[data-copylink]', b => b.dataset.copylink).catch(() => '');
+      await p.click('[data-copylink]').catch(() => {}); await p.waitForTimeout(200);
+      const got = await p.evaluate(() => window.__copied.slice(-1)[0] || ''), said = await p.textContent('[data-copylink]').catch(() => '');
+      await p.waitForTimeout(2200); const after = await p.textContent('[data-copylink]').catch(() => '');
+      ok('editor, Publish changes: Copy link copies the guide\'s full address, says Copied, then Copy link again', /^https:\/\//.test(want) && got === want && /Copied/.test(said) && /Copy link/.test(after), `${want} -> ${got}, "${said}" then "${after}"`);
+    }
+    await ctx.close(); }
   for (const lang of ['de', 'fr']) {
     const { ctx, p } = await open(browser, E, 360, 780);
     await p.goto('http://editor.test/#guide'); await ready(p);

@@ -398,10 +398,11 @@ function readyCard(){
 function readyHTML(g){
   const slug = (g && g.slug) || v('slug'), live = (g && g.status) === 'published', link = `/g/${esc(slug)}`;
   const say = live ? 'It is live. Share this link with your guests.' : 'Have a look. Only you can see it until it is published.';
+  const url = `<div class="burlrow"><p class="burl" translate="no">${esc(location.host)}/g/<wbr>${esc(slug)}</p>${copyBtn(location.origin + '/g/' + slug, 'bcopy')}</div>`;
   const open = `<a class="go-next" href="${link}" target="_blank" rel="noopener"><span>Open my guide</span><span class="ar">${ARROW}</span></a>
-    <p class="burl" translate="no">${esc(location.host)}/g/<wbr>${esc(slug)}</p>`, quiet = `<a class="btn small bopen" href="${link}" target="_blank" rel="noopener">Open my guide now</a>`;
+    ${url}`, quiet = `<a class="btn small bopen" href="${link}" target="_blank" rel="noopener">Open my guide now</a>`;
   if (RD.st === 'load') return `<h1>Your guide is ready.</h1><p>${say}</p>`;
-  if (RD.st === 'cards') return `<h1>Your guide is ready.</h1><p class="bmore">${say}</p><p class="burl bmore" translate="no">${esc(location.host)}/g/<wbr>${esc(slug)}</p><p class="bmore">One last thing before you open it.</p>${quiet}`;   // on a phone the card's question is enough: the card starts higher
+  if (RD.st === 'cards') return `<h1>Your guide is ready.</h1><p class="bmore">${say}</p>${url.replace('burlrow', 'burlrow bmore')}<p class="bmore">One last thing before you open it.</p>${quiet}`;   // on a phone the card's question is enough: the card starts higher
   if (RD.st === 'pub') { const n = rdMem().kept.length;
     return `<h1>Your guide is ready.</h1><p role="status">${n === 1 ? 'Adding the place you kept to your guide…' : `Adding the ${n} places you kept to your guide…`}</p><div class="cm-progw dark"><div class="cm-prog bwait"><i></i></div></div>`; }
   if (RD.st === 'err') return `<h1>Your guide is ready.</h1><p class="berr" role="alert">${esc(RD.err)}</p>
@@ -443,6 +444,20 @@ document.addEventListener('click', e => {
   else if (d.rdstop !== undefined && f) { findMark(f.id, rdLeft().map(x => x.id)); readyNextCard(); }
   else if (d.rdretry !== undefined) { b.disabled = true; readyPublish(); }
 });
+
+/* ---------- Copy a guide's link (the ready screen, the editor's Publish changes) ----------
+   The full https address. The clipboard API where the page may use it (a click is enough, no permission asked), else the
+   browser's own copy command, which works on any page. The button says "Copied" for two seconds. */
+const copyBtn = (url, cls = '') => `<button class="btn small cplink${cls ? ' ' + cls : ''}" type="button" data-copylink="${esc(url)}"><span>Copy link</span></button>`;
+async function copyLink(b){
+  const url = b.dataset.copylink; let done = false;
+  try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(url); done = true; } } catch (e) { /* the fallback below */ }
+  if (!done) { const put = e => { e.clipboardData.setData('text/plain', url); e.preventDefault(); }; document.addEventListener('copy', put, { once: true });
+    try { done = document.execCommand('copy'); } catch (e) { done = false; } document.removeEventListener('copy', put); }
+  const sp = b.querySelector('span'); if (!sp) return;
+  sp.textContent = done ? 'Copied' : 'Could not copy'; clearTimeout(b._t); b._t = setTimeout(() => { sp.textContent = 'Copy link'; }, 2000);   // in the maker's language on the way (i18n.js)
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-copylink]'); if (b) copyLink(b); });
 
 /* ---------- After sending ---------- */
 function thanksHTML(){
@@ -501,7 +516,7 @@ function render(){
   else if (r === 'thanks' || (A._sentAt && !location.hash)) main.innerHTML = thanksHTML();
   else if (r === 'yours') { main.innerHTML = yoursHTML(); phoneRender(); if (r !== lastRoute) log('open', 'yours'); }   // the wow: the guide in a phone
   else if (m) { main.innerHTML = moduleHTML(m); PHONE.screen = (m.id === 'known' && KN.screen) || STEP_SCREEN[m.id] || 'home'; PHONE.build = false; phoneRender(); if (r !== lastRoute) log('open', m.id); if (A._last !== m.id || !(A._seen || []).includes(m.id)) { A._last = m.id; markSeen(m.id); } queueSave(); }
-  else if (r === 'send') { main.innerHTML = sendHTML(); if (r !== lastRoute) { log('open', 'send'); queueSave(); } }
+  else if (r === 'send') { main.innerHTML = sendHTML(); PHONE.screen = 'home'; PHONE.build = false; phoneRender(); if (r !== lastRoute) { log('open', 'send'); queueSave(); } }
   else if ((r === 'home' || r === 'start') && (r === 'start' || (!A._draftAt && !A._skipStart && !visible().some(m => statusOf(m).k !== 'new')))) { main.innerHTML = startHTML(); if (r !== lastRoute) { log('open', 'start'); queueSave(); } }
   else { history.replaceState(null, '', '#' + obNext()); return render(); }   // no overview page: straight to the next step
   let nb = document.getElementById('navbar'); if (!nb) { nb = document.createElement('div'); nb.id = 'navbar'; nb.hidden = true; document.body.appendChild(nb); }
@@ -519,7 +534,7 @@ function softRefresh(){
   const s = statusOf(m), miss = missingOf(m);
   const p = document.querySelector('.mhead .pill'); if (p) { p.className = 'pill ' + s.k; p.innerHTML = (s.k === 'done' ? CHECK : '') + esc(s.label); }
   const d = document.querySelector('[data-done]'); if (d) d.disabled = !!miss.length;
-  const t = document.querySelector('.foot .todo'); if (t) t.innerHTML = miss.length ? `Still needed for Done: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>` : s.k === 'done' ? 'This step is done. You can still change anything.' : 'Everything needed is here. Press Done when you are happy with it.';
+  const t = document.querySelector('.foot .todo'); if (t) t.innerHTML = miss.length ? `Still needed for Done: <b>${miss.map(k => esc(NAME(k))).join(', ')}</b>` : s.k === 'done' ? 'This step is done. You can still change anything.' : 'Everything needed is here.';
   document.querySelectorAll('[data-k],[data-multi],[data-radio]').forEach(el => { const k = el.dataset.k || el.dataset.multi || el.dataset.radio; const f = el.closest('.f'); const b = f && f.querySelector('.req'); if (b) b.outerHTML = badge(k); });
   if (m.id === 'known') knownTicks();
   refreshNav();

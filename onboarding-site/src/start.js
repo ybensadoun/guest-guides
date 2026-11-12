@@ -304,7 +304,7 @@ function moreRefresh(){
 }
 function moreNote(){
   if (!AUTH) return ''; const left = moreLeft();
-  if (left) return `<div class="rv-more"><b>${left} more ${left === 1 ? 'place' : 'places'} to look at</b><p>Our research found them near you. Keep the ones you like: only those go in your guide.</p><a class="btn small" href="#nearby">Look at them</a></div>`;
+  if (left) return `<div class="rv-more"><b>${left} more ${left === 1 ? 'place' : 'places'} to look at</b><p>${left === 1 ? 'Our research found it near you. Keep it if you like it: only what you keep goes in your guide.' : 'Our research found them near you. Keep the ones you like: only those go in your guide.'}</p><a class="btn small" href="#nearby">Look at them</a></div>`;
   if (AREA.fullOpen && !researchCards().length) return `<div class="rv-more"><b>We are looking for more places near you</b><p>It takes about 2 minutes. Wait for them here, or send now: they will wait for you in your editor.</p></div>`;
   return '';
 }

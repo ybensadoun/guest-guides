@@ -235,11 +235,12 @@ function plFound(p, sec, it) {
   // (with a Google id) that guests get the hours from Google's line.
   const S = !it.always && !hrs.length ? plSeasonOf(it) : null, sr = S && S.ranges[0], back = S ? plBack(it) : null;
   const sHead = !S ? '' : S.confirmed ? `Open from ${plDate(sr.from)} to ${plDate(sr.to)}` : `A ${S.kind} place: expected open ${plMonthOf(sr.from)} to ${plMonthOf(sr.to)}.`;
-  if (S) out.push(line(I.clock, `<span class="pl-hl">${esc(sHead)}</span>${back ? say(`Shown to guests from ${plDateOf(back)}.`) : ''}${it.gid ? say('Guests see Google’s own line for the hours.') : ''}${note ? say(note, 1) : ''}${S.confirmed ? '' : `<button class="pl-more pl-ally" type="button" data-callyear="${p}">Open all year</button>`}`));
-  else if (hrs.length || note) out.push(line(I.clock, hrs.join('') + (note ? say(note, 1) : '')));
-  else if ((kind || facts) && (!K || K.hours !== false)) out.push(line(I.clock, say(it.gid ? 'No opening hours found. Guests see Google’s own line saying whether it is open.' : 'No opening hours found.')));
+  const wide = (ic, html) => plLine(ic, html, ' pl-lw');   // the hours and prices take the panel's width: a row of hours and its dates on one line
+  if (S) out.push(wide(I.clock, `<span class="pl-hl">${esc(sHead)}</span>${back ? say(`Shown to guests from ${plDateOf(back)}.`) : ''}${it.gid ? say('Guests see Google’s own line for the hours.') : ''}${note ? say(note, 1) : ''}${S.confirmed ? '' : `<button class="pl-more pl-ally" type="button" data-callyear="${p}">Open all year</button>`}`));
+  else if (hrs.length || note) out.push(wide(I.clock, hrs.join('') + (note ? say(note, 1) : '')));
+  else if ((kind || facts) && (!K || K.hours !== false)) out.push(wide(I.clock, say(it.gid ? 'No opening hours found. Guests see Google’s own line saying whether it is open.' : 'No opening hours found.')));
   const price = [it.price ? engT('perPerson', it.price) : '', ...(it.setMenus || []).filter(m => m && m.price).map(m => engT('sm_' + m.kind, m.price))].filter(Boolean), pn = edShown(it.priceNote || {});
-  if (price.length || pn) out.push(line(I.euro, (price.length ? `<span translate="no">${esc(price.join(' · '))}</span>` : '') + (pn ? say(pn, 1) : '')));
+  if (price.length || pn) out.push(wide(I.euro, (price.length ? `<span translate="no">${esc(price.join(' · '))}</span>` : '') + (pn ? say(pn, 1) : '')));
   if (it.phone) out.push(line(I.phone, `<a href="tel:${esc(String(it.phone).replace(/[^\d+]/g, ''))}" translate="no">${esc(it.phone)}</a>`));
   if (it.url) out.push(line(I.globe, `<a href="${esc(/^https?:/.test(it.url) ? it.url : 'https://' + it.url)}" target="_blank" rel="noopener" translate="no">${esc(plHost(it.url))}</a>`));
   const mk = plMarks(sec, it); if (mk.length) out.push(line(I.tag, `<span class="pl-mks">${mk.map(m => `<span class="pl-mk" translate="no">${esc(plMark(m))}</span>`).join('')}</span>`, " pl-lm"));
@@ -465,7 +466,7 @@ function mkFound(p, it) {
   const out = [], n = +it.stalls_approx, st = n > 0 ? engT('stalls').split('{n}').join(n) : '';
   if (it.category) out.push(`<div class="pl-l pl-lk">${mkTile(it.category, true)}<div translate="no">${esc(mkKind(it.category))}${st ? `<span class="pl-qty"> · <span class="pl-nw">${esc(st)}</span></span>` : ''}</div></div>`);
   const hrs = plHours(it.schedule), when = edShown(it.occasional_when || {}).trim();
-  out.push(plLine(I.clock, hrs.length ? hrs.join('') + (when ? `<p class="pl-note pl-clip" translate="no">${esc(when)}</p>` : '') : when ? `<span class="pl-hl" translate="no">${esc(when)}</span>` : '<p class="pl-note">No days or hours yet.</p>'));
+  out.push(plLine(I.clock, hrs.length ? hrs.join('') + (when ? `<p class="pl-note pl-clip" translate="no">${esc(when)}</p>` : '') : when ? `<span class="pl-hl" translate="no">${esc(when)}</span>` : '<p class="pl-note">No days or hours yet.</p>', ' pl-lw'));
   const chips = ks => `<span class="pl-mks">${ks.map(x => `<span class="pl-mk" translate="no">${esc(x)}</span>`).join('')}</span>`;
   const tg = (it.tags || []).filter(t => MK_TAGS.includes(t)), fl = MK_FLAGS.filter(f => (it.flags || []).includes(f));
   if (tg.length) out.push(plLine(I.bag, chips(tg.map(t => engT('t_' + t))), ' pl-lm'));
@@ -1433,8 +1434,8 @@ function cmTile(m) {
 const cmPillText = (ch, m) => ch ? 'Changed' : m && cmNeeds(m) ? 'Needs you' : cmLive() ? 'Live' : 'Not published yet';
 const cmFootText = () => cmDirty() ? 'Saved as a draft. Guests see it once you publish.' : 'Changes save as you type, as a draft only you see until you publish.';
 function cmLangBar(langs) {
-  return `<div class="cm-lang"><label for="c_lang">You are editing in</label><select id="c_lang" data-cmlang translate="no">${langs.map(l => `<option value="${l}"${CM.lang === l ? ' selected' : ''}>${ED_LANGS[l]}</option>`).join('')}</select></div>
-    <p class="hint cm-langhint">A text you change here changes in the other languages too while they still had the same words. Translated texts stay as they are.</p>`;
+  return `<div class="cm-langbar"><div class="cm-lang"><label for="c_lang">You are editing in</label><select id="c_lang" data-cmlang translate="no">${langs.map(l => `<option value="${l}"${CM.lang === l ? ' selected' : ''}>${ED_LANGS[l]}</option>`).join('')}</select></div>
+    <p class="hint cm-langhint">A text you change here changes in the other languages too while they still had the same words. Translated texts stay as they are.</p></div>`;
 }
 function cmStepHTML(m) {
   const ch = cmChanged(m), langs = edLangs();
@@ -1451,7 +1452,7 @@ function cmPublishHTML() {
     ${miss.length ? `<section class="card"><div class="note"><div>Give these a name before you publish, or delete them.</div></div><div class="sum">${miss.map(({ m, n }) => `<a href="#${m.id}" style="--tc:${m.tc}"><span class="sw"></span><span><b>${esc(m.title)}</b><p>${n === 1 ? '1 entry with no name' : `${n} entries with no name`}</p></span><span class="pill new" style="position:static">Needs you</span></a>`).join('')}</div></section>` : ''}
     <section class="card">
       ${ch.length ? `<div class="sum">${ch.map(m => `<a href="#${m.id}" style="--tc:${m.tc}"><span class="sw"></span><span><b>${esc(m.title)}</b><p>${esc(cmSub(m))}</p></span><span class="pill chk" style="position:static">Changed</span></a>`).join('')}</div>` : dirty ? '<p class="hint">Translations and other small changes are waiting.</p>' : ''}
-      <p class="hint">${cmLive() ? 'Guests open' : 'Once it is published, guests open'} <a href="${esc(url)}" target="_blank" rel="noopener" style="white-space:nowrap">${esc(url.replace(/^https?:\/\//, ''))}</a></p>
+      <div class="cm-urlrow"><p class="hint">${cmLive() ? 'Guests open' : 'Once it is published, guests open'} <a href="${esc(url)}" target="_blank" rel="noopener" style="white-space:nowrap">${esc(url.replace(/^https?:\/\//, ''))}</a></p>${copyBtn(url)}</div>
       <div class="foot"><div class="row"><a class="btn" href="${esc(cmPreviewUrl())}" target="_blank" rel="noopener" data-cpreview>${I.eye}Preview</a>${dirty || !cmLive() ? `<button class="btn primary" type="button" data-cpublish>${I.send}${cmLive() ? 'Publish changes' : 'Publish my guide'}</button>` : ''}</div>
         ${dirty ? `<div class="cm-row"><button class="btn small" type="button" data-cdiscard>Undo all changes</button><p class="hint">Goes back to the guide guests see now.</p></div>` : ''}</div></section>
     ${cmLive() ? `<section class="card"><div class="cm-row"><button class="btn small" type="button" data-cunpublish>Unpublish</button><p class="hint">Takes the guide offline: guests can no longer open it. Nothing is deleted, and you can publish it again any time.</p></div></section>` : ''}</div>${cmPhoneHTML('publish')}</div>`;
@@ -1498,6 +1499,9 @@ for (const id of ['todo', 'restaurants', 'nightlife', 'markets', 'events', 'tile
 const CM_LOOK = { todo: ['todo', 'items'], restaurants: ['restaurants', 'items'], nightlife: ['nightlife', 'items'], markets: ['markets', 'markets'] };
 const cmLooks = (c, id) => { const k = CM_LOOK[id], a = k && (((c.files || {})[k[0]] || {})[k[1]]); return Array.isArray(a) ? a.filter(lkOpen) : []; };
 const cmNeeds = m => !!(CM_NEEDS[m.id] && CM_NEEDS[m.id](edC()));
+// The steps in the order the list shows them: what needs the host first, then each group. The bottom bar's count, Back and
+// Next follow this same order, so "6 of 15" is the sixth row of the list.
+const cmOrder = () => { const need = cmSteps().filter(cmNeeds); return [...need, ...GROUPS.flatMap(([g]) => cmSteps().filter(m => m.group === g && !need.includes(m)))]; };
 function cmStepList(cur) {
   const item = m => { const ch = cmChanged(m); return `<a class="si s-${ch ? 'chk' : 'new'}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${ch ? STATUS_ICON.chk : I[m.icon] || ''}</span><span class="st">${esc(m.title)}</span><span class="sl">${ch ? 'Changed' : cmNeeds(m) ? 'Needs you' : ''}</span></a>`; };
   const need = cmSteps().filter(cmNeeds);
@@ -1509,7 +1513,7 @@ function cmStepList(cur) {
     <p class="sg">Finish</p><a class="si s-${dirty ? 'chk' : 'done'} send" href="#publish"${cur === 'publish' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Publish changes</span><span class="sl">${dirty ? 'Waiting' : cmLive() ? 'Live' : ''}</span></a>`;
 }
 function cmNavbar(cur) {
-  const order = [...cmSteps().map(m => m.id), 'publish'], i = order.indexOf(cur), prev = order[i - 1], next = order[i + 1];
+  const order = [...cmOrder().map(m => m.id), 'publish'], i = order.indexOf(cur), prev = order[i - 1], next = order[i + 1];
   const t = id => id === 'publish' ? 'Publish changes' : (cmSteps().find(m => m.id === id) || {}).title;
   return `<div class="nbin">
     ${prev ? `<a class="nb ghost" href="#${prev}" aria-label="Back to ${esc(t(prev))}">${BACK}<span class="hide-s">${esc(t(prev))}</span></a>` : '<span></span>'}
@@ -2040,7 +2044,11 @@ function cmInit() {
 .cm-lang{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .cm-lang label{font-weight:700;font-size:15px}
 .cm-lang select{width:auto;flex:1 1 160px;max-width:260px}
-.cm-langhint{margin-top:-14px;padding-bottom:18px;border-bottom:1.5px solid var(--line)}
+/* "You are editing in": the select and what it means, ruled off from the step. From 900 px on one row, the hint beside the
+   select, so the block is no taller than the select */
+.cm-langbar{display:flex;flex-direction:column;gap:6px;padding-bottom:18px;border-bottom:1.5px solid var(--line)}
+.cm-langbar .cm-langhint{margin:0}
+@media (min-width:900px){.cm-langbar{flex-direction:row;align-items:center;gap:20px;padding-bottom:14px}.cm-langbar .cm-lang{flex:none;flex-wrap:nowrap}.cm-langbar .cm-lang select{width:140px;flex:none}.cm-langbar .cm-langhint{flex:1;min-width:0;font-size:13px;line-height:1.45}}
 .cm-cover{display:flex;flex-direction:column;gap:10px}
 .cm-cover img{width:100%;max-width:420px;aspect-ratio:16/10;object-fit:cover;border-radius:14px;display:block}
 .cm-cover img.off{opacity:.35;filter:grayscale(1)}
@@ -2124,6 +2132,11 @@ function cmInit() {
 .bsteps li.now i{box-shadow:inset 0 0 0 2px var(--lamp)}
 .bsteps li.now i::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--lamp)}
 .hero p.burl{font-size:14px;opacity:.7;overflow-wrap:anywhere}
+/* The guide's address and Copy link beside it (runtime.js copyBtn), on the ready screen and on Publish changes */
+.burlrow,.cm-urlrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.burlrow .burl,.cm-urlrow .hint{margin:0;min-width:0}
+.hero .cplink{background:none;border-color:rgba(244,241,234,.55);color:#F4F1EA}
+.cplink{flex:none}
 .hero p.berr{color:#FFD0C2;opacity:1}
 .hero .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .bopen{background:none;border-color:rgba(244,241,234,.55);color:#F4F1EA}
@@ -2144,7 +2157,7 @@ function cmInit() {
 @media (prefers-reduced-motion:reduce){.btick span{transition:none}.bwait i{animation:none;width:100%!important;opacity:.6}}
 @media (prefers-reduced-motion:reduce){.cm-prog i{transition:none}}
 .cm-swrow{display:flex;flex-direction:column;gap:6px}
-.cm-switch{display:flex;align-items:center;gap:12px;width:100%;max-width:480px;min-height:52px;padding:10px 14px;border-radius:var(--r-s);border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.cm-switch{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 14px;border-radius:var(--r-s);border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}
 .cm-switch:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .cm-sw-track{flex:none;position:relative;width:46px;height:28px;border-radius:999px;background:var(--line)}
 .cm-sw-knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
@@ -2176,7 +2189,8 @@ function cmInit() {
 .pl-l.pl-lk{align-items:center;font-weight:600}
 .pl-l a{color:inherit;overflow-wrap:anywhere}
 .pl-hl{display:block}.pl-nw{white-space:nowrap}
-.pl-hl small{color:var(--muted);font-size:13.5px}
+.pl-hl small{color:var(--muted);font-size:13.5px;white-space:nowrap}   /* "from 13 Jun to 12 Jul" in one piece, on the line of its hours when there is room */
+.pl-ls>.pl-lw{grid-column:1/-1}   /* hours and prices across the panel; the phone and the website share the row under them */
 .pl-note{margin:0;color:var(--muted);font-size:13.5px}
 .pl-mks{display:flex;flex-wrap:wrap;gap:4px 6px}
 .pl-mk{font-size:13.5px;font-weight:600;line-height:1.3;padding:1px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}

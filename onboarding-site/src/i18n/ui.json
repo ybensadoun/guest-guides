@@ -701,15 +701,10 @@
 "es": "Final",
 "fr": "Fin"
 },
-"Filled in for you: please review": {
-"ca": "Omplert per a tu: revisa-ho",
-"es": "Rellenado para ti: revísalo",
-"fr": "Rempli pour vous : à vérifier"
-},
-"Filled in for you: please review · {n} left": {
-"ca": "Omplert per a tu: revisa-ho · {n} pendents",
-"es": "Rellenado para ti: revísalo · {n} pendientes",
-"fr": "Rempli pour vous : à vérifier · {n} restantes"
+"{n} to review": {
+"ca": "{n} per revisar",
+"es": "{n} por revisar",
+"fr": "{n} à vérifier"
 },
 "Needs you · {n} left": {
 "ca": "Et necessita · {n} pendents",
@@ -830,11 +825,6 @@
 "ca": "Nom i idiomes",
 "es": "Nombre e idiomas",
 "fr": "Nom et langues"
-},
-"Name, address, languages": {
-"ca": "Nom, adreça i idiomes",
-"es": "Nombre, dirección e idiomas",
-"fr": "Nom, adresse et langues"
 },
 "What guests see": {
 "ca": "El que veuen els hostes",
@@ -2441,10 +2431,10 @@
 "es": "Todo en un solo sitio",
 "fr": "Tout au même endroit"
 },
-"Everything needed is here. Press Done when you are happy with it.": {
-"ca": "Ja hi ha tot el necessari. Prem Fet quan n’estiguis content.",
-"es": "Ya está todo lo necesario. Pulsa Hecho cuando estés conforme.",
-"fr": "Tout le nécessaire est là. Appuyez sur Terminé quand cela vous convient."
+"Everything needed is here.": {
+"ca": "Ja hi ha tot el necessari.",
+"es": "Ya está todo lo necesario.",
+"fr": "Tout le nécessaire est là."
 },
 "Everything, by group": {
 "ca": "Tot, per grups",
@@ -4206,10 +4196,10 @@
 "es": "Empieza a escribir el nombre",
 "fr": "Commencez à taper le nom"
 },
-"Start typing the name and pick it from the list: we add the map and the opening hours. A website or a Google Maps link works too. Your comment shows in the guide: what to order, when to go.": {
-"ca": "Comença a escriure el nom i tria’l de la llista: hi afegim el mapa i l’horari. També serveix una web o un enllaç de Google Maps. El teu comentari surt a la guia: què demanar, quan anar-hi.",
-"es": "Empieza a escribir el nombre y elígelo de la lista: añadimos el mapa y el horario. También sirve una web o un enlace de Google Maps. Tu comentario aparece en la guía: qué pedir, cuándo ir.",
-"fr": "Commencez à taper le nom et choisissez-le dans la liste : nous ajoutons la carte et les horaires. Un site web ou un lien Google Maps fonctionne aussi. Votre commentaire apparaît dans le guide : quoi commander, quand y aller."
+"Start typing the name and pick it from the list: we put it on the map and look up its details. A website or a Google Maps link works too. Your comment shows in the guide: what to order, when to go.": {
+"ca": "Comença a escriure el nom i tria’l de la llista: el posem al mapa i en busquem les dades. També serveix una web o un enllaç de Google Maps. El teu comentari surt a la guia: què demanar, quan anar-hi.",
+"es": "Empieza a escribir el nombre y elígelo de la lista: lo ponemos en el mapa y buscamos sus datos. También sirve una web o un enlace de Google Maps. Tu comentario aparece en la guía: qué pedir, cuándo ir.",
+"fr": "Commencez à taper le nom et choisissez-le dans la liste : nous le plaçons sur la carte et cherchons ses informations. Un site web ou un lien Google Maps fonctionne aussi. Votre commentaire apparaît dans le guide : quoi commander, quand y aller."
 },
 "Start typing the name and pick it from the list. A website or a Google Maps link works too. Then add your comment: what it is like, when to go.": {
 "ca": "Comença a escriure el nom i tria’l de la llista. També serveix una web o un enllaç de Google Maps. Després afegeix-hi el teu comentari: com és, quan anar-hi.",
@@ -8215,5 +8205,25 @@
 "ca": "No trobat a Google: la font web n’és l’única prova",
 "es": "No encontrado en Google: la fuente web es la única prueba",
 "fr": "Introuvable sur Google : la source web est la seule preuve"
+},
+"Our research found it near you. Keep it if you like it: only what you keep goes in your guide.": {
+"ca": "La nostra recerca l’ha trobat a prop teu. Queda-te’l si t’agrada: només el que et quedis anirà a la guia.",
+"es": "Nuestra búsqueda lo ha encontrado cerca de ti. Quédatelo si te gusta: solo lo que te quedes irá en tu guía.",
+"fr": "Notre recherche l’a trouvé près de chez vous. Gardez-le s’il vous convient : seul ce que vous gardez ira dans votre guide."
+},
+"Copy link": {
+"ca": "Copia l’enllaç",
+"es": "Copiar enlace",
+"fr": "Copier le lien"
+},
+"Copied": {
+"ca": "Copiat",
+"es": "Copiado",
+"fr": "Copié"
+},
+"Could not copy": {
+"ca": "No s’ha pogut copiar",
+"es": "No se ha podido copiar",
+"fr": "Copie impossible"
 }
 }

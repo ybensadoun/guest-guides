@@ -13,7 +13,7 @@ function stepListHTML(cur){
   const flow = flowMods(), left = flow.filter(m => statusOf(m).k !== 'done').length, unread = readyMods().filter(m => statusOf(m).k === 'pre').length;
   return `<div class="si-guide"><b>${esc(v('guideName') || v('placeName') || 'Your guide')}</b><small>${A._draftAt ? '<a href="#yours">See your guide</a>' : 'Your listing is not loaded yet'}</small></div>
     <p class="sg">Needs you${left ? ` · ${left} left` : ''}</p>${flow.map(item).join('')}
-    <p class="sg">Filled in for you: please review${unread ? ` · ${unread} left` : ''}</p>${mods.filter(m => !needsYou(m)).map(item).join('')}
+    <p class="sg">Filled in for you${unread ? ` · ${unread} to review` : ''}</p>${mods.filter(m => !needsYou(m)).map(item).join('')}
     <p class="sg">Finish</p><a class="si s-${miss ? 'new' : 'done'} send" href="#send"${cur === 'send' ? ' aria-current="step"' : ''}><span class="sic">${I.send}</span><span class="st">Review and send</span><span class="sl">${miss ? miss + ' left' : 'Ready'}</span></a>`;
 }
 function railHTML(cur){ return `<aside class="rail" aria-label="All steps"><nav>${stepListHTML(cur)}</nav></aside>`; }
@@ -70,7 +70,8 @@ function sendHTML(){
   // Places picked on Google with no name (psPick in start.js): never published under the words typed to find them.
   const nameless = [['favEat', 'favourites'], ['favNight', 'nightlife'], ['favDo', 'nearby']].filter(([k]) => (Array.isArray(A[k]) ? A[k] : []).some(r => r && r.gid && !String(r.p || '').trim()))
     .map(([, id]) => visible().find(m => m.id === id)).filter(Boolean);
-  return `<div class="split">${railHTML('send')}<div class="col">
+  // The same three columns as every step, the phone included: a host about to send sees the guide they send.
+  return `<div class="split has-phone">${railHTML('send')}<div class="col">
     <section class="mhead" style="--tc:var(--ink);--ti:var(--paper);--sh:var(--sun)">
       <h1>Review and send</h1><p>We build your guide from your answers. You can change anything afterwards.</p></section>
     <section class="card">
@@ -84,12 +85,32 @@ function sendHTML(){
         ${AUTH ? '' : '<p class="hint">Your answers are on this device only. Save them to an account first: then we build your guide from them.</p>'}
         <div class="row"><button class="btn" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Preview my guide</button>${AUTH ? `<button class="btn primary" type="button" id="send"${miss.length ? ' disabled' : ''}>${I.send.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Send to build my guide</button>`
           : '<button class="btn primary" type="button" data-acctnow="signup">Save my guide</button>'}</div></div>
-    </section><div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div></div></div>`;
+    </section><div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div></div>
+    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>${A._draftAt || v('placeName') || v('guideName') ? 'Your guide, live, as guests see it' : 'An example for now: load your listing and it becomes your guide'}</p></aside></div>`;
 }
 
 // Keep the current step visible in the left list, whatever re-drew it.
 function fixRail(){
+  railFit();
   const rail = document.querySelector('.rail'), cur = rail && rail.querySelector('[aria-current]'); if (!cur) return;
   const rr = rail.getBoundingClientRect(), cr = cur.getBoundingClientRect();
   if (cr.top < rr.top + 8 || cr.bottom > rr.bottom - 8) rail.scrollTop += (cr.top - rr.top) - (rail.clientHeight - cur.clientHeight) / 2;
+  railEdges();
 }
+// The list of steps never goes under the bottom bar: it is as tall as the room between where it starts (under the header,
+// or the top of the window once it sticks there) and the bar, and scrolls inside it when it is longer (the editor's 16
+// steps at 860 px). Driven by the page's scroll, no transition. A soft fade marks the edge that has more (railEdges).
+function railFit(){
+  const rail = document.querySelector('.rail'); if (!rail || !rail.offsetParent) return;
+  const nb = document.getElementById('navbar'), bar = nb && !nb.hidden ? nb.getBoundingClientRect().top : innerHeight;
+  const top = Math.max(rail.getBoundingClientRect().top, parseFloat(getComputedStyle(rail).top) || 0);
+  const h = Math.max(160, Math.floor(bar - top - 14)) + 'px'; if (rail.style.maxHeight !== h) rail.style.maxHeight = h;
+}
+function railEdges(){
+  const rail = document.querySelector('.rail'); if (!rail) return;
+  rail.classList.toggle('more-up', rail.scrollTop > 2);
+  rail.classList.toggle('more-down', rail.scrollTop + rail.clientHeight < rail.scrollHeight - 2);
+}
+{ let q = 0; const fit = () => { if (q) return; q = requestAnimationFrame(() => { q = 0; railFit(); railEdges(); }); };
+  addEventListener('scroll', fit, { passive: true }); addEventListener('resize', fit);
+  document.addEventListener('scroll', e => { if (e.target.classList && e.target.classList.contains('rail')) railEdges(); }, { passive: true, capture: true }); }

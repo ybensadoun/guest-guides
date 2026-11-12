@@ -61,7 +61,8 @@ seg1=rep(seg1,'''    <span id="ownerSlot"></span>\n''','')
 seg1=rep(seg1,"need:['placeName','town'],fields:['listingUrl','listingText','autofill','placeName'","need:['placeName','town'],fields:['listingUrl','listingText','placeName'")
 seg1=rep(seg1,"lead:'Paste your listing link and description: we fill in what we can. Nothing is copied from Airbnb by us, only what you paste.',","lead:'Your listing link and the basics. Pasting your description helps us write the guide in your words.',")
 seg1=rep(seg1,"need:['languages'],fields:['guideName','tagline','languages','guests','up:logo']","need:['slug','languages'],fields:['guideName','slug','tagline','languages']")
-seg1=rep(seg1,"title:'Name and languages',sub:'What guests see'","title:'Name, address, languages',sub:'What guests see'")
+# (the step was called "Name, address, languages" until 12 Nov 2026: it has no address, only the guide's web address, so it
+# keeps the editor's name, "Name and languages")
 seg1=rep(seg1,"need:['upload:inspiration','mood','upload:cover'],fields:['styleBrief','up:inspiration','lookLikes','mood','up:cover','lookAvoid']",
  "need:[],fields:['up:logo','up:cover','mood','colorsFrom']")
 seg1=rep(seg1,"title:'The look',sub:'Images and mood'","title:'The look',sub:'Cover, colours, what goes in'")
