@@ -4,7 +4,7 @@
 // text of the question is read here: nothing is sent anywhere.   node --test 'worker/test/*.test.mjs'
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { prompt } from '../../onboarding-site/netlify/functions/listing.mjs';
+import { prompt, pageWords, readerIsListing } from '../../onboarding-site/netlify/functions/listing.mjs';
 
 const SRC = { url: 'https://www.airbnb.com/rooms/1', title: 'Casa Prova', description: 'A quiet house', counts: '3 bedrooms', pics: [{ caption: 'Pool' }], text: 'Made-up listing text.' };
 const line = (p, k) => (p.split('\n').find(l => l.startsWith(` "${k}":`)) || '');
@@ -29,4 +29,36 @@ test('listing prompt: guests only those the listing points to; the other lines a
     assert.match(p, /^Listing link: https:\/\/www\.airbnb\.com\/rooms\/1\nTown given by the host: (Vilaprova|not given)\n/);
     assert.doesNotMatch(p, /[—–]/);
   }
+});
+
+// The host's own words in the page's data (pageWords) and a reader answer that is not the listing (readerIsListing):
+// 12 Nov 2026, a real read came back with no description, no town and no interests, because the page reader had landed
+// on an advertising tracker and the description was never read from the page itself. A made-up page, in Airbnb's shape.
+const PAGE = '<html><script>{"descriptions":{"__typename":"X","longDescriptionHtml":{"__typename":"UGCText","localizedStringWithTranslationPreference":'
+  + '"A quiet house near the beaches of Vilaprova.\\u003cbr />Vineyards all around, \\"Cal Prova\\" is 5 minutes away.\\u003cbr />\\u003cbr />\\u003cb>The space\\u003c/b>\\u003cbr />Three bedrooms.\\u003cbr />\\u003cbr />\\u003cb>Registration Details\\u003c/b>\\u003cbr />HUTT-000000"}},'
+  + '"location":{"__typename":"StaysPdpLocation","subtitle":"Can Prova, Catalunya, Spain","locationName":"Vilaprova del Pened\\u00e8s","locationSummary":null},'
+  + '"items":[{"__typename":"StaysPdpDetailItem","type":"HOUSE_RULES_ADDITIONAL_RULES","title":"During the stay","description":{"__typename":"PdpUGCText","content":{"__typename":"UGCText","localizedStringWithTranslationPreference":"No smoking indoors.\\r\\n\\r\\nChildren by the pool only with an adult."}}}]}</script></html>';
+
+test('listing page: the description, the host\'s added rules and the town are read from the page\'s own data', () => {
+  const w = pageWords(PAGE);
+  assert.equal(w.about, 'A quiet house near the beaches of Vilaprova.\nVineyards all around, "Cal Prova" is 5 minutes away.\nThe space:\nThree bedrooms.');
+  assert.doesNotMatch(w.about, /HUTT|Registration/, 'the registration numbers are left out');
+  assert.equal(w.extra, 'No smoking indoors.\nChildren by the pool only with an adult.');
+  assert.deepEqual(w.place, { name: 'Vilaprova del Penedès', area: 'Can Prova, Catalunya, Spain' });
+  assert.doesNotMatch(w.about + w.extra, /\n\n/, 'no blank line: the facts stay one block');
+});
+
+test('listing page: a page without them gives nothing, never an error', () => {
+  assert.deepEqual(pageWords('<html><body>Nothing here</body></html>'), { about: '', extra: '', place: null });
+  assert.deepEqual(pageWords(''), { about: '', extra: '', place: null });
+  const noName = pageWords('{"location":{"__typename":"StaysPdpLocation","subtitle":"Somewhere, Spain","locationName":null}}');
+  assert.deepEqual(noName.place, { name: '', area: 'Somewhere, Spain' });
+});
+
+test('page reader: an answer that is another page than the listing is refused', () => {
+  const url = 'https://www.airbnb.com/rooms/1';
+  assert.equal(readerIsListing('Title: https://ads.example/track\nURL Source: ' + url + '\nFinal URL: https://ads.example/track?x=1\n\nMarkdown Content:\nA 1x1 image', url), false, 'landed on a tracker');
+  assert.equal(readerIsListing('Title: https://ads.example/track\nURL Source: ' + url + '\n\nMarkdown Content:\nA 1x1 image', url), false, 'an address as a title');
+  assert.equal(readerIsListing('Title: Casa Prova - Houses for Rent - Airbnb\nURL Source: ' + url + '\n\nMarkdown Content:\nA quiet house', url), true);
+  assert.equal(readerIsListing('Title: Casa Prova\nURL Source: ' + url + '\nFinal URL: https://www.airbnb.es/rooms/1?source=x\n\nMarkdown Content:\nUna casa', url), true, 'the same site in another country');
 });

@@ -19,6 +19,21 @@ function htmlToText(html){
 const meta = (html, p) => { const m = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${p}["'][^>]+content=["']([^"']+)`, 'i')) || html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${p}["']`, 'i')); return m ? m[1] : ''; };
 
 const roomOf = n => /bed|dormit|habitaci|chambre|cambra/i.test(n) ? 'Bedroom' : /bath|ba[ñn]o|toilet|salle de bain/i.test(n) ? 'Bathroom' : /kitchen|cocina|cuisine|cuina/i.test(n) ? 'Kitchen' : /living|sal[oó]n|dining|comedor|lounge|\bsala\b|menjador/i.test(n) ? 'Living room' : /pool|piscina/i.test(n) ? 'Pool' : /garden|jard[ií]n|jardí/i.test(n) ? 'Garden' : /patio|porch|balcon|terrace|terraza|veranda/i.test(n) ? 'Terrace' : /laundry|lavander/i.test(n) ? 'Laundry' : /office|study|workspace|despacho/i.test(n) ? 'Office' : /exterior|outside|fachada|entrance|entrada|front/i.test(n) ? 'Outside' : 'Other';
+// The host's own words, which Airbnb's page holds in its data and shows only behind "Show more": the description with its
+// parts (The space, Guest access, Other things to note), the rules the host added, and where the page says the house is.
+// Without them the listing read knew the rooms and the amenities but not one sentence of the host's (12 Nov 2026: the
+// page reader had stopped answering, and the interests, the town and the welcome came back empty or from the facts alone).
+// The registration numbers at the end of the description are left out. Exported for worker/test/listing-prompt.test.mjs.
+export function pageWords(html){
+  const str = x => { try { return JSON.parse('"' + x + '"'); } catch (e) { return ''; } };
+  const ugc = (from, n) => { const i = html.indexOf(from), m = i < 0 ? null : html.slice(i, i + n).match(/"localizedStringWithTranslationPreference":"((?:[^"\\]|\\.)*)"/); return m ? str(m[1]) : ''; };
+  const lines = t => t.replace(/<br\s*\/?>/gi, '\n').replace(/<b>([^<]*)<\/b>/gi, '$1:').replace(/<[^>]+>/g, ' ').replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').replace(/\n{2,}/g, '\n').trim();
+  const about = lines(ugc('"longDescriptionHtml"', 60000).split(/<b>[^<]*regist[^<]*<\/b>/i)[0]).slice(0, 6000);
+  const extra = lines(ugc('"HOUSE_RULES_ADDITIONAL_RULES"', 12000)).slice(0, 2500);
+  const i = html.indexOf('"location":{"__typename":"StaysPdpLocation"'), blk = i < 0 ? '' : html.slice(i, i + 900), one = k => str((blk.match(new RegExp('"' + k + '":"((?:[^"\\\\]|\\\\.)*)"')) || [, ''])[1]).trim();
+  const place = blk && (one('locationName') || one('subtitle')) ? { name: one('locationName'), area: one('subtitle') } : null;
+  return { about, extra, place };
+}
 // Airbnb's photo tour and sleeping arrangements are "MediaTour" blocks: stops with a name ("Bedroom 1"), photos and a description ("1 king bed").
 function tourStops(blk, cl){
   const ms = [...blk.matchAll(/"__typename":"MediaTourStop","id":"[^"]*","name":"([^"]+)","items":\[/g)];
@@ -62,12 +77,16 @@ async function readPage(url){
     const amenityItems = amenGroups(html);
     const sleeping = sleepLines;
     const rt = html.match(/"ratingAverage":([\d.]+),"ratingCount":"?(\d+)/);
-    const facts = [overview.length && 'Overview: ' + overview.join(' · '), rules.length && 'House rules section: ' + rules.join(' | '), amenities.length && 'Amenities listed: ' + amenities.join(', '),
+    const { about, extra, place } = pageWords(html);
+    const facts = [place && 'Where the page says the house is: ' + [place.area && 'location shown: ' + place.area, place.name && 'town named on its map: ' + place.name].filter(Boolean).join('; '),
+      about && 'Description, the host\'s own words:\n' + about, extra && 'Additional rules from the host:\n' + extra, overview.length && 'Overview: ' + overview.join(' · '), rules.length && 'House rules section: ' + rules.join(' | '), amenities.length && 'Amenities listed: ' + amenities.join(', '),
       amenityItems.length > amenities.length && 'Every amenity (the page\'s "Show all" list): ' + amenityItems.map(x => x.t).join(', '),
       sleeping.length && 'Sleeping arrangements: ' + sleeping.join(' | '), tour.length && 'Photo tour rooms: ' + tour.map(x => x.name + ' (' + x.imgs.length + ' photos)').join(', '), rt && 'Rating: ' + rt[1] + ' from ' + rt[2] + ' reviews'].filter(Boolean).join('\n');
     const text = (facts ? 'FACTS READ FROM THE PAGE DATA:\n' + facts + '\n\n' : '') + htmlToText(html);
     const out = { overview, rules, amenities, amenityItems, sleeping: sleepLines, tourRooms: tour.length, rating: rt ? { avg: +rt[1], count: +rt[2] } : null, title: meta(html, 'og:title'), pageTitle: ((html.match(/<title[^>]*>([^<]+)<\/title>/i) || [])[1] || '').replace(/&amp;/g, '&').trim(), description: meta(html, 'og:description'), image: meta(html, 'og:image'), photos, pics, counts, facts, text: text.slice(0, 40000),
-      lat: coords ? +coords[1] : null, lng: coords ? +coords[2] : null };
+      lat: coords ? +coords[1] : null, lng: coords ? +coords[2] : null, place };
+    // thin: the page's text without the host's words read above is short, so the reader is asked too (it has the times).
+    out.thin = out.text.length - about.length - extra.length < 6000;
     // A blocked or empty page has almost no text and no title.
     if (!out.title && out.text.length < 1500) return null;
     out.via = 'page';
@@ -91,6 +110,13 @@ function amenGroups(html){
   } catch (e) { return []; }
 }
 
+// The reader sometimes lands on another page than the listing (12 Nov 2026: an advertising tracker Airbnb's page sends
+// browsers to, "A 1x1 image", with the tracker's address as its title): that is no answer. Exported for the tests.
+export function readerIsListing(md, url){
+  const site = u => (LINK_RX.find(x => x.rx.test(u)) || {}).site || null;
+  const fin = (md.match(/^Final URL:\s*(\S+)/m) || [])[1], title = (md.match(/^Title:\s*(.+)$/m) || [])[1] || '';
+  return !(fin && site(fin) !== site(url)) && !/^https?:\/\//i.test(title.trim());
+}
 // Airbnb often refuses servers. A public page reader (r.jina.ai) opens the page like a browser and hands back text with the photo links.
 const hasTimes = t => /(check-?in|check-?out|llegada|salida|arriv|d[ée]part)[^\n]{0,40}?\d{1,2}(\s?[:.h]\s?\d{2}|\s?[ap]\.?m)/i.test(t || '');
 async function readViaReader(url, fresh = false){
@@ -104,6 +130,7 @@ async function readViaReader(url, fresh = false){
     const counts = [...new Set((md.match(/\b\d{1,2}\s(?:bedrooms?|beds?|baths?|bathrooms?|habitaci[oó]n(?:es)?|camas?|ba[ñn]os?|chambres?|lits?|salles? de bains?)\b/gi) || []))].slice(0, 12).join(' · ');
     const title = (md.match(/^Title:\s*(.+)$/m) || [])[1] || '';
     if (!title && text.length < 1500) return null;
+    if (!readerIsListing(md, url)) return null;
     return { via: 'reader', sleeping: [], tourRooms: 0, rating: null, title, description: '', image: pics[0] ? pics[0].url : '', photos: pics.slice(0, 16).map(x => x.url), pics: pics.slice(0, 16), counts, text: text.slice(0, 40000), lat: null, lng: null };
   } catch (e) { return null; }
 }
@@ -219,7 +246,7 @@ export default async (req) => {
     if (!site && !text) return json({ ok: false, need: 'link', message: 'That does not look like a listing page. Open your listing on Airbnb (or Booking, Vrbo) and copy the address from the browser: it looks like airbnb.com/rooms/12345678.' });
     if (site) {
       src = await readPage(url);
-      if (!src || src.text.length < 6000) {
+      if (!src || (src.thin != null ? src.thin : src.text.length < 6000)) {
         // The reader sometimes hands back the page before its times are there (2,800 characters instead of 15,000): two reads
         // side by side, the one with the check-in and check-out times kept, else the longer.
         const alt = (await Promise.all([readViaReader(url), readViaReader(url, true)])).filter(Boolean).sort((a, b) => hasTimes(b.text) - hasTimes(a.text) || b.text.length - a.text.length)[0] || null;
@@ -248,6 +275,9 @@ export default async (req) => {
     // What the page states exactly is kept when the model gave none; it comes back in English otherwise.
     if (src.sleeping && src.sleeping.length && !draft.sleeping) draft.sleeping = src.sleeping.join('\n');
     if (src.rating) { draft.rating = src.rating.avg; draft.reviewCount = src.rating.count; }
+    // The town and the region as the page states them (its map's town; the last two parts of the location shown).
+    if (src.place && !String(draft.town || '').trim() && src.place.name) draft.town = src.place.name;
+    if (src.place && !String(draft.region || '').trim() && src.place.area) { const p = src.place.area.split(',').map(x => x.trim()).filter(Boolean); draft.region = p.slice(-2).join(', '); }
     const photoRooms = (src.pics || []).map((x, i) => x.room || (draft.photoRooms || [])[i] || null);
     const has = k => draft[k] != null && String(draft[k]).trim() !== '' && !(Array.isArray(draft[k]) && !draft[k].length);
     const report = { assistant, code, via: src.via, photos: (src.photos || []).length, roomsFromPage: !!src.tourRooms,
