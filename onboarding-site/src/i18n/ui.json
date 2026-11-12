@@ -8165,5 +8165,25 @@
 "ca": "Segur? Torna a tocar",
 "es": "¿Seguro? Toca otra vez",
 "fr": "Vraiment ? Touchez à nouveau"
+},
+"One place to look at:": {
+"ca": "Un lloc per revisar:",
+"es": "Un sitio que revisar:",
+"fr": "Un lieu à vérifier :"
+},
+"{n} places to look at:": {
+"ca": "{n} llocs per revisar:",
+"es": "{n} sitios que revisar:",
+"fr": "{n} lieux à vérifier :"
+},
+"One market to look at:": {
+"ca": "Un mercat per revisar:",
+"es": "Un mercado que revisar:",
+"fr": "Un marché à vérifier :"
+},
+"{n} markets to look at:": {
+"ca": "{n} mercats per revisar:",
+"es": "{n} mercados que revisar:",
+"fr": "{n} marchés à vérifier :"
 }
 }

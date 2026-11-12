@@ -25,8 +25,12 @@ const cmClone = x => x === undefined ? undefined : JSON.parse(JSON.stringify(x))
 const cmCanon = x => Array.isArray(x) ? x.map(cmCanon) : x && typeof x === 'object' ? Object.fromEntries(Object.keys(x).sort().map(k => [k, cmCanon(x[k])])) : x;
 const cmSame = (a, b) => JSON.stringify(cmCanon(a)) === JSON.stringify(cmCanon(b));
 const cmW = () => ({ content: CM.g.content, theme: CM.g.theme });
-const cmChanged = m => m.paths.some(p => { const q = edPath(p); return !cmSame(edGet(cmW(), q), edGet(CM.live, q)); });
-const cmDirty = () => !cmSame(cmW(), CM.live);
+// What guests see, to tell a change: a place's "Is it still open?" note (look, lkHTML) is the host's answer to us, never a
+// change to publish (the draft still keeps it: cmSave compares the whole; the monthly check reads ok in either copy).
+const cmNoLook = x => Array.isArray(x) ? x.map(cmNoLook) : x && typeof x === 'object' ? Object.fromEntries(Object.entries(x).filter(([k, v]) => !(k === 'look' && v && Array.isArray(v.why))).map(([k, v]) => [k, cmNoLook(v)])) : x;
+const cmSameShown = (a, b) => cmSame(cmNoLook(a), cmNoLook(b));
+const cmChanged = m => m.paths.some(p => { const q = edPath(p); return !cmSameShown(edGet(cmW(), q), edGet(CM.live, q)); });
+const cmDirty = () => !cmSameShown(cmW(), CM.live);
 const cmLive = () => CM.g.status === 'published';
 const cmOnSec = id => ((edC().site || {}).modules || {})[id] !== false;
 const cmLiveUrl = () => { const n = (edC().site || {}).netlify; return n && n.project ? `https://${n.project}.netlify.app` : `${location.origin}/g/${CM.g.slug}`; };
@@ -309,6 +313,17 @@ const lkDate = at => { const d = new Date(String(at || '') + 'T00:00:00Z'); if (
 // Where the host looks: Google Maps by the place's Google id, else its own map link, else a search by its name and town.
 const lkMap = it => { const n = String(edShown(it.name || {})).trim(), own = [it.gmaps, it.map].find(u => typeof u === 'string' && /^https?:\/\//.test(u));
   return it.gid ? gmLink(n, it.gid) : own || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([n, typeof it.town === 'string' ? it.town : ''].filter(Boolean).join(' '))}`; };
+// At the top of a step, so the host finds them in a long list: "2 places to look at: Casinet and Quijote Beach", each name
+// opening its card and scrolling it into view (data-clookgo). Gone once each is answered. The names are the guide's, the
+// list's words the maker's (Intl), so that part is not translated again on its way.
+function lkList(path, what) {
+  const hits = (edGet(edC(), edPath(path)) || []).map((it, i) => [it, i]).filter(([it]) => lkOpen(it)); if (!hits.length) return '';
+  const mk = what === 'market', n = hits.length, head = n === 1 ? (mk ? 'One market to look at:' : 'One place to look at:') : `${n} ${mk ? 'markets' : 'places'} to look at:`;
+  let k = 0;
+  const list = new Intl.ListFormat(plLoc(), { type: 'conjunction' }).formatToParts(hits.map(([it]) => String(cName(it)))).map(x => { if (x.type !== 'element') return esc(x.value); const [, i] = hits[k++];
+    return `<button class="cm-lkgo" type="button" data-clookgo="${esc(`${path}/${i}`)}">${esc(x.value)}</button>`; }).join('');
+  return `<p class="cm-lkl"><b>${esc(head)}</b> <span translate="no">${list}</span></p>`;
+}
 // At the top of the card: the question, the reason with its day, the map, and the two answers (one surface, the panel's family).
 function lkHTML(p, it) {
   if (!lkOpen(it)) return '';
@@ -870,7 +885,7 @@ function edAddTile(icon) {
 function cmPlaces(path, what) {
   const arr = edGet(edC(), edPath(path)) || [];
   if (PL_SEC[path] && CM.pfLoaded !== true) pfLoad();   // lookups of a place's facts still running, or done while away
-  return `${PL_SEC[path] ? cmUnnamed(path) : ''}${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
+  return `${lkList(path, what)}${PL_SEC[path] ? cmUnnamed(path) : ''}${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
     <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
     <p class="hint">A new ${esc(what)} has no pin yet: find it on Google, or paste its Google Maps link. The distance from the house follows the pin.</p>`;
@@ -1451,7 +1466,7 @@ async function cmSave() {
   clearTimeout(CM.timer); CM.timer = null;
   if (CM.saving) { CM.again = true; return CM.saving; }
   CM.saving = (async () => {
-    const dirty = cmDirty();
+    const dirty = !cmSame(cmW(), CM.live);   // the whole draft, notes included: a host's "It is still open" is kept even with nothing to publish
     try { await ensureFresh(); await sb('/rest/v1/guides?id=eq.' + CM.g.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: { draft: dirty ? { content: CM.g.content, theme: CM.g.theme, savedAt: new Date().toISOString() } : null } }); setSave('ok', cmSaveText()); }
     catch (e) { setSave('err', 'Not saved: ' + niceError(e)); return; }
     cmPhoneRefresh();
@@ -1797,6 +1812,8 @@ document.addEventListener('click', e => {
   // A place's fact changed by hand (its kind, the hours or Open 24 hours, Book ahead) is the host's: no source said for it.
   { const own = d.ckind ? [d.ckind, 'kind'] : d.cflag && d.f === 'book' ? [d.cflag, 'book'] : d.cseason && /\/season$/.test(d.cseason) ? [d.cseason, 'season'] : d.callyear ? [d.callyear, 'season'] : d.calways || d.daytog || d.cseason || d.addsch ? [d.calways || d.daytog || d.cseason || d.addsch, 'schedule']
       : d.cdel && /\/schedule\/\d+$/.test(d.cdel) ? [d.cdel, 'schedule'] : null; if (own) plMine(...own); }
+  if (d.clookgo) { const q = d.clookgo; CM.open.add(q); render();   // its card, open, at the top of the screen
+    const c = document.querySelector(`details.cmi[data-open="${CSS.escape(q)}"]`); if (c) c.scrollIntoView({ block: 'start' }); return; }
   if (d.clookok) { const it = edGet(edC(), edPath(d.clookok)); if (it && it.look) it.look = { ...it.look, ok: new Date().toISOString().slice(0, 10) }; return done(); }   // "It is still open": the day, as the check writes its own (UTC)
   if (d.pflook) return pfStart(d.pflook);
   if (d.pfagain) { const it = edGet(edC(), edPath(d.pfagain)), j = it && CM.pf[it.id]; return pfStart(d.pfagain, (j && j.website) || ''); }
@@ -2153,6 +2170,11 @@ function cmInit() {
 .pl-lka{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .pl-lka .btn{min-height:40px}
 .cmi[open]>summary small.pl-lkn{display:none}
+/* The places asked about, named at the top of the step (lkList): one line, lighter than "Waiting for a name", no box */
+.cm-lkl{margin:0;padding:2px 0 2px 12px;box-shadow:inset 3px 0 0 var(--line);font-size:15px;line-height:1.6;overflow-wrap:normal;word-break:normal}
+.cm-lkl>b{font-weight:700;margin-right:2px}
+.cm-lkgo{display:inline;border:0;background:none;padding:0;font:inherit;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:2px;cursor:pointer;text-align:left}
+.cmi{scroll-margin-top:16px}
 .pl-l .pl-ally{display:block;margin-top:2px}`;
   document.head.appendChild(st);
 })();

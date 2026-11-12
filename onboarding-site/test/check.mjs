@@ -1442,6 +1442,15 @@ try {
       const needs = async p => { let l = await p.$$eval('.rail p.sg, .rail a.si .st', els => els.map(e => (e.matches('.sg') ? '#' : '') + e.textContent.trim())).catch(() => []);
         if (!l.length) { await p.click('#openSteps').catch(() => {}); await p.waitForTimeout(300); l = await p.$$eval('[role="dialog"] p.sg, [role="dialog"] a.si .st', els => els.map(e => (e.matches('.sg') ? '#' : '') + e.textContent.trim())).catch(() => []); await p.click('.sheet .sheet-x').catch(() => {}); await p.waitForTimeout(200); }
         const i = l.indexOf('#Needs you'), j = l.findIndex((x, n) => n > i && x[0] === '#'); return i < 0 ? [] : l.slice(i + 1, j < 0 ? undefined : j); };
+      // The step list (rail, or the steps sheet on a phone): each step's name and what it says on the right ("Changed", "Waiting").
+      const states = async p => { const rd = sel => p.$$eval(sel, as => as.map(a => [(a.querySelector('.st') || {}).textContent || '', ((a.querySelector('.sl') || {}).textContent || '').trim()])).catch(() => []);
+        let l = await rd('.rail a.si'); if (!l.length) { await p.click('#openSteps').catch(() => {}); await p.waitForTimeout(300); l = await rd('[role="dialog"] a.si'); await p.click('.sheet .sheet-x').catch(() => {}); await p.waitForTimeout(200); }
+        return Object.fromEntries(l); };
+      // The line at the top of the step: its words, its names, the first thing in the step, no word wider than its line.
+      const topLine = p => p.evaluate(() => { const l = document.querySelector('.edz .cm-lkl'); if (!l) return null;
+        const first = l === document.querySelector('.edz .cm-lkl, .edz .cm-unn, .edz details.cmi'), cv = document.createElement('canvas').getContext('2d'); cv.font = getComputedStyle(l).font;
+        const wide = l.textContent.split(/\s+/).filter(w => cv.measureText(w).width > l.clientWidth - 12);
+        return { t: l.textContent.replace(/[\s\u00a0\u202f]+/g, ' ').trim(), names: [...l.querySelectorAll('[data-clookgo]')].map(b => b.dataset.clookgo), first, wide, side: document.documentElement.scrollWidth > innerWidth }; });
       // The block: its parts side by side or under each other, never on top of each other, inside the card, no sideways scroll.
       const lkClash = (p, sel) => p.evaluate(sel => { const b = document.querySelector(sel + ' .pl-look'); if (!b) return ['no block'];
         const cr = document.querySelector(sel).getBoundingClientRect(), els = [...b.querySelectorAll('b, .pl-lks, .pl-lks a, button')], r = els.map(e => e.getBoundingClientRect()), bad = [];
@@ -1462,9 +1471,16 @@ try {
         ok(`still open, ${tag}: Eat and drink is under "Needs you"`, n1.includes('Eat and drink') && (await p.textContent('#cmPill').catch(() => '')).trim() === 'Needs you', n1.join(' > '));
         await p.$eval(card(P(0)), e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -80)); await p.waitForTimeout(200);
         await p.screenshot({ path: join(SHOTS, `still-open-rows-${w}.png`) });
+        // At the top of the step, the noted places by name; a name opens its card at the top of the screen.
+        const tl = await topLine(p), nm = k => R[ris[k]].name.en;
+        ok(`still open, ${tag}: the step starts with one line naming the places to look at, each a link to its card; no word cut, no sideways scroll`, !!tl && tl.first && tl.t === `3 places to look at: ${nm(0)}, ${nm(1)} and ${nm(2)}` && cmpSame(tl.names, [P(0), P(1), P(2)]) && !tl.wide.length && !tl.side, JSON.stringify(tl));
+        await p.$eval('.edz .cm-lkl', e => e.scrollIntoView({ block: 'center' })); await p.waitForTimeout(150); await p.screenshot({ path: join(SHOTS, `still-open-top-${w}.png`) });
+        await p.click(`.cm-lkl [data-clookgo="${P(2)}"]`); await p.waitForTimeout(300);
+        const went = await p.$eval(card(P(2)), d => ({ open: d.open, top: Math.round(d.getBoundingClientRect().top), block: !!d.querySelector('.pl-look') })).catch(() => null);
+        ok(`still open, ${tag}: a name in the line opens that place's card, its question first, at the top of the screen`, !!went && went.open && went.block && went.top >= 0 && went.top < 120, JSON.stringify(went));
         // Each card, opened: the block first, the question, the reason with its day, Google Maps (by the place's id) in a new tab.
         for (const [k, [why, , , rx]] of LK.entries()) {
-          await p.click(card(P(k)) + ' > summary'); await p.waitForTimeout(250);
+          if (!(await p.$eval(card(P(k)), d => d.open))) { await p.click(card(P(k)) + ' > summary'); await p.waitForTimeout(250); }
           const bl = await p.evaluate(sel => { const c = document.querySelector(sel), b = c.querySelector('.pl-look'), a = b && b.querySelector('a'); const rl = c.querySelector('summary .pl-lkn'); return b ? { t: b.textContent.replace(/[\s\u00a0]+/g, ' ').trim(), first: c.querySelector('.cmb').firstElementChild === b, href: a.href, blank: a.target === '_blank', rowLine: !!rl && !!rl.getClientRects().length } : null; }, card(P(k)));
           const it = R[ris[k]], href = it.gid ? `query_place_id=${encodeURIComponent(it.gid)}` : 'google.com/maps';
           ok(`still open, ${tag}, ${why}: the card starts with the question, the reason and its day, Google Maps in a new tab, the two answers; the row's line is not said twice while it is open`, !!bl && bl.first && rx.test(bl.t) && bl.href.includes(href) && bl.blank && !bl.rowLine, JSON.stringify(bl));
@@ -1486,6 +1502,11 @@ try {
         await p.click(card(P(0)) + ` [data-clookok="${P(0)}"]`); const o1 = await item(P(0));
         ok(`still open, ${tag}: "It is still open" writes look.ok with today's date, keeps the note's day and reason`, !!o1 && cmpSame(o1.look, { at: '2026-11-01', why: ['site'], ok: today() }), JSON.stringify(o1 && o1.look));
         ok(`still open, ${tag}: then the block and the row's line go at once, the card stays open`, !(await p.$(card(P(0)) + ' .pl-look')) && !(await rowNote(p, P(0))).some(t => /still open/.test(t)) && await p.$eval(card(P(0)), d => d.open).catch(() => false));
+        // The host answered a question; nothing guests see changed: no "Changed", nothing waiting to publish (the draft keeps ok, above).
+        const st1 = await states(p), pill1 = (await p.textContent('#cmPill').catch(() => '')).trim(), goPub = await p.$eval('#cmGoPub', e => !e.hidden).catch(() => false), tl2 = await topLine(p);
+        ok(`still open, ${tag}: after "It is still open" the step does not say Changed and Publish changes does not wait`, st1['Eat and drink'] !== 'Changed' && st1['Publish changes'] !== 'Waiting' && pill1 !== 'Changed' && !goPub, JSON.stringify({ eat: st1['Eat and drink'], pub: st1['Publish changes'], pill1, goPub }));
+        ok(`still open, ${tag}: the line at the top now names the two places left`, !!tl2 && tl2.t === `2 places to look at: ${nm(1)} and ${nm(2)}`, JSON.stringify(tl2));
+        await p.evaluate(() => scrollTo(0, 0)); await p.waitForTimeout(150); await p.screenshot({ path: join(SHOTS, `still-open-after-${w}.png`) });
         if (!(await p.$(card(P(1)) + ' .pl-look'))) { await p.click(card(P(1)) + ' > summary'); await p.waitForTimeout(200); }
         await p.click(card(P(1)) + ` [data-clookok="${P(1)}"]`); await p.waitForTimeout(300);
         const n2 = await needs(p);
@@ -1497,6 +1518,13 @@ try {
         ok(`still open, ${tag}: "Remove it from my guide" asks "Sure? Tap again", then removes the place`, sure === 'Sure? Tap again' && Array.isArray(a1) && a1.length === R.length - 1 && !a1.some(x => x.id === gone), `${sure}, ${a1 && a1.length} of ${R.length}`);
         const n3 = await needs(p);
         ok(`still open, ${tag}: every note answered, Eat and drink no longer needs the host`, !n3.includes('Eat and drink'), n3.join(' > '));
+        ok(`still open, ${tag}: every note answered, the line at the top goes`, !(await topLine(p)));
+        // A later change, published: the host's answers go live with it.
+        if (!(await p.$eval(card(P(1)), d => d.open).catch(() => false))) { await p.click(card(P(1)) + ' > summary'); await p.waitForTimeout(200); }
+        await p.click(card(P(1)) + ` [data-cfav="${P(1)}"]`); await p.waitForTimeout(1300); await go(p, '#publish'); await p.click('.card [data-cpublish]').catch(() => {}); await p.waitForTimeout(800);
+        const pub2 = saved.map(b => { try { return JSON.parse(b); } catch (e) { return null; } }).filter(j => j && j.content).pop(), pr2 = pub2 && pub2.content.files.restaurants.items;
+        ok(`still open, ${tag}: publishing another change later carries the answers (look.ok) along`, pub2 !== pub && !!pr2 && [0, 1].every(k => pr2[ris[k]].look && pr2[ris[k]].look.ok === today()), JSON.stringify(pr2 && [0, 1].map(k => pr2[ris[k]].look)));
+        await go(p, '#restaurants'); await p.waitForTimeout(300);
         // A new place takes the first one's shape, never its note (the first place carries one, answered).
         await p.click('[data-addit="files/restaurants/items"]'); const a2 = await item('files/restaurants/items');
         ok(`still open, ${tag}: a new place added after does not carry look`, Array.isArray(a2) && a2.length === a1.length + 1 && !('look' in a2[a2.length - 1]) && (ris[0] !== 0 || !!a2[0].look), JSON.stringify(a2 && a2[a2.length - 1].look));
@@ -1510,7 +1538,9 @@ try {
       // The maker in French, 360 px: the line, the block, nothing overlapping, nothing cut.
       { const { ctx, p, errors } = await run(360, 780, { 'porta-lang-v1': 'fr' }, G2);
         await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
-        const fr = await rowNote(p, P(2));
+        const fr = await rowNote(p, P(2)), tfr = await topLine(p);
+        ok('still open, the maker in French, 360 px: the line at the top in French, no word cut', !!tfr && tfr.t === `3 lieux à vérifier : ${R[ris[0]].name.en}, ${R[ris[1]].name.en} et ${R[ris[2]].name.en}` && !tfr.wide.length && !tfr.side, JSON.stringify(tfr));
+        await p.$eval('.edz .cm-lkl', e => e.scrollIntoView({ block: 'center' })); await p.waitForTimeout(150); await p.screenshot({ path: join(SHOTS, 'still-open-top-fr-360.png') });
         await p.$eval(card(P(0)), e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -80)); await p.waitForTimeout(200);
         await p.screenshot({ path: join(SHOTS, 'still-open-rows-fr-360.png') });
         await p.click(card(P(2)) + ' > summary'); await p.waitForTimeout(250);

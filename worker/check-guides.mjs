@@ -20,7 +20,10 @@
 // What it does with a signal: never removes a place, never changes what guests see (the engine ignores the note). It keeps
 // a note of ours on the place for the host, look: { at: 'YYYY-MM-DD', why: ['site'] | ['directory'] | both, ok? } (lookOf),
 // and writes a line in the report. The note goes as soon as no signal is left. ok is the host's "I looked" (the maker's
-// editor, under "Needs you", later): kept while the reasons stay those the host saw, dropped when a new one comes.
+// editor: "Is it still open?", onboarding-site/src/editor.js lkHTML, with the place's step under "Needs you"): kept while the
+// reasons stay those the host saw, dropped when a new one comes. The editor writes it into the unpublished changes and does
+// not count it as a change to publish, so the host's answer counts wherever it was written: the same place in the guide and
+// in its draft share it (okOf, looksOf).
 // No date of its own on each place: the check is free, so every place is looked at every run. The old "checked" was the
 // day Google was asked; it is no longer written, and worker/clean-google.mjs takes it out of today's guides.
 // Run on the 1st of each month by worker/monthly.mjs (with --apply).
@@ -122,17 +125,31 @@ export function lookOf(old, signals, today) {
   return { at: today, why };
 }
 
+// The host's answer, wherever it was written: a note without ok takes the ok of the same place's note in the other copy
+// (the guide or its unpublished changes) when that note's reasons cover all of its own. A reason the host did not see keeps
+// it unanswered. Pure.
+export function okOf(look, peer) {
+  if (!look || look.ok || !peer || !peer.ok || !Array.isArray(look.why) || !Array.isArray(peer.why)) return look;
+  return look.why.every(w => peer.why.includes(w)) ? { ...look, ok: peer.ok } : look;
+}
+// The notes of a guide's places by list and id, copied before either copy is checked: 'restaurants|locanda' -> look.
+export function looksOf(files) {
+  const m = new Map(); for (const { file, it } of placesOf(files)) if (it.id && it.look && typeof it.look === 'object') m.set(`${file}|${it.id}`, JSON.parse(JSON.stringify(it.look)));
+  return m;
+}
+
 // The check itself, pure: no network, no clock unless now is left out. files: a guide's files (changed in place). sites:
 // url -> siteVerdict's answer (missing: not looked at, nothing said); dir(file, it): directoryVerdict's answer for a place
-// with a door; distrust: the run's websites are not believed (suspect()). Returns one entry a place: { name, file, it, url,
+// with a door; distrust: the run's websites are not believed (suspect()); peer: looksOf the other copy (the draft for the
+// guide, the guide for its draft), whose ok counts here too (okOf). Returns one entry a place: { name, file, it, url,
 // site, directory, look, change } (change: 'new', 'changed', 'cleared' or null).
-export function checkFiles(files, { sites = {}, dir = () => null, distrust = false, now = new Date() } = {}) {
+export function checkFiles(files, { sites = {}, dir = () => null, distrust = false, now = new Date(), peer = null } = {}) {
   const today = day(now), out = [];
   for (const { file, it, door } of placesOf(files)) {
     const url = siteOf(it), s = url ? sites[url] || null : null, d = door ? dir(file, it) || null : null;
     const signals = { site: !url ? false : !s || distrust || s.state === 'unknown' ? null : s.state === 'gone',
       directory: !door ? false : d ? d.state : null };
-    const was = it.look ? JSON.stringify(it.look) : null, look = lookOf(it.look, signals, today);
+    const was = it.look ? JSON.stringify(it.look) : null, look = lookOf(peer && it.id ? okOf(it.look, peer.get(`${file}|${it.id}`)) : it.look, signals, today);
     if (look) it.look = look; else delete it.look;
     const is = look ? JSON.stringify(look) : null;
     out.push({ name: label(it), file, it, url, site: s, directory: d, look, change: was === is ? null : !was ? 'new' : !look ? 'cleared' : 'changed' });
@@ -225,7 +242,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 
     for (let attempt = 1; ; attempt++) {
       const F = g.content.files, D = g.draft && g.draft.content && g.draft.content.files;
-      const live = checkFiles(F, { sites, dir, distrust, now }), draft = D ? checkFiles(D, { sites, dir, distrust, now }) : [];
+      const lf = looksOf(F), ld = D ? looksOf(D) : null;   // each copy takes the host's answer from the other as it was read
+      const live = checkFiles(F, { sites, dir, distrust, now, peer: ld }), draft = D ? checkFiles(D, { sites, dir, distrust, now, peer: lf }) : [];
       const changed = [...live, ...draft].some(r => r.change);
       if (attempt === 1) {
         const [lines, humans] = reportOf(live), opened = new Set(live.map(r => r.url).filter(Boolean)).size;

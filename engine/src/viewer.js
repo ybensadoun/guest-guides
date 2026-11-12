@@ -31,7 +31,10 @@ async function fetchGuide(slug) {
       const r = await fetch(`${DB.url}/rest/v1/guides?slug=eq.${encodeURIComponent(slug)}&select=content,theme,status${PREVIEW ? ',draft' : ''}`, { headers: { apikey: DB.key, Authorization: 'Bearer ' + tok } });
       if (r.ok) {
         const j = await r.json(), g = j[0];
-        if (g && PREVIEW && g.draft && g.draft.content) return { content: g.draft.content, theme: g.draft.theme || g.theme, status: g.status, preview: 'draft' };
+        // A draft that differs from the guide only by the monthly check's notes on places (look: the host's answer to us, never
+        // shown to guests; the maker's cmNoLook) has no change waiting. Both copies come from jsonb: their keys in the same order.
+        const shown = x => JSON.stringify(x, (k, v) => k === 'look' && v && Array.isArray(v.why) ? undefined : v);
+        if (g && PREVIEW && g.draft && g.draft.content) return { content: g.draft.content, theme: g.draft.theme || g.theme, status: g.status, preview: shown(g.draft.content) === shown(g.content) && shown(g.draft.theme || g.theme) === shown(g.theme) ? 'live' : 'draft' };
         if (g && g.content && g.content.site) return PREVIEW ? { ...g, preview: 'live' } : g;
       }
     } catch (e) { /* fall through to the public copy */ }

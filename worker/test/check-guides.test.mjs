@@ -8,7 +8,7 @@ import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { placesOf, siteOf, knock, lookSite, siteVerdict, suspect, directoryVerdict, lookOf, checkFiles, reportOf } from '../check-guides.mjs';
+import { placesOf, siteOf, knock, lookSite, siteVerdict, suspect, directoryVerdict, lookOf, okOf, looksOf, checkFiles, reportOf } from '../check-guides.mjs';
 import { NET } from '../place-facts.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -146,6 +146,37 @@ test('checkFiles: a note for each signal, an old one taken off when the site ans
   const K = guide(); K.restaurants.items[0].look = { at: '2026-11-01', why: ['site'], ok: '2026-11-02' };
   const [l2, h2] = reportOf(checkFiles(K, { sites, dir, now }));
   assert.equal(h2, 3); assert.ok(l2.some(l => l.startsWith('- looked at by the host on 2026-11-02, still: Can Tancat')));
+});
+
+test('okOf: a note without ok takes the other copy\'s ok when that note\'s reasons cover its own', () => {
+  const ok = { at: '2026-11-01', why: ['site', 'directory'], ok: '2026-11-05' };
+  assert.deepEqual(okOf({ at: '2026-11-01', why: ['site'] }, ok), { at: '2026-11-01', why: ['site'], ok: '2026-11-05' });          // fewer reasons
+  assert.deepEqual(okOf({ at: '2026-10-20', why: ['site', 'directory'] }, ok), { at: '2026-10-20', why: ['site', 'directory'], ok: '2026-11-05' });   // the same, its own day kept
+  assert.deepEqual(okOf({ at: '2026-11-01', why: ['site', 'directory'] }, { at: '2026-11-01', why: ['site'], ok: '2026-11-05' }), { at: '2026-11-01', why: ['site', 'directory'] });   // a reason the host did not see
+  assert.deepEqual(okOf({ at: '2026-11-01', why: ['site'], ok: '2026-11-02' }, ok), { at: '2026-11-01', why: ['site'], ok: '2026-11-02' });   // its own ok stays
+  assert.deepEqual(okOf({ at: '2026-11-01', why: ['site'] }, { at: '2026-11-01', why: ['site'] }), { at: '2026-11-01', why: ['site'] });       // no answer anywhere
+  assert.equal(okOf(undefined, ok), undefined); assert.deepEqual(okOf({ at: '2026-11-01', why: ['site'] }, undefined), { at: '2026-11-01', why: ['site'] });
+});
+
+test('checkFiles with the other copy: the host\'s answer in the draft reaches the guide and back; a new reason still asks again', () => {
+  // The editor wrote ok into the unpublished changes only (Can Tancat), and the guide has it for Bar Viu only (published before).
+  const F = guide(), D = guide();
+  F.restaurants.items[0].look = { at: '2026-11-01', why: ['site'] }; D.restaurants.items[0].look = { at: '2026-11-01', why: ['site'], ok: '2026-11-03' };
+  F.markets.markets[0].look = { at: '2026-11-01', why: ['site'], ok: '2026-11-04' }; D.markets.markets[0].look = { at: '2026-11-01', why: ['site'] };
+  F.todo.items[0].look = { at: '2026-11-01', why: ['site'] }; D.todo.items[0].look = { at: '2026-11-01', why: ['site'], ok: '2026-11-03' };   // the museum: our directory now adds a reason
+  const lf = looksOf(F), ld = looksOf(D), live = checkFiles(F, { sites, dir, now, peer: ld }), draft = checkFiles(D, { sites, dir, now, peer: lf });
+  for (const X of [F, D]) {
+    assert.deepEqual(X.restaurants.items[0].look, { at: '2026-11-01', why: ['site'], ok: '2026-11-03' });   // the draft's answer, in both
+    assert.deepEqual(X.markets.markets[0].look, { at: '2026-11-01', why: ['site'], ok: '2026-11-04' });     // the guide's answer, in both
+    assert.deepEqual(X.todo.items[0].look, { at: '2026-12-01', why: ['directory'] });                       // a new reason: asked again, everywhere
+  }
+  assert.equal(live.find(r => r.it.id === 'gone-site').change, 'changed'); assert.equal(draft.find(r => r.it.id === 'gone-site').change, null);
+  assert.equal(draft.find(r => r.it.id === 'mercat').change, 'changed');
+  assert.equal(reportOf(live)[1], 2);                                                                       // for a human: the museum, and Lent (its old note, unanswered)
+  // A place only in one copy, or with no id, takes nothing from the other.
+  const G = guide(), H = guide(); G.restaurants.items[0].look = { at: '2026-11-01', why: ['site'] }; H.restaurants.items[0].id = 'another';
+  H.restaurants.items[0].look = { at: '2026-11-01', why: ['site'], ok: '2026-11-03' };
+  checkFiles(G, { sites, dir, now, peer: looksOf(H) }); assert.deepEqual(G.restaurants.items[0].look, { at: '2026-11-01', why: ['site'] });
 });
 
 test('the content check accepts the note and refuses a wrong one; the generator documents it', () => {
