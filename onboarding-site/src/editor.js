@@ -119,13 +119,13 @@ function cPhotos(path, arr) {
   return `${(arr || []).length ? `<div class="thumbs">${arr.map((n, i) => `<div class="thumb"><img src="${esc(edImg(n))}" alt="" loading="lazy"><div class="cm-phb"><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="-1" aria-label="Move earlier">‹</button><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="1" aria-label="Move later">›</button></div><button class="x" type="button" data-cdel="${path}/${i}" data-now="1" aria-label="Remove photo ${i + 1}">×</button></div>`).join('')}</div>` : ''}
     <label class="btn small cm-file"><input class="sr" type="file" accept="image/*" multiple data-phadd="${path}">+ Add photos</label>`;
 }
-function cCard(p, title, meta, inner, order, lead = '', note = '') {   // note: a quiet line under the row's meta (a place hidden from guests for the season)   // lead: what goes before the name in the row (a place's kind)   // order: [this card's place, how many there are], for a list the host can put in order
+function cCard(p, title, meta, inner, order, lead = '', note = '') {   // note: quiet lines under the row's meta, one or a list, each words or { t: words, c: class } (a place hidden from guests for the season; is it still open, lkNote)   // lead: what goes before the name in the row (a place's kind)   // order: [this card's place, how many there are], for a list the host can put in order
   const mv = order ? `<div class="cm-ord"><button type="button" data-cardmove="${esc(p)}" data-dir="-1" aria-label="Move ${esc(title)} up"${order[0] ? '' : ' disabled'}>↑</button><button type="button" data-cardmove="${esc(p)}" data-dir="1" aria-label="Move ${esc(title)} down"${order[0] < order[1] - 1 ? '' : ' disabled'}>↓</button></div>` : '';
-  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary>${lead}<span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}${note ? `<small class="pl-hid">${esc(note)}</small>` : ''}</span>${mv}<i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
+  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary>${lead}<span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}${[].concat(note || []).filter(Boolean).map(x => `<small class="pl-hid${x.c ? ' ' + x.c : ''}">${esc(x.t || x)}</small>`).join('')}</span>${mv}<i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
 }
 
 /* --- One place, contact or tile: its texts, links, position, hours or dates --- */
-const C_SKIP = new Set(['id', 'from', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx', 'pos', 'filled', 'season']);   // filled: where a place's facts came from, said under "Filled in for you", never a field; season: a place's own part of the year (plSeason)
+const C_SKIP = new Set(['id', 'from', 'icon', 'tone', 'group', 'category', 'cat', 'tags', 'flags', 'gid', 'checked', 'utility', 'always', 'wiki', 'hoursSource', 'topPick', 'rating', 'setMenus', 'sources', 'dates', 'schedule', 'lat', 'lng', 'km_from_house', 'wide', 'verify', 'alt', 'trains', 'bins', 'link', 'qr', 'stalls_approx', 'pos', 'filled', 'season', 'look']);   // filled: where a place's facts came from, said under "Filled in for you", never a field; season: a place's own part of the year (plSeason); look: the monthly check's note (lkHTML)
 const C_STR = ['town', 'place', 'phone', 'web', 'url', 'map', 'gmaps', 'venue', 'address', 'comarca', 'price'];
 const C_LONG = ['description', 'what', 'examples', 'priceNote', 'hours', 'occasional_when'];
 const C_LBL = { name: 'Name', name_local: 'Name in the local language', title: 'Title on its page', sub: 'Line under the name', type: 'Type', kind: 'Kind', what: 'What guests need to know', description: 'Description', hours: 'Opening hours, in words', occasional_when: 'When it runs', town: 'Town', place: 'Where exactly', venue: 'Where exactly', address: 'Address', comarca: 'County', phone: 'Phone', url: 'Official website', web: 'Website', gmaps: 'Google Maps link', map: 'Map link', price: 'Price (€)', priceNote: 'About the price', taxiName: 'Taxi name', taxiSub: 'Line under the taxi' };
@@ -290,6 +290,33 @@ const plMonthOf = md => new Intl.DateTimeFormat(plLoc(), { month: 'long', timeZo
 const plDateOf = d => new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short' }).format(d).replace(/ /g, '\u00a0');   // "2 May" never split over two lines
 // The row's quiet note while a place is hidden from guests: "Hidden from guests until 2 May: closed for the season".
 const plHidNote = it => { const b = plBack(it); return b ? `Hidden from guests until ${plDateOf(b)}: closed for the season` : ''; };
+/* --- "Is it still open?" (12 Nov 2026): the monthly check (worker/check-guides.mjs, lookOf) leaves a note of ours on a place
+   of the host's lists or a market whose own website no longer answers, or that our open directory no longer lists: look:
+   { at, why: ['site'] and/or ['directory'], ok? }. It never changes what guests see, so nothing here does either: the host
+   looks with their own eyes (Google Maps, a new tab) and says "It is still open" (ok: today; the check keeps it while the
+   reasons stay those the host saw), or removes the place with the card's own delete. Until then the row says so in one
+   quiet line and the step is under "Needs you" (CM_NEEDS), without stopping Publish. A new place or a copy never takes the
+   note (edNewItem, cmFindPut, the Home tile copy in cmPin); look is ours, never a field (C_SKIP), never translated. --- */
+const lkOpen = it => !!(it && it.look && typeof it.look === 'object' && Array.isArray(it.look.why) && it.look.why.length && !it.look.ok);
+const lkWhy = it => { const w = it.look.why; return w.includes('site') && w.includes('directory') ? 'both' : w.includes('site') ? 'site' : 'directory'; };
+const LK_ROW = { site: 'Is it still open? Its website no longer answers.', directory: 'Is it still open? Our open directory no longer lists it.', both: 'Is it still open? Its website no longer answers and our open directory dropped it.' };
+const LK_SAY = { site: 'Its website has not answered since {x}.', directory: 'Our open directory has not listed it since {x}.', both: 'Since {x}, its website has not answered and our open directory has not listed it.' };
+const lkNote = it => lkOpen(it) ? LK_ROW[lkWhy(it)] : '';
+const lkRow = it => lkOpen(it) ? { t: lkNote(it), c: 'pl-lkn' } : '';   // the row's line: gone while the card is open, its block says it all
+// The day it was first seen, in the maker's language ("1 Dec"; with its year when not this one), never split over two lines.
+const lkDate = at => { const d = new Date(String(at || '') + 'T00:00:00Z'); if (isNaN(d)) return '';
+  return new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short', ...(d.getUTCFullYear() !== new Date().getUTCFullYear() ? { year: 'numeric' } : {}), timeZone: 'UTC' }).format(d).replace(/ /g, '\u00a0'); };
+// Where the host looks: Google Maps by the place's Google id, else its own map link, else a search by its name and town.
+const lkMap = it => { const n = String(edShown(it.name || {})).trim(), own = [it.gmaps, it.map].find(u => typeof u === 'string' && /^https?:\/\//.test(u));
+  return it.gid ? gmLink(n, it.gid) : own || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([n, typeof it.town === 'string' ? it.town : ''].filter(Boolean).join(' '))}`; };
+// At the top of the card: the question, the reason with its day, the map, and the two answers (one surface, the panel's family).
+function lkHTML(p, it) {
+  if (!lkOpen(it)) return '';
+  const k = lkWhy(it), d = lkDate(it.look.at);
+  return `<section class="cm-found pl-look" aria-label="Is it still open?"><b class="pl-h">Is it still open?</b>
+    <p class="pl-lks">${esc(d ? LK_SAY[k].split('{x}').join(d) : LK_ROW[k].replace(/^Is it still open\? /, ''))} <a href="${esc(lkMap(it))}" target="_blank" rel="noopener">Look at it on Google Maps</a></p>
+    <div class="pl-lka"><button class="btn small primary" type="button" data-clookok="${esc(p)}">It is still open</button><button class="btn small" type="button" data-cdel="${esc(p)}">Remove it from my guide</button></div></section>`;
+}
 const plRowsSeason = rows => { const k = [...new Set((rows || []).map(r => r && r.from && r.to ? r.from + '|' + r.to : ''))]; return k.length === 1 && k[0] ? k[0] : ''; };
 function plSeasonBack(it, gone, left = (it.schedule || []).length) { const k = plRowsSeason(gone); if (k && !left && !plOwnSeason(it)) { const [from, to] = k.split('|'); it.season = { from, to }; } }
 // "Open all year" (the tag allyear, the research's own word and a guest's "All year" mark): never hidden by an assumed season.
@@ -367,12 +394,12 @@ function cPlace(base, it, i) {
   const p = `${base}/${i}`, sec = PL_SEC[base], ord = k => { const n = C_ORDER.indexOf(k); return n < 0 ? 99 : n; };
   const rest = Object.keys(it).filter(k => !C_SKIP.has(k) && !PL_DONE.has(k) && !k.startsWith('_') && (edIs18(it[k]) || (C_STR.includes(k) && typeof it[k] === 'string'))).sort((a, b) => ord(a) - ord(b));
   const ty = plType(sec, it), town = typeof it.town === 'string' ? it.town : '';   // a line that already names the town does not get it twice
-  const meta = [ty, town && !ty.toLowerCase().includes(town.toLowerCase()) ? town : '', cKm(it), (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
+  const meta = [ty, town && !ty.toLowerCase().includes(town.toLowerCase()) ? town : '', cKm(it).replace(' ', '\u00a0'), (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');
   const { find, pin, first } = cWhere(p, it), nameless = !String(edShown(it.name || {})).trim() && !!it.gid;   // found on Google, no name yet: asked for
-  return cCard(p, nameless ? 'No name yet' : cName(it), meta, `<div class="grid">${first ? find : ''}${cf('Name', `${p}/name`, it.name, { i18n: true, ...(nameless ? { ph: 'Now type its name' } : {}) })}${cf('Your comment', `${p}/description`, it.description, { long: true, i18n: true })}</div>
+  return cCard(p, nameless ? 'No name yet' : cName(it), meta, `${lkHTML(p, it)}<div class="grid">${first ? find : ''}${cf('Name', `${p}/name`, it.name, { i18n: true, ...(nameless ? { ph: 'Now type its name' } : {}) })}${cf('Your comment', `${p}/description`, it.description, { long: true, i18n: true })}</div>
     ${cSwitch(`data-cfav="${p}"`, 'Our favourite', !!it.topPick, 'Guests see it marked Unmissable. Keep it for two or three places.')}
     ${plFound(p, sec, it)}${CM.chg.has(p) ? plForm(p, sec, it, rest, (first ? '' : find) + pin) : ''}
-    ${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this place</button></div>`, null, plTile(sec, it), plHidNote(it));
+    ${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this place</button></div>`, null, plTile(sec, it), [lkRow(it), plHidNote(it)]);
 }
 // A kind picked: its icon; its name as the line under the name unless the host wrote their own; for Attractions its quick
 // filter (and tone) and "Great for kids" when the kind is for kids (taken off again only if the host did not set it here).
@@ -449,9 +476,9 @@ function cMarket(base, it, i) {
   const meta = [typeof it.town === 'string' ? it.town : '', cKm(it).replace(' ', '\u00a0'), (it.flags || []).includes('check') ? 'check before going' : '', it.auto ? 'added automatically' : ''].filter(Boolean).join(' · ');   // "27 km" never split
   const { find, pin, first } = cWhere(p, it), field = (k, o = {}) => cf(cLabel(k), `${p}/${k}`, it[k], { ...cOpt(it, k), ...o });
   const where = WH.filter(shown).map(k => field(k, { half: true })).join('') + LK.filter(shown).map(k => field(k)).join('') + (first ? '' : find) + pin + rest.map(k => field(k)).join('');
-  return cCard(p, cName(it), meta, `<div class="grid">${first ? find : ''}${cf('Name', `${p}/name`, it.name, { i18n: true, long: cOpt(it, 'name').long, rows: 2 })}${cf('Description', `${p}/description`, it.description, { long: true, i18n: true })}</div>
+  return cCard(p, cName(it), meta, `${lkHTML(p, it)}<div class="grid">${first ? find : ''}${cf('Name', `${p}/name`, it.name, { i18n: true, long: cOpt(it, 'name').long, rows: 2 })}${cf('Description', `${p}/description`, it.description, { long: true, i18n: true })}</div>
     ${mkFound(p, it)}${CM.chg.has(p) ? mkForm(p, it, where) : ''}
-    <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this market</button></div>`, null, mkTile(it.category));
+    <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this market</button></div>`, null, mkTile(it.category), lkRow(it));
 }
 // A kind picked for a market: its category, also one of the file's (the Markets page filters by them, as in edNewItem).
 function mkPick(p, k) {
@@ -531,7 +558,7 @@ function edNewItem(arr, path) {
   const clear = o => { for (const k of Object.keys(o)) { const x = o[k]; if (['icon', 'group', 'tone', 'category', 'type', 'wide'].includes(k) && !edIs18(x)) { delete o[k]; continue; } if (edIs18(x)) o[k] = Object.fromEntries(Object.keys(x).map(l => [l, ''])); else if (typeof x === 'string') o[k] = ''; else if (Array.isArray(x)) o[k] = []; else if (typeof x === 'number' && k !== 'lat' && k !== 'lng') o[k] = 0; else if (typeof x === 'boolean') delete o[k]; } return o; };   // switches too: a new event is not "added automatically" because the first one was
   const n = clear(clone); n.id = 'custom-' + Date.now().toString(36);
   if ('lat' in n) { n.lat = h.lat || 0; n.lng = h.lng || 0; n.km_from_house = null; n.nomap = true; }   // no position yet: never "0 km", never a pin at the house
-  for (const k of ['verify', 'always', 'gid', 'pos', 'checked', 'hoursSource', 'rating', 'topPick', 'wiki', 'sources', 'setMenus', 'filled']) delete n[k];
+  for (const k of ['verify', 'always', 'gid', 'pos', 'checked', 'hoursSource', 'rating', 'topPick', 'wiki', 'sources', 'setMenus', 'filled', 'look']) delete n[k];   // look: the first place's "Is it still open?" is not the new one's
   Object.assign(n, cmClone(ED_NEW_DEFAULT[path] || {}));
   const fl = path && n.category ? edGet(edC(), edPath(path).slice(0, -1)) : null;   // the market's category is one of the file's, as in cmFindAdd
   if (fl) { fl.categories = fl.categories || []; if (!fl.categories.includes(n.category)) fl.categories.push(n.category); }
@@ -1202,7 +1229,7 @@ async function cmFindPoll(kind) {
 // ready screen (runtime.js). Returns the new entry.
 function cmFindPut(path, sid) {
   const kind = FIND_OF[path][0], f = CM.find[kind], it = f && (f.items || []).find(x => x.id === sid); if (!it) return null;
-  const n = cmClone(it); delete n._google; delete n._card;
+  const n = cmClone(it); delete n._google; delete n._card; delete n.look;   // a suggestion is new to the guide: no note of the monthly check
   let a = edGet(edC(), edPath(path)); if (!Array.isArray(a)) { edSet(edC(), edPath(path), []); a = edGet(edC(), edPath(path)); }
   a.push(n);
   const sec = path.split('/')[1], fl = edF()[sec];
@@ -1382,7 +1409,10 @@ function cmRemember(r) { try { const o = JSON.parse(localStorage.getItem(CM_LAST
 // For a guide that exists this is the Wi-Fi: rubbish and contacts pages only exist once they are filled.
 // A step with an entry that has words but no name needs the host too: Publish waits for it (cmNameless).
 const CM_NEEDS = { wifi: c => { const w = (c.private || {}).wifi || {}; return !w.password || !(w.networks || []).some(n => n.ssid); } };
-for (const id of ['todo', 'restaurants', 'nightlife', 'markets', 'events', 'tiles', 'contacts', 'transport', 'housepage']) CM_NEEDS[id] = c => cmNameless(c, id).length > 0 || cmUnnamedOf(c, `files/${id}/items`).length > 0;   // places waiting for a name (cmUnnamed) too, without stopping Publish: guests do not see them
+for (const id of ['todo', 'restaurants', 'nightlife', 'markets', 'events', 'tiles', 'contacts', 'transport', 'housepage']) CM_NEEDS[id] = c => cmNameless(c, id).length > 0 || cmUnnamedOf(c, `files/${id}/items`).length > 0 || cmLooks(c, id).length > 0;   // places waiting for a name (cmUnnamed) and places asked "Is it still open?" (lkHTML) too, without stopping Publish: guests do not see the first and still see the second
+// The places of a step that the monthly check asks about and the host has not answered yet.
+const CM_LOOK = { todo: ['todo', 'items'], restaurants: ['restaurants', 'items'], nightlife: ['nightlife', 'items'], markets: ['markets', 'markets'] };
+const cmLooks = (c, id) => { const k = CM_LOOK[id], a = k && (((c.files || {})[k[0]] || {})[k[1]]); return Array.isArray(a) ? a.filter(lkOpen) : []; };
 const cmNeeds = m => !!(CM_NEEDS[m.id] && CM_NEEDS[m.id](edC()));
 function cmStepList(cur) {
   const item = m => { const ch = cmChanged(m); return `<a class="si s-${ch ? 'chk' : 'new'}" href="#${m.id}"${m.id === cur ? ' aria-current="step"' : ''} style="--tc:${m.tc}"><span class="sic">${ch ? STATUS_ICON.chk : I[m.icon] || ''}</span><span class="st">${esc(m.title)}</span><span class="sl">${ch ? 'Changed' : cmNeeds(m) ? 'Needs you' : ''}</span></a>`; };
@@ -1767,6 +1797,7 @@ document.addEventListener('click', e => {
   // A place's fact changed by hand (its kind, the hours or Open 24 hours, Book ahead) is the host's: no source said for it.
   { const own = d.ckind ? [d.ckind, 'kind'] : d.cflag && d.f === 'book' ? [d.cflag, 'book'] : d.cseason && /\/season$/.test(d.cseason) ? [d.cseason, 'season'] : d.callyear ? [d.callyear, 'season'] : d.calways || d.daytog || d.cseason || d.addsch ? [d.calways || d.daytog || d.cseason || d.addsch, 'schedule']
       : d.cdel && /\/schedule\/\d+$/.test(d.cdel) ? [d.cdel, 'schedule'] : null; if (own) plMine(...own); }
+  if (d.clookok) { const it = edGet(edC(), edPath(d.clookok)); if (it && it.look) it.look = { ...it.look, ok: new Date().toISOString().slice(0, 10) }; return done(); }   // "It is still open": the day, as the check writes its own (UTC)
   if (d.pflook) return pfStart(d.pflook);
   if (d.pfagain) { const it = edGet(edC(), edPath(d.pfagain)), j = it && CM.pf[it.id]; return pfStart(d.pfagain, (j && j.website) || ''); }
   if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); edCoverMade(d.cover === 'photo' ? ((edC().files || {}).house || {}).photo : ''); return done(); }
@@ -2115,6 +2146,13 @@ function cmInit() {
 .cmi textarea[data-p^="files/markets/"]{field-sizing:content;min-height:0}   /* a market's name and description: as tall as their words */
 /* A place out of season (season.js): the row's quiet note while guests do not see it; "Open all year" under the season line */
 .cmi>summary small.pl-hid{color:var(--muted);font-style:italic}
+/* "Is it still open?" (lkHTML): a calm question at the top of the card, the panel's own surface, no warning colour */
+.pl-look{gap:6px;padding:12px 14px 14px}
+.pl-lks{margin:0;font-size:14.5px;line-height:1.45}
+.pl-lks a{color:inherit;font-weight:600;text-underline-offset:2px;white-space:nowrap}
+.pl-lka{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.pl-lka .btn{min-height:40px}
+.cmi[open]>summary small.pl-lkn{display:none}
 .pl-l .pl-ally{display:block;margin-top:2px}`;
   document.head.appendChild(st);
 })();

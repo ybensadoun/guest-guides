@@ -1063,7 +1063,7 @@ try {
     await p.click(card + ' .pl-sug button').catch(() => {});
     await p.waitForFunction(() => [...document.querySelectorAll('details.cmi')].some(d => /Llul de Llebre/.test(d.querySelector('summary').textContent)), null, { timeout: 5000 }).catch(() => {});
     const got = await p.evaluate(() => { const d = [...document.querySelectorAll('details.cmi')].find(x => /Llul de Llebre/.test(x.querySelector('summary').textContent)); return d ? { head: d.querySelector('summary').textContent, text: d.textContent, link: (d.querySelector('[data-glive] a') || {}).textContent, name: d.querySelector('input[data-p$="/name"]') && d.querySelector('input[data-p$="/name"]').value } : {}; });
-    ok('editor, finding a place: the pick is read by its id, fills the empty name with the host\'s words and the distance, and no town of Google\'s', read[0] === 'g-ull' && got.name === 'Llul de Llebre' && /3 km/.test(got.head || '') && !/La Bisbal/.test(got.head || ''), JSON.stringify({ read, ...got, text: undefined }));
+    ok('editor, finding a place: the pick is read by its id, fills the empty name with the host\'s words and the distance, and no town of Google\'s', read[0] === 'g-ull' && got.name === 'Llul de Llebre' && /3\skm/.test(got.head || '') && !/La Bisbal/.test(got.head || ''), JSON.stringify({ read, ...got, text: undefined }));
     await p.locator('details.cmi[open] [data-glive]').scrollIntoViewIfNeeded().catch(() => {}); await p.screenshot({ path: join(SHOTS, 'editor-place-found-360.png') });
     ok('editor, finding a place: it says what it found on Google, with Google Maps beside it, so the host can tell', /Found: Restaurant Ull de Llebre, La Bisbal del Penedès, Spain, 3 km from the house/.test(got.text || '') && got.link === 'Google Maps');
     await p.waitForTimeout(2500);
@@ -1197,7 +1197,7 @@ try {
       const rows = await p.$$eval('.edz details.cmi > summary', ss => ss.map(s => ({ tile: !!s.querySelector('i.pl-ic'), svg: !!s.querySelector('i.pl-ic svg'), meta: (s.querySelector('small') || {}).textContent || '' })));
       const lr = rows[ri] || {};
       ok('place card: every row of Eat and drink starts with its kind\'s tile, drawn with the guide\'s icon when it has a kind', rows.length > 3 && rows.every(r => r.tile) && rows.filter(r => r.svg).length === items('restaurants').filter(x => x.icon).length, `${rows.filter(r => r.svg).length} of ${rows.length}`);
-      ok('place card: the row says kind · town · km, and never the town twice', lr.meta === [L0.type.en, L0.type.en.toLowerCase().includes(L0.town.toLowerCase()) ? '' : L0.town, L0.km_from_house + ' km'].filter(Boolean).join(' · '), lr.meta);
+      ok('place card: the row says kind · town · km, and never the town twice', lr.meta.replace(/\u00a0/g, ' ') === [L0.type.en, L0.type.en.toLowerCase().includes(L0.town.toLowerCase()) ? '' : L0.town, L0.km_from_house + ' km'].filter(Boolean).join(' · '), lr.meta);
       await p.$eval(card(RP), e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -10)); await p.screenshot({ path: join(SHOTS, 'place-card-closed-list-360.png') });
       await p.click(card(RP) + ' > summary'); await p.waitForTimeout(300);
       const order = await p.evaluate(sel => { const c = document.querySelector(sel), y = s => { const e = c.querySelector(s); return e ? e.getBoundingClientRect().top : -1; };
@@ -1421,6 +1421,103 @@ try {
         const after = (await p.textContent(card(AP) + ' .pl-found').catch(() => '')).replace(/\s+/g, ' ');
         ok(`assumed season, ${tag}: "Open all year" in the panel sets allyear and sticks: no assumed line, no note, never hidden`, !!a4 && (a4.tags || []).includes('allyear') && !/A summer place/.test(after) && !(await p.$(card(AP) + ' > summary .pl-hid')), JSON.stringify(a4 && a4.tags));
         ok(`assumed season, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+        await ctx.close(); }
+    }
+    // "Is it still open?" (12 Nov 2026): the monthly check's note on a place, look { at, why, ok? } (worker/check-guides.mjs).
+    // The row says so in one quiet line; the card asks at the top, with the reason, the day, Google Maps and two answers; the
+    // step is under "Needs you" and Publish is not stopped. "It is still open" writes ok (today) and everything goes at once;
+    // "Remove it from my guide" is the card's own delete; a place with ok says nothing; a new place never takes the note.
+    { const R = items('restaurants'), ris = R.map((x, i) => i).filter(i => String((R[i].name || {}).en || '').trim()).slice(0, 4);
+      const LK = [['site', ['site'], 'Is it still open? Its website no longer answers.', /^Is it still open\?\s*Its website has not answered since 1 Nov( 2026)?\.\s*Look at it on Google Maps\s*It is still open\s*Remove it from my guide$/],
+        ['directory', ['directory'], 'Is it still open? Our open directory no longer lists it.', /^Is it still open\?\s*Our open directory has not listed it since 1 Nov( 2026)?\.\s*Look at it on Google Maps\s*It is still open\s*Remove it from my guide$/],
+        ['both', ['site', 'directory'], 'Is it still open? Its website no longer answers and our open directory dropped it.', /^Is it still open\?\s*Since 1 Nov( 2026)?, its website has not answered and our open directory has not listed it\.\s*Look at it on Google Maps\s*It is still open\s*Remove it from my guide$/]];
+      const c2 = JSON.parse(JSON.stringify(E.content)), f2 = c2.files;
+      for (const [s, k] of [['restaurants', 'items'], ['nightlife', 'items'], ['todo', 'items'], ['markets', 'markets']]) for (const it of (f2[s] || {})[k] || []) delete it.look;   // only this check's notes
+      LK.forEach(([, why], k) => { f2.restaurants.items[ris[k]].look = { at: '2026-11-01', why }; });
+      f2.restaurants.items[ris[3]].look = { at: '2026-10-01', why: ['site'], ok: '2026-10-03' };   // looked at by the host: nothing shown
+      const mk0 = ((f2.markets || {}).markets || [])[0]; if (mk0) mk0.look = { at: '2026-11-01', why: ['site'] };
+      const G2 = { ...E, content: c2 }, P = k => `files/restaurants/items/${ris[k]}`, MP = 'files/markets/markets/0', today = () => new Date().toISOString().slice(0, 10);
+      const rowNote = (p, x) => p.$$eval(card(x) + ' > summary .pl-hid', ns => ns.map(n => n.textContent.replace(/[\u00a0\u202f]/g, ' ').trim())).catch(() => []);
+      // The rail (or, on a phone, the same list in the steps sheet): the steps under "Needs you".
+      const needs = async p => { let l = await p.$$eval('.rail p.sg, .rail a.si .st', els => els.map(e => (e.matches('.sg') ? '#' : '') + e.textContent.trim())).catch(() => []);
+        if (!l.length) { await p.click('#openSteps').catch(() => {}); await p.waitForTimeout(300); l = await p.$$eval('[role="dialog"] p.sg, [role="dialog"] a.si .st', els => els.map(e => (e.matches('.sg') ? '#' : '') + e.textContent.trim())).catch(() => []); await p.click('.sheet .sheet-x').catch(() => {}); await p.waitForTimeout(200); }
+        const i = l.indexOf('#Needs you'), j = l.findIndex((x, n) => n > i && x[0] === '#'); return i < 0 ? [] : l.slice(i + 1, j < 0 ? undefined : j); };
+      // The block: its parts side by side or under each other, never on top of each other, inside the card, no sideways scroll.
+      const lkClash = (p, sel) => p.evaluate(sel => { const b = document.querySelector(sel + ' .pl-look'); if (!b) return ['no block'];
+        const cr = document.querySelector(sel).getBoundingClientRect(), els = [...b.querySelectorAll('b, .pl-lks, .pl-lks a, button')], r = els.map(e => e.getBoundingClientRect()), bad = [];
+        els.forEach((e, i) => { if (r[i].right > cr.right + 0.5 || r[i].left < cr.left - 0.5) bad.push('outside: ' + e.textContent.trim().slice(0, 24)); });
+        for (let i = 0; i < els.length; i++) for (let j = i + 1; j < els.length; j++) { if (els[i].contains(els[j]) || els[j].contains(els[i])) continue; const a = r[i], c = r[j];
+          if (Math.min(a.right, c.right) - Math.max(a.left, c.left) > 1 && Math.min(a.bottom, c.bottom) - Math.max(a.top, c.top) > 1) bad.push(els[i].textContent.trim().slice(0, 20) + ' / ' + els[j].textContent.trim().slice(0, 20)); }
+        if (document.documentElement.scrollWidth > innerWidth) bad.push('sideways scroll'); return bad; }, sel);
+      for (const [w, h] of [[1280, 860], [360, 780]]) {
+        const { ctx, p, errors, item, saved } = await run(w, h, {}, G2), tag = w + ' px';
+        await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
+        const rows = []; for (const k of [0, 1, 2]) rows.push(await rowNote(p, P(k)));
+        ok(`still open, ${tag}: each noted row says one quiet line, by its reason (website, directory, both)`, LK.every(([, , t], k) => rows[k].includes(t)), JSON.stringify(rows));
+        ok(`still open, ${tag}: a place the host already looked at (ok) says nothing`, !(await rowNote(p, P(3))).some(t => /still open/.test(t)));
+        const inRow = await p.evaluate(sels => sels.every(sel => { const s = document.querySelector(sel + ' > summary'), n = s && [...s.querySelectorAll('.pl-hid')].find(x => /still open/.test(x.textContent)); if (!n) return false;
+          const r = s.getBoundingClientRect(), b = n.getBoundingClientRect(), t = s.querySelector('b').getBoundingClientRect(); return b.right <= r.right + 0.5 && b.top >= t.bottom - 0.5; }) && document.documentElement.scrollWidth <= innerWidth, [0, 1, 2].map(k => card(P(k))));
+        ok(`still open, ${tag}: the line sits inside its row, under the name, no sideways scroll`, inRow);
+        const n1 = await needs(p);
+        ok(`still open, ${tag}: Eat and drink is under "Needs you"`, n1.includes('Eat and drink') && (await p.textContent('#cmPill').catch(() => '')).trim() === 'Needs you', n1.join(' > '));
+        await p.$eval(card(P(0)), e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -80)); await p.waitForTimeout(200);
+        await p.screenshot({ path: join(SHOTS, `still-open-rows-${w}.png`) });
+        // Each card, opened: the block first, the question, the reason with its day, Google Maps (by the place's id) in a new tab.
+        for (const [k, [why, , , rx]] of LK.entries()) {
+          await p.click(card(P(k)) + ' > summary'); await p.waitForTimeout(250);
+          const bl = await p.evaluate(sel => { const c = document.querySelector(sel), b = c.querySelector('.pl-look'), a = b && b.querySelector('a'); const rl = c.querySelector('summary .pl-lkn'); return b ? { t: b.textContent.replace(/[\s\u00a0]+/g, ' ').trim(), first: c.querySelector('.cmb').firstElementChild === b, href: a.href, blank: a.target === '_blank', rowLine: !!rl && !!rl.getClientRects().length } : null; }, card(P(k)));
+          const it = R[ris[k]], href = it.gid ? `query_place_id=${encodeURIComponent(it.gid)}` : 'google.com/maps';
+          ok(`still open, ${tag}, ${why}: the card starts with the question, the reason and its day, Google Maps in a new tab, the two answers; the row's line is not said twice while it is open`, !!bl && bl.first && rx.test(bl.t) && bl.href.includes(href) && bl.blank && !bl.rowLine, JSON.stringify(bl));
+          const c1 = [...await lkClash(p, card(P(k))), ...await clash(p, card(P(k)))];
+          ok(`still open, ${tag}, ${why}: nothing in the card overlaps or sticks out, no sideways scroll`, !c1.length, c1.join('; '));
+          if (why === 'both') await p.locator(card(P(k))).screenshot({ path: join(SHOTS, `still-open-card-${w}.png`), style: NO_BAR });
+        }
+        await p.click(card(P(3)) + ' > summary'); await p.waitForTimeout(200);
+        ok(`still open, ${tag}: the card of a place with ok has no block`, !(await p.$(card(P(3)) + ' .pl-look')) && !!(await p.$(card(P(3)) + ' .pl-found')));
+        // Publish goes through with the notes unanswered (guests still see the places); an edited place keeps its note.
+        await p.click(card(P(1)) + ` [data-cfav="${P(1)}"]`); const e1 = await item(P(1));
+        await go(p, '#publish'); await p.click('.card [data-cpublish]').catch(() => {}); await p.waitForTimeout(800);
+        const pub = saved.map(b => { try { return JSON.parse(b); } catch (e) { return null; } }).filter(j => j && j.content).pop(), pr = pub && pub.content.files.restaurants.items;
+        ok(`still open, ${tag}: Publish is not stopped by a note, and the notes go live unanswered (the engine ignores them)`, /Published/.test(await p.textContent('#toast').catch(() => '')) && !!pr && [0, 1, 2].every(k => pr[ris[k]].look && !pr[ris[k]].look.ok), await p.textContent('#toast').catch(() => ''));
+        ok(`still open, ${tag}: an edited place keeps its note`, !!e1 && !!e1.topPick !== !!R[ris[1]].topPick && cmpSame(e1.look, { at: '2026-11-01', why: ['directory'] }), JSON.stringify(e1 && e1.look));
+        await go(p, '#restaurants'); await p.waitForTimeout(300);
+        // "It is still open": ok is today, the block and the row's line go at once, the card stays open.
+        if (!(await p.$(card(P(0)) + ' .pl-look'))) { await p.click(card(P(0)) + ' > summary'); await p.waitForTimeout(200); }
+        await p.click(card(P(0)) + ` [data-clookok="${P(0)}"]`); const o1 = await item(P(0));
+        ok(`still open, ${tag}: "It is still open" writes look.ok with today's date, keeps the note's day and reason`, !!o1 && cmpSame(o1.look, { at: '2026-11-01', why: ['site'], ok: today() }), JSON.stringify(o1 && o1.look));
+        ok(`still open, ${tag}: then the block and the row's line go at once, the card stays open`, !(await p.$(card(P(0)) + ' .pl-look')) && !(await rowNote(p, P(0))).some(t => /still open/.test(t)) && await p.$eval(card(P(0)), d => d.open).catch(() => false));
+        if (!(await p.$(card(P(1)) + ' .pl-look'))) { await p.click(card(P(1)) + ' > summary'); await p.waitForTimeout(200); }
+        await p.click(card(P(1)) + ` [data-clookok="${P(1)}"]`); await p.waitForTimeout(300);
+        const n2 = await needs(p);
+        ok(`still open, ${tag}: one note left, Eat and drink still needs the host`, n2.includes('Eat and drink'), n2.join(' > '));
+        // "Remove it from my guide": the card's own delete, with its "Sure? Tap again".
+        const gone = R[ris[2]].id, rm = card(P(2)) + ` .pl-look [data-cdel="${P(2)}"]`;
+        if (!(await p.$(rm))) { await p.click(card(P(2)) + ' > summary'); await p.waitForTimeout(200); }
+        await p.click(rm); const sure = (await p.textContent(rm).catch(() => '')).trim(); await p.click(rm); const a1 = await item('files/restaurants/items');
+        ok(`still open, ${tag}: "Remove it from my guide" asks "Sure? Tap again", then removes the place`, sure === 'Sure? Tap again' && Array.isArray(a1) && a1.length === R.length - 1 && !a1.some(x => x.id === gone), `${sure}, ${a1 && a1.length} of ${R.length}`);
+        const n3 = await needs(p);
+        ok(`still open, ${tag}: every note answered, Eat and drink no longer needs the host`, !n3.includes('Eat and drink'), n3.join(' > '));
+        // A new place takes the first one's shape, never its note (the first place carries one, answered).
+        await p.click('[data-addit="files/restaurants/items"]'); const a2 = await item('files/restaurants/items');
+        ok(`still open, ${tag}: a new place added after does not carry look`, Array.isArray(a2) && a2.length === a1.length + 1 && !('look' in a2[a2.length - 1]) && (ris[0] !== 0 || !!a2[0].look), JSON.stringify(a2 && a2[a2.length - 1].look));
+        // A market: the same line and block.
+        if (mk0) { await go(p, '#markets'); await p.waitForTimeout(300);
+          const mr = await rowNote(p, MP); await p.click(card(MP) + ' > summary'); await p.waitForTimeout(250);
+          const mb = (await p.textContent(card(MP) + ' .pl-look').catch(() => '')).replace(/[\s\u00a0]+/g, ' '), mc = await lkClash(p, card(MP)), n4 = await needs(p);
+          ok(`still open, ${tag}: a market noted says the same line and block, and Local markets is under "Needs you"`, mr.includes(LK[0][2]) && /Its website has not answered since 1 Nov/.test(mb) && !mc.length && n4.includes('Local markets'), JSON.stringify({ mr, mc, n4 })); }
+        ok(`still open, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+        await ctx.close(); }
+      // The maker in French, 360 px: the line, the block, nothing overlapping, nothing cut.
+      { const { ctx, p, errors } = await run(360, 780, { 'porta-lang-v1': 'fr' }, G2);
+        await p.goto('http://editor.test/#restaurants'); await ready(p); await p.waitForTimeout(400);
+        const fr = await rowNote(p, P(2));
+        await p.$eval(card(P(0)), e => e.scrollIntoView({ block: 'start' })); await p.evaluate(() => scrollBy(0, -80)); await p.waitForTimeout(200);
+        await p.screenshot({ path: join(SHOTS, 'still-open-rows-fr-360.png') });
+        await p.click(card(P(2)) + ' > summary'); await p.waitForTimeout(250);
+        const fb = (await p.textContent(card(P(2)) + ' .pl-look').catch(() => '')).replace(/[\s\u00a0\u202f]+/g, ' ').trim(), c1 = [...await lkClash(p, card(P(2))), ...await clash(p, card(P(2)))];
+        await p.locator(card(P(2))).screenshot({ path: join(SHOTS, 'still-open-card-fr-360.png'), style: NO_BAR });
+        ok('still open, the maker in French, 360 px: the line and the block in French, nothing overlaps', fr.includes('Est-il encore ouvert ? Son site ne répond plus et notre annuaire ouvert l’a retiré.') && /^Est-il encore ouvert \? Depuis le 1 nov\.( 2026)?, son site ne répond plus et notre annuaire ouvert ne le répertorie plus\. Le voir sur Google Maps Il est toujours ouvert\s*Le retirer de mon guide$/.test(fb) && !c1.length, JSON.stringify({ fr, fb, c1 }));
+        ok('still open, the maker in French: no page errors', !errors.length, errors.join(' | '));
         await ctx.close(); }
     }
     // A place's facts, looked up in the editor (job place-facts, 11 Nov 2026): picked on Google, the place gets one job; its

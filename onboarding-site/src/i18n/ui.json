@@ -8095,5 +8095,75 @@
 "ca": "A Google",
 "es": "En Google",
 "fr": "Sur Google"
+},
+"Is it still open?": {
+"ca": "Encara és obert?",
+"es": "¿Sigue abierto?",
+"fr": "Est-il encore ouvert ?"
+},
+"Is it still open? Its website no longer answers.": {
+"ca": "Encara és obert? El seu web ja no respon.",
+"es": "¿Sigue abierto? Su web ya no responde.",
+"fr": "Est-il encore ouvert ? Son site ne répond plus."
+},
+"Is it still open? Our open directory no longer lists it.": {
+"ca": "Encara és obert? El nostre directori obert ja no l’inclou.",
+"es": "¿Sigue abierto? Nuestro directorio abierto ya no lo incluye.",
+"fr": "Est-il encore ouvert ? Notre annuaire ouvert ne le répertorie plus."
+},
+"Is it still open? Its website no longer answers and our open directory dropped it.": {
+"ca": "Encara és obert? El seu web ja no respon i el nostre directori obert l’ha tret.",
+"es": "¿Sigue abierto? Su web ya no responde y nuestro directorio abierto lo ha quitado.",
+"fr": "Est-il encore ouvert ? Son site ne répond plus et notre annuaire ouvert l’a retiré."
+},
+"Its website no longer answers.": {
+"ca": "El seu web ja no respon.",
+"es": "Su web ya no responde.",
+"fr": "Son site ne répond plus."
+},
+"Our open directory no longer lists it.": {
+"ca": "El nostre directori obert ja no l’inclou.",
+"es": "Nuestro directorio abierto ya no lo incluye.",
+"fr": "Notre annuaire ouvert ne le répertorie plus."
+},
+"Its website no longer answers and our open directory dropped it.": {
+"ca": "El seu web ja no respon i el nostre directori obert l’ha tret.",
+"es": "Su web ya no responde y nuestro directorio abierto lo ha quitado.",
+"fr": "Son site ne répond plus et notre annuaire ouvert l’a retiré."
+},
+"Its website has not answered since {x}.": {
+"ca": "El seu web no respon des del {x}.",
+"es": "Su web no responde desde el {x}.",
+"fr": "Son site ne répond plus depuis le {x}."
+},
+"Our open directory has not listed it since {x}.": {
+"ca": "El nostre directori obert no l’inclou des del {x}.",
+"es": "Nuestro directorio abierto no lo incluye desde el {x}.",
+"fr": "Notre annuaire ouvert ne le répertorie plus depuis le {x}."
+},
+"Since {x}, its website has not answered and our open directory has not listed it.": {
+"ca": "Des del {x}, el seu web no respon i el nostre directori obert no l’inclou.",
+"es": "Desde el {x}, su web no responde y nuestro directorio abierto no lo incluye.",
+"fr": "Depuis le {x}, son site ne répond plus et notre annuaire ouvert ne le répertorie plus."
+},
+"Look at it on Google Maps": {
+"ca": "Mira’l a Google Maps",
+"es": "Verlo en Google Maps",
+"fr": "Le voir sur Google Maps"
+},
+"It is still open": {
+"ca": "Encara és obert",
+"es": "Sigue abierto",
+"fr": "Il est toujours ouvert"
+},
+"Remove it from my guide": {
+"ca": "Treu-lo de la meva guia",
+"es": "Quitarlo de mi guía",
+"fr": "Le retirer de mon guide"
+},
+"Sure? Tap again": {
+"ca": "Segur? Torna a tocar",
+"es": "¿Seguro? Toca otra vez",
+"fr": "Vraiment ? Touchez à nouveau"
 }
 }
