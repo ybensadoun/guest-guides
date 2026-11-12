@@ -1022,12 +1022,50 @@ const PROG_STEPS = {
   translate: [[/Translating (\d+) of (\d+)/, 5, 97, 45]],
   art: [[/Reading your photo/, 3, 8, 8], [/Drawing your cover/, 8, 94, 70], [/Saving your cover/, 94, 99, 5]],
   facts: [[/Looking for its website/, 4, 45, 12], [/Reading its website/, 45, 97, 20]],   // a place's facts (place-facts): about 20 s
-  build: [[/Reading your answers/, 3, 8, 20], [/Researching: markets/, 8, 30, 180], [/Researching: todo/, 30, 52, 180], [/Researching: emergency/, 52, 62, 90], [/Building the guide/, 62, 78, 40], [/Translating/, 78, 92, 90], [/Saving the guide/, 92, 99, 30]]
+  // A guide's build has its own steps and clock (progBuild): [step, usual seconds, does it run for this guide?], in the
+  // worker's order (worker/guide-worker.mjs, build). Measured on the server on 11 Nov 2026, a guide in six languages: the
+  // contacts found in 85 s (Researching: emergency, which ran at that build), translation 600 s for five languages beyond
+  // the guide's own (120 s each), the generator a few seconds, saving 13 s. The host's places took a second there (their
+  // facts were already kept); a place never seen is read from its website in about 15 s (the editor's lookup, 11 Nov). The research runs at the build only when it was not done while the host answered.
+  build: [[/Reading your answers/, 5], [/Finding your favourite places/, () => Math.min(180, 15 * buildPlaces()), () => buildPlaces() > 0], [/Finishing the research/, 120, () => false],
+    [/Researching: markets/, 180, () => !(AREA.full || {}).markets], [/Researching: todo/, 180, () => !(AREA.full || {}).todo], [/Researching: emergency/, 85, () => !(AREA.quick || {}).emergency],
+    [/Building the guide/, 10], [/Translating/, () => 120 * Math.max(1, buildLangs().length), () => buildLangs().length > 0], [/Saving the guide/, 15]]
 };
+// What the build works from: the languages beyond the guide's own (the worker translates into those, and into its own for
+// texts in another language), and the host's places it looks up (worker placesOf: their lists and the cards they kept).
+const BUILD_LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
+const buildSrc = () => BUILD_LANGS.includes(A.sourceLang) ? A.sourceLang : 'en';
+const buildLangs = () => [...new Set((A.languages || []).filter(l => BUILD_LANGS.includes(l) && l !== buildSrc()))];
+const buildPlaces = () => ['favEat', 'favNight', 'favDo'].reduce((n, k) => n + placeRows(k).length, 0) + Object.values(A.swipes || {}).filter(x => x && x.d === 'yes').length;
+const progSecs = x => typeof x[1] === 'function' ? x[1]() : x[1], progRuns = x => !x[2] || x[2]();
+// "about 9 min left" only while a step is within its usual time; past it, no number that could be wrong (Yohann, 11 Nov
+// 2026: "less than a minute left" stayed on screen for ten minutes of translation).
+const progLeft = s => s >= 90 ? `about ${Math.round(s / 60)}\u00a0min left` : s >= 45 ? 'about a minute left' : 'less than a minute left';
+// The bar follows time: the share of the build's time spent since this page has followed it, out of that plus the time
+// left (the rest of this step and the steps still to run). A step past its usual time keeps a little time left, so the bar
+// slows down near the end instead of stopping or filling up.
+function progBuild(j) {
+  const now = Date.now(), S = PROG_STEPS.build, k = S.findIndex(x => x[0].test(j.message || ''));
+  const total = S.filter(progRuns).reduce((a, x) => a + progSecs(x), 0);
+  if (j.status === 'queued' || k < 0 && /^(Starting|Waiting)/.test(j.message || '')) {
+    const wait = now - (j.since || now);
+    return { pct: Math.max(j.shown || 0, 2), left: null, k: -1, words: 'Waiting for its turn',
+      text: wait > 120000 ? 'Still waiting to start. Our service may be busy or paused: it starts by itself as soon as it can.' : `Waiting for its turn · then about ${Math.max(1, Math.round(total / 60))}\u00a0min` };
+  }
+  const words = ({ 'Researching: markets': 'Looking for markets', 'Researching: todo': 'Looking for things to do', 'Researching: emergency': 'Finding emergency numbers', 'Translating': 'Translating into your languages', 'Finding your favourite places': 'Looking up the places you recommend' })[j.message] || String(j.message || '').replace(/ · .*$/, '').replace(/^Starting again$/, 'Starting');
+  if (k < 0) return { pct: Math.max(j.shown || 0, 3), text: words, left: null, k, words };
+  if (j.startAt == null) j.startAt = j.phaseAt || now;
+  const u = progSecs(S[k]), t = (now - (j.phaseAt || now)) / 1000, over = t - u, later = S.slice(k + 1).filter(progRuns).reduce((a, x) => a + progSecs(x), 0);
+  const left = (over > 0 ? Math.max(10, u / 10) : u - t) + later, spent = (now - j.startAt) / 1000;
+  const pct = j.shown = Math.min(99, Math.max(j.shown || 0, 3 + 96 * spent / (spent + left)));
+  const when = over <= 0 ? progLeft(left) : over < Math.max(60, u / 2) ? (later < 60 ? 'almost there' : 'a little longer than usual') : 'taking longer than usual';
+  return { pct, text: `${words} · ${when}`, left: over > 0 ? null : left, k, words };
+}
 const progEase = (t, tau) => 1 - Math.exp(-Math.max(0, t) / tau);
 // A job's place on the bar and the time left, from its step and how long it has been in it.
 function progOf(j, kind) {
   if (!j) return null;
+  if (kind === 'build') return progBuild(j);
   const steps = PROG_STEPS[kind] || PROG_STEPS.events, now = Date.now();
   if (j.status === 'queued' || !j.message || /^Starting|^Waiting/.test(j.message)) {
     const wait = now - (j.since || now);
@@ -1039,8 +1077,8 @@ function progOf(j, kind) {
     const [re, from, to, secs] = steps[k], t = (now - (j.phaseAt || j.since || now)) / 1000, m = j.message.match(re), later = steps.slice(k + 1).reduce((a, x) => a + x[3], 0);
     if (m && m[2]) { const i = Math.max(1, +m[1]), n = Math.max(i, +m[2]), per = secs; pct = from + (to - from) * ((i - 1 + progEase(t, per)) / n); left = (n - i + 1) * per - t + later; }
     else { pct = from + (to - from) * progEase(t, secs / 2); left = secs - t + later; }
-    // A job that starts at a later step (a build whose research was done while the host answered starts at "emergency",
-    // 52 on the full scale) has its own scale from there: the bar starts near empty, not half full (Yohann, 11 Nov 2026).
+    // A job that starts at a later step has its own scale from there: the bar starts near empty, not half full (Yohann,
+    // 11 Nov 2026, about a build; builds now follow time, progBuild).
     if (j.k0 == null) j.k0 = k;
     const f0 = steps[j.k0][1]; if (j.k0 > 0 && k >= j.k0) pct = 3 + (pct - f0) * 96 / (99 - f0);
   }
@@ -1097,17 +1135,20 @@ function cmFindHTML(path) {
   return `<div class="cm-find" id="cmFind" data-fpath="${path}">${cmFindInner(path)}</div>`;
 }
 const cmDays = sch => (sch || []).map(r => `${(r.days || []).map(d => (ED_DAYS.find(x => x[0] === d) || [0, d])[1]).join(' ')} ${r.open || ''}${r.close ? '-' + r.close : ''}`).join(', ');
-function cmFindCard(it, i, n) {
-  const today = new Date().toISOString().slice(0, 10);
+// o (the ready screen, runtime.js): its own words and buttons (data-rdadd, data-rdskip, data-rdstop), and why the place
+// was suggested, from what the research says of it (kids, free, dogs: the guide's own marks, in the maker's language).
+function cmFindCard(it, i, n, o) {
+  const today = new Date().toISOString().slice(0, 10), b = o ? 'rd' : 'cf';
   const sub = [edIs18(it.type) ? edShown(it.type) : '', it.town, it.km_from_house != null ? it.km_from_house + ' km from the house' : ''].filter(Boolean).join(' · ');
   const when = (it.dates || []).filter(d => (d.end || d.start) >= today).map(d => `${d.start}${d.end && d.end !== d.start ? ' to ' + d.end : ''}, ${d.status === 'confirmed' ? 'confirmed' : 'expected'}`).join('; ');
   const hours = it.always ? 'Open any time' : cmDays(it.schedule);
-  return `<article class="cm-fcard"><small>Suggestion ${i} of ${n}</small><h3>${esc(edShown(it.name))}</h3>${sub ? `<p class="cm-fsub">${esc(sub)}</p>` : ''}
-    <p>${esc(edShown(it.description))}</p>
+  const why = o ? [['kidsfun', 't_kidsfun'], ['free', 't_free'], ['dogs', 't_dogs']].filter(([x]) => [...(it.tags || []), ...(it.flags || [])].includes(x) || (x === 'kidsfun' && it.kids)).map(([, w]) => engT(w)) : [];
+  return `<article class="cm-fcard"><small>${o ? `Found near you · ${i} of ${n}` : `Suggestion ${i} of ${n}`}</small><h3>${esc(edShown(it.name))}</h3>${sub ? `<p class="cm-fsub">${esc(sub)}</p>` : ''}
+    <p>${esc(edShown(it.description))}</p>${why.length ? `<p class="cm-fwhy" translate="no">${why.map(w => `<span>${esc(w)}</span>`).join('')}</p>` : ''}
     ${when ? `<p class="hint"><b>Dates:</b> ${esc(when)}</p>` : ''}${hours ? `<p class="hint"><b>Hours:</b> ${esc(hours)}</p>` : ''}${it._google ? `<p class="hint">${esc(it._google)}</p>` : ''}
     <p class="cm-flinks">${it.gmaps ? `<a href="${esc(it.gmaps)}" target="_blank" rel="noopener">See it on Google Maps</a>` : ''}${it.url ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">Official page</a>` : ''}</p>
-    <div class="cm-fbtns"><button class="btn small" type="button" data-cfskip="${esc(it.id)}">Not for us</button><button class="btn small primary" type="button" data-cfadd="${esc(it.id)}">Add to my guide</button></div>
-    <button class="cm-fstop" type="button" data-cfstop>Skip the rest</button></article>`;
+    <div class="cm-fbtns"><button class="btn small" type="button" data-${b}skip="${esc(it.id)}">${o ? 'Skip' : 'Not for us'}</button><button class="btn small primary" type="button" data-${b}add="${esc(it.id)}">${o ? 'Keep' : 'Add to my guide'}</button></div>
+    ${!o || n - i > 0 ? `<button class="cm-fstop" type="button" data-${b}stop>Skip the rest</button>` : ''}</article>`;
 }
 const CM_TAKES = 'A search usually takes 3 to 6 minutes. You can keep editing, or come back later: the results wait here.';
 function cmFindInner(path) {
@@ -1157,8 +1198,10 @@ async function cmFindPoll(kind) {
   }
   f.polling = false;
 }
-function cmFindAdd(path, sid) {
-  const kind = FIND_OF[path][0], f = CM.find[kind], it = f && (f.items || []).find(x => x.id === sid); if (!it) return;
+// A suggestion into the guide's draft, marked as looked at: the editor's Find more cards (cmFindAdd) and the cards on the
+// ready screen (runtime.js). Returns the new entry.
+function cmFindPut(path, sid) {
+  const kind = FIND_OF[path][0], f = CM.find[kind], it = f && (f.items || []).find(x => x.id === sid); if (!it) return null;
   const n = cmClone(it); delete n._google; delete n._card;
   let a = edGet(edC(), edPath(path)); if (!Array.isArray(a)) { edSet(edC(), edPath(path), []); a = edGet(edC(), edPath(path)); }
   a.push(n);
@@ -1168,8 +1211,9 @@ function cmFindAdd(path, sid) {
   const ss = (edF().sections = edF().sections || { sections: [] }).sections = edF().sections.sections || [];
   const row = ss.find(x => x.id === sec); if (!row) ss.push({ id: sec, ...FIND_SECTION[sec], group: 'area', status: 'live' }); else if (row.status !== 'live') row.status = 'live';
   const site = edC().site = edC().site || {}; site.modules = { ...(site.modules || {}), [sec]: true };
-  findMark(f.id, [sid]); cmQueue(); render(); toast(`Added: ${edShown(n.name)}. Preview, then publish.`);
+  findMark(f.id, [sid]); return n;
 }
+function cmFindAdd(path, sid) { const n = cmFindPut(path, sid); if (!n) return; cmQueue(); render(); toast(`Added: ${edShown(n.name)}. Preview, then publish.`); }
 
 /* --- Automatic events (files/events/auto): the worker searches the next three months every month and adds what it finds
    straight into the guide (worker/guide-worker.mjs, refreshEvents). The settings save at once, in the live guide and the
@@ -1439,22 +1483,26 @@ function cmNameless(c, only) {
 }
 const cmNamelessText = miss => { const n = miss.reduce((s, x) => s + x.n, 0);
   return miss.length > 1 ? `Not published: ${n} entries have no name. Name them or delete them.` : n === 1 ? `Not published: 1 entry in ${miss[0].m.title} has no name. Name it or delete it.` : `Not published: ${n} entries in ${miss[0].m.title} have no name. Name them or delete them.`; };
+// Publish's work, with no words on screen (the ready screen in runtime.js says its own): the draft tidied, checked for
+// entries with no name (an error that names them, e.miss), then copied into the guide. o.keep: the guide stays published
+// or not as it is (the ready screen adds the places a host kept; it never publishes a guide held back for review).
+async function cmPublishNow(o = {}) {
+  clearTimeout(CM.timer); while (CM.saving) await CM.saving;
+  if (cmTidy(CM.g.content)) CM.open.clear();   // empty entries never go live (and leave the draft too)
+  const miss = cmNameless(CM.g.content);
+  if (miss.length) { cmQueue(); throw Object.assign(new Error(cmNamelessText(miss)), { miss }); }
+  await ensureFresh();
+  const body = { content: CM.g.content, theme: CM.g.theme, draft: null }; if (!cmLive() && !o.keep) body.status = 'published';
+  const r = await sb('/rest/v1/guides?id=eq.' + CM.g.id + '&select=status', { method: 'PATCH', headers: { Prefer: 'return=representation' }, body });
+  if (r && r[0]) CM.g.status = GUIDE.status = r[0].status;
+  CM.live = { content: cmClone(CM.g.content), theme: cmClone(CM.g.theme) }; GUIDE.content = CM.live.content;
+  if (window.__acctHouses) window.__acctHouses();
+  setSave('ok', cmSaveText());
+}
 async function cmPublish(btn) {
   if (btn) btn.disabled = true;
-  try {
-    clearTimeout(CM.timer); while (CM.saving) await CM.saving;
-    if (cmTidy(CM.g.content)) CM.open.clear();   // empty entries never go live (and leave the draft too)
-    const miss = cmNameless(CM.g.content);
-    if (miss.length) { if (btn) btn.disabled = false; cmQueue(); toast(cmNamelessText(miss)); render(); return; }
-    await ensureFresh();
-    const body = { content: CM.g.content, theme: CM.g.theme, draft: null }; if (!cmLive()) body.status = 'published';
-    const r = await sb('/rest/v1/guides?id=eq.' + CM.g.id + '&select=status', { method: 'PATCH', headers: { Prefer: 'return=representation' }, body });
-    if (r && r[0]) CM.g.status = GUIDE.status = r[0].status;
-    CM.live = { content: cmClone(CM.g.content), theme: cmClone(CM.g.theme) }; GUIDE.content = CM.live.content;
-    if (window.__acctHouses) window.__acctHouses();
-    setSave('ok', cmSaveText()); toast(cmLive() ? 'Published. Guests see it now.' : 'Saved, but not published. Try again.');
-    render();
-  } catch (e) { toast('Not published: ' + niceError(e)); if (btn) btn.disabled = false; }
+  try { await cmPublishNow(); toast(cmLive() ? 'Published. Guests see it now.' : 'Saved, but not published. Try again.'); render(); }
+  catch (e) { if (btn) btn.disabled = false; if (e.miss) { toast(e.message); render(); } else toast('Not published: ' + niceError(e)); }
 }
 // Unpublish: the guide goes offline (status "ready": built, not public); its content and any draft stay as they are.
 async function cmUnpublish(btn) {
@@ -1930,8 +1978,48 @@ function cmInit() {
 .cm-prog i{display:block;height:100%;width:0;border-radius:99px;background:var(--sun);transition:width 1s linear}
 .cm-progw.dark .cm-prog{background:rgba(255,255,255,.2)}
 .cm-progw.dark .cm-progt{color:inherit;opacity:.85}
-/* The building screen: on a phone the lit doorway sits bottom right of the dark card, so the bar and the words stop before it. */
-@media (max-width:620px){#bstate > .cm-progw,#bstate > p{max-width:calc(100% - 76px)}}
+/* The building screen (runtime.js buildState): one dark card. The line that changes (.btick) keeps the room of two lines, so
+   nothing moves when it does; it fades (none when the device asks for less motion). From 900 px the build's steps sit
+   beside the bar, left of the lit doorway. On a phone the doorway sits bottom right: the words near the bottom stop before
+   it, and the last one keeps the doorway's height so the changing line, full width, always stays above it. */
+#bstate{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.bwrap{display:grid;gap:18px}
+.bgrid{display:grid;gap:12px;width:100%}
+.bmain{display:flex;flex-direction:column;gap:12px;min-width:0}
+.bmain .cm-progw{max-width:none}
+.hero p.btick{display:grid;max-width:none;min-height:2.9em;margin:2px 0 0;font-size:17px;line-height:1.45;font-weight:500;color:var(--lamp2);opacity:1}
+.btick span{grid-area:1/1;opacity:0;transition:opacity .5s ease}
+.btick span.on{opacity:1}
+.hero p.bclose{font-size:14px;opacity:.72}
+.bside{display:none}
+.bsteps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.bsteps li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:start;font-size:15px;line-height:1.35;opacity:.6}
+.bsteps li.done{opacity:.85}
+.bsteps li.now{opacity:1;font-weight:600;color:var(--lamp2)}
+.bsteps i{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(244,241,234,.4);display:grid;place-items:center}
+.bsteps li.done i{background:var(--lamp);box-shadow:none;color:#2A1A04}
+.bsteps li.done i svg{width:13px;height:13px;stroke-width:3}
+.bsteps li.now i{box-shadow:inset 0 0 0 2px var(--lamp)}
+.bsteps li.now i::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--lamp)}
+.hero p.burl{font-size:14px;opacity:.7;overflow-wrap:anywhere}
+.hero p.berr{color:#FFD0C2;opacity:1}
+.hero .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.bopen{background:none;border-color:rgba(244,241,234,.55);color:#F4F1EA}
+.bwait i{width:40%!important;animation:bwait 1.4s ease-in-out infinite alternate}
+@keyframes bwait{from{margin-left:0}to{margin-left:60%}}
+.bcards{gap:14px}
+.bfrow{display:flex;flex-wrap:wrap;gap:10px;padding:0 4px}
+.bcards .bask{margin:0;font-size:16px;font-weight:600;padding-bottom:14px;border-bottom:1.5px solid var(--line)}
+.cm-fwhy{display:flex;flex-wrap:wrap;gap:6px}
+.cm-fwhy span{font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--sunk);color:var(--ink)}
+@media (min-width:900px){
+  .bgrid{grid-template-columns:minmax(0,1fr) minmax(0,230px);gap:48px;padding-right:150px;box-sizing:border-box}
+  .bside{display:flex;flex-direction:column;gap:14px;padding-top:8px}
+  .bwrap.two{grid-template-columns:minmax(0,5fr) minmax(0,6fr);align-items:stretch}
+  .bwrap.two .bhero{padding-bottom:200px}
+}
+@media (max-width:620px){#bstate > :not(.bgrid),.bmain > p:not(.btick){max-width:calc(100% - 76px)}.hero p.bclose{min-height:80px}.bwrap.two .bmore{display:none}}
+@media (prefers-reduced-motion:reduce){.btick span{transition:none}.bwait i{animation:none;width:100%!important;opacity:.6}}
 @media (prefers-reduced-motion:reduce){.cm-prog i{transition:none}}
 .cm-swrow{display:flex;flex-direction:column;gap:6px}
 .cm-switch{display:flex;align-items:center;gap:12px;width:100%;max-width:480px;min-height:52px;padding:10px 14px;border-radius:var(--r-s);border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}

@@ -182,37 +182,257 @@ const progressText = () => { const ms = visible(); return `${ms.filter(m => stat
 /* ---------- Extra questions for the public test ---------- */
 
 /* ---------- Building your guide ---------- */
+// The screen after Send: the bar and its step (editor.js progBuild), a line under it that changes every few seconds and
+// says what is going into this host's guide (Yohann, 12 Nov 2026: "more text changing to keep the user reading"), and on a
+// wide screen the build's steps beside them. Then the ready screen: the places the research found first (below).
 let buildTimer = null;
+const BUILT = ['ready', 'approved', 'published'];
 function buildState(g){
-  const slug = (g && g.slug) || v('slug'), st = (g && g.status) || 'queued', url = location.origin + '/g/' + slug;
-  if (st === 'ready' || st === 'approved' || st === 'published') { const n = window.__moreCards || 0; return `<h1>Your guide is ready.</h1><p>${st === 'published' ? 'It is live. Share this link with your guests.' : 'Have a look. Only you can see it until it is published.'}</p>
-      <a class="go-next" href="/g/${esc(slug)}" target="_blank" rel="noopener"><span>Open my guide</span><span class="ar">${ARROW}</span></a>
-      <p style="margin:14px 0 0;color:#F4F1EA;opacity:.75;word-break:break-all">${esc(url)}</p>
-      ${n ? `<p style="margin:10px 0 0">We found ${n} more ${n === 1 ? 'place' : 'places'} near you. Only the ones you keep go in your guide.</p><a class="btn small" href="/?step=todo">Look at them</a>` : ''}`; }
+  const st = (g && g.status) || 'queued';
+  if (BUILT.includes(st)) return readyHTML(g);
   if (st === 'failed') return `<h1>This did not work.</h1><p>${esc((g && g.message) || 'Something went wrong while building your guide.')} We have been told. You can change an answer and send it again.</p>`;
-  // The worker's step and the time left, on a bar (editor.js, progBar): set by watchBuild from the guide's status.
   const j = window.__buildJob = window.__buildJob || { since: Date.now() };
   progSet(j, { status: st === 'generating' ? 'running' : 'queued', message: (g && g.message) || 'Waiting for its turn' });
-  return `<h1>${st === 'generating' ? 'Building your guide…' : 'Your guide is in the queue.'}</h1>${progBar('build', 'Building your guide', true)}<p>This takes a few minutes. You can close this page: your guide will be here when you come back.</p>`;
+  const p = progBuild(j); if (p.k !== BL.k || !BL.line) { BL.k = p.k; BL.line = blNext(); }   // drawn again on the same step: the same line
+  // Screen readers hear the step when it changes (a polite status), not the line that changes every few seconds.
+  return `<div class="bgrid"><div class="bmain"><h1>${st === 'generating' ? 'Building your guide…' : 'Your guide is in the queue.'}</h1>${progBar('build', 'Building your guide', true)}
+    <p class="sr" id="bsay" role="status" aria-live="polite" data-w="${esc(p.words)}">${esc(p.words)}</p>
+    <p class="btick" aria-hidden="true"><span class="on">${esc(BL.line)}</span><span></span></p>
+    <p class="bclose">You can close this page: your guide will be here when you come back.</p></div>
+    <div class="bside"><small>What goes in</small><ol class="bsteps">${blSteps(p.k)}</ol></div></div>`;
 }
 // Under the progress: nothing while it is queued or being built (sending again would do nothing, and an answer changed now is
-// not in this build); the answers once it is ready; the answers and a second try when it failed (Yohann, 11 Nov 2026).
+// not in this build), nor while found places wait on the ready screen; the answers once it is ready; the answers and a second
+// try when it failed (Yohann, 11 Nov 2026).
 function buildFoot(g){
-  const st = (g && g.status) || 'queued', done = ['ready', 'approved', 'published'].includes(st);
-  if (!done && st !== 'failed') return '';
-  return `<section class="card"><div class="foot"><div class="row"><a class="btn" href="#home">See or change my answers</a>${st === 'failed' ? '<a class="btn" href="#send">Build it again</a>' : ''}</div></div></section>`;
+  const st = (g && g.status) || 'queued', done = BUILT.includes(st);
+  if (!done && st !== 'failed' || done && ['load', 'cards', 'pub'].includes(RD.st)) return '';
+  return `<div class="row bfrow"><a class="btn" href="#home">See or change my answers</a>${st === 'failed' ? '<a class="btn" href="#send">Build it again</a>' : ''}</div>`;   // a link under the card, not a card of its own
 }
 function buildingHTML(){
-  return `<section class="hero"><small>${esc(v('guideName') || v('placeName') || 'Your guide')}</small><div id="bstate" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">${buildState(window.__acctGuide && window.__acctGuide())}</div></section>
-    <div id="bfoot">${buildFoot(window.__acctGuide && window.__acctGuide())}</div>`;
+  const g = window.__acctGuide && window.__acctGuide();
+  return `<div class="bwrap${RD.st === 'cards' ? ' two' : ''}" id="bwrap"><section class="hero bhero"><small>${esc(v('guideName') || v('placeName') || 'Your guide')}</small><div id="bstate">${buildState(g)}</div></section>
+    <section class="card bcards" id="bcards"${RD.st === 'cards' ? '' : ' hidden'}>${RD.st === 'cards' ? readyCard() : ''}</section></div>
+    <div id="bfoot">${buildFoot(g)}</div>`;
+}
+function buildDraw(g){
+  const el = document.getElementById('bstate'); if (!el) return;
+  el.innerHTML = buildState(g);
+  const c = document.getElementById('bcards'), w = document.getElementById('bwrap'), on = RD.st === 'cards' && BUILT.includes(g && g.status);
+  if (c) { c.hidden = !on; c.innerHTML = on ? readyCard() : ''; } if (w) w.classList.toggle('two', on);
+  const bf = document.getElementById('bfoot'); if (bf) bf.innerHTML = buildFoot(g);
 }
 function watchBuild(){
-  clearInterval(buildTimer);
+  clearInterval(buildTimer); let was = (window.__acctGuide && (window.__acctGuide() || {}).status) || null;
   const tick = async () => {
-    try { const g = await window.__acctStatus(); const el = document.getElementById('bstate'); if (g && ['ready', 'approved', 'published'].includes(g.status)) window.__moreCards = await window.__acctMore().catch(() => 0); if (el && g) { el.innerHTML = buildState(g); const bf = document.getElementById('bfoot'); if (bf) bf.innerHTML = buildFoot(g); if (['ready', 'approved', 'published', 'failed'].includes(g.status)) clearInterval(buildTimer); } } catch (e) {}
+    try {
+      const g = await window.__acctStatus(); if (!g) return;
+      if (BUILT.includes(g.status) || g.status === 'failed') clearInterval(buildTimer);
+      if (BUILT.includes(g.status)) { if (was !== g.status) { was = g.status; if (!RD.st) RD.st = 'load'; buildDraw(g); } return readyLoad(); }   // built while watched: "ready" with no button until the found places are known
+      if (g.status !== was) { was = g.status; buildDraw(g); }   // queued, being built, failed: a new title
+      else if (window.__buildJob) progSet(window.__buildJob, { status: g.status === 'generating' ? 'running' : 'queued', message: g.message || 'Waiting for its turn' });   // the bar and the lines follow by themselves
+    } catch (e) {}
   };
-  tick(); buildTimer = setInterval(tick, 4000);
+  tick(); buildTimer = setInterval(tick, 4000); blStart();
 }
+
+/* --- The line that keeps the host reading: only what the browser knows about this guide, each line shown only when its
+   data is there. Every 6.5 s a new one fades in (none when the device asks for less motion); while a step has lines of
+   its own (the places it looks up, the languages it translates into), every other line is one of them. Lines are
+   English sentences translated by i18n.js like any other: a number is {n}, a name {x}; names of days, languages and
+   lists are given in the maker's language already. --- */
+const BL = { k: -1, line: '', n: 0, gi: 0, si: 0, timer: null, t: 0, k0: null };
+const BL_EVERY = 6500, NB = '\u00a0';   // a number stays with its unit (km, min)
+const blList = xs => { try { return new Intl.ListFormat(UIL === 'en' ? 'en-GB' : UIL, { type: 'conjunction' }).format(xs); } catch (e) { return xs.join(', '); } };
+const blLang = l => { try { return new Intl.DisplayNames([UIL === 'en' ? 'en-GB' : UIL], { type: 'language' }).of(l); } catch (e) { return l; } };
+const blKm = it => { const k = it.km_from_house != null ? +it.km_from_house : typeof it.lat === 'number' && A.lat ? edKm(+A.lat, +A.lng, it.lat, it.lng) : null; return k == null || isNaN(k) ? null : Math.max(1, Math.round(k)); };
+const blDay = d => ({ mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' })[d];
+const blDate = s => { try { return new Intl.DateTimeFormat(UIL, { day: 'numeric', month: 'long' }).format(new Date(s + 'T12:00:00')); } catch (e) { return s; } };
+const blSame = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+// For every step of the build (editor.js PROG_STEPS.build, by index): what it does for this guide.
+function blStepLines(k){
+  const names = ['favEat', 'favNight', 'favDo'].flatMap(placeRows).map(r => String(r.p || '').trim()).filter(x => x && x.length <= 40);
+  const photos = uploads.filter(u => u.kind === 'photo').length, town = v('town');
+  switch (k) {
+    case 0: return ['Reading your answers and your photos.'];
+    case 1: return [...names.map(x => `Looking up ${x}: its phone, website and hours.`), 'Putting a pin on the map for each place you recommend.'];
+    case 2: return ['Finishing the search of the area around the house.'];
+    case 3: return town ? [`Looking for the weekly markets around ${town}.`] : ['Looking for the weekly markets around the house.'];
+    case 4: return town ? [`Looking for things to do around ${town}.`] : ['Looking for things to do around the house.'];
+    case 5: return ['Looking for the nearest pharmacy and hospital.', 'Looking for the pharmacy on duty nearest to the house.'];
+    case 6: return ['Laying out the pages of your guide.', ...(photos ? ['Putting your photos in their rooms.'] : [])];
+    case 7: { const L = buildLangs().map(blLang); return L.length ? [`Translating into ${blList(L)}.`, ...L.map(x => `Your welcome, rooms and rules, going into ${x}.`)] : []; }
+    case 8: return ['Saving your guide and its photos.'];
+  }
+  return [];
+}
+// The lines about the whole guide, the most personal first.
+function blLines(){
+  const out = [], add = (ok, s) => { if (ok && s) out.push(s); }, nm = x => shownText(x);
+  const AR = AREA.result || {}, today = new Date().toISOString().slice(0, 10);
+  const rooms = Array.isArray(A.rooms) ? A.rooms.filter(r => r && r.n).length : 0, photos = uploads.filter(u => u.kind === 'photo').length;
+  add(rooms > 1, photos ? `Your ${rooms} rooms, in the order you chose, with ${photos} photos.` : `Your ${rooms} rooms, in the order you chose.`);
+  const eat = placeRows('favEat'), night = placeRows('favNight'), todo = placeRows('favDo').length + Object.values(A.swipes || {}).filter(x => x && x.d === 'yes' && x.cat === 'todo').length;
+  add(eat.length, eat.length === 1 ? 'Your place to eat, with phone and hours if we find them.' : `Your ${eat.length} places to eat, with phone and hours if we find them.`);
+  const said = eat.find(r => String(r.c || '').trim() && String(r.p || '').trim().length <= 40); add(said, said && `${String(said.p).trim()}, in your own words.`);
+  add(todo, todo === 1 ? 'The thing to do you chose, and nothing you did not.' : `The ${todo} things to do you chose, and nothing you did not.`);
+  add(night.length, night.length === 1 ? 'Your place for the evening.' : `Your ${night.length} places for the evening.`);
+  const mk = ((AR.markets || {}).markets || []).filter(m => nm(m.name)).map(m => ({ m, km: blKm(m) })).sort((a, b) => (a.km ?? 999) - (b.km ?? 999));
+  const far = Math.max(...mk.map(x => x.km || 0));
+  add(mk.length > 1 && far > 0, `${mk.length} markets within ${far}${NB}km of the house, nearest first.`);
+  for (const { m, km } of mk.slice(0, 3)) { const d = blDay(((m.schedule || [])[0] || {}).days?.[0]); if (!d || !m.town) continue;
+    add(true, blSame(m.town, v('town')) ? `${d} is market day right here in ${m.town}.` : km ? `${d} is market day in ${m.town}, ${km}${NB}km away.` : ''); }
+  add(mk.length, 'Guests see which markets are on today, every day.');
+  const ev = ((AR.events || {}).items || []).map(e => ({ e, d: (e.dates || []).filter(x => (x.end || x.start) >= today).sort((a, b) => a.start.localeCompare(b.start))[0] })).filter(x => x.d && nm(x.e.name)).sort((a, b) => a.d.start.localeCompare(b.d.start));
+  add(ev.length > 1, `${ev.length} local events coming up, each with its dates.`);
+  if (ev[0]) { const x = ev[0], when = blDate(x.d.start >= today ? x.d.start : today); add(nm(x.e.name).length <= 40, x.d.status === 'confirmed' ? `Coming up: ${nm(x.e.name)}, on ${when}.` : `Coming up: ${nm(x.e.name)}, expected on ${when}.`); }
+  const help = ((AR.emergency || {}).groups || []).flatMap(g => g.items || []).map(x => nm(x.name)).filter(Boolean);
+  add(help.length, 'Emergency numbers, the nearest pharmacy and hospital.');
+  const ph = help.find(x => /farm[aà]c|pharm|apothe/i.test(x) && x.length <= 40); add(ph, ph && `For a pharmacy, guests find ${ph}.`);
+  const ho = help.find(x => /hospital|h[oô]pital|cl[ií]nic/i.test(x) && x.length <= 40); add(ho, ho && `The nearest hospital, ${ho}, with directions.`);
+  const L = buildLangs().length + 1;
+  add(L > 1, `Guests will read it in ${L} languages.`);
+  add(L > 1, `Each phone opens it in its own language, when it is one of your ${L}.`);
+  const am = (A.amenities || []).length; add(am > 2, `${am} things your place offers, the most asked for first.`);
+  add(v('checkIn') && v('checkOut'), `Check-in from ${v('checkIn')} and check-out by ${v('checkOut')}, always at hand.`);
+  const rules = lines('houseRules').length; add(rules, rules === 1 ? (L > 1 ? 'Your house rule, in every language of the guide.' : 'Your house rule, where guests look for it.') : L > 1 ? `Your ${rules} house rules, in every language of the guide.` : `Your ${rules} house rules, where guests look for them.`);
+  add(+v('sleeps') > 0 && +v('bedrooms') > 0, +v('bedrooms') === 1 ? `Sleeps ${v('sleeps')}, with 1 bedroom, on the house page.` : `Sleeps ${v('sleeps')}, with ${v('bedrooms')} bedrooms, on the house page.`);
+  add(v('wifiName') && v('wifiPassword'), 'The Wi-Fi password, with a copy button and a QR code.');
+  add(v('arrival'), 'How to get in, in your own words.');
+  add(v('rubbishMode'), 'Which bin goes out on which day.');
+  add(v('localTips'), 'Your local tips, in the house guide.');
+  add(v('taxi'), 'The taxi number, for guests without a car.');
+  add(secOn('map'), 'Every place in the guide on one map.');
+  const more = typeof moreLeft === 'function' && AUTH ? moreLeft() : 0; add(more > 1, `We found ${more} more places nearby: you choose once it is built.`);
+  add(true, 'Guests open it from a link: no app to install.');
+  return out;
+}
+// The next line: one of the step's own every other time, else the next of the guide's, never the one just shown.
+function blNext(){
+  const S = blStepLines(BL.k), G = blLines(); BL.n++;
+  const pick = (L, key) => { for (let i = 0; i < L.length; i++) { const x = L[BL[key]++ % L.length]; if (x !== BL.line || L.length === 1) return x; } return L[0]; };
+  return S.length && (BL.n % 2 || !G.length) ? pick(S, 'si') : G.length ? pick(G, 'gi') : BL.line;
+}
+// The build's steps beside the bar (wide screens): rows of PROG_STEPS.build by their first step, ticked as it moves on.
+function blRows(){
+  const n = buildPlaces(), L = buildLangs().length + 1;
+  return [[0, 'Your answers and photos'], ...(n ? [[1, n === 1 ? 'The place you recommend' : `The ${n} places you recommend`]] : []), [2, 'What is around the house'],
+    [6, 'The pages of your guide'], ...(L > 1 ? [[7, `Your ${L} languages`]] : []), [8, 'Saving it']];
+}
+function blSteps(k){
+  const R = blRows(), cur = k < 0 ? -1 : R.reduce((c, r, i) => r[0] <= k ? i : c, 0);
+  return R.map((r, i) => `<li class="${i < cur ? 'done' : i === cur ? 'now' : ''}"><i aria-hidden="true">${i < cur ? CHECK : ''}</i><span>${esc(r[1])}</span>${i < cur ? '<b class="sr">Done</b>' : i === cur ? '<b class="sr">Now</b>' : ''}</li>`).join('');
+}
+// Every second: the step for screen readers and the steps beside the bar; every BL_EVERY: the next line.
+function blStart(){
+  clearInterval(BL.timer); BL.t = Date.now();
+  BL.timer = setInterval(() => {
+    const tk = document.querySelector('#bstate .btick'); if (!tk) { clearInterval(BL.timer); return; }
+    const j = window.__buildJob, p = j && progBuild(j); if (!p) return;
+    const say = document.getElementById('bsay'); if (say && say.dataset.w !== p.words) { say.dataset.w = p.words; say.textContent = p.words; }
+    if (p.k !== BL.k) { BL.k = p.k; BL.si = 0; BL.n = 0; const ol = document.querySelector('#bstate .bsteps'); if (ol) ol.innerHTML = blSteps(p.k); BL.t = 0; }
+    if (Date.now() - BL.t < BL_EVERY) return;
+    BL.t = Date.now(); blSwap(tk);
+  }, 1000);
+}
+// The next line goes into the hidden half, is translated (i18n.js, a microtask) and measured there before it fades in: one
+// that would take a third line in this language and width is passed over, so the room kept for two lines is always enough.
+async function blSwap(tk){
+  const [a, b] = tk.children, on = a.classList.contains('on') ? a : b, off = on === a ? b : a, lh = parseFloat(getComputedStyle(tk).lineHeight) || 24;
+  for (let i = 0; i < 6; i++) {
+    const line = blNext(); if (line === BL.line) continue;
+    off.textContent = line; await Promise.resolve();
+    if (off.getBoundingClientRect().height <= lh * 2 + 2 && off.scrollWidth <= tk.clientWidth + 1) { BL.line = line; off.classList.add('on'); on.classList.remove('on'); return; }
+  }
+  off.textContent = '';
+}
+window.__buildLines = () => [...new Set([...blLines(), ...[0, 1, 2, 3, 4, 5, 6, 7, 8].flatMap(blStepLines)])];   // every line this guide can show (the checks measure them)
+
+/* --- The ready screen (Yohann, 12 Nov 2026: "guide to accept, and then to see the site, else they will go to the site and
+   will forget"). The places the research found and the host has not looked at (the build's find-todo job, the same cards
+   as the editor's Find more) come first, one at a time: Keep puts the place in the guide's draft at once (cmFindPut,
+   saved like any change), Skip remembers it on this device (findMark, as in the editor). After the last card the kept
+   ones go into the guide (cmPublishNow: published as the editor's Publish does; a guide held back for review stays held
+   back), then "Open my guide" is the main button. A host who leaves and comes back finds the cards still there
+   (readyLanding); kept places that did not reach the guide offer to try again. --- */
+const RD = { st: '', err: '', step: '', added: [] };   // st: load, cards, pub, err, done (after cards), off (nothing to show)
+const RD_PATH = 'files/todo/items', RD_KEY = 'porta-ready-v1';
+const rdMem = () => { try { return ((JSON.parse(localStorage.getItem(RD_KEY) || '{}') || {})[GUIDE.id]) || { kept: [] }; } catch (e) { return { kept: [] }; } };
+const rdSave = m => { try { const o = JSON.parse(localStorage.getItem(RD_KEY) || '{}') || {}; o[GUIDE.id] = m; localStorage.setItem(RD_KEY, JSON.stringify(o)); } catch (e) { /* this device forgets: the draft still holds what was kept */ } };
+// The found places of this build: the find-todo job the worker wrote just before it finished (not a later Find more).
+function rdJob(){
+  const f = CM.on && CM.find['find-todo']; if (!f || f.status !== 'done' || !f.id) return null;
+  const fin = Date.parse(GUIDE.finished_at || '');
+  return (fin ? Math.abs(f.since - fin) < 15 * 60e3 : f.since >= Date.parse(A._sentAt || 0)) ? f : null;
+}
+const rdLeft = () => rdJob() ? cmFindItems('find-todo', RD_PATH) : [];
+// Kept here, in the draft, not in the live guide yet (the publish failed, or the host left before it).
+const rdWaiting = () => { const m = rdMem(), live = new Set(((((CM.live || {}).content || {}).files || {}).todo || {}).items?.map(x => x.id) || []), now = edGet(edC(), edPath(RD_PATH)) || [];
+  return (m.kept || []).filter(id => now.some(x => x.id === id) && !live.has(id)); };
+const rdState = () => rdLeft().length ? 'cards' : CM.on && rdWaiting().length ? 'err' : 'off';
+async function readyLoad(){
+  if (RD.busy || RD.st && RD.st !== 'load') return;
+  RD.busy = true;
+  try { if (!CM.on && window.__acctFresh) await window.__acctFresh(); if (CM.on) await cmFindLoad('find-todo'); } catch (e) { /* the plain ready screen */ }
+  RD.busy = false; RD.st = CM.on ? rdState() : 'off';
+  if (RD.st === 'err') RD.err = 'The places you kept are saved, but not in your guide yet.';
+  buildDraw(GUIDE);
+}
+// Coming back to the maker after a build (no step in the address): cards still to look at, or kept places that did not
+// reach the guide, open the ready screen instead of the editor (account.js accountBoot, once the editor is set up).
+async function readyLanding(){
+  if ((CM_OPENED_ON && CM_OPENED_ON !== 'building') || new URLSearchParams(location.search).get('step')) return;
+  if (!A._sentAt || !BUILT.includes(GUIDE.status) || Date.now() - Date.parse(GUIDE.finished_at || A._sentAt) > 14 * 864e5) return;
+  try { await cmFindLoad('find-todo'); } catch (e) { return; }
+  const st = RD.st = rdState(); if (st === 'off') return;   // known now: the ready screen does not ask again
+  if (st === 'err') RD.err = 'The places you kept are saved, but not in your guide yet.';
+  history.replaceState(null, '', location.pathname + location.search + '#building');
+}
+// The question, then the card: what it is, where, why it was suggested, Keep or Skip, "1 of 2".
+function readyCard(){
+  const left = rdLeft(), all = cmFindPool('find-todo', RD_PATH).length; if (!left.length) return '';
+  return `<p class="bask">${all === 1 ? 'We found a place near you that is not in your guide. Keep it if you would send guests there: only what you keep goes in.' : `We found ${all} places near you that are not in your guide. Keep the ones you would send guests to: only those go in.`}</p>${cmFindCard(left[0], all - left.length + 1, all, {})}`;
+}
+function readyHTML(g){
+  const slug = (g && g.slug) || v('slug'), live = (g && g.status) === 'published', link = `/g/${esc(slug)}`;
+  const say = live ? 'It is live. Share this link with your guests.' : 'Have a look. Only you can see it until it is published.';
+  const open = `<a class="go-next" href="${link}" target="_blank" rel="noopener"><span>Open my guide</span><span class="ar">${ARROW}</span></a>
+    <p class="burl" translate="no">${esc(location.host)}/g/<wbr>${esc(slug)}</p>`, quiet = `<a class="btn small bopen" href="${link}" target="_blank" rel="noopener">Open my guide now</a>`;
+  if (RD.st === 'load') return `<h1>Your guide is ready.</h1><p>${say}</p>`;
+  if (RD.st === 'cards') return `<h1>Your guide is ready.</h1><p class="bmore">${say}</p><p class="burl bmore" translate="no">${esc(location.host)}/g/<wbr>${esc(slug)}</p><p class="bmore">One last thing before you open it.</p>${quiet}`;   // on a phone the card's question is enough: the card starts higher
+  if (RD.st === 'pub') { const n = rdMem().kept.length;
+    return `<h1>Your guide is ready.</h1><p role="status">${n === 1 ? 'Adding the place you kept to your guide…' : `Adding the ${n} places you kept to your guide…`}</p><div class="cm-progw dark"><div class="cm-prog bwait"><i></i></div></div>`; }
+  if (RD.st === 'err') return `<h1>Your guide is ready.</h1><p class="berr" role="alert">${esc(RD.err)}</p>
+    <div class="row"><button class="go-next" type="button" data-rdretry><span>Add them to my guide</span><span class="ar">${ARROW}</span></button>${RD.step ? `<a class="btn small bopen" href="#${esc(RD.step)}">Fix it in the editor</a>` : ''}</div>${quiet}`;
+  const added = RD.st === 'done' && RD.added.length ? `<p>${RD.added.length === 1 ? `${esc(RD.added[0])} is in your guide now.` : `${RD.added.length} places you kept are in your guide now.`}</p>` : '';
+  return `<h1>Your guide is ready.</h1>${added}<p>${say}</p>${open}`;
+}
+// After a card: the next one, or the kept ones into the guide.
+function readyNextCard(){
+  if (rdLeft().length) { buildDraw(GUIDE); const h = document.querySelector('#bcards h3'); if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); } return; }
+  readyPublish();
+}
+async function readyPublish(){
+  const m = rdMem(), wait = rdWaiting();
+  if (!wait.length) { RD.st = 'done'; RD.added = []; m.done = true; rdSave(m); return buildDraw(GUIDE); }
+  RD.st = 'pub'; buildDraw(GUIDE);
+  try {
+    await cmPublishNow({ keep: true });
+    const items = edGet(edC(), edPath(RD_PATH)) || [];
+    RD.added = wait.map(id => items.find(x => x.id === id)).filter(Boolean).map(x => edShown(x.name)); RD.st = 'done'; m.done = true; rdSave(m);
+  } catch (e) { RD.st = 'err'; RD.err = e.miss ? e.message : 'Not published: ' + niceError(e); RD.step = e.miss && e.miss[0] && e.miss[0].m ? e.miss[0].m.id : ''; }
+  buildDraw(GUIDE);
+  const b = document.querySelector('#bstate .go-next'); if (b) b.focus({ preventScroll: true });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('#bwrap button'); if (!b || !CM.on) return;
+  const d = b.dataset, f = rdJob();
+  // Kept: remembered with its build's job (a later build's cards start afresh) and saved in the draft at once.
+  if (d.rdadd && f) { const n = cmFindPut(RD_PATH, d.rdadd); if (n) { const m0 = rdMem(), m = m0.job === f.id ? m0 : { job: f.id, kept: [] }; m.kept = [...new Set([...m.kept, d.rdadd])]; rdSave(m); cmQueue(); } readyNextCard(); }
+  else if (d.rdskip && f) { findMark(f.id, [d.rdskip]); readyNextCard(); }
+  else if (d.rdstop !== undefined && f) { findMark(f.id, rdLeft().map(x => x.id)); readyNextCard(); }
+  else if (d.rdretry !== undefined) { b.disabled = true; readyPublish(); }
+});
 
 /* ---------- After sending ---------- */
 function thanksHTML(){
@@ -257,14 +477,15 @@ function render(){
   if (/(^|[#&])(access_token|error_description)=/.test(location.hash)) return;   // a sign-in link: accountBoot reads it first
   let r = route(); const main = $('#main');
   if (!main) return;
-  clearInterval(buildTimer);
+  clearInterval(buildTimer); clearInterval(BL.timer);
   const ae = document.activeElement, fid = ae && ae.id, sel = ae && ae.selectionStart;
   const m = visible().find(x => x.id === r);
   const path = decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g, ''));
   if (path && path !== 'index.html' && CM.on) { location.replace('/g/' + encodeURIComponent(CM.g.slug)); return; }
   if (path && path !== 'index.html') { if (path === v('slug') || path === 'preview') { renderPreview(); return; } main.innerHTML = notHereHTML(path); return; }
-  if (CM.on && !cmIsPage(r)) { history.replaceState(null, '', '#' + cmStart()); r = route(); }   // no overview: the editor opens on a step
-  if (CM.on) { main.innerHTML = cmPageHTML(r); cmRemember(r); cmPhoneOn(); }   // the guide exists: the steps edit it (editor.js)
+  if (CM.on && r !== 'building' && !cmIsPage(r)) { history.replaceState(null, '', '#' + cmStart()); r = route(); }   // no overview: the editor opens on a step
+  if (CM.on && r === 'building') { main.innerHTML = buildingHTML(); watchBuild(); }   // just built: the ready screen, found places first
+  else if (CM.on) { main.innerHTML = cmPageHTML(r); cmRemember(r); cmPhoneOn(); }   // the guide exists: the steps edit it (editor.js)
   else if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
   else if (r === 'building' || (A._sentAt && !location.hash && window.__acctGuide && window.__acctGuide() && window.__acctGuide().status !== 'draft')) { main.innerHTML = buildingHTML(); watchBuild(); }
   else if (r === 'thanks' || (A._sentAt && !location.hash)) main.innerHTML = thanksHTML();

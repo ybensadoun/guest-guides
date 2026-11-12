@@ -294,7 +294,7 @@ const swList = () => { const list = SW.lists[SW.cat]; if (!list || SW.cat !== 't
 // New cards: the deck takes them, Review says so, once.
 function moreRefresh(){
   refreshSwipe(); const el = document.getElementById('rvMore'); if (el) el.innerHTML = moreNote();
-  const n = researchCards().length; if (n && !AREA.cards && moreLeft() && !['nearby', 'send'].includes(route())) toast(`${n} more ${n === 1 ? 'place' : 'places'} in Attractions`); AREA.cards = n;
+  const n = researchCards().length; if (n && !AREA.cards && moreLeft() && !['nearby', 'send', 'building'].includes(route())) toast(`${n} more ${n === 1 ? 'place' : 'places'} in Attractions`); AREA.cards = n;
 }
 function moreNote(){
   if (!AUTH) return ''; const left = moreLeft();

@@ -448,7 +448,7 @@ async function acctAttach(){
   // of its own: never put on top of a house the account already has.
   const pick = startedHere() && !A._acct ? null : HOUSES.find(h => h.id === houseSaved(user.id)) || HOUSES[0];
   if (pick && A._house && A._house !== pick.id) await wipeLocal();     // this device's answers are another house's
-  const rows = pick ? await sb('/rest/v1/guides?select=id,answers,status,slug,origin,content,theme,draft&id=eq.' + pick.id) : null;
+  const rows = pick ? await sb('/rest/v1/guides?select=id,answers,status,slug,origin,content,theme,draft,finished_at&id=eq.' + pick.id) : null;
   if (rows && rows[0]) {
     GUIDE = rows[0];
     const rT = (GUIDE.answers || {})._savedAt || 0, lT = A._savedAt || 0;
@@ -626,15 +626,20 @@ async function acctStatus(){
   if (!AUTH || !GUIDE) return null;
   await ensureFresh();
   const r = await sb('/rest/v1/guides?select=status,message,slug,finished_at&id=eq.' + GUIDE.id);
-  if (r && r[0]) { const was = GUIDE.status; GUIDE.status = r[0].status; GUIDE.message = r[0].message; if (was !== GUIDE.status) acctHouses(); return r[0]; }   // the houses menu says the new state
+  if (r && r[0]) { const was = GUIDE.status; GUIDE.status = r[0].status; GUIDE.message = r[0].message; GUIDE.finished_at = r[0].finished_at; if (was !== GUIDE.status) acctHouses(); return r[0]; }   // the houses menu says the new state
   return null;
 }
-// The places the research found that the host has not seen: cards in the editor (worker/guide-worker.mjs, build).
-async function acctMore(){
-  const r = await sb('/rest/v1/guide_jobs?select=result&kind=eq.find-todo&status=eq.done&order=created_at.desc&limit=1&guide_id=eq.' + GUIDE.id);
-  return (((r && r[0] && r[0].result) || {}).items || []).length;
+// The guide just built, read again with what the build wrote (content, theme): the ready screen adds the places the host
+// keeps to it through the editor (runtime.js readyLoad), so the editor is set up on it, as when the maker opens on a built guide.
+async function acctFresh(){
+  await ensureFresh();
+  const r = await sb('/rest/v1/guides?select=id,answers,status,slug,origin,content,theme,draft,finished_at&id=eq.' + GUIDE.id);
+  if (!r || !r[0]) return;
+  const h = location.hash; Object.assign(GUIDE, r[0]); cmInit();
+  if (location.hash !== h) history.replaceState(null, '', location.pathname + location.search + h);   // cmInit may move to the step the page opened on: this screen stays
 }
-window.__acctQueueBuild = acctQueueBuild; window.__acctStatus = acctStatus; window.__acctSendOne = acctSendOne; window.__acctMore = acctMore;
+window.__acctFresh = acctFresh;
+window.__acctQueueBuild = acctQueueBuild; window.__acctStatus = acctStatus; window.__acctSendOne = acctSendOne;
 window.__acctGuide = () => GUIDE;
 
 async function accountBoot(){
@@ -654,6 +659,7 @@ async function accountBoot(){
   try { await acctAttach(); }
   catch (e) { if (e.status === 401 || e.status === 403) { authStore(null); await accountBoot(); return; } /* offline: keep working on this device */ }
   try { cmInit(); } catch (e) {}
+  if (CM.on) await readyLanding();   // just built, with found places not looked at yet: the ready screen first (runtime.js)
   if (!CM.on && GUIDE && GUIDE.status === 'draft' && !A._researchJob) researchStart();   // the full research, now that the guide has an account
   if (!document.querySelector('.logoutTop')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'logoutTop'; b.textContent = 'Log out'; acctBar().appendChild(b); }
   acctHouses();

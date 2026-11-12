@@ -7670,5 +7670,430 @@
 "ca": "Nom d’aquest lloc",
 "es": "Nombre de este sitio",
 "fr": "Nom de ce lieu"
+},
+"about {n} min left": {
+"ca": "queden uns {n} min",
+"es": "quedan unos {n} min",
+"fr": "encore environ {n} min"
+},
+"about a minute left": {
+"ca": "queda un minut, més o menys",
+"es": "queda un minuto, más o menos",
+"fr": "encore une minute environ"
+},
+"less than a minute left": {
+"ca": "queda menys d’un minut",
+"es": "queda menos de un minuto",
+"fr": "moins d’une minute"
+},
+"almost there": {
+"ca": "gairebé hi som",
+"es": "ya casi está",
+"fr": "presque terminé"
+},
+"a little longer than usual": {
+"ca": "una mica més del normal",
+"es": "un poco más de lo normal",
+"fr": "un peu plus long que d’habitude"
+},
+"taking longer than usual": {
+"ca": "està trigant més del normal",
+"es": "está tardando más de lo normal",
+"fr": "plus long que d’habitude"
+},
+"then about {n} min": {
+"ca": "després uns {n} min",
+"es": "después unos {n} min",
+"fr": "puis environ {n} min"
+},
+"Looking up the places you recommend": {
+"ca": "Buscant els llocs que recomanes",
+"es": "Buscando los sitios que recomiendas",
+"fr": "Recherche des lieux que vous recommandez"
+},
+"You can close this page: your guide will be here when you come back.": {
+"ca": "Pots tancar aquesta pàgina: la guia serà aquí quan tornis.",
+"es": "Puedes cerrar esta página: tu guía estará aquí cuando vuelvas.",
+"fr": "Vous pouvez fermer cette page : votre guide sera là à votre retour."
+},
+"Your answers and photos": {
+"ca": "Les teves respostes i fotos",
+"es": "Tus respuestas y fotos",
+"fr": "Vos réponses et photos"
+},
+"The place you recommend": {
+"ca": "El lloc que recomanes",
+"es": "El sitio que recomiendas",
+"fr": "Le lieu que vous recommandez"
+},
+"The {n} places you recommend": {
+"ca": "Els {n} llocs que recomanes",
+"es": "Los {n} sitios que recomiendas",
+"fr": "Les {n} lieux que vous recommandez"
+},
+"What is around the house": {
+"ca": "Què hi ha al voltant de la casa",
+"es": "Qué hay alrededor de la casa",
+"fr": "Ce qu’il y a autour de la maison"
+},
+"The pages of your guide": {
+"ca": "Les pàgines de la guia",
+"es": "Las páginas de tu guía",
+"fr": "Les pages de votre guide"
+},
+"Your {n} languages": {
+"ca": "Els teus {n} idiomes",
+"es": "Tus {n} idiomas",
+"fr": "Vos {n} langues"
+},
+"Saving it": {
+"ca": "Desar-la",
+"es": "Guardarla",
+"fr": "L’enregistrement"
+},
+"Now": {
+"ca": "Ara",
+"es": "Ahora",
+"fr": "En cours"
+},
+"Reading your answers and your photos.": {
+"ca": "Llegint les teves respostes i les teves fotos.",
+"es": "Leyendo tus respuestas y tus fotos.",
+"fr": "Lecture de vos réponses et de vos photos."
+},
+"Looking up {x}: its phone, website and hours.": {
+"ca": "Buscant {x}: telèfon, web i horaris.",
+"es": "Buscando {x}: teléfono, web y horarios.",
+"fr": "Recherche de {x} : téléphone, site et horaires."
+},
+"Putting a pin on the map for each place you recommend.": {
+"ca": "Posant al mapa cada lloc que recomanes.",
+"es": "Poniendo en el mapa cada sitio que recomiendas.",
+"fr": "Chaque lieu recommandé prend sa place sur la carte."
+},
+"Finishing the search of the area around the house.": {
+"ca": "Acabant la cerca de la zona al voltant de la casa.",
+"es": "Terminando la búsqueda de la zona alrededor de la casa.",
+"fr": "Fin de la recherche autour de la maison."
+},
+"Looking for the weekly markets around {x}.": {
+"ca": "Buscant els mercats setmanals al voltant de {x}.",
+"es": "Buscando los mercadillos semanales alrededor de {x}.",
+"fr": "Recherche des marchés de la semaine autour de {x}."
+},
+"Looking for the weekly markets around the house.": {
+"ca": "Buscant els mercats setmanals al voltant de la casa.",
+"es": "Buscando los mercadillos semanales alrededor de la casa.",
+"fr": "Recherche des marchés de la semaine autour de la maison."
+},
+"Looking for things to do around {x}.": {
+"ca": "Buscant coses per fer al voltant de {x}.",
+"es": "Buscando cosas que hacer alrededor de {x}.",
+"fr": "Recherche de choses à faire autour de {x}."
+},
+"Looking for things to do around the house.": {
+"ca": "Buscant coses per fer al voltant de la casa.",
+"es": "Buscando cosas que hacer alrededor de la casa.",
+"fr": "Recherche de choses à faire autour de la maison."
+},
+"Looking for the nearest pharmacy and hospital.": {
+"ca": "Buscant la farmàcia i l’hospital més propers.",
+"es": "Buscando la farmacia y el hospital más cercanos.",
+"fr": "Recherche de la pharmacie et de l’hôpital les plus proches."
+},
+"Looking for the pharmacy on duty nearest to the house.": {
+"ca": "Buscant la farmàcia de guàrdia més propera a la casa.",
+"es": "Buscando la farmacia de guardia más cercana a la casa.",
+"fr": "Recherche de la pharmacie de garde la plus proche de la maison."
+},
+"Laying out the pages of your guide.": {
+"ca": "Composant les pàgines de la teva guia.",
+"es": "Componiendo las páginas de tu guía.",
+"fr": "Mise en page de votre guide."
+},
+"Putting your photos in their rooms.": {
+"ca": "Posant cada foto a la seva habitació.",
+"es": "Poniendo cada foto en su habitación.",
+"fr": "Chaque photo trouve sa pièce."
+},
+"Translating into {x}.": {
+"ca": "Traduint: {x}.",
+"es": "Traduciendo: {x}.",
+"fr": "Traduction en {x}."
+},
+"Your welcome, rooms and rules, going into {x}.": {
+"ca": "La benvinguda, les habitacions i les normes, aviat en {x}.",
+"es": "La bienvenida, las habitaciones y las normas, pronto en {x}.",
+"fr": "Votre accueil, vos pièces et vos règles, bientôt en {x}."
+},
+"Saving your guide and its photos.": {
+"ca": "Desant la guia i les seves fotos.",
+"es": "Guardando tu guía y sus fotos.",
+"fr": "Enregistrement de votre guide et de ses photos."
+},
+"Your {n} rooms, in the order you chose, with {m} photos.": {
+"ca": "Les teves {n} habitacions, en l’ordre que has triat, amb {m} fotos.",
+"es": "Tus {n} habitaciones, en el orden que elegiste, con {m} fotos.",
+"fr": "Vos {n} pièces, dans l’ordre choisi, avec {m} photos."
+},
+"Your {n} rooms, in the order you chose.": {
+"ca": "Les teves {n} habitacions, en l’ordre que has triat.",
+"es": "Tus {n} habitaciones, en el orden que elegiste.",
+"fr": "Vos {n} pièces, dans l’ordre choisi."
+},
+"Your place to eat, with phone and hours if we find them.": {
+"ca": "El teu lloc per menjar, amb telèfon i horaris si els trobem.",
+"es": "Tu sitio para comer, con teléfono y horario si los hay.",
+"fr": "Votre adresse pour manger, avec téléphone et horaires si trouvés."
+},
+"Your {n} places to eat, with phone and hours if we find them.": {
+"ca": "Els teus {n} llocs per menjar, amb telèfon i horaris si els trobem.",
+"es": "Tus {n} sitios para comer, con teléfono y horario si los hay.",
+"fr": "Vos {n} adresses pour manger, avec téléphone et horaires si trouvés."
+},
+"{x}, in your own words.": {
+"ca": "{x}, amb les teves paraules.",
+"es": "{x}, con tus propias palabras.",
+"fr": "{x}, avec vos propres mots."
+},
+"The thing to do you chose, and nothing you did not.": {
+"ca": "L’activitat que has triat, i cap altra.",
+"es": "La actividad que elegiste, y ninguna otra.",
+"fr": "L’activité que vous avez choisie, et aucune autre."
+},
+"The {n} things to do you chose, and nothing you did not.": {
+"ca": "Les {n} coses per fer que has triat, i cap altra.",
+"es": "Las {n} cosas que hacer que elegiste, y ninguna otra.",
+"fr": "Les {n} activités que vous avez choisies, et aucune autre."
+},
+"Your place for the evening.": {
+"ca": "El teu lloc per sortir al vespre.",
+"es": "Tu sitio para salir por la noche.",
+"fr": "Votre adresse pour sortir le soir."
+},
+"Your {n} places for the evening.": {
+"ca": "Els teus {n} llocs per sortir al vespre.",
+"es": "Tus {n} sitios para salir por la noche.",
+"fr": "Vos {n} adresses pour sortir le soir."
+},
+"{n} markets within {m} km of the house, nearest first.": {
+"ca": "{n} mercats a menys de {m} km de la casa, el més proper primer.",
+"es": "{n} mercadillos a menos de {m} km de la casa, el más cercano primero.",
+"fr": "{n} marchés à moins de {m} km de la maison, le plus proche en premier."
+},
+"{x} is market day right here in {y}.": {
+"ca": "Mercat aquí mateix, a {y}, cada {x}.",
+"es": "Mercadillo aquí mismo, en {y}, cada {x}.",
+"fr": "Marché ici même, à {y}, chaque {x}."
+},
+"{x} is market day in {y}, {n} km away.": {
+"ca": "Mercat a {y} cada {x}, a {n} km.",
+"es": "Mercadillo en {y} cada {x}, a {n} km.",
+"fr": "Marché à {y} chaque {x}, à {n} km."
+},
+"Guests see which markets are on today, every day.": {
+"ca": "Cada dia, els hostes veuen quins mercats hi ha avui.",
+"es": "Cada día, los huéspedes ven qué mercadillos hay hoy.",
+"fr": "Chaque jour, les voyageurs voient les marchés du jour."
+},
+"{n} local events coming up, each with its dates.": {
+"ca": "{n} esdeveniments locals propers, cadascun amb les seves dates.",
+"es": "{n} eventos locales próximos, cada uno con sus fechas.",
+"fr": "{n} événements locaux à venir, chacun avec ses dates."
+},
+"Coming up: {x}, on {y}.": {
+"ca": "Aviat: {x}, el {y}.",
+"es": "Próximamente: {x}, el {y}.",
+"fr": "Bientôt : {x}, le {y}."
+},
+"Coming up: {x}, expected on {y}.": {
+"ca": "Aviat: {x}, previst el {y}.",
+"es": "Próximamente: {x}, previsto el {y}.",
+"fr": "Bientôt : {x}, prévu le {y}."
+},
+"Emergency numbers, the nearest pharmacy and hospital.": {
+"ca": "Telèfons d’emergència, la farmàcia i l’hospital més propers.",
+"es": "Teléfonos de emergencia, la farmacia y el hospital más cercanos.",
+"fr": "Numéros d’urgence, la pharmacie et l’hôpital les plus proches."
+},
+"For a pharmacy, guests find {x}.": {
+"ca": "Per a una farmàcia, els hostes troben {x}.",
+"es": "Para una farmacia, los huéspedes encuentran {x}.",
+"fr": "Pour une pharmacie, les voyageurs trouvent {x}."
+},
+"The nearest hospital, {x}, with directions.": {
+"ca": "L’hospital més proper, {x}, amb indicacions.",
+"es": "El hospital más cercano, {x}, con indicaciones.",
+"fr": "L’hôpital le plus proche, {x}, avec l’itinéraire."
+},
+"Guests will read it in {n} languages.": {
+"ca": "Els hostes la llegiran en {n} idiomes.",
+"es": "Los huéspedes la leerán en {n} idiomas.",
+"fr": "Les voyageurs le liront en {n} langues."
+},
+"Each phone opens it in its own language, when it is one of your {n}.": {
+"ca": "Cada mòbil l’obre en el seu idioma, si és un dels teus {n}.",
+"es": "Cada móvil la abre en su idioma, si es uno de tus {n}.",
+"fr": "Chaque téléphone l’ouvre dans sa langue, si c’est l’une de vos {n}."
+},
+"{n} things your place offers, the most asked for first.": {
+"ca": "{n} serveis del teu allotjament, els més buscats primer.",
+"es": "{n} cosas que ofrece tu alojamiento, las más buscadas primero.",
+"fr": "{n} équipements de votre logement, les plus demandés en premier."
+},
+"Check-in from {t} and check-out by {u}, always at hand.": {
+"ca": "Entrada a partir de les {t} i sortida abans de les {u}, sempre a mà.",
+"es": "Entrada desde las {t} y salida antes de las {u}, siempre a mano.",
+"fr": "Arrivée à partir de {t} et départ avant {u}, toujours sous la main."
+},
+"Your house rule, in every language of the guide.": {
+"ca": "La teva norma de la casa, en tots els idiomes de la guia.",
+"es": "Tu norma de la casa, en todos los idiomas de la guía.",
+"fr": "Votre règle de la maison, dans toutes les langues du guide."
+},
+"Your house rule, where guests look for it.": {
+"ca": "La teva norma de la casa, on els hostes la busquen.",
+"es": "Tu norma de la casa, donde los huéspedes la buscan.",
+"fr": "Votre règle de la maison, là où les voyageurs la cherchent."
+},
+"Your {n} house rules, in every language of the guide.": {
+"ca": "Les teves {n} normes de la casa, en tots els idiomes de la guia.",
+"es": "Tus {n} normas de la casa, en todos los idiomas de la guía.",
+"fr": "Vos {n} règles de la maison, dans toutes les langues du guide."
+},
+"Your {n} house rules, where guests look for them.": {
+"ca": "Les teves {n} normes de la casa, on els hostes les busquen.",
+"es": "Tus {n} normas de la casa, donde los huéspedes las buscan.",
+"fr": "Vos {n} règles de la maison, là où les voyageurs les cherchent."
+},
+"Sleeps {n}, with 1 bedroom, on the house page.": {
+"ca": "Per a {n} persones, amb 1 dormitori, a la pàgina de la casa.",
+"es": "Para {n} personas, con 1 dormitorio, en la página de la casa.",
+"fr": "Pour {n} personnes, avec 1 chambre, sur la page de la maison."
+},
+"Sleeps {n}, with {m} bedrooms, on the house page.": {
+"ca": "Per a {n} persones, amb {m} dormitoris, a la pàgina de la casa.",
+"es": "Para {n} personas, con {m} dormitorios, en la página de la casa.",
+"fr": "Pour {n} personnes, avec {m} chambres, sur la page de la maison."
+},
+"The Wi-Fi password, with a copy button and a QR code.": {
+"ca": "La contrasenya del wifi, amb un botó per copiar-la i un codi QR.",
+"es": "La contraseña del wifi, con un botón para copiarla y un código QR.",
+"fr": "Le mot de passe du Wi-Fi, avec un bouton pour le copier et un code QR."
+},
+"How to get in, in your own words.": {
+"ca": "Com entrar, amb les teves paraules.",
+"es": "Cómo entrar, con tus propias palabras.",
+"fr": "Comment entrer, avec vos propres mots."
+},
+"Which bin goes out on which day.": {
+"ca": "Quin cubell es treu cada dia.",
+"es": "Qué cubo se saca cada día.",
+"fr": "Quelle poubelle sortir, et quel jour."
+},
+"Your local tips, in the house guide.": {
+"ca": "Els teus consells locals, a la guia de la casa.",
+"es": "Tus consejos locales, en la guía de la casa.",
+"fr": "Vos conseils locaux, dans le guide de la maison."
+},
+"The taxi number, for guests without a car.": {
+"ca": "El número de taxi, per als hostes sense cotxe.",
+"es": "El número de taxi, para los huéspedes sin coche.",
+"fr": "Le numéro de taxi, pour les voyageurs sans voiture."
+},
+"We found {n} more places nearby: you choose once it is built.": {
+"ca": "Hem trobat {n} llocs més a prop: tries tu quan estigui feta.",
+"es": "Hemos encontrado {n} sitios más cerca: eliges tú cuando esté lista.",
+"fr": "Nous avons trouvé {n} autres lieux près d’ici : vous choisirez une fois le guide prêt."
+},
+"Guests open it from a link: no app to install.": {
+"ca": "Els hostes l’obren amb un enllaç: sense cap app per instal·lar.",
+"es": "Los huéspedes la abren con un enlace: sin app que instalar.",
+"fr": "Les voyageurs l’ouvrent avec un lien : aucune appli à installer."
+},
+"One last thing before you open it.": {
+"ca": "Una última cosa abans d’obrir-la.",
+"es": "Una última cosa antes de abrirla.",
+"fr": "Une dernière chose avant de l’ouvrir."
+},
+"Open my guide now": {
+"ca": "Obre la guia ara",
+"es": "Abrir mi guía ahora",
+"fr": "Ouvrir mon guide"
+},
+"We found a place near you that is not in your guide. Keep it if you would send guests there: only what you keep goes in.": {
+"ca": "Hem trobat un lloc a prop teu que no és a la guia. Queda-te’l si hi enviaries els hostes: només hi va el que et quedis.",
+"es": "Hemos encontrado un sitio cerca de ti que no está en tu guía. Quédatelo si enviarías allí a tus huéspedes: solo entra lo que te quedes.",
+"fr": "Nous avons trouvé un lieu près de chez vous qui n’est pas dans votre guide. Gardez-le si vous y enverriez vos voyageurs : seul ce que vous gardez y entre."
+},
+"We found {n} places near you that are not in your guide. Keep the ones you would send guests to: only those go in.": {
+"ca": "Hem trobat {n} llocs a prop teu que no són a la guia. Queda’t els que recomanaries als hostes: només hi van aquests.",
+"es": "Hemos encontrado {n} sitios cerca de ti que no están en tu guía. Quédate con los que recomendarías a tus huéspedes: solo entran esos.",
+"fr": "Nous avons trouvé {n} lieux près de chez vous qui ne sont pas dans votre guide. Gardez ceux que vous conseilleriez à vos voyageurs : seuls ceux-là y entrent."
+},
+"Found near you": {
+"ca": "Trobat a prop teu",
+"es": "Encontrado cerca de ti",
+"fr": "Trouvé près de chez vous"
+},
+"Keep": {
+"ca": "Me’l quedo",
+"es": "Me lo quedo",
+"fr": "Garder"
+},
+"Skip": {
+"ca": "Passo",
+"es": "Paso",
+"fr": "Passer"
+},
+"Adding the place you kept to your guide…": {
+"ca": "Afegint a la guia el lloc que t’has quedat…",
+"es": "Añadiendo a tu guía el sitio que te has quedado…",
+"fr": "Ajout du lieu gardé à votre guide…"
+},
+"Adding the {n} places you kept to your guide…": {
+"ca": "Afegint a la guia els {n} llocs que t’has quedat…",
+"es": "Añadiendo a tu guía los {n} sitios que te has quedado…",
+"fr": "Ajout des {n} lieux gardés à votre guide…"
+},
+"The places you kept are saved, but not in your guide yet.": {
+"ca": "Els llocs que t’has quedat estan desats, però encara no són a la guia.",
+"es": "Los sitios que te has quedado están guardados, pero aún no están en tu guía.",
+"fr": "Les lieux gardés sont enregistrés, mais pas encore dans votre guide."
+},
+"Add them to my guide": {
+"ca": "Afegeix-los a la guia",
+"es": "Añadirlos a mi guía",
+"fr": "Les ajouter à mon guide"
+},
+"Fix it in the editor": {
+"ca": "Arregla-ho a l’editor",
+"es": "Arreglarlo en el editor",
+"fr": "Corriger dans l’éditeur"
+},
+"{x} is in your guide now.": {
+"ca": "{x} ja és a la guia.",
+"es": "{x} ya está en tu guía.",
+"fr": "{x} est maintenant dans votre guide."
+},
+"{n} places you kept are in your guide now.": {
+"ca": "Els {n} llocs que t’has quedat ja són a la guia.",
+"es": "Los {n} sitios que te has quedado ya están en tu guía.",
+"fr": "Les {n} lieux gardés sont maintenant dans votre guide."
+},
+"Hours:": {
+"ca": "Horari:",
+"es": "Horario:",
+"fr": "Horaires :"
+},
+"Dates:": {
+"ca": "Dates:",
+"es": "Fechas:",
+"fr": "Dates :"
+},
+"On Google": {
+"ca": "A Google",
+"es": "En Google",
+"fr": "Sur Google"
 }
 }

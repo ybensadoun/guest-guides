@@ -288,14 +288,101 @@ try {
     ok('a house with no position from its listing: the deck searches the town and keeps Google\'s position with its date', q.some(x => /town=/.test(x) && !/lat=/.test(x)) && A.lat === 41.5 && A.lng === 1.7 && JSON.stringify(A.pos) === JSON.stringify({ from: 'google', at: today }), JSON.stringify({ lat: A.lat, pos: A.pos, q: q[0] }));
     ok('a house with no position from its listing: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
-  { const G = { ...B, status: 'generating', slug: 'test-cards', answers: { ...B.answers, slug: 'test-cards' } };
-    const { ctx, p, errors } = await open(browser, G, 360, 780);
-    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ result: { items: [{ id: 'a' }, { id: 'b' }] } }]));
-    await ctx.route(u => u.pathname.startsWith('/rest/v1/guides') && /select=status/.test(u.search), r => json(r, [{ status: 'published', slug: 'test-cards', message: null }]));
-    await p.goto('http://editor.test/#building'); await p.waitForFunction(() => /We found 2 more places/.test((document.getElementById('bstate') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
-    ok('cards after sign-up: the finished screen says how many wait, and links to them', /We found 2 more places/.test(await p.textContent('#bstate')) && (await p.getAttribute('#bstate a.btn', 'href').catch(() => '')) === '/?step=todo');
-    await p.screenshot({ path: join(SHOTS, 'cards-finished-360.png') });
-    ok('cards after sign-up, finished screen: no sideways scroll, no page errors', (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0 && !errors.length, errors.join(' | '));
+  // ---- The build screen (Yohann, 12 Nov 2026): a line under the bar that changes and says what goes into this guide; the
+  // time left true for the languages chosen; when it is ready, the places the research found first, then the guide ----
+  // Anything in the dark card that its lit doorway (.bhero::before) touches, and the doorway's own box.
+  const heroClear = p => p.evaluate(() => {
+    const h = document.querySelector('.bhero'); if (!h) return ['no card'];
+    const s = getComputedStyle(h, '::before'), hb = h.getBoundingClientRect(), w = parseFloat(s.width), ht = parseFloat(s.height);
+    const x1 = hb.right - parseFloat(s.right) - w, y1 = hb.bottom - parseFloat(s.bottom) - ht;
+    const hit = r => r.width > 0 && r.left < x1 + w - 1 && r.right > x1 + 1 && r.top < y1 + ht - 1 && r.bottom > y1 + 1;
+    return [...h.querySelectorAll('h1, p, li, small, a, button, .cm-prog')].filter(el => getComputedStyle(el).visibility !== 'hidden' && !el.closest('.sr') && !el.classList.contains('sr')).filter(el => {
+      if (el.matches('a, button, .cm-prog')) return hit(el.getBoundingClientRect());
+      const rg = document.createRange(); rg.selectNodeContents(el); return [...rg.getClientRects()].some(hit); }).map(el => el.tagName + '.' + (el.className || '') + ' ' + el.textContent.trim().slice(0, 30));
+  });
+  const wide = p => p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  const now = new Date().toISOString(), SIX = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
+  const building = (langs, msg = 'Translating') => ({ ...B, status: 'generating', message: msg, slug: 'test-build', answers: { ...B.answers, slug: 'test-build', languages: langs, sourceLang: 'en', _sentAt: now } });
+  for (const [w, h] of [[360, 780], [1280, 860]]) for (const lang of ['en', 'fr']) {
+    const { ctx, p, errors } = await open(browser, building(SIX), w, h, { 'porta-lang-v1': lang }), tag = `build screen, ${w} px, ${lang}`;
+    await p.goto('http://editor.test/#building'); await p.waitForSelector('#bstate .btick', { timeout: 15000 }).catch(() => {}); await p.waitForTimeout(1200);
+    const at = () => p.evaluate(() => { const t = document.querySelector('#bstate .btick'), c = document.querySelector('#bstate .bclose'); return { line: ((t && t.querySelector('.on')) || {}).textContent || '', top: c ? Math.round(c.getBoundingClientRect().top) : -1, hidden: t && t.getAttribute('aria-hidden'), say: (document.getElementById('bsay') || {}).getAttribute ? document.getElementById('bsay').getAttribute('role') : '' }; });
+    const a1 = await at(); await p.screenshot({ path: join(SHOTS, `build-line-a-${w}${lang === 'en' ? '' : '-' + lang}.png`) });
+    await p.waitForTimeout(7300); const a2 = await at(); await p.screenshot({ path: join(SHOTS, `build-line-b-${w}${lang === 'en' ? '' : '-' + lang}.png`) });
+    ok(`${tag}: a line under the bar says what goes into the guide, and changes`, !!a1.line.trim() && !!a2.line.trim() && a1.line !== a2.line, `${a1.line} / ${a2.line}`);
+    ok(`${tag}: the line keeps its room (nothing under it moves), hidden from screen readers, the step read politely`, a1.top === a2.top && a1.hidden === 'true' && a1.say === 'status', JSON.stringify([a1.top, a2.top, a1.hidden, a1.say]));
+    // Every line this guide can show, in its box: two lines at most, no word wider than the box.
+    const bad = await p.evaluate(async () => { const t = document.querySelector('#bstate .btick'), sp = document.createElement('span'), out = [], lh = parseFloat(getComputedStyle(t).lineHeight);
+      t.appendChild(sp);   // a third, invisible half of the line: what the screen shows stays as it is
+      for (const x of window.__buildLines()) { sp.textContent = x; await new Promise(r => setTimeout(r, 0));
+        if (sp.getBoundingClientRect().height > lh * 2 + 2 || sp.scrollWidth > t.clientWidth + 1) out.push(sp.textContent); }
+      sp.remove(); return out; });
+    const n = await p.evaluate(() => window.__buildLines().length);
+    ok(`${tag}: each of the ${n} lines fits in two lines, no word cut`, n >= 12 && !bad.length, bad.join(' | '));
+    const clear = await heroClear(p), x = await wide(p);
+    ok(`${tag}: nothing touches the doorway, no sideways scroll, no page errors`, !clear.length && x <= 0 && !errors.length, [...clear, x > 0 ? x + ' px too wide' : '', ...errors].filter(Boolean).join(' | '));
+    if (w === 1280) ok(`${tag}: the build's steps beside the bar, the languages step on`, /6/.test(await p.textContent('.bsteps li.now').catch(() => '')) && await p.isVisible('.bside'), await p.textContent('.bsteps li.now').catch(() => 'none'));
+    await ctx.close(); }
+  // The time left: translation takes about 2 minutes a language beyond the guide's own (measured 11 Nov 2026), and past its
+  // usual time the screen never says a number it cannot keep.
+  for (const [langs, want] of [[['en'], /about 2 min left/], [SIX, /about 10 min left/]]) {
+    const { ctx, p, errors } = await open(browser, building(langs), 360, 780);
+    await p.goto('http://editor.test/#building'); await p.waitForSelector('#bstate .cm-progt', { timeout: 15000 }).catch(() => {});
+    const time = async ago => { await p.evaluate(s => { const j = window.__buildJob; j.phaseAt = Date.now() - s * 1000; j.startAt = j.phaseAt - 60000; j.shown = 0; }, ago); await p.waitForTimeout(1300); return p.textContent('#bstate .cm-progt'); };
+    const t0 = await time(0), t1 = langs.length > 1 ? await time(700) : '', t2 = langs.length > 1 ? await time(1000) : '';
+    if (langs.length > 1) { await time(700); await p.screenshot({ path: join(SHOTS, 'build-late-360.png') }); }
+    ok(`build screen, time left with ${langs.length} language${langs.length > 1 ? 's' : ''}: ${want.source.replace('\\u00a0', ' ')} while translating`, want.test(t0), t0);
+    if (langs.length > 1) ok('build screen, time left: past its usual time "almost there", then "taking longer than usual", never a number', /almost there/.test(t1) && /taking longer than usual/.test(t2) && !/min|minute/.test(t1 + t2), `${t1} / ${t2}`);
+    ok(`build screen, time left with ${langs.length} language${langs.length > 1 ? 's' : ''}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  { const { ctx, p } = await open(browser, building(SIX), 1280, 860);
+    await p.goto('http://editor.test/#building'); await p.waitForSelector('#bstate .cm-progt', { timeout: 15000 }).catch(() => {}); await p.waitForTimeout(1300);
+    await p.screenshot({ path: join(SHOTS, 'build-translating-1280.png') }); await p.setViewportSize({ width: 360, height: 780 }); await p.waitForTimeout(300);
+    await p.screenshot({ path: join(SHOTS, 'build-translating-360.png') });
+    await p.evaluate(() => { const j = window.__buildJob; j.phaseAt = Date.now() - 700000; }); await p.setViewportSize({ width: 1280, height: 860 }); await p.waitForTimeout(1300);
+    await p.screenshot({ path: join(SHOTS, 'build-late-1280.png') });
+    await ctx.close(); }
+  // Ready: the places the build found and the host has not looked at come first, on this screen; the kept ones are published
+  // into the guide without the editor; then "Open my guide" is the main button. Nothing found: "Open my guide" at once.
+  const FOUND = [{ id: 'rd-castle', name: { en: 'Ready Test Castle' }, type: { en: 'Castle' }, town: 'Testville', lat: A0.lat + 0.05, lng: A0.lng, km_from_house: 6, description: { en: 'A castle on a hill, with a short walk up and a view of the vineyards.' }, tags: ['kidsfun'], _google: 'On Google' },
+    { id: 'rd-cave', name: { en: 'Ready Test Cellar' }, type: { en: 'Winery' }, town: 'Othertown', lat: A0.lat - 0.05, lng: A0.lng, km_from_house: 9, description: { en: 'A family wine cellar with visits and tastings.' } }];
+  const readyCtx = async (w, h, found, watched) => {
+    const built = { ...E, status: 'published', finished_at: now, draft: null, answers: { ...E.answers, slug: E.slug, _sentAt: now }, content: { ...E.content, files: { ...E.content.files, todo: { ...E.content.files.todo, items: (E.content.files.todo.items || []).filter(x => !String(x.id).startsWith('rd-')) } } } };
+    const G = watched ? { ...built, status: 'generating', message: 'Saving the guide', content: null } : built, o = await open(browser, G, w, h); o.patches = []; let polled = false;
+    await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, /kind=eq.find-todo/.test(new URL(r.request().url()).search) && found.length ? [{ id: 'job-ready', status: 'done', message: found.length + ' things to do found', created_at: now, result: { items: found } }] : []));
+    await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), r => { const req = r.request(), q = new URL(req.url()).search;
+      if (req.method() === 'PATCH') { const b = JSON.parse(req.postData() || '{}'); o.patches.push(b); if ('content' in b) { built.content = b.content; built.draft = null; return json(r, [{ status: built.status }]); } if (b.draft !== undefined) built.draft = b.draft; return r.fulfill({ status: 204, body: '' }); }
+      if (/select=status/.test(q)) { polled = true; return json(r, [{ status: 'published', slug: built.slug, message: null, finished_at: now }]); }
+      if (/select=id(%2C|,)answers/.test(q)) return json(r, [watched && !polled ? G : built]);
+      return r.fallback(); });
+    return o; };
+  for (const [w, h] of [[360, 780], [1280, 860]]) {
+    { const { ctx, p, errors } = await readyCtx(w, h, [], false);
+      await p.goto('http://editor.test/#building'); await p.waitForSelector('#bstate .go-next', { timeout: 15000 }).catch(() => {}); await p.waitForTimeout(600);
+      ok(`ready screen, ${w} px, nothing found: "Open my guide" is the main button, no card`, /Open my guide/.test(await p.textContent('#bstate .go-next').catch(() => '')) && !(await p.isVisible('#bcards')));
+      const clear = await heroClear(p); ok(`ready screen, ${w} px, nothing found: nothing touches the doorway, no sideways scroll, no page errors`, !clear.length && (await wide(p)) <= 0 && !errors.length, [...clear, ...errors].join(' | '));
+      await p.screenshot({ path: join(SHOTS, `ready-none-${w}.png`), fullPage: true });
+      await p.goto('http://editor.test/'); await ready(p);
+      ok(`ready screen, ${w} px, nothing found: coming back opens the editor as before`, (await p.evaluate(() => location.hash)) !== '#building' && !!(await p.$('.edz')), await p.evaluate(() => location.hash));
+      await ctx.close(); }
+    const o = await readyCtx(w, h, FOUND, true), { ctx, p, errors } = o;
+    await p.goto('http://editor.test/#building'); await p.waitForSelector('#bcards .cm-fcard', { timeout: 20000 }).catch(() => {}); await p.waitForTimeout(400);
+    const card = await p.textContent('#bcards').catch(() => '');
+    ok(`ready screen, ${w} px, 2 found while the host watched the build: the first card, "1 of 2", the question above it`, /Ready Test Castle/.test(card) && /1 of 2/.test(card) && /only those go in/.test(card) && !!(await p.$('[data-rdadd]')) && !!(await p.$('[data-rdskip]')), card.slice(0, 160));
+    ok(`ready screen, ${w} px, 2 found: "Open my guide" is there but not the main button`, !(await p.$('#bstate .go-next')) && !!(await p.$('#bstate .bopen')));
+    const clear = await heroClear(p); ok(`ready screen, ${w} px, 2 found: nothing touches the doorway, no sideways scroll`, !clear.length && (await wide(p)) <= 0, clear.join(' | '));
+    await p.screenshot({ path: join(SHOTS, `ready-found-${w}.png`), fullPage: true });
+    await p.click('[data-rdadd]'); await p.waitForTimeout(1500);
+    ok(`ready screen, ${w} px: Keep shows the next card, "2 of 2", and saves the kept place in the draft`, /2 of 2/.test(await p.textContent('#bcards').catch(() => '')) && JSON.stringify(o.patches.map(b => b.draft)).includes('rd-castle'), o.patches.length + ' saves');
+    if (w === 360) { await p.goto('http://editor.test/'); await p.waitForSelector('#bcards .cm-fcard', { timeout: 15000 }).catch(() => {});
+      ok('ready screen: a host who leaves and comes back finds the card not looked at yet', (await p.evaluate(() => location.hash)) === '#building' && /Ready Test Cellar/.test(await p.textContent('#bcards').catch(() => '')) && /2 of 2/.test(await p.textContent('#bcards').catch(() => '')), await p.evaluate(() => location.hash)); }
+    await p.click('[data-rdskip]'); await p.waitForSelector('#bstate .go-next', { timeout: 10000 }).catch(() => {}); await p.waitForTimeout(400);
+    const pub = o.patches.find(b => 'content' in b), items = pub ? ((pub.content.files || {}).todo || {}).items || [] : [];
+    ok(`ready screen, ${w} px: after the last card the kept place is published, the skipped one is not, the guide stays published`, !!pub && items.some(x => x.id === 'rd-castle') && !items.some(x => x.id === 'rd-cave') && pub.draft === null && !('status' in pub), pub ? Object.keys(pub).join(',') : 'no publish');
+    ok(`ready screen, ${w} px: then "Open my guide" is the main button, with the place kept named`, /Open my guide/.test(await p.textContent('#bstate .go-next').catch(() => '')) && /Ready Test Castle is in your guide now/.test(await p.textContent('#bstate')) && !(await p.isVisible('#bcards')));
+    ok(`ready screen, ${w} px: both cards are remembered as looked at`, (await p.evaluate(() => JSON.parse(localStorage.getItem('cmfind:job-ready') || '[]'))).sort().join() === 'rd-castle,rd-cave');
+    const clear2 = await heroClear(p); ok(`ready screen, ${w} px, after the cards: nothing touches the doorway, no sideways scroll, no page errors`, !clear2.length && (await wide(p)) <= 0 && !errors.length, [...clear2, ...errors].join(' | '));
+    await p.screenshot({ path: join(SHOTS, `ready-after-${w}.png`), fullPage: true });
     await ctx.close(); }
   // ---- Send: the guide is built from the account, so the copy to Netlify Forms can never stop it ----
   for (const [tag, down] of [['with a picture already in the account', false], ['with Netlify Forms failing', true]]) {
