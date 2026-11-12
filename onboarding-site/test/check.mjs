@@ -125,8 +125,9 @@ const MISSING = new Map();
 if (env.WALK) { try { await (await import('./walk.mjs')).default({ browser, open, ready, go, json, inPhone, E, B, N, A0, photos, PAGE, WRITE, HTML, SB, HERE }); } finally { await browser.close(); } process.exit(0); }
 try {
   // ---- Signed out: the first page, in the guides' look, with Google when it is switched on ----
-  const signedOut = async (w, h, googleOn) => {
+  const signedOut = async (w, h, googleOn, lang) => {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } }), seen = [];
+    if (lang) await ctx.addInitScript(l => { try { localStorage.setItem('porta-lang-v1', l); } catch (e) {} }, lang);
     await ctx.route('**/*', route => { const u = new URL(route.request().url());
       if (u.host === 'editor.test') return route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
       if (u.origin === SB && u.pathname === '/auth/v1/settings') return json(route, { external: { google: googleOn, email: true } });
@@ -144,7 +145,7 @@ try {
     return [...el.querySelectorAll('b, small, .ex-ic svg, .ex-ar, .ex-tag, .ex-pill')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent + ': ' + t.tagName); }));
   for (const [w, h, tag] of [[360, 780, '360 px'], [1280, 860, 'desktop']]) {
     const { ctx, p, errors } = await signedOut(w, h, false);
-    ok(`signed out, ${tag}: the page in the guides' look, asking for the listing link, not an account`, !!(await p.$('#acct .ac-hero')) && !!(await p.$('#acct #acUrl')) && !(await p.$('#acct #acEmail')) && !!(await p.$('#acct [data-m="login"]')));
+    ok(`signed out, ${tag}: the page in the maker's look (the start page's navy card), asking for the listing link, not an account`, !!(await p.$('#acct .ac2 > .start #acUrl')) && !(await p.$('#acct #acEmail')) && !!(await p.$('#acct [data-m="login"]')) && !(await p.$('#acct .ac-hero, #acct .ac-art')));
     ok(`signed out, ${tag}: no Google button while Google is off`, !(await p.$('#acGoogle')));
     ok(`signed out, ${tag}: no sideways scroll`, (await p.evaluate(() => document.getElementById('acct').scrollWidth - window.innerWidth)) <= 0);
     const clash = await tileClash(p); ok(`signed out, ${tag}: no tile text under its corner shape`, !clash.length, clash.join('; '));
@@ -156,9 +157,93 @@ try {
     await p.screenshot({ path: join(SHOTS, `signed-out-${tag.replace(' ', '')}.png`), fullPage: false });
     await ctx.close();
   }
+  // ---- The first page and Log in in the maker's look (12 Nov 2026): the start page's navy card, the app's header, type,
+  // fields and buttons; the example guide alone keeps the guides' look. At 360 and 1280, in English and French. ----
+  // Inside a navy start card (sel): nothing touches anything (the eyebrow, title and text by their words, the panel, the moon
+  // with its crescent, the door with its leaf; the glow does not count), the moon at least 4 px from the title, no
+  // placeholder wider than its field, no word wider than its line. A list of problems, empty when clear.
+  const startClear = (p, sel) => p.evaluate(sel => {
+    const card = document.querySelector(sel); if (!card) return ['no card ' + sel];
+    const words = e => { if (!e) return []; const g = document.createRange(); g.selectNodeContents(e); return [...g.getClientRects()].filter(r => r.width > 0); };
+    const box = e => e ? [e.getBoundingClientRect()] : [];
+    const moon = card.querySelector('.st-moon'), mr = moon && moon.getBoundingClientRect();
+    const moonBox = mr ? [new DOMRect(mr.left - 11, mr.top, mr.width + 11, mr.height + 7)] : [];   // its crescent is a shadow 10 px left, 6 px down
+    const parts = [['eyebrow', words(card.querySelector('.st-tx small'))], ['title', words(card.querySelector('.st-tx h1'))], ['text', words(card.querySelector('.st-tx p'))],
+      ['panel', box(card.querySelector('.st-form'))], ['moon', moonBox], ['door', [...box(card.querySelector('.st-door')), ...box(card.querySelector('.st-door i'))]]];
+    const hit = (a, b, m = 0) => a.right + m > b.left && b.right + m > a.left && a.bottom + m > b.top && b.bottom + m > a.top;
+    const out = [];
+    for (const [i, [n, rs]] of parts.entries()) for (const [m, qs] of parts.slice(i + 1)) if (rs.some(r => qs.some(q => hit(r, q, (n === 'title' || m === 'title') && (n === 'moon' || m === 'moon') ? 4 : -1)))) out.push(`${n} touches ${m}`);
+    const cb = card.getBoundingClientRect();
+    for (const [n, rs] of parts) if (n !== 'door' && rs.some(r => r.right > cb.right + 1 || r.left < cb.left - 1)) out.push(`${n} out of the card`);
+    const cv = document.createElement('canvas').getContext('2d');
+    for (const i of card.querySelectorAll('input[placeholder]')) { const s = getComputedStyle(i); cv.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+      const room = i.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight), need = cv.measureText(i.placeholder).width;
+      if (need > room + 0.5) out.push(`placeholder "${i.placeholder}" ${Math.round(need)} px in ${Math.round(room)} px`);
+      if (parseFloat(s.fontSize) < 16) out.push(`field font ${s.fontSize}`); }
+    for (const e of card.querySelectorAll('h1, p, small, label, button, a')) if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible') out.push('cut: ' + e.textContent.trim().slice(0, 30));
+    if (document.documentElement.scrollWidth > innerWidth || (document.getElementById('acct') || { scrollWidth: 0 }).scrollWidth > innerWidth) out.push('sideways scroll');
+    return out;
+  }, sel);
+  // The maker's look outside the example: no Jost, no 2 px black outline (the old look's), the app's serif for titles;
+  // buttons and fields at least 44 px tall on a phone.
+  const makerLook = (p, phone) => p.evaluate(phone => {
+    const out = [], root = document.getElementById('acct'); if (!root) return ['no #acct'];
+    for (const e of root.querySelectorAll('*')) {
+      if (e.closest('.ex-cols, svg') || !e.getClientRects().length) continue;
+      const s = getComputedStyle(e), tag = e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className ? '.' + e.className.split(' ')[0] : '');
+      if (/jost/i.test(s.fontFamily) && e.childNodes.length && [...e.childNodes].some(n => n.nodeType === 3 && n.data.trim())) out.push('Jost: ' + tag);
+      for (const side of ['Top', 'Right', 'Bottom', 'Left']) if (parseFloat(s['border' + side + 'Width']) >= 2 && /^rgb\((0, 0, 0|18, 18, 18)\)$/.test(s['border' + side + 'Color'])) { out.push('black outline: ' + tag); break; }
+      if (phone && e.matches('button, input, select, .lpick') && !e.closest('.lpick') && e.getBoundingClientRect().height < 44 && getComputedStyle(e).visibility !== 'hidden') out.push(`under 44 px: ${tag} ${Math.round(e.getBoundingClientRect().height)}`);
+    }
+    for (const h of root.querySelectorAll('.st-tx h1, .ex-head h2, .ac-sheet h2')) { const s = getComputedStyle(h); if (!/Gloock/.test(s.fontFamily) || s.fontWeight !== '400') out.push('title not in the serif: ' + h.textContent.slice(0, 20)); }
+    for (const e of root.querySelectorAll('.st-tx p, .ac-card label, .ac-card input, .ex-head p, .ac-cta')) if (!/Onest/.test(getComputedStyle(e).fontFamily)) out.push('text not in the app font: ' + e.tagName);
+    return [...new Set(out)];
+  }, phone);
+  for (const lang of ['en', 'fr']) for (const [w, h] of [[360, 780], [1280, 860]]) {
+    const tag = `${lang}, ${w} px`, { ctx, p, errors } = await signedOut(w, h, true, lang);
+    await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(300);
+    let c = await startClear(p, '#acct .start');
+    ok(`first page, ${tag}: in the navy card nothing overlaps (words, panel, moon, door), the moon clear of the title, every placeholder fits`, !c.length, c.join('; '));
+    let l = await makerLook(p, w < 600);
+    ok(`first page, ${tag}: the maker's look outside the example (no Jost, no black outline, the serif and Onest${w < 600 ? ', 44 px targets' : ''})`, !l.length, l.join('; '));
+    const head = await p.evaluate(() => { const b = document.querySelector('#acct .ac-top .ac-login'), t = document.querySelector('#acct .ac-top'), d = document.querySelector('#acct .ac-top .door');
+      const own = document.querySelector('#acct .start .alt [data-m="login"]'), or = own && own.getBoundingClientRect();
+      return { login: innerWidth < 600 ? !!b && getComputedStyle(b).display === 'none' && !!or && or.height >= 44 && or.bottom <= innerHeight : !!b && getComputedStyle(b).display !== 'none' && b.getBoundingClientRect().right <= t.getBoundingClientRect().right + 1, door: !!d && getComputedStyle(d).backgroundColor === 'rgb(20, 35, 58)' }; });
+    ok(`first page, ${tag}: the app's header (navy door, ${w < 600 ? 'no Log in up there on a phone: the panel\'s own is in the first screen' : 'Log in at the right'})`, head.login && head.door, JSON.stringify(head));
+    // the main button: in the first screen, or reached by scrolling with nothing over it
+    const go = await p.evaluate(() => { const b = document.querySelector('#acct .go'), r = b.getBoundingClientRect(); const first = r.top >= 0 && r.bottom <= innerHeight;
+      b.scrollIntoView({ block: 'center' }); const q = b.getBoundingClientRect(), at = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2);
+      return { first, free: !!at && b.contains(at), bottom: Math.round(r.bottom), orange: getComputedStyle(b).backgroundColor }; });
+    ok(`first page, ${tag}: the main button ${w < 600 ? 'in the first screen' : 'in view'}, nothing over it, orange as the start page's`, go.first && go.free && go.orange === 'rgb(243, 181, 91)', JSON.stringify(go));
+    const cols = await p.evaluate(() => { const c = [...document.querySelectorAll('#acct .ex-col')].map(e => e.getBoundingClientRect()), cta = document.querySelector('#acct .ac-cta').getBoundingClientRect(), ex = document.querySelector('#acct .ex-cols').getBoundingClientRect();
+      return { n: c.length, side: c.length === 2 && Math.abs(c[0].top - c[1].top) < 2 && c[1].left >= c[0].right && Math.abs(c[0].width - c[1].width) < 2, stacked: c.length === 2 && c[1].top >= c[0].bottom,
+        ctaUnder: cta.top >= ex.bottom && Math.abs((cta.left + cta.right) / 2 - (ex.left + ex.right) / 2) < 2, ctaBg: getComputedStyle(document.querySelector('#acct .ac-cta')).backgroundColor }; });
+    ok(`first page, ${tag}: the example in ${w < 900 ? 'one column' : 'two equal columns'}, the button under it, centred, the app's navy`, cols.n === 2 && (w < 900 ? cols.stacked : cols.side) && cols.ctaUnder && cols.ctaBg === 'rgb(20, 35, 58)', JSON.stringify(cols));
+    // Log in: only what is inside the navy card changes, the card stays where it was; the header's Log in gone, the language at the right edge
+    const top0 = await p.evaluate(() => document.querySelector('#acct .start').getBoundingClientRect().top + document.getElementById('acct').scrollTop);
+    await p.click(w < 600 ? '#acct .start .alt [data-m="login"]' : '#acct .ac-top [data-m="login"]'); await p.waitForTimeout(250);
+    const top1 = await p.evaluate(() => document.querySelector('#acct .start').getBoundingClientRect().top + document.getElementById('acct').scrollTop);
+    const hidden = await p.evaluate(() => { const t = document.querySelector('#acct .ac-top').getBoundingClientRect(), l = document.querySelector('#acct .ac-top .lpick').getBoundingClientRect(); return getComputedStyle(document.querySelector('#acct .ac-login')).display === 'none' && Math.abs(t.right - l.right) < 2 && t.height < 60; });
+    ok(`log in, ${tag}: the same frame, the navy card where it was, no Log in in the header, the language at its right edge, one row`, !!(await p.$('#acct .start #acEmail')) && !!(await p.$('#acct .start #acGoogle')) && Math.abs(top0 - top1) < 1 && hidden, `card top ${top0} then ${top1}`);
+    c = await startClear(p, '#acct .start');
+    ok(`log in, ${tag}: in the navy card nothing overlaps, every placeholder fits`, !c.length, c.join('; '));
+    l = await makerLook(p, w < 600);
+    ok(`log in, ${tag}: the maker's look (Google's button outlined in ink, no black outline, no Jost)`, !l.length && (await p.evaluate(() => getComputedStyle(document.getElementById('acGoogle')).borderTopColor)) === 'rgb(22, 32, 46)', l.join('; '));
+    await p.screenshot({ path: join(SHOTS, `first-login-${lang}-${w}.png`) });
+    ok(`first page and log in, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // The start page signed in shares the navy card: the same rules on a phone and wide, in English and French.
+  for (const lang of ['en', 'fr']) for (const [w, h] of [[360, 780], [1280, 860]]) {
+    const { ctx, p } = await open(browser, N, w, h, { 'porta-lang-v1': lang });
+    await p.goto('http://editor.test/'); await p.waitForSelector('#st_url', { timeout: 15000 }).catch(() => {}); await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(300);
+    const c = await startClear(p, '#main > .start');
+    ok(`start page signed in, ${lang}, ${w} px: nothing overlaps in the navy card (the moon clear of the title, the door beside or under the form), every placeholder fits`, !c.length, c.join('; '));
+    await ctx.close();
+  }
   { const { ctx, p, errors, seen } = await signedOut(360, 780, true);
     ok('signed out: the first page has no Google button (no account asked yet)', !(await p.$('#acGoogle')));
-    await p.click('#acct [data-m="login"]'); await p.waitForTimeout(200);
+    await p.click('#acct [data-m="login"]:visible'); await p.waitForTimeout(200);
     ok('signed out: with Google on, Log in offers "Continue with Google"', !!(await p.$('#acGoogle')));
     await p.screenshot({ path: join(SHOTS, 'signed-out-google-360.png') });
     await p.click('#acGoogle'); await p.waitForTimeout(800);
@@ -210,8 +295,24 @@ try {
     await go(p, '#send');
     ok('no account yet: Review and send offers "Save my guide", not Send', !!(await p.$('[data-acctnow="signup"]')) && !(await p.$('#send')));
     await p.click('[data-acctnow="signup"]'); await p.waitForSelector('#acct.only #acEmail', { timeout: 3000 }).catch(() => {});
-    ok('Save my guide: the account card alone, over the builder, with Google', /Save your guide/.test(await p.textContent('#acct.only .ac-card h2').catch(() => '')) && !!(await p.$('#acct.only #acGoogle')) && !(await p.$('#acct.only .ac-hero')));
+    ok('Save my guide: the account card alone, over the builder, with Google', /Save your guide/.test(await p.textContent('#acct.only .ac-card h2').catch(() => '')) && !!(await p.$('#acct.only #acGoogle')) && !(await p.$('#acct.only .start, #acct.only .ac-top')));
     await p.screenshot({ path: join(SHOTS, 'save-sheet-360.png') });
+    // the sheet in the app's look (12 Nov 2026): white, no outline, the serif title, the app's fields and navy button; it fits a
+    // phone, and a phone too short for it scrolls inside the sheet to the button
+    const sheetLook = () => p.evaluate(() => { const sh = document.querySelector('#acct .ac-sheet'), r = sh.getBoundingClientRect(), go = sh.querySelector('.go'), g = go.getBoundingClientRect();
+      const pw = getComputedStyle(document.getElementById('acPw')), h2 = getComputedStyle(sh.querySelector('h2')), ss = getComputedStyle(sh), gb = getComputedStyle(document.getElementById('acGoogle')), x = sh.querySelector('.ac-x').getBoundingClientRect();
+      return { fits: r.top >= 0 && r.bottom <= innerHeight + 0.5 && r.left >= 0 && r.right <= innerWidth, goIn: g.top >= r.top && g.bottom <= r.bottom, scrolls: ss.overflowY === 'auto' && sh.scrollHeight > sh.clientHeight + 1,
+        sheet: ss.backgroundColor === 'rgb(255, 255, 255)' && parseFloat(ss.borderTopWidth) === 0 && ss.borderTopLeftRadius === '20px' && ss.boxShadow !== 'none',
+        title: /Gloock/.test(h2.fontFamily) && h2.fontWeight === '400', field: /Onest/.test(pw.fontFamily) && pw.borderTopLeftRadius === '12px' && [1, 1.5].includes(parseFloat(pw.borderTopWidth)) && pw.backgroundColor === 'rgb(246, 244, 240)' && pw.borderTopColor === 'rgb(222, 218, 210)',
+        button: getComputedStyle(go).backgroundColor === 'rgb(20, 35, 58)' && /Onest/.test(getComputedStyle(go).fontFamily), google: gb.borderTopColor === 'rgb(22, 32, 46)' && gb.backgroundColor === 'rgb(255, 255, 255)', close: x.width >= 44 && x.height >= 44 }; });
+    const sl = await sheetLook(), slBad = Object.entries(sl).filter(([k, v]) => !v && k !== 'scrolls').map(([k]) => k), slLook = await makerLook(p, true);
+    ok('Save my guide, 360 x 780: the sheet fits with its button, white with no outline, the serif title, the app\'s fields, navy button and outlined Google button', !slBad.length && !slLook.length, [...slBad, ...slLook].join('; '));
+    await p.setViewportSize({ width: 360, height: 520 }); await p.waitForTimeout(200);
+    const tall = await sheetLook();
+    await p.evaluate(() => document.querySelector('#acct .ac-sheet .go').scrollIntoView({ block: 'nearest' })); await p.waitForTimeout(100);
+    const reach = await p.evaluate(() => { const b = document.querySelector('#acct .ac-sheet .go'), q = b.getBoundingClientRect(), at = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); return !!at && b.contains(at); });
+    ok('Save my guide, a phone too short for it (360 x 520): the sheet stays on screen and scrolls inside to its button', tall.fits && tall.scrolls && reach, JSON.stringify({ fits: tall.fits, scrolls: tall.scrolls, reach }));
+    await p.setViewportSize({ width: 360, height: 780 }); await p.waitForTimeout(200);
     await p.keyboard.press('Escape'); await p.waitForTimeout(200);
     ok('Save my guide: Escape closes it, nothing lost', !(await p.$('#acct')) && (await p.evaluate(() => location.hash)) === '#send');
     await p.click('[data-acctnow="signup"]'); await signUp(p);

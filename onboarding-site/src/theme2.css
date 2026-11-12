@@ -19,20 +19,24 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .door{background:var(--night)}
 .door::after{background:var(--lamp)}
 
-/* Start: a night scene with a lit doorway */
-.start{position:relative;overflow:hidden;isolation:isolate;border-radius:28px;background:linear-gradient(180deg,var(--night) 0%,var(--night2) 100%);color:#F4F1EA;padding:28px 22px 24px;display:grid;gap:22px}
+/* Start: a night scene with a lit doorway. The start page signed in (start.js startHTML) and the first page, log in and
+   sign up signed out (account.js gate) share it. On a phone and a narrow window the door stands in its own strip under
+   the form, bottom right, and the moon in the eyebrow's row (its room kept by the eyebrow's padding and height), so
+   neither sits on the words or behind the form; from 900 px the door stands beside the form, the moon in the top corner. */
+.start{--door-h:96px;position:relative;overflow:hidden;isolation:isolate;border-radius:28px;background:linear-gradient(180deg,var(--night) 0%,var(--night2) 100%);color:#F4F1EA;padding:24px 18px calc(var(--door-h) + 18px);display:grid;gap:22px}
 .st-art{position:absolute;inset:0;z-index:-1;pointer-events:none}
-.st-moon{position:absolute;right:28px;top:26px;width:46px;height:46px;border-radius:50%;box-shadow:-10px 6px 0 0 #F4E6C8;transform:rotate(-20deg)}
-.st-door{position:absolute;right:-30px;bottom:-10px;width:170px;height:250px;border-radius:85px 85px 0 0;background:radial-gradient(ellipse at 50% 70%,var(--lamp2),var(--lamp) 55%,#E28F3A);box-shadow:0 0 90px 30px rgba(243,181,91,.28)}
-.st-door i{position:absolute;left:-26px;bottom:0;width:30px;height:230px;border-radius:12px 0 0 0;background:#0C1626;transform:skewY(-14deg);transform-origin:right bottom}
+.st-moon{position:absolute;right:20px;top:18px;width:30px;height:30px;border-radius:50%;box-shadow:-7px 4px 0 0 #F4E6C8;transform:rotate(-20deg)}
+.st-door{position:absolute;right:30px;bottom:0;width:66px;height:var(--door-h);border-radius:33px 33px 0 0;background:radial-gradient(ellipse at 50% 70%,var(--lamp2),var(--lamp) 55%,#E28F3A);box-shadow:0 0 30px 4px rgba(243,181,91,.3)}
+.st-door i{position:absolute;left:-15px;bottom:0;width:17px;height:calc(100% - 8px);border-radius:8px 0 0 0;background:#0C1626;transform:skewY(-14deg);transform-origin:right bottom}
+.st-tx small{min-height:36px;padding-right:48px;display:flex;align-items:center}
 .st-tx{max-width:30rem;display:grid;gap:10px}
-.st-tx small{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--lamp2)}
+.st-tx small{font-size:12px;line-height:1.5;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--lamp2)}
 .st-tx h1{font-size:clamp(36px,8.5vw,56px);line-height:1;max-width:12ch}
 .st-tx p{margin:0;font-size:17px;line-height:1.5;opacity:.88}
-.st-form{background:rgba(255,255,255,.96);color:#16202E;border-radius:20px;padding:18px;display:grid;gap:8px;max-width:34rem;box-shadow:0 20px 40px rgba(0,0,0,.25)}
+.st-form{background:rgba(255,255,255,.96);color:#16202E;border-radius:20px;padding:18px 14px;display:grid;gap:8px;box-shadow:0 20px 40px rgba(0,0,0,.25)}
 .st-form label{font-weight:700;font-size:15px;margin-top:6px}
 .st-form .opt{font-weight:500;color:#7a808a}
-.st-form input,.st-form textarea{width:100%;font:inherit;font-size:16px;padding:13px 14px;border-radius:12px;border:1.5px solid #D9DCE2;background:#F7F8FA;color:#16202E}
+.st-form input,.st-form textarea{width:100%;font:inherit;font-size:16px;padding:13px 12px;border-radius:12px;border:1.5px solid #D9DCE2;background:#F7F8FA;color:#16202E}
 .st-form input:focus,.st-form textarea:focus{outline:none;border-color:#16202E;background:#fff}
 .st-hint{margin:0;font-size:13.5px;color:#5c636e}
 .st-hint.bad{color:#A8402A;font-weight:600}
@@ -44,7 +48,13 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(42,26,4,.25);border-top-color:#2A1A04;animation:sp .8s linear infinite;display:inline-block;vertical-align:-3px}
 .spin.dark{border-color:rgba(22,32,46,.15);border-top-color:var(--ink)}
 @keyframes sp{to{transform:rotate(360deg)}}
-@media (min-width:760px){.start{padding:44px 40px 36px;grid-template-columns:minmax(0,1fr)}.st-door{right:40px;width:200px;height:300px}}
+@media (min-width:600px){.start{padding-inline:32px}.st-form{padding:20px 20px}}
+@media (min-width:760px){.start{padding-top:40px}}
+@media (min-width:900px){.start{padding:44px 40px 36px}.st-form{max-width:34rem}   /* the form beside the door; narrower, it takes the card's width and the door stands under it */
+  .st-door{right:40px;bottom:-10px;width:200px;height:300px;border-radius:100px 100px 0 0;box-shadow:0 0 90px 30px rgba(243,181,91,.28)}
+  .st-door i{left:-26px;width:30px;height:230px;border-radius:12px 0 0 0}
+  .st-moon{right:28px;top:26px;width:46px;height:46px;box-shadow:-10px 6px 0 0 #F4E6C8}
+  .st-tx small{min-height:0;padding-right:0}}
 
 /* Home hero and first-version banner */
 .hero{background:var(--night);color:#F4F1EA;border-radius:24px}

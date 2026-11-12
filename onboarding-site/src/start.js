@@ -43,6 +43,22 @@ const DRAFT_MAP = { placeName: 'place', propertyType: 'place', town: 'place', re
   guideName: 'guide', tagline: 'guide', welcome: 'place', guests: 'area', checkIn: 'stay', checkOut: 'stay', houseRules: 'stay', checkoutTasks: 'stay',
   howTos: 'howto', arrival: 'arrival', interests: 'area', navStyle: 'look', feelWords: 'look' };
 
+// A placeholder cut mid-word reads as broken ("https://www.airbnb.com/roor"): a field whose placeholder, in the maker's
+// language, is wider than the field shows its shorter one (data-ph-short, a sentence the table already has, or an address).
+// Checked whenever the page changes, the window is resized, the language switched or the fonts come in.
+function fitPlaceholders(){
+  const cv = fitPlaceholders.cv || (fitPlaceholders.cv = document.createElement('canvas').getContext('2d'));
+  for (const i of document.querySelectorAll('input[data-ph-short]')) {
+    const long = i.dataset.phLong || (i.dataset.phLong = i.getAttribute('placeholder')), s = getComputedStyle(i);
+    const room = i.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight); if (room <= 0) continue;
+    cv.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+    const want = cv.measureText(tr(long)).width <= room ? long : i.dataset.phShort, now = i.getAttribute('placeholder');
+    if (now !== want && now !== tr(want)) i.setAttribute('placeholder', want);   // the language table translates it as it lands
+  }
+}
+{ let q = 0; const later = () => { if (!q) q = requestAnimationFrame(() => { q = 0; fitPlaceholders(); }); };
+  new MutationObserver(later).observe(document.documentElement, { childList: true, subtree: true });
+  addEventListener('resize', later); addEventListener('porta-lang', later); document.fonts.ready.then(later); }
 function startHTML(){
   const lp = linkProblem(v('listingUrl'));
   return `<section class="start">
@@ -54,10 +70,10 @@ function startHTML(){
     </div>
     <form class="st-form" id="startForm" novalidate>
       <label for="st_url">Your listing link</label>
-      <input id="st_url" data-k="listingUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://www.airbnb.com/rooms/…" value="${esc(v('listingUrl'))}">
+      <input id="st_url" data-k="listingUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://www.airbnb.com/rooms/…" data-ph-short="airbnb.com/rooms/…" value="${esc(v('listingUrl'))}">
       <p class="st-hint${lp ? ' bad' : ''}" id="st_urlMsg">${esc(lp || 'Airbnb, Booking.com or Vrbo.')}</p>
       <label for="st_town">Town <span class="opt">if we cannot find it in your listing</span></label>
-      <input id="st_town" data-k="town" type="text" autocomplete="off" placeholder="The town or village of your place" value="${esc(v('town'))}">
+      <input id="st_town" data-k="town" type="text" autocomplete="off" placeholder="The town or village of your place" data-ph-short="Where the place is" value="${esc(v('town'))}">
       ${START.need === 'text' || v('listingText') ? `<label for="st_text">Your listing text</label>
         <p class="st-hint">On your listing page, select everything from the title down to the house rules, copy, and paste here.</p>
         <textarea id="st_text" data-k="listingText" rows="7" placeholder="Entire home in …">${esc(v('listingText'))}</textarea>` : ''}

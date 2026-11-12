@@ -31,45 +31,76 @@ function niceError(e){
 /* The first page for a visitor who is not signed in, and the account card (gate, below). */
 (function(){
   const st = document.createElement('style');
-  st.textContent = `/* The sign-in screen, in the guides' own look (Ca La Kimberly's "Bauhaus summer": paper, bold primaries, Jost) */
-#acct{position:fixed;inset:0;z-index:200;overflow:auto;background:#F3EEE3;color:#121212;font-family:"Jost",system-ui,-apple-system,"Segoe UI",sans-serif;
+  st.textContent = `/* The first page (signed out), the log-in page and the account sheet, in the maker's own look (12 Nov 2026): the paper,
+   the header, the start page's navy card (theme2.css .start: the same classes, not a copy), the app's fields and buttons.
+   Only the example guide below (.ex-cols) keeps the guides' look (Jost, primaries, outlines): it shows what guests get. */
+#acct{position:fixed;inset:0;z-index:200;overflow:auto;overscroll-behavior:contain;background:var(--paper);color:var(--ink);font-family:var(--body);
   --k-ink:#121212;--k-blue:#1D4FA0;--k-red:#D52B1E;--k-yellow:#F5C400;--k-orange:#EC6A1C;--k-green:#0E7C46;--k-line:#DED6C6;--k-muted:#4A4A4A}
 #acct *{box-sizing:border-box}
-#acct.only{background:rgba(18,18,18,.55);display:grid;place-items:center;padding:16px}
-#acct .ac-sheet{position:relative;width:100%;max-width:440px;margin:auto}
-#acct .ac-sheet .ac-card{box-shadow:0 24px 60px rgba(0,0,0,.3)}
-#acct .ac-sheet .ac-card h2{padding-right:44px}
-#acct .ac-x{position:absolute;top:12px;right:12px;z-index:1;width:40px;height:40px;border-radius:50%;border:0;background:#F3EEE3;color:var(--k-ink);font-size:24px;line-height:1;cursor:pointer}
-#acct .ac2{max-width:1120px;margin:0 auto;padding:18px 16px 48px;display:grid;gap:18px;grid-template-areas:"top" "hero" "card" "tiles"}
-#acct .ac-top{grid-area:top;display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px}
-#acct .ac-top .lpick{display:inline-flex;margin:0 0 0 auto;font-size:13px;font-weight:700;line-height:1;font-family:inherit}   /* a label: not the form's labels */
-#acct .ac-door{width:22px;height:28px;border-radius:11px 11px 3px 3px;background:var(--k-ink);position:relative;flex:none}
-#acct .ac-door::after{content:"";position:absolute;left:6px;top:14px;width:5px;height:5px;border-radius:50%;background:var(--k-yellow)}
-#acct .ac-hero{grid-area:hero;background:#fff;border:2px solid var(--k-ink);border-radius:20px;overflow:hidden;display:flex;flex-direction:column}
-#acct .ac-art{position:relative;height:150px;background:var(--k-blue);overflow:hidden}
-#acct .ac-art i{position:absolute;display:block}
-#acct .ac-art .s1{width:92px;height:92px;border-radius:50%;background:var(--k-yellow);right:44px;top:22px}
-#acct .ac-art .s2{width:120px;height:120px;border-radius:0 120px 0 0;background:var(--k-red);left:0;bottom:0}
-#acct .ac-art .s3{width:0;height:0;border-left:46px solid transparent;border-right:46px solid transparent;border-bottom:78px solid var(--k-ink);left:128px;bottom:0}
-#acct .ac-art .s4{width:150px;height:44px;background:#F3EEE3;right:0;bottom:0}
-#acct .ac-art .s5{width:44px;height:44px;border-radius:50% 50% 0 0;background:var(--k-green);right:66px;bottom:44px}
-#acct .ac-name{padding:18px 20px 16px;display:flex;flex-direction:column;gap:8px}
-#acct .ac-name small{font-size:12.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--k-muted)}
-#acct .ac-name h1{margin:0;font-size:clamp(30px,7.5vw,48px);line-height:1.04;font-weight:700;letter-spacing:-.01em}
-#acct .ac-name p{margin:0;font-size:17px;line-height:1.45;color:#2a2a2a}
+#acct:not(.only)::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;background-image:var(--noise)}   /* the page's grain, as behind the app */
+#acct :focus-visible:not(input){outline:3px solid var(--ink);outline-offset:2px}   /* the app's yellow ring is too faint on paper and white */
+/* The page: the app's single-card screens, same width, margins and gaps (src.html body and .wrap) */
+#acct .ac2{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:14px 16px 48px;display:flex;flex-direction:column;gap:18px}
+/* The header, as the app's (header.top): the logo, the language, Log in. On a phone there is no Log in up here: it would
+   take a row of its own, and the panel has "Already have an account? Log in" in the first screen. On the Log in page it
+   is gone and the language takes the right edge. The row's height is fixed, so switching modes moves nothing under it. */
+#acct .ac-top{display:grid;grid-template-columns:minmax(0,auto) minmax(8px,1fr) auto;column-gap:12px;row-gap:10px;align-items:center;min-height:48px}
+#acct .ac-top>.brand{grid-area:1/1}#acct .ac-top>.lpick{grid-area:1/3}
+#acct .ac-top>.ac-login{display:none}
+@media (min-width:600px){#acct .ac-top{grid-template-columns:minmax(0,auto) minmax(8px,1fr) auto auto}#acct .ac-top>.ac-login{display:block;grid-area:1/4}#acct .ac-top>.ac-login.off{display:none}#acct .ac-top:has(>.ac-login.off)>.lpick{grid-area:1/3/2/5;justify-self:end}}
+/* The form panel: white on the navy card (.st-form, always white) or the sheet (the app's surface): one set of rules, its colours from these */
+#acct .ac-card{--ac-ink:#16202E;--ac-muted:#5c636e;--ac-line:#D9DCE2;--ac-bad:#A8402A;--ac-ok:#1E7A4A}
+#acct .ac-card.st-form{display:block;padding-bottom:12px}
+#acct .st-form :focus-visible:not(input){outline-color:#16202E}
+#acct .ac-card h2{margin:0}
+#acct .gbtn{width:100%;gap:10px;min-height:52px;font-size:16px}
+#acct .gbtn svg{width:20px;height:20px;flex:none}   /* Google's own mark, untouched */
+#acct .or{display:flex;align-items:center;gap:12px;margin:14px 0 0;font-size:13.5px;color:var(--ac-muted)}
+#acct .or::before,#acct .or::after{content:"";flex:1;border-top:1px solid var(--ac-line)}
+#acct .ac-card label{display:block;font-weight:700;font-size:15px;margin:14px 0 6px}   /* the form's labels, not the language picker */
+#acct .ac-card>form>label:first-child{margin-top:0}
+#acct .go{width:100%;min-height:52px;margin-top:16px;font-size:17px}
+#acct .go[disabled]{opacity:.6;cursor:wait}
+#acct .acmsg{margin-top:10px;font-size:14px;line-height:1.4;color:var(--ac-bad)}
+#acct .acmsg:empty{margin:0}   /* still there for the screen reader, no room kept */
+#acct .acmsg.ok{color:var(--ac-ok)}
+#acct .ac-note{margin:12px 0 0;font-size:14px;line-height:1.45;color:var(--ac-muted);text-align:center;text-wrap:balance}
+#acct .alt{margin-top:4px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;column-gap:5px;font-size:14px;line-height:1.35;color:var(--ac-muted);text-align:center}
+#acct .ac-note+.alt{margin-top:6px}
+#acct .alt+.alt{margin-top:0}
+#acct .alt button{min-height:44px;padding:0 2px;border:0;background:none;font:inherit;font-weight:600;color:var(--ac-ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+#acct .small{margin:8px 0 0;font-size:12.5px;line-height:1.5;color:var(--ac-muted)}
+#acct .small a{color:var(--ac-ink);font-weight:600}
+/* The sheet: the card alone over the dimmed builder, like the app's other boxes (account.js .acdel): at the bottom on a
+   phone, in the middle on a wide screen; a long card scrolls inside it */
+#acct.only{background:rgba(10,10,10,.5);display:flex;align-items:flex-end;justify-content:center;padding:16px}
+@media (min-width:621px){#acct.only{align-items:center}}
+#acct .ac-sheet{position:relative;width:100%;max-width:440px;max-height:100%;overflow:auto;overscroll-behavior:contain;background:var(--surface);color:var(--ink);border-radius:var(--r);box-shadow:0 18px 48px rgba(0,0,0,.25)}
+#acct .ac-sheet .ac-card{--ac-ink:var(--ink);--ac-muted:var(--muted);--ac-line:var(--line);--ac-bad:var(--danger);--ac-ok:var(--ok);padding:22px 20px 16px}
+#acct .ac-sheet .ac-card h2{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.05;margin:0 0 8px;padding:6px 52px 0 0}   /* the step headers' serif (.mhead h1) */
+#acct .ac-sheet p.lead{margin:0 0 18px;color:var(--muted);font-size:16px;line-height:1.45}
+#acct .ac-x{position:absolute;top:14px;right:14px;z-index:1;width:44px;height:44px;background:var(--sunk)}   /* .sheet-x, the app's close button, on white */
+/* What your guests get: Ca La Kimberly's home for an example house, same pieces, shapes and sizes (acToday, acExample).
+   Its heading and line are the maker's; the example itself (.ex-cols) is the guide's, in two columns from 900 px. */
+#acct .ac-ex{display:flex;flex-direction:column;gap:14px;min-width:0;margin-top:10px}
+#acct .ex-head h2{margin:0 0 4px;font-size:30px;line-height:1.08}
+#acct .ex-head p{margin:0;font-size:15px;line-height:1.45;color:var(--muted)}
+#acct .ex-head p b{color:var(--ink);font-weight:600;white-space:nowrap}
+#acct .ex-cols{display:flex;flex-direction:column;gap:14px;min-width:0;font-family:"Jost",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--k-ink)}
+#acct .ex-col{display:flex;flex-direction:column;gap:14px;min-width:0}
+#acct .ex-cols h3{font-family:inherit;font-weight:700;letter-spacing:0}   /* the guides' own font for every title, as in Ca La Kimberly */
+@media (min-width:900px){
+  #acct .ex-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start}
+  #acct .ex-col>.ex-sg:first-child{margin-top:0}
+  #acct .ex-col+.ex-col{position:sticky;top:16px}   /* What's on, shorter than the house's column, stays in view beside it while it scrolls */
+}
+#acct [data-ex]{cursor:pointer}
+#acct .ex-welcome{background:#fff;border:2px solid var(--k-ink);border-radius:20px;overflow:hidden}
 #acct .ac-facts{display:grid;grid-template-columns:1fr 1fr;border-top:1.5px solid var(--k-line)}
 #acct .ac-facts div{padding:12px 20px;display:flex;flex-direction:column;gap:2px;min-width:0}
 #acct .ac-facts div+div{border-left:1.5px solid var(--k-line)}
 #acct .ac-facts small{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--k-muted)}
 #acct .ac-facts b{font-weight:600;font-size:16px;color:var(--k-blue)}
-/* What your guests get: Ca La Kimberly's home for an example house, same pieces, shapes and sizes (acToday, acExample) */
-#acct .ac-ex{grid-area:tiles;display:flex;flex-direction:column;gap:14px;min-width:0}
-#acct .ac-ex h2,#acct .ac-ex h3{font-family:inherit;letter-spacing:0}   /* the guides' own font for every title, as in Ca La Kimberly */
-#acct .ex-head h2{margin:6px 0 2px;font-size:26px;line-height:1.1;font-weight:700}
-#acct .ex-head p{margin:0;font-size:15px;line-height:1.4;color:var(--k-muted)}
-#acct .ex-head p b{color:var(--k-ink);font-weight:600;white-space:nowrap}
-#acct [data-ex]{cursor:pointer}
-#acct .ex-welcome{background:#fff;border:2px solid var(--k-ink);border-radius:20px;overflow:hidden}
 #acct .ex-scene svg{display:block;width:100%;height:150px}
 #acct .ex-wrow{display:flex;align-items:center;gap:12px;padding:14px 16px}
 #acct .ex-logo{width:46px;height:46px;border-radius:12px;flex:none;background:var(--k-blue);position:relative;overflow:hidden}
@@ -144,27 +175,8 @@ function niceError(e){
 #acct .ex-date{width:44px;height:44px;border-radius:10px;background:var(--k-ink);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 #acct .ex-date b{font-size:18px;color:#fff;font-weight:700}#acct .ex-date small{font-size:10px;letter-spacing:.08em;margin-top:3px;text-transform:uppercase}
 #acct .ex-links{display:flex;gap:18px;padding:14px 0 16px;border-top:1.5px solid var(--k-line);color:var(--k-blue);font-size:15px;font-weight:600}
-#acct .ac-cta{align-self:stretch;margin-top:6px;font:inherit;font-weight:700;font-size:16px;padding:14px 18px;border-radius:999px;border:0;background:var(--k-ink);color:#fff;cursor:pointer}
-#acct .ac-card{grid-area:card;background:#fff;border:2px solid var(--k-ink);border-radius:20px;padding:22px 20px}
-#acct .ac-card h2{margin:0 0 6px;font-size:28px;line-height:1.08;font-weight:700}
-#acct p.lead{margin:0 0 16px;color:var(--k-muted);font-size:16px;line-height:1.45}
-#acct .gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;font:inherit;font-weight:600;font-size:16px;padding:12px 14px;border-radius:999px;border:2px solid var(--k-ink);background:#fff;color:var(--k-ink);cursor:pointer;text-decoration:none}
-#acct .gbtn svg{width:20px;height:20px;flex:none}
-#acct .or{display:flex;align-items:center;gap:12px;margin:16px 0 2px;font-size:13px;color:var(--k-muted)}
-#acct .or::before,#acct .or::after{content:"";flex:1;border-top:1.5px solid var(--k-line)}
-#acct label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
-#acct input{width:100%;font:inherit;font-size:16px;padding:13px 14px;border-radius:12px;border:1.5px solid var(--k-line);background:#F3EEE3;color:var(--k-ink)}
-#acct input:focus{outline:2px solid var(--k-blue);outline-offset:1px}
-#acct .go{margin-top:18px;width:100%;font:inherit;font-weight:700;font-size:16px;padding:14px;border-radius:999px;border:0;background:var(--k-ink);color:#fff;cursor:pointer}
-#acct .go[disabled]{opacity:.6;cursor:wait}
-#acct .alt{margin-top:16px;text-align:center;font-size:14px;color:var(--k-muted)}
-#acct .alt button{font:inherit;background:none;border:0;color:var(--k-blue);font-weight:600;text-decoration:underline;cursor:pointer;padding:0}
-#acct .acmsg{margin-top:14px;font-size:14px;min-height:20px;color:var(--k-red)}
-#acct .acmsg.ok{color:var(--k-green)}
-#acct .small{margin-top:18px;font-size:12.5px;color:#6E6A63;line-height:1.5}
-#acct .small a{color:var(--k-blue);font-weight:600}
-@media (min-width:900px){#acct .ac2{grid-template-columns:minmax(0,1fr) 420px;grid-template-areas:"top top" "hero card" "tiles card";align-items:start;column-gap:28px;padding-top:28px}
-  #acct .ac-card{position:sticky;top:24px}#acct .ac-art{height:210px}#acct .ac-art .s1{width:130px;height:130px}}
+#acct .ac-cta{align-self:stretch;min-height:52px;margin-top:8px;font-size:16px}   /* .btn.primary, the app's main button */
+@media (min-width:900px){#acct .ac-cta{align-self:center;padding-inline:32px}}
 /* Account row: inside the page header (acctBar), in the page flow, so it never sits on the step bar. On a phone it is the
    header's second line (the houses menu left, Log out right); from 900 px it joins the header's one row: the logo, the
    houses menu beside it, then at the right the save state, the language and Log out (or Log in). */
@@ -181,7 +193,7 @@ header.top>#acctbar{grid-area:2/1/3/4}
   header.top>#acctbar>button{grid-area:1/5}
 }
 #acctbar:empty{display:none}
-#acctbar button{font:600 13px/1 inherit;font-family:inherit;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}
+#acctbar button,#acct .ac-login{font:600 13px/1 inherit;font-family:inherit;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}
 /* Houses: one account, several houses; the one being edited, and a menu to pick another or add one */
 #acctbar .houses{position:relative;margin-right:auto;min-width:0}
 #acctbar .houses>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;font:600 13px/1.2 inherit;font-family:inherit;padding:8px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);max-width:calc(100vw - 150px)}
@@ -277,6 +289,7 @@ function acExample(){
   const card = (cls, sq, title, lines, extra = '') => `<div class="ex-card${cls}" data-ex>${sq}<span class="ex-tx"><b>${title}</b>${lines.map(x => `<span>${x}</span>`).join('')}${extra}</span></div>`;
   return `<section class="ac-ex" aria-label="What your guests get">
           <div class="ex-head"><h2>What your guests get</h2><p>An example guide, as it looks today, <b>${esc(L.date)}</b></p></div>
+          <div class="ex-cols"><div class="ex-col">
           <div class="ex-welcome" data-ex><div class="ex-scene">${AC_SCENE}</div>
             <div class="ex-wrow"><span class="ex-logo" aria-hidden="true"></span><span class="ex-wt"><small>Welcome to</small><b>Casa Sol</b><span>See the house</span></span><span class="ex-go" aria-hidden="true">${EXI.arrow}</span></div>
             <div class="ac-facts"><div><small>Wi-Fi</small><b>Tap to connect</b></div><div><small>Check-out</small><b>Before 11:00</b></div></div></div>
@@ -298,6 +311,7 @@ function acExample(){
             <div class="ex-tile ex-g" data-ex><span class="ex-ic">${EXI.star}</span><b>What to do</b>${ar}</div>
           </div>
           <div class="ex-card ex-map" data-ex><span class="ex-ic">${EXI.map}</span><span class="ex-tx"><b>Map of all spots</b><span>64 places</span></span><span class="ex-go" aria-hidden="true">${EXI.arrow}</span></div>
+          </div><div class="ex-col">
           <p class="ex-sg">What's on</p>
           <div class="ex-on" data-ex>
             <div class="ex-onh"><b>Today</b><span>${esc(L.date)}</span>${EXI.up}</div>
@@ -307,7 +321,8 @@ function acExample(){
             <div class="ex-sec"><h3>Coming up</h3>${L.events.map(e => `<div class="ex-it"><span class="ex-date"><b>${e.d}</b><small>${esc(e.mon)}</small></span><span class="ex-tx"><b>${esc(e.name)}</b><span>${esc(e.where)}</span></span><span class="ex-when">${esc(e.in)}</span></div>`).join('')}</div>
             <div class="ex-links"><span>All markets</span><span>All events</span></div>
           </div>
-          <button class="ac-cta" type="button">Make this guide for your house →</button>
+          </div></div>
+          <button class="btn primary ac-cta" type="button">Make this guide for your house →</button>
         </section>`;
 }
 // The account card. On the first page (signed out, nothing on this device yet) it asks for the listing link, not an
@@ -327,30 +342,38 @@ async function gate(mode0, notice, noticeOk, sheet){
     const draw = (msg, ok) => {
       const up = mode === 'signup', rec = mode === 'recover', reset = mode === 'reset', start = mode === 'start';
       const google = window.__googleOn && (up || mode === 'login');
-      const card = `<section class="ac-card">
-          <h2>${start ? 'Start with your listing' : reset ? 'Choose a new password' : rec ? 'Reset your password' : up ? (sheet ? 'Save your guide' : 'Create your account') : 'Welcome back'}</h2>
-          <p class="lead">${start ? 'See your whole guide in about a minute. No account needed: you save it at the end.' : reset ? 'Pick a new password, then you are back in.' : rec ? 'We email you a link to choose a new password.' : up ? (sheet ? 'Create your account: your guide is kept in it, and you can come back to it from any device.' : 'So you can come back any time and change your answers. It takes a minute.') : 'Log in to continue where you left off.'}</p>
-          ${google ? `<button class="gbtn" type="button" id="acGoogle">${GOOGLE_G}Continue with Google</button><div class="or">or with your email</div>` : ''}
-          <form id="acForm" novalidate>
-          ${start ? `<label for="acUrl">Your listing link</label><input id="acUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://www.airbnb.com/rooms/…" value="${esc(v('listingUrl'))}">` : ''}
+      // The mode's own title and sentence: in the sheet on its card; on the page in the navy card, above the white panel,
+      // except the first page, whose title is the promise (its own heading stays for the screen reader, the form's name).
+      const head = start ? 'Start with your listing' : reset ? 'Choose a new password' : rec ? 'Reset your password' : up ? (sheet ? 'Save your guide' : 'Create your account') : 'Welcome back';
+      const lead = start ? 'See your whole guide in about a minute. No account needed: you save it at the end.' : reset ? 'Pick a new password, then you are back in.' : rec ? 'We email you a link to choose a new password.' : up ? (sheet ? 'Create your account: your guide is kept in it, and you can come back to it from any device.' : 'So you can come back any time and change your answers. It takes a minute.') : 'Log in to continue where you left off.';
+      const named = sheet || start ? 'acHead' : 'acTitle';
+      const card = `<section class="ac-card${sheet ? '' : ' st-form'}">
+          ${sheet ? `<h2 id="acHead">${head}</h2><p class="lead">${lead}</p>` : start ? `<h2 class="sr" id="acHead">${head}</h2>` : ''}
+          ${google ? `<button class="btn gbtn" type="button" id="acGoogle">${GOOGLE_G}Continue with Google</button><div class="or">or with your email</div>` : ''}
+          <form id="acForm" novalidate aria-labelledby="${named}">
+          ${start ? `<label for="acUrl">Your listing link</label><input id="acUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://www.airbnb.com/rooms/…" data-ph-short="airbnb.com/rooms/…" value="${esc(v('listingUrl'))}">` : ''}
           ${start || reset ? '' : '<label for="acEmail">Email</label><input id="acEmail" type="email" autocomplete="email" inputmode="email" required>'}
           ${start || rec ? '' : `<label for="acPw">${reset ? 'New password' : 'Password'}</label><input id="acPw" type="password" autocomplete="${up || reset ? 'new-password' : 'current-password'}" ${up || reset ? 'minlength="8" placeholder="At least 8 characters"' : ''} required>`}
-          <button class="go" type="submit">${start ? 'Show me my guide' : reset ? 'Save password' : rec ? 'Send me the link' : up ? (sheet ? 'Create my account' : 'Create my account') : 'Log in'}</button>
+          <button class="btn ${sheet ? 'primary' : 'st-go'} go" type="submit">${start ? 'Show me my guide' : reset ? 'Save password' : rec ? 'Send me the link' : up ? 'Create my account' : 'Log in'}${sheet ? '' : ' ' + ARROW}</button>
           <div class="acmsg${ok ? ' ok' : ''}" id="acMsg" role="status">${esc(msg || '')}</div>
         </form>
-          <div class="alt">${start ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : `New here? <button type="button" data-m="${sheet ? 'signup' : 'start'}">${sheet ? 'Create an account' : 'Start with your listing'}</button> · <button type="button" data-m="recover">Forgot password?</button>`}</div>
+          ${start && !sheet ? `<p class="ac-note">${lead}</p>` : ''}
+          <div class="alt">${start ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : `New here? <button type="button" data-m="${sheet ? 'signup' : 'start'}">${sheet ? 'Create an account' : 'Start with your listing'}</button></div><div class="alt"><button type="button" data-m="recover">Forgot password?</button>`}</div>
           ${start ? '<div class="alt"><button type="button" id="acSteps">No listing link? Fill it in step by step</button></div>' : ''}
         ${start ? '<p class="small">Your answers stay on this device until you create your account. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>'
           : up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>' : ''}</section>`;
       el.className = sheet ? 'only' : '';
-      el.innerHTML = sheet ? `<div class="ac-sheet" role="dialog" aria-modal="true" aria-label="Your account"><button type="button" class="ac-x" aria-label="Close">×</button>${card}</div>`
+      // The page: the app's header (Log in beside the language, its room kept while the page is Log in), then the start
+      // page's navy card with this mode's words and the panel, then the example guide.
+      el.innerHTML = sheet ? `<div class="ac-sheet" role="dialog" aria-modal="true" aria-label="Your account"><button type="button" class="sheet-x ac-x" aria-label="Close">×</button>${card}</div>`
         : `<div class="ac2">
-        <div class="ac-top"><span class="ac-door" aria-hidden="true"></span><span translate="no">Guest Guide Maker</span>${langPick()}</div>
-        <section class="ac-hero"><div class="ac-art" aria-hidden="true"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i><i class="s5"></i></div>
-          <div class="ac-name"><small>Guest guides for holiday homes</small><h1>Your guest guide, written for you.</h1>
-            <p>Paste your Airbnb link: in about a minute you see your whole guide, with the house, the rules, the Wi-Fi and the best of the area, in your guests' languages. Then you make it yours.</p></div>
-</section>
-        ${card}
+        <header class="ac-top"><span class="brand"><span class="door" aria-hidden="true"></span><b translate="no">Guest Guide Maker</b></span>${langPick()}<button type="button" class="ac-login${mode === 'login' ? ' off' : ''}" data-m="login">Log in</button></header>
+        <section class="start ac-start" aria-labelledby="acTitle">
+          <div class="st-art" aria-hidden="true"><span class="st-door"><i></i></span><span class="st-moon"></span></div>
+          <div class="st-tx"><small>Guest guides for holiday homes</small><h1 id="acTitle">${start ? 'Your guest guide, written for you.' : head}</h1>
+            <p>${start ? 'Paste your Airbnb link: in about a minute you see your whole guide, with the house, the rules, the Wi-\u2060Fi and the best of the area, in your guests\' languages. Then you make it yours.' : lead}</p></div>
+          ${card}
+        </section>
         ${acExample()}</div>`;
       const gb = el.querySelector('#acGoogle'); if (gb) gb.onclick = () => { gb.disabled = true; flush(); try { sessionStorage.setItem('porta-return', location.hash); if (sheet) sessionStorage.setItem('porta-saved', '1'); } catch (e) {} location.href = `${SB.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + '/')}`; };
       el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; draw(); });

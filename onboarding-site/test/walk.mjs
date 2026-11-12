@@ -34,9 +34,17 @@ export default async function walk(H) {
     const base = `${flow}-${step}`;
     const t1 = join(TMP, `${++tmpN}.png`); await p.screenshot({ path: t1 });
     shots.push({ order, base, w, full: false, tmp: t1, what: what + (opt.keep ? (opt.note || ' (scrolled to it)') : '') });
-    if (!opt.noFull) { const t2 = join(TMP, `${++tmpN}.png`); await p.screenshot({ path: t2, fullPage: true });
+    if (!opt.noFull) { const t2 = join(TMP, `${++tmpN}.png`); await fullShot(p, t2);
       shots.push({ order, base, w, full: true, tmp: t2, what: what + ', whole page' }); }
     if (w === 1280 && !measures.has(base)) measures.set(base, { what, m: await p.evaluate(MEASURE).catch(e => ({ error: e.message })) });
+  };
+  // The whole page. The signed-out page (#acct) is a fixed layer that scrolls in itself: for this picture it is laid in the
+  // page's flow, so the picture holds all of it and not only its first screen.
+  const fullShot = async (p, path) => {
+    const st = await p.$('#acct:not(.only)') ? await p.addStyleTag({ content: '#acct:not(.only){position:absolute!important;bottom:auto!important;overflow:visible!important}' }) : null;
+    if (st) await p.waitForTimeout(150);
+    await p.screenshot({ path, fullPage: true });
+    if (st) await st.evaluate(e => e.remove());
   };
   const elShot = async (p, sel, w, order, flow, step, what) => {
     await settle(p); const t = join(TMP, `${++tmpN}.png`);
@@ -117,7 +125,7 @@ export default async function walk(H) {
       return route.continue(); });
     const p = await ctx.newPage(); watch(p, `signed out ${w}`);
     await p.goto('http://editor.test/'); await p.waitForSelector('#acct .ac-card', { timeout: 15000 }).catch(() => {});
-    await p.click('#acct [data-m="login"]'); await p.waitForTimeout(400);
+    await p.click('#acct [data-m="login"]:visible'); await p.waitForTimeout(400);
     await shot(p, w, [3, 2], 'account', 'log-in', 'The signed-out page with Log in open (email, password, Continue with Google)');
     await ctx.close();
     const o = await open(browser, N, w, h); watch(o.p, `new account ${w}`);
@@ -235,6 +243,33 @@ export default async function walk(H) {
     await o.p.evaluate(() => { const c = document.querySelector('.cm-find'); if (c) window.scrollBy(0, c.getBoundingClientRect().top - 90); }); await o.p.waitForTimeout(200);
     await shot(o.p, w, [5, 71], 'editor', 'find-more-cards', 'Attractions: Find more with 2 suggestions back, the first card (Add or Not for us)', { keep: true });
     await o.ctx.close();
+  }
+  // ---- The signed-out page outside the journey (not in index.txt): the first page in French at both sizes
+  // (fr-first-page-*.png), the first page and Log in on wide windows (wide-first-page-*, wide-log-in-*) ----
+  const signedOutCtx = async (w, h, lang) => {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+    if (lang) await ctx.addInitScript(l => { try { localStorage.setItem('porta-lang-v1', l); } catch (e) {} }, lang);
+    await ctx.route('**/*', route => { const u = new URL(route.request().url());
+      if (u.host === 'editor.test') return route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
+      if (u.origin === SB && u.pathname === '/auth/v1/settings') return json(route, { external: { google: true, email: true } });
+      if (u.origin === SB) return json(route, []);
+      return route.continue(); });
+    const p = await ctx.newPage(); watch(p, `signed out ${lang || 'en'} ${w}`);
+    await p.goto('http://editor.test/'); await p.waitForSelector('#acct .ac-card', { timeout: 15000 }).catch(() => {}); await settle(p);
+    await p.evaluate(() => { const a = document.activeElement; if (a && a.blur) a.blur(); });   // as first seen on a phone: no field picked yet
+    return { ctx, p };
+  };
+  for (const [w, h] of SIZES) {
+    const { ctx, p } = await signedOutCtx(w, h, 'fr');
+    await p.screenshot({ path: join(DIR, `fr-first-page-${w}.png`) }); await fullShot(p, join(DIR, `fr-first-page-${w}-full.png`));
+    await ctx.close();
+  }
+  for (const [w, h] of [[1440, 900], [1920, 1080]]) {
+    const { ctx, p } = await signedOutCtx(w, h);
+    await p.screenshot({ path: join(DIR, `wide-first-page-${w}.png`) });
+    await p.click('#acct .ac-top [data-m="login"]'); await settle(p);
+    await p.screenshot({ path: join(DIR, `wide-log-in-${w}.png`) });
+    await ctx.close();
   }
   // ---- Wide windows: one builder step, one editor step, the ready screen, at 1440 x 900 and 1920 x 1080 (wide-*.png, not in index.txt) ----
   for (const [w, h] of [[1440, 900], [1920, 1080]]) {
