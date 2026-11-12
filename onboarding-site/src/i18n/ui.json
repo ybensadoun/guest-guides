@@ -8231,6 +8231,11 @@
 "es": "De la posición de la casa · GeoNames",
 "fr": "De la position de la maison · GeoNames"
 },
+"Beaches: from the house’s position · GeoNames": {
+"ca": "Platges: de la posició de la casa · GeoNames",
+"es": "Playas: de la posición de la casa · GeoNames",
+"fr": "Plages : de la position de la maison · GeoNames"
+},
 "{x} province": {
 "ca": "província de {x}",
 "es": "provincia de {x}",

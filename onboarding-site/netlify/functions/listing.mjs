@@ -143,7 +143,8 @@ Never include a street address, door code or key-box code, and never tell guests
 Copy what the listing says, in its own wording (translated into ${LANG_NAME[lang]} when it is in another language): house rules, check-in and out, rooms, beds, amenities, rating. Do NOT guess or invent. When the listing is silent on a point, return null for it. The only things you write yourself are the tagline and the welcome text, from facts in the listing. The host will edit every line.
 Before answering, check every text value: each one in ${LANG_NAME[lang]} only, the house rules and the sleeping arrangements too.
 Return ONLY a JSON object, no prose.`;
-function prompt(src, town, lang){
+// What Claude is asked for a listing (exported for worker/test/listing-prompt.test.mjs; Netlify uses only the default export and config).
+export function prompt(src, town, lang){
   return `Listing link: ${src.url || 'none'}
 Town given by the host: ${town || 'not given'}
 Page title: ${src.title || ''}
@@ -175,8 +176,8 @@ Return this JSON (null when unknown):
  "howTos": string (one line per instruction the listing itself gives about how something works, "Thing: how it works"; otherwise null. Never invent instructions),
  "arrival": string (how to arrive and park, in ${LANG_NAME[lang]}, only if the listing says so; null if not said),
  "rubbish": null,
- "interests": array chosen from ["Beaches","Wine and food","Hiking and nature","Culture and history","Local markets","Nightlife","Festivals","Sports","Shopping","Wellness"] that fit the area,
- "guests": array chosen from ["Families with kids","Couples","Groups of friends","Remote workers","Older guests","Guests with pets","Wedding or event guests"],
+ "interests": array chosen from ["Beaches","Wine and food","Hiking and nature","Culture and history","Local markets","Nightlife","Festivals","Sports","Shopping","Wellness"]: only what guests go out for in the area AND the listing's own words name (a beach or the sea for Beaches, vineyards or wineries for Wine and food, walks or a natural park for Hiking and nature, a historic town or monuments for Culture and history, markets for Local markets, bars or clubs for Nightlife, festivals for Festivals, a sport to do nearby for Sports, shops for Shopping, a spa or thermal baths outside the house for Wellness). Never from what you know of the region, and never from the house's own amenities: a pool, a hot tub or a sauna at the house is not Wellness, a kitchen is not Wine and food. An empty array when the listing names none of them,
+ "guests": array chosen from ["Families with kids","Couples","Groups of friends","Remote workers","Older guests","Guests with pets","Wedding or event guests"]: only the guests the listing itself points to, by its words or what it offers (kids or a cot for Families with kids, a stay for two for Couples, a group for Groups of friends, a workspace for Remote workers, step-free access for Older guests, pets allowed for Guests with pets, weddings or events for Wedding or event guests). Never from what you know of the region. An empty array when it says nothing about who stays,
  "navStyle": one of ["Big tiles, like an app","A simple list","Photo-led, like a magazine"] that fits the listing's style,
  "feelWords": array of up to 3 from ["Cosy","Elegant","Playful","Modern","Rustic","Calm","Local and authentic","Luxurious","Family friendly","Colourful"],
  "basis": object saying, for each of "houseRules","sleeping","arrival","checkIn","checkOut","welcome","tagline": "listing" when the listing itself says it, "suggested" when you wrote it (only welcome and tagline),

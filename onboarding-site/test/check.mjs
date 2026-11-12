@@ -216,7 +216,7 @@ function groupList() {
   return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'research-deck': gResearchDeck, 'deck-steady': gDeckSteady, 'build-ready': gBuildReady, 'web-address': gWebAddress,
     'houses': gHouses, 'builder': gBuilder, 'rooms-offers': gRoomsOffers, 'nearby': gNearby, 'wow': gWow, 'editor': gEditor, 'editor-names': gEditorNames,
     'place-card': gPlaceCard, 'place-season': gPlaceSeason, 'still-open': gStillOpen, 'place-facts': gPlaceFacts, 'market-event': gMarketEvent,
-    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'nightlife-colours': gNightlifeColours, 'layout': gLayout, 'towns': gTowns };
+    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'nightlife-colours': gNightlifeColours, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea };
 }
 
   // Inside a navy start card (sel): nothing touches anything (the eyebrow, title and text by their words, the panel, the moon
@@ -1206,6 +1206,117 @@ async function gBuilder() {
       ok(`name of a pick, builder, ${tag}: the name typed when asked keeps the place picked`, r2.gid === 'g-soc' && !!(await p.$(`${at(n2)}.ok`)), JSON.stringify(r2)); }
     ok(`name of a pick, builder, ${tag}: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close(); }
+}
+// Beaches from the house's position (12 Nov 2026, acceptance test fault 7): the listing ticks only the interests its own
+// words name, and the guide's research gives the nearest beach (GeoNames, place.sea, km by road). Within 25 km Beaches is
+// ticked in Your area, beside what the listing gave or alone, whichever arrives first, marked where it came from; never
+// once the host changed the chips; nothing at 40 km. At 1280 px and 360 px, and in French at 360 px.
+async function gAreaSea() {
+  const SEA_PLACE = km => ({ town: 'Vilaprova del Test', province: 'Tarragona', sea: { km, name: 'Platja de Prova' }, source: 'geonames', fetched: '2026-11-12' });
+  const LISTED = ['Culture and history', 'Wellness'];
+  const seaPage = async (w, h, answers, job, lang = 'en') => {
+    const G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, _seen: [], _done: { listing: true }, _interestsHost: undefined, _seaAuto: undefined, ...answers } };
+    const s = await open(browser, G, w, h); s.job = job; s.polled = 0;
+    await s.ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => { if (r.request().method() === 'GET') s.polled++; return json(r, [s.job]); });
+    await s.p.goto(`http://editor.test/${lang === 'en' ? '' : '?lang=' + lang}#area`); await ready(s.p); await settle(s.p, 400);
+    s.next = async j => { s.job = j; const n = s.polled; await until(() => s.polled > n, 15000); await settle(s.p, 400); };   // the builder looks at the research every 6 s
+    return s;
+  };
+  const marks = p => p.$$eval('#l_interests .frm', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim())).catch(() => []);
+  const ticked = p => p.$$eval('input[data-multi="interests"]:checked', els => els.map(e => e.value)).catch(() => []);
+  // The chips' label and its marks, the chips: touching nothing, inside the field, each mark on one line, no sideways scroll.
+  const areaClear = p => p.evaluate(() => {
+    const lab = document.getElementById('l_interests'); if (!lab) return ['no label'];
+    const f = lab.closest('.f'), fr = f.getBoundingClientRect(), out = [];
+    const words = e => { const g = document.createRange(); g.selectNodeContents(e); return [...g.getClientRects()].filter(r => r.width > 0); };
+    const own = [...lab.childNodes].filter(n => n.nodeType === 3 && n.data.trim()).flatMap(n => { const g = document.createRange(); g.selectNodeContents(n); return [...g.getClientRects()]; });
+    const parts = [['label', own], ...[...lab.querySelectorAll('.frm, .req')].map(e => [e.textContent.trim().slice(0, 20), [...e.getClientRects()]]), ...[...f.querySelectorAll('.chip span')].map(e => ['chip ' + e.textContent.trim(), [e.getBoundingClientRect()]])];
+    const hit = (a, b) => a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1;
+    for (const [i, [n, rs]] of parts.entries()) for (const [m, qs] of parts.slice(i + 1)) if (rs.some(r => qs.some(q => hit(r, q)))) out.push(`${n} touches ${m}`);
+    for (const [n, rs] of parts) if (rs.some(r => r.right > fr.right + 1 || r.left < fr.left - 1)) out.push(`${n} out of its field`);
+    for (const e of lab.querySelectorAll('.frm')) if (e.getClientRects().length !== 1) out.push('a mark over two lines: ' + e.textContent.trim().slice(0, 30));
+    if (words(lab).some(r => r.right > fr.right + 1)) out.push('a word wider than its line');
+    if (document.documentElement.scrollWidth > innerWidth) out.push('sideways scroll');
+    return out;
+  });
+  const SEA_EN = 'Beaches: from the house’s position · GeoNames';
+  // 1. The listing gave other interests; the research's place comes while Your area is open: Beaches joins them in place.
+  for (const [w, h, lang] of [[1280, 860, 'en'], [360, 780, 'en'], [360, 780, 'fr']]) {
+    const tag = `${w} px${lang === 'en' ? '' : ' in French'}`;
+    const { ctx, p, errors, next } = await seaPage(w, h, { interests: LISTED, _pre: { ...(B.answers._pre || {}), interests: 'area' } }, { status: 'running', result: { place: { town: 'Vilaprova del Test', province: 'Tarragona', source: 'geonames' } } }, lang);
+    await p.locator('#l_interests').scrollIntoViewIfNeeded();
+    await p.focus('input[data-multi="guests"]');
+    const at = () => p.evaluate(() => ({ y: scrollY, focus: (document.activeElement || {}).dataset && document.activeElement.dataset.multi + ':' + document.activeElement.value, head: document.querySelector('.mhead').getBoundingClientRect().top,
+      label: document.getElementById('l_interests').getBoundingClientRect().top, chips: [...document.querySelectorAll('input[data-multi="interests"]')].map(e => { const r = e.closest('.chip').getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top)]; }),
+      below: document.querySelector('[data-multi="guests"]').closest('.f').getBoundingClientRect().top }));
+    const before = await at(), m0 = await marks(p);
+    await next({ status: 'running', result: { place: SEA_PLACE(10) } });
+    const A = await stored(p), after = await at(), m1 = await marks(p);
+    ok(`sea, ${tag}: the research's place with a beach 10 km away ticks Beaches beside the listing's interests, in the page and in the answers`,
+      (await ticked(p)).sort().join() === [...LISTED, 'Beaches'].sort().join() && [...A.interests].sort().join() === [...LISTED, 'Beaches'].sort().join() && A._seaAuto === true && (A._pre || {}).interests === 'area', JSON.stringify({ i: A.interests, t: await ticked(p) }));
+    ok(`sea, ${tag}: the mark says the listing gave some and the house's position Beaches, with GeoNames`,
+      m0.length === 1 && m1.length === 2 && (lang === 'en' ? m0[0] === 'From your listing' && m1[0] === 'From your listing' && m1[1] === SEA_EN : /annonce/.test(m1[0]) && /^Plages\s?: de la position de la maison · GeoNames$/.test(m1[1])), JSON.stringify({ m0, m1 }));
+    // The new mark goes into the label, as the town's does: when the label's line is full it takes a line of its own, and
+    // what is under the label moves down by that one line, all together (nothing reflows, nothing jumps sideways).
+    const dy = after.below - before.below;
+    ok(`sea, ${tag}: in place: no scroll, the focus stays, nothing above the chips moves, the chips keep their order and places across, and what is under the label moves down together by at most the mark's one line`,
+      before.y === after.y && before.focus === after.focus && before.head === after.head && before.label === after.label && dy >= 0 && dy <= 32
+      && before.chips.every((c, i) => c[0] === after.chips[i][0] && Math.abs(after.chips[i][1] - c[1] - dy) <= 1), JSON.stringify({ dy, before, after }));
+    const c = await areaClear(p);
+    ok(`sea, ${tag}: the label, its marks and the chips touch nothing, nothing wider than the screen`, !c.length, c.join('; '));
+    await p.evaluate(() => document.getElementById('l_interests').scrollIntoView({ block: 'center' })); await settle(p, 100);
+    await p.screenshot({ path: join(SHOTS, `area-sea-${w}${lang === 'en' ? '' : '-' + lang}.png`) });
+    // The host unticks Beaches: theirs from then on, whatever the research says next.
+    await p.click('label.chip:has(input[data-multi="interests"][value="Beaches"])'); await settle(p, 300);
+    await next({ status: 'running', result: { place: SEA_PLACE(8) } });
+    const A2 = await stored(p);
+    await go(p, '#look'); await go(p, '#area');   // the marks stay under the host's finger while they tap (as before), and are gone the next time the step is drawn
+    ok(`sea, ${tag}: once the host unticks Beaches, a later answer of the research ticks nothing, and the mark is gone`, !A2.interests.includes('Beaches') && !(await ticked(p)).includes('Beaches') && A2._interestsHost === true && !A2._seaAuto && !(A2._pre || {}).interests && !(await marks(p)).length, JSON.stringify({ i: A2.interests, m: await marks(p) }));
+    ok(`sea, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  for (const [w, h] of [[1280, 860], [360, 780]]) {
+    // 2. The listing gave no interests: Beaches alone, marked as the position's only.
+    { const { ctx, p, errors } = await seaPage(w, h, { interests: [], _pre: { ...(B.answers._pre || {}), interests: undefined } }, { status: 'done', result: { place: SEA_PLACE(10) } });
+      const A = await stored(p), m = await marks(p);
+      ok(`sea, ${w} px: no interests from the listing, the beach 10 km away ticks Beaches alone, marked as the position's, not the listing's`, cmpSame(A.interests, ['Beaches']) && cmpSame(await ticked(p), ['Beaches']) && cmpSame(m, [SEA_EN]), JSON.stringify({ i: A.interests, m }));
+      const c = await areaClear(p); ok(`sea, ${w} px: Beaches alone, its mark touches nothing`, !c.length, c.join('; '));
+      await p.locator('#l_interests').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, `area-sea-alone-${w}.png`) });
+      ok(`sea, ${w} px, alone: no page errors`, !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // 3. The sea 40 km away: nothing ticked, the listing's mark as it was.
+    { const { ctx, p, errors } = await seaPage(w, h, { interests: LISTED, _pre: { ...(B.answers._pre || {}), interests: 'area' } }, { status: 'done', result: { place: SEA_PLACE(40) } });
+      const A = await stored(p), m = await marks(p);
+      ok(`sea, ${w} px: a beach 40 km away ticks nothing, the mark stays the listing's`, cmpSame(A.interests, LISTED) && !(await ticked(p)).includes('Beaches') && cmpSame(m, ['From your listing']) && !A._seaAuto, JSON.stringify({ i: A.interests, m }));
+      ok(`sea, ${w} px, 40 km: no page errors`, !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // 4. The host changed a chip before the place came: nothing is touched.
+    { const { ctx, p, errors, next } = await seaPage(w, h, { interests: LISTED, _pre: { ...(B.answers._pre || {}), interests: 'area' } }, { status: 'running', result: null });
+      await p.click('label.chip:has(input[data-multi="interests"][value="Sports"])'); await settle(p, 300);
+      await next({ status: 'running', result: { place: SEA_PLACE(10) } });
+      const A = await stored(p);
+      await go(p, '#look'); await go(p, '#area');
+      ok(`sea, ${w} px: the host ticked Sports before the research's place came: Beaches is not added, no mark`, cmpSame([...A.interests].sort(), [...LISTED, 'Sports'].sort()) && !(await ticked(p)).includes('Beaches') && !(await marks(p)).length && A._interestsHost === true, JSON.stringify(A.interests));
+      ok(`sea, ${w} px, host's chips: no page errors`, !errors.length, errors.join(' | '));
+      await ctx.close(); }
+    // 5. A new host: the research's place comes while the listing is still being written, the listing's interests after it.
+    { let wrote = 0, seaAt = 0;
+      const W2 = { ...WRITE, draft: { ...WRITE.draft, interests: LISTED } };
+      const late = (route, body) => setTimeout(() => { if (body.stage !== 'page') wrote = Date.now(); json(route, body.stage === 'page' ? PAGE : W2); }, body.stage === 'page' ? 400 : 3500);
+      const { ctx, p, errors } = await open(browser, N, w, h, {}, late);
+      await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => r.request().method() === 'POST' ? json(r, [{ id: JOB_ID, status: 'queued' }]) : json(r, [{ status: 'running', result: { place: SEA_PLACE(10) } }]));
+      await p.goto('http://editor.test/'); await p.waitForSelector('#st_url', { timeout: 15000 });
+      await p.fill('#st_url', 'https://www.airbnb.com/rooms/12345678'); await p.click('#startGo');
+      await until(async () => { const i = (await stored(p)).interests || []; if (i.includes('Beaches') && !seaAt) seaAt = Date.now(); return !!seaAt; }, 8000);
+      await p.waitForFunction(() => /Your guide is written/.test((document.getElementById('yoursTx') || {}).textContent || ''), null, { timeout: 10000 }).catch(() => {});
+      await settle(p, 600);
+      const A = await stored(p);
+      ok(`sea, ${w} px: a new host: Beaches ticked from the position before the listing is written, kept when the listing's interests come after`, !!seaAt && !!wrote && seaAt < wrote && cmpSame([...A.interests].sort(), [...LISTED, 'Beaches'].sort()) && A._seaAuto === true, JSON.stringify({ i: A.interests, first: seaAt && wrote ? seaAt - wrote : null }));
+      await go(p, '#area');
+      const m = await marks(p);
+      ok(`sea, ${w} px: a new host: Your area marks the listing's and the position's`, cmpSame(m, ['From your listing', SEA_EN]) && (await ticked(p)).includes('Beaches'), JSON.stringify(m));
+      ok(`sea, ${w} px, new host: no page errors`, !errors.length, errors.join(' | '));
+      await ctx.close(); }
+  }
 }
 // ---- Towns as things to do (fault 2 of the acceptance test, 12 Nov 2026): a host typing "Barcelona" was offered the airport
 // and a company. Our towns (towns-es.json, GeoNames) show first, from memory, before Google answers and when it fails; Google's

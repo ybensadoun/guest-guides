@@ -9,7 +9,7 @@
 # A second question, in the same call or alone: the municipality each point lies in (worker/place-facts.mjs municipalityAt,
 # the area research's brief and the builder's town).
 #   stdin:  {"country": "ES", "points": [{"id", "lat", "lng"}]}
-#   stdout: {"fetched": ..., "places": {"<id>": {"town", "province", "seat", "near", "near_code", "metres", "by"} or null}}
+#   stdout: {"fetched": ..., "places": {"<id>": {"town", "province", "seat", "near", "near_code", "metres", "by", "sea"?} or null}}
 #   ("pins" too when pins were asked). From the nearest populated place (class P) within 10 km of the point: the
 #   municipality is the ADM3 row with its admin codes (in Spain ADM3 is the municipi / municipio), province the ADM2
 #   row's name without "Provincia de" and the like, seat the municipality's seat (its PPLA3, PPLA2, PPLA or PPLC row) when
@@ -17,6 +17,9 @@
 #   of its municipality), near_code its code, metres its distance from the point. by: "adm3", or "nearest" when its codes
 #   name no ADM3 row: then the nearest P row with a population or a PPLA or PPLC code stands for the town. null: no P row
 #   within 10 km. An inverted name ("Rosario, El") is turned round ("El Rosario"), or the seat's own spelling is used.
+#   sea: the nearest beach to the point (class T, code BCH or BCHS; a beach whose name says river or reservoir, "Playa fluvial", aside),
+#   {"km", "name"}: km by road as the guides estimate it (1.3 times the straight line, rounded, at least 1), only when it
+#   is 60 km or less; else no "sea" at all. The builder ticks Beaches from it, the area research's brief names it.
 # Python's standard library only (3.9 and later). The country's file is kept in GEONAMES_CACHE (default
 # ~/.cache/guest-guides/geonames/, next to Overture's, outside the repo) and fetched again when 30 days old; offline, the
 # old one is used. Downloaded data is only ever read as text, never run. The pins' names are never printed.
@@ -27,6 +30,8 @@ URL = os.environ.get('GEONAMES_URL') or 'https://download.geonames.org/export/du
 MAX_DAYS, REACH_KM, MAX = 30, 3.0, 8
 MUNI_KM, SEATS = 10.0, ('PPLA3', 'PPLA2', 'PPLA', 'PPLC')   # the municipality: from the nearest town or village within 10 km
 GONE = set('PPLQ PPLW PPLH PPLCH'.split())   # abandoned, destroyed, historical: no one lives there now
+BEACH, ROAD, SEA_KM = ('BCH', 'BCHS'), 1.3, 60   # the nearest beach: by road about 1.3 times the line, given up to 60 km
+INLAND = re.compile(r'\b(fluvial|fluviale|embalse|embassament|pantano|panta)\b')   # "Playa fluvial ...", a reservoir's: not the sea ("Playa del Río" is a sea beach at a river mouth)
 MAX_ZIP, MAX_TXT, DEADLINE = 400e6, 2e9, 240   # bytes, bytes, seconds: a stuck or odd download gives up before the worker's 5 minutes
 CELL = 0.1                                     # degrees: pins sorted into cells, so each line is compared with the pins of its cell and the next ones
 GENERIC = set('el la els les l d de del dels the of i y and a en al per platja playa beach plage strand'.split())
@@ -128,6 +133,12 @@ def municipality(cands, adm3, adm2, seats):
     return {'town': town, 'province': province(adm2.get((row['a1'], row['a2']))), 'seat': seat, 'near': near['name'],
             'near_code': near['code'], 'metres': round(near['d'] * 1000), 'by': by}
 
+# The nearest beach as the answer gives it, or None: beyond 60 km by road, or none at all.
+def sea_of(b):
+    if not b: return None
+    k = max(1, int(b[0] * ROAD + 0.5))   # rounded as the guides' code rounds (Math.round), at least 1
+    return {'km': k, 'name': b[1]} if k <= SEA_KM else None
+
 def main():
     try:
         q = json.load(sys.stdin); cc = str(q.get('country') or '')
@@ -155,6 +166,7 @@ def main():
     pcells = {}   # the points' cells: 10 km reaches two cells of 0.1 degree on either side, east and west, in Spain
     for p in points: pcells.setdefault((math.floor(p['lat'] / CELL), math.floor(p['lng'] / CELL)), []).append(p)
     pc = {p['id']: [] for p in points}; adm3, adm2, seats = {}, {}, {}
+    beach = {p['id']: None for p in points}   # the nearest beach to each point: (km in a straight line, name, id)
     found = {p['id']: [] for p in named}; t0 = time.time(); lines = 0
     with open(path, encoding='utf-8', errors='replace') as f:
         for line in f:
@@ -164,6 +176,13 @@ def main():
             if points:   # the municipality question: the admin areas' names, the seats, the towns and villages near a point
                 if c[6] == 'A' and c[7] == 'ADM3': adm3[(c[10], c[11], c[12])] = c[1]
                 elif c[6] == 'A' and c[7] == 'ADM2': adm2[(c[10], c[11])] = c[1]
+                elif c[6] == 'T' and c[7] in BEACH and not INLAND.search(' '.join(words(c[1]))):   # about 1,300 in Spain: every point is measured
+                    try: lat, lng = float(c[4]), float(c[5])
+                    except ValueError: lat = None
+                    if lat is not None:
+                        for p in points:
+                            d = km(p['lat'], p['lng'], lat, lng); b = beach[p['id']]
+                            if b is None or (d, c[0]) < (b[0], b[2]): beach[p['id']] = (d, c[1], c[0])
                 elif c[6] == 'P' and c[7] not in GONE:
                     if c[7] in SEATS and c[12]:
                         k = (c[10], c[11], c[12])
@@ -202,7 +221,10 @@ def main():
     for pid, lst in found.items():
         lst.sort(key=lambda x: (not x['exact'], x['metres'], x['id'])); res[pid] = lst[:MAX]   # the very name first ("Sitges" before "Parrots Sitges Hotel"), then the nearest
     seat_names = {k: v[0] for k, v in seats.items()}
-    for p in points: places[p['id']] = municipality(pc[p['id']], adm3, adm2, seat_names)
+    for p in points:
+        m = municipality(pc[p['id']], adm3, adm2, seat_names); s = sea_of(beach[p['id']])
+        if m and s: m['sea'] = s
+        places[p['id']] = m
     say('geonames: %s of %s, %d lines, %d of %d pins with a feature%s, %.1f s' % (cc, fetched, lines, sum(1 for v in res.values() if v), len(pins),
         ', %d of %d points in a municipality' % (sum(1 for v in places.values() if v), len(points)) if points else '', time.time() - t0))
     answer(fetched)

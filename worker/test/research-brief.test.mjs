@@ -74,7 +74,8 @@ test('the worker: the guide\'s research and the quick one use the early brief an
   const fn = name => { const i = src.indexOf(`async function ${name}(`); assert.ok(i >= 0, name); return src.slice(i, src.indexOf('\n}\n', i)); };
   assert.match(fn('researchJob'), /muniSoon\(\{ lat: \+A\.lat, lng: \+A\.lng \}\)/); assert.match(fn('researchJob'), /rules: earlyRules\(A\), early: true/);
   assert.match(fn('researchJob'), /await jp\(\{ result: \{ place \} \}\)/);
-  assert.match(fn('runArea'), /muniSoon\(\{ lat: \+row\.lat, lng: \+row\.lng \}\)/); assert.match(src, /const muniSoon = at => [^\n]*setTimeout[^\n]*20000/); assert.match(src, /municipalityAt\(at, /); assert.match(fn('runArea'), /together: true, early: true/); assert.match(fn('runArea'), /result\.place = \{ town: m\.town, province: m\.province, source: 'geonames', fetched: m\.fetched \}/);
+  assert.match(fn('runArea'), /muniSoon\(\{ lat: \+row\.lat, lng: \+row\.lng \}\)/); assert.match(src, /const muniSoon = at => [^\n]*setTimeout[^\n]*20000/); assert.match(src, /municipalityAt\(at, /); assert.match(fn('runArea'), /together: true, early: true/); assert.match(fn('runArea'), /result\.place = \{ town: m\.town, province: m\.province, \.\.\.\(m\.sea \? \{ sea: m\.sea \} : \{\}\), source: 'geonames', fetched: m\.fetched \}/);
+  assert.match(fn('researchJob'), /const place = m \? \{ town: m\.town, province: m\.province, \.\.\.\(m\.sea \? \{ sea: m\.sea \} : \{\}\), source: 'geonames', fetched: m\.fetched \} : null;/);   // the builder ticks Beaches from it
   assert.match(fn('firstEvents'), /early: true/);
   assert.doesNotMatch(fn('findJob'), /early/); assert.doesNotMatch(fn('refreshEvents'), /early/);
   assert.match(fn('findJob'), /interests: A0\.interests/);
@@ -116,6 +117,15 @@ test('eventsInReach: small events within 10 km, the main ones up to the host\'s 
   assert.equal(eventsInReach(E, '15 min').dropped, 4);
   assert.equal(got('1 hour', { city: true }), 'nk');   // a city: small ones within 2 km, the main ones within 8 km
   assert.deepEqual(eventsInReach(undefined, '15 min'), { items: [], dropped: 0 });
+});
+
+test('the early brief names the nearest beach when GeoNames has one within reach, and says nothing of the sea otherwise', () => {
+  const sea = researchPrompt('todo', { ...HOST, place: { ...PLACE, sea: { km: 14, name: 'Platja de Prova' } } }, 'R', { early: true });
+  assert.match(sea, /The host or the listing names the town Vilagran\. The nearest beach is about 14 km away by road \(Platja de Prova\)\. Approximate point: 41\.3, 1\.5\./);
+  assert.match(whereLine({ place: { town: 'Vilaprova', near: 'Vilaprova', sea: { km: 3, name: 'Platja Llarga' } } }), /^the house, in the municipality of Vilaprova\. The nearest beach is about 3 km away by road \(Platja Llarga\)$/);
+  for (const place of [PLACE, { ...PLACE, sea: null }, { ...PLACE, sea: { km: 0, name: 'X' } }, { ...PLACE, sea: { km: 9, name: '' } }])
+    assert.doesNotMatch(researchPrompt('markets', { ...HOST, place }, 'R', { early: true }), /beach|sea\b/i);
+  assert.doesNotMatch(sea, /—/);
 });
 
 test('whereLine: the house\'s town as before when GeoNames gave nothing', () => {

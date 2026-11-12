@@ -317,3 +317,40 @@ test('municipalityAt: from geonames.py, from an injected gazetteer, and null rat
   const l2 = [], gone = await municipalityAt({ lat: 41.1, lng: 1.9 }, { python: 'no-such-python-here', log: m => l2.push(m) });
   assert.equal(gone, null); assert.match(l2[0], /^geonames: no features/);
 });
+
+// The nearest beach, in the same pass (12 Nov 2026): a made-up coast. Two municipalities, one by the sea and one about
+// 49 km inland; a beach 4.4 km from the first (by road about 6 km), a second one farther, and a river beach next to the
+// inland one, which is not the sea.
+const SEA = [
+  row('9100001', 'Província de Tarragona', 41.1, 1.1, 'A', 'ADM2', '', 800000),
+  row('9100002', 'Vilamar', 41.2, 1.6, 'A', 'ADM3', '43910', 2000),
+  row('9100003', 'Vilamar', 41.2, 1.6, 'P', 'PPLA3', '43910', 2000),
+  row('9100004', 'Vilaterra', 41.6, 1.6, 'A', 'ADM3', '43911', 300),
+  row('9100005', 'Vilaterra', 41.6, 1.6, 'P', 'PPLA3', '43911', 300),
+  row('9100006', 'Platja de Prova', 41.16, 1.6, 'T', 'BCH', '43910'),
+  row('9100007', 'Platges del Sud', 41.12, 1.62, 'T', 'BCHS', '43910'),
+  row('9100008', 'Playa fluvial del Riu Sec', 41.59, 1.6, 'T', 'BCH', '43911'),
+].join('\n') + '\n';
+const seaCache = () => { const d = mkdtempSync(join(tmpdir(), 'geonames-sea-')); writeFileSync(join(d, 'ES.txt'), SEA); writeFileSync(join(d, 'ES.json'), JSON.stringify({ fetched: today })); return d; };
+
+test('geonames.py, the sea: the nearest beach and its distance by road, none beyond 60 km by road, none in a file without beaches', () => {
+  const r = py({ country: 'ES', points: [{ id: 'coast', lat: 41.2, lng: 1.6 }, { id: 'inland', lat: 41.6, lng: 1.6 }] }, { GEONAMES_CACHE: seaCache() });
+  assert.equal(r.status, 0, r.stderr);
+  const out = JSON.parse(r.stdout).places;
+  assert.deepEqual(out.coast.sea, { km: 6, name: 'Platja de Prova' });   // 4.45 km in a straight line, times 1.3, rounded
+  assert.equal(out.coast.town, 'Vilamar');
+  assert.equal(out.inland.town, 'Vilaterra'); assert.ok(!('sea' in out.inland), JSON.stringify(out.inland));   // the river beach 1 km away is not the sea, the sea is 64 km by road
+  const none = JSON.parse(py({ country: 'ES', points: POINTS.slice(0, 1) }, { GEONAMES_CACHE: muniCache() }).stdout).places.hamlet;
+  assert.equal(none.town, 'Vilaprova'); assert.ok(!('sea' in none));
+});
+
+test('municipalityAt: the sea passed through from geonames.py and from a gazetteer; one out of reach or without a name left out', async () => {
+  process.env.GEONAMES_CACHE = seaCache();
+  const m = await municipalityAt({ lat: 41.2, lng: 1.6 }, { log: () => {} });
+  assert.deepEqual(m.sea, { km: 6, name: 'Platja de Prova' }); assert.equal(m.town, 'Vilamar');
+  assert.ok(!('sea' in await municipalityAt({ lat: 41.6, lng: 1.6 }, { log: () => {} })));
+  const gaz = sea => async () => ({ fetched: '2026-11-12', places: { house: { town: 'la Prova', sea } } });
+  assert.deepEqual((await municipalityAt({ lat: 41.1, lng: 1.9 }, { gaz: gaz({ km: 23, name: '  Platja Llarga ' }) })).sea, { km: 23, name: 'Platja Llarga' });
+  for (const bad of [{ km: 75, name: 'Lluny' }, { km: 0, name: 'X' }, { km: 12 }, { km: 'x', name: 'Y' }, null, 'sea'])
+    assert.ok(!('sea' in await municipalityAt({ lat: 41.1, lng: 1.9 }, { gaz: gaz(bad) })), JSON.stringify(bad));
+});

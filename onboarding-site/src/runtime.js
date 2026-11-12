@@ -552,6 +552,7 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   const t = e.target;
   if ((t.dataset.multi || t.dataset.radio) && A._pre && A._pre[t.dataset.multi || t.dataset.radio]) { const p = { ...A._pre }; delete p[t.dataset.multi || t.dataset.radio]; A._pre = p; }
+  if (t.dataset.multi === 'interests') { A._interestsHost = true; delete A._seaAuto; }   // the host's own chips: nothing ticks them for them again (start.js seaFromResearch, applyDraft)
   if (t.dataset.multi) { const k = t.dataset.multi, cur = new Set(A[k] || []); t.checked ? cur.add(t.value) : cur.delete(t.value); set(k, [...cur]); softRefresh(); }
   else if (t.dataset.radio) { set(t.dataset.radio, t.value); softRefresh(); refreshSend(); }
   else if (t.dataset.k && t.tagName === 'SELECT') { set(t.dataset.k, t.value); softRefresh(); }

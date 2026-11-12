@@ -694,7 +694,7 @@ async function runArea(only) {
       await research({ town: row.town, region: row.region, lat: row.lat, lng: row.lng, ...(m ? { place: m } : {}) }, dir, null, { meter, parts: AREA_KINDS, rules: { markets: QUICK_MARKETS }, searches: QUICK_SEARCHES, together: true, early: true });
       const result = Object.fromEntries(AREA_KINDS.filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))]));
       if (!Object.keys(result).length) throw new Error('Nothing came back from the research');
-      if (m) result.place = { town: m.town, province: m.province, source: 'geonames', fetched: m.fetched };   // the row's point is the area's, not exactly the house's: the builder does not fill a town from it
+      if (m) result.place = { town: m.town, province: m.province, ...(m.sea ? { sea: m.sea } : {}), source: 'geonames', fetched: m.fetched };   // the row's point is the area's, not exactly the house's: the builder does not fill a town or tick Beaches from it
       const reach = Math.max(0, ...(((result.markets || {}).markets) || []).filter(m => m.lat != null && m.lng != null).map(m => kmBetween(+row.lat, +row.lng, +m.lat, +m.lng)));   // the database shares it within half of this
       await ap({ status: 'done', result, reach_km: reach ? +reach.toFixed(2) : null, usd: claudeApi ? +meter.usd.toFixed(3) : null, message: null, finished_at: new Date().toISOString() });
       log(`  area researched (reach ${reach.toFixed(1)} km): ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
@@ -727,7 +727,7 @@ async function researchJob(j, jp) {
     // fills the town with it when the host and the listing gave none). The host's distance cuts what was found later, in
     // the deck and at the build (research-brief.mjs); their interests stay out of it.
     const m = await muniSoon({ lat: +A.lat, lng: +A.lng });
-    const place = m ? { town: m.town, province: m.province, source: 'geonames', fetched: m.fetched } : null;
+    const place = m ? { town: m.town, province: m.province, ...(m.sea ? { sea: m.sea } : {}), source: 'geonames', fetched: m.fetched } : null;   // sea: the nearest beach, for the builder's Beaches
     if (m) { A.place = m; await jp({ result: { place } }); }
     const read = () => ({ ...Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))])), ...(place ? { place } : {}) });
     // Things to do first: as soon as they are checked the host gets them as cards (start.js, researchCards), the rest goes on.

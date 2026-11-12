@@ -28,7 +28,8 @@ export function example(name, n = 2) {
 const plain = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 // Where the house is, in words. A.place (municipalityAt): the municipality and its province from GeoNames, the hamlet or
 // housing estate when the nearest place is not the municipality itself, and the town the host or the listing gave when it
-// differs. Without it, the host's town and region as before.
+// differs, and the nearest beach when GeoNames has one within 60 km by road (A.place.sea), so the research knows the sea
+// is near. Without it, the host's town and region as before.
 export function whereLine(A) {
   const m = A.place, given = String(A.town || '').trim();
   if (!m || !m.town) return `${A.placeName || 'the house'}, ${given}${A.region ? ', ' + A.region : ''}`;
@@ -37,7 +38,8 @@ export function whereLine(A) {
   const other = given && plain(given) !== plain(m.town) && plain(given) !== plain(near) ? given : null;
   return `${A.placeName || 'the house'}, in the municipality of ${m.town}${m.province ? ` (province of ${m.province})` : ''}${A.region ? ', ' + A.region : ''}`
     + `${near ? `, close to ${near} (a village, hamlet or housing estate of it${km != null ? `, about ${km} km from the point` : ''})` : ''}`
-    + `${other ? `. The host or the listing names the town ${other}` : ''}`;
+    + `${other ? `. The host or the listing names the town ${other}` : ''}`
+    + `${m.sea && m.sea.km > 0 && m.sea.name ? `. The nearest beach is about ${m.sea.km} km away by road (${m.sea.name})` : ''}`;
 }
 
 // early: the area research that starts before the host has answered (the guide's research job, the visitor's quick one):

@@ -69,7 +69,7 @@ export function nearby(house, pins, { km = 60, python = process.env.OVERTURE_PYT
 // capital letters (the file fetched). pins: as for nearby(). Returns { fetched, pins: { id: [features] } }; if Python or
 // the download fails, no features. python: any Python 3.9 or later (standard library only).
 // points (optional): [{ id, lat, lng }], the second question of geonames.py: the municipality each lies in, given back as
-// places: { id: { town, province, seat, near, near_code, metres, by } or null } (see municipalityAt).
+// places: { id: { town, province, seat, near, near_code, metres, by, sea? } or null } (see municipalityAt).
 export function gazetteer(country, pins, { python = process.env.GEONAMES_PYTHON || 'python3', log = console.error, points = null } = {}) {
   return runPython('geonames.py', { country, pins, ...(points ? { points } : {}) }, { python, log, tag: 'geonames', none: 'no features',
     empty: () => ({ fetched: null, pins: {}, ...(points ? { places: {} } : {}) }),
@@ -103,8 +103,9 @@ export async function townPoint(town, at, { country = 'ES', gaz = gazetteer, pyt
 // with it when they gave none (onboarding-site/src/start.js). at: the house's point. Returns { town, province, near,
 // metres, fetched }: town the municipality ("la Bisbal del Penedès"), province its province or null, near the nearest
 // town, village, hamlet or housing estate GeoNames lists ("Can Gordei", or the town itself) and metres its distance from
-// the point; or null (no town or village within 10 km, no point, GeoNames not reachable). Never throws. gaz (tests): in
-// place of gazetteer().
+// the point, and sea { km, name } when a beach lies within 60 km by road (the nearest one, km by road as the guides estimate
+// it: the builder ticks Beaches from it, the research's brief names it; absent otherwise); or null (no town or village
+// within 10 km, no point, GeoNames not reachable). Never throws. gaz (tests): in place of gazetteer().
 export async function municipalityAt(at, { country = 'ES', gaz = gazetteer, python, log = console.error } = {}) {
   const lat = +(at && at.lat), lng = +(at && at.lng);
   if (!at || at.lat == null || at.lng == null || !isNum(lat) || !isNum(lng)) return null;
@@ -112,7 +113,8 @@ export async function municipalityAt(at, { country = 'ES', gaz = gazetteer, pyth
     const g = await gaz(country, [], { log, points: [{ id: 'house', lat, lng }], ...(python ? { python } : {}) });
     const m = ((g && g.places) || {}).house, text = x => typeof x === 'string' && x.trim() ? x.trim().slice(0, 80) : null;
     if (!m || !text(m.town)) return null;
-    return { town: text(m.town), province: text(m.province), near: text(m.near), metres: isNum(m.metres) ? m.metres : null, fetched: (g && g.fetched) || null };
+    const sea = m.sea && isNum(m.sea.km) && m.sea.km >= 1 && m.sea.km <= 60 && text(m.sea.name) ? { sea: { km: Math.round(m.sea.km), name: text(m.sea.name) } } : {};
+    return { town: text(m.town), province: text(m.province), near: text(m.near), metres: isNum(m.metres) ? m.metres : null, ...sea, fetched: (g && g.fetched) || null };
   } catch (e) { log(`geonames: the municipality not looked up (${e.message})`); return null; }
 }
 // Our kind (engine/src/kinds.json, todo) from a feature's class and code, for a place Claude gave no kind.

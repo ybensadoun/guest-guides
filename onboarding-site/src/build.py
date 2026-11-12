@@ -144,7 +144,7 @@ seg1=rep(seg1,".loading{padding:40px;text-align:center;color:var(--muted)}",""".
 .frm{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--sky) 15%,transparent);color:var(--sky)}
 :root:not([data-theme="light"]) .pill.pre{color:#2c5aa0}""")
 views=rep(views,"  if (k === 'privacyNote')","  if (k === 'fillBtn') return `<div class=\"full\" style=\"display:flex;gap:12px;align-items:center;flex-wrap:wrap\"><button class=\"btn sun\" type=\"button\" id=\"fillListing\">Fill in from my listing</button><span class=\"hint\">Fills the steps it can and marks them “Review”. Nothing you typed is replaced.</span></div>`;\n  if (k === 'privacyNote')")
-views=rep(views,"  const head = `${esc(q.label)} ${badge(k)}`;","  const head = `${esc(q.label)} ${badge(k)}${A._pre && A._pre[k] && filled(k) ? (A._basis && A._basis[k] === 'suggested' ? ' <span class=\"frm sug\">Suggested for you: please check</span>' : placeAuto(k) ? PLACE_MARK : ' <span class=\"frm\">From your listing</span>') : ''}`;")
+views=rep(views,"  const head = `${esc(q.label)} ${badge(k)}`;","  const head = `${esc(q.label)} ${badge(k)}${A._pre && A._pre[k] && filled(k) ? preMark(k) : ''}`;")
 # ---- v2: link-first, everything optional except the listing and the town ----
 import re as _re
 seg1=_re.sub(r"need:\[[^\]]*\]","need:[]",seg1)

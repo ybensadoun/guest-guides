@@ -155,7 +155,7 @@ async function areaWatch(){
   } catch (e) { wait = true; }   // no connection: try again
   const before = JSON.stringify(AREA.result);
   AREA.result = (AREA.quick || AREA.full) ? { ...(AREA.quick || {}), ...(AREA.full || {}) } : null;
-  townFromResearch();
+  townFromResearch(); seaFromResearch();
   if (JSON.stringify(AREA.result) !== before) phoneSoon();
   moreRefresh();
   if (wait && ++AREA.tries < 150) AREA.timer = setTimeout(areaWatch, AREA.tries < 30 ? 6000 : 20000);
@@ -192,6 +192,32 @@ function townFromResearch(){
 // answer says "From your listing" (the field's label, build.py), until the host changes it.
 const placeAuto = k => (k === 'town' && !!A._townAuto && A.town === A._townAuto) || (k === 'region' && !!A._regionAuto && A.region === A._regionAuto);
 const PLACE_MARK = ' <span class="frm">From the house’s position · GeoNames</span>';
+// Beaches from the house's position (12 Nov 2026, acceptance test fault 7): the listing ticks only the interests its own
+// words name (listing.mjs), so a house 10 km from the sea whose listing never mentions the beach had no Beaches. The
+// guide's own research gives the nearest beach (GeoNames, worker/geonames.py: place.sea, km by road; not the quick
+// research's, whose point is the area's): within 25 km, Beaches is ticked, whichever of the research and the listing
+// comes first (applyDraft keeps it beside the listing's), and marked where it came from. Never once the host changed the
+// chips themselves (A._interestsHost, runtime.js), nor over chips they changed before that mark existed (chips with no
+// "From your listing"). The chips and their mark change in place; the deck follows Your area as it does (swWant, SW.key).
+const SEA_TICK_KM = 25;
+function seaFromResearch(){
+  const S = ((AREA.full || {}).place || {}).sea, cur = Array.isArray(A.interests) ? A.interests : [];
+  if (!S || !(+S.km > 0 && +S.km <= SEA_TICK_KM) || A._interestsHost || cur.includes('Beaches') || (cur.length && !(A._pre || {}).interests)) return;
+  A.interests = [...cur, 'Beaches']; A._seaAuto = true; A._pre = { ...(A._pre || {}), interests: 'area' };
+  queueSave(); log('interests', 'position');
+  const box = document.querySelector('input[data-multi="interests"][value="Beaches"]'); if (box) box.checked = true;
+  const lab = document.getElementById('l_interests'); if (lab) { lab.querySelectorAll('.frm').forEach(x => x.remove()); lab.insertAdjacentHTML('beforeend', preMark('interests')); }
+  softRefresh();
+}
+// The mark beside a prefilled answer's label (build.py puts it in field()): Claude's own words, the house's position
+// (GeoNames), or the listing; Your area's interests say which chips the listing gave and that Beaches came from the position.
+const FROM_LISTING = ' <span class="frm">From your listing</span>', SEA_MARK = ' <span class="frm">Beaches: from the house’s position · GeoNames</span>';
+function preMark(k){
+  if (A._basis && A._basis[k] === 'suggested') return ' <span class="frm sug">Suggested for you: please check</span>';
+  if (placeAuto(k)) return PLACE_MARK;
+  if (k === 'interests' && A._seaAuto && Array.isArray(A.interests) && A.interests.includes('Beaches')) return (A.interests.some(x => x !== 'Beaches') ? FROM_LISTING : '') + SEA_MARK;
+  return FROM_LISTING;
+}
 // What the listing page says, before Claude: its name (for the phone only, Claude writes the real one), its photos,
 // cover, rating and position.
 function applyEarly(d){
@@ -256,6 +282,12 @@ function applyDraft(d){
     if (k === 'sleeps' || k === 'bedrooms' || k === 'bathrooms' || k === 'beds') val = String(val);
     const empty = Array.isArray(A[k]) ? !A[k].length : !String(A[k] ?? '').trim();
     const auto = (k === 'town' && A._townAuto && A[k] === A._townAuto) || (k === 'region' && A._regionAuto && A[k] === A._regionAuto);   // the research's town: the listing's own wins
+    if (k === 'interests') {   // Beaches the research already ticked from the house's position stays beside the listing's (seaFromResearch)
+      const own = (A.interests || []).filter(x => !(A._seaAuto && x === 'Beaches'));
+      if (A._interestsHost || own.length) continue;
+      A.interests = [...new Set([...(Array.isArray(val) ? val : [val]), ...(A._seaAuto && (A.interests || []).includes('Beaches') ? ['Beaches'] : [])])]; if (A.interests.includes('Beaches') && [].concat(val).includes('Beaches')) delete A._seaAuto;
+      pre[k] = mod; continue;
+    }
     if (!empty && !auto) continue;
     A[k] = val; pre[k] = mod;
   }
