@@ -328,12 +328,11 @@ function swLiveAsk(p){
     swCardRefresh();
   }));
 }
-function swCardRefresh(){
+function swCardRefresh(count){
   const d = document.querySelector('#swipe .sw-deck'); if (!d) return;
-  const keys = d.contains(document.activeElement), t = document.createElement('div'); t.innerHTML = swipeInner();
-  const n = t.querySelector('.sw-deck'); if (!n) return; d.replaceWith(n);
-  const b = document.querySelector('#swipe .sw-btns'), nb = t.querySelector('.sw-btns'); if (b && nb) b.replaceWith(nb);   // a closed card's buttons follow it
-  if (keys) { const c = n.querySelector('.sw-card'); if (c) c.focus({ preventScroll: true }); }
+  const keys = d.contains(document.activeElement);
+  swSwap(count ? ['.sw-count', '.sw-deck', '.sw-btns'] : ['.sw-deck', '.sw-btns']);   // a closed card's buttons follow it
+  if (keys) { const c = document.querySelector('#swipe .sw-card'); if (c) c.focus({ preventScroll: true }); }
 }
 // The card as drawn: a researched one with Google's live photo and rating when there is a photo (else its kind's icon).
 const swLive = p => { const L = isOurs(p.id) && p.gid && SW.live.get(p.gid); return L && typeof L === 'object' ? { ...p, ...L } : p; };
@@ -349,11 +348,61 @@ function swShown(x){
 }
 const gmLink = (words, id) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(words || 'place')}&query_place_id=${encodeURIComponent(id)}`;
 const swMaps = p => p.maps || (isOurs(p.id) ? '' : gmLink(p.name, p.id));
-const swList = () => { const list = SW.lists[SW.cat]; if (!list || SW.cat !== 'todo') return list; const cards = researchCards(); return [...cards, ...list.filter(p => !cards.some(c => samePlace(c.name, p.name)))]; };
-// New cards: the deck takes them, Review says so, once.
+const swList = () => { const list = SW.lists[SW.cat]; if (!list || SW.cat !== 'todo') return list; const cards = researchCards(); return swOrder([...cards, ...list.filter(p => !cards.some(c => samePlace(c.name, p.name)))]); };
+// The deck's order, kept for the session (fault 3 of the acceptance test, 12 Nov 2026): the first time, the research's cards
+// first, then Google's. Cards that come later (the research, a wider Your area) never take the place of the card in hand
+// (the first card not decided yet): they go right after it (so the researched ones still come early), or at the end when
+// every card was decided (the deck opens again). Cards that come with the deck itself (within the first second it shows,
+// SW.openAt) go first, as if they had been there, and are not counted as arrivals. A Google card the research also found gives its place to the research's card, the
+// same place. Decisions are kept by id, whatever the order. SW.came counts the new cards not decided yet that came to a
+// deck in hand, for the count's line (swArrive).
+function swOrder(base){
+  const S = swipes(), by = new Map(base.map(p => [p.id, p]));
+  if (!SW.seq) { SW.seq = base.map(p => p.id); return base; }
+  const fresh = base.filter(p => !SW.seq.includes(p.id));
+  const seq = SW.seq.map(id => { if (by.has(id)) return id; const was = SW.mem.get(id), twin = was && fresh.find(f => isOurs(f.id) && samePlace(f.name, was.name));
+    if (!twin) return null; fresh.splice(fresh.indexOf(twin), 1); return twin.id; }).filter(Boolean);
+  const top = seq.findIndex(id => !S[id]), first = !SW.openAt || Date.now() - SW.openAt < 1000;
+  seq.splice(top < 0 ? seq.length : first ? top : top + 1, 0, ...fresh.map(p => p.id));
+  if (!first) SW.came = (SW.came || 0) + fresh.filter(p => !S[p.id]).length;
+  SW.seq = seq; return seq.map(id => by.get(id));
+}
+// New cards: the deck takes them (swArrive), Review says so, once. The deck is drawn again only when the research's cards
+// changed (not at every look at the research, which redrew the host's comment field under their fingers).
 function moreRefresh(){
-  refreshSwipe(); const el = document.getElementById('rvMore'); if (el) el.innerHTML = moreNote();
+  const sig = JSON.stringify([researchCards().map(p => p.id), !!AREA.fullOpen]);
+  if (sig !== SW.rsig) { SW.rsig = sig; swArrive(); }
+  const el = document.getElementById('rvMore'); if (el) el.innerHTML = moreNote();
   const n = researchCards().length; if (n && !AREA.cards && moreLeft() && !['nearby', 'send', 'building'].includes(route())) toast(`${n} more ${n === 1 ? 'place' : 'places'} in Attractions`); AREA.cards = n;
+}
+// Cards arriving while the deck is open: the card in hand stays (and a card held by the finger is left alone), the count's
+// total changes in place and its line says for a few seconds how many came (SW_SAY ms), said once to a screen reader
+// (#swSay, polite). No toast on this step: the line says it where the eye is. A finished deck opens again with them.
+const SW_SAY = 5000;
+function swArrive(){
+  const root = document.getElementById('swipe'); if (!root) return;
+  const had = !!(SW.seq && SW.lists[SW.cat]); SW.came = 0;
+  const list = swList(), n = had && list ? SW.came : 0;
+  if (n) {
+    SW.arrived = { n, until: Date.now() + SW_SAY }; clearTimeout(SW.arrT);
+    SW.arrT = setTimeout(() => { SW.arrived = null; swSwap(['.sw-count']); const s = document.getElementById('swSay'); if (s) s.textContent = ''; }, SW_SAY);
+    const s = document.getElementById('swSay'); if (s) s.textContent = tr(n === 1 ? `${n} more place found near you: it comes next in the deck.` : `${n} more places found near you: they come next in the deck.`);
+  }
+  const c = root.querySelector('.sw-card');
+  if (!c) return refreshSwipe();   // loading, or finished: drawn again
+  if (c.dataset.gone) return;   // flying off: the next drawing (swDecide) has them
+  if (c.dataset.drag) { SW.stale = true; swSwap(['.sw-count']); return; }   // held: the count now, the deck when it lets go
+  swCardRefresh(true);
+}
+// Parts of the deck drawn again in place (the count's line, the deck, its buttons), nothing else: not the picks, whose
+// comment the host may be typing. Parts that come or go (a deck that ends) draw the whole deck again.
+function swSwap(parts){
+  const root = document.getElementById('swipe'); if (!root) return;
+  const t = document.createElement('div'); t.innerHTML = swipeInner();
+  const pairs = parts.map(s => [root.querySelector(s), t.querySelector(s)]);
+  if (pairs.some(([a, b]) => !a !== !b)) { root.innerHTML = t.innerHTML; swFitSoon(); return; }
+  for (const [a, b] of pairs) if (a) a.replaceWith(b);
+  swFitSoon();
 }
 function moreNote(){
   if (!AUTH) return ''; const left = moreLeft();
@@ -377,32 +426,36 @@ async function loadPlaces(cat){
 function swipeHTML(){
   if (window.__placesOff) return `<div class="note full"><div>We cannot search places near you right now. Add the ones you recommend below.</div></div>`;
   if (!v('town') && !A.lat) return `<div class="note full"><div>Add your town in <a href="#listing">Your listing</a> first, so we know where to look.</div></div>`;
-  return `<div class="full sw" id="swipe">${swipeInner()}</div>`;
+  return `<div class="full sw" id="swipe">${swipeInner()}</div><p class="sr" id="swSay" aria-live="polite" translate="no"></p>`;
 }
 // The deck (docs/plan-fast-builder.md, step 5): one big card at a time, the next ones showing behind it. Drag it right to
 // recommend, left to skip (it follows the finger), or use the buttons or the arrow keys. Each yes lands in the phone.
 const swWant = () => [...(Array.isArray(A.interests) ? A.interests : []), ...(Array.isArray(A.guests) ? A.guests : [])];
 function swipeInner(){
-  const key = [v('radius'), ...swWant()].join('|'); if (SW.key !== key) { SW.key = key; SW.lists = {}; }   // Your area changed: the deck follows, what the host decided stays
+  const key = [v('radius'), ...swWant()].join('|'); if (SW.key !== key) { SW.key = key; SW.lists = {}; SW.seq = null; SW.openAt = 0; }   // Your area changed: the deck follows, what the host decided stays
   const list = swList(), S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
   const tabs = SW_CATS.length > 1 ? `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>` : '';
-  if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<div class="sw-empty">${SW.err ? esc(SW.err) : '<span class="spin dark"></span> Finding the best-rated places near you…'}</div>`; }
+  if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<p class="sw-count" aria-hidden="true"></p><div class="sw-empty sw-slot">${SW.err ? `<span>${esc(SW.err)}</span>` : '<span class="spin dark"></span><span>Finding the best-rated places near you…</span>'}</div>`; }
   const left = list.filter(p => !S[p.id]), seen = list.length - left.length;
   left.slice(0, 2).forEach(swLiveAsk);   // the card on top and the next one
   const p = left[0] && swLive(left[0]), kind = p && isOurs(p.id) && !p.photo;   // a researched card with no picture (yet): its kind's icon
+  if (!SW.openAt) SW.openAt = Date.now();   // when the deck first showed a card or its end (swOrder)
   const closed = p && isOurs(p.id) && p.gid ? p.closed || null : null, gone = closed === 'permanent';   // Google's word, live (swLiveAsk)
   const undo = SW.last && S[SW.last] ? ' <button type="button" class="sw-undo" data-swlast="1">Undo</button>' : '';
-  const count = `<p class="sw-count" role="status">${p ? `${seen + 1} of ${list.length}` : `All ${list.length} seen`} · ${yes} recommended${undo}</p>`;
+  // Cards that just came (swArrive): for a few seconds the line says how many instead of the picks (shown, not said: #swSay says it once).
+  const came = SW.arrived && SW.arrived.until > Date.now() ? SW.arrived.n : 0;
+  const count = `<p class="sw-count" role="status">${came ? `<span><span>${p ? `${seen + 1} of ${list.length}` : `All ${list.length} seen`}</span> · <b class="sw-new" aria-hidden="true">${came} more ${came === 1 ? 'place' : 'places'} found</b></span>` : `${p ? `${seen + 1} of ${list.length}` : `All ${list.length} seen`} · ${yes} recommended`}${undo}</p>`;
   const card = p ? `<div class="sw-deck">${left.length > 2 ? '<i class="sw-back b2" aria-hidden="true"></i>' : ''}${left.length > 1 ? '<i class="sw-back" aria-hidden="true"></i>' : ''}
       <article class="sw-card" data-pid="${esc(p.id)}" tabindex="0" aria-label="${esc(p.name)}: arrow right to recommend, arrow left to skip">
-        <div class="sw-ph${kind ? ' sw-kind' : ''}" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : kind ? `--kc:${esc(swKindColour())}` : ''}">${p.photo ? '' : kind ? `<span class="sw-ic" data-kind="${esc(p.icon && ENG_ICON[p.icon] ? p.icon : 'todo')}" aria-hidden="true">${(p.icon && ENG_ICON[p.icon]) || ENG_TODO}</span>` : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
+        <div class="sw-ph${kind ? ' sw-kind' : ''}" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : kind ? `--kc:${esc(swKindColour())}` : ''}">${p.photo ? '' : kind ? `<div class="sw-icw"><span class="sw-ic" data-kind="${esc(p.icon && ENG_ICON[p.icon] ? p.icon : 'todo')}" aria-hidden="true">${(p.icon && ENG_ICON[p.icon]) || ENG_TODO}</span></div>` : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
           <span class="sw-stamp yes" aria-hidden="true">Recommend</span><span class="sw-stamp no" aria-hidden="true">Not for us</span>
           <div class="sw-on"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
             <p>${closed ? `<b class="sw-closed ${closed}">${closed === 'permanent' ? 'Permanently closed' : 'Temporarily closed'}</b> · ` : ''}${p.rating ? `<span class="sw-rt"><b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''}</span> · ` : ''}<a href="${esc(swMaps(p) || gmLink(p.name, p.id))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>${swBy(p)}</div></div>
-        ${p.summary || gone ? `<div class="sw-tx">${gone ? '<p class="sw-gone">It cannot be added. If you know it is open, add it yourself by its name.</p>' : ''}${p.summary ? `<p>${esc(p.summary)}</p>` : ''}</div>` : ''}
+        ${p.summary || gone ? `<div class="sw-tx">${gone ? '<p class="sw-gone">It cannot be added. If you know it is open, add it yourself by its name.</p>' : ''}${p.summary ? `<p class="sw-sum" translate="no">${esc(p.summary)}</p>` : ''}</div>` : ''}
       </article></div>
     <div class="sw-btns${gone ? ' gone' : ''}"><button type="button" class="sw-no" data-sw="no">${svg('<path d="M6 6l12 12M18 6L6 18"/>').replace('stroke-width="2.2"', 'stroke-width="2.4" width="16" height="16"')}Not for us</button><button type="button" class="sw-yes" data-sw="yes"${gone ? ' aria-disabled="true"' : ''}>${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>`
-    : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> ${AUTH && AREA.fullOpen && !researchCards().length ? 'Our research is finding more: they will land here in about 2 minutes.' : 'Missing one? Add it below.'}</div>`;
+    : `<div class="sw-empty sw-slot sw-end"><span class="sw-endic" aria-hidden="true">${CHECK}</span><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b><span>${AUTH && AREA.fullOpen && !researchCards().length ? 'Our research is finding more: they will land here in about 2 minutes.' : 'Missing one? Add it below.'}</span></div>`;
+  swFitSoon();
   const picks = Object.values(S).filter(x => x.d === 'yes' && x.cat === SW.cat).map(swShown);
   return `${tabs}${count}${card}
     ${picks.length ? `<div class="sw-picks"><b>Your picks</b>${picks.map(x => { const nm = x.gone ? 'A place you kept' : x.name, link = swMaps(x);
@@ -413,13 +466,28 @@ function swipeInner(){
 // In memory only, like the rest of the card: a swipe never keeps them.
 const swBy = p => p.photo && (p.photoBy || []).length ? `<p class="sw-by">Photo: ${p.photoBy.map(a => a.uri ? `<a href="${esc(a.uri)}" target="_blank" rel="noopener" translate="no">${esc(a.name)}</a>` : `<span translate="no">${esc(a.name)}</span>`).join(', ')}</p>` : '';
 function refreshSwipe(){ const el = document.getElementById('swipe'); if (el) el.innerHTML = swipeInner(); }
+// A card's words: two lines at most, cut after a whole word with "…", never inside one (the line-clamp of CSS may cut a
+// word to fit its ellipsis). Done once the card is on the page (its width known), and again when the fonts or the width change.
+function swFit(){
+  for (const p of document.querySelectorAll('#swipe .sw-tx p.sw-sum')) {
+    const full = p.dataset.full || (p.dataset.full = p.textContent), fits = () => p.scrollHeight <= p.clientHeight + 1;
+    p.textContent = full; if (fits()) continue;
+    const w = full.split(/\s+/), cut = k => w.slice(0, k).join(' ').replace(/[\s,;:.·]+$/u, '') + '…';
+    let lo = 1, hi = w.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; p.textContent = cut(mid); if (fits()) lo = mid; else hi = mid - 1; }
+    p.textContent = cut(lo);
+  }
+}
+const swFitSoon = () => { clearTimeout(SW.fitT); SW.fitT = setTimeout(swFit, 0); };
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(swFit);
+window.addEventListener('resize', swFitSoon);
 // A decision: the card flies off the way it went, the next one comes up (with the focus, for keyboard users), the phone follows.
 // A yes on a researched card Google says is permanently closed (12 Nov 2026): the card comes back, a toast says why, nothing
 // is saved. Its answer not known yet: asked first (at most OPEN_WAIT, the Recommend button busy), then decided; no answer
 // lets the yes through.
 const swBackHome = c => { c.style.transition = ''; c.style.transform = ''; c.style.opacity = ''; c.style.setProperty('--yes', 0); c.style.setProperty('--no', 0); };
 function swDecide(d, c, asked){
-  const id = c && c.dataset.pid, p = id && (swList() || []).find(x => x.id === id); if (!p || c.dataset.gone) return;
+  const id = c && c.dataset.pid, p = id && ((swList() || []).find(x => x.id === id) || SW.mem.get(id)); if (!p || c.dataset.gone) { if (c && !c.dataset.gone) { swBackHome(c); refreshSwipe(); } return; }
   if (d === 'yes' && isOurs(id) && p.gid) {
     const L = SW.live.get(p.gid);
     if (L && L.closed === 'permanent') { swBackHome(c); toast(OPEN_NO); return; }

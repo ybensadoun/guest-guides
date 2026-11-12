@@ -114,21 +114,24 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .kn-part > .grid{margin-top:4px}
 .kn-card .opt{display:none}   /* everything here is optional: the header says so once */
 /* Places nearby: one big card at a time, the next ones behind it; dragged with a finger, or the buttons, or the arrow keys */
-.sw{display:grid;gap:14px}
+.sw{display:grid;gap:14px;--sw-ph:clamp(180px,28vh,320px);--sw-lh:20px;--sw-h:calc(var(--sw-ph) + 2 * var(--sw-lh) + 23px)}
+/* One height for every card (fault 3, 12 Nov 2026): the photo plus a band of two lines of words at most, so the buttons
+   under it never move from one card to the next. A card with no words: the photo takes the whole card; one or two lines:
+   the photo is shorter by the band. The cards behind follow the deck's height. */
 .sw-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .sw-tabs::-webkit-scrollbar{display:none}
 .sw-tabs button{flex:none;border:1.5px solid var(--line);background:var(--sunk);border-radius:999px;padding:8px 14px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;color:var(--ink)}
 .sw-tabs button[aria-selected="true"]{background:var(--night);border-color:var(--night);color:#fff}
-.sw-count{margin:0;font-size:13.5px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:26px}
+.sw-count{margin:0;font-size:13.5px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:28px}   /* as tall as Undo: the deck stays put when Undo comes or goes */
 .nb-card{padding-top:16px}
 .sw-undo{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 12px;font:inherit;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer}
 .sw-deck{position:relative;width:100%;max-width:420px;margin:12px auto 0}
 .sw-back{position:absolute;left:14px;right:14px;top:-8px;bottom:8px;border-radius:22px;background:var(--surface);box-shadow:0 4px 14px rgba(20,35,58,.12)}
 .sw-back.b2{left:28px;right:28px;top:-16px;bottom:16px;opacity:.6}
-.sw-card{position:relative;background:var(--surface);border-radius:22px;box-shadow:0 12px 32px rgba(20,35,58,.16);overflow:hidden;display:block;transition:transform .24s ease,opacity .24s ease;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+.sw-card{position:relative;background:var(--surface);border-radius:22px;box-shadow:0 12px 32px rgba(20,35,58,.16);overflow:hidden;display:flex;flex-direction:column;height:var(--sw-h);transition:transform .24s ease,opacity .24s ease;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
 .sw-card:active{cursor:grabbing}
 .sw-card:focus-visible{outline:3px solid var(--focus,var(--sea));outline-offset:3px}
-.sw-ph{position:relative;height:clamp(180px,28vh,320px);background:var(--sunk) center/cover no-repeat;display:grid;place-items:center;font:400 64px var(--display);color:var(--faint)}
+.sw-ph{position:relative;flex:1 1 auto;min-height:0;background:var(--sunk) center/cover no-repeat;display:grid;place-items:center;font:400 64px var(--display);color:var(--faint)}
 .sw-ph::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(10,14,20,.66))}
 .sw-on{position:absolute;left:16px;right:16px;bottom:12px;z-index:1;display:grid;gap:2px;color:#fff;font:15px/1.35 var(--body)}
 .sw-on small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.92}
@@ -139,16 +142,18 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .sw-on .sw-by{margin-top:2px;font-size:12px;line-height:1.3;opacity:.92;text-shadow:0 1px 2px rgba(0,0,0,.6);overflow-wrap:anywhere}
 .sw-on .sw-by a{font-weight:500}
 /* A researched card with no picture: its kind's icon (the engine's drawing) on the guide's colour, above the words, in the
-   flow so a long name pushes the card taller instead of running over the icon */
-.sw-ph.sw-kind{display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;gap:14px;height:auto;min-height:clamp(180px,28vh,320px);padding:20px 16px 12px;background:var(--kc,var(--pine));color:#fff}
-.sw-kind .sw-on{position:relative;left:auto;right:auto;bottom:auto}
-.sw-ic{position:relative;z-index:1;align-self:center;width:76px;height:76px;flex:none;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;color:#fff}
-.sw-ic svg{width:40px;height:40px}
+   flow: the card keeps its height, so a long name takes room from the icon (smaller, then none) instead of running over it */
+.sw-ph.sw-kind{display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:16px 16px 12px;background:var(--kc,var(--pine));color:#fff}
+.sw-kind .sw-on{position:relative;left:auto;right:auto;bottom:auto;flex:none}
+.sw-icw{flex:1 1 0;min-height:0;display:grid;place-items:center;container-type:size}
+.sw-ic{position:relative;z-index:1;width:min(76px,100cqh);height:min(76px,100cqh);border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;color:#fff}
+.sw-ic svg{width:53%;height:53%}
+@container (max-height:39px){.sw-ic{display:none}}
 .sw-stamp{position:absolute;top:16px;z-index:2;padding:4px 10px;border-radius:10px;border:3px solid currentColor;background:rgba(255,255,255,.9);font:800 17px/1.2 var(--body);text-transform:uppercase;letter-spacing:.04em}
 .sw-stamp.yes{left:14px;color:var(--ok);opacity:var(--yes,0);transform:rotate(-8deg)}
 .sw-stamp.no{right:14px;color:var(--danger,#B3261E);opacity:var(--no,0);transform:rotate(8deg)}
-.sw-tx{padding:11px 16px 12px}
-.sw-tx p{margin:0;font-size:14.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sw-tx{flex:none;padding:11px 16px 12px}
+.sw-tx p{margin:0;font-size:14.5px;line-height:var(--sw-lh);color:var(--muted);max-height:calc(2 * var(--sw-lh));overflow:hidden}   /* cut after a whole word with "…" by swFit */
 .sw-btns{display:grid;grid-template-columns:1fr 1.3fr;gap:10px;width:100%;max-width:420px;margin:0 auto}
 .sw-btns button{min-height:52px;border-radius:999px;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .sw-no{border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
@@ -157,11 +162,19 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
    kept, so Recommend looks unavailable (it still answers, with a toast) and Not for us becomes the main button */
 .sw-on .sw-rt{white-space:nowrap}   /* the stars and their count stay together on the line */
 .sw-on .sw-closed.permanent{background:var(--danger,#B3261E);color:#fff;padding:0 6px;border-radius:5px;white-space:nowrap}
-.sw-tx p.sw-gone{display:block;-webkit-line-clamp:none;color:var(--ink);font-weight:600;margin-bottom:6px}
+.sw-tx p.sw-gone{max-height:none;color:var(--ink);font-weight:600;margin-bottom:6px}
+.sw-tx .sw-gone + .sw-sum{max-height:var(--sw-lh)}   /* under what to do instead: one line, the photo keeps its room */
 .sw-btns.gone .sw-yes{opacity:.5;cursor:default}
 .sw-btns.gone .sw-no{background:var(--night);border-color:var(--night);color:#fff}
 .sw-btns button[aria-busy="true"]{cursor:progress;opacity:.7}
 .sw-empty{padding:22px;border-radius:18px;background:var(--sunk);color:var(--muted);font-size:15px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* Loading and the end of the deck take the place of the card and its buttons, at their height: when the last card goes
+   (or the first comes) nothing under the deck moves, and Undo brings the card back where it was */
+.sw-slot{box-sizing:border-box;width:100%;max-width:420px;margin:12px auto 0;height:calc(var(--sw-h) + 14px + 52px);flex-direction:column;flex-wrap:nowrap;justify-content:center;text-align:center;text-wrap:balance;border-radius:22px;padding:24px 18px;gap:8px}
+.sw-end b{font:400 26px/1.15 var(--display);color:var(--ink)}
+.sw-endic{width:64px;height:64px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--ok);margin-bottom:6px}
+.sw-endic svg{width:30px;height:30px;stroke-width:2.6}
+.sw-count .sw-new{color:var(--ok);font-weight:700}
 .sw-picks{display:grid;gap:8px;max-width:520px}
 .sw-picks > b{font-size:14px}
 .sw-pick{display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center;background:var(--sunk);border-radius:14px;padding:10px 12px}

@@ -4192,9 +4192,9 @@
 "fr": "Recommencer"
 },
 "Start typing the name": {
-"ca": "Comença a escriure el nom",
-"es": "Empieza a escribir el nombre",
-"fr": "Commencez à taper le nom"
+"ca": "Escriu el nom",
+"es": "Escribe el nombre",
+"fr": "Tapez le nom"
 },
 "Start typing the name and pick it from the list: we put it on the map and look up its details. A website or a Google Maps link works too. Your comment shows in the guide: what to order, when to go.": {
 "ca": "Comença a escriure el nom i tria’l de la llista: el posem al mapa i en busquem les dades. També serveix una web o un enllaç de Google Maps. El teu comentari surt a la guia: què demanar, quan anar-hi.",
@@ -4772,9 +4772,9 @@
 "fr": "Quelle poubelle, quel jour"
 },
 "Why you love it, when to go (optional)": {
-"ca": "Per què t’agrada, quan anar-hi (opcional)",
-"es": "Por qué te gusta, cuándo ir (opcional)",
-"fr": "Pourquoi vous l’aimez, quand y aller (facultatif)"
+"ca": "Per què, quan anar-hi (opcional)",
+"es": "Por qué, cuándo ir (opcional)",
+"fr": "Pourquoi, quand y aller (facultatif)"
 },
 "Wi-Fi card": {
 "ca": "Targeta de wifi",
@@ -8245,5 +8245,50 @@
 "ca": "Pobles, i llocs a Google",
 "es": "Pueblos, y lugares en Google",
 "fr": "Villes, et lieux sur Google"
+},
+"{n} more places found": {
+"ca": "{n} llocs nous",
+"es": "{n} sitios nuevos",
+"fr": "{n} nouveaux lieux"
+},
+"{n} more place found": {
+"ca": "{n} lloc nou",
+"es": "{n} sitio nuevo",
+"fr": "{n} nouveau lieu"
+},
+"{n} more places found near you: they come next in the deck.": {
+"ca": "{n} llocs nous a prop teu: vénen a continuació.",
+"es": "{n} sitios nuevos cerca de ti: vienen a continuación.",
+"fr": "{n} nouveaux lieux près de chez vous : ils arrivent juste après."
+},
+"{n} more place found near you: it comes next in the deck.": {
+"ca": "{n} lloc nou a prop teu: ve a continuació.",
+"es": "{n} sitio nuevo cerca de ti: viene a continuación.",
+"fr": "{n} nouveau lieu près de chez vous : il arrive juste après."
+},
+"All {n} seen · {k} recommended": {
+"ca": "Els {n} vistos · {k} recomanats",
+"es": "Los {n} vistos · {k} recomendados",
+"fr": "Les {n} vus · {k} recommandés"
+},
+"All {n} seen": {
+"ca": "Els {n} vistos",
+"es": "Los {n} vistos",
+"fr": "Les {n} vus"
+},
+"That’s all for attractions.": {
+"ca": "Això és tot a Què veure i fer.",
+"es": "Esto es todo en Qué ver y hacer.",
+"fr": "C’est tout pour À voir et à faire."
+},
+"{n} more places in Attractions": {
+"ca": "{n} llocs més a Què veure i fer",
+"es": "{n} sitios más en Qué ver y hacer",
+"fr": "{n} autres lieux dans À voir et à faire"
+},
+"{n} more place in Attractions": {
+"ca": "{n} lloc més a Què veure i fer",
+"es": "{n} sitio más en Qué ver y hacer",
+"fr": "{n} autre lieu dans À voir et à faire"
 }
 }

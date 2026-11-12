@@ -213,7 +213,7 @@ const launch = async () => {
 
 // ======== The groups. Each runs alone in its process; between them, only the constants above and the helpers below. ========
 function groupList() {
-  return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'research-deck': gResearchDeck, 'build-ready': gBuildReady, 'web-address': gWebAddress,
+  return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'research-deck': gResearchDeck, 'deck-steady': gDeckSteady, 'build-ready': gBuildReady, 'web-address': gWebAddress,
     'houses': gHouses, 'builder': gBuilder, 'rooms-offers': gRoomsOffers, 'nearby': gNearby, 'wow': gWow, 'editor': gEditor, 'editor-names': gEditorNames,
     'place-card': gPlaceCard, 'place-season': gPlaceSeason, 'still-open': gStillOpen, 'place-facts': gPlaceFacts, 'market-event': gMarketEvent,
     'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'nightlife-colours': gNightlifeColours, 'layout': gLayout, 'towns': gTowns };
@@ -637,6 +637,115 @@ async function gResearchDeck() {
     ok('a house with no position from its listing: the deck searches the town and keeps Google\'s position with its date', q.some(x => /town=/.test(x) && !/lat=/.test(x)) && A.lat === 41.5 && A.lng === 1.7 && JSON.stringify(A.pos) === JSON.stringify({ from: 'google', at: today }), JSON.stringify({ lat: A.lat, pos: A.pos, q: q[0] }));
     ok('a house with no position from its listing: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+}
+  // ---- The deck holds still (fault 3 of the acceptance test, 12 Nov 2026): every card has one height, so the two buttons
+  // never move under the hand, whatever the card holds (no words, one line, two lines cut after a whole word, Google's live
+  // picture and author line coming late, a drag); the end of the deck takes the card's and the buttons' place. Cards the
+  // research finds while the deck is open never replace the card in hand: they come right after it, the count's total grows
+  // in place and its line says how many came for a few seconds, said once to a screen reader; decisions stay. ----
+  const STEADY_LONG = 'A long beach of fine sand with shallow water for small children, a wooden boardwalk, two summer kiosks and a lifeguard from June to September.';
+  const STEADY_G = [['gs-a', 'Platja Test', ''], ['gs-b', 'Cala Test', 'A quiet cove under the pines.'], ['gs-c', 'Platja Llarga Test', STEADY_LONG], ['gs-d', 'Ermita Test', ''], ['gs-e', 'Mirador Test', 'A view over the bay.']]
+    .map(([id, name, summary], i) => ({ id, name, type: 'Beach', rating: 4.5, reviews: 100 + i, maps: 'https://maps.google.com/?q=' + id, lat: A0.lat, lng: A0.lng, km: 2 + i, photo: photos[i] || '/api/photo?name=' + id, photoBy: i === 0 ? [{ name: 'Ana Test', uri: 'https://maps.google.com/maps/contrib/123' }] : [], ...(summary ? { summary } : {}) }));
+  // Where the deck's parts are on the page (not on the screen: the page may scroll).
+  const steadyGeom = p => p.evaluate(() => { const q = s => document.querySelector(s), r = s => { const e = q(s); if (!e) return null; const b = e.getBoundingClientRect(); return { top: b.top + scrollY, bottom: b.bottom + scrollY, height: b.height }; };
+    const tx = q('.sw-card .sw-tx'), sum = q('.sw-card .sw-tx .sw-sum');
+    return { yes: r('[data-sw="yes"]'), no: r('[data-sw="no"]'), card: r('.sw-card'), ph: r('.sw-card .sw-ph'), row: r('.sw-count'), slot: r('.sw-slot'), picks: r('.sw-picks'), btns: r('.sw-btns'),
+      tx: tx ? { height: tx.getBoundingClientRect().height, text: tx.textContent.trim() } : null, sum: sum ? { text: sum.textContent, full: sum.dataset.full || '', lines: Math.round(sum.getBoundingClientRect().height / parseFloat(getComputedStyle(sum).lineHeight)) } : null,
+      name: (q('.sw-card h3') || {}).textContent || '', count: ((q('.sw-count') || {}).textContent || '').replace(/\s+/g, ' ').trim(), news: document.querySelectorAll('.sw-count .sw-new').length,
+      kind: !!q('.sw-card .sw-kind'), by: !!q('.sw-card .sw-by'), photo: /background-image/.test((q('.sw-card .sw-ph') || { getAttribute: () => '' }).getAttribute('style') || '') }; });
+  const near1 = (a, b) => a != null && b != null && Math.abs(a - b) <= 1;
+  // A description cut after a whole word: what shows is the start of the full text up to a space, then "…"; never wider than two lines.
+  const wholeWords = s => !!s && (s.text === s.full || (s.text.endsWith('…') && s.full.startsWith(s.text.slice(0, -1)) && /^[\s,;:.·]/.test(s.full.slice(s.text.length - 1)))) && s.lines <= 2;
+async function gDeckSteady() {
+  const one = async (w, h, lang) => {
+    const tag = `${w} px${lang === 'en' ? '' : ' in French'}`, sfx = `${w}${lang === 'en' ? '' : '-' + lang}`;
+    const items = AREA_TODO.items.map((it, i) => i === 0 ? { ...it, gid: 'gs-r0' } : it), en = i => lang === 'fr' ? items[i].name.fr || items[i].name.en : items[i].name.en;
+    const G = { ...B, answers: { ...B.answers, radius: '1 hour', _researchJob: JOB_ID, swipes: {}, favDo: [] } };
+    const { ctx, p, errors } = await open(browser, G, w, h); let job = { status: 'running', result: null }, letPhoto; const photoGo = new Promise(r => { letPhoto = r; });
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [job]));
+    await ctx.route('**/api/places**', r => { const q = new URL(r.request().url()).searchParams;
+      if (q.get('card')) return photoGo.then(() => json(r, q.get('card') === 'gs-r0' ? { ok: true, photo: CARD_PHOTO, photoBy: [{ name: 'Bea Test', uri: 'https://maps.google.com/maps/contrib/456' }], rating: 4.7, reviews: 321 } : { ok: false }).catch(() => {}));
+      return json(r, q.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: STEADY_G }); });
+    await p.goto(`http://editor.test/${lang === 'en' ? '' : '?lang=' + lang}#nearby`); await ready(p);
+    await p.waitForSelector('.sw-card', { timeout: 8000 }).catch(() => {}); await settle(p, 500);
+    const shot = async name => { await p.evaluate(() => { const c = document.querySelector('.sw-count'); if (c) window.scrollBy(0, c.getBoundingClientRect().top - 12); });
+      await p.evaluate(() => { const m = /url\(["']?([^"')]+)/.exec((document.querySelector('.sw-card .sw-ph') || { style: {} }).style.backgroundImage || ''); return m && new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = m[1]; setTimeout(r, 4000); }); });   // the photo drawn in the picture
+      await settle(p, 150); await p.screenshot({ path: join(SHOTS, name) }); };
+    const g0 = await steadyGeom(p), c0 = await cardClear(p, '.sw-card');
+    ok(`deck holds still, ${tag}: a card with no words is all photo (no band under it), touching nothing`, g0.name === 'Platja Test' && !g0.tx && near1(g0.ph.bottom, g0.card.bottom) && !c0, `${g0.name} ${JSON.stringify(g0.tx)} ${c0}`);
+    await shot(`deck-steady-no-words-${sfx}.png`);
+    await p.click('[data-sw="yes"]'); await settle(p, 450);
+    const g1 = await steadyGeom(p), c1 = await cardClear(p, '.sw-card');
+    ok(`deck holds still, ${tag}: a card with one line of words, the photo shorter by the band, touching nothing`, g1.name === 'Cala Test' && !!g1.sum && g1.sum.lines === 1 && near1(g1.ph.bottom + g1.tx.height, g1.card.bottom) && !c1, `${g1.name} ${JSON.stringify(g1.sum)} ${c1}`);
+    await shot(`deck-steady-one-line-${sfx}.png`);
+    await p.click('[data-sw="no"]'); await settle(p, 450);
+    const g2 = await steadyGeom(p), c2 = await cardClear(p, '.sw-card');
+    ok(`deck holds still, ${tag}: a longer description shows two lines, cut after a whole word with "…", touching nothing`, g2.name === 'Platja Llarga Test' && g2.sum.lines === 2 && g2.sum.text.endsWith('…') && wholeWords(g2.sum) && !c2, `${JSON.stringify(g2.sum)} ${c2}`);
+    await shot(`deck-steady-two-lines-${sfx}.png`);
+    ok(`deck holds still, ${tag}: no words, one line, two lines: the card the same height, the two buttons at the same place`, near1(g0.card.height, g1.card.height) && near1(g1.card.height, g2.card.height) && near1(g0.yes.top, g1.yes.top) && near1(g1.yes.top, g2.yes.top) && near1(g0.no.top, g2.no.top),
+      [g0, g1, g2].map(g => `card ${g.card.height.toFixed(1)} buttons ${g.yes.top.toFixed(1)}`).join(' / '));
+    // The research's cards arrive while Google's third card is in hand.
+    await p.evaluate(() => { window.__says = []; const s = document.getElementById('swSay'); if (s) new MutationObserver(() => { if (s.textContent.trim()) window.__says.push(s.textContent.trim()); }).observe(s, { childList: true, characterData: true, subtree: true }); });
+    const before = g2.count, total0 = +(before.match(/(\d+)\s+(?:of|sur)\s+(\d+)/) || [])[2];
+    job = { status: 'running', result: { todo: { ...AREA_TODO, items } } };
+    await p.waitForSelector('.sw-count .sw-new', { timeout: 10000 }).catch(() => {}); await settle(p, 300);
+    const g3 = await steadyGeom(p), n = items.length, total1 = +(g3.count.match(/(\d+)\s+(?:of|sur)\s+(\d+)/) || [])[2];
+    const said = lang === 'fr' ? `${n} nouveaux lieux` : `${n} more places found`, A3 = (await stored(p)).swipes || {};
+    ok(`deck holds still, ${tag}: when the research's cards arrive, the card in hand stays on top`, g3.name === 'Platja Llarga Test', g3.name);
+    ok(`deck holds still, ${tag}: the count's total grows in place and its line says how many came, once`, total1 === total0 + n && g3.news === 1 && g3.count.includes(said) && /^3\s+(of|sur)\s/.test(g3.count), `${before} -> ${g3.count}`);
+    ok(`deck holds still, ${tag}: decisions made before the arrival are kept`, (A3['gs-a'] || {}).d === 'yes' && (A3['gs-b'] || {}).d === 'no' && !A3['gs-c'], JSON.stringify(A3));
+    ok(`deck holds still, ${tag}: the arrival moves nothing (the count's line keeps its height, the buttons their place), no toast says it again`, near1(g3.row.height, g2.row.height) && near1(g3.yes.top, g2.yes.top) && near1(g3.card.height, g2.card.height) && !/more places|nouveaux lieux|autres lieux/.test(await textNow(p, '#toast')), `row ${g2.row.height}->${g3.row.height}, buttons ${g2.yes.top}->${g3.yes.top}`);
+    const rc = await rowClash(p, '.sw-count', ['.sw-new', '.sw-undo', ':scope > span > span']);
+    ok(`deck holds still, ${tag}: the count's line with what came, touching nothing, on one line`, !rc.length && g3.row.height < 30, `${rc.join('; ')} ${g3.row.height}`);
+    await shot(`deck-arrival-${sfx}.png`);
+    // The next card is the research's (its live picture held back until the check lets it come).
+    await p.click('[data-sw="no"]'); await settle(p, 450);
+    const g4 = await steadyGeom(p);
+    ok(`deck holds still, ${tag}: the next card is the research's first, its kind's icon while its picture is on its way, the buttons at the same place`, g4.name === en(0) && g4.kind && !g4.photo && near1(g4.yes.top, g2.yes.top) && near1(g4.card.height, g2.card.height) && wholeWords(g4.sum) && !(await cardClear(p, '.sw-card')), `${g4.name} kind ${g4.kind} buttons ${g4.yes.top}`);
+    letPhoto(); await p.waitForSelector('.sw-card .sw-by', { timeout: 5000 }).catch(() => {}); await settle(p, 300);
+    const g5 = await steadyGeom(p);
+    ok(`deck holds still, ${tag}: its picture, rating and "Photo:" line come, and nothing moves`, g5.name === en(0) && g5.photo && g5.by && near1(g5.yes.top, g4.yes.top) && near1(g5.card.height, g4.card.height) && near1(g5.ph.height, g4.ph.height) && !(await cardClear(p, '.sw-card')), `photo ${g5.photo} by ${g5.by} buttons ${g4.yes.top}->${g5.yes.top}`);
+    // A drag to the right recommends it; the next card's buttons in the same place.
+    { const [x, y] = await p.$eval('.sw-card', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + 60]; });
+      await p.mouse.move(x, y); await p.mouse.down(); for (let i = 1; i <= 8; i++) { await p.mouse.move(x + 160 * i / 8, y); await p.waitForTimeout(16); } await p.mouse.up(); await settle(p, 450); }
+    const g6 = await steadyGeom(p), A6 = (await stored(p)).swipes || {};
+    ok(`deck holds still, ${tag}: a drag to the right still recommends the card, the next comes up with the buttons at the same place`, (A6['r:' + plainKey(en(0))] || {}).d === 'yes' && g6.name === en(1) && near1(g6.yes.top, g2.yes.top), `${g6.name} ${Object.keys(A6).join()}`);
+    // The line goes back to the plain count after a few seconds; the arrival was said once.
+    await p.waitForFunction(() => !document.querySelector('.sw-count .sw-new'), null, { timeout: 9000 }).catch(() => {}); await settle(p, 200);
+    const says = await p.evaluate(() => window.__says), live = await p.getAttribute('#swSay', 'aria-live').catch(() => '');
+    const g7 = await steadyGeom(p);
+    ok(`deck holds still, ${tag}: after a few seconds the line is the plain count again, at the same height`, /(2 recommended|2 recommandés)/.test(g7.count) && near1(g7.row.height, g2.row.height) && near1(g7.yes.top, g2.yes.top), g7.count);
+    ok(`deck holds still, ${tag}: the arrival is said once to a screen reader, politely`, live === 'polite' && says.length === 1 && says[0].startsWith(lang === 'fr' ? `${n} nouveaux lieux près de chez vous` : `${n} more places found near you`), `${live} ${JSON.stringify(says)}`);
+    // To the end: the end of the deck takes the card's and the buttons' place, so nothing under it moves; Undo brings the card back where it was.
+    let last = null;
+    for (let k = 0; k < 20 && await p.$('.sw-card'); k++) { last = await steadyGeom(p); await p.click('[data-sw="no"]'); await settle(p, 450); }
+    const g8 = await steadyGeom(p);
+    ok(`deck holds still, ${tag}: at the end, "That's all" takes the card's and the buttons' place: nothing under it moves`, !!g8.slot && !!last && near1(g8.slot.top, last.card.top) && near1(g8.slot.bottom, last.btns.bottom) && near1(g8.picks.top, last.picks.top) && !(await rowClash(p, '.sw-slot', ['b', 'span'])).length,
+      g8.slot && last ? `end ${g8.slot.top.toFixed(1)}-${g8.slot.bottom.toFixed(1)}, card and buttons ${last.card.top.toFixed(1)}-${last.btns.bottom.toFixed(1)}, picks ${last.picks.top.toFixed(1)}->${g8.picks.top.toFixed(1)}` : 'no end');
+    await shot(`deck-end-${sfx}.png`);
+    await p.click('[data-swlast]'); await settle(p, 300);
+    const g9 = await steadyGeom(p);
+    ok(`deck holds still, ${tag}: Undo brings the last card back, the buttons where they were`, !!g9.yes && near1(g9.yes.top, g2.yes.top) && near1(g9.picks.top, g8.picks.top), g9.yes ? `${g9.yes.top}` : 'no card');
+    ok(`deck holds still, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  };
+  // A deck already finished when the research's cards come: they open it again, the line says how many came.
+  const finished = async () => {
+    const G = { ...B, answers: { ...B.answers, radius: '1 hour', _researchJob: JOB_ID, swipes: {}, favDo: [] } };
+    const { ctx, p, errors } = await open(browser, G, 360, 780); let job = { status: 'running', result: null };
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [job]));
+    await ctx.route('**/api/places**', r => { const q = new URL(r.request().url()).searchParams; return json(r, q.get('card') ? { ok: false } : q.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: STEADY_G.slice(0, 1) }); });
+    await p.goto('http://editor.test/#nearby'); await ready(p); await p.waitForSelector('.sw-card', { timeout: 8000 }).catch(() => {}); await settle(p, 300);
+    await p.click('[data-sw="no"]'); await settle(p, 1200);
+    const end = !!(await p.$('.sw-end')) && !(await p.$('.sw-card'));
+    job = { status: 'done', result: { todo: AREA_TODO } };
+    await p.waitForSelector('.sw-card', { timeout: 10000 }).catch(() => {}); await settle(p, 300);
+    const g = await steadyGeom(p);
+    ok('deck holds still, finished deck: the research\'s cards open it again, first card the research\'s, the line says how many came', end && g.name === AREA_TODO.items[0].name.en && g.news === 1 && g.count.includes(`${AREA_TODO.items.length} more places found`) && /^2 of 6\b/.test(g.count), `${end} ${g.name} | ${g.count}`);
+    ok('deck holds still, finished deck: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  };
+  await Promise.all([one(1280, 860, 'en'), one(360, 780, 'en'), one(1280, 860, 'fr'), one(360, 780, 'fr'), finished()]);
 }
   // ---- The build screen (Yohann, 12 Nov 2026): a line under the bar that changes and says what goes into this guide; the
   // time left true for the languages chosen; when it is ready, the places the research found first, then the guide ----
