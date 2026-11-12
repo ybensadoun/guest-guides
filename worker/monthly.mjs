@@ -67,7 +67,7 @@ if (STEPS.includes('find')) {
   }
   parts.push(`3. New places: Find more searches (things to do, markets). The worker runs them in the next minutes; their suggestions wait 14 days in the editor (Things to do > Find more, Markets > Find more), to keep or skip.\n${lines.join('\n')}`);
 }
-const head = `Monthly check, ${today}${DRY ? ' (dry run)' : ''}\n${sum.humans} line(s) for a human, ${sum.added} automatic event(s) added, ${sum.sites} website(s) opened, no Google request in this run (Find more, queued, checks its suggestions on Google in the worker), Claude about ${sum.claudeUsd.toFixed(2)} USD for the events search.`;
+const head = `Monthly check, ${today}${DRY ? ' (dry run)' : ''}\n${sum.humans} line(s) for a human, ${sum.added} automatic event(s) added, ${sum.sites} website(s) opened, no Google request in this run (Find more, queued, locates its suggestions on Google in the worker), Claude about ${sum.claudeUsd.toFixed(2)} USD for the events search.`;
 const text = `${head}\n\n${parts.join('\n\n')}\n`;
 console.log('\n' + text);
 

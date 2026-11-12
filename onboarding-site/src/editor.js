@@ -1176,20 +1176,77 @@ function cmFindHTML(path) {
   if (!CM.find[kind]) cmFindLoad(kind);
   return `<div class="cm-find" id="cmFind" data-fpath="${path}">${cmFindInner(path)}</div>`;
 }
+/* --- Is a suggestion still open? (Yohann, 12 Nov 2026) Google's terms let us keep a place's id and nothing else it says, so
+   its status is no longer asked by the worker and stored with the research (worker/research-check.mjs): it is asked here,
+   live, when a host looks at a suggestion that has a Google id (the editor's Find more cards, the ready screen's cards in
+   runtime.js; the deck asks it with the card's photo, start.js swLiveAsk), shown with "Google Maps" beside it, and used at
+   once. A place Google says is permanently closed cannot be added: its accept button looks unavailable but still answers,
+   with a toast; the host who knows better adds it by its name, in their own words. Temporarily closed is only shown, and no
+   mark of ours comes from it. OPEN holds the answers for this session only, in memory, by Google id: 'wait' while asked,
+   { closed: 'permanent' | 'temporary' | null }, or 'fail' (no key, offline, no answer). Never in the answers, a draft,
+   this device's storage or the database. A failed ask never blocks a host: the accept goes through. --- */
+const OPEN = {}, OPEN_P = {}, OPEN_WAIT = 4000;   // the longest an accept waits for Google before it goes through
+const OPEN_SAY = { permanent: 'Permanently closed', temporary: 'Temporarily closed' }, OPEN_NO = 'Permanently closed on Google Maps: it cannot be added.';
+// Asked once per id per session (again after a failure only when the host accepts: again).
+function openAsk(gid, again = false) {
+  if (!gid) return Promise.resolve(null);
+  const s = OPEN[gid];
+  if (s && typeof s === 'object') return Promise.resolve(s);
+  if (OPEN_P[gid]) return OPEN_P[gid];
+  if (s === 'fail' && !again) return Promise.resolve(null);
+  OPEN[gid] = 'wait';
+  return OPEN_P[gid] = fetch('/api/places?open=' + encodeURIComponent(gid), { signal: AbortSignal.timeout(9000) }).then(r => r.json())
+    .then(d => d && d.ok ? { closed: d.closed === 'permanent' || d.closed === 'temporary' ? d.closed : null } : 'fail').catch(() => 'fail')
+    .then(x => { OPEN[gid] = x; delete OPEN_P[gid]; if (x !== 'fail' && x.closed) openShow(gid); return x === 'fail' ? null : x; });
+}
+const openOf = gid => { const s = gid && OPEN[gid]; return s && typeof s === 'object' ? s.closed : null; };
+// The answer came while its card is on screen: only a closed place changes the card (an open one shows nothing, so the card
+// never moves for it). The focus stays on the same button.
+function openShow(gid) {
+  const on = [...document.querySelectorAll('.cm-fcard')].filter(c => c.dataset.gid === gid); if (!on.length) return;
+  const a = document.activeElement, keep = a && a.closest && a.closest('.cm-fcard') ? ['cfadd', 'cfskip', 'rdadd', 'rdskip'].find(k => a.dataset[k] !== undefined) : null;
+  for (const c of on) {
+    if (c.closest('#bcards') && typeof readyCard === 'function') document.getElementById('bcards').innerHTML = readyCard();
+    else if (c.closest('#cmFind')) cmFindRefresh();
+  }
+  if (keep) { const b = document.querySelector(`.cm-fcard[data-gid="${CSS.escape(gid)}"] [data-${keep}]`); if (b) b.focus({ preventScroll: true }); }
+}
+// Before a suggestion goes in: true when it may. Not known yet: asked first, the button busy (and no second tap), at most
+// OPEN_WAIT; then a permanently closed one is refused with a toast, anything else (or no answer) goes in.
+async function openGate(it, btn) {
+  if (!it || !it.gid) return true;
+  if (OPEN[it.gid] === undefined || OPEN[it.gid] === 'wait' || OPEN[it.gid] === 'fail') {
+    if (btn) { if (btn.getAttribute('aria-busy') === 'true') return false; btn.setAttribute('aria-busy', 'true'); btn.disabled = true; }
+    await Promise.race([openAsk(it.gid, true), new Promise(r => setTimeout(r, OPEN_WAIT))]);
+    if (btn) { btn.removeAttribute('aria-busy'); btn.disabled = false; }
+  }
+  if (openOf(it.gid) === 'permanent') { toast(OPEN_NO); openShow(it.gid); return false; }
+  return true;
+}
+// The line on the card, above the buttons: Google's word with "Google Maps" beside it (as the deck writes it under a card's
+// rating), and for a permanently closed place what the host can do instead.
+const openLine = (it, closed) => !closed ? '' : `<p class="cm-fclosed ${closed}"><b>${OPEN_SAY[closed]}</b> · <a href="${esc(it.gmaps || gmLink(edShown(it.name) || it.name_local, it.gid))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>`
+  + (closed === 'permanent' ? '<p class="hint">It cannot be added. If you know it is open, add it yourself by its name.</p>' : '');
 const cmDays = sch => (sch || []).map(r => `${(r.days || []).map(d => (ED_DAYS.find(x => x[0] === d) || [0, d])[1]).join(' ')} ${r.open || ''}${r.close ? '-' + r.close : ''}`).join(', ');
 // o (the ready screen, runtime.js): its own words and buttons (data-rdadd, data-rdskip, data-rdstop), and why the place
 // was suggested, from what the research says of it (kids, free, dogs: the guide's own marks, in the maker's language).
+// A suggestion with a Google id shows whether Google says it is closed (openLine, asked as the card is drawn); one without
+// keeps the research's own note that it was not found on Google (older results' "On Google" or "Temporarily closed on
+// Google" are never shown: the status is only ever live).
 function cmFindCard(it, i, n, o) {
   const today = new Date().toISOString().slice(0, 10), b = o ? 'rd' : 'cf';
+  if (it.gid) openAsk(it.gid);
+  const closed = it.gid ? openOf(it.gid) : null, gone = closed === 'permanent';
   const sub = [edIs18(it.type) ? edShown(it.type) : '', it.town, it.km_from_house != null ? it.km_from_house + ' km from the house' : ''].filter(Boolean).join(' · ');
   const when = (it.dates || []).filter(d => (d.end || d.start) >= today).map(d => `${d.start}${d.end && d.end !== d.start ? ' to ' + d.end : ''}, ${d.status === 'confirmed' ? 'confirmed' : 'expected'}`).join('; ');
   const hours = it.always ? 'Open any time' : cmDays(it.schedule);
   const why = o ? [['kidsfun', 't_kidsfun'], ['free', 't_free'], ['dogs', 't_dogs']].filter(([x]) => [...(it.tags || []), ...(it.flags || [])].includes(x) || (x === 'kidsfun' && it.kids)).map(([, w]) => engT(w)) : [];
-  return `<article class="cm-fcard"><small>${o ? `Found near you · ${i} of ${n}` : `Suggestion ${i} of ${n}`}</small><h3>${esc(edShown(it.name))}</h3>${sub ? `<p class="cm-fsub">${esc(sub)}</p>` : ''}
+  return `<article class="cm-fcard"${it.gid ? ` data-gid="${esc(it.gid)}"` : ''}><small>${o ? `Found near you · ${i} of ${n}` : `Suggestion ${i} of ${n}`}</small><h3>${esc(edShown(it.name))}</h3>${sub ? `<p class="cm-fsub">${esc(sub)}</p>` : ''}
     <p>${esc(edShown(it.description))}</p>${why.length ? `<p class="cm-fwhy" translate="no">${why.map(w => `<span>${esc(w)}</span>`).join('')}</p>` : ''}
-    ${when ? `<p class="hint"><b>Dates:</b> ${esc(when)}</p>` : ''}${hours ? `<p class="hint"><b>Hours:</b> ${esc(hours)}</p>` : ''}${it._google ? `<p class="hint">${esc(it._google)}</p>` : ''}
+    ${when ? `<p class="hint"><b>Dates:</b> ${esc(when)}</p>` : ''}${hours ? `<p class="hint"><b>Hours:</b> ${esc(hours)}</p>` : ''}${!it.gid && /^Not found on Google/.test(it._google || '') ? `<p class="hint">${esc(it._google)}</p>` : ''}
     <p class="cm-flinks">${it.gmaps ? `<a href="${esc(it.gmaps)}" target="_blank" rel="noopener">See it on Google Maps</a>` : ''}${it.url ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">Official page</a>` : ''}</p>
-    <div class="cm-fbtns"><button class="btn small" type="button" data-${b}skip="${esc(it.id)}">${o ? 'Skip' : 'Not for us'}</button><button class="btn small primary" type="button" data-${b}add="${esc(it.id)}">${o ? 'Keep' : 'Add to my guide'}</button></div>
+    ${openLine(it, closed)}
+    <div class="cm-fbtns"><button class="btn small${gone ? ' primary' : ''}" type="button" data-${b}skip="${esc(it.id)}">${o ? 'Skip' : 'Not for us'}</button><button class="btn small${gone ? '' : ' primary'}" type="button" data-${b}add="${esc(it.id)}"${gone ? ' aria-disabled="true"' : ''}>${o ? 'Keep' : 'Add to my guide'}</button></div>
     ${!o || n - i > 0 ? `<button class="cm-fstop" type="button" data-${b}stop>Skip the rest</button>` : ''}</article>`;
 }
 const CM_TAKES = 'A search usually takes 3 to 6 minutes. You can keep editing, or come back later: the results wait here.';
@@ -1199,6 +1256,7 @@ function cmFindInner(path) {
   if (f.status === 'loading') return '<p class="hint">…</p>';
   if (f.status === 'queued' || f.status === 'running') return `<div class="cm-fhead"><b>Looking for more ${esc(what)}</b></div>${progBar(kind, 'Search for ' + what)}<p class="hint">${esc(CM_TAKES)}</p>`;
   const left = cmFindItems(kind, path), all = cmFindPool(kind, path).length;
+  if (left[1] && left[1].gid) openAsk(left[1].gid);   // the next card's answer is ready when it comes up
   if (left.length) return cmFindCard(left[0], all - left.length + 1, all);
   const note = f.status === 'failed' ? `<p class="hint err">The search did not work: ${esc(f.message || 'try again later')}</p>` : f.status === 'done' ? `<p class="hint">${all ? 'You have looked at every suggestion from the last search.' : 'The last search found nothing new nearby.'}</p>` : '';
   return `<div class="cm-fhead"><b>Looking for more ${esc(what)}?</b></div><p class="hint">We search the web around the house for ${esc(what)} that are not in your guide yet, check each one on Google and translate it. It takes a few minutes, then you keep or skip each one.</p>${note}<div><button class="btn small sun" type="button" data-cfind="${path}">Find more ${esc(what)}</button></div>`;
@@ -1244,7 +1302,11 @@ async function cmFindPoll(kind) {
 // ready screen (runtime.js). Returns the new entry.
 function cmFindPut(path, sid) {
   const kind = FIND_OF[path][0], f = CM.find[kind], it = f && (f.items || []).find(x => x.id === sid); if (!it) return null;
-  const n = cmClone(it); delete n._google; delete n._card; delete n.look;   // a suggestion is new to the guide: no note of the monthly check
+  const n = cmClone(it);
+  // An older result's "check" that came from Google saying it was temporarily closed is not ours to keep (its status is only
+  // ever live now), nor the date Google was asked.
+  if (/^Temporarily closed/.test(n._google || '') && Array.isArray(n.flags)) n.flags = n.flags.filter(x => x !== 'check');
+  delete n._google; delete n._card; delete n.look; delete n.checked;   // a suggestion is new to the guide: no note of the monthly check
   let a = edGet(edC(), edPath(path)); if (!Array.isArray(a)) { edSet(edC(), edPath(path), []); a = edGet(edC(), edPath(path)); }
   a.push(n);
   const sec = path.split('/')[1], fl = edF()[sec];
@@ -1256,6 +1318,13 @@ function cmFindPut(path, sid) {
   findMark(f.id, [sid]); return n;
 }
 function cmFindAdd(path, sid) { const n = cmFindPut(path, sid); if (!n) return; cmQueue(); render(); toast(`Added: ${edShown(n.name)}. Preview, then publish.`); }
+// Add to my guide: Google asked first when its answer is not known (openGate); nothing added twice, nor after a Skip made
+// while it was asked.
+async function cmFindAccept(btn, path, sid) {
+  const f = CM.find[FIND_OF[path][0]], it = f && (f.items || []).find(x => x.id === sid); if (!it) return;
+  if (!(await openGate(it, btn)) || findSeen(f.id).has(sid) || (CM.findSkip || new Set()).has(sid)) return;
+  cmFindAdd(path, sid);
+}
 
 /* --- Automatic events (files/events/auto): the worker searches the next three months every month and adds what it finds
    straight into the guide (worker/guide-worker.mjs, refreshEvents). The settings save at once, in the live guide and the
@@ -1877,7 +1946,7 @@ document.addEventListener('click', e => {
   if (d.addbadge) { arr(d.addbadge).push({ t: '', c: '#1D4FA0' }); return done(); }
   if (d.addto) { arr(d.addto).push({ dest: L6(''), time: '', note: L6('') }); return done(); }
   if (d.cfind) return cmFindStart(d.cfind);
-  if (d.cfadd) return cmFindAdd(t.closest('[data-fpath]').dataset.fpath, d.cfadd);
+  if (d.cfadd) return cmFindAccept(t, t.closest('[data-fpath]').dataset.fpath, d.cfadd);
   if (d.cfskip) { const f = CM.find[FIND_OF[t.closest('[data-fpath]').dataset.fpath][0]]; findMark(f.id, [d.cfskip]); return cmFindRefresh(); }
   if (d.cfstop !== undefined) { const path = t.closest('[data-fpath]').dataset.fpath, kind = FIND_OF[path][0]; findMark(CM.find[kind].id, cmFindItems(kind, path).map(x => x.id)); return cmFindRefresh(); }
   if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
@@ -2021,6 +2090,11 @@ function cmInit() {
 .cm-fsub{color:var(--muted);font-size:14px}
 .cm-flinks{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;font-weight:600}
 .cm-fbtns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:4px}
+.cm-fbtns .btn[aria-disabled="true"]{pointer-events:auto;cursor:default;opacity:.5}
+.cm-fbtns .btn[aria-busy="true"]{cursor:progress;opacity:.6}
+.cm-fclosed{font-size:14px}
+.cm-fclosed.permanent b{color:var(--danger)}
+.cm-fclosed a{font-weight:600}
 .cm-progw{display:flex;flex-direction:column;gap:6px;width:100%;max-width:520px}
 .cm-prog{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
 .cm-prog i{display:block;height:100%;width:0;border-radius:99px;background:var(--sun);transition:width 1s linear}

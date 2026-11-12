@@ -354,7 +354,8 @@ window.__buildLines = () => [...new Set([...blLines(), ...[0, 1, 2, 3, 4, 5, 6, 
    saved like any change), Skip remembers it on this device (findMark, as in the editor). After the last card the kept
    ones go into the guide (cmPublishNow: published as the editor's Publish does; a guide held back for review stays held
    back), then "Open my guide" is the main button. A host who leaves and comes back finds the cards still there
-   (readyLanding); kept places that did not reach the guide offer to try again. --- */
+   (readyLanding); kept places that did not reach the guide offer to try again. A card with a Google id says whether Google
+   calls it closed, asked live and never kept (openAsk, openGate in editor.js): a permanently closed one cannot be kept. --- */
 const RD = { st: '', err: '', step: '', added: [] };   // st: load, cards, pub, err, done (after cards), off (nothing to show)
 const RD_PATH = 'files/todo/items', RD_KEY = 'porta-ready-v1';
 const rdMem = () => { try { return ((JSON.parse(localStorage.getItem(RD_KEY) || '{}') || {})[GUIDE.id]) || { kept: [] }; } catch (e) { return { kept: [] }; } };
@@ -391,6 +392,7 @@ async function readyLanding(){
 // The question, then the card: what it is, where, why it was suggested, Keep or Skip, "1 of 2".
 function readyCard(){
   const left = rdLeft(), all = cmFindPool('find-todo', RD_PATH).length; if (!left.length) return '';
+  if (left[1] && left[1].gid) openAsk(left[1].gid);   // the next card's answer is ready when it comes up
   return `<p class="bask">${all === 1 ? 'We found a place near you that is not in your guide. Keep it if you would send guests there: only what you keep goes in.' : `We found ${all} places near you that are not in your guide. Keep the ones you would send guests to: only those go in.`}</p>${cmFindCard(left[0], all - left.length + 1, all, {})}`;
 }
 function readyHTML(g){
@@ -406,6 +408,14 @@ function readyHTML(g){
     <div class="row"><button class="go-next" type="button" data-rdretry><span>Add them to my guide</span><span class="ar">${ARROW}</span></button>${RD.step ? `<a class="btn small bopen" href="#${esc(RD.step)}">Fix it in the editor</a>` : ''}</div>${quiet}`;
   const added = RD.st === 'done' && RD.added.length ? `<p>${RD.added.length === 1 ? `${esc(RD.added[0])} is in your guide now.` : `${RD.added.length} places you kept are in your guide now.`}</p>` : '';
   return `<h1>Your guide is ready.</h1>${added}<p>${say}</p>${open}`;
+}
+// Keep: Google asked first when its answer is not known (openGate: a permanently closed place stays on its card, with a
+// toast); nothing kept twice, nor after a Skip made while it was asked.
+async function readyKeep(b, f, sid){
+  const it = (f.items || []).find(x => x.id === sid); if (!it) return;
+  if (!(await openGate(it, b)) || findSeen(f.id).has(sid) || (CM.findSkip || new Set()).has(sid)) return;
+  const n = cmFindPut(RD_PATH, sid); if (n) { const m0 = rdMem(), m = m0.job === f.id ? m0 : { job: f.id, kept: [] }; m.kept = [...new Set([...m.kept, sid])]; rdSave(m); cmQueue(); }
+  readyNextCard();
 }
 // After a card: the next one, or the kept ones into the guide.
 function readyNextCard(){
@@ -428,7 +438,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('#bwrap button'); if (!b || !CM.on) return;
   const d = b.dataset, f = rdJob();
   // Kept: remembered with its build's job (a later build's cards start afresh) and saved in the draft at once.
-  if (d.rdadd && f) { const n = cmFindPut(RD_PATH, d.rdadd); if (n) { const m0 = rdMem(), m = m0.job === f.id ? m0 : { job: f.id, kept: [] }; m.kept = [...new Set([...m.kept, d.rdadd])]; rdSave(m); cmQueue(); } readyNextCard(); }
+  if (d.rdadd && f) readyKeep(b, f, d.rdadd);
   else if (d.rdskip && f) { findMark(f.id, [d.rdskip]); readyNextCard(); }
   else if (d.rdstop !== undefined && f) { findMark(f.id, rdLeft().map(x => x.id)); readyNextCard(); }
   else if (d.rdretry !== undefined) { b.disabled = true; readyPublish(); }

@@ -96,6 +96,23 @@ const barText = p => p.$eval('#navbar', el => el.innerText.replace(/\s+/g, ' ').
 const everyPage = async (p, tag) => { const pages = [...new Set(await p.$$eval('.rail a.si', as => as.map(x => x.getAttribute('href'))))], bad = [];
   for (const h of pages) { await go(p, h); const c = await underShape(p); if (c.length) bad.push(`${h}: header ${c.join(', ')}`); if (await barOverlaps(p)) bad.push(`${h}: bottom bar`); }
   ok(`${tag}: nothing overlaps on any of the ${pages.length} pages`, !bad.length, bad.join('; ')); };
+// A suggestion's card (the editor's Find more, the ready screen's, the deck's with its buttons): its lines and buttons touch
+// nothing, no word is wider than its line, no sideways scroll. '' when clear.
+const cardClear = (p, sel) => p.evaluate(sel => {
+  const card = document.querySelector(sel); if (!card) return 'no card';
+  const deck = card.matches('.sw-card'), blocks = [...card.querySelectorAll(deck ? '.sw-on > *, .sw-ic, .sw-tx > p' : ':scope > small, :scope > h3, :scope > p, .cm-fbtns > button, .cm-fstop'), ...(deck ? document.querySelectorAll('.sw-btns > button') : [])]
+    .map(e => [e, e.getBoundingClientRect()]).filter(([, r]) => r.width > 0 && r.height > 0);
+  const hit = (a, b) => a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1;
+  for (const [i, [e, r]] of blocks.entries()) for (const [f, q] of blocks.slice(i + 1)) if (!e.contains(f) && !f.contains(e) && hit(r, q)) return `overlap: ${e.className || e.tagName} / ${f.className || f.tagName}`;
+  const cut = blocks.map(([e]) => e).filter(e => e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible' || e.getBoundingClientRect().right > card.getBoundingClientRect().right + 1 && !deck);
+  if (cut.length) return 'wider than its line: ' + cut.map(e => e.textContent.trim().slice(0, 30)).join(' | ');
+  return document.documentElement.scrollWidth > innerWidth ? 'sideways scroll' : '';
+}, sel);
+// /api/places?open= as the stand-in answers it: by the suggestion's Google id, after ms; every ask counted.
+const OPEN_ANS = { 'g-perm': { ok: true, closed: 'permanent' }, 'g-temp': { ok: true, closed: 'temporary' }, 'g-open': { ok: true, closed: null }, 'g-fail': { ok: false, message: 'Places are not set up yet.' } };
+const openAnswer = (route, asked, ms = {}) => { const id = new URL(route.request().url()).searchParams.get('open'); asked.push(id); setTimeout(() => json(route, OPEN_ANS[id.replace(/^g-(ed|rd)-/, 'g-')] || { ok: false }).catch(() => {}), ms[id] || 0); };
+const OPEN_NO = 'Permanently closed on Google Maps: it cannot be added.';
+const count = (a, x) => a.filter(y => y === x).length;
 
 const browser = await chromium.launch();
 // Every sentence the maker shows that its translation table (src/i18n/ui.json) does not have: shots/i18n-missing.json.
@@ -278,6 +295,54 @@ try {
     await p.locator('.sw-card').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'cards-icon-fr-360.png') });
     ok('researched cards in French: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // A researched card Google says is closed (12 Nov 2026): asked live with its photo (?card=), never kept. Permanently closed:
+  // the line with "Google Maps", what to do instead, Recommend unavailable (a tap, a swipe or the arrow key keep nothing and
+  // say why), Not for us the main button. Temporarily closed: only the line, and a yes keeps it, with nothing of Google's.
+  for (const [w, h, lang] of [[360, 780, 'en'], [1280, 860, 'en'], [360, 780, 'fr']]) {
+    const items = AREA_TODO.items.slice(0, 3).map((it, i) => i < 2 ? { ...it, gid: ['g-dk-perm', 'g-dk-temp'][i] } : it), en = i => items[i].name.en, tag = `${w} px${lang === 'en' ? '' : ' in French'}`;
+    const G = { ...B, answers: { ...B.answers, _researchJob: JOB_ID, swipes: {}, favDo: [] } };
+    const { ctx, p, errors } = await open(browser, G, w, h), asked = [], opened = [];
+    const LIVE = { 'g-dk-perm': { ok: true, photo: null, photoBy: [], rating: 4.4, reviews: 60, closed: 'permanent' }, 'g-dk-temp': { ok: true, photo: CARD_PHOTO, photoBy: [{ name: 'Bea Test', uri: 'https://maps.google.com/maps/contrib/456' }], rating: 4.5, reviews: 70, closed: 'temporary' } };
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ status: 'done', result: { todo: { ...AREA_TODO, items } } }]));
+    await ctx.route('**/api/places**', r => { const q = new URL(r.request().url()).searchParams; if (q.get('open')) { opened.push(q.get('open')); return json(r, { ok: false }); }
+      if (q.get('card')) { asked.push(q.get('card')); return json(r, LIVE[q.get('card')] || { ok: false }); }
+      return json(r, q.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: [] }); });
+    await p.goto(`http://editor.test/${lang === 'en' ? '' : '?lang=' + lang}#nearby`); await ready(p);
+    await p.waitForSelector('.sw-card .sw-closed', { timeout: 8000 }).catch(() => {}); await p.waitForTimeout(300);
+    await p.locator('.sw-card').scrollIntoViewIfNeeded().catch(() => {});
+    const c1 = await cardClear(p, '.sw-card');
+    ok(`deck, ${tag}: a permanently closed card says so with "Google Maps" beside it, Recommend looks unavailable, Not for us is the main button, nothing touches`,
+      !!(await p.$('.sw-card .sw-on .sw-closed.permanent')) && !!(await p.$('.sw-card .sw-on p a[translate="no"]:has-text("Google Maps")')) && !!(await p.$('.sw-card .sw-tx .sw-gone')) && !!(await p.$('.sw-btns.gone [data-sw="yes"][aria-disabled="true"]')) && !c1
+      && (lang !== 'en' || /^Permanently closed$/.test((await p.textContent('.sw-card .sw-closed')).trim()) && /It cannot be added\. If you know it is open, add it yourself by its name\./.test(await p.textContent('.sw-card .sw-tx'))), c1);
+    const deckShot = async name => { await p.evaluate(() => { const c = document.querySelector('.sw-count'); if (c) window.scrollBy(0, c.getBoundingClientRect().top - 12); }); await p.waitForTimeout(150); await p.screenshot({ path: join(SHOTS, name) }); };
+    await deckShot(`closed-deck-permanent-${lang === 'en' ? '' : lang + '-'}${w}.png`);
+    if (lang === 'en') {
+      const kept = async () => Object.keys((await stored(p)).swipes || {});
+      const tappable = await p.$eval('[data-sw="yes"]', b => getComputedStyle(b).pointerEvents !== 'none').catch(() => false);
+      await p.click('[data-sw="yes"]', { force: true }); await p.waitForTimeout(500);   // aria-disabled: Playwright would wait for it, a finger does not
+      const t1 = await p.textContent('#toast').catch(() => '');
+      await p.focus('.sw-card'); await p.keyboard.press('ArrowRight'); await p.waitForTimeout(500);
+      const box = await p.$eval('.sw-card .sw-ph', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + 30]; });
+      await p.mouse.move(box[0], box[1]); await p.mouse.down(); await p.mouse.move(box[0] + 60, box[1], { steps: 4 }); await p.mouse.move(box[0] + 160, box[1], { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(600);
+      const tf = await p.$eval('.sw-card', e => e.style.transform || '').catch(() => 'gone');
+      ok(`deck, ${tag}: Recommend, the arrow key and a swipe to the right keep nothing: the card comes back, a toast says why`, tappable && t1 === OPEN_NO && (await p.textContent('.sw-card h3')) === en(0) && !(await kept()).length && (tf === '' || tf === 'none'), `${t1} | ${tf} | ${(await kept()).join()}`);
+      await p.click('[data-sw="no"]'); await p.waitForTimeout(450);
+      await p.waitForSelector('.sw-card .sw-ph[style*="background-image"]', { timeout: 4000 }).catch(() => {});
+    } else { await p.click('[data-sw="no"]'); await p.waitForTimeout(450); await p.waitForSelector('.sw-card .sw-closed.temporary', { timeout: 4000 }).catch(() => {}); }
+    await p.locator('.sw-card').scrollIntoViewIfNeeded().catch(() => {});
+    const c2 = await cardClear(p, '.sw-card');
+    ok(`deck, ${tag}: a temporarily closed card shows its line with "Google Maps" over its photo, Recommend as usual, nothing touches`,
+      !!(await p.$('.sw-card .sw-on .sw-closed.temporary')) && !(await p.$('.sw-card .sw-gone')) && !(await p.$('.sw-btns.gone')) && !(await p.$('[data-sw="yes"][aria-disabled]')) && !c2 && (lang !== 'en' || (await p.textContent('.sw-card h3')) === en(1) && /Temporarily closed · ★ 4\.5 \(70 reviews\) · Google Maps/.test((await p.textContent('.sw-card .sw-on p')).replace(/\s+/g, ' '))), c2);
+    await deckShot(`closed-deck-temporary-${lang === 'en' ? '' : lang + '-'}${w}.png`);
+    if (lang === 'en') {
+      await p.click('[data-sw="yes"]'); await p.waitForTimeout(500);
+      const A = await stored(p), x = (A.swipes || {})['r:' + plainKey(en(1))] || {};
+      ok(`deck, ${tag}: a temporarily closed card is kept, with nothing of Google's (no status, no rating, no photo)`, x.d === 'yes' && Object.keys(x).every(k => ['id', 'd', 'cat', 'name', 'type', 'maps', 'lat', 'lng', 'km', 'c'].includes(k)) && !/closed|temporar|permanent|Bea Test|"rating"/i.test(JSON.stringify(A.swipes)), JSON.stringify(x));
+      ok(`deck, ${tag}: an open card (no id) has no line`, (await p.textContent('.sw-card h3')) === en(2) && !(await p.$('.sw-card .sw-closed')) && !(await p.$('.sw-btns.gone')));
+      ok(`deck, ${tag}: the status came with the card's own ask, once per id, and ?open= was never asked`, asked.join() === 'g-dk-perm,g-dk-temp' && !opened.length, `${asked.join()} / ${opened.join()}`);
+    }
+    ok(`deck closed, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // A house whose listing gave no position: the deck searches its town on Google, whose position may be kept 30 days only,
   // so it is saved with its date (pos), for the build to look for the town in GeoNames.
   { const ans = { ...B.answers }; delete ans.lat; delete ans.lng; delete ans.pos; delete ans._research; delete ans._researchJob;
@@ -383,6 +448,46 @@ try {
     ok(`ready screen, ${w} px: both cards are remembered as looked at`, (await p.evaluate(() => JSON.parse(localStorage.getItem('cmfind:job-ready') || '[]'))).sort().join() === 'rd-castle,rd-cave');
     const clear2 = await heroClear(p); ok(`ready screen, ${w} px, after the cards: nothing touches the doorway, no sideways scroll, no page errors`, !clear2.length && (await wide(p)) <= 0 && !errors.length, [...clear2, ...errors].join(' | '));
     await p.screenshot({ path: join(SHOTS, `ready-after-${w}.png`), fullPage: true });
+    await ctx.close(); }
+  // The ready screen's cards ask Google live whether a place is closed (?open=, 12 Nov 2026), once per id, never kept. Older
+  // results' notes ("On Google", "Temporarily closed on Google") are never shown, and their "check" never goes in.
+  const FOUND_CL = [{ id: 'rd-perm', gid: 'g-rd-perm', name: { en: 'Closed Test Mill' }, type: { en: 'Mill' }, town: 'Testville', lat: A0.lat + 0.03, lng: A0.lng, km_from_house: 4, description: { en: 'An old mill by the river, with a short walk along the water.' } },
+    { id: 'rd-temp', gid: 'g-rd-temp', name: { en: 'Winter Test Beach Bar' }, type: { en: 'Beach' }, town: 'Testville', lat: A0.lat + 0.04, lng: A0.lng, km_from_house: 5, description: { en: 'A cove with a summer kiosk.' }, flags: ['check'], _google: 'Temporarily closed on Google (off-season?)', checked: '2026-10-01' },
+    { id: 'rd-open', gid: 'g-rd-open', name: { en: 'Open Test Tower' }, type: { en: 'Tower' }, town: 'Othertown', lat: A0.lat - 0.04, lng: A0.lng, km_from_house: 7, description: { en: 'A watchtower with a view.' }, _google: 'On Google', checked: '2026-10-01' }];
+  const itemIn = (patches, id) => { for (const b of patches.slice().reverse()) { const c = b.draft ? b.draft.content : b.content, it = c && (((c.files || {}).todo || {}).items || []).find(x => x.id === id); if (it) return it; } return null; };
+  for (const [w, h, lang] of [[360, 780, 'en'], [1280, 860, 'en'], [360, 780, 'fr']]) {
+    const tag = `${w} px${lang === 'en' ? '' : ' in French'}`, o = await readyCtx(w, h, FOUND_CL, true), { ctx, p, errors } = o, asked = [];
+    await ctx.route('**/api/places**', r => new URL(r.request().url()).searchParams.get('open') ? openAnswer(r, asked) : json(r, { ok: false }));
+    await p.goto(`http://editor.test/${lang === 'en' ? '' : '?lang=' + lang}#building`); await p.waitForSelector('#bcards .cm-fclosed', { timeout: 20000 }).catch(() => {}); await p.waitForTimeout(400);
+    await p.locator('#bcards').scrollIntoViewIfNeeded().catch(() => {});
+    const c1 = await cardClear(p, '#bcards .cm-fcard'), h1 = await heroClear(p);
+    ok(`ready, closed, ${tag}: a permanently closed place says so with "Google Maps" beside it and what to do; Keep looks unavailable, Skip is the main button; nothing touches`,
+      !!(await p.$('#bcards .cm-fclosed.permanent a[translate="no"]:has-text("Google Maps")')) && !!(await p.$('#bcards [data-rdadd][aria-disabled="true"]')) && !!(await p.$('#bcards [data-rdskip].primary')) && !c1 && !h1.length
+      && (lang !== 'en' || /Permanently closed · Google Maps/.test((await p.textContent('#bcards .cm-fclosed')).replace(/\s+/g, ' ')) && /It cannot be added\. If you know it is open, add it yourself by its name\./.test(await p.textContent('#bcards'))), [c1, ...h1].join(' | '));
+    await p.screenshot({ path: join(SHOTS, `closed-ready-permanent-${lang === 'en' ? '' : lang + '-'}${w}.png`) });
+    if (lang === 'en') {
+      const tappable = await p.$eval('[data-rdadd]', b => getComputedStyle(b).pointerEvents !== 'none').catch(() => false);
+      await p.click('[data-rdadd]', { force: true }); await p.waitForTimeout(800);
+      ok(`ready, closed, ${tag}: Keep on it adds nothing, says why, and the card stays`, tappable && (await p.textContent('#toast').catch(() => '')) === OPEN_NO && !JSON.stringify(o.patches).includes('rd-perm') && /1 of 3/.test(await p.textContent('#bcards')), await p.textContent('#toast').catch(() => ''));
+    }
+    await p.click('[data-rdskip]'); await p.waitForSelector('#bcards .cm-fclosed.temporary', { timeout: 5000 }).catch(() => {}); await p.waitForTimeout(300);
+    const c2 = await cardClear(p, '#bcards .cm-fcard');
+    ok(`ready, closed, ${tag}: a temporarily closed place shows only its line (no old note), Keep as usual; nothing touches`, !!(await p.$('#bcards .cm-fclosed.temporary a:has-text("Google Maps")')) && !(await p.$('#bcards [data-rdadd][aria-disabled]')) && !!(await p.$('#bcards [data-rdadd].primary')) && !/off-season|closed on Google/.test(await p.textContent('#bcards')) && !c2
+      && (lang !== 'en' || /Temporarily closed · Google Maps/.test((await p.textContent('#bcards .cm-fclosed')).replace(/\s+/g, ' '))), c2);
+    await p.screenshot({ path: join(SHOTS, `closed-ready-temporary-${lang === 'en' ? '' : lang + '-'}${w}.png`) });
+    if (lang === 'en') {
+      await p.click('[data-rdadd]'); await p.waitForSelector('#bcards h3:has-text("Open Test Tower")', { timeout: 6000 }).catch(() => {}); await p.waitForTimeout(1500);
+      const t = itemIn(o.patches, 'rd-temp');
+      ok(`ready, closed, ${tag}: the temporarily closed place is kept with no "check" of ours, no note and no date`, !!t && !(t.flags || []).includes('check') && !('_google' in t) && !('checked' in t) && t.gid === 'g-rd-temp', JSON.stringify(t));
+      const c3 = await cardClear(p, '#bcards .cm-fcard');
+      ok(`ready, closed, ${tag}: an open place has no line and no old "On Google" note`, !(await p.$('#bcards .cm-fclosed')) && !/On Google/.test(await p.textContent('#bcards')) && !!(await p.$('#bcards [data-rdadd].primary')) && !c3, c3);
+      await p.screenshot({ path: join(SHOTS, `closed-ready-open-${w}.png`) });
+      await p.click('[data-rdadd]'); await p.waitForSelector('#bstate .go-next', { timeout: 10000 }).catch(() => {}); await p.waitForTimeout(400);
+      const pub = o.patches.find(b => 'content' in b), items = pub ? ((pub.content.files || {}).todo || {}).items || [] : [];
+      ok(`ready, closed, ${tag}: published with the two kept, never the closed one`, items.some(x => x.id === 'rd-temp') && items.some(x => x.id === 'rd-open') && !items.some(x => x.id === 'rd-perm'), items.map(x => x.id).join());
+      ok(`ready, closed, ${tag}: each id asked once, nothing of the answer kept on this device`, ['g-rd-perm', 'g-rd-temp', 'g-rd-open'].every(x => count(asked, x) === 1) && !/"closed":"(permanent|temporary)"/.test(await p.evaluate(() => JSON.stringify({ ...localStorage }))), asked.join());
+    }
+    ok(`ready, closed, ${tag}: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close(); }
   // ---- Send: the guide is built from the account, so the copy to Netlify Forms can never stop it ----
   for (const [tag, down] of [['with a picture already in the account', false], ['with Netlify Forms failing', true]]) {
@@ -2013,6 +2118,75 @@ try {
     const after = saved.join(' ');
     ok('editor: a card kept goes in the guide and makes the section live, as a draft', /Cards Castle/.test(after) && /"id":"todo"[^}]*"status":"live"/.test(after), after.slice(0, 120));
     ok('editor, cards: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // The editor's Find more cards ask Google live whether a suggestion is closed (?open=, 12 Nov 2026): permanently closed
+  // cannot be added (the button answers with a toast), temporarily closed only shows its line, an open one is unchanged, and
+  // a failed ask (no key) lets Add through. Older results' notes are never shown, and their "check" never goes in.
+  const ED_CL = [{ id: 'ed-perm', gid: 'g-ed-perm', name: { en: 'Molino Ribera' }, type: { en: 'Mill' }, town: 'Testville', lat: A0.lat + 0.03, lng: A0.lng, km_from_house: 3, description: { en: 'An old mill by the river.' }, _google: 'On Google' },
+    { id: 'ed-temp', gid: 'g-ed-temp', name: { en: 'Kiosko Playa' }, type: { en: 'Beach' }, town: 'Testville', lat: A0.lat + 0.06, lng: A0.lng, km_from_house: 4, description: { en: 'A cove with a summer kiosk.' }, flags: ['check'], _google: 'Temporarily closed on Google (off-season?)', checked: '2026-10-01' },
+    { id: 'ed-open', gid: 'g-ed-open', name: { en: 'Torre Mirador' }, type: { en: 'Tower' }, town: 'Othertown', lat: A0.lat - 0.03, lng: A0.lng, km_from_house: 6, description: { en: 'A watchtower with a view.' }, _google: 'On Google', checked: '2026-10-01' },
+    { id: 'ed-fail', gid: 'g-ed-fail', name: { en: 'Ermita Colina' }, type: { en: 'Chapel' }, town: 'Othertown', lat: A0.lat - 0.06, lng: A0.lng, km_from_house: 7, description: { en: 'A chapel on a hill.' } },
+    { id: 'ed-none', name: { en: 'Rincon Escondido' }, type: { en: 'Beach' }, town: 'Othertown', lat: A0.lat - 0.09, lng: A0.lng, km_from_house: 8, description: { en: 'A cove only locals know.' }, _google: 'Not found on Google: the web source is the only proof' }];
+  const edFind = async (w, h, lang, list, ms = {}) => {
+    const files = { ...E.content.files, todo: { ...E.content.files.todo, items: [] }, sections: { ...E.content.files.sections, sections: E.content.files.sections.sections.map(x => x.id === 'todo' ? { ...x, status: 'soon' } : x) } };
+    const o = await open(browser, { ...E, draft: null, content: { ...E.content, files } }, w, h); o.saved = []; o.asked = [];
+    await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ id: 'job-closed-' + w + lang + list.length, status: 'done', message: list.length + ' things to do found', created_at: new Date().toISOString(), result: { items: list } }]));
+    await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); o.saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
+    await o.ctx.route(u => u.pathname === '/api/places', r => new URL(r.request().url()).searchParams.get('open') ? openAnswer(r, o.asked, ms) : json(r, { ok: false }));
+    await o.p.goto(`http://editor.test/?${lang === 'en' ? '' : 'lang=' + lang + '&'}step=todo`); await ready(o.p); await o.p.waitForSelector('.cm-fcard', { timeout: 8000 }).catch(() => {});
+    return o; };
+  const savedItem = (saved, id) => { for (const b of saved.slice().reverse()) { try { const j = JSON.parse(b), c = (j.draft || {}).content || j.content || {}, it = (((c.files || {}).todo || {}).items || []).find(x => x.id === id); if (it) return it; } catch (e) { /* not a save */ } } return null; };
+  const edShot = async (p, name) => { await p.locator('.cm-find').scrollIntoViewIfNeeded().catch(() => {}); await p.evaluate(() => { const c = document.querySelector('.cm-find'); if (c) window.scrollBy(0, c.getBoundingClientRect().top - 90); }); await p.waitForTimeout(150); await p.screenshot({ path: join(SHOTS, name) }); };
+  for (const [w, h, lang] of [[360, 780, 'en'], [1280, 860, 'en'], [360, 780, 'fr']]) {
+    const tag = `${w} px${lang === 'en' ? '' : ' in French'}`, { ctx, p, errors, saved, asked } = await edFind(w, h, lang, ED_CL);
+    await p.waitForSelector('.cm-fcard .cm-fclosed', { timeout: 6000 }).catch(() => {}); await p.waitForTimeout(200);
+    const c1 = await cardClear(p, '.cm-fcard');
+    ok(`editor, closed, ${tag}: a permanently closed suggestion says so with "Google Maps" beside it and what to do; Add looks unavailable, Not for us is the main button; no old note; nothing touches`,
+      !!(await p.$('.cm-fcard .cm-fclosed.permanent a[translate="no"]:has-text("Google Maps")')) && !!(await p.$('.cm-fcard [data-cfadd][aria-disabled="true"]')) && !!(await p.$('.cm-fcard [data-cfskip].primary')) && !/On Google/.test(await p.textContent('.cm-fcard')) && !c1
+      && (lang !== 'en' || /Permanently closed · Google Maps/.test((await p.textContent('.cm-fcard .cm-fclosed')).replace(/\s+/g, ' ')) && /It cannot be added\. If you know it is open, add it yourself by its name\./.test(await p.textContent('.cm-fcard'))), c1);
+    await edShot(p, `closed-editor-permanent-${lang === 'en' ? '' : lang + '-'}${w}.png`);
+    if (lang === 'en') {
+      const tappable = await p.$eval('[data-cfadd]', b => getComputedStyle(b).pointerEvents !== 'none').catch(() => false);
+      await p.click('[data-cfadd]', { force: true }); await p.waitForTimeout(2600);
+      ok(`editor, closed, ${tag}: Add on it adds nothing, says why, and the card stays`, tappable && (await p.textContent('#toast').catch(() => '')) === OPEN_NO && !saved.join('').includes('ed-perm') && /Suggestion 1 of 5/.test(await p.textContent('.cm-fcard')), await p.textContent('#toast').catch(() => ''));
+    }
+    await p.click('[data-cfskip]'); await p.waitForSelector('.cm-fcard .cm-fclosed.temporary', { timeout: 5000 }).catch(() => {}); await p.waitForTimeout(200);
+    const c2 = await cardClear(p, '.cm-fcard');
+    ok(`editor, closed, ${tag}: Not for us works, and a temporarily closed suggestion shows only its line (no old note), Add as usual; nothing touches`,
+      !!(await p.$('.cm-fcard .cm-fclosed.temporary a:has-text("Google Maps")')) && !(await p.$('.cm-fcard [data-cfadd][aria-disabled]')) && !!(await p.$('.cm-fcard [data-cfadd].primary')) && !/off-season|closed on Google/.test(await p.textContent('.cm-fcard')) && !c2
+      && (lang !== 'en' || /Temporarily closed · Google Maps/.test((await p.textContent('.cm-fcard .cm-fclosed')).replace(/\s+/g, ' ')) && /Suggestion 2 of 5/.test(await p.textContent('.cm-fcard'))), c2);
+    await edShot(p, `closed-editor-temporary-${lang === 'en' ? '' : lang + '-'}${w}.png`);
+    if (lang === 'en') {
+      await p.click('[data-cfadd]'); await p.waitForSelector('.cm-fcard h3:has-text("Torre Mirador")', { timeout: 6000 }).catch(() => {}); await p.waitForTimeout(2600);
+      const t = savedItem(saved, 'ed-temp');
+      ok(`editor, closed, ${tag}: the temporarily closed suggestion goes in with no "check" of ours, no note and no date`, !!t && !(t.flags || []).includes('check') && !('_google' in t) && !('checked' in t) && t.gid === 'g-ed-temp', JSON.stringify(t));
+      const c3 = await cardClear(p, '.cm-fcard');
+      ok(`editor, closed, ${tag}: an open suggestion has no line and no old "On Google" note, as before`, !(await p.$('.cm-fcard .cm-fclosed')) && !/On Google/.test(await p.textContent('.cm-fcard')) && !!(await p.$('.cm-fcard [data-cfadd].primary')) && !c3, c3);
+      await edShot(p, `closed-editor-open-${w}.png`);
+      await p.click('[data-cfadd]'); await p.waitForSelector('.cm-fcard h3:has-text("Ermita Colina")', { timeout: 6000 }).catch(() => {}); await p.waitForTimeout(400);
+      ok(`editor, closed, ${tag}: a suggestion whose ask failed (no key) shows no line`, !(await p.$('.cm-fcard .cm-fclosed')) && !(await p.$('.cm-fcard [data-cfadd][aria-disabled]')));
+      await p.click('[data-cfadd]'); await p.waitForSelector('.cm-fcard h3:has-text("Rincon Escondido")', { timeout: 8000 }).catch(() => {}); await p.waitForTimeout(2600);
+      ok(`editor, closed, ${tag}: and Add lets it through (asked once more, then added)`, !!savedItem(saved, 'ed-fail') && count(asked, 'g-ed-fail') === 2, asked.join());
+      ok(`editor, closed, ${tag}: a suggestion with no Google id keeps its "Not found on Google" note and asks nothing`, /Not found on Google: the web source is the only proof/.test(await p.textContent('.cm-fcard')) && !(await p.$('.cm-fcard .cm-fclosed')));
+      ok(`editor, closed, ${tag}: each id asked once (the failed one again at Add), nothing of the answers kept on this device or in a save`, ['g-ed-perm', 'g-ed-temp', 'g-ed-open'].every(x => count(asked, x) === 1)
+        && !/"closed":"(permanent|temporary)"|Permanently closed|Temporarily closed/.test(saved.join('') + await p.evaluate(() => JSON.stringify({ ...localStorage }))), asked.join());
+    }
+    ok(`editor, closed, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // Add tapped before Google answered: the button is busy (no second add), then refused when Google says permanently closed;
+  // and when Google does not answer within 4 seconds, the suggestion goes in.
+  { const SLOW = [{ ...ED_CL[0], id: 'ed-slow', gid: 'g-ed-perm' }, { ...ED_CL[2], id: 'ed-hang', gid: 'g-ed-hang' }];
+    const { ctx, p, errors, saved, asked } = await edFind(360, 780, 'en', SLOW, { 'g-ed-perm': 2000, 'g-ed-hang': 20000 });
+    await p.click('[data-cfadd]'); const busy = await p.getAttribute('[data-cfadd]', 'aria-busy').catch(() => null);
+    await p.click('[data-cfadd]', { force: true, timeout: 500 }).catch(() => {});   // a second tap while it is busy
+    await p.waitForSelector('.cm-fcard .cm-fclosed.permanent', { timeout: 5000 }).catch(() => {}); await p.waitForTimeout(400);
+    ok('editor, closed: Add tapped before Google answered shows it is busy, then refuses a permanently closed one, added nothing', busy === 'true' && (await p.textContent('#toast').catch(() => '')) === OPEN_NO && !saved.join('').includes('ed-slow'), `${busy} | ${await p.textContent('#toast').catch(() => '')}`);
+    await p.click('[data-cfskip]'); await p.waitForSelector('.cm-fcard h3:has-text("Torre Mirador")', { timeout: 5000 }).catch(() => {});
+    const t0 = Date.now(); await p.click('[data-cfadd]');
+    await p.waitForFunction(() => !document.querySelector('[data-cfadd="ed-hang"]'), null, { timeout: 9000 }).catch(() => {}); const took = Date.now() - t0; await p.waitForTimeout(2600);
+    const last = (() => { for (const x of saved.slice().reverse()) { try { const c = (JSON.parse(x).draft || {}).content; if (c) return ((c.files || {}).todo || {}).items || []; } catch (e) { /* not a save */ } } return []; })();
+    ok('editor, closed: Google not answering within 4 seconds lets Add through, once', took >= 3500 && took < 8000 && last.filter(x => x.id === 'ed-hang').length === 1, `${took} ms, ${last.map(x => x.id).join()}`);
+    ok('editor, closed (slow Google): no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // Nightlife (29 Oct 2026): optional and off in Ca La Kimberly; switched on in Guide sections, its first place makes its
   // section, right after Attractions.

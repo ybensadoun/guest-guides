@@ -1,7 +1,11 @@
 // The research's check on Google (the places work, step 3d: docs/plan-ca-la-kimberly-through-the-maker.md, "Step 3, the
 // design"), for what Find more and the area research found. Google's terms let us keep a place's id for good and its
-// position for 30 days, nothing else: so Google is asked only whether the place exists, is the same place and is still
-// open (worker/places.mjs, locateItem), and only its id is written to the item, with the Google Maps link made from it.
+// position for 30 days, nothing else: so Google is asked only whether the place exists and is the same place
+// (worker/places.mjs, locateItem), and only its id is written to the item, with the Google Maps link made from it. Whether
+// it is still open is not asked here and nothing is dropped or marked by what Google says (Yohann, 12 Nov 2026): the maker
+// asks it live when the host looks at the suggestion (onboarding-site/netlify/functions/places.mjs, ?open=), shows it with
+// "Google Maps" beside it, and a place Google says is permanently closed cannot be added there. No date of the check either
+// (the old "checked": nothing read it).
 // Everything else is the research's own reading of the web, or ours from the table place_facts (worker/host-places.mjs,
 // fillPlaces, the same look a host's place gets at the build): phone, website, hours, price, "book ahead", kind, and a
 // position of ours (Overture's or GeoNames') that replaces the research's. The research's position stays otherwise: it is
@@ -19,13 +23,14 @@ export const mapsLink = (name, gid) => `https://www.google.com/maps/search/?api=
 
 // items: what the research found (Find more's suggestions, the area research's things to do or markets); file: 'todo' or
 // 'markets' (events are not checked). house: { lat, lng }. locate(it, { market }): locateItem with the Google key bound,
-// { gid, lat, lng, status } or null (no Google key: null locate, the items come back as they are). store: makeStore(rest),
+// { gid, lat, lng } or null (no Google key: null locate, the items come back as they are). store: makeStore(rest),
 // or null (located only). ask, again: the worker's Haiku chain (placeAsk, placeAgain); without them only what is kept is
 // used, nothing asked. near, gaz (tests): in place of nearby() and gazetteer(). progress(i, n, stage) before each place,
-// stage 'locate' then 'fill'. pause: ms between two Google requests. Returns the items kept, in their order: a place Google
-// says is permanently closed is left out, nothing of it stored. A failure for one place never fails the job.
+// stage 'locate' then 'fill'. pause: ms between two Google requests. Returns every item, in its order: one Google does not
+// find stays, with a note that holds nothing of Google's (the web source is its only proof). A failure for one place never
+// fails the job.
 export async function checkResearch(items, file, { locate = null, house = null, store = null, ask = null, again = null, near = nearby, gaz = gazetteer,
-  python = process.env.OVERTURE_PYTHON || 'python3', country = 'ES', meter = null, log = console.error, progress = () => {}, pause = 300, max = MAX_FILLED, today = new Date().toISOString().slice(0, 10) } = {}) {
+  python = process.env.OVERTURE_PYTHON || 'python3', country = 'ES', meter = null, log = console.error, progress = () => {}, pause = 300, max = MAX_FILLED } = {}) {
   if (!locate) return items;
   const market = file === 'markets', kept = [], located = [];
   // 1. Located: the id, nothing else of Google's is written. Google's position stays in memory, as the pin our own sources are
@@ -34,16 +39,12 @@ export async function checkResearch(items, file, { locate = null, house = null, 
     await progress(i + 1, items.length, 'locate');
     let loc = null; try { loc = await locate(it, { market }); } catch (e) { /* kept, unchecked */ }
     if (pause) await new Promise(r => setTimeout(r, pause));
-    it.checked = today;
+    delete it.checked;   // an older result checked again: its date of a Google check goes
     if (!loc) { it._google = 'Not found on Google: the web source is the only proof'; kept.push(it); continue; }
-    if (loc.status === 'CLOSED_PERMANENTLY') continue;   // gone: never suggested
+    delete it._google;   // located: no note (an older "On Google" or "Temporarily closed on Google" goes with it)
     it.gid = loc.gid;
     const name = it.name_local || nameOf(it.name) || '';
     if (!it.gmaps || /\/maps\/search\//.test(it.gmaps)) it.gmaps = mapsLink(name, loc.gid);   // a listing link the research gave stays
-    it._google = 'On Google';
-    // "Temporarily closed" (often the off-season) keeps its flag and note as before step 3: it is a result of the check, not a
-    // copy of Google's data, and stays so until the terms pass (proposal 19) says what the check may keep.
-    if (loc.status === 'CLOSED_TEMPORARILY') { it.flags = [...new Set([...(it.flags || []), 'check'])]; it._google = 'Temporarily closed on Google (off-season?)'; }
     kept.push(it);
     located.push({ it, lat: loc.lat, lng: loc.lng, name });
   }
@@ -71,9 +72,9 @@ export async function checkResearch(items, file, { locate = null, house = null, 
       const f = facts[String(k)] || {}, it = p.it, ours = [];   // ours: the item's fields filled here, for the editor's source line
       if (empty(it.phone) && f.phone) { it.phone = f.phone; ours.push('phone'); }
       if (empty(it.url) && f.website) { it.url = f.website; ours.push('url'); }
-      // Hours from the place's own site: no hoursSource (they are ours). As with Google's hours before, a place that gains
-      // them loses the research's "check" unless Google said it is temporarily closed.
-      if (empty(it.schedule) && !it.always && Array.isArray(f.hours) && f.hours.length) { it.schedule = f.hours; ours.push('schedule'); if (it._google === 'On Google') it.flags = (it.flags || []).filter(x => x !== 'check'); }
+      // Hours from the place's own site: no hoursSource (they are ours). As with Google's hours before, a located place that
+      // gains them loses the research's "check" (Google's status no longer counts here: the maker shows it live).
+      if (empty(it.schedule) && !it.always && Array.isArray(f.hours) && f.hours.length) { it.schedule = f.hours; ours.push('schedule'); if (it.gid) it.flags = (it.flags || []).filter(x => x !== 'check'); }
       // Its site's season, for a place still with no hours (its hours, with their own seasons, win): the guide says "Closed,
       // Opens 1 Jun" out of season and Google's line gives the hours.
       if (empty(it.schedule) && !it.always && !it.season && f.season && f.season.from && f.season.to) { it.season = { from: f.season.from, to: f.season.to }; ours.push('season'); }

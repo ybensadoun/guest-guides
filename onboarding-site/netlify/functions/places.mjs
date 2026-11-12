@@ -1,10 +1,11 @@
 // GET /api/places?lat=..&lng=..&cat=eat|coffee|drinks|todo&town=..
 // Top-rated places near the house from Google Places (New). Without lat/lng, the town is geocoded first.
 // ?suggest=<text>: what Google suggests as a host types a place's name. ?id=<google id>: one place by its id. ?q=<name>: one place by its name.
-// ?card=<google id>: what a researched card in the deck shows live (its photo with the photo's authors, its rating).
+// ?card=<google id>: what a researched card in the deck shows live (its photo with the photo's authors, its rating, whether
+// it is closed). ?open=<google id>: whether a suggestion is closed, nothing else (the editor's and the ready screen's cards).
 // Google's terms: a place's id may be kept for good and its position for 30 days, nothing else it returns. So ?id= and ?q= ask
-// for those two only and answer { id, lat, lng, km }; the suggestions and the deck are only shown, live, never kept. No answer
-// is cached anywhere (private, no-store): a shared or day-long copy of Google's answers would be a stored copy.
+// for those two only and answer { id, lat, lng, km }; the suggestions, the deck and the status are only shown, live, never
+// kept. No answer is cached anywhere (private, no-store): a shared or day-long copy of Google's answers would be a stored copy.
 const CATS = {
   eat: ['restaurant'], coffee: ['cafe', 'bakery', 'coffee_shop'], drinks: ['bar', 'wine_bar', 'pub'],
   todo: ['tourist_attraction', 'beach', 'park', 'museum', 'hiking_area', 'winery', 'historical_landmark']
@@ -32,6 +33,8 @@ const PLACE = ['id', 'location'];
 // (they come with places.photos: nothing more is billed). None: photo null, no authors.
 const photoOf = ph => ph ? { photo: '/api/photo?name=' + encodeURIComponent(ph.name),
   photoBy: (ph.authorAttributions || []).filter(a => a && a.displayName).map(a => ({ name: a.displayName, uri: (u => /^https:\/\//.test(u) ? u : null)(String(a.uri || '').replace(/^\/\//, 'https://')) })) } : { photo: null, photoBy: [] };
+// Google's businessStatus as the maker says it: 'permanent' (it cannot be added), 'temporary' (shown only), else null.
+const closedOf = s => s === 'CLOSED_PERMANENTLY' ? 'permanent' : s === 'CLOSED_TEMPORARILY' ? 'temporary' : null;
 const located = (p, la, ln) => ({ id: p.id, lat: p.location.latitude, lng: p.location.longitude, km: Math.max(1, Math.round(hav(la, ln, p.location.latitude, p.location.longitude) * 1.3)) });
 export default async (req) => {
   const key = process.env.GOOGLE_MAPS_API_KEY;
@@ -53,14 +56,28 @@ export default async (req) => {
     } catch (e) { return json({ ok: false, message: 'Could not reach Google right now.' }); }
   }
   // ?card=<google id>: a card of our own research in the builder's deck (its name, kind, distance and words are ours). Only
-  // what the card shows live with "Google Maps" on it: the first photo and its authors, the rating and how many rated it.
-  // Shown, never kept: the builder holds the answer in memory for the session, a swipe saves nothing of it.
+  // what the card shows live with "Google Maps" on it: the first photo and its authors, the rating and how many rated it,
+  // and whether Google says it is closed (closed: 'permanent' | 'temporary' | null; a permanently closed card cannot be
+  // kept). Shown, never kept: the builder holds the answer in memory for the session, a swipe saves nothing of it.
   if (u.searchParams.get('card')) {
     try {
-      const r = await fetch(G + 'places/' + encodeURIComponent(u.searchParams.get('card').slice(0, 300)), { signal: AbortSignal.timeout(8000), headers: { 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': 'photos,rating,userRatingCount' } });
+      const r = await fetch(G + 'places/' + encodeURIComponent(u.searchParams.get('card').slice(0, 300)), { signal: AbortSignal.timeout(8000), headers: { 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': 'photos,rating,userRatingCount,businessStatus' } });
       if (!r.ok) throw new Error('google_' + r.status);
       const p = await r.json();
-      return json({ ok: true, ...photoOf((p.photos || [])[0]), rating: typeof p.rating === 'number' ? p.rating : null, reviews: typeof p.userRatingCount === 'number' ? p.userRatingCount : null });
+      return json({ ok: true, ...photoOf((p.photos || [])[0]), rating: typeof p.rating === 'number' ? p.rating : null, reviews: typeof p.userRatingCount === 'number' ? p.userRatingCount : null, closed: closedOf(p.businessStatus) });
+    } catch (e) { return json({ ok: false, message: 'Could not reach Google right now.' }); }
+  }
+  // ?open=<google id>: is a suggestion still open? Asked when a host looks at a suggestion of our research or accepts it (the
+  // editor's Find more cards, the ready screen's cards), shown with "Google Maps" beside it and used at once (a permanently
+  // closed one cannot be added), never kept: the maker holds it in memory for the session, nothing of it is saved anywhere.
+  // Answers { ok: true, closed: 'permanent' | 'temporary' | null }. Place Details Pro (businessStatus alone): 5,000 free a
+  // month, then 17 USD per 1,000.
+  if (u.searchParams.get('open')) {
+    try {
+      const r = await fetch(G + 'places/' + encodeURIComponent(u.searchParams.get('open').slice(0, 300)), { signal: AbortSignal.timeout(8000), headers: { 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': 'businessStatus' } });
+      if (!r.ok) throw new Error('google_' + r.status);
+      const p = await r.json();
+      return json({ ok: true, closed: closedOf(p.businessStatus) });
     } catch (e) { return json({ ok: false, message: 'Could not reach Google right now.' }); }
   }
   // ?id=<google id>&lat=..&lng=..: the place a host picked from those suggestions, in the editor.
@@ -98,10 +115,11 @@ export default async (req) => {
     if (!(lat && lng)) return json({ ok: false, message: 'We need the town first.' });
     const search = types => g('places:searchNearby', { includedTypes: types, maxResultCount: 20, rankPreference: 'POPULARITY', languageCode: lang,
       locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius } } },
-      'places.id,places.displayName,places.rating,places.userRatingCount,places.priceLevel,places.primaryTypeDisplayName,places.location,places.googleMapsUri,places.shortFormattedAddress,places.photos,places.editorialSummary', key);
+      'places.id,places.displayName,places.rating,places.userRatingCount,places.priceLevel,places.primaryTypeDisplayName,places.location,places.googleMapsUri,places.shortFormattedAddress,places.photos,places.editorialSummary,places.businessStatus', key);
     const market = p => MARKET.test([p.displayName && p.displayName.text, p.primaryTypeDisplayName && p.primaryTypeDisplayName.text].join(' '));
+    // A place Google says is permanently closed is left out of its own live list (the status is not passed on, never kept).
     const best = (d, bar) => (d.places || [])
-      .filter(p => (p.rating || 0) >= bar && (p.userRatingCount || 0) >= 40 && !(cat === 'todo' && market(p)))
+      .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY' && (p.rating || 0) >= bar && (p.userRatingCount || 0) >= 40 && !(cat === 'todo' && market(p)))
       .map(p => ({ id: p.id, name: p.displayName && p.displayName.text, rating: p.rating, reviews: p.userRatingCount, price: p.priceLevel || null,
         type: p.primaryTypeDisplayName && p.primaryTypeDisplayName.text, address: p.shortFormattedAddress, maps: p.googleMapsUri,
         summary: p.editorialSummary && p.editorialSummary.text, lat: p.location.latitude, lng: p.location.longitude,

@@ -777,7 +777,13 @@ if todo_file.exists() or kept or added:
         if twin:
             found.remove(twin); it = {**twin, 'hostPick': True, **({'description': it['description']} if it.get('description') else {})}
         if not any(plain(en_name(x)) == plain(en_name(it)) for x in picks): picks.append(it)
-    todo_doc['items'] = [{k: v for k, v in x.items() if k not in ('_card', '_google')} for x in picks]
+    # Nothing of Google's check goes into the guide: its note, the date it was asked, and the "check" an older research set
+    # because Google called the place temporarily closed (its status is only ever shown live now, never kept).
+    def ours(x):
+        y = {k: v for k, v in x.items() if k not in ('_card', '_google', 'checked')}
+        if str(x.get('_google') or '').startswith('Temporarily closed') and isinstance(y.get('flags'), list): y['flags'] = [fl for fl in y['flags'] if fl != 'check']
+        return y
+    todo_doc['items'] = [ours(x) for x in picks]
     todo_doc['_doc'] = with_look(todo_doc.get('_doc'))
     if waiting: todo_doc['unnamed'] = waiting; todo_doc['_doc'] = (todo_doc.get('_doc') or '') + ('' if UNNAMED_DOC in (todo_doc.get('_doc') or '') else UNNAMED_DOC)
     else: todo_doc.pop('unnamed', None)

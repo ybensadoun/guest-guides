@@ -25,7 +25,7 @@ const envFile = resolve(HERE, '.env.local');
 if (existsSync(envFile)) for (const l of readFileSync(envFile, 'utf8').split('\n')) { const m = l.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/); if (m && !(m[1] in env)) env[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); }
 const URL_ = (env.SUPABASE_URL || 'https://dmoxszfwulolqkgxtxcp.supabase.co').replace(/\/$/, '');
 const KEY = env.SUPABASE_SERVICE_KEY;
-// Google Places key (Guest Guides/.env, git-ignored): Find more checks each suggested place on Google. Without it, suggestions are not checked.
+// Google Places key (Guest Guides/.env, git-ignored): Find more locates each suggested place on Google. Without it, suggestions are not located.
 const rootEnv = resolve(ROOT, '.env');
 if (existsSync(rootEnv)) for (const l of readFileSync(rootEnv, 'utf8').split('\n')) { const m = l.match(/^\s*(GOOGLE_PLACES_KEY)\s*=\s*(.*?)\s*$/); if (m && !(m[1] in env)) env[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); }
 const AUTO_PUBLISH = env.AUTO_PUBLISH !== '0';          // test phase: a built guide goes live at once. Set AUTO_PUBLISH=0 to review first.
@@ -355,7 +355,7 @@ async function translateJob(j, jp) {
 
 /* ---------- Find more: web research for new things to do, markets or events, returned as suggestions ----------
    From the editor's "Find more" button. Claude searches the web around the house (same rules as a build's research,
-   plus the curation rule), each place is checked on Google (gone: dropped; only its id kept) and filled from our own sources, texts are
+   plus the curation rule), each place is located on Google (only its id kept) and filled from our own sources, texts are
    translated into the guide's languages, and the result goes back in the job. Nothing is added to the guide here:
    the host keeps or skips each suggestion in the editor, and what they keep goes into their draft. */
 // What every events search returns, and how it looks for them wherever the guide is: the area's own traditions first.
@@ -368,10 +368,12 @@ const FIND = {
 };
 const CURATION = 'Pick like a local host would: places and events a guest would not easily find by searching Google themselves (local favourites, hidden gems, things for kids or dogs, the best of each kind nearby). No chains, no supermarkets or groceries, no golf courses. Each one must still exist or still run, confirmed by a source from the last two years. Each "description" says in one or two sentences why it is worth it and when to go.';
 const FIND_PER_DAY = 8;   // each search costs Claude time on this computer and a few Google requests
-// Each place on Google (the existence rule, CLAUDE.md): gone, it is dropped; found, it keeps Google's id and the Google Maps
-// link made from it, nothing else of Google's (its terms); the nearest are then filled from our own sources (place_facts,
-// the chain), as a host's places are at the build (worker/research-check.mjs). Not found, or Google not answering, it stays,
-// marked. Without the Google key the suggestions are not checked; without Claude only facts already kept are used.
+// Each place located on Google: found, it keeps Google's id and the Google Maps link made from it, nothing else of Google's
+// (its terms); the nearest are then filled from our own sources (place_facts, the chain), as a host's places are at the build
+// (worker/research-check.mjs). Not found, or Google not answering, it stays, marked. Whether it is still open is not asked
+// here (12 Nov 2026): the maker asks Google live when the host looks at the suggestion, and one Google says is permanently
+// closed cannot be added there. Without the Google key the suggestions are not located; without Claude only facts already
+// kept are used.
 // progress(i, n, stage) before each one, stage 'locate' or 'fill'.
 const LOCATE = env.GOOGLE_PLACES_KEY ? (it, o) => locateItem(env.GOOGLE_PLACES_KEY, it, o) : null;
 // The --find dry run writes nowhere: what the chain finds there is merged in memory and not kept in place_facts.

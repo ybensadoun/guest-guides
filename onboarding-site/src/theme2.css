@@ -143,6 +143,14 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .sw-btns button{min-height:52px;border-radius:999px;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .sw-no{border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
 .sw-yes{border:0;background:var(--clay);color:#fff}
+/* Google's word that a researched card is closed (start.js swLiveAsk, live, never kept). Permanently closed: it cannot be
+   kept, so Recommend looks unavailable (it still answers, with a toast) and Not for us becomes the main button */
+.sw-on .sw-rt{white-space:nowrap}   /* the stars and their count stay together on the line */
+.sw-on .sw-closed.permanent{background:var(--danger,#B3261E);color:#fff;padding:0 6px;border-radius:5px;white-space:nowrap}
+.sw-tx p.sw-gone{display:block;-webkit-line-clamp:none;color:var(--ink);font-weight:600;margin-bottom:6px}
+.sw-btns.gone .sw-yes{opacity:.5;cursor:default}
+.sw-btns.gone .sw-no{background:var(--night);border-color:var(--night);color:#fff}
+.sw-btns button[aria-busy="true"]{cursor:progress;opacity:.7}
 .sw-empty{padding:22px;border-radius:18px;background:var(--sunk);color:var(--muted);font-size:15px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .sw-picks{display:grid;gap:8px;max-width:520px}
 .sw-picks > b{font-size:14px}

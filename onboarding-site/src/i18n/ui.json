@@ -1351,6 +1351,11 @@
 "es": "({n} reseñas) ·",
 "fr": "({n} avis) ·"
 },
+"({n} reviews)": {
+"ca": "({n} ressenyes)",
+"es": "({n} reseñas)",
+"fr": "({n} avis)"
+},
 ", which can have its own tile here.": {
 "ca": ", que pot tenir el seu propi botó aquí.",
 "es": ", que puede tener su propio botón aquí.",
@@ -8185,5 +8190,30 @@
 "ca": "{n} mercats per revisar:",
 "es": "{n} mercados que revisar:",
 "fr": "{n} marchés à vérifier :"
+},
+"Permanently closed": {
+"ca": "Tancat permanentment",
+"es": "Cerrado permanentemente",
+"fr": "Fermé définitivement"
+},
+"Temporarily closed": {
+"ca": "Tancat temporalment",
+"es": "Cerrado temporalmente",
+"fr": "Fermé temporairement"
+},
+"It cannot be added. If you know it is open, add it yourself by its name.": {
+"ca": "No es pot afegir. Si saps que és obert, afegeix-lo tu pel seu nom.",
+"es": "No se puede añadir. Si sabes que está abierto, añádelo tú por su nombre.",
+"fr": "Impossible de l’ajouter. Si vous savez qu’il est ouvert, ajoutez-le vous-même par son nom."
+},
+"Permanently closed on Google Maps: it cannot be added.": {
+"ca": "Tancat permanentment segons Google Maps: no es pot afegir.",
+"es": "Cerrado permanentemente según Google Maps: no se puede añadir.",
+"fr": "Fermé définitivement selon Google Maps : impossible de l’ajouter."
+},
+"Not found on Google: the web source is the only proof": {
+"ca": "No trobat a Google: la font web n’és l’única prova",
+"es": "No encontrado en Google: la fuente web es la única prueba",
+"fr": "Introuvable sur Google : la source web est la seule preuve"
 }
 }

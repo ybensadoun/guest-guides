@@ -233,7 +233,7 @@ document.addEventListener('input', e => { if (e.target.id === 'st_url') { const 
 // Google's cards are shown live and never kept (Google's terms: a place's id may be kept, not its name, rating, photo or
 // address). A swipe saves { id, d, cat, c }: the id, the host's yes or no and their comment. What the screen shows about a
 // card (the card, Your picks, the phone) is read by its id from SW.mem, every card loaded in this session, in memory only.
-const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {}, mem: new Map(), live: new Map() };
+const SW = { cat: 'todo', lists: {}, loading: false, err: '', idx: {}, mem: new Map(), live: new Map(), asking: new Map() };
 // Eating and drinking is the host's own list (see "Your places"): we only suggest things to do.
 const SW_CATS = [['todo', 'Attractions']];
 const swipes = () => A.swipes || (A.swipes = {});
@@ -256,24 +256,30 @@ function researchCards(){
 const moreLeft = () => researchCards().filter(p => !swipes()[p.id]).length;
 // A researched card is ours (name, kind, distance, words), but its picture and rating are Google's, shown live (Yohann,
 // 10 Nov 2026): asked once per id per session (/api/places?card=) when the card is on top or next, kept in SW.live with
-// the deck's memory, never saved. 'wait' while asked; null when there is nothing to show (no photo, the call failed).
+// the deck's memory, never saved. 'wait' while asked; null when the call failed. The same answer says whether Google calls
+// the place closed (12 Nov 2026, as the editor's cards: openGate in editor.js): closed, 'permanent' or 'temporary', shown on
+// the card with "Google Maps" beside it, and a permanently closed card cannot be kept (swDecide). The photo, its authors and
+// the rating only when there is a photo (a card with none shows its kind's icon and no rating).
 function swLiveAsk(p){
   if (!p || !isOurs(p.id) || !p.gid || SW.live.has(p.gid)) return;
   SW.live.set(p.gid, 'wait');
-  fetch('/api/places?card=' + encodeURIComponent(p.gid)).then(r => r.json()).catch(() => null).then(d => {
-    SW.live.set(p.gid, d && d.ok && d.photo ? { photo: d.photo, photoBy: Array.isArray(d.photoBy) ? d.photoBy : [], rating: d.rating, reviews: d.reviews } : null);
+  SW.asking.set(p.gid, fetch('/api/places?card=' + encodeURIComponent(p.gid)).then(r => r.json()).catch(() => null).then(d => {
+    const closed = d && d.ok && (d.closed === 'permanent' || d.closed === 'temporary') ? d.closed : null;
+    SW.live.set(p.gid, d && d.ok ? { ...(d.photo ? { photo: d.photo, photoBy: Array.isArray(d.photoBy) ? d.photoBy : [], rating: d.rating, reviews: d.reviews } : {}), closed } : null);
+    SW.asking.delete(p.gid);
     // Only the card on top is drawn again (a next one is drawn when it comes up), and only the card: not the picks, whose
     // comment the host may be typing. A card held by the finger is drawn when it lets go.
     const c = document.querySelector('.sw-card');
-    if (!d || !d.ok || !d.photo || !c || c.dataset.pid !== p.id) return;
+    if (!d || !d.ok || !(d.photo || closed) || !c || c.dataset.pid !== p.id) return;
     if (c.dataset.drag || c.dataset.gone) { SW.stale = true; return; }
     swCardRefresh();
-  });
+  }));
 }
 function swCardRefresh(){
   const d = document.querySelector('#swipe .sw-deck'); if (!d) return;
   const keys = d.contains(document.activeElement), t = document.createElement('div'); t.innerHTML = swipeInner();
   const n = t.querySelector('.sw-deck'); if (!n) return; d.replaceWith(n);
+  const b = document.querySelector('#swipe .sw-btns'), nb = t.querySelector('.sw-btns'); if (b && nb) b.replaceWith(nb);   // a closed card's buttons follow it
   if (keys) { const c = n.querySelector('.sw-card'); if (c) c.focus({ preventScroll: true }); }
 }
 // The card as drawn: a researched one with Google's live photo and rating when there is a photo (else its kind's icon).
@@ -331,6 +337,7 @@ function swipeInner(){
   const left = list.filter(p => !S[p.id]), seen = list.length - left.length;
   left.slice(0, 2).forEach(swLiveAsk);   // the card on top and the next one
   const p = left[0] && swLive(left[0]), kind = p && isOurs(p.id) && !p.photo;   // a researched card with no picture (yet): its kind's icon
+  const closed = p && isOurs(p.id) && p.gid ? p.closed || null : null, gone = closed === 'permanent';   // Google's word, live (swLiveAsk)
   const undo = SW.last && S[SW.last] ? ' <button type="button" class="sw-undo" data-swlast="1">Undo</button>' : '';
   const count = `<p class="sw-count" role="status">${p ? `${seen + 1} of ${list.length}` : `All ${list.length} seen`} · ${yes} recommended${undo}</p>`;
   const card = p ? `<div class="sw-deck">${left.length > 2 ? '<i class="sw-back b2" aria-hidden="true"></i>' : ''}${left.length > 1 ? '<i class="sw-back" aria-hidden="true"></i>' : ''}
@@ -338,10 +345,10 @@ function swipeInner(){
         <div class="sw-ph${kind ? ' sw-kind' : ''}" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : kind ? `--kc:${esc(swKindColour())}` : ''}">${p.photo ? '' : kind ? `<span class="sw-ic" data-kind="${esc(p.icon && ENG_ICON[p.icon] ? p.icon : 'todo')}" aria-hidden="true">${(p.icon && ENG_ICON[p.icon]) || ENG_TODO}</span>` : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
           <span class="sw-stamp yes" aria-hidden="true">Recommend</span><span class="sw-stamp no" aria-hidden="true">Not for us</span>
           <div class="sw-on"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
-            <p>${p.rating ? `<b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''} · ` : ''}<a href="${esc(swMaps(p) || gmLink(p.name, p.id))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>${swBy(p)}</div></div>
-        ${p.summary ? `<div class="sw-tx"><p>${esc(p.summary)}</p></div>` : ''}
+            <p>${closed ? `<b class="sw-closed ${closed}">${closed === 'permanent' ? 'Permanently closed' : 'Temporarily closed'}</b> · ` : ''}${p.rating ? `<span class="sw-rt"><b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''}</span> · ` : ''}<a href="${esc(swMaps(p) || gmLink(p.name, p.id))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>${swBy(p)}</div></div>
+        ${p.summary || gone ? `<div class="sw-tx">${gone ? '<p class="sw-gone">It cannot be added. If you know it is open, add it yourself by its name.</p>' : ''}${p.summary ? `<p>${esc(p.summary)}</p>` : ''}</div>` : ''}
       </article></div>
-    <div class="sw-btns"><button type="button" class="sw-no" data-sw="no">${svg('<path d="M6 6l12 12M18 6L6 18"/>').replace('stroke-width="2.2"', 'stroke-width="2.4" width="16" height="16"')}Not for us</button><button type="button" class="sw-yes" data-sw="yes">${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>`
+    <div class="sw-btns${gone ? ' gone' : ''}"><button type="button" class="sw-no" data-sw="no">${svg('<path d="M6 6l12 12M18 6L6 18"/>').replace('stroke-width="2.2"', 'stroke-width="2.4" width="16" height="16"')}Not for us</button><button type="button" class="sw-yes" data-sw="yes"${gone ? ' aria-disabled="true"' : ''}>${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>`
     : `<div class="sw-empty"><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b> ${AUTH && AREA.fullOpen && !researchCards().length ? 'Our research is finding more: they will land here in about 2 minutes.' : 'Missing one? Add it below.'}</div>`;
   const picks = Object.values(S).filter(x => x.d === 'yes' && x.cat === SW.cat).map(swShown);
   return `${tabs}${count}${card}
@@ -354,8 +361,27 @@ function swipeInner(){
 const swBy = p => p.photo && (p.photoBy || []).length ? `<p class="sw-by">Photo: ${p.photoBy.map(a => a.uri ? `<a href="${esc(a.uri)}" target="_blank" rel="noopener" translate="no">${esc(a.name)}</a>` : `<span translate="no">${esc(a.name)}</span>`).join(', ')}</p>` : '';
 function refreshSwipe(){ const el = document.getElementById('swipe'); if (el) el.innerHTML = swipeInner(); }
 // A decision: the card flies off the way it went, the next one comes up (with the focus, for keyboard users), the phone follows.
-function swDecide(d, c){
+// A yes on a researched card Google says is permanently closed (12 Nov 2026): the card comes back, a toast says why, nothing
+// is saved. Its answer not known yet: asked first (at most OPEN_WAIT, the Recommend button busy), then decided; no answer
+// lets the yes through.
+const swBackHome = c => { c.style.transition = ''; c.style.transform = ''; c.style.opacity = ''; c.style.setProperty('--yes', 0); c.style.setProperty('--no', 0); };
+function swDecide(d, c, asked){
   const id = c && c.dataset.pid, p = id && (swList() || []).find(x => x.id === id); if (!p || c.dataset.gone) return;
+  if (d === 'yes' && isOurs(id) && p.gid) {
+    const L = SW.live.get(p.gid);
+    if (L && L.closed === 'permanent') { swBackHome(c); toast(OPEN_NO); return; }
+    if ((L === 'wait' || L === undefined) && !asked) {
+      if (c.dataset.busy) return; c.dataset.busy = '1'; swBackHome(c);
+      const y = document.querySelector('[data-sw="yes"]'); if (y) { y.setAttribute('aria-busy', 'true'); y.disabled = true; }
+      if (L === undefined) swLiveAsk(p);
+      Promise.race([SW.asking.get(p.gid), new Promise(r => setTimeout(r, OPEN_WAIT))]).then(() => {
+        delete c.dataset.busy; const n = document.querySelector('.sw-card'), y2 = document.querySelector('[data-sw="yes"]');
+        if (y2) { y2.removeAttribute('aria-busy'); y2.disabled = false; }
+        if (n && n.dataset.pid === id) swDecide(d, n, true);
+      });
+      return;
+    }
+  }
   c.dataset.gone = '1';
   // Google's card: its id and the host's decision, nothing of Google's. A researched card is ours: it keeps its name and
   // where it is (the build finds it among the research by that name), not the rating or photo Google gave it.

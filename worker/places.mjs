@@ -1,7 +1,8 @@
 // Google Places (New), asked by the worker to locate a place: a host's places at the build (worker/host-places.mjs), the
-// editor's place lookups (worker/place-job.mjs), the weekly renewal of positions (worker/renew-positions.mjs) and the check
-// of what Find more and the research suggest (worker/research-check.mjs). The same name and position rules decide whether
-// Google's answer is our place. The monthly check no longer asks Google anything (worker/check-guides.mjs, 12 Nov 2026), so
+// editor's place lookups (worker/place-job.mjs), the weekly renewal of positions (worker/renew-positions.mjs) and what Find
+// more and the research suggest (worker/research-check.mjs). The same name and position rules decide whether Google's
+// answer is our place. Locating is all the worker asks: whether a place is still open is never asked here (12 Nov 2026), it
+// is asked live in the maker when the host looks at a suggestion (onboarding-site/netlify/functions/places.mjs, ?open=). The monthly check no longer asks Google anything (worker/check-guides.mjs, 12 Nov 2026), so
 // the full details request it made (makeGoogle, its FIELDS: hours, rating, photos, address) and the turning of Google's
 // opening periods into our hours are gone.
 export const ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -70,13 +71,15 @@ export async function locateByWords(GK, raw, house, reachKm = 50) {
   if (km > reachKm || !(sameName({ name: { en: q } }, p) || close())) return null;
   return link ? { ...loc, words: q } : loc;
 }
-// A place the research found (Find more, the area research): is it on Google, the same place, and still open? Asked with
-// the id, the position, the name and the business status only. The name and the position decide in memory whether
-// Google's answer is our place (within 2 km of the research's pin and sharing a real word with its name, or for a market
-// the market rule), as the check did before step 3; the name is never returned. Details by id when the item has one, else
-// a text search around its pin. Returns { gid, lat, lng, status } (status: Google's businessStatus, used at once and not
-// kept) or null when Google has no such place near it.
-const ITEM_FIELDS = 'id,location,displayName,businessStatus';
+// A place the research found (Find more, the area research): is it on Google, and the same place? Asked with the id, the
+// position and the name only. The name and the position decide in memory whether Google's answer is our place (within 2 km
+// of the research's pin and sharing a real word with its name, or for a market the market rule), as the check did before
+// step 3; the name is never returned. Details by id when the item has one, else a text search around its pin. Returns
+// { gid, lat, lng } or null when Google has no such place near it. Its business status is not asked (Yohann, 12 Nov 2026):
+// Google's terms let us keep nothing it returns but the id (and the position for 30 days), and a background job that drops
+// or marks a place by what Google says of it would act on it and keep the result. The maker asks it live instead, when the
+// host looks at the suggestion, shows it with "Google Maps" beside it and never keeps it.
+const ITEM_FIELDS = 'id,location,displayName';
 export async function locateItem(GK, it, { market = false } = {}) {
   const head = { 'X-Goog-Api-Key': GK, 'Content-Type': 'application/json' };
   let p = null;
@@ -92,5 +95,5 @@ export async function locateItem(GK, it, { market = false } = {}) {
   if (!loc) return null;
   const far = typeof it.lat === 'number' ? hav(it.lat, it.lng, loc.lat, loc.lng) : 99;
   if (!(far <= 2 && (sameName(it, p) || (market && sameMarket(it, p, far))))) return null;
-  return { ...loc, status: p.businessStatus || null };
+  return loc;
 }
