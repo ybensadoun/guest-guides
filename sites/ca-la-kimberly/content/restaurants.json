@@ -63,7 +63,7 @@
           "close": "23:30"
         }
       ],
-      "gmaps": "https://www.google.com/maps/place/La+Locanda+dei+Sapori/data=!4m2!3m1!1s0x12a38b237f1c227f:0x5588072edcbdf82",
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=La%20Locanda%20dei%20Sapori&query_place_id=ChIJfyIcfyOLoxIRgt_L7XKAWAU",
       "url": "https://www.facebook.com/LaLocandaElVendrell",
       "icon": "pizza",
       "price": "20-25",
@@ -76,8 +76,7 @@
         "nl": "Een pizza per persoon, een gedeeld voorgerecht en een fles huiswijn voor twee: ongeveer € 20-25 p.p. Pizza's rond € 10-13, pasta iets meer."
       },
       "topPick": true,
-      "gid": "ChIJfyIcfyOLoxIRgt_L7XKAWAU",
-      "checked": "2026-10-23"
+      "gid": "ChIJfyIcfyOLoxIRgt_L7XKAWAU"
     },
     {
       "id": "obrador",
@@ -155,7 +154,7 @@
           "close": "20:30"
         }
       ],
-      "gmaps": "https://www.google.com/maps/place/L%27Obrador+d%27Oriol+Rossell/data=!4m2!3m1!1s0x12a38b2344d76479:0xdbdf4466666d5ad2",
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=L'Obrador%20d'Oriol%20Rossell&query_place_id=ChIJeWTXRCOLoxIR0lptZmZE39s",
       "icon": "croissant",
       "price": "5-15",
       "priceNote": {
@@ -167,8 +166,7 @@
         "nl": "Koffie met een croissant of palmier: ongeveer € 5. Een lobster roll of rosbiefbroodje met drankje als lunch: ongeveer € 12-15. Taarten op bestelling."
       },
       "topPick": true,
-      "gid": "ChIJeWTXRCOLoxIR0lptZmZE39s",
-      "checked": "2026-10-23"
+      "gid": "ChIJeWTXRCOLoxIR0lptZmZE39s"
     },
     {
       "id": "casinet",
@@ -232,7 +230,7 @@
           "close": "16:00"
         }
       ],
-      "gmaps": "https://www.google.com/maps/place/Casinet/data=!4m2!3m1!1s0x12a38c9bea80d6b3:0x177d14ea1d7111f9",
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=Casinet&query_place_id=ChIJs9aA6puMoxIR-RFxHeoUfRc",
       "icon": "paella",
       "price": "30-45",
       "priceNote": {
@@ -254,8 +252,7 @@
         }
       ],
       "topPick": true,
-      "gid": "ChIJs9aA6puMoxIR-RFxHeoUfRc",
-      "checked": "2026-10-23"
+      "gid": "ChIJs9aA6puMoxIR-RFxHeoUfRc"
     },
     {
       "id": "ulldellebre",
@@ -322,7 +319,7 @@
           "close": "11:00"
         }
       ],
-      "gmaps": "https://www.google.com/maps/place/Ull+de+Llebre/data=!4m2!3m1!1s0x12a40a862fb699c9:0x70c43759d025f86e",
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=Ull%20de%20Llebre&query_place_id=ChIJyZm2L4YKpBIRbvgl0Fk3xHA",
       "icon": "pot",
       "price": "15-40",
       "priceNote": {
@@ -343,8 +340,7 @@
           "price": "29"
         }
       ],
-      "gid": "ChIJyZm2L4YKpBIRbvgl0Fk3xHA",
-      "checked": "2026-10-23"
+      "gid": "ChIJyZm2L4YKpBIRbvgl0Fk3xHA"
     },
     {
       "id": "esencia",
@@ -403,7 +399,7 @@
           "close": "23:00"
         }
       ],
-      "gmaps": "https://www.google.com/maps/place/Esencia/data=!4m2!3m1!1s0x12a3f5588dc7a129:0xdbe0c178ca5437dc",
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=Esencia&query_place_id=ChIJKaHHjVj1oxIR3DdUynjB4Ns",
       "icon": "cloche",
       "price": "35-55",
       "priceNote": {
@@ -414,8 +410,7 @@
         "de": "Ein feines Essen mit ein, zwei Gläsern Wein: etwa 35-55 € pro Person. Fragt nach dem Mittagsmenü unter der Woche, meist das beste Angebot.",
         "nl": "Een verfijnde maaltijd met een of twee glazen wijn: ongeveer € 35-55 p.p. Vraag naar het lunchmenu doordeweeks, vaak de beste prijs."
       },
-      "gid": "ChIJKaHHjVj1oxIR3DdUynjB4Ns",
-      "checked": "2026-10-23"
+      "gid": "ChIJKaHHjVj1oxIR3DdUynjB4Ns"
     },
     {
       "id": "ancora",
@@ -468,7 +463,7 @@
           "close": "00:00"
         }
       ],
-      "gmaps": "https://www.google.com/maps/place/L%27%C3%80ncora+del+Serrallo/data=!4m2!3m1!1s0x12a3e2d272462ee5:0xa5346325642161ff",
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=L'%C3%80ncora%20del%20Serrallo&query_place_id=ChIJ5S5GctLioxIR_2EhZCVjNKU",
       "icon": "fish",
       "price": "30-40",
       "priceNote": {
@@ -479,8 +474,7 @@
         "de": "Vorspeisen zum Teilen, Fisch oder Meeresfrüchte und eine Flasche Wein für zwei: etwa 30-40 € pro Person. Ganzer Fisch nach Gewicht (etwa 40 € pro Kilo).",
         "nl": "Gedeelde voorgerechten, vis of zeevruchten en een fles wijn voor twee: ongeveer € 30-40 p.p. Hele vis gaat per gewicht (ongeveer € 40 per kilo)."
       },
-      "gid": "ChIJ5S5GctLioxIR_2EhZCVjNKU",
-      "checked": "2026-10-23"
+      "gid": "ChIJ5S5GctLioxIR_2EhZCVjNKU"
     },
     {
       "id": "pernil",
@@ -547,7 +541,7 @@
           "close": "23:00"
         }
       ],
-      "gmaps": "https://www.google.com/maps/place/La+F%C3%A0brica+del+Pernil/data=!4m2!3m1!1s0x12a38b40c30bdda7:0xf29396492ed5c471",
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=La%20F%C3%A0brica%20del%20Pernil&query_place_id=ChIJp90Lw0CLoxIRccTVLkmWk_I",
       "icon": "ham",
       "price": "20-30",
       "priceNote": {
@@ -558,8 +552,7 @@
         "de": "Ein Brett Ibérico-Schinken, ein paar Montaditos oder Huevos rotos und ein Glas Wein oder ein Bier: etwa 20-30 € pro Person.",
         "nl": "Een plank ibérico-ham, een paar montaditos of huevos rotos en een glas wijn of een biertje: ongeveer € 20-30 p.p."
       },
-      "gid": "ChIJp90Lw0CLoxIRccTVLkmWk_I",
-      "checked": "2026-10-23"
+      "gid": "ChIJp90Lw0CLoxIRccTVLkmWk_I"
     },
     {
       "id": "marga",
@@ -596,7 +589,7 @@
       "flags": [],
       "phone": "640 69 29 09",
       "url": "https://www.lacuinadelamarga.com/",
-      "gmaps": "https://www.google.com/maps/place/La+Cuina+de+la+Marga/data=!4m2!3m1!1s0x12a38ca11df2c82f:0xc3d484415286ded8",
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=La%20Cuina%20de%20la%20Marga&query_place_id=ChIJL8jyHaGMoxIR2N6GUkGE1MM",
       "hours": {
         "en": "Closed on Tuesdays. Kitchen 13:00-16:00. Google also shows some Friday and Saturday evenings: check before going.",
         "es": "Cerrado los martes. Cocina 13:00-16:00. Google también indica algunas noches de viernes y sábado: confírmalo antes de ir.",
@@ -629,8 +622,7 @@
         "de": "Reisgerichte etwa 21-26 € pro Person, Vorspeisen etwa 16 € zum Teilen. Mit Wein: etwa 35-50 € pro Person.",
         "nl": "Rijstgerechten ongeveer € 21-26 p.p., voorgerechten ongeveer € 16 om te delen. Met wijn: ongeveer € 35-50 p.p."
       },
-      "gid": "ChIJL8jyHaGMoxIR2N6GUkGE1MM",
-      "checked": "2026-10-23"
+      "gid": "ChIJL8jyHaGMoxIR2N6GUkGE1MM"
     },
     {
       "id": "rest101",
@@ -705,8 +697,7 @@
           "kind": "menuDia",
           "price": "12-15"
         }
-      ],
-      "checked": "2026-10-23"
+      ]
     },
     {
       "id": "llepol",
@@ -747,7 +738,7 @@
       ],
       "phone": "609 78 99 20",
       "url": "https://llepol.com/",
-      "gmaps": "https://www.google.com/maps/place/Ll%C3%A9pol/data=!4m2!3m1!1s0x12a407d2127922a1:0x203e9f43212b8552",
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=Ll%C3%A9pol&query_place_id=ChIJoSJ5EtIHpBIRUoUrIUOfPiA",
       "hours": {
         "en": "Open Friday to Sunday only.",
         "es": "Abierto solo de viernes a domingo.",
@@ -795,8 +786,7 @@
           "price": "44"
         }
       ],
-      "gid": "ChIJoSJ5EtIHpBIRUoUrIUOfPiA",
-      "checked": "2026-10-23"
+      "gid": "ChIJoSJ5EtIHpBIRUoUrIUOfPiA"
     },
     {
       "id": "quijote",
@@ -841,7 +831,7 @@
       "flags": [],
       "phone": "675 18 14 21",
       "icon": "beachbar",
-      "gmaps": "https://www.google.com/maps/place/Quijote+Beach/data=!4m2!3m1!1s0x12a3f39f4be6ca0b:0x669f4d66326cc1ef",
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=Quijote%20Beach&query_place_id=ChIJC8rmS5_zoxIR78FsMmZNn2Y",
       "price": "20-30",
       "priceNote": {
         "en": "Paella or fish with a drink: about €20-30 per person. An estimate, prices are not published.",
@@ -851,8 +841,7 @@
         "de": "Paella oder Fisch mit Getränk: etwa 20-30 € pro Person. Eine Schätzung, Preise sind nicht veröffentlicht.",
         "nl": "Paella of vis met een drankje: ongeveer € 20-30 per persoon. Een schatting, prijzen worden niet gepubliceerd."
       },
-      "gid": "ChIJC8rmS5_zoxIR78FsMmZNn2Y",
-      "checked": "2026-10-23"
+      "gid": "ChIJC8rmS5_zoxIR78FsMmZNn2Y"
     },
     {
       "id": "brisa",
@@ -915,7 +904,7 @@
           "to": "10-31"
         }
       ],
-      "gmaps": "https://www.google.com/maps/place/La+Brisa+Beach+Club/data=!4m2!3m1!1s0x12a38dbfd9df20b5:0x290afc9eaae10c6c",
+      "gmaps": "https://www.google.com/maps/search/?api=1&query=La%20Brisa%20Beach%20Club&query_place_id=ChIJtSDf2b-NoxIRbAzhqp78Cik",
       "price": "15-25",
       "priceNote": {
         "en": "Pizza or wings with a drink: about €15-25 per person. An estimate, prices are not published.",
@@ -925,8 +914,7 @@
         "de": "Pizza oder Chicken Wings mit Getränk: etwa 15-25 € pro Person. Eine Schätzung, Preise sind nicht veröffentlicht.",
         "nl": "Pizza of kippenvleugels met een drankje: ongeveer € 15-25 per persoon. Een schatting, prijzen worden niet gepubliceerd."
       },
-      "gid": "ChIJtSDf2b-NoxIRbAzhqp78Cik",
-      "checked": "2026-10-23"
+      "gid": "ChIJtSDf2b-NoxIRbAzhqp78Cik"
     }
   ]
 }
