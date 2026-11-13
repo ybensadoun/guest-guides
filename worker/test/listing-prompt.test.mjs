@@ -4,7 +4,7 @@
 // text of the question is read here: nothing is sent anywhere.   node --test 'worker/test/*.test.mjs'
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { prompt, pageWords, readerIsListing, readerAsks, hasTimes, timesOf } from '../../onboarding-site/netlify/functions/listing.mjs';
+import { prompt, pageWords, readerIsListing, readerAsks, hasTimes, timesOf, asksTimes } from '../../onboarding-site/netlify/functions/listing.mjs';
 
 const SRC = { url: 'https://www.airbnb.com/rooms/1', title: 'Casa Prova', description: 'A quiet house', counts: '3 bedrooms', pics: [{ caption: 'Pool' }], text: 'Made-up listing text.' };
 const line = (p, k) => (p.split('\n').find(l => l.startsWith(` "${k}":`)) || '');
@@ -95,4 +95,9 @@ test('reader: the times are copied as the page words them, never from a rating o
   assert.deepEqual(timesOf('Check in after 3 pm and before 9 p.m.\nCheck out before 12:00 and lock up'), { in: '15:00', out: '12:00' });
   assert.deepEqual(timesOf('Check-in after 12:00 AM\nCheckout before 12:30 am'), { in: '00:00', out: '00:30' });
   assert.deepEqual(timesOf(''), { in: '', out: '' });
+});
+
+test('reader: a question about the hour of check-in or check-out is told from one that only names the check-in', () => {
+  for (const q of ['What time is check-in and what time is check-out?', 'What time is check-in and check-out?', 'When can guests check in?', '¿A qué hora es la llegada y la salida?', 'À quelle heure sont l\'arrivée et le départ ?', 'A quina hora és l\'entrada i la sortida?', 'What are the check-in hours?']) assert.equal(asksTimes(q), true, q);
+  for (const q of ['Are there any specific instructions for the guest registration app mentioned in the check-in process?', 'Is the attic office a fifth bedroom?', 'What should guests do before checkout?', 'Is the outdoor shower heated?', '']) assert.equal(asksTimes(q), false, q);
 });

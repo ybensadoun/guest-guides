@@ -171,6 +171,11 @@ export function timesOf(text){
   return { in: one('check[- ]?in|llegada|arriv[ée]e'), out: one('check[- ]?out|salida|d[ée]part') };
 }
 
+// A question to the host about the hour of check-in or check-out, in the maker's languages ("What time is check-in and
+// check-out?", "¿A qué hora es la llegada?"): Claude wrote its questions before the times were copied in, so once both are
+// there such a question is taken out. One that only names the check-in ("the app mentioned in the check-in process") stays.
+export const asksTimes = q => /check[- ]?in|check[- ]?out|llegada|salida|entrada|sortida|arriv[ée]e|d[ée]part/i.test(q || '') && /\b(what time|time|times|hours?|when|hora|horas|horario|cu[aá]ndo|heure|heures|quand|quina hora|quan)\b/i.test(q || '');
+
 // If the writing assistant fails, what the page states exactly is still filled in, so the host never gets nothing.
 function fallbackDraft(src){
   const d = {}; const ov = src.overview || [];
@@ -318,6 +323,7 @@ export default async (req) => {
     if (src.rating) { draft.rating = src.rating.avg; draft.reviewCount = src.rating.count; }
     const tm = timesP ? await timesP : null;
     if (tm) for (const [k, v] of [['checkIn', tm.in], ['checkOut', tm.out]]) if (v && !String(draft[k] || '').trim()) { draft[k] = v; draft.basis = { ...(draft.basis || {}), [k]: 'listing' }; }
+    if (tm && tm.in && tm.out && draft.checkIn && draft.checkOut && Array.isArray(draft.toConfirm)) draft.toConfirm = draft.toConfirm.filter(q => !asksTimes(q));
     // The town and the region as the page states them (its map's town; the last two parts of the location shown).
     if (src.place && !String(draft.town || '').trim() && src.place.name) draft.town = src.place.name;
     if (src.place && !String(draft.region || '').trim() && src.place.area) { const p = src.place.area.split(',').map(x => x.trim()).filter(Boolean); draft.region = p.slice(-2).join(', '); }
