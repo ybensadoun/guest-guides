@@ -1,8 +1,10 @@
-import { t, tx } from '../i18n.js';
-import { GARBAGE, MAP_ITEMS } from '../content.js';
-import { FRACTIONS, plan, collectedOn, binName, isRed, mainOf, CONTAINERS_ONLY, collectHour } from '../garbage.js';
-import { dayName, cap } from '../schedule.js';
-import { esc, ICON, row } from '../ui.js';
+// The rubbish page: tonight's bins, how it works at the house, the containers, the week, what goes where, a missed day
+// (README.md, "The page").
+import { t, tx } from '../../i18n.js';
+import { GARBAGE, MAP_ITEMS } from '../../content.js';
+import { FRACTIONS, plan, collectedOn, binName, isRed, mainOf, CONTAINERS_ONLY, collectHour } from './data.js';
+import { dayName, cap } from '../../schedule.js';
+import { esc, ICON, row } from '../../ui.js';
 
 // The red bin (sanitary) goes out every evening, so it is stated once instead of repeated everywhere.
 const RED = FRACTIONS.find(isRed);
@@ -19,7 +21,7 @@ function header(f) {
   return f.d.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(x => cap(dayName(x, 'short'))).join(', ');
 }
 
-export function renderGarbage(V) {
+export function page(V) {
   const now = new Date();
   const p = plan(now);
   const main = mainOf(p.list);

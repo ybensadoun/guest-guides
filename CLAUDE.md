@@ -63,6 +63,7 @@ A local build without `sites/<site>/private/wifi.json` simply has no Wi-Fi sheet
 
 ## Engine conventions
 - No framework. Views in `engine/src/views/`, router in `main.js`, styles in `engine/src/styles/app.css` (later blocks override earlier ones), icons in `engine/src/ui.js`.
+- Modules (13 Nov 2026): a part of the guide kept as one folder, `engine/src/modules/<kind>/`, with a `README.md` that says its rules (who decided each and when), its data, its look and its Home widget; `page(V)` draws its page, `widget(now)` gives what Home's tile is made of, and `modules/index.js` lists them. Rubbish (`garbage`) is the first; the other sections move one at a time. Read a module's README before changing how it behaves and write the changed rule there. The reference for a module's look is Ca La Kimberly: compare pixel for pixel before and after.
 - UI strings: `engine/src/i18n/<lang>.json`, all six languages, same keys. `typo()` in `i18n.js` adds French spaces at render time; the build lints the other typography rules.
 - Content files carry a `_doc` field describing their schema: read it before editing.
 - Scroll effects: driven by a `--k` value from a requestAnimationFrame scroll handler, no CSS transitions. Back arrow uses in-app history depth (`history.state.d`).

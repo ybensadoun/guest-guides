@@ -7,7 +7,7 @@ import { overviewMap } from './map.js';
 import { st } from '../state.js';
 import { QUICK } from '../content.js';
 import { quickIcon } from './home.js';
-import { renderGarbage } from './garbage.js';
+import { MODULES } from '../modules/index.js';
 import { renderTransport } from './place.js';
 import { dateRange, upcoming, when } from '../events.js';
 import { HOUSE, MODULE_ON, SITE, REVIEWS } from '../content.js';
@@ -98,7 +98,7 @@ export function renderSection(V, id) {
   const prevF = V.dataset.secf;
   const sec = SECTIONS.find(s => s.id === id);
   if (!sec) { location.replace('#home'); return; }
-  if (sec.kind === 'garbage' && sec.status === 'live') { renderGarbage(V); return; }
+  if (MODULES[sec.kind]?.page && sec.status === 'live') { MODULES[sec.kind].page(V); return; }   // a module draws its own page
   if (sec.kind === 'transport' && sec.status === 'live' && sec.data) { const T = sec.data; renderTransport(V, { ...T, id: sec.id, title: t(sec.labelKey), tileIcon: QUICK.find(q => q.id === sec.id)?.icon }, quickIcon); return; }
   let body;
   if (sec.status !== 'live') {

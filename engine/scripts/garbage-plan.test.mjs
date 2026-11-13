@@ -1,8 +1,8 @@
-// What goes out and when, for the rubbish tile and page (engine/src/bins.js): pure, no guide needed.
+// The rubbish module's rules (engine/src/modules/garbage/plan.js): what goes out and when. Pure, no guide needed.
 //   node --test 'engine/scripts/*.test.mjs'
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { planOf, hourText } from '../src/bins.js';
+import { planOf, hourText } from '../src/modules/garbage/plan.js';
 
 // A guide the maker built: organic collected on Monday and Thursday, packaging on Tuesday, paper on Wednesday, no daily bin.
 const DAYS = { 1: ['organic'], 2: ['packaging'], 3: ['paper'], 4: ['organic'] }, on = d => DAYS[d] || [];

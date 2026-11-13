@@ -1,8 +1,9 @@
-// What goes out and when, for the rubbish tile and page. The rule (Yohann, 13 Nov 2026): "let's only show what they need to
+// The rubbish module's rules, with no guide in them (README.md says each rule, who decided it and when).
+// What goes out and when, for the Home widget and the page. The rule (Yohann, 13 Nov 2026): "let's only show what they need to
 // take out on this evening, which means that it will be collected in the next morning." A guide with a bin that goes out
 // every evening (Ca La Kimberly's red bin) always has something; a guide without one has evenings with nothing, and then
-// the tile and the page say "Nothing tonight" and no more: the week list on the page shows the days to come.
-// Pure, so it is tested without a guide (engine/scripts/bins.test.mjs).
+// the widget and the page say "Nothing tonight" and no more: the week list on the page shows the days to come.
+// Pure, so it is tested without a guide (engine/scripts/garbage-plan.test.mjs).
 // now: a Date. on(day): the fractions collected on that weekday (0 = Sunday). collectMin: the collection hour in minutes
 // from midnight, not a number when the guide gives none.
 // Returns { mode, day, list, collectedToday }. mode 'now': before this morning's collection, when it has something (its bins

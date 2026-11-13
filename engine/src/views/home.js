@@ -5,7 +5,7 @@ import { runsOn, statusLabel, cap, nextOpen, closedStatus, seasonStatus } from '
 import { esc, title, catIcon, SECTION_LOOK, stHTML, distHTML } from '../ui.js';
 import { sorted } from './markets.js';
 import { st, DEFAULT_CATS } from '../state.js';
-import { tileText, plan, mainOf, FRACTIONS, isRed, CONTAINERS_ONLY, collectHour } from '../garbage.js';
+import { MODULES } from '../modules/index.js';
 import { upcoming, dateRange, when, dayBadge } from '../events.js';
 import { eventRow } from './section.js';
 
@@ -127,7 +127,6 @@ const THEMED_COVER = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax s
 </svg>`;
 
 const STAY_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M8 6l2-3h4l2 3"/><circle cx="12" cy="13" r="3.5"/></svg>';
-const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="currentColor"/></svg>';
 const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
 
 
@@ -171,18 +170,8 @@ function sectionGrid(now, todayCount) {
   const one = (sec, cls = '') => {
     if (sec.kind === 'markets') return tile(sec.id, t('markets'), '#markets/today', t('openToday', { n: todayCount ?? todaysMarkets(now).length }), true);
     if (sec.status !== 'live') return tile(sec.id, t(sec.labelKey), null, t('soon'), false);
-    if (sec.kind === 'garbage' && CONTAINERS_ONLY) return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, t('gTileContainers'), false, 'wide');
-    if (sec.kind === 'garbage') {
-      // Small bins for what goes out tonight, the daily red bin last.
-      const p = plan(now);
-      // Only what goes out this evening (13 Nov 2026): with nothing to take out, the tile says so and no more, as the
-      // short wide tile of a rubbish tile with no bins to show.
-      const bins = [...mainOf(p.list), ...FRACTIONS.filter(isRed)], label = bins.length ? t(p.mode === 'now' ? 'gBinsNow' : 'gTonightTag', { time: collectHour() }) : t('gNoneTonight');
-      return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, '', true, bins.length ? 'wide has-bins' : 'wide',
-        // One white card = "tonight": the label, then each bin with its name (the daily red bin included).
-        `<span class="gt-tonight"><span class="gt-tl">${MOON}${esc(label)}</span>
-          ${bins.length ? `<span class="gt-bins">${bins.map(f => `<span class="gtb"><span class="gbc"><span class="gbin" style="--wc:var(--w-${f.id})"></span></span><span class="gtn">${esc(tx(f.name))}</span></span>`).join('')}</span>` : ''}</span>`);
-    }
+    // A module draws its own widget (modules/index.js): Home only places it.
+    if (MODULES[sec.kind]?.widget) { const w = MODULES[sec.kind].widget(now); return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, w.meta, w.live, w.cls, w.extra); }
     if (sec.kind === 'events') {
       // The next event on the tile, e.g. "Next: Santa Teresa Fair, 9 Oct".
       const d0 = new Date(now); d0.setHours(0, 0, 0, 0);
