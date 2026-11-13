@@ -5,7 +5,7 @@ import { GARBAGE as G0 } from './content.js';
 // A site without the rubbish module (or without garbage.json) gets an empty plan.
 const GARBAGE = G0 || { fractions: [], collectionTime: '00:00', bins: {} };
 import { tx, t, lang } from './i18n.js';
-import { hourText } from './bins.js';
+import { hourText, planOf } from './bins.js';
 
 const DAY = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
 export const FRACTIONS = GARBAGE.fractions.map(f => ({ ...f, d: f.days.map(x => DAY[x]) }));
@@ -16,14 +16,8 @@ export const collectHour = () => hourText(GARBAGE.collectionTime, lang);
 
 export const collectedOn = dow => FRACTIONS.filter(f => f.d.includes(dow));
 
-// { mode: 'now' | 'tonight', day: collection weekday, list: fractions, collectedToday: fractions }
-export function plan(now = new Date()) {
-  const mins = now.getHours() * 60 + now.getMinutes();
-  const today = now.getDay();
-  if (mins < COLLECT_MIN) return { mode: 'now', day: today, list: collectedOn(today), collectedToday: [] };
-  const tomorrow = (today + 1) % 7;
-  return { mode: 'tonight', day: tomorrow, list: collectedOn(tomorrow), collectedToday: mins < 20 * 60 ? collectedOn(today) : [] };
-}
+// { mode: 'now' | 'tonight', day: collection weekday, list: fractions, collectedToday: fractions } (bins.js planOf)
+export const plan = (now = new Date()) => planOf(now, collectedOn, COLLECT_MIN);
 
 export const isRed = f => f.id === 'sanitary';
 // Villages with shared street containers have no collection days at all: no "tonight" or weekly plan to show.

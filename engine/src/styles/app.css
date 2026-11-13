@@ -294,6 +294,8 @@ gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;borde
 .ghero-hd{display:flex;flex-direction:column;gap:2px}
 .ghero-hd b{font-family:var(--display);font-weight:700;font-size:30px;line-height:1.05}
 .ghero .sub2{color:var(--deep-soft);font-size:16px}
+/* Nothing to take out tonight: the header alone, kept clear of the corner shape (13 Nov 2026). */
+.ghero.none .ghero-hd{padding-right:92px}
 .gput{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .gput li{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:var(--white);color:var(--ink)}
 .gput li .gbin{width:30px;height:38px}
@@ -629,8 +631,6 @@ body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .gt-tonight{background:none!important;color:#fff!important;padding:0!important;margin:10px 56px 0 0!important;gap:10px!important}
 .gt-tl{display:inline-flex;align-items:center;gap:7px;font-size:14px!important;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.92}
 .gt-tl svg{width:16px;height:16px;color:var(--yellow)}
-/* Nothing goes out tonight: the next evening that has bins, named above them (home.js, 13 Nov 2026). */
-.gt-next{font-size:16px;font-weight:600;line-height:1.15}
 .gt-tonight .gt-bins{gap:8px!important}
 .gtb{background:rgba(255,255,255,.16);border-radius:999px;padding:5px 14px 5px 5px;gap:9px!important}
 .gbc{width:34px;height:34px;border-radius:50%;background:#fff;display:grid;place-items:center;flex:none}
@@ -1048,6 +1048,8 @@ body:not(.is-home) #view h2.title{min-height:44px;display:flex;align-items:cente
 .gt.wide[data-k="garbage"]:not(.has-bins){padding-right:96px!important}
 .gt.wide[data-k="garbage"]:not(.has-bins) .go{top:50%!important;bottom:auto!important;margin-top:-18px;right:52px}
 .gt.wide[data-k="garbage"]:not(.has-bins)::before{width:80px;height:80px;right:-44px;top:50%;margin-top:-40px;bottom:auto}
+/* The same short tile on an evening with nothing to take out: its "Nothing tonight" line needs no room kept for the arrow (13 Nov 2026). */
+.gt.wide[data-k="garbage"]:not(.has-bins) .gt-tonight{margin-right:0!important}
 .gt[data-k="events"] .go{top:50%!important;bottom:auto!important;margin-top:-18px;right:52px}
 .gt[data-k="events"]{padding-right:96px!important}
 .gt[data-k="events"]::before{width:80px;height:80px;border-radius:50%;right:-44px;top:50%;margin-top:-40px;bottom:auto}
