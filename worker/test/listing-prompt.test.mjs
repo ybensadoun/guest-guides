@@ -4,7 +4,7 @@
 // text of the question is read here: nothing is sent anywhere.   node --test 'worker/test/*.test.mjs'
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { prompt, pageWords, readerIsListing } from '../../onboarding-site/netlify/functions/listing.mjs';
+import { prompt, pageWords, readerIsListing, readerAsks, hasTimes, timesOf } from '../../onboarding-site/netlify/functions/listing.mjs';
 
 const SRC = { url: 'https://www.airbnb.com/rooms/1', title: 'Casa Prova', description: 'A quiet house', counts: '3 bedrooms', pics: [{ caption: 'Pool' }], text: 'Made-up listing text.' };
 const line = (p, k) => (p.split('\n').find(l => l.startsWith(` "${k}":`)) || '');
@@ -61,4 +61,38 @@ test('page reader: an answer that is another page than the listing is refused', 
   assert.equal(readerIsListing('Title: https://ads.example/track\nURL Source: ' + url + '\n\nMarkdown Content:\nA 1x1 image', url), false, 'an address as a title');
   assert.equal(readerIsListing('Title: Casa Prova - Houses for Rent - Airbnb\nURL Source: ' + url + '\n\nMarkdown Content:\nA quiet house', url), true);
   assert.equal(readerIsListing('Title: Casa Prova\nURL Source: ' + url + '\nFinal URL: https://www.airbnb.es/rooms/1?source=x\n\nMarkdown Content:\nUna casa', url), true, 'the same site in another country');
+});
+
+test('reader: an Airbnb room is asked on the British site, alone and afresh; other links twice as before', () => {
+  assert.deepEqual(readerAsks('https://www.airbnb.com/rooms/123456?source=x'), [['https://www.airbnb.co.uk/rooms/123456', true]]);
+  assert.deepEqual(readerAsks('https://es.airbnb.com/rooms/plus/987'), [['https://www.airbnb.co.uk/rooms/plus/987', true]]);
+  assert.deepEqual(readerAsks('https://www.airbnb.es/rooms/55'), [['https://www.airbnb.co.uk/rooms/55', true]]);
+  assert.deepEqual(readerAsks('https://www.airbnb.co.uk/rooms/55'), [['https://www.airbnb.co.uk/rooms/55', true]]);
+  const slink = 'https://www.airbnb.com/slink/AbC12'; assert.deepEqual(readerAsks(slink), [[slink, false], [slink, true]]);   // no room number in it: as before
+  const b = 'https://www.booking.com/hotel/es/casa-prova.html'; assert.deepEqual(readerAsks(b), [[b, false], [b, true]]);
+  // The British read of a .com link is still that listing (the same site, another country); Airbnb's own first page is not.
+  assert.equal(readerIsListing('Title: Home in Vilaprova\nFinal URL: https://www.airbnb.co.uk/rooms/55?source_impression_id=p3\n', 'https://www.airbnb.com/rooms/55'), true);
+  assert.equal(readerIsListing('Title: Airbnb: Holiday Rentals, Cabins, Beach Houses, Unique Homes & Experiences\nURL Source: https://www.airbnb.co.uk/rooms/55\n', 'https://www.airbnb.co.uk/rooms/55'), false);
+  assert.equal(readerIsListing('Title: Airbnb home with a pool in Vilaprova\n', 'https://www.airbnb.co.uk/rooms/55'), true);   // a listing whose own title starts with the word
+});
+
+test('reader: the times are seen as Airbnb writes them on its sites', () => {
+  for (const s of ['Check in after 15:00', 'Check out before 12:00, self check-in with smart lock', 'Check-in after 3:00 PM', 'Checkout before 11 am',
+    'Llegada a partir de las 15:00', 'Salida antes de las 12:00', 'Arrivée à partir de 15:00', 'Départ avant 12:00']) assert.equal(hasTimes(s), true, s);
+  for (const s of ['Self check-in', 'Lock up at checkout', 'Quiet hours 10:00 PM - 8:00 AM', '']) assert.equal(hasTimes(s), false, s);
+});
+
+test('reader: the times are copied as the page words them, never from a rating or a date', () => {
+  assert.deepEqual(timesOf('Things to know\nCheck in after 15:00\nCheck out before 12:00, self check-in with smart lock\nHouse rules'), { in: '15:00', out: '12:00' });
+  assert.deepEqual(timesOf('Check-in after 3:00 PM\nCheckout before 11:00 AM'), { in: '15:00', out: '11:00' });
+  assert.deepEqual(timesOf('Check-in: 3:00 PM - 8:00 PM\nCheckout before 11 am'), { in: '15:00', out: '11:00' });
+  assert.deepEqual(timesOf('Llegada a partir de las 15:00\nSalida antes de las 12:00, llegada autónoma con cerradura inteligente'), { in: '15:00', out: '12:00' });
+  assert.deepEqual(timesOf('Arrivée à partir de 15:00\nDépart avant 12:00, arrivée autonome'), { in: '15:00', out: '12:00' });
+  assert.deepEqual(timesOf('Check-in From 15:00 to 20:00\nCheck-out Until 11:00'), { in: '15:00', out: '11:00' });
+  // Not times: a rating beside the word, a date, a count, a self check-in line, an hour with nothing that says morning or evening.
+  assert.deepEqual(timesOf('Check-in\n4.9\nCheck-in 4.91 out of 5\nSelf check-in with smart lock\nAdd your check-in date 12/01\nLock up at checkout\nCheck in after 3 nights'), { in: '', out: '' });
+  assert.deepEqual(timesOf('Check in after 15:00'), { in: '15:00', out: '' });
+  assert.deepEqual(timesOf('Check in after 3 pm and before 9 p.m.\nCheck out before 12:00 and lock up'), { in: '15:00', out: '12:00' });
+  assert.deepEqual(timesOf('Check-in after 12:00 AM\nCheckout before 12:30 am'), { in: '00:00', out: '00:30' });
+  assert.deepEqual(timesOf(''), { in: '', out: '' });
 });

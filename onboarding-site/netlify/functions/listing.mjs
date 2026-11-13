@@ -115,10 +115,24 @@ function amenGroups(html){
 export function readerIsListing(md, url){
   const site = u => (LINK_RX.find(x => x.rx.test(u)) || {}).site || null;
   const fin = (md.match(/^Final URL:\s*(\S+)/m) || [])[1], title = (md.match(/^Title:\s*(.+)$/m) || [])[1] || '';
-  return !(fin && site(fin) !== site(url)) && !/^https?:\/\//i.test(title.trim());
+  // Nor the listing site's own first page, which the reader sometimes hands back before the listing is there ("Airbnb:
+  // Holiday Rentals, Cabins, Beach Houses, Unique Homes & Experiences").
+  return !(fin && site(fin) !== site(url)) && !/^https?:\/\//i.test(title.trim()) && !/^(airbnb|booking\.com|vrbo)\s*[:|]/i.test(title.trim());
 }
 // Airbnb often refuses servers. A public page reader (r.jina.ai) opens the page like a browser and hands back text with the photo links.
-const hasTimes = t => /(check-?in|check-?out|llegada|salida|arriv|d[ée]part)[^\n]{0,40}?\d{1,2}(\s?[:.h]\s?\d{2}|\s?[ap]\.?m)/i.test(t || '');
+// "Check in after 15:00" too: Airbnb's British site writes it in two words (13 Nov 2026).
+export const hasTimes = t => /(check[- ]?in|check[- ]?out|llegada|salida|arriv|d[ée]part)[^\n]{0,40}?\d{1,2}(\s?[:.h]\s?\d{2}|\s?[ap]\.?m)/i.test(t || '');
+// What the reader is asked: [address, fresh]. For an Airbnb room, the same room on Airbnb's British site, read afresh and
+// alone: on 13 Nov 2026 the reader, asked for airbnb.com/rooms/<id>, landed on an advertising tracker five times out of
+// five, while the same room on airbnb.co.uk, .es and .fr came back whole eight times out of eight when asked alone, with
+// "Check in after 15:00" and "Check out before 12:00" (the page a server gets from Airbnb never has those times: a browser
+// loads them afterwards). Asked beside the .com read it came back once as Airbnb's empty first page, so the .com address
+// is not asked at all. Any other link: the link twice side by side, the second read afresh, as before (the reader
+// sometimes hands back the page before its times are there).
+export function readerAsks(url){
+  const m = String(url || '').match(/^https?:\/\/(?:[a-z]{2,3}\.)?(?:www\.)?airbnb\.[a-z.]+\/(rooms\/(?:plus\/)?\d+)/i);
+  return m ? [['https://www.airbnb.co.uk/' + m[1], true]] : [[url, false], [url, true]];
+}
 async function readViaReader(url, fresh = false){
   try {
     const r = await fetch('https://r.jina.ai/' + url, { signal: AbortSignal.timeout(14000), headers: { accept: 'text/plain', 'x-return-format': 'markdown', ...(fresh ? { 'x-no-cache': 'true' } : {}) } });
@@ -133,6 +147,28 @@ async function readViaReader(url, fresh = false){
     if (!readerIsListing(md, url)) return null;
     return { via: 'reader', sleeping: [], tourRooms: 0, rating: null, title, description: '', image: pics[0] ? pics[0].url : '', photos: pics.slice(0, 16).map(x => x.url), pics: pics.slice(0, 16), counts, text: text.slice(0, 40000), lat: null, lng: null };
   } catch (e) { return null; }
+}
+
+// The reader's read of a listing: the asks of readerAsks side by side; a single ask that brought no times (the page's empty
+// first state, or nothing) is asked once more. The read with the times first, else the longer; null when none came.
+async function readerRead(url){
+  const asks = readerAsks(url), alts = (await Promise.all(asks.map(([u, fresh]) => readViaReader(u, fresh)))).filter(Boolean);
+  if (asks.length === 1 && !alts.some(a => hasTimes(a.text))) { const again = await readViaReader(asks[0][0], true); if (again) alts.push(again); }
+  return alts.sort((a, b) => hasTimes(b.text) - hasTimes(a.text) || b.text.length - a.text.length)[0] || null;
+}
+// The check-in and check-out times as a listing's page words them, copied, never guessed: { in, out } as HH:MM, '' for
+// one that is not stated. A time counts only after the words that announce it ("Check in after 15:00", "Check-in: 3:00 PM
+// - 8:00 PM", "Checkout before 11 am", "Llegada a partir de las 15:00", "Départ avant 12:00"), so a rating beside
+// "Check-in" (4.9) or a date is never taken for one.
+export function timesOf(text){
+  const t = String(text || ''), CUE = '(?:\\s*:|\\s+(?:is\\s+)?(?:after|from|between|before|by|until|a partir de(?: las?)?|desde(?: las?)?|antes de(?: las?)?|hasta(?: las?)?|à partir de|avant|jusqu\'à))\\s*';
+  const T = '(\\d{1,2})(?:[:.h](\\d{2}))?(?:\\s?([ap])\\.?m\\b)?';   // am or pm only as a whole word: "12:00 and lock up" is noon
+  const one = words => { for (const m of t.matchAll(new RegExp('(?:' + words + ')' + CUE + T, 'gi'))) {
+    let h = +m[1]; const min = m[2] || '00', p = (m[3] || '').toLowerCase(); if (!m[2] && !p) continue;   // "after 3" alone: not a time of day
+    if (p === 'p' && h < 12) h += 12; if (p === 'a' && h === 12) h = 0;
+    if (h < 24 && +min < 60) return String(h).padStart(2, '0') + ':' + min; }
+    return ''; };
+  return { in: one('check[- ]?in|llegada|arriv[ée]e'), out: one('check[- ]?out|salida|d[ée]part') };
 }
 
 // If the writing assistant fails, what the page states exactly is still filled in, so the host never gets nothing.
@@ -246,10 +282,12 @@ export default async (req) => {
     if (!site && !text) return json({ ok: false, need: 'link', message: 'That does not look like a listing page. Open your listing on Airbnb (or Booking, Vrbo) and copy the address from the browser: it looks like airbnb.com/rooms/12345678.' });
     if (site) {
       src = await readPage(url);
-      if (!src || (src.thin != null ? src.thin : src.text.length < 6000)) {
-        // The reader sometimes hands back the page before its times are there (2,800 characters instead of 15,000): two reads
-        // side by side, the one with the check-in and check-out times kept, else the longer.
-        const alt = (await Promise.all([readViaReader(url), readViaReader(url, true)])).filter(Boolean).sort((a, b) => hasTimes(b.text) - hasTimes(a.text) || b.text.length - a.text.length)[0] || null;
+      // The reader's read is slow (5 to 17 s measured, 13 Nov 2026). The first answer of the two stages ("page") no longer
+      // waits for it when the page itself was read with its photos: the builder shows the guide at once, and the times,
+      // the one thing only the reader's read has, are fetched while Claude writes (stage "write", below). Without stages,
+      // or when the page gave nothing, as before: the reader's text joins the page's.
+      if (stage === 'page' ? !src || !(src.pics || []).length : !src || (src.thin != null ? src.thin : src.text.length < 6000)) {
+        const alt = await readerRead(url);
         if (alt && !src) src = alt;
         else if (alt && src) { src.via = 'page + reader'; src.text = (src.facts ? src.text.split('\n\n')[0] + '\n\n' : '') + alt.text; src.counts = src.counts || alt.counts; if (!src.pics.length) { src.pics = alt.pics; src.photos = alt.photos; src.image = src.image || alt.image; } }
       }
@@ -268,6 +306,9 @@ export default async (req) => {
     rating: src.rating || null, sleeping: src.sleeping || [], amenityItems: src.amenityItems || [], lat: src.lat, lng: src.lng, src });
   {
     let draft, assistant = 'ok', code = '';
+    // The times, when the text in hand has none (the page a server gets never has them): the reader is asked while Claude
+    // writes, and what it states is copied into the answers Claude left empty (timesOf). A reader that fails costs nothing.
+    const timesP = site && url && !hasTimes(src.text) ? readerRead(url).then(a => a ? timesOf(a.text) : null).catch(() => null) : null;
     try { draft = await askClaude(src, town, lang); } catch (e) { assistant = 'failed'; code = String((e && e.message) || e).slice(0, 220); draft = fallbackDraft(src); console.error('askClaude failed:', code); }
     if (assistant === 'failed' && !(src.pics || []).length && !(src.overview || []).length && !draft.houseRules) {
       return json({ ok: false, need: 'retry', code, message: code.startsWith('no_key') ? 'The writing assistant is not set up yet. You can still fill in the steps by hand.' : 'The writing assistant did not answer, so we could not read your listing this time. Press the button again, or fill in the steps by hand.' });
@@ -275,6 +316,8 @@ export default async (req) => {
     // What the page states exactly is kept when the model gave none; it comes back in English otherwise.
     if (src.sleeping && src.sleeping.length && !draft.sleeping) draft.sleeping = src.sleeping.join('\n');
     if (src.rating) { draft.rating = src.rating.avg; draft.reviewCount = src.rating.count; }
+    const tm = timesP ? await timesP : null;
+    if (tm) for (const [k, v] of [['checkIn', tm.in], ['checkOut', tm.out]]) if (v && !String(draft[k] || '').trim()) { draft[k] = v; draft.basis = { ...(draft.basis || {}), [k]: 'listing' }; }
     // The town and the region as the page states them (its map's town; the last two parts of the location shown).
     if (src.place && !String(draft.town || '').trim() && src.place.name) draft.town = src.place.name;
     if (src.place && !String(draft.region || '').trim() && src.place.area) { const p = src.place.area.split(',').map(x => x.trim()).filter(Boolean); draft.region = p.slice(-2).join(', '); }
