@@ -3,8 +3,9 @@
 // 2026: no box, it takes the colour of the panel it sits in and reads like the guide's own lines, where our hours go.
 // Loaded live in the guest's browser when the guest opens that place, never stored, never read: its inside is Google's
 // closed shadow root, our code only measures the element's outer height to decide whether to show it. Places that ask:
-// spots rows (Eat and drink, Things to do, Nightlife) and the Home quick tile page; never markets, events, contacts or
-// the map's sheet. Everything about the card lives here; ui.js and place.js draw the slot, main.js mounts it.
+// spots rows (Eat and drink, Things to do, Nightlife), the Home quick tile page and, since 13 Nov 2026 (Yohann: Google as
+// the live backup "as we do for the rest"), the Markets page's rows; never events, contacts, Home's own rows or the map's
+// sheet. Everything about the card lives here; ui.js and place.js draw the slot, main.js mounts it.
 import { lang } from './i18n.js';
 import KINDS from './kinds.json';
 

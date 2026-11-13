@@ -45,10 +45,12 @@ export function renderMarkets(V) {
     const head = (rel(off) ? rel(off) + ' · ' : '') + cap(new Intl.DateTimeFormat(locale(), { weekday: 'long', day: 'numeric', month: 'long' }).format(sel));
     shown = MARKETS.filter(m => vis(m) && runsOn(m, sel).length); mkey = 'd' + off;
     body = bar + mapBox(shown) + `<h3 class="section-h">${esc(head)}</h3>` +
-      list(sorted(shown), () => ({ date: off === 0 ? now : sel, live: off === 0 }));
+      list(sorted(shown), () => ({ date: off === 0 ? now : sel, live: off === 0, gcard: true }));
   } else {
     shown = MARKETS.filter(vis); mkey = 'all';
-    body = mapBox(shown) + list(sorted(shown), () => ({}));
+    // gcard: a market we hold no hours for, with a Google id, gets Google's own live line when its row opens (ui.js row,
+    // gcard.js), as a place of the host's lists does: Google says there whether it is open, or closed for good.
+    body = mapBox(shown) + list(sorted(shown), () => ({ gcard: true }));
   }
   mkey += '|' + [...st.cats].sort().join(',');
   const oldMap = V.dataset.mkkey === mkey ? V.querySelector('#mkmap') : null;

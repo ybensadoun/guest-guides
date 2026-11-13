@@ -736,6 +736,11 @@ async function researchJob(j, jp) {
       if (kind === 'todo') { const f = join(dir, 'todo.json'), o = JSON.parse(readFileSync(f, 'utf8')), ids = new Set();
         for (const it of o.items || []) { let n = slugOf(it.name_local || nameOf(it.name)); while (ids.has(n)) n += '-2'; ids.add(n); it.id = n; }
         o.items = await checkOnGoogle(o.items || [], 'todo', { lat: +A.lat, lng: +A.lng }, () => {}); writeFileSync(f, JSON.stringify(o, null, 1)); }
+      // The markets located too (13 Nov 2026): Google's id only, so a guest who opens a market we hold no hours for gets
+      // Google's own live line (engine/src/gcard.js). Nothing is asked about its status and no market is dropped here:
+      // for an account billed in Europe Google's "closed" may only be shown to a person, never used by a job.
+      if (kind === 'markets') { const f = join(dir, 'markets.json'), o = JSON.parse(readFileSync(f, 'utf8'));
+        o.markets = await checkOnGoogle(o.markets || [], 'markets', { lat: +A.lat, lng: +A.lng }, () => {}); writeFileSync(f, JSON.stringify(o, null, 1)); }
       await jp({ result: read() }); } });
     const result = read();
     const events = await firstEvents(A, meter).catch(e => { log('  events search skipped:', e.message); return null; });

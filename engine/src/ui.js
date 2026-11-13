@@ -178,7 +178,7 @@ const wikiUrl = q => `https://${lang}.wikipedia.org/w/index.php?search=${encodeU
 // Compact list row that expands to the full details (Markets page). Summary: icon, name,
 // type and distance, and the live status (today) or that day's hours (other days).
 // No rating: the host's places are hand-picked, and Google's ratings may not be kept (a "rating" left in old data is ignored).
-// opts.gcard (spots sections only): a place with no hours of ours gets Google's line (gcard.js) where our hours go,
+// opts.gcard (spots sections and the Markets page): a place with no hours of ours gets Google's line (gcard.js) where our hours go,
 // under the address, and its "Google Maps" button goes last in the actions (data-gbtn), kept back until we know no
 // line of Google's comes (that line has Google's own Maps button), so no other button ever moves. Every other row is
 // drawn exactly as before.

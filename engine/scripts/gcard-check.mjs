@@ -1,7 +1,8 @@
 // Google card check (engine/src/gcard.js): Google's open-now line with a FAKED Google, never a real call. Builds the site
 // three times into temporary folders: with a fake key, without any key, and a patched copy of its content with a fake key
 // (a beach that is not open all day, a town and a city given a Google id, a Home quick tile with a Google id and no hours,
-// so the kind rule and the tile page are tried too; the site's own folder is never touched). Every request to a Google
+// a market that loses its hours and is given a Google id, so the kind rule, the tile page and the Markets page are tried
+// too; the site's own folder is never touched). Every request to a Google
 // host is routed: Google's script gets a fake that defines google.maps.importLibrary and a fake
 // <gmp-place-details-compact> whose height and answer this check chooses per place (125 px then gmp-load, a card with a
 // status line; 105 px then gmp-load, Google's card with nothing to say; gmp-error; never answering). Any other request to a Google host fails the check. At 360 px in de and fr.
@@ -24,7 +25,7 @@ const G = { quijote: gidOf('restaurants', 'quijote'), gramona: gidOf('todo', 'gr
 // A season as MM-DD from today plus a number of days at each end (today's clock: the guide reads the phone's date).
 const MMDD = n => { const d = new Date(); d.setDate(d.getDate() + n); return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const SEASON = (a, b) => ({ from: MMDD(a), to: MMDD(b) });
-const TOWN_GID = 'TestTownGid0000000000', CITY_GID = 'TestCityGid0000000000', TILE_GID = 'TestTileGid0000000000';
+const TOWN_GID = 'TestTownGid0000000000', CITY_GID = 'TestCityGid0000000000', TILE_GID = 'TestTileGid0000000000', MARKET_GID = 'TestMarketGid00000000';
 // What the fake card does for each place: [answer, height in px]. Anything not listed: a card with a status line.
 const PLAN = { [G.gramona]: ['load', 105], [G.montserrat]: ['error', 0], [G.poblet]: ['never', 0] };
 
@@ -49,8 +50,13 @@ const patched = () => {
   edit('restaurants', j => { for (const x of j.items) if (x.id === 'quijote') x.season = SEASON(20, 100); });   // opens in 20 days: shown, closed
   let tile = null;
   edit('quick', j => { const q = j.items.find(x => !x.trains && x.phone !== undefined) || j.items.find(x => !x.trains); if (q) { tile = q.id; delete q.schedule; delete q.always; delete q.hours; delete q.price; q.gid = TILE_GID; q.lat = q.lat || 41.2; q.lng = q.lng || 1.5; } });
+  // A weekly market of a kind the Markets page shows by default (covered halls are filtered out) loses its hours and gets a
+  // Google id: the one market that asks for the card. Another one keeps its hours: never a slot.
+  let market = null, marketHours = null;
+  edit('markets', j => { const withHours = (j.markets || []).filter(x => (x.schedule || []).length && x.category !== 'covered');
+    const m = withHours[0]; if (m) { market = m.id; delete m.schedule; delete m.always; m.gid = MARKET_GID; } if (withHours[1]) marketHours = withHours[1].id; });
   const t = JSON.parse(readFileSync(join(d, 'content', 'todo.json'), 'utf8')).items;
-  return { dir: d, tile, town: t.find(x => x.gid === TOWN_GID)?.id, city: t.find(x => x.gid === CITY_GID)?.id };
+  return { dir: d, tile, market, marketHours, town: t.find(x => x.gid === TOWN_GID)?.id, city: t.find(x => x.gid === CITY_GID)?.id };
 };
 
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json', '.txt': 'text/plain' };
@@ -273,6 +279,39 @@ try {
         }
       } else fail(at('patched'), 'no Home quick tile to try');
       if (net.real.length) fail(at('patched'), 'a real Google host was asked: ' + net.real[0]);
+      await ctx.close(); }
+
+    // 4. The Markets page (13 Nov 2026): a market with no hours of ours and a Google id gets the card when its row opens,
+    // in the list of all markets (the days view only lists markets that have hours); a market with hours never has a slot.
+    { const { ctx, pg, net } = await open(PATCH, l, '#markets');
+      if (!P.market || !P.marketHours) fail(at('markets'), 'no market to try'); else {
+        if (await pg.evaluate(() => document.querySelectorAll('.mrow [data-gcard]').length)) fail(at('markets'), 'a row of the days view has a slot');
+        await pg.evaluate(() => document.querySelector('[data-mk="all"]').click()); await pg.waitForTimeout(300);
+        const ids = await pg.evaluate(g => [...document.querySelectorAll('.mrow')].filter(r => r.querySelector('[data-gcard]')).map(r => r.dataset.id + '|' + r.querySelector('[data-gcard]').dataset.gcard), MARKET_GID);
+        const mine = ids.find(x => x.endsWith('|' + MARKET_GID)), id = mine && mine.split('|')[0];
+        if (!id) fail(at('markets'), 'the market with no hours of ours and a Google id has no slot'); else {
+          if (await pg.evaluate(m => [...document.querySelectorAll('.mrow')].some(r => (r.dataset.id === m || r.dataset.id.endsWith('-' + m)) && r.querySelector('[data-gcard]')), P.marketHours)) fail(at('markets'), 'a market with hours of ours has a slot');
+          const s0 = await rowState(pg, id);
+          if (!s0.placed) fail(at(id), 'the slot is not under the address, where our hours go');
+          if (!s0.gbtn || !s0.gbtn.last) fail(at(id), 'our Google Maps button is not last in the actions');
+          if (net.script || (await counts(pg)).req.length) fail(at(id), 'Google was asked before the row was opened');
+          await click(pg, id); const before = await rowState(pg, id);
+          if (before.on || before.vis !== 'hidden') fail(at(id), 'the card shows before it loaded');
+          if (before.gbtn.shown) fail(at(id), 'our Google Maps button shows while a card may still come');
+          await pg.waitForSelector(`${sel(id)} .gcard.on`, { timeout: 4000 }).catch(() => fail(at(id), 'the card was not shown'));
+          const after = await rowState(pg, id);
+          if (after.h !== before.h) fail(at(id), `the row changed height when the card came: ${before.h} / ${after.h}`);
+          if (after.gbtn.shown) fail(at(id), 'our Google Maps button is still shown beside the card');
+          if (!same(before.btns, after.btns)) fail(at(id), `a button moved: ${before.btns} / ${after.btns}`);
+          for (const x of await layout(pg)) fail(at(id), x);
+          // The list drawn again (a filter): the same card, never a second request.
+          await pg.evaluate(() => { document.querySelector('[data-filt]')?.click(); document.querySelector('[data-sort="house"]')?.click(); }); await pg.waitForTimeout(300);
+          const again = await rowState(pg, id), c = await counts(pg);
+          if (!again || !again.open || !again.on) fail(at(id), 'after the list was drawn again the card is gone');
+          if (c.req.filter(g => g === MARKET_GID).length !== 1) fail(at(id), `requests for the market: ${c.req.filter(g => g === MARKET_GID).length}`);
+        }
+      }
+      if (net.real.length) fail(at('markets'), 'a real Google host was asked: ' + net.real[0]);
       await ctx.close(); }
   }
 } catch (e) { fail('check', e.stack || e.message); }
