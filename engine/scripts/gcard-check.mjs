@@ -25,7 +25,7 @@ const G = { quijote: gidOf('restaurants', 'quijote'), gramona: gidOf('todo', 'gr
 // A season as MM-DD from today plus a number of days at each end (today's clock: the guide reads the phone's date).
 const MMDD = n => { const d = new Date(); d.setDate(d.getDate() + n); return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const SEASON = (a, b) => ({ from: MMDD(a), to: MMDD(b) });
-const TOWN_GID = 'TestTownGid0000000000', CITY_GID = 'TestCityGid0000000000', TILE_GID = 'TestTileGid0000000000', MARKET_GID = 'TestMarketGid00000000';
+const TOWN_GID = 'TestTownGid0000000000', CITY_GID = 'TestCityGid0000000000', TILE_GID = 'TestTileGid0000000000', MARKET_GID = 'TestMarketGid00000000', FAIR_GID = 'TestFairGid0000000000';
 // What the fake card does for each place: [answer, height in px]. Anything not listed: a card with a status line.
 const PLAN = { [G.gramona]: ['load', 105], [G.montserrat]: ['error', 0], [G.poblet]: ['never', 0] };
 
@@ -50,13 +50,15 @@ const patched = () => {
   edit('restaurants', j => { for (const x of j.items) if (x.id === 'quijote') x.season = SEASON(20, 100); });   // opens in 20 days: shown, closed
   let tile = null;
   edit('quick', j => { const q = j.items.find(x => !x.trains && x.phone !== undefined) || j.items.find(x => !x.trains); if (q) { tile = q.id; delete q.schedule; delete q.always; delete q.hours; delete q.price; q.gid = TILE_GID; q.lat = q.lat || 41.2; q.lng = q.lng || 1.5; } });
-  // A weekly market of a kind the Markets page shows by default (covered halls are filtered out) loses its hours and gets a
-  // Google id: the one market that asks for the card. Another one keeps its hours: never a slot.
-  let market = null, marketHours = null;
-  edit('markets', j => { const withHours = (j.markets || []).filter(x => (x.schedule || []).length && x.category !== 'covered');
-    const m = withHours[0]; if (m) { market = m.id; delete m.schedule; delete m.always; m.gid = MARKET_GID; } if (withHours[1]) marketHours = withHours[1].id; });
+  // A weekly street market loses its hours and gets a Google id: the one market that asks for the card. Another one keeps
+  // its hours: never a slot. A fair (category events) loses its hours and gets a Google id too: never a slot either, a
+  // fair is not held every week and Google's line would give another market's weekly hours.
+  let market = null, marketHours = null, fair = null;
+  edit('markets', j => { const withHours = (j.markets || []).filter(x => (x.schedule || []).length && x.category === 'street');
+    const m = withHours[0]; if (m) { market = m.id; delete m.schedule; delete m.always; m.gid = MARKET_GID; } if (withHours[1]) marketHours = withHours[1].id;
+    const e = (j.markets || []).find(x => x.category === 'events'); if (e) { fair = e.id; delete e.schedule; delete e.always; e.gid = e.gid || FAIR_GID; } });
   const t = JSON.parse(readFileSync(join(d, 'content', 'todo.json'), 'utf8')).items;
-  return { dir: d, tile, market, marketHours, town: t.find(x => x.gid === TOWN_GID)?.id, city: t.find(x => x.gid === CITY_GID)?.id };
+  return { dir: d, tile, market, marketHours, fair, town: t.find(x => x.gid === TOWN_GID)?.id, city: t.find(x => x.gid === CITY_GID)?.id };
 };
 
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json', '.txt': 'text/plain' };
@@ -282,13 +284,16 @@ try {
       await ctx.close(); }
 
     // 4. The Markets page (13 Nov 2026): a market with no hours of ours and a Google id gets the card when its row opens,
-    // in the list of all markets (the days view only lists markets that have hours); a market with hours never has a slot.
+    // in the list of all markets (the days view only lists markets that have hours); a market with hours never has a slot,
+    // nor does a fair or a monthly market, whatever it holds.
     { const { ctx, pg, net } = await open(PATCH, l, '#markets');
       if (!P.market || !P.marketHours) fail(at('markets'), 'no market to try'); else {
         if (await pg.evaluate(() => document.querySelectorAll('.mrow [data-gcard]').length)) fail(at('markets'), 'a row of the days view has a slot');
         await pg.evaluate(() => document.querySelector('[data-mk="all"]').click()); await pg.waitForTimeout(300);
         const ids = await pg.evaluate(g => [...document.querySelectorAll('.mrow')].filter(r => r.querySelector('[data-gcard]')).map(r => r.dataset.id + '|' + r.querySelector('[data-gcard]').dataset.gcard), MARKET_GID);
         const mine = ids.find(x => x.endsWith('|' + MARKET_GID)), id = mine && mine.split('|')[0];
+        if (!P.fair) fail(at('markets'), 'no fair to try');
+        if (ids.length > 1 || (ids.length === 1 && !mine)) fail(at('markets'), 'a market that is not held every week has a slot: ' + ids.filter(x => x !== mine).map(x => x.split('|')[0]).join(', '));
         if (!id) fail(at('markets'), 'the market with no hours of ours and a Google id has no slot'); else {
           if (await pg.evaluate(m => [...document.querySelectorAll('.mrow')].some(r => (r.dataset.id === m || r.dataset.id.endsWith('-' + m)) && r.querySelector('[data-gcard]')), P.marketHours)) fail(at('markets'), 'a market with hours of ours has a slot');
           const s0 = await rowState(pg, id);

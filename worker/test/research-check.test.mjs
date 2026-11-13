@@ -183,3 +183,20 @@ test('checkResearch: a filled item says where its facts came from (filled), only
   assert.equal(out[2].filled, undefined);   // nothing kept for it: nothing filled, nothing said
   assert.ok(!/google/i.test(JSON.stringify(out.map(x => x.filled || null))));
 });
+
+test('checkResearch: a fair never takes the id of its town\'s weekly market; a weekly market with a plain name does', async () => {
+  // Google answers every search with the town's weekly market, 300 m away, as it did for two yearly fairs on 13 Nov 2026.
+  const weekly = { id: gid(9), displayName: { text: 'Mercat setmanal de Cunit' }, location: { latitude: 41.2227, longitude: 1.52 } };
+  const real = globalThis.fetch;
+  globalThis.fetch = async url => ({ ok: true, json: async () => (/searchText/.test(url) ? { places: [weekly] } : weekly) });
+  try {
+    const fair = item('fira-artesania-estiu', 41.22, 1.52, { category: 'events', town: 'Cunit' });
+    const flea = item('encants-vells', 41.22, 1.52, { category: 'flea', town: 'Cunit' });
+    const street = item('mercat-setmanal', 41.22, 1.52, { category: 'street', town: 'Cunit' });
+    const out = await checkResearch([fair, flea, street], 'markets', opts({ locate: (it, o) => locateItem('KEY', it, o) }));
+    assert.deepEqual(out.map(x => x.id), ['fira-artesania-estiu', 'encants-vells', 'mercat-setmanal']);   // none dropped
+    assert.ok(!('gid' in out[0]) && !('gmaps' in out[0]), JSON.stringify(out[0]));
+    assert.ok(!('gid' in out[1]), JSON.stringify(out[1]));
+    assert.equal(out[2].gid, gid(9));
+  } finally { globalThis.fetch = real; }
+});

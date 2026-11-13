@@ -15,6 +15,11 @@ import { nearby, gazetteer, kindsOf } from './place-facts.mjs';
 import { fillPlaces, filledOf } from './host-places.mjs';
 
 const num = v => typeof v === 'number' && Number.isFinite(v);
+// The kinds of market held every week: only these may take the loose match of worker/places.mjs sameMarket ("a market
+// listing within 600 m"). A fair, a flea or antiques market must share a word of its own name with Google's listing, or it
+// stays without an id: on 13 Nov 2026 two yearly fairs of a live guide carried the id of their town's weekly market, and
+// Google's line said that market's hours on the fair.
+export const WEEKLY_MARKET = new Set(['street', 'covered']);
 const empty = v => v == null || v === '' || (Array.isArray(v) && !v.length);
 export const MAX_FILLED = 12;   // each look waits on Claude for some seconds and costs about 0.02 USD: the nearest only
 
@@ -37,7 +42,7 @@ export async function checkResearch(items, file, { locate = null, house = null, 
   // asked around.
   for (const [i, it] of items.entries()) {
     await progress(i + 1, items.length, 'locate');
-    let loc = null; try { loc = await locate(it, { market }); } catch (e) { /* kept, unchecked */ }
+    let loc = null; try { loc = await locate(it, { market: market && WEEKLY_MARKET.has(it.category) }); } catch (e) { /* kept, unchecked */ }
     if (pause) await new Promise(r => setTimeout(r, pause));
     delete it.checked;   // an older result checked again: its date of a Google check goes
     if (!loc) { it._google = 'Not found on Google: the web source is the only proof'; kept.push(it); continue; }

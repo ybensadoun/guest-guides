@@ -6,6 +6,10 @@ import { kmMe } from '../geo.js';
 import { esc, row, chips, ICON } from '../ui.js';
 import { overviewMap } from './map.js';
 
+// Google's own live line (gcard.js) only on the kinds of market held every week, a street market or a market hall. A fair,
+// a flea or antiques market held once a month or once a year never asks: Google's line gives weekly hours, and on the live
+// guide (13 Nov 2026) it said "Open · Closes 14:00" on a summer night market, from the listing of the town's weekly market.
+const WEEKLY = new Set(['street', 'covered']);
 const FILTER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>';
 
 export function sorted(list) {
@@ -45,12 +49,12 @@ export function renderMarkets(V) {
     const head = (rel(off) ? rel(off) + ' · ' : '') + cap(new Intl.DateTimeFormat(locale(), { weekday: 'long', day: 'numeric', month: 'long' }).format(sel));
     shown = MARKETS.filter(m => vis(m) && runsOn(m, sel).length); mkey = 'd' + off;
     body = bar + mapBox(shown) + `<h3 class="section-h">${esc(head)}</h3>` +
-      list(sorted(shown), () => ({ date: off === 0 ? now : sel, live: off === 0, gcard: true }));
+      list(sorted(shown), m => ({ date: off === 0 ? now : sel, live: off === 0, gcard: WEEKLY.has(m.cat) }));
   } else {
     shown = MARKETS.filter(vis); mkey = 'all';
-    // gcard: a market we hold no hours for, with a Google id, gets Google's own live line when its row opens (ui.js row,
-    // gcard.js), as a place of the host's lists does: Google says there whether it is open, or closed for good.
-    body = mapBox(shown) + list(sorted(shown), () => ({ gcard: true }));
+    // gcard: a weekly market we hold no hours for, with a Google id, gets Google's own live line when its row opens
+    // (ui.js row, gcard.js), as a place of the host's lists does: Google says there whether it is open, or closed for good.
+    body = mapBox(shown) + list(sorted(shown), m => ({ gcard: WEEKLY.has(m.cat) }));
   }
   mkey += '|' + [...st.cats].sort().join(',');
   const oldMap = V.dataset.mkkey === mkey ? V.querySelector('#mkmap') : null;

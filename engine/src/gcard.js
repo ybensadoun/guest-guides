@@ -4,7 +4,8 @@
 // Loaded live in the guest's browser when the guest opens that place, never stored, never read: its inside is Google's
 // closed shadow root, our code only measures the element's outer height to decide whether to show it. Places that ask:
 // spots rows (Eat and drink, Things to do, Nightlife), the Home quick tile page and, since 13 Nov 2026 (Yohann: Google as
-// the live backup "as we do for the rest"), the Markets page's rows; never events, contacts, Home's own rows or the map's
+// the live backup "as we do for the rest"), the Markets page's rows for the markets held every week (street markets and
+// market halls; never a fair or a monthly market: views/markets.js); never events, contacts, Home's own rows or the map's
 // sheet. Everything about the card lives here; ui.js and place.js draw the slot, main.js mounts it.
 import { lang } from './i18n.js';
 import KINDS from './kinds.json';
