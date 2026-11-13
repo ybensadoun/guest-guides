@@ -616,7 +616,8 @@ if taxis:
 # Neither is researched: only the host knows them. Rubbish comes from the plan they ticked; places from their own list.
 GD = json.loads((Path(__file__).parent / 'garbage-defaults.json').read_text())
 def gl(obj): return {l: (obj.get(l) or obj.get('en')) for l in LANGS}
-def gl_steps(lst): return [gl(x) for x in lst]
+# A step may hold its words for a guide with no collection hour ("noTime"): "by the time shown" is only said when a time is shown.
+def gl_steps(lst, timed=True): return [gl(x if timed or not x.get('noTime') else x['noTime']) for x in lst]
 rmode = A.get('rubbishMode') or ''
 rplan = A.get('rubbishPlan') or {}
 # Containers the host listed: where (their words), what each takes (fraction ids), an optional Google Maps link (a point on the map when it has coordinates).
@@ -633,10 +634,10 @@ if rmode:
         days = [d for d in (rplan.get(fid) or [])] if r_home else []
         binn = 'street' if not days else ('brown' if fid == 'organic' else 'grey')
         fr.append({'id': fid, 'bin': binn, 'days': days, 'name': gl(GD['names'][fid]), 'examples': gl(GD['examples'][fid])})
-    steps = []
-    steps += gl_steps(GD['steps_containers'] if (r_cont and not r_home) else GD['steps_home'])
-    if (A.get('rubbishNotes') or '').strip(): steps += [L(x) for x in lines('rubbishNotes')]
     t = (A.get('rubbishTime') or '')[:5]
+    steps = []
+    steps += gl_steps(GD['steps_containers'] if (r_cont and not r_home) else GD['steps_home'], bool(t))
+    if (A.get('rubbishNotes') or '').strip(): steps += [L(x) for x in lines('rubbishNotes')]
     containers, g_items = [], []
     for n, r in enumerate(spots, 1):
         takes = [x for x in (r.get('t') or []) if x in ('organic', 'packaging', 'paper', 'glass', 'rest')]

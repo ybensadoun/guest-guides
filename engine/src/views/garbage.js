@@ -9,8 +9,9 @@ import { esc, ICON, row } from '../ui.js';
 const RED = FRACTIONS.find(isRed);
 const pill = f => `<span class="gpill"><i class="gdot" style="background:var(--w-${f.id})"></i>${esc(tx(f.name))}</span>`;
 const redLine = key => `<p class="gred" style="--wc:var(--w-sanitary)"><span class="gbin sm"></span>${esc(t(key))}</p>`;
+// A bin the guide gives no name says only what goes in it: never "in the" with nothing after.
 const putItem = f => `<li style="--wc:var(--w-${f.id})"><span class="gbin"></span>
-  <span><b>${esc(tx(f.name))}</b><small>${esc(t(isRed(f) ? 'gInEvery' : 'gIn', { bin: binName(f) }))}</small></span></li>`;
+  <span><b>${esc(tx(f.name))}</b>${binName(f) ? `<small>${esc(t(isRed(f) ? 'gInEvery' : 'gIn', { bin: binName(f) }))}</small>` : ''}</span></li>`;
 
 function header(f) {
   if (f.bin === 'kitchen') return t('gKitchen');
@@ -66,7 +67,7 @@ export function renderGarbage(V) {
   const what = `<section class="gsec"><h3 class="section-h">${esc(t('gWhat'))}</h3>
     <div class="list">${FRACTIONS.map(f => `<article class="card" style="--cc:var(--w-${f.id})">
       <div class="hd">${f.bin !== 'kitchen' ? `<span class="gbin" style="--wc:var(--w-${f.id})"></span>` : ''}<div class="hdt"><h3>${esc(tx(f.name))}</h3><span class="sub2">${esc(header(f))}</span></div></div>
-      ${f.bin !== 'kitchen' ? `<div class="where">${esc(cap(binName(f)))}</div>` : ''}
+      ${f.bin !== 'kitchen' && binName(f) ? `<div class="where">${esc(cap(binName(f)))}</div>` : ''}
       <div class="note">${esc(tx(f.examples))}</div>
       ${f.id === 'glass' && glass ? `<div class="actions"><a class="btn" href="#map/m/${encodeURIComponent(glass.id)}">${ICON.pin}${esc(t('onMap'))}</a></div>` : ''}
     </article>`).join('')}</div></section>`;

@@ -70,3 +70,21 @@ test('generator: an unmatched place has no town; a picked row with no name is na
     assert.ok(!todo.items.some(x => !x.name));
   } finally { rmSync(site, { recursive: true, force: true }); rmSync(src, { recursive: true, force: true }); }
 });
+
+// "By the time shown" is only said in a guide that shows a time: with no collection hour from the host, the step ends before it.
+test('generator: the step about putting bins out names a time only when the host gave one', () => {
+  for (const [time, said] of [['', false], ['07:00', true]]) {
+    const src = mkdtempSync(join(tmpdir(), 'gen-bins-')), slug = 'zz-test-bins-' + process.pid, site = resolve(ROOT, 'sites', slug);
+    writeFileSync(join(src, 'host.json'), JSON.stringify({ answers: { placeName: 'Test house', town: 'Calafell', languages: ['en', 'es', 'fr', 'de'],
+      rubbishMode: 'Collected at the house', rubbishPlan: { organic: ['mon', 'thu'], packaging: ['tue'] }, rubbishTime: time } }));
+    writeFileSync(join(src, 'geocode.json'), '{}');
+    try {
+      const r = spawnSync('python3', ['engine/scripts/generate-site.py', src, '--slug', slug, '--lat', '41.2', '--lng', '1.5'], { cwd: ROOT, encoding: 'utf8', timeout: 60000 });
+      assert.equal(r.status, 0, (r.stderr || '').slice(-400));
+      const g = JSON.parse(readFileSync(join(site, 'content/garbage.json'), 'utf8')), all = JSON.stringify(g.steps);
+      assert.equal(g.collectionTime, time);
+      for (const [l, w] of [['en', 'time shown'], ['es', 'hora indicada'], ['fr', 'heure indiquée'], ['de', 'angegebenen Uhrzeit']]) assert.equal(g.steps[1][l].includes(w), said, `${l}, time "${time}"`);
+      assert.match(g.steps[1].en, /^Put each bin out the evening before its collection day/); assert.ok(!all.includes('noTime'));
+    } finally { rmSync(site, { recursive: true, force: true }); rmSync(src, { recursive: true, force: true }); }
+  }
+});

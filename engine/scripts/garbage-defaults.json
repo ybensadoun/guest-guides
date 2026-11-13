@@ -127,7 +127,13 @@
    "en": "Put each bin out the evening before its collection day, by the time shown.",
    "es": "Saca cada cubo la tarde anterior a su día de recogida, a la hora indicada.",
    "fr": "Sortez chaque bac la veille de son jour de collecte, à l'heure indiquée.",
-   "de": "Stellen Sie jede Tonne am Vorabend des Abholtags bereit, zur angegebenen Uhrzeit."
+   "de": "Stellen Sie jede Tonne am Vorabend des Abholtags bereit, zur angegebenen Uhrzeit.",
+   "noTime": {
+    "en": "Put each bin out the evening before its collection day.",
+    "es": "Saca cada cubo la tarde anterior a su día de recogida.",
+    "fr": "Sortez chaque bac la veille de son jour de collecte.",
+    "de": "Stellen Sie jede Tonne am Vorabend des Abholtags bereit."
+   }
   },
   {
    "en": "Close the bags well and flatten boxes and bottles so everything fits.",

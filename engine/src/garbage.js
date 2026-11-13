@@ -29,7 +29,7 @@ export const isRed = f => f.id === 'sanitary';
 // Villages with shared street containers have no collection days at all: no "tonight" or weekly plan to show.
 export const CONTAINERS_ONLY = FRACTIONS.length > 0 && FRACTIONS.every(f => !f.d.length);
 export const mainOf = list => list.filter(f => !isRed(f));
-export const binName = f => tx(GARBAGE.bins[f.bin]);
+export const binName = f => tx((GARBAGE.bins || {})[f.bin]);   // '' when the guide names no bin (a guide the maker builds)
 
 // Short text for the Home tile: the main fraction(s), leaving the daily red bin implied.
 export function tileText(now = new Date()) {
