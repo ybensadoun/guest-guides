@@ -903,7 +903,7 @@ function edAddTile(icon) {
 function cmPlaces(path, what) {
   const arr = edGet(edC(), edPath(path)) || [];
   if (PL_SEC[path] && CM.pfLoaded !== true) pfLoad();   // lookups of a place's facts still running, or done while away
-  return `${lkList(path, what)}${PL_SEC[path] ? cmUnnamed(path) : ''}${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
+  return `${path === MK_PATH ? heldNote() : ''}${lkList(path, what)}${PL_SEC[path] ? cmUnnamed(path) : ''}${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
     <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
     <p class="hint">A new ${esc(what)} has no pin yet: find it on Google, or paste its Google Maps link. The distance from the house follows the pin.</p>`;
@@ -1284,8 +1284,10 @@ async function cmFindLoad(kind) {
   CM.find[kind] = { status: 'loading' };
   try {
     await ensureFresh();
+    // The markets a build held back (result.held, cmHeld below) are never this search's suggestions: the last few jobs are
+    // read and the held one is passed over.
     const since = new Date(Date.now() - 14 * 864e5).toISOString();
-    const r = await sb(`/rest/v1/guide_jobs?select=id,status,message,result,created_at&guide_id=eq.${CM.g.id}&kind=eq.${kind}&created_at=gt.${encodeURIComponent(since)}&order=created_at.desc&limit=1`), j = r && r[0];
+    const r = await sb(`/rest/v1/guide_jobs?select=id,status,message,result,created_at&guide_id=eq.${CM.g.id}&kind=eq.${kind}&created_at=gt.${encodeURIComponent(since)}&order=created_at.desc&limit=5`), j = (r || []).find(x => !(x.result || {}).held) || null;   // the latest that is not a held job (told apart here, not by a filter on the job's result)
     CM.find[kind] = j ? { id: j.id, status: j.status, message: j.message, items: (j.result || {}).items || [], since: Date.parse(j.created_at) } : { status: 'none' };
     if (j && (j.status === 'queued' || j.status === 'running')) cmFindPoll(kind);
   } catch (e) { CM.find[kind] = { status: 'none' }; }
@@ -1320,20 +1322,27 @@ async function cmFindPoll(kind) {
 // ready screen (runtime.js). Returns the new entry.
 function cmFindPut(path, sid) {
   const kind = FIND_OF[path][0], f = CM.find[kind], it = f && (f.items || []).find(x => x.id === sid); if (!it) return null;
+  const n = cmPutIn(edC(), path, it);
+  findMark(f.id, [sid]); return n;
+}
+// A found place into a guide's content c: the draft the editor holds (cmFindPut), or a copy of the live guide and of the
+// draft (the markets the build held back, cmHeld). Its section made live and switched on, so it shows; o.keepOff: a section
+// the host switched off stays off. Returns the new entry.
+function cmPutIn(c, path, it, o = {}) {
   const n = cmClone(it);
   // An older result's "check" that came from Google saying it was temporarily closed is not ours to keep (its status is only
   // ever live now), nor the date Google was asked.
   if (/^Temporarily closed/.test(n._google || '') && Array.isArray(n.flags)) n.flags = n.flags.filter(x => x !== 'check');
   delete n._google; delete n._card; delete n.look; delete n.checked;   // a suggestion is new to the guide: no note of the monthly check
-  let a = edGet(edC(), edPath(path)); if (!Array.isArray(a)) { edSet(edC(), edPath(path), []); a = edGet(edC(), edPath(path)); }
+  let a = edGet(c, edPath(path)); if (!Array.isArray(a)) { edSet(c, edPath(path), []); a = edGet(c, edPath(path)); }
   a.push(n);
-  const sec = path.split('/')[1], fl = edF()[sec];
+  const F = c.files = c.files || {}, sec = path.split('/')[1], fl = F[sec];
   if (sec === 'markets' && n.category) { fl.categories = fl.categories || []; if (!fl.categories.includes(n.category)) fl.categories.push(n.category); }
   // The section must exist and be live in the guide for the new place to show (a guide built without events had none).
-  const ss = (edF().sections = edF().sections || { sections: [] }).sections = edF().sections.sections || [];
+  const ss = (F.sections = F.sections || { sections: [] }).sections = F.sections.sections || [];
   const row = ss.find(x => x.id === sec); if (!row) ss.push({ id: sec, ...FIND_SECTION[sec], group: 'area', status: 'live' }); else if (row.status !== 'live') row.status = 'live';
-  const site = edC().site = edC().site || {}; site.modules = { ...(site.modules || {}), [sec]: true };
-  findMark(f.id, [sid]); return n;
+  const site = c.site = c.site || {}; if (!(o.keepOff && (site.modules || {})[sec] === false)) site.modules = { ...(site.modules || {}), [sec]: true };
+  return n;
 }
 function cmFindAdd(path, sid) { const n = cmFindPut(path, sid); if (!n) return; cmQueue(); render(); toast(`Added: ${edShown(n.name)}. Preview, then publish.`); }
 // Add to my guide: Google asked first when its answer is not known (openGate); nothing added twice, nor after a Skip made
@@ -1343,6 +1352,93 @@ async function cmFindAccept(btn, path, sid) {
   if (!(await openGate(it, btn)) || findSeen(f.id).has(sid) || (CM.findSkip || new Set()).has(sid)) return;
   cmFindAdd(path, sid);
 }
+
+/* --- The markets the build held back (Yohann, 13 Nov 2026) ---
+   For an account billed in Europe, Google's "permanently closed" may only be shown to a person looking at the guide, never
+   used by a job. So the build keeps every market with a Google id out of the guide and leaves them in a find-markets job of
+   their own (result.held), which the guide's markets file names (files.markets.held: the job's id; worker/guide-worker.mjs
+   holdBack). When the maker opens on the guide (the ready screen, or the editor whenever the host comes back, on any step),
+   it asks Google about each one by itself, no tap (openAsk, at most OPEN_WAIT each, all at once), then in one write puts the
+   others into the live guide, and into the draft when there is one, without publishing the draft or changing the guide's
+   status: open, temporarily closed, no answer or a failed ask all go in, guests are told nothing. One Google calls
+   permanently closed never goes in, and the host is told once, by name, with "Google Maps" beside Google's word. The same
+   write sets files.markets.heldDone to the job's id, so the job is handled once on any device: a market the host deletes
+   later never comes back. Nothing of Google's answer is kept anywhere (not in the guide, the draft, the job or this
+   device); a closed market is simply never copied. A failed write marks nothing: the next load tries again (the ready
+   screen offers Try again). Find more never shows a held job as its own suggestions (cmFindLoad). --- */
+const HELD = { job: '', st: '', slow: false, told: false, added: 0, gone: [] };   // st: ask, done, err, none (nothing to do)
+const heldKeys = it => [it.name_local, ...(edIs18(it.name) ? Object.values(it.name) : [it.name])].map(plainName).filter(Boolean);
+// The held markets into a guide's content c (a copy of the live guide, the draft): those whose id or plain name the guide
+// already has are skipped, and the job is marked handled. Returns the markets added.
+function heldPut(c, jid, add) {
+  const F = c.files = c.files || {}, mk = F.markets = F.markets || { categories: [], markets: [] }, list = mk.markets = Array.isArray(mk.markets) ? mk.markets : [];
+  const ids = new Set(list.map(x => x.id)), names = new Set(list.flatMap(heldKeys)), out = [];
+  for (const it of add) { const k = heldKeys(it); if (ids.has(it.id) || k.some(x => names.has(x))) continue;
+    out.push(cmPutIn(c, MK_PATH, it, { keepOff: true })); ids.add(it.id); k.forEach(x => names.add(x)); }
+  mk.heldDone = jid;
+  return out;
+}
+// The one write: the live guide plus the markets, and the draft plus the markets when the host has unpublished changes (as
+// cmSave decides it: no difference left, no draft). Taken in turn with the editor's saves and publishing (CM.saving), and
+// only while the guide still names this job and has not handled it (a new build, or another device first): then null.
+// Returns the markets added.
+async function heldWrite(jid, add) {
+  while (CM.saving) await CM.saving;
+  let n = null;
+  CM.saving = (async () => {
+    const live = cmClone(CM.live.content), draft = cmClone(CM.g.content), put = heldPut(live, jid, add); heldPut(draft, jid, add);
+    const dirty = !cmSame({ content: draft, theme: CM.g.theme }, { content: live, theme: CM.live.theme }), d = dirty ? { content: draft, theme: CM.g.theme, savedAt: new Date().toISOString() } : null;
+    await ensureFresh();
+    const q = 'content->files->markets->>', r = await sb(`/rest/v1/guides?id=eq.${CM.g.id}&${q}held=eq.${encodeURIComponent(jid)}&${q}heldDone=is.null&select=id`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: { content: live, draft: d } });
+    if (!r || !r[0]) return;
+    CM.live = { content: live, theme: CM.live.theme }; GUIDE.content = live; GUIDE.draft = d;
+    heldPut(CM.g.content, jid, add);   // what the editor holds: the same markets (an edit made meanwhile stays, and saves as usual)
+    n = put;
+  })();
+  try { await CM.saving; } finally { CM.saving = null; }
+  if (CM.again) { CM.again = false; cmSave(); }
+  return n;
+}
+async function cmHeld(again = false) {
+  const mk = (((CM.live || {}).content || {}).files || {}).markets || {}, jid = typeof mk.held === 'string' ? mk.held : '';
+  if (!CM.on || !jid || mk.heldDone === jid || (HELD.job === jid && HELD.st && !(again && HELD.st === 'err'))) return;
+  Object.assign(HELD, { job: jid, st: 'ask', slow: false, told: false, added: 0, gone: [] }); heldDraw();
+  const t = setTimeout(() => { if (HELD.st === 'ask' && HELD.job === jid) { HELD.slow = true; heldDraw(); } }, 600);   // a wait shown only when it is one
+  try {
+    await ensureFresh();
+    const r = await sb(`/rest/v1/guide_jobs?select=id,result&id=eq.${encodeURIComponent(jid)}&guide_id=eq.${CM.g.id}`), j = r && r[0], items = j && j.result && j.result.held === true && Array.isArray(j.result.items) ? j.result.items : null;
+    if (!items) { HELD.st = 'none'; return; }
+    const said = await Promise.all(items.map(it => it.gid ? Promise.race([openAsk(it.gid), new Promise(ok => setTimeout(ok, OPEN_WAIT))]).then(() => openOf(it.gid)) : null));
+    const n = await heldWrite(jid, items.filter((it, i) => said[i] !== 'permanent'));
+    if (n == null) { HELD.st = 'none'; return; }
+    Object.assign(HELD, { st: 'done', added: n.length, gone: items.filter((it, i) => said[i] === 'permanent').map(it => String(it.name_local || edShown(it.name) || '').trim()).filter(Boolean) });
+  } catch (e) { HELD.st = 'err'; }
+  finally { clearTimeout(t); if (HELD.job === jid) heldDraw(); }
+}
+// What the host reads: how many went in, then the ones left out by name, with Google's word and "Google Maps" in one
+// sentence, and what they can do. here: on the Local markets step itself.
+const heldAdded = () => HELD.added === 1 ? '1 market added to your guide.' : `${HELD.added} markets added to your guide.`;
+const heldGone = () => !HELD.gone.length ? '' : `Left out: ${HELD.gone.join(', ')}. ${HELD.gone.length === 1 ? 'It is' : 'They are'} permanently closed on Google\u00a0Maps.`;   // "Google Maps" never split from Google's word
+const heldHint = here => `If you know ${HELD.gone.length === 1 ? 'it' : 'one'} still runs, add it by its name ${here ? 'below' : 'in Local markets'}.`;
+const heldLines = here => [HELD.added ? `<p class="hd-n">${esc(heldAdded())}</p>` : '', HELD.gone.length ? `<p class="hd-g"><span>${esc(heldGone())}</span> <span>${esc(heldHint(here))}</span></p>` : ''].join('');
+// The ready screen (runtime.js readyHTML, #bheld): a quiet line, "Adding your markets…" only past 600 ms, Try again on a failure.
+function heldReadyHTML() {
+  if (HELD.st === 'ask') return HELD.slow ? '<p class="hd-n">Adding your markets…</p>' : '';
+  if (HELD.st === 'err') return '<p class="berr">Your markets are not in your guide yet.</p><button class="btn small bopen" type="button" data-heldretry>Try again</button>';
+  return HELD.st === 'done' ? heldLines(false) : '';
+}
+// At the top of Local markets, for this session.
+const heldNote = () => HELD.st === 'done' && (HELD.added || HELD.gone.length) ? `<div class="cm-held" id="cmHeld" role="status">${heldLines(true)}</div>` : '';
+// Drawn where it shows; once done, the editor (not the ready screen) says it in a toast, and the steps follow.
+function heldDraw() {
+  const b = document.getElementById('bheld'); if (b) b.innerHTML = heldReadyHTML();
+  if (HELD.st !== 'done') return;
+  if (!HELD.told) { HELD.told = true; if (!b && (HELD.added || HELD.gone.length)) toast(HELD.added ? heldAdded() : heldGone()); }
+  const a = document.activeElement, typing = a && a.closest && a.closest('.edz input, .edz textarea, .edz select');
+  if (CM.on && route() === 'markets' && !typing) render(); else if (CM.on && document.querySelector('.edz')) cmMarks();
+  if (typeof cmPhoneRefresh === 'function') cmPhoneRefresh();
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-heldretry]'); if (b) { b.disabled = true; cmHeld(true); } });
 
 /* --- Automatic events (files/events/auto): the worker searches the next three months every month and adds what it finds
    straight into the guide (worker/guide-worker.mjs, refreshEvents). The settings save at once, in the live guide and the
@@ -2002,6 +2098,7 @@ function cmInit() {
   CM.on = true;
   const step = new URLSearchParams(location.search).get('step') || CM_OPENED_ON;   // the page's first draw is the builder's, which may send an address it does not know elsewhere
   if (step && cmIsPage(step)) history.replaceState(null, '', location.pathname + '#' + step);
+  cmHeld();   // markets the build held back: asked and added by themselves, the editor never waits for them
 }
 (function () {
   const st = document.createElement('style');
@@ -2278,6 +2375,15 @@ function cmInit() {
 /* The places asked about, named at the top of the step (lkList): one line, lighter than "Waiting for a name", no box */
 .cm-lkl{margin:0;padding:2px 0 2px 12px;box-shadow:inset 3px 0 0 var(--line);font-size:15px;line-height:1.6;overflow-wrap:normal;word-break:normal}
 .cm-lkl>b{font-weight:700;margin-right:2px}
+/* The markets the build held back (cmHeld): the same quiet line as above, at the top of Local markets; on the ready screen,
+   lines of the dark card's own family */
+.cm-held{display:flex;flex-direction:column;gap:4px;margin:0;padding:2px 0 2px 12px;box-shadow:inset 3px 0 0 var(--line);font-size:15px;line-height:1.5}
+.cm-held p{margin:0}.cm-held .hd-n{font-weight:700}
+#bheld{display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-width:620px}
+#bheld:empty{display:none}
+.hero #bheld p{margin:0;font-size:15.5px;line-height:1.5}
+.hero #bheld .hd-n{font-weight:600}
+.hero #bheld .hd-g{opacity:.85}
 .cm-lkgo{display:inline;border:0;background:none;padding:0;font:inherit;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:2px;cursor:pointer;text-align:left}
 .cmi{scroll-margin-top:16px}
 .pl-l .pl-ally{display:block;margin-top:2px}`;

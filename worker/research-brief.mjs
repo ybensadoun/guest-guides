@@ -108,3 +108,18 @@ export function eventsInReach(items, radius, { city = false } = {}) {
   const kept = list.filter(e => evFits(e, R));
   return { items: kept, dropped: list.length - kept.length };
 }
+// The markets a build holds back (Yohann, 13 Nov 2026): for an account billed in Europe, Google's "permanently closed" may
+// only be shown to a person looking at the guide, never used by a job. So the build keeps out of the guide every market
+// that has a Google id (gid) and leaves them in a find-markets job of its own (result.held); the host's maker asks Google
+// about each one live, by itself, and puts in the guide those that may go in (onboarding-site/src/editor.js, cmHeld).
+// Markets with no Google id stay in the guide as before. file: the built content/markets.json. Returns { file, held,
+// categories }: the file without the held markets (its categories cut to the markets it keeps, as reachCut does), the held
+// markets as they were, and their categories. Nothing held: the same file.
+export function holdMarkets(file) {
+  const o = file && typeof file === 'object' ? file : {}, list = Array.isArray(o.markets) ? o.markets : [];
+  const held = list.filter(m => m && m.gid), markets = list.filter(m => !(m && m.gid));
+  if (!held.length) return { file: o, held: [], categories: [] };
+  const cats = Array.isArray(o.categories) ? o.categories : [], of = l => cats.filter(c => l.some(m => m.category === c));
+  return { file: { ...o, markets, ...(Array.isArray(o.categories) ? { categories: of(markets) } : {}) }, held,
+    categories: [...new Set([...of(held), ...held.map(m => m.category).filter(Boolean)])] };
+}

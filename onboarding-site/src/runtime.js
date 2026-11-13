@@ -355,7 +355,9 @@ window.__buildLines = () => [...new Set([...blLines(), ...[0, 1, 2, 3, 4, 5, 6, 
    ones go into the guide (cmPublishNow: published as the editor's Publish does; a guide held back for review stays held
    back), then "Open my guide" is the main button. A host who leaves and comes back finds the cards still there
    (readyLanding); kept places that did not reach the guide offer to try again. A card with a Google id says whether Google
-   calls it closed, asked live and never kept (openAsk, openGate in editor.js): a permanently closed one cannot be kept. --- */
+   calls it closed, asked live and never kept (openAsk, openGate in editor.js): a permanently closed one cannot be kept.
+   Under the title, whatever the state, one quiet line for the markets the build held back (13 Nov 2026, editor.js cmHeld):
+   how many went in, and the ones Google calls permanently closed by name; "Open my guide" never waits for it. --- */
 const RD = { st: '', err: '', step: '', added: [] };   // st: load, cards, pub, err, done (after cards), off (nothing to show)
 const RD_PATH = 'files/todo/items', RD_KEY = 'porta-ready-v1';
 const rdMem = () => { try { return ((JSON.parse(localStorage.getItem(RD_KEY) || '{}') || {})[GUIDE.id]) || { kept: [] }; } catch (e) { return { kept: [] }; } };
@@ -401,14 +403,15 @@ function readyHTML(g){
   const url = `<div class="burlrow"><p class="burl" translate="no">${esc(location.host)}/g/<wbr>${esc(slug)}</p>${copyBtn(location.origin + '/g/' + slug, 'bcopy')}</div>`;
   const open = `<a class="go-next" href="${link}" target="_blank" rel="noopener"><span>Open my guide</span><span class="ar">${ARROW}</span></a>
     ${url}`, quiet = `<a class="btn small bopen" href="${link}" target="_blank" rel="noopener">Open my guide now</a>`;
-  if (RD.st === 'load') return `<h1>Your guide is ready.</h1><p>${say}</p>`;
-  if (RD.st === 'cards') return `<h1>Your guide is ready.</h1><p class="bmore">${say}</p>${url.replace('burlrow', 'burlrow bmore')}<p class="bmore">One last thing before you open it.</p>${quiet}`;   // on a phone the card's question is enough: the card starts higher
+  const held = `<div id="bheld" role="status">${heldReadyHTML()}</div>`;   // the markets the build held back (editor.js cmHeld): never waited for
+  if (RD.st === 'load') return `<h1>Your guide is ready.</h1>${held}<p>${say}</p>`;
+  if (RD.st === 'cards') return `<h1>Your guide is ready.</h1>${held}<p class="bmore">${say}</p>${url.replace('burlrow', 'burlrow bmore')}<p class="bmore">One last thing before you open it.</p>${quiet}`;   // on a phone the card's question is enough: the card starts higher
   if (RD.st === 'pub') { const n = rdMem().kept.length;
-    return `<h1>Your guide is ready.</h1><p role="status">${n === 1 ? 'Adding the place you kept to your guide…' : `Adding the ${n} places you kept to your guide…`}</p><div class="cm-progw dark"><div class="cm-prog bwait"><i></i></div></div>`; }
-  if (RD.st === 'err') return `<h1>Your guide is ready.</h1><p class="berr" role="alert">${esc(RD.err)}</p>
+    return `<h1>Your guide is ready.</h1>${held}<p role="status">${n === 1 ? 'Adding the place you kept to your guide…' : `Adding the ${n} places you kept to your guide…`}</p><div class="cm-progw dark"><div class="cm-prog bwait"><i></i></div></div>`; }
+  if (RD.st === 'err') return `<h1>Your guide is ready.</h1>${held}<p class="berr" role="alert">${esc(RD.err)}</p>
     <div class="row"><button class="go-next" type="button" data-rdretry><span>Add them to my guide</span><span class="ar">${ARROW}</span></button>${RD.step ? `<a class="btn small bopen" href="#${esc(RD.step)}">Fix it in the editor</a>` : ''}</div>${quiet}`;
   const added = RD.st === 'done' && RD.added.length ? `<p>${RD.added.length === 1 ? `${esc(RD.added[0])} is in your guide now.` : `${RD.added.length} places you kept are in your guide now.`}</p>` : '';
-  return `<h1>Your guide is ready.</h1>${added}<p>${say}</p>${open}`;
+  return `<h1>Your guide is ready.</h1>${held}${added}<p>${say}</p>${open}`;
 }
 // Keep: Google asked first when its answer is not known (openGate: a permanently closed place stays on its card, with a
 // toast); nothing kept twice, nor after a Skip made while it was asked.

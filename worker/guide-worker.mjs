@@ -15,7 +15,7 @@ import { hav, nameOf, sameName, locateItem } from './places.mjs';
 import { checkResearch } from './research-check.mjs';   // the research's check: Google locates, our own sources fill
 import { hostPlaces, placesOf } from './host-places.mjs';   // a host's own places: located by Google, filled from our own table
 import { townPoint, municipalityAt } from './place-facts.mjs';   // the house's town in GeoNames, when its position is Google's; the municipality it lies in
-import { researchPrompt, HOURS_RULE, MARKETS_RULE, TODO_RULE, earlyRules, EV_REACH, EV_MAIN, EV_EARLY, evFits, inReach, eventsInReach } from './research-brief.mjs';   // the research's brief, how far it reaches
+import { researchPrompt, HOURS_RULE, MARKETS_RULE, TODO_RULE, earlyRules, EV_REACH, EV_MAIN, EV_EARLY, evFits, inReach, eventsInReach, holdMarkets } from './research-brief.mjs';   // the research's brief, how far it reaches
 import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
 import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
@@ -292,6 +292,7 @@ async function build(g) {
   const checked = run('node', ['engine/scripts/run.js', 'check', tmp], { allowFail: true });
   if (checked.status !== 0) throw new Error('The guide did not pass its checks: ' + ((checked.stdout || '') + (checked.stderr || '')).trim().split('\n').slice(-3).join(' | '));
   say(id, 'Saving the guide');
+  await holdBack(siteDir, id);   // the markets with a Google id wait for the host's maker (below), the last change before the row
   const assetBase = `${URL_}/storage/v1/object/public/guide-assets/${id}/`;
   const row = JSON.parse(run('node', ['engine/scripts/guide-to-row.mjs', tmp, assetBase]).stdout);
   row.content.site.slug = g.slug; row.content.site.storageKey = g.slug;
@@ -306,6 +307,26 @@ async function build(g) {
   rest('/rest/v1/events', { method: 'POST', body: { user_id: g.owner, guide_id: id, kind: 'guide_built', data: { slug: g.slug, images: n, status } }, headers: { Prefer: 'return=minimal' } }).catch(() => {});
   rmSync(siteDir, { recursive: true, force: true });
   log(`  built ${g.slug}: ${n} images, status ${status}`);
+}
+
+// The markets with a Google id are held back (Yohann, 13 Nov 2026): for an account billed in Europe, Google's "permanently
+// closed" may only be shown to a person looking at the guide, never used by a job such as this build. So they leave the
+// built guide (research-brief.mjs holdMarkets), as the generator and the translation made them, and wait in a find-markets
+// job of their own (status done, result.held: true, the shape Find more's results have), which the guide's markets file
+// names (held: the job's id). The host's maker, open on the ready screen or the editor, asks Google about each one live and
+// by itself, and puts the others into the guide with heldDone: the job's id (onboarding-site/src/editor.js, cmHeld).
+// Markets with no Google id (no key on the server: none has one) stay in the guide as before. The job not saved: the
+// markets stay in the guide, as before this hold, so a failure never costs a guide its markets.
+async function holdBack(siteDir, id) {
+  const f = join(siteDir, 'content/markets.json'); if (!existsSync(f)) return 0;
+  const h = holdMarkets(JSON.parse(readFileSync(f, 'utf8'))); if (!h.held.length) return 0;
+  try {
+    const j = await rest('/rest/v1/guide_jobs?select=id', { method: 'POST', body: { guide_id: id, kind: 'find-markets', status: 'done', message: `${h.held.length} markets held for the host's maker`, result: { kind: 'find-markets', held: true, items: h.held, categories: h.categories }, finished_at: new Date().toISOString() }, headers: { Prefer: 'return=representation' } });
+    const jid = j && j[0] && j[0].id; if (!jid) throw new Error('no job id came back');
+    writeFileSync(f, JSON.stringify({ ...h.file, held: jid }, null, 1));
+    log(`  ${h.held.length} market(s) with a Google id held back for the host's maker (job ${jid}), ${h.file.markets.length} in the guide`);
+    return h.held.length;
+  } catch (e) { log('  markets not held back, they stay in the guide:', e.message); return 0; }
 }
 
 /* ---------- Loop ---------- */

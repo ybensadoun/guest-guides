@@ -8295,5 +8295,55 @@
 "ca": "{n} lloc més a Què veure i fer",
 "es": "{n} sitio más en Qué ver y hacer",
 "fr": "{n} autre lieu dans À voir et à faire"
+},
+"1 market added to your guide.": {
+"ca": "1 mercat afegit a la teva guia.",
+"es": "1 mercado añadido a tu guía.",
+"fr": "1 marché ajouté à votre guide."
+},
+"{n} markets added to your guide.": {
+"ca": "{n} mercats afegits a la teva guia.",
+"es": "{n} mercados añadidos a tu guía.",
+"fr": "{n} marchés ajoutés à votre guide."
+},
+"Left out: {x}. It is permanently closed on Google Maps.": {
+"ca": "No afegit: {x}. Està tancat permanentment segons Google Maps.",
+"es": "No añadido: {x}. Está cerrado permanentemente según Google Maps.",
+"fr": "Non ajouté : {x}. Il est fermé définitivement selon Google Maps."
+},
+"Left out: {x}. They are permanently closed on Google Maps.": {
+"ca": "No afegits: {x}. Estan tancats permanentment segons Google Maps.",
+"es": "No añadidos: {x}. Están cerrados permanentemente según Google Maps.",
+"fr": "Non ajoutés : {x}. Ils sont fermés définitivement selon Google Maps."
+},
+"If you know it still runs, add it by its name in Local markets.": {
+"ca": "Si saps que encara se celebra, afegeix-lo pel seu nom a Mercats.",
+"es": "Si sabes que todavía se celebra, añádelo por su nombre en Mercados.",
+"fr": "Si vous savez qu’il a toujours lieu, ajoutez-le par son nom dans Marchés."
+},
+"If you know one still runs, add it by its name in Local markets.": {
+"ca": "Si saps que algun encara se celebra, afegeix-lo pel seu nom a Mercats.",
+"es": "Si sabes que alguno todavía se celebra, añádelo por su nombre en Mercados.",
+"fr": "Si vous savez que l’un d’eux a toujours lieu, ajoutez-le par son nom dans Marchés."
+},
+"If you know it still runs, add it by its name below.": {
+"ca": "Si saps que encara se celebra, afegeix-lo pel seu nom més avall.",
+"es": "Si sabes que todavía se celebra, añádelo por su nombre más abajo.",
+"fr": "Si vous savez qu’il a toujours lieu, ajoutez-le par son nom ci-dessous."
+},
+"If you know one still runs, add it by its name below.": {
+"ca": "Si saps que algun encara se celebra, afegeix-lo pel seu nom més avall.",
+"es": "Si sabes que alguno todavía se celebra, añádelo por su nombre más abajo.",
+"fr": "Si vous savez que l’un d’eux a toujours lieu, ajoutez-le par son nom ci-dessous."
+},
+"Adding your markets…": {
+"ca": "Afegint els teus mercats…",
+"es": "Añadiendo tus mercados…",
+"fr": "Ajout de vos marchés…"
+},
+"Your markets are not in your guide yet.": {
+"ca": "Els teus mercats encara no són a la teva guia.",
+"es": "Tus mercados todavía no están en tu guía.",
+"fr": "Vos marchés ne sont pas encore dans votre guide."
 }
 }
