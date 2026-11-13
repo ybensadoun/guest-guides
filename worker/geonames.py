@@ -9,7 +9,7 @@
 # A second question, in the same call or alone: the municipality each point lies in (worker/place-facts.mjs municipalityAt,
 # the area research's brief and the builder's town).
 #   stdin:  {"country": "ES", "points": [{"id", "lat", "lng"}]}
-#   stdout: {"fetched": ..., "places": {"<id>": {"town", "province", "seat", "near", "near_code", "metres", "by", "sea"?} or null}}
+#   stdout: {"fetched": ..., "places": {"<id>": {"town", "province", "seat", "near", "near_code", "metres", "by", "others"?, "sea"?} or null}}
 #   ("pins" too when pins were asked). From the nearest populated place (class P) within 10 km of the point: the
 #   municipality is the ADM3 row with its admin codes (in Spain ADM3 is the municipi / municipio), province the ADM2
 #   row's name without "Provincia de" and the like, seat the municipality's seat (its PPLA3, PPLA2, PPLA or PPLC row) when
@@ -17,6 +17,10 @@
 #   of its municipality), near_code its code, metres its distance from the point. by: "adm3", or "nearest" when its codes
 #   name no ADM3 row: then the nearest P row with a population or a PPLA or PPLC code stands for the town. null: no P row
 #   within 10 km. An inverted name ("Rosario, El") is turned round ("El Rosario"), or the seat's own spelling is used.
+#   others (13 Nov 2026): GeoNames has no borders, so the nearest place's municipality is a guess near an edge (a house
+#   of la Bisbal del Penedès got Albinyana, whose village stands 600 m nearer than la Bisbal's). The next municipalities
+#   around the point, at most 2, each once by its nearest place within 10 km, nearest first: [{"town", "metres"}]; absent
+#   when there is none, or when by is "nearest". The research's brief names them (worker/research-brief.mjs).
 #   sea: the nearest beach to the point (class T, code BCH or BCHS; a beach whose name says river or reservoir, "Playa fluvial", aside),
 #   {"km", "name"}: km by road as the guides estimate it (1.3 times the straight line, rounded, at least 1), only when it
 #   is 60 km or less; else no "sea" at all. The builder ticks Beaches from it, the area research's brief names it.
@@ -127,11 +131,22 @@ def municipality(cands, adm3, adm2, seats):
         row = next((x for x in cands if x['pop'] > 0 or x['code'] in SEATS), None)
         if not row: return None
     key = (row['a1'], row['a2'], row['a3'])
+    def named(k):   # a municipality's name: its seat's own spelling when it is the same name, else the ADM3 row's, turned round
+        s, n = seats.get(k), adm3.get(k)
+        return (s if s and s.lower() == turned(n or '').lower() else turned(n)) if n else None
     seat = seats.get(key) if row['a3'] else None
-    name = adm3.get(key) if row['a3'] else None
-    town = (seat if seat and seat.lower() == turned(name or '').lower() else turned(name)) if name else row['name']
-    return {'town': town, 'province': province(adm2.get((row['a1'], row['a2']))), 'seat': seat, 'near': near['name'],
-            'near_code': near['code'], 'metres': round(near['d'] * 1000), 'by': by}
+    town = (named(key) if row['a3'] else None) or row['name']
+    out = {'town': town, 'province': province(adm2.get((row['a1'], row['a2']))), 'seat': seat, 'near': near['name'],
+           'near_code': near['code'], 'metres': round(near['d'] * 1000), 'by': by}
+    if by == 'adm3':
+        seen, others = {key}, []
+        for x in cands:   # nearest first: each other municipality once, by its nearest place
+            k = (x['a1'], x['a2'], x['a3'])
+            if not x['a3'] or k in seen or k not in adm3: continue
+            seen.add(k); others.append({'town': named(k), 'metres': round(x['d'] * 1000)})
+            if len(others) == 2: break
+        if others: out['others'] = others
+    return out
 
 # The nearest beach as the answer gives it, or None: beyond 60 km by road, or none at all.
 def sea_of(b):

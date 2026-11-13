@@ -30,17 +30,38 @@ const plain = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLo
 // housing estate when the nearest place is not the municipality itself, and the town the host or the listing gave when it
 // differs, and the nearest beach when GeoNames has one within 60 km by road (A.place.sea), so the research knows the sea
 // is near. Without it, the host's town and region as before.
-export function whereLine(A) {
-  const m = A.place, given = String(A.town || '').trim();
-  if (!m || !m.town) return `${A.placeName || 'the house'}, ${given}${A.region ? ', ' + A.region : ''}`;
+// GeoNames has no borders: the municipality is the nearest place's, a guess near an edge (13 Nov 2026: a house of la Bisbal
+// del Penedès got Albinyana, whose village stands 600 m nearer). So, with the next municipalities around the point
+// (A.place.others): the one the host or the listing names is taken as the house's; else, when the second is nearly as
+// close as the first (less than twice as far, or less than 1 km further), none is claimed and the brief names them all,
+// with how far the nearest place of each is.
+export function placeWords(A) {
+  const m0 = A.place, given = String(A.town || '').trim();
+  if (!m0 || !m0.town) return { line: `${A.placeName || 'the house'}, ${given}${A.region ? ', ' + A.region : ''}`, first: '' };
+  const kmOf = x => typeof x === 'number' ? Math.max(0.1, Math.round(x / 100) / 10) : null;
+  const around = [{ town: m0.town, metres: m0.metres }, ...(Array.isArray(m0.others) ? m0.others : [])].filter(x => x && x.town);
+  const theirs = given ? around.find(x => plain(x.town) === plain(given)) : null;
+  const m = theirs && plain(theirs.town) !== plain(m0.town) ? { ...m0, town: theirs.town, near: null } : m0;   // the nearest place is the neighbour's: not named as a hamlet of this one
+  const two = around.length > 1 && typeof around[0].metres === 'number' && typeof around[1].metres === 'number';
+  const unsure = !theirs && two && !(around[1].metres >= 2 * around[0].metres && around[1].metres - around[0].metres >= 1000);
+  const tail = `${m.sea && m.sea.km > 0 && m.sea.name ? `. The nearest beach is about ${m.sea.km} km away by road (${m.sea.name})` : ''}`;
+  if (unsure) {
+    const names = around.map(x => `${x.town}${kmOf(x.metres) != null ? ` (its nearest village about ${kmOf(x.metres)} km from the point)` : ''}`);
+    const list = names.length > 2 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names.join(' and ');
+    const other = given && !around.some(x => plain(x.town) === plain(given)) ? given : null;
+    return { line: `${A.placeName || 'the house'}, near the edge of several municipalities, ${list}${m.province ? `, in the province of ${m.province}` : ''}${A.region ? ', ' + A.region : ''}: which of them the house belongs to is not known`
+      + `${other ? `. The host or the listing names the place ${other}` : ''}` + tail,
+      first: `\nSearch these municipalities first, all of them (${around.map(x => x.town).join(', ')}), then the nearest villages and towns, nearest first.` };
+  }
   const near = m.near && plain(m.near) !== plain(m.town) ? m.near : null;
-  const km = typeof m.metres === 'number' ? Math.max(0.1, Math.round(m.metres / 100) / 10) : null;
+  const km = kmOf(m.metres);
   const other = given && plain(given) !== plain(m.town) && plain(given) !== plain(near) ? given : null;
-  return `${A.placeName || 'the house'}, in the municipality of ${m.town}${m.province ? ` (province of ${m.province})` : ''}${A.region ? ', ' + A.region : ''}`
+  return { line: `${A.placeName || 'the house'}, in the municipality of ${m.town}${m.province ? ` (province of ${m.province})` : ''}${A.region ? ', ' + A.region : ''}`
     + `${near ? `, close to ${near} (a village, hamlet or housing estate of it${km != null ? `, about ${km} km from the point` : ''})` : ''}`
-    + `${other ? `. The host or the listing names the town ${other}` : ''}`
-    + `${m.sea && m.sea.km > 0 && m.sea.name ? `. The nearest beach is about ${m.sea.km} km away by road (${m.sea.name})` : ''}`;
+    + `${other ? `. The host or the listing names the town ${other}` : ''}` + tail,
+    first: `\nSearch the house's own municipality first, then the nearest villages and towns, nearest first.` };
 }
+export const whereLine = A => placeWords(A).line;
 
 // early: the area research that starts before the host has answered (the guide's research job, the visitor's quick one):
 // no distance and no interests of the host, the municipality first. Otherwise (Find more, the events of the monthly run,
@@ -49,8 +70,8 @@ export function researchPrompt(kind, A, rules, { early = false } = {}) {
   const km = reachKm(A.radius);   // the builder's answer, or the guide's radius in km
   const reach = early ? (A.city ? ' Guests get around on foot, by bike or by public transport.' : '')
     : ` ${A.city ? `Guests get around on foot, by bike or by public transport, up to ${km} km.` : `Guests drive up to ${km} km.`} The host likes: ${[A.interests, A.feelWords, A.tone].flat().filter(Boolean).join('; ') || 'no preference given'}.`;
-  const first = A.place && A.place.town ? `\nSearch the house's own municipality first, then the nearest villages and towns, nearest first.` : '';
-  return `You research one module of a guest guide for a holiday home. Place: ${whereLine(A)}. Approximate point: ${A.lat}, ${A.lng}.${reach}${first}
+  const where = placeWords(A), first = where.first;
+  return `You research one module of a guest guide for a holiday home. Place: ${where.line}. Approximate point: ${A.lat}, ${A.lng}.${reach}${first}
 Use web search. Only include things you confirmed exist from a web source. Never invent names, addresses, phone numbers, hours or distances. When unsure, leave the field out or set "verify": true. Write every text in English, as {"en": "..."}. No em-dashes.
 ${rules}
 Answer with ONE JSON object and nothing else. It must follow the shape of this example (only its first items are shown):

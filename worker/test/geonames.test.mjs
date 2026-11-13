@@ -354,3 +354,31 @@ test('municipalityAt: the sea passed through from geonames.py and from a gazette
   for (const bad of [{ km: 75, name: 'Lluny' }, { km: 0, name: 'X' }, { km: 12 }, { km: 'x', name: 'Y' }, null, 'sea'])
     assert.ok(!('sea' in await municipalityAt({ lat: 41.1, lng: 1.9 }, { gaz: gaz(bad) })), JSON.stringify(bad));
 });
+
+// Near an edge (13 Nov 2026): the nearest village is the neighbour's. A made-up file: the point stands about 1.7 km from
+// Vilaveïna's village, 2.3 km from Vilanostra's, 2.6 km from a second village of Vilaveïna and about 6 km from Vilalluny.
+const EDGE = [
+  row('9100001', 'Província de Tarragona', 41.1, 1.1, 'A', 'ADM2', '', 800000),
+  row('9100002', 'Vilaveïna', 41.2153, 1.5, 'A', 'ADM3', '43910', 2000), row('9100003', 'Vilaveïna', 41.2153, 1.5, 'P', 'PPLA3', '43910', 2000),
+  row('9100004', 'Vilanostra', 41.1793, 1.5, 'A', 'ADM3', '43911', 3000), row('9100005', 'Vilanostra', 41.1793, 1.5, 'P', 'PPLA3', '43911', 3000),
+  row('9100006', 'Les Cases de Vilaveïna', 41.2, 1.4688, 'P', 'PPL', '43910'),
+  row('9100007', 'Vilalluny', 41.2, 1.5717, 'A', 'ADM3', '43912', 500), row('9100008', 'Vilalluny', 41.2, 1.5717, 'P', 'PPLA3', '43912', 500),
+  row('9100009', 'Vilaquarta', 41.2, 1.59, 'A', 'ADM3', '43913', 400), row('9100010', 'Vilaquarta', 41.2, 1.59, 'P', 'PPLA3', '43913', 400),
+].join('\n') + '\n';
+const edgeCache = () => { const d = mkdtempSync(join(tmpdir(), 'geonames-edge-')); writeFileSync(join(d, 'ES.txt'), EDGE); writeFileSync(join(d, 'ES.json'), JSON.stringify({ fetched: today })); return d; };
+
+test('geonames.py, municipality: the next municipalities around the point, each once, nearest first, at most 2', () => {
+  const r = py({ country: 'ES', points: [{ id: 'edge', lat: 41.2, lng: 1.5 }] }, { GEONAMES_CACHE: edgeCache() });
+  assert.equal(r.status, 0, r.stderr);
+  const m = JSON.parse(r.stdout).places.edge;
+  assert.equal(m.town, 'Vilaveïna'); assert.equal(m.by, 'adm3'); assert.ok(m.metres > 1600 && m.metres < 1800, String(m.metres));
+  assert.deepEqual(m.others.map(x => x.town), ['Vilanostra', 'Vilalluny']);   // Vilaveïna's second village is not another municipality, the fourth one is left out
+  assert.ok(m.others[0].metres > 2200 && m.others[0].metres < 2400, String(m.others[0].metres)); assert.ok(m.others[1].metres > 5500 && m.others[1].metres < 6500, String(m.others[1].metres));
+});
+
+test('municipalityAt: the next municipalities pass through, a wrong one is left out, none gives no key', async () => {
+  const gaz = others => async () => ({ fetched: '2026-11-13', pins: {}, places: { house: { town: 'Vilaveïna', province: 'Tarragona', near: 'Vilaveïna', metres: 1694, ...(others ? { others } : {}) } } });
+  const at = { lat: 41.2, lng: 1.5 };
+  assert.deepEqual((await municipalityAt(at, { gaz: gaz([{ town: 'Vilanostra', metres: 2294 }, { town: '', metres: 5 }, { town: 'Vilalluny', metres: 'far' }, { town: 'Vilaquarta', metres: 6000 }]) })).others, [{ town: 'Vilanostra', metres: 2294 }, { town: 'Vilaquarta', metres: 6000 }]);
+  assert.ok(!('others' in await municipalityAt(at, { gaz: gaz(null) }))); assert.ok(!('others' in await municipalityAt(at, { gaz: gaz('x') })));
+});

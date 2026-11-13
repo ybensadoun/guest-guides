@@ -132,3 +132,32 @@ test('whereLine: the house\'s town as before when GeoNames gave nothing', () => 
   assert.equal(whereLine({ placeName: 'X', town: 'T', region: 'R' }), 'X, T, R');
   assert.equal(whereLine({}), 'the house, ');
 });
+
+// Near an edge (13 Nov 2026): GeoNames has no borders, so the nearest village's municipality is a guess.
+const EDGE = { town: 'Vilaveïna', province: 'Tarragona', near: 'Vilaveïna', metres: 1694, others: [{ town: 'Vilanostra', metres: 2294 }, { town: 'Vilalluny', metres: 6010 }] };
+test('whereLine: near an edge no municipality is claimed and the brief names them all', () => {
+  const A = { ...HOST, town: 'Can Prova', place: EDGE }, p = researchPrompt('markets', A, 'R', { early: true });
+  assert.match(p, /Place: Casa Prova, near the edge of several municipalities, Vilaveïna \(its nearest village about 1\.7 km from the point\), Vilanostra \(its nearest village about 2\.3 km from the point\) and Vilalluny \(its nearest village about 6 km from the point\), in the province of Tarragona, Catalonia, Spain: which of them the house belongs to is not known\. The host or the listing names the place Can Prova\. Approximate point/);
+  assert.match(p, /\nSearch these municipalities first, all of them \(Vilaveïna, Vilanostra, Vilalluny\), then the nearest villages and towns, nearest first\.\n/);
+  assert.ok(!/in the municipality of/.test(p) && !/hamlet or housing estate of it/.test(p), p.slice(0, 500));
+  assert.ok(!/—/.test(p));
+  // Two only: "A and B".
+  assert.match(whereLine({ placeName: 'X', place: { ...EDGE, others: EDGE.others.slice(0, 1) } }), /^X, near the edge of several municipalities, Vilaveïna \([^)]*\) and Vilanostra \([^)]*\), in the province of Tarragona: which/);
+});
+
+test('whereLine: the municipality the host or the listing names, among those around, is the house\'s', () => {
+  const p = researchPrompt('todo', { ...HOST, town: 'vilanostra', place: EDGE }, 'R', { early: true });
+  assert.match(p, /Place: Casa Prova, in the municipality of Vilanostra \(province of Tarragona\), Catalonia, Spain\. Approximate point/);   // not Vilaveïna, and its village is not called a hamlet of Vilanostra
+  assert.match(p, /\nSearch the house's own municipality first, then the nearest villages and towns, nearest first\.\n/);
+  // The nearest one named by the host: as before, with nothing about an edge.
+  assert.match(whereLine({ ...HOST, town: 'Vilaveïna', place: EDGE }), /^Casa Prova, in the municipality of Vilaveïna \(province of Tarragona\), Catalonia, Spain$/);
+});
+
+test('whereLine: a second municipality far enough leaves the first as before', () => {
+  const far = { town: 'Vilaprova', province: 'Tarragona', near: 'Can Provet', metres: 820, others: [{ town: 'Vilanostra', metres: 4200 }] };
+  assert.equal(whereLine({ ...HOST, place: far }), whereLine({ ...HOST, place: PLACE }));
+  // Twice as far but less than 1 km further (a hamlet at 300 m, the neighbour's at 900 m): still not claimed.
+  assert.match(whereLine({ ...HOST, place: { ...far, metres: 300, others: [{ town: 'Vilanostra', metres: 900 }] } }), /near the edge of several municipalities/);
+  // More than 1 km further but less than twice as far: not claimed either.
+  assert.match(whereLine({ ...HOST, place: { ...far, metres: 3000, others: [{ town: 'Vilanostra', metres: 4500 }] } }), /near the edge of several municipalities/);
+});

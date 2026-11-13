@@ -105,7 +105,9 @@ export async function townPoint(town, at, { country = 'ES', gaz = gazetteer, pyt
 // town, village, hamlet or housing estate GeoNames lists ("Can Gordei", or the town itself) and metres its distance from
 // the point, and sea { km, name } when a beach lies within 60 km by road (the nearest one, km by road as the guides estimate
 // it: the builder ticks Beaches from it, the research's brief names it; absent otherwise); or null (no town or village
-// within 10 km, no point, GeoNames not reachable). Never throws. gaz (tests): in place of gazetteer().
+// within 10 km, no point, GeoNames not reachable). others, when GeoNames gives them: the next municipalities around the
+// point, [{ town, metres }], nearest first (the nearest place's municipality is a guess near an edge: the brief names
+// them, worker/research-brief.mjs). Never throws. gaz (tests): in place of gazetteer().
 export async function municipalityAt(at, { country = 'ES', gaz = gazetteer, python, log = console.error } = {}) {
   const lat = +(at && at.lat), lng = +(at && at.lng);
   if (!at || at.lat == null || at.lng == null || !isNum(lat) || !isNum(lng)) return null;
@@ -114,7 +116,8 @@ export async function municipalityAt(at, { country = 'ES', gaz = gazetteer, pyth
     const m = ((g && g.places) || {}).house, text = x => typeof x === 'string' && x.trim() ? x.trim().slice(0, 80) : null;
     if (!m || !text(m.town)) return null;
     const sea = m.sea && isNum(m.sea.km) && m.sea.km >= 1 && m.sea.km <= 60 && text(m.sea.name) ? { sea: { km: Math.round(m.sea.km), name: text(m.sea.name) } } : {};
-    return { town: text(m.town), province: text(m.province), near: text(m.near), metres: isNum(m.metres) ? m.metres : null, ...sea, fetched: (g && g.fetched) || null };
+    const others = (Array.isArray(m.others) ? m.others : []).filter(x => x && text(x.town) && isNum(x.metres)).slice(0, 2).map(x => ({ town: text(x.town), metres: x.metres }));
+    return { town: text(m.town), province: text(m.province), near: text(m.near), metres: isNum(m.metres) ? m.metres : null, ...(others.length ? { others } : {}), ...sea, fetched: (g && g.fetched) || null };
   } catch (e) { log(`geonames: the municipality not looked up (${e.message})`); return null; }
 }
 // Our kind (engine/src/kinds.json, todo) from a feature's class and code, for a place Claude gave no kind.
