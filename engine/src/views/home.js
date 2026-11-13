@@ -1,11 +1,12 @@
 import qrcode from 'qrcode-generator';
 import { t, tx, locale } from '../i18n.js';
 import { MARKETS, mapItems, SECTIONS, CATS, QUICK, HOUSE, slots, SITE, MODULE_ON, TRANSPORT, quickShown } from '../content.js';
-import { runsOn, statusLabel, cap, nextOpen, closedStatus, seasonStatus } from '../schedule.js';
+import { runsOn, statusLabel, cap, nextOpen, closedStatus, seasonStatus, dayName } from '../schedule.js';
 import { esc, title, catIcon, SECTION_LOOK, stHTML, distHTML } from '../ui.js';
 import { sorted } from './markets.js';
 import { st, DEFAULT_CATS } from '../state.js';
-import { tileText, plan, mainOf, FRACTIONS, isRed, CONTAINERS_ONLY } from '../garbage.js';
+import { tileText, plan, mainOf, FRACTIONS, isRed, CONTAINERS_ONLY, collectedOn, collectHour } from '../garbage.js';
+import { nextOut } from '../bins.js';
 import { upcoming, dateRange, when, dayBadge } from '../events.js';
 import { eventRow } from './section.js';
 
@@ -175,10 +176,15 @@ function sectionGrid(now, todayCount) {
     if (sec.kind === 'garbage') {
       // Small bins for what goes out tonight, the daily red bin last.
       const p = plan(now);
-      const bins = [...mainOf(p.list), ...FRACTIONS.filter(isRed)];
+      let bins = [...mainOf(p.list), ...FRACTIONS.filter(isRed)], label = t(p.mode === 'now' ? 'gBinsNow' : 'gTonightTag', { time: collectHour() }), next = '';
+      // Nothing goes out tonight (13 Nov 2026; never so with a daily red bin): the tile says it, then the next evening
+      // something does, with its bins (bins.js nextOut).
+      if (!bins.length) { const n = nextOut(p, collectedOn);
+        if (n && n.tonight) { bins = n.list; label = t('gTonightTag'); }
+        else { label = t('gNoneTonight'); if (n) { bins = n.list; next = t('gEvening', { day: cap(dayName((n.day + 6) % 7)) }); } } }
       return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, '', true, 'wide has-bins',
         // One white card = "tonight": the label, then each bin with its name (the daily red bin included).
-        `<span class="gt-tonight"><span class="gt-tl">${MOON}${esc(t(p.mode === 'now' ? 'gBinsNow' : 'gTonightTag'))}</span>
+        `<span class="gt-tonight"><span class="gt-tl">${MOON}${esc(label)}</span>${next ? `<span class="gt-next">${esc(next)}</span>` : ''}
           <span class="gt-bins">${bins.map(f => `<span class="gtb"><span class="gbc"><span class="gbin" style="--wc:var(--w-${f.id})"></span></span><span class="gtn">${esc(tx(f.name))}</span></span>`).join('')}</span></span>`);
     }
     if (sec.kind === 'events') {

@@ -1,6 +1,7 @@
 import { t, tx } from '../i18n.js';
 import { GARBAGE, MAP_ITEMS } from '../content.js';
-import { FRACTIONS, plan, collectedOn, binName, isRed, mainOf, CONTAINERS_ONLY } from '../garbage.js';
+import { FRACTIONS, plan, collectedOn, binName, isRed, mainOf, CONTAINERS_ONLY, collectHour } from '../garbage.js';
+import { nextOut } from '../bins.js';
 import { dayName, cap } from '../schedule.js';
 import { esc, ICON, row } from '../ui.js';
 
@@ -26,10 +27,13 @@ export function renderGarbage(V) {
   const glass = spot('glass'), deix = spot('deixalleria');
   const back = mainOf(p.collectedToday);
 
+  // Nothing goes out tonight (13 Nov 2026; never so with a daily red bin): said so, then the next evening something does
+  // and what (bins.js nextOut).
+  const out = [...main, ...(RED ? [RED] : [])], nx = out.length ? null : nextOut(p, collectedOn), none = !out.length && !(nx && nx.tonight);
   const hero = `<section class="ghero">
-    <div class="ghero-hd"><b>${esc(t(p.mode === 'now' ? 'gNow' : 'gTonight'))}</b>
-      <span class="sub2">${esc(t('gForMorning', { day: dayName(p.day) }))}</span></div>
-    <ul class="gput">${[...main, ...(RED ? [RED] : [])].map(putItem).join('')}</ul>
+    <div class="ghero-hd"><b>${esc(none ? t('gNoneTonight') : t(p.mode === 'now' && out.length ? 'gNow' : 'gTonight', { time: collectHour() }))}</b>
+      ${nx && none ? `<span class="sub2">${esc(t('gEvening', { day: cap(dayName((nx.day + 6) % 7)) }))}</span>` : ''}${nx || !none ? `<span class="sub2">${esc(t('gForMorning', { day: dayName(nx ? nx.day : p.day) }))}</span>` : ''}</div>
+    <ul class="gput">${(nx ? nx.list : out).map(putItem).join('')}</ul>
     ${back.length ? `<p class="gnote">${esc(t('gBringBack', { list: back.map(f => tx(f.name)).join(', ') }))}</p>` : ''}
   </section>`;
 
@@ -48,7 +52,7 @@ export function renderGarbage(V) {
 
   // Rows: the evening you put out, then the morning it is collected.
   const order = [1, 2, 3, 4, 5, 6, 0];
-  const week = `<section class="gsec"><h3 class="section-h">${esc(t('gWeek'))}</h3><p class="lead">${esc(t('gWeekLead', { time: String(GARBAGE.collectionTime || '').replace(/^0(\d)/, '$1') }))}</p>
+  const week = `<section class="gsec"><h3 class="section-h">${esc(t('gWeek'))}</h3><p class="lead">${esc(collectHour() ? t('gWeekLead', { time: String(GARBAGE.collectionTime || '').replace(/^0(\d)/, '$1') }) : t('gWeekLeadNoTime'))}</p>
     ${RED ? redLine('gRedNote') : ''}
     <div class="gweek">${order.map(d => {
       const ev = (d + 6) % 7;
@@ -56,7 +60,7 @@ export function renderGarbage(V) {
       const list = mainOf(collectedOn(d));
       return `<div class="grow${isNext ? ' next' : ''}">
         <div class="gwhen"><b>${esc(t('gEvening', { day: cap(dayName(ev)) }))}</b><small>${esc(t('gMorningOf', { day: dayName(d) }))}</small>${isNext ? `<span class="gtag">${esc(t(p.mode === 'now' ? 'today' : 'gTonightTag'))}</span>` : ''}</div>
-        <div class="gpills">${list.length ? list.map(pill).join('') : `<span class="sub2">${esc(cap(t('gRedOnly')))}</span>`}</div></div>`;
+        <div class="gpills">${list.length ? list.map(pill).join('') : `<span class="sub2">${esc(cap(t(RED ? 'gRedOnly' : 'gNothingDay')))}</span>`}</div></div>`;
     }).join('')}</div></section>`;
 
   const what = `<section class="gsec"><h3 class="section-h">${esc(t('gWhat'))}</h3>

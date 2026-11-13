@@ -4,12 +4,15 @@
 import { GARBAGE as G0 } from './content.js';
 // A site without the rubbish module (or without garbage.json) gets an empty plan.
 const GARBAGE = G0 || { fractions: [], collectionTime: '00:00', bins: {} };
-import { tx, t } from './i18n.js';
+import { tx, t, lang } from './i18n.js';
+import { hourText } from './bins.js';
 
 const DAY = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
 export const FRACTIONS = GARBAGE.fractions.map(f => ({ ...f, d: f.days.map(x => DAY[x]) }));
-const [ch, cm] = GARBAGE.collectionTime.split(':').map(Number);
-const COLLECT_MIN = ch * 60 + cm;
+const [ch, cm] = String(GARBAGE.collectionTime || '').split(':').map(Number);
+const COLLECT_MIN = ch * 60 + cm;   // no time in the guide: not a number, so there is no "before the collection" state and every day reads as its evening
+// The collection hour in the guide's words ("6:00", "6 h"), '' when the guide gives none.
+export const collectHour = () => hourText(GARBAGE.collectionTime, lang);
 
 export const collectedOn = dow => FRACTIONS.filter(f => f.d.includes(dow));
 
@@ -32,5 +35,5 @@ export const binName = f => tx(GARBAGE.bins[f.bin]);
 export function tileText(now = new Date()) {
   const p = plan(now);
   const main = mainOf(p.list);
-  return t(p.mode === 'now' ? 'gTileNow' : 'gTile', { list: main.length ? main.map(f => tx(f.name)).join(', ') : t('gRedOnly') });
+  return t(p.mode === 'now' ? 'gTileNow' : 'gTile', { time: collectHour(), list: main.length ? main.map(f => tx(f.name)).join(', ') : t('gRedOnly') });
 }
