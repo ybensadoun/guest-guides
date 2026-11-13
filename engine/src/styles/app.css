@@ -5,16 +5,26 @@
 
 :root{
   color-scheme:light;box-sizing:border-box;
+  /* The five colour roles (Yohann, 10 Nov 2026: every guide gets these tiles, a host picks a colour world, not a layout).
+     A world fills the roles; the old token names carry them:
+       deep   = --blue    white text on it
+       strong = --red     white text on it; always in the red family, so Emergencies reads as urgent
+       fresh  = --green   white text on it, and the "Open" word on white and on the page
+       light  = --yellow  dark text (--ink) on it
+       warm   = --orange  dark text (--ink) on it
+     plus --paper (the page), --ink (the text) and the fonts. One contrast rule for every palette: text on a tile, and
+     coloured words on the page, reach 4.5 to 1 (engine/src/worlds.js, worldTokens). A colour in a rule below is a token,
+     never a hex; the few fixed ones are listed in engine/scripts/worlds.test.mjs. */
   /* Palette: Bauhaus primaries + black, plus orange and green so tiles never repeat */
   --paper:#F3EEE3;--white:#FFFFFF;--ink:#121212;--muted:#4A4A4A;--faint:#6E6A63;--line:#DED6C6;
   --red:#D52B1E;--blue:#1D4FA0;--yellow:#F5C400;--orange:#EC6A1C;--green:#0E7C46;
   /* Old names still used by the code and the map */
   --k-blue:var(--blue);--k-red:var(--red);--k-yellow:var(--yellow);--k-black:var(--ink);--k-orange:var(--orange);--k-green:var(--green);--k-sky:var(--blue);--k-pink:var(--orange);--k-purple:var(--blue);--k-amber:var(--yellow);
   --bg:var(--paper);--surface:var(--white);
-  --accent:var(--red);--accent-soft:#F3D9D6;--on-accent:#fff;
+  --accent:var(--red);--accent-soft:#F3D9D6;--on-accent:#fff;   /* accent-soft: strong, 80% to white */
   --brand:var(--ink);--brand-soft:var(--paper);--on-brand:#fff;
   --ok:var(--green);--ok-s:var(--green);
-  --sea:#D7E0EA;--me:#1A73E8;
+  --sea:#D7E0EA;--me:#1A73E8;   /* sea: the map's resting colour before its tiles load, deep 81% to white; me: the blue "my position" dot, fixed */
   /* Market types */
   --c-covered:var(--blue);--c-street:var(--red);--c-flea:var(--orange);--c-antiques:var(--ink);--c-events:var(--green);
   --c-covered-s:var(--paper);--c-street-s:var(--paper);--c-flea-s:var(--paper);--c-antiques-s:var(--paper);--c-events-s:var(--paper);
@@ -22,6 +32,29 @@
   --c-restaurants:var(--orange);--c-todo:var(--green);--c-nightlife:var(--ink);--c-places:var(--green);--c-deixalleria:#5B6B2E;
   /* Bins: the real colours of the bins, kept recognisable */
   --w-organic:#7A4A1E;--w-packaging:#F5C400;--w-paper:#1D4FA0;--w-rest:#6B6B6B;--w-sanitary:#D52B1E;--w-glass:#0E7C46;--w-kitchen:#6B6B6B;--c-glass:#0E7C46;
+  /* Derived tokens (13 Nov 2026): tints and uses of the roles. Each holds today's exact value; worldTokens() in
+     engine/src/worlds.js computes every one from a world's roles by the formula named here. */
+  /* Soft tints, for chips and quiet backgrounds */
+  --deep-soft:#DCE5F3;      /* deep, 85% to white; also the quiet line on a deep card */
+  --strong-soft:#F8DEDB;    /* strong, 84% to white */
+  --warm-soft:#FBE3D3;      /* warm, 81% to white */
+  --fresh-soft:#D7EBDF;     /* fresh, 83% to white */
+  --ink-soft:#E6E2DA;       /* paper, 5% toward ink */
+  --on-ink-soft:#E8E2D6;    /* the quiet line on an ink band: paper, 6% toward ink */
+  --warm-word:#8A4B00;      /* warm as a word on the page (a warning): warm, 42% toward black, at least 4.5 on paper */
+  --paper-glass:rgba(243,238,227,.82);   /* paper at 82%, behind the blurred header */
+  /* Things to do and events tones (views/section.js, ui.js itemStyle): the roles, their tints, two of their own */
+  --tone-blue:var(--blue);--tone-blue-s:var(--deep-soft);--tone-red:var(--red);--tone-red-s:var(--strong-soft);--tone-orange:var(--orange);--tone-orange-s:var(--warm-soft);
+  --tone-purple:#121212;--tone-purple-s:var(--ink-soft);   /* the sights group: ink */
+  --tone-green:var(--green);--tone-green-s:var(--fresh-soft);--tone-pink:var(--green);--tone-pink-s:var(--fresh-soft);
+  --tone-taxi:#F5C400;      /* taxis and fairs: light */
+  --tone-wine:#8E1B4A;--tone-wine-s:#F3DDE6;   /* the wine group: strong's hue turned toward purple, dark; and 86% to white */
+  /* The roles as the cards drawn on white use them: contacts, the place page, quick calls, opening hours, list badges.
+     Each is exactly its role (ink, muted, line, paper, deep, strong, fresh, light), written out rather than var(--blue)
+     because these cards have always kept the Bauhaus colours in the other layouts and in guides with their own colours,
+     which change the role tokens; a world sets them to its roles. */
+  --ink-card:#121212;--muted-card:#4A4A4A;--line-card:#DED6C6;--paper-card:#F3EEE3;
+  --deep-card:#1D4FA0;--strong-card:#D52B1E;--fresh-card:#0E7C46;--light-card:#F5C400;
   --r:20px;--r-s:12px;
   --display:"Jost",system-ui,sans-serif;--font:"Jost",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
@@ -51,7 +84,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
 .langsel::after{content:"";position:absolute;right:11px;top:50%;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-70%) rotate(45deg);pointer-events:none}
 .langsel select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px;border:0;margin:0}
 .langsel:focus-within{outline:3px solid var(--blue);outline-offset:2px}
-.langsel option{color:#121212}
+.langsel option{color:var(--ink-card)}
 .themebtn{display:none}
 
 /* ---------- Bottom bar ---------- */
@@ -124,7 +157,7 @@ a.gt:active{transform:scale(.98)}
 .hero-today .hd b{font-family:var(--display);font-weight:700;font-size:25px;line-height:1.1}
 .todaycard .band{background:var(--ink);color:#fff;padding:18px 18px 16px;position:relative;overflow:hidden}
 .todaycard .band::after{content:"";position:absolute;width:90px;height:90px;border-radius:50%;background:var(--red);right:-24px;bottom:-46px}
-.todaycard .hd-sub{margin:2px 0 0;font-size:16px;color:#E8E2D6;position:relative;z-index:1}
+.todaycard .hd-sub{margin:2px 0 0;font-size:16px;color:var(--on-ink-soft);position:relative;z-index:1}
 .see{font-size:16px;font-weight:600;text-decoration:none;white-space:nowrap}
 .todaycard .see{background:var(--yellow);color:var(--ink);padding:6px 14px;border-radius:999px;position:relative;z-index:1}
 .mini{display:flex;flex-direction:column;padding:4px 18px 8px}
@@ -183,7 +216,7 @@ a.gt:active{transform:scale(.98)}
 .dchip{flex:none;text-align:left;border:2px solid var(--line);background:var(--white);color:var(--ink);border-radius:14px;padding:8px 14px;cursor:pointer;display:flex;flex-direction:column;font-size:17px;font-weight:600;min-width:74px;line-height:1.2}
 .dchip small{font-size:14px;color:var(--muted);font-weight:500}
 .dchip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
-.dchip[aria-pressed="true"] small{color:#E8E2D6}
+.dchip[aria-pressed="true"] small{color:var(--on-ink-soft)}
 
 /* ---------- Markets list (collapsible rows) ---------- */
 .mlist{display:flex;flex-direction:column;background:var(--white);border-radius:var(--r);overflow:hidden}
@@ -212,7 +245,7 @@ a.gt:active{transform:scale(.98)}
 .when .t{font-variant-numeric:tabular-nums;font-weight:600}
 .when .next{color:var(--blue);font-weight:600}
 .size{font-size:15px;font-weight:600;padding:3px 10px;border-radius:999px;border:1.5px solid var(--ink)}
-.flag{font-size:15px;font-weight:600;color:#8A4B00;display:flex;gap:8px;align-items:baseline}
+.flag{font-size:15px;font-weight:600;color:var(--warm-word);display:flex;gap:8px;align-items:baseline}
 .flag::before{content:"!";display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--yellow);color:var(--ink);font-size:13px;font-weight:700;flex:none}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 /* Google's open-now line (engine/src/gcard.js), under the address in a row's body or in its own block on a tile page.
@@ -260,7 +293,7 @@ gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;borde
 .ghero::before{content:"";position:absolute;z-index:-1;width:150px;height:150px;border-radius:50%;background:var(--yellow);right:-50px;top:-60px}
 .ghero-hd{display:flex;flex-direction:column;gap:2px}
 .ghero-hd b{font-family:var(--display);font-weight:700;font-size:30px;line-height:1.05}
-.ghero .sub2{color:#DCE5F3;font-size:16px}
+.ghero .sub2{color:var(--deep-soft);font-size:16px}
 .gput{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .gput li{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:var(--white);color:var(--ink)}
 .gput li .gbin{width:30px;height:38px}
@@ -315,7 +348,7 @@ gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;borde
 
 /* Markets today: date under the title, like the Tomorrow card */
 .todaycard .hd b{display:flex;flex-direction:column}
-.todaycard .hd b small{font-family:var(--display);font-size:16px;font-weight:500;color:#E8E2D6;margin-top:2px}
+.todaycard .hd b small{font-family:var(--display);font-size:16px;font-weight:500;color:var(--on-ink-soft);margin-top:2px}
 
 /* =====================================================================
    Design review fixes: one frame colour, three radii, one rule per control.
@@ -359,7 +392,7 @@ gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;borde
 .soonbox[data-k="message"]::before{background:var(--ink)}
 
 /* Map: same language as the rest (ink outlines, Jost, 12px radius) */
-#mapview .mapbox{border-block:2px solid var(--ink);border-inline:0;border-radius:0;background:#D7E0EA}
+#mapview .mapbox{border-block:2px solid var(--ink);border-inline:0;border-radius:0;background:var(--sea)}
 .maplibregl-ctrl-group{border:2px solid var(--ink)!important;border-radius:var(--r-m)!important;box-shadow:none!important;overflow:hidden}
 .maplibregl-ctrl-group button+button{border-top:2px solid var(--ink)!important}
 .map-msg p,.locmsg{font-size:15px;color:var(--ink);background:var(--white);border:2px solid var(--ink);border-radius:var(--r-m);box-shadow:none}
@@ -381,34 +414,34 @@ gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;borde
 
 /* Home quick calls: tap to dial. White with an ink outline = an action, not a section */
 .qcalls{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px}
-.qcall{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px;border-radius:16px;background:#fff;border:2px solid #121212;color:#121212;text-decoration:none;-webkit-tap-highlight-color:transparent;min-width:0}
+.qcall{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px;border-radius:16px;background:#fff;border:2px solid var(--ink-card);color:var(--ink-card);text-decoration:none;-webkit-tap-highlight-color:transparent;min-width:0}
 .qcall:active{transform:scale(.97)}
-.qcall .qi{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;margin-bottom:8px;color:#fff;background:#D52B1E}
-.qcall[data-q="taxi"] .qi,.qcall[data-q="transport"] .qi{background:#F5C400;color:#121212}
-.qcall[data-q="shop"] .qi{background:#0E7C46}
+.qcall .qi{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;margin-bottom:8px;color:#fff;background:var(--strong-card)}
+.qcall[data-q="taxi"] .qi,.qcall[data-q="transport"] .qi{background:var(--light-card);color:var(--ink-card)}
+.qcall[data-q="shop"] .qi{background:var(--fresh-card)}
 .qcall .qi .ci{width:24px;height:24px}
 .qcall b{font-family:var(--display);font-weight:700;font-size:17px;line-height:1.1}
-.qcall small{font-size:14px;color:#4A4A4A;line-height:1.2}
+.qcall small{font-size:14px;color:var(--muted-card);line-height:1.2}
 
 /* Emergency contacts page: grouped rows, the number is the button */
 .cgroup{display:flex;flex-direction:column;gap:10px}
 .clist{display:flex;flex-direction:column;background:#fff;border-radius:20px;overflow:hidden}
-.crow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:1.5px solid #DED6C6}
+.crow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:1.5px solid var(--line-card)}
 .crow:first-child{border-top:0}
 .ctx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .ctx b{font-size:18px;font-weight:600;line-height:1.2}
-.ctx span{font-size:15px;color:#4A4A4A;line-height:1.35}
-.cmap{display:inline-flex;align-items:center;gap:5px;font-size:15px;font-weight:600;color:#1D4FA0;text-decoration:none;margin-top:2px}
+.ctx span{font-size:15px;color:var(--muted-card);line-height:1.35}
+.cmap{display:inline-flex;align-items:center;gap:5px;font-size:15px;font-weight:600;color:var(--deep-card);text-decoration:none;margin-top:2px}
 .cmap svg{width:16px;height:16px}
-.ccall{flex:none;display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:999px;background:#0E7C46;color:#fff;font-weight:700;font-size:16px;text-decoration:none;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ccall{flex:none;display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:999px;background:var(--fresh-card);color:#fff;font-weight:700;font-size:16px;text-decoration:none;white-space:nowrap;font-variant-numeric:tabular-nums}
 .ccall svg{width:18px;height:18px}
-.cgroup[data-g="urgent"] .ccall{background:#D52B1E;font-size:20px;padding:10px 18px}
+.cgroup[data-g="urgent"] .ccall{background:var(--strong-card);font-size:20px;padding:10px 18px}
 .cgroup[data-g="urgent"] .crow:first-child .ccall{font-size:24px}
 .crow{flex-wrap:wrap;row-gap:10px}
 .ctx{flex:1 1 190px}
 
 /* Garbage tile: "Tonight" and the bins are one white card; each bin carries its name */
-.gt-tonight{position:relative;z-index:1;align-self:stretch;margin-top:12px;margin-right:52px;background:#fff;color:#121212;border-radius:12px;padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px}
+.gt-tonight{position:relative;z-index:1;align-self:stretch;margin-top:12px;margin-right:52px;background:#fff;color:var(--ink-card);border-radius:12px;padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px}
 .gt-tl{font-family:var(--display);font-weight:700;font-size:17px;line-height:1}
 .gt-tonight .gt-bins{all:unset;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:flex-start}
 .gtb{display:flex;align-items:center;gap:8px}
@@ -421,13 +454,13 @@ gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;borde
 /* Emergency contacts: hours like the markets, links on one line */
 .chours{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:6px}
 .chours .when{font-size:16px}
-.chours .when span{color:#121212}
+.chours .when span{color:var(--ink-card)}
 .chours .st{font-size:14px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
-.chours .st.open{background:#0E7C46;color:#fff}
-.chours .st.later{background:#1D4FA0;color:#fff}
-.chours .st.done{background:#F3EEE3;color:#4A4A4A}
+.chours .st.open{background:var(--fresh-card);color:#fff}
+.chours .st.later{background:var(--deep-card);color:#fff}
+.chours .st.done{background:var(--paper-card);color:var(--muted-card)}
 .clinks{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:4px}
-.ctx > span:not(.clinks){color:#4A4A4A}
+.ctx > span:not(.clinks){color:var(--muted-card)}
 .crow .ccall{align-self:flex-start;margin-top:2px}
 .crow{flex-direction:column;align-items:stretch}
 .crow .ccall{align-self:flex-start}
@@ -448,38 +481,36 @@ gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;borde
 
 /* Place page (#p/<id>): map, buttons, description, hours */
 .pl-head{display:flex;gap:14px;align-items:center}
-.pl-head .qi{flex:none;display:grid;place-items:center;width:56px;height:56px;border-radius:14px;color:#fff;background:#D52B1E}
-.place[data-q="taxi"] .pl-head .qi,.place[data-q="transport"] .pl-head .qi{background:#F5C400;color:#121212}
-.place[data-q="shop"] .pl-head .qi{background:#0E7C46}
+.pl-head .qi{flex:none;display:grid;place-items:center;width:56px;height:56px;border-radius:14px;color:#fff;background:var(--strong-card)}
+.place[data-q="taxi"] .pl-head .qi,.place[data-q="transport"] .pl-head .qi{background:var(--light-card);color:var(--ink-card)}
+.place[data-q="shop"] .pl-head .qi{background:var(--fresh-card)}
 .pl-head .qi .ci{width:30px;height:30px}
 .pl-head .lead{margin-top:4px}
-.pl-map{position:relative;display:block;height:200px;border-radius:20px;overflow:hidden;border:2px solid #121212;background:#D7E0EA;text-decoration:none}
+.pl-map{position:relative;display:block;height:200px;border-radius:20px;overflow:hidden;border:2px solid var(--ink-card);background:var(--sea);text-decoration:none}
 .pl-map #plmap{position:absolute;inset:0}
-.pl-map-cta{position:absolute;left:10px;bottom:10px;display:inline-flex;align-items:center;gap:6px;background:#fff;color:#121212;border:2px solid #121212;border-radius:999px;padding:5px 12px;font-weight:600;font-size:15px}
+.pl-map-cta{position:absolute;left:10px;bottom:10px;display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--ink-card);border:2px solid var(--ink-card);border-radius:999px;padding:5px 12px;font-weight:600;font-size:15px}
 .pl-map-cta svg{width:16px;height:16px}
 .pl-actions{display:flex;flex-wrap:wrap;gap:10px}
 .pl-actions .ccall{font-size:18px;padding:11px 18px}
 .pl-what{margin:0;font-size:17px;line-height:1.5}
 .pl-sec{display:flex;flex-direction:column;gap:10px}
 .pl-hours{display:flex;flex-direction:column;align-items:flex-start;gap:8px;background:#fff;border-radius:20px;padding:16px}
-.pl-hours p{margin:0;font-size:16px;line-height:1.45;color:#4A4A4A}
+.pl-hours p{margin:0;font-size:16px;line-height:1.45;color:var(--muted-card)}
 .pl-hours .st{font-size:14px;font-weight:600;padding:3px 10px;border-radius:999px}
-.pl-hours .st.open{background:#0E7C46;color:#fff}
-.pl-hours .st.later{background:#1D4FA0;color:#fff}
-.pl-hours .st.done{background:#F3EEE3;color:#4A4A4A}
-.pl-alt{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:14px 16px;text-decoration:none;color:#121212}
+.pl-hours .st.open{background:var(--fresh-card);color:#fff}
+.pl-hours .st.later{background:var(--deep-card);color:#fff}
+.pl-hours .st.done{background:var(--paper-card);color:var(--muted-card)}
+.pl-alt{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:14px 16px;text-decoration:none;color:var(--ink-card)}
 .pl-alt b{font-size:17px}
-.pl-alt span{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#0E7C46;white-space:nowrap}
+.pl-alt span{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--fresh-card);white-space:nowrap}
 .pl-alt svg{width:18px;height:18px}
 .pl-map-cta{left:auto;right:10px;bottom:auto;top:10px}
 .qcall small{white-space:pre-line}
 
-.card .hnote{margin:0;font-size:15px;line-height:1.35;color:#4A4A4A}
+.card .hnote{margin:0;font-size:15px;line-height:1.35;color:var(--muted-card)}
 .secmap{height:220px}
 .secmap #secmap{position:absolute;inset:0}
-.mbody .hnote{margin:0;font-size:15px;line-height:1.35;color:#4A4A4A}
-/* Item colours (What to do) */
-:root{--tone-blue:var(--blue);--tone-blue-s:#DCE5F3;--tone-red:var(--red);--tone-red-s:#F8DEDB;--tone-orange:var(--orange);--tone-orange-s:#FBE3D3;--tone-purple:#121212;--tone-purple-s:#E6E2DA;--tone-green:var(--green);--tone-green-s:#D7EBDF;--tone-pink:var(--green);--tone-pink-s:#D7EBDF}
+.mbody .hnote{margin:0;font-size:15px;line-height:1.35;color:var(--muted-card)}
 /* Small live tiles: the round arrow sits top right (where "Soon" sits), clear of the title */
 .gt[data-k="emergency"] .go,.gt[data-k="restaurants"] .go,.gt[data-k="todo"] .go,.gt[data-k="message"] .go{top:14px;bottom:auto}
 /* Quick filters (What to do) */
@@ -500,20 +531,18 @@ gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;borde
 .tr-tag{margin:0;font-weight:700;font-size:16px;color:var(--blue)}
 .tr-what{margin:0;font-size:17px;line-height:1.45}
 #trmap{position:absolute;inset:0}
-:root{--tone-taxi:#F5C400}
-.transport .mrow[style*="tone-taxi"] .dot{color:#121212}
+.transport .mrow[style*="tone-taxi"] .dot{color:var(--ink-card)}
 /* The same for an event on the yellow tone (a fair): a white icon on yellow could hardly be seen. */
-.events .mrow[style*="tone-taxi"] .dot{color:#121212}
+.events .mrow[style*="tone-taxi"] .dot{color:var(--ink-card)}
 .lbadges{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0 3px}
 .lbadge{font-style:normal;display:inline-block;padding:2px 7px;border-radius:6px;background:var(--lc);color:#fff;font-weight:700;font-size:14px;line-height:1.3}
-.lbadge.ink{color:#121212}
+.lbadge.ink{color:var(--ink-card)}
 .dests{border-collapse:collapse;width:100%;font-size:16px}
 .dests th{text-align:left;font-weight:600;padding:5px 8px 5px 0}
 .dests td{padding:5px 8px 5px 0;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
 .dests td{text-align:right;vertical-align:top;padding-right:0}
 .dests th small{display:block;font-size:14px;font-weight:400;color:var(--muted)}
 .dests tr+tr{border-top:1.5px solid var(--line)}
-:root{--tone-wine:#8E1B4A;--tone-wine-s:#F3DDE6}
 /* Slim header that hides on scroll down; no bottom bar (Home is the menu) */
 body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .bnav{display:none!important}
@@ -534,7 +563,7 @@ body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 /* Header, 2026: no bar at rest. Floating round buttons; a frosted bar with the page title fades in on scroll. */
 .hero{background:transparent;border-bottom:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;margin-bottom:0;transition:background-color .2s,box-shadow .2s}
 .hero.hide{transform:none}
-.hero.scrolled{background:rgba(243,238,227,.82);-webkit-backdrop-filter:saturate(1.5) blur(18px);backdrop-filter:saturate(1.5) blur(18px);box-shadow:0 1px 0 rgba(18,18,18,.08)}
+.hero.scrolled{background:var(--paper-glass);-webkit-backdrop-filter:saturate(1.5) blur(18px);backdrop-filter:saturate(1.5) blur(18px);box-shadow:0 1px 0 rgba(18,18,18,.08)}
 .hero .top{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:10px}
 .hero .mark{display:none}
 .hero .brand{min-width:0;text-align:center}
