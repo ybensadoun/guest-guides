@@ -1,9 +1,11 @@
 // Fonts are bundled so the guide works offline. Use the per-weight files (they declare unicode-range); the latin + latin-ext pair without it broke capital accents like À.
-// The site's fonts come from site.json (theme.fonts, or the preset's), then the engine styles, the layout preset, and the site's own theme.css on top.
+// The site's fonts come from site.json (theme.fonts, or its world's or preset's), then the engine styles, the layout preset,
+// the colour world's tokens (theme.world, src/worlds.js; nothing without one), and the site's own theme.css on top.
 import 'virtual:site-fonts';
 import './styles/app.css';
 import './styles/map.css';
 import 'virtual:site-preset';
+import 'virtual:site-world.css';
 import '@site/theme.css';
 
 import { t, setLang, lang, LANGS, LANG_NAMES } from './i18n.js';

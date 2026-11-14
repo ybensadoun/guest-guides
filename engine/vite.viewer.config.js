@@ -62,6 +62,7 @@ export default defineConfig({
   // licenses.txt next to viewer.html (/g-app/licenses.txt) or index.html (a guide's own address): every font family installed,
   // since the viewer can show a guide in any of them; no Workbox (its service worker is onboarding-site/g-sw.js).
   // Google's hours card: one guide's own address (built on Netlify) takes the key from the build's environment; the
-  // shared viewer always gets the placeholder (noKeyInGit).
-  plugins: [sitePlugin(SLUG || '_viewer', { gmapsKey: SLUG ? process.env.GOOGLE_MAPS_BROWSER_KEY || '' : GMAPS_PLACEHOLDER }), vendorMaplibre(), licensesPlugin({ fonts: fontFamilies(), workbox: false }), ...(SLUG ? [singleGuide()] : [noKeyInGit()])]
+  // shared viewer always gets the placeholder (noKeyInGit). No colour world in the build: the viewer applies each
+  // guide's from its row (src/viewer.js).
+  plugins: [sitePlugin(SLUG || '_viewer', { gmapsKey: SLUG ? process.env.GOOGLE_MAPS_BROWSER_KEY || '' : GMAPS_PLACEHOLDER, world: false }), vendorMaplibre(), licensesPlugin({ fonts: fontFamilies(), workbox: false }), ...(SLUG ? [singleGuide()] : [noKeyInGit()])]
 });

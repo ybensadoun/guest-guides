@@ -7,6 +7,7 @@ import minimal from './styles/presets/minimal.css?url';
 import mediterranean from './styles/presets/mediterranean.css?url';
 import rural from './styles/presets/rural.css?url';
 import LOOKS from './presets.json';
+import { worldOf, worldCss } from './worlds.js';
 
 // A guide's own address (ca-la-kimberly.netlify.app) is the same viewer built for one guide, served from the root:
 // GUIDE_SLUG=<slug> at build time (engine/vite.viewer.config.js). Otherwise the guide comes from the path /g/<slug>.
@@ -23,6 +24,11 @@ function say(title, text) {
 
 // ?preview: the host's unpublished changes (guides.draft, saved by the editor), only for the host logged in on this site.
 const PREVIEW = new URLSearchParams(location.search).has('preview');
+// ?world=<id>: the guide in that colour world (src/worlds.js) for this visit only, how an owner looks at his guide in each
+// world on his phone and how the maker's picker shows them. Nothing is stored: the copy kept for offline use is the guide
+// as it is, and the address's world is read again on every start (offline too: the service worker answers any /g/ address
+// with the same page). An unknown id is ignored.
+const ASKED = new URLSearchParams(location.search).get('world');
 async function fetchGuide(slug) {
   let tok = null;
   try { tok = (JSON.parse(localStorage.getItem('porta-auth-v1') || 'null') || {}).access_token; } catch (e) { /* storage blocked */ }
@@ -97,9 +103,14 @@ function goOffline(site, files, base, slug, paper, icons = {}) {
   const c = row.content, th = row.theme || {};
   const base = c.assetBase || '';
   const site = withAssets(c.site, base), files = withAssets(c.files || {}, base);
-  // The fonts this guide shows: the look's own, then the guide's (loaded from the CDN below, named on the credits page).
-  const preset = th.preset || (site.theme || {}).preset;
-  const fonts = [...new Set([...(LOOKS.fonts[preset] || []), ...(th.fonts || (site.theme || {}).fonts || [])])];
+  // Its colour world: the address's (?world), else the guide's own (theme.world); an id this viewer does not know is
+  // none. A world goes with the base look only: with a world, a preset the guide also names is not loaded (the builds
+  // refuse the pair, engine/site.config.js; here the world wins, so the guide still opens).
+  const world = worldOf(ASKED) || worldOf(th.world || (site.theme || {}).world);
+  const preset = world ? 'bauhaus' : th.preset || (site.theme || {}).preset;
+  // The fonts this guide shows: the world's or the look's own, then the guide's (loaded from the CDN below, named on the
+  // credits page).
+  const fonts = [...new Set([...((world && world.fonts) || LOOKS.fonts[preset] || []), ...(th.fonts || (site.theme || {}).fonts || [])])];
   window.__GUIDE__ = { site, files, private: c.private || {}, i18n: c.i18n || {}, fonts };
   window.__VENDOR_BASE = import.meta.env.BASE_URL + 'vendor/maplibre/';
 
@@ -113,13 +124,14 @@ function goOffline(site, files, base, slug, paper, icons = {}) {
   const icon = k => { const v = (c.site.icons || {})[k]; return v ? (/^https?:/.test(v) ? v : base + v) : base + ICON_FILE[k]; };
   const ic = document.querySelector('link[rel="icon"]'); if (ic && c.favicon !== false) ic.href = icon('favicon');
 
-  // Fonts come from the CDN (the viewer does not bundle every font): the look's own, then this guide's; then the look's
-  // styles, then this guide's own theme.
+  // Fonts come from the CDN (the viewer does not bundle every font): the world's or the look's own, then this guide's;
+  // then the look's styles, the world's tokens, then this guide's own theme.
   for (const f of fonts) {
     const [fam, file] = f.replace(/^@fontsource\//, '').split('/');
     const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = `https://cdn.jsdelivr.net/npm/@fontsource/${fam}@5/${file}`; document.head.appendChild(l);
   }
   if (PRESET_CSS[preset]) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = PRESET_CSS[preset]; document.head.appendChild(l); }
+  if (world) { const s = document.createElement('style'); s.id = 'guideWorld'; s.textContent = worldCss(world); document.head.appendChild(s); }
   if (th.css) { const s = document.createElement('style'); s.id = 'guideTheme'; s.textContent = th.css; document.head.appendChild(s); }
 
   V().innerHTML = '';

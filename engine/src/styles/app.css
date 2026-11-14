@@ -42,6 +42,7 @@
   --ink-soft:#E6E2DA;       /* paper, 5% toward ink */
   --on-ink-soft:#E8E2D6;    /* the quiet line on an ink band: paper, 6% toward ink */
   --warm-word:#8A4B00;      /* warm as a word on the page (a warning): warm, 42% toward black, at least 4.5 on paper */
+  --on-warm:#FFFFFF;        /* an icon on a warm badge (a place to eat, a flea market): white while it reaches 3 to 1 on warm, else ink */
   --paper-glass:rgba(243,238,227,.82);   /* paper at 82%, behind the blurred header */
   /* Things to do and events tones (views/section.js, ui.js itemStyle): the roles, their tints, two of their own */
   --tone-blue:var(--blue);--tone-blue-s:var(--deep-soft);--tone-red:var(--red);--tone-red-s:var(--strong-soft);--tone-orange:var(--orange);--tone-orange-s:var(--warm-soft);
@@ -180,7 +181,10 @@ a.gt:active{transform:scale(.98)}
 .nextcard[open] .chev,.mrow[open] .chev{transform:rotate(-135deg) translateY(-1px)}
 
 /* Category badge (market type): square, flat colour, white pictogram */
-.dot{width:40px;height:40px;border-radius:10px;background:var(--cc);color:#fff;display:grid;place-items:center;flex:none}
+.dot{width:40px;height:40px;border-radius:10px;background:var(--cc);color:var(--ci,#fff);display:grid;place-items:center;flex:none}
+/* A badge in the warm colour: its icon takes the colour that reads on it (--on-warm: white in Bauhaus summer, ink in a world whose warm is light).
+   The names are the ones the views give --cc (ui.js catStyle and itemStyle). */
+[style*="--c-restaurants)"],[style*="--c-flea)"],[style*="--tone-orange)"]{--ci:var(--on-warm)}
 .dot .ci{width:22px;height:22px;stroke-width:2.2}
 
 /* Status pills: solid, readable in sunlight */

@@ -1,10 +1,11 @@
-// Colour worlds (engine/src/worlds.js): the contrast maths, the one contrast rule on six palettes, strong staying red,
-// and a guard on the stylesheets: a colour in a rule is a token, never a hex, apart from the few fixed ones listed
-// below (13 Nov 2026). Nothing is written.   node --test engine/scripts/worlds.test.mjs
+// Colour worlds (engine/src/worlds.js): the contrast maths, the one contrast rule on the six worlds, strong staying red,
+// their fonts installed, Bauhaus summer being today's app.css, and a guard on the stylesheets: a colour in a rule is a
+// token, never a hex, apart from the few fixed ones listed below (13 Nov 2026). Nothing is written.
+//   node --test engine/scripts/worlds.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { contrast, mix, fit, hsl, worldTokens, worldCss, BAUHAUS } from '../src/worlds.js';
+import { readFileSync, existsSync } from 'node:fs';
+import { contrast, mix, fit, hsl, worldTokens, worldCss, BAUHAUS, WORLDS, worldOf } from '../src/worlds.js';
 
 const W = '#FFFFFF';
 // The six palettes of the mockups of 10 Nov 2026 (scratch generator make.py, WORLDS), in roles:
@@ -48,13 +49,19 @@ test('fit: reaches the target, and leaves a colour that passes untouched', () =>
   assert.ok(contrast(l, '#000000') >= 4.5 && contrast(l, '#000000') > contrast('#555555', '#000000'));
 });
 
-// Every 4.5 rule of the plan, on the tokens a world gives.
+test('the worlds hold the mockups\' palettes', () => {
+  assert.deepEqual(Object.keys(WORLDS), Object.keys(PALETTES));
+  for (const [id, p] of Object.entries(PALETTES)) for (const [k, v] of Object.entries(p)) assert.equal(WORLDS[id][k], v, `${id} ${k}`);
+});
+
+// Every 4.5 rule of the plan, on the tokens a world gives. strong and fresh as words: on white cards only (the page
+// colour never carries them, measured 13 Nov 2026); warm as a word: on the page.
 function rules(t) {
   return [
     ['white text on deep', W, t['--blue']], ['white text on strong', W, t['--red']], ['white text on fresh', W, t['--green']],
+    ['white text on deep under the rubbish tile\'s 16% white veil', W, mix(t['--blue'], W, 0.16)],
     ['ink on light', t['--ink'], t['--yellow']], ['ink on warm', t['--ink'], t['--orange']],
-    ['fresh as a word on paper', t['--green'], t['--paper']], ['fresh as a word on white', t['--green'], W],
-    ['strong as a word on paper', t['--red'], t['--paper']], ['strong as a word on white', t['--red'], W],
+    ['fresh as a word on white', t['--green'], W], ['strong as a word on white', t['--red'], W],
     ['ink on paper', t['--ink'], t['--paper']], ['muted on paper', t['--muted'], t['--paper']], ['muted on white', t['--muted'], W],
     ['faint on paper', t['--faint'], t['--paper']],
     ['the quiet line on an ink band', t['--on-ink-soft'], t['--ink']], ['the quiet line on a deep card', t['--deep-soft'], t['--blue']],
@@ -65,17 +72,24 @@ function rules(t) {
   ];
 }
 
-for (const [id, p] of Object.entries(PALETTES)) {
+for (const [id, p] of Object.entries(WORLDS)) {
   test(`world ${id}: every text and coloured word reaches 4.5`, () => {
     const t = worldTokens(p);
     for (const [what, a, b] of rules(t)) assert.ok(contrast(a, b) >= 4.5, `${id}, ${what || 'the same'}: ${a} on ${b} is ${contrast(a, b).toFixed(2)}`);
-    for (const [k, v] of Object.entries(t)) assert.match(v, /^(#[0-9A-F]{6}|rgba\(\d+,\d+,\d+,\.\d+\))$/, `${id} ${k}: ${v}`);
+    for (const [k, v] of Object.entries(t)) if (!['--display', '--font'].includes(k)) assert.match(v, /^(#[0-9A-F]{6}|rgba\(\d+,\d+,\d+,\.\d+\))$/, `${id} ${k}: ${v}`);
   });
   // Strong stays in the red family, so Emergencies reads as urgent: its hue within 25 degrees of pure red (335 to 25,
   // which takes in a raspberry like City night's) and clearly coloured (saturation above 0.3), after the contrast rule.
   test(`world ${id}: strong stays red`, () => {
     const [h, s] = hsl(worldTokens(p)['--red']);
     assert.ok((h >= 335 || h <= 25) && s > 0.3, `${id}: strong ${worldTokens(p)['--red']} has hue ${h.toFixed(0)} and saturation ${s.toFixed(2)}`);
+  });
+  // Its fonts: every file it names is installed, a display and a text stack, and the stacks name the families loaded.
+  test(`world ${id}: its font files exist and its stacks name them`, () => {
+    assert.ok(p.fonts.length && p.display && p.font);
+    for (const f of p.fonts) assert.ok(existsSync(new URL(`../../node_modules/@fontsource/${f}`, import.meta.url)), `${id}: @fontsource/${f} is not installed`);
+    const fams = [p.display, p.font].map(s => s.match(/^"([^"]+)"/)[1].toLowerCase().replace(/ /g, '-'));
+    for (const f of fams) assert.ok(p.fonts.some(x => x.startsWith(f + '/')), `${id}: ${f} is in a stack but no file of it is loaded`);
   });
 }
 
@@ -96,15 +110,26 @@ test('every token a world sets exists in app.css', () => {
   for (const k of Object.keys(worldTokens(BAUHAUS))) assert.ok(k in ROOT, `${k} is not in app.css :root`);
 });
 
-// Today's look against what the rule computes from its five roles: reported, never changed here (whether today's
-// look moves by a hair is Yohann's call). The test fails only when a token is not a colour at all.
-test('Bauhaus: today\'s values against the computed ones (report)', t => {
-  const comp = worldTokens(BAUHAUS), out = [];
-  for (const [k, v] of Object.entries(comp)) {
-    const now = val(k); assert.ok(now, k);
-    if (now.toUpperCase() !== v.toUpperCase()) out.push(`${k} ${now} -> ${v}`);
-  }
-  t.diagnostic(`${out.length} of ${Object.keys(comp).length} differ: ${out.join(', ')}`);
+// Bauhaus summer is today's look: every token it gives is app.css's own value, strong #D52B1E among them (13 Nov 2026,
+// once strong and fresh are fitted against white only). Its fonts are the bauhaus preset's (presets.json).
+test('Bauhaus: the world is today\'s app.css', () => {
+  const comp = worldTokens(WORLDS.bauhaus), out = [];
+  for (const [k, v] of Object.entries(comp)) { const now = val(k); if (!now || now.toUpperCase() !== v.toUpperCase()) out.push(`${k} ${now} -> ${v}`); }
+  assert.deepEqual(out, []);
+  assert.equal(comp['--red'], '#D52B1E');
+  assert.deepEqual(worldTokens(BAUHAUS), Object.fromEntries(Object.entries(comp).filter(([k]) => !['--display', '--font'].includes(k))));
+  assert.deepEqual(WORLDS.bauhaus.fonts, JSON.parse(readFileSync(new URL('../src/presets.json', import.meta.url), 'utf8')).fonts.bauhaus);
+});
+// Its hand-set tints against what the formulas give from its roles: reported, so a change of formula can be judged.
+test('Bauhaus: the hand-set tints against the formulas (report)', t => {
+  const comp = worldTokens({ ...BAUHAUS, set: {} }), out = [];
+  for (const [k, v] of Object.entries(BAUHAUS.set)) if (comp[k] !== v) out.push(`${k} ${v} (formula ${comp[k]})`);
+  t.diagnostic(`${out.length} set by hand: ${out.join(', ')}`);
+});
+
+test('a palette cannot set a role by hand', () => {
+  assert.equal(worldTokens({ ...BAUHAUS, set: { '--red': '#FF0000', '--muted': '#333' } })['--red'], '#D52B1E');
+  assert.equal(worldTokens({ ...BAUHAUS, set: { '--muted': '#333' } })['--muted'], '#333333');
 });
 
 // The fixed colours: everything else in a rule of app.css or map.css must be a token (var(--...)), so the next
@@ -130,4 +155,19 @@ test('stylesheets: no colour outside the :root tokens but the fixed ones', () =>
     }
   }
   assert.deepEqual(bad, [], 'a colour written in a rule: take a token from app.css :root (or add a derived one there and to worlds.js)');
+});
+
+// An address may ask for any word (?world=constructor): only the six ids are worlds.
+test('worldOf: only a world\'s own id gives a world', () => {
+  for (const id of Object.keys(WORLDS)) assert.equal(worldOf(id), WORLDS[id]);
+  for (const id of ['constructor', '__proto__', 'toString', 'moon', '', null, undefined, 3]) assert.equal(worldOf(id), null, String(id));
+});
+
+// A display family with one weight is drawn as it is: the browser is told not to fake a bold (Sea's DM Serif Display).
+test('worldCss: a world whose display face has one weight asks for no false bold, the others say nothing of it', () => {
+  for (const [id, w] of Object.entries(WORLDS)) {
+    const fam = w.display.match(/^"([^"]+)"/)[1].toLowerCase().replace(/ /g, '-'), weights = w.fonts.filter(f => f.startsWith(fam + '/')).length;
+    assert.equal(/font-synthesis-weight:none\}$/.test(worldCss(w)), weights === 1, id);
+    assert.equal(!!w.plain, weights === 1, id);
+  }
 });
