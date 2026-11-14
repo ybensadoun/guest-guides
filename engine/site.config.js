@@ -36,11 +36,16 @@ export function readSite(slug) {
 // which builds the site as if its site.json said so (for the checks and pictures of each world; no site is changed).
 // A world goes with the base look only, so a world and another preset is an error, as is an unknown world.
 export function siteWorld(site) {
-  const id = process.env.WORLD || site.theme.world, from = process.env.WORLD ? 'WORLD' : 'theme.world', preset = site.theme.preset || 'bauhaus';
-  if (!id) return null;
-  if (!worldOf(id)) throw new Error(`${site.slug}: unknown colour world "${id}" (${from}). Worlds: ${Object.keys(WORLDS).join(', ')}`);
-  if (preset !== 'bauhaus') throw new Error(`${site.slug}: the colour world "${id}" (${from}) goes with the base look only, not with the preset "${preset}". Drop one of the two.`);
-  return worldOf(id);
+  const env = process.env.WORLD, from = env ? 'WORLD' : 'theme.world', preset = site.theme.preset || 'bauhaus';
+  let asked = env || site.theme.world;
+  if (!asked) return null;
+  // A world with colours of its own ("From your picture"): an object in site.json, the same as JSON in WORLD.
+  if (typeof asked === 'string' && asked.trim().startsWith('{')) { try { asked = JSON.parse(asked); } catch (e) { throw new Error(`${site.slug}: ${from} is not valid JSON: ${e.message}`); } }
+  const name = typeof asked === 'string' ? asked : JSON.stringify(asked);
+  if (!worldOf(asked)) throw new Error(`${site.slug}: unknown colour world ${name} (${from}). Worlds: ${Object.keys(WORLDS).join(', ')}, or { "base": one of them, and deep, strong, fresh, light, warm as #RRGGBB }`);
+  if (typeof asked === 'object') for (const [k, v] of Object.entries(asked)) if (k !== 'base' && !(['deep', 'strong', 'fresh', 'light', 'warm'].includes(k) && /^#[0-9a-f]{6}$/i.test(String(v)))) throw new Error(`${site.slug}: colour world ${name} (${from}): "${k}" must be one of deep, strong, fresh, light, warm, as #RRGGBB`);
+  if (preset !== 'bauhaus') throw new Error(`${site.slug}: the colour world ${name} (${from}) goes with the base look only, not with the preset "${preset}". Drop one of the two.`);
+  return worldOf(asked);
 }
 
 // The fonts a site bundles: its look's (its world's, else its preset's), then its own. "fonts": [] bundles none (the

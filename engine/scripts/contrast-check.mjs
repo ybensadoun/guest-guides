@@ -9,13 +9,15 @@
 // cannot be measured this way and is counted as "not measured". Each failing case is printed once (world, page, where,
 // the two colours, the ratio, an example); in a run of every world, a case Bauhaus summer has too is marked so.
 // Needs Playwright (as ux-check.mjs): node engine/scripts/contrast-check.mjs <site> [world|all] [chromium path]
-// Without a world: the site as its site.json says.
+// Without a world: the site as its site.json says. A world may also be one with colours of its own, as JSON:
+// '{"base":"stone","deep":"#2F5478"}' (what "From your picture" makes, engine/src/picture-world.js).
 import { createServer } from 'http'; import { spawnSync } from 'child_process';
 import { readFileSync, existsSync, statSync, mkdtempSync, rmSync } from 'fs'; import { join, extname, resolve } from 'path'; import { tmpdir } from 'os';
 import { WORLDS, worldOf } from '../src/worlds.js';
 const [site, which, exe] = process.argv.slice(2);
 if (!site) { console.error('Usage: node engine/scripts/contrast-check.mjs <site> [world|all] [chromium path]'); process.exit(1); }
-if (which && which !== 'all' && !worldOf(which)) { console.error(`Unknown world "${which}". Worlds: ${Object.keys(WORLDS).join(', ')}, or all`); process.exit(1); }
+const own = which && which.trim().startsWith('{');
+if (which && which !== 'all' && !worldOf(own ? JSON.parse(which) : which)) { console.error(`Unknown world "${which}". Worlds: ${Object.keys(WORLDS).join(', ')}, or all`); process.exit(1); }
 const { chromium } = await import('playwright');
 const worlds = which === 'all' ? Object.keys(WORLDS) : [which || ''];
 const langs = JSON.parse(readFileSync(resolve('sites', site, 'site.json'))).languages.filter(l => ['en', 'de'].includes(l));
@@ -25,7 +27,7 @@ const TMP = mkdtempSync(join(tmpdir(), 'contrast-check-'));
 
 // Builds quietly, with the world asked for and no key for Google's card (its line is Google's, not ours to measure).
 const build = world => {
-  const out = join(TMP, world || 'own'), env = { ...process.env, SITE: site };
+  const out = join(TMP, own ? 'picture' : world || 'own'), env = { ...process.env, SITE: site };
   delete env.GOOGLE_MAPS_BROWSER_KEY; delete env.WORLD; if (world) env.WORLD = world;
   const r = spawnSync('npx', ['vite', 'build', '--config', resolve('engine/vite.config.js'), '--outDir', out, '--emptyOutDir', '--logLevel', 'error'], { stdio: 'inherit', env });
   if (r.status) throw new Error(`build ${world || site} failed`);

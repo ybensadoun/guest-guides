@@ -161,5 +161,17 @@ export function worldCss(p) {
   return ':root{' + Object.entries(worldTokens(p)).map(([k, v]) => `${k}:${v}`).join(';') + (p.plain ? ';font-synthesis-weight:none' : '') + '}';
 }
 
-// The world of an id, or null: only WORLDS' own keys count (an address may ask for "constructor").
-export const worldOf = id => (typeof id === 'string' && Object.hasOwn(WORLDS, id) ? WORLDS[id] : null);
+// The world a guide asks for, or null. An id: only WORLDS' own keys count (an address may ask for "constructor").
+// Or a world with colours of the guide's own, as "From your picture" makes them (src/picture-world.js):
+// { base: 'stone', deep: '#2F5478', light: '#E3CB98' } is Stone with those two roles; paper, text colour and fonts stay
+// the base's. Anything that is not a hex colour is left out (the value comes from a guide's row and goes into a
+// stylesheet), and the base's tints picked by hand (`set`) go, since they belong to its own colours.
+const OWN = ['deep', 'strong', 'fresh', 'light', 'warm'];
+export function worldOf(w) {
+  if (typeof w === 'string') return Object.hasOwn(WORLDS, w) ? WORLDS[w] : null;
+  if (!w || typeof w !== 'object' || typeof w.base !== 'string' || !Object.hasOwn(WORLDS, w.base)) return null;
+  const own = Object.fromEntries(OWN.filter(r => typeof w[r] === 'string' && /^#[0-9a-f]{6}$/i.test(w[r])).map(r => [r, w[r].toUpperCase()]));
+  if (!Object.keys(own).length) return WORLDS[w.base];
+  const { set, ...base } = WORLDS[w.base];
+  return { ...base, ...own };
+}
