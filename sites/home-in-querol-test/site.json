@@ -26,19 +26,10 @@
     "events": false
   },
   "theme": {
-    "preset": "soft",
-    "fonts": [
-      "cormorant-garamond/500.css",
-      "cormorant-garamond/600.css",
-      "cormorant-garamond/700.css",
-      "inter/400.css",
-      "inter/500.css",
-      "inter/600.css",
-      "inter/700.css"
-    ],
-    "paper": "#F2EADF",
-    "manifestBackground": "#F2EADF",
-    "manifestTheme": "#565F45",
+    "world": "country",
+    "paper": "#F1EADB",
+    "manifestBackground": "#F1EADB",
+    "manifestTheme": "#496436",
     "darkMode": false
   },
   "previewImages": [
@@ -59,7 +50,6 @@
         "#E2A93B",
         "#3E7D4F"
       ]
-    },
-    "presetChosen": "soft"
+    }
   }
 }

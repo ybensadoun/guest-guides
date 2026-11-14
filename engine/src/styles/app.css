@@ -52,8 +52,8 @@
   --tone-wine:#8E1B4A;--tone-wine-s:#F3DDE6;   /* the wine group: strong's hue turned toward purple, dark; and 86% to white */
   /* The roles as the cards drawn on white use them: contacts, the place page, quick calls, opening hours, list badges.
      Each is exactly its role (ink, muted, line, paper, deep, strong, fresh, light), written out rather than var(--blue)
-     because these cards have always kept the Bauhaus colours in the other layouts and in guides with their own colours,
-     which change the role tokens; a world sets them to its roles. */
+     because these cards kept the Bauhaus colours in guides whose own css changes the role tokens; a world sets them to
+     its roles. */
   --ink-card:#121212;--muted-card:#4A4A4A;--line-card:#DED6C6;--paper-card:#F3EEE3;
   --deep-card:#1D4FA0;--strong-card:#D52B1E;--fresh-card:#0E7C46;--light-card:#F5C400;
   --r:20px;--r-s:12px;

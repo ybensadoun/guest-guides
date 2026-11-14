@@ -70,8 +70,8 @@ export const BAUHAUS = { paper: '#F3EEE3', ink: '#121212', deep: '#1D4FA0', stro
 
 // The six worlds a guide can pick (theme.world): Bauhaus summer (today's look), Sea, Country, Tropical, City night,
 // Stone. Each is a palette (the mockups of 10 Nov 2026), its display font (titles, --display) and text font (--font),
-// and the @fontsource files those need (fonts: "family/weight.css", as presets.json), bundled by a build and loaded from
-// the CDN by the shared viewer. The text font is Jost in every world, the world's character being in its colours and
+// and the @fontsource files those need (fonts: "family/weight.css"; Bauhaus's are also the fonts of a guide with no
+// world), bundled by a build and loaded from the CDN by the shared viewer. The text font is Jost in every world, the world's character being in its colours and
 // titles (13 Nov 2026): the guide's lines are measured for Jost, and every other installed text family is wider at the
 // same weight (Outfit and Nunito by 1.6%, Geist, DM Sans, Bricolage Grotesque, Space Grotesk and Fraunces by 7 to 10%),
 // which pushed a Dutch market name, and in Space Grotesk some German and French words of Things to do, past their line
@@ -143,8 +143,8 @@ export function worldTokens(p) {
     '--tone-taxi': light,                                     // taxis and fairs: light
     '--tone-wine': wine, '--tone-wine-s': mix(wine, WHITE, 0.86),
     // The roles as the cards drawn on white use them (contacts, place page, quick calls, opening hours, list badges):
-    // exactly the role. Separate tokens only because older layouts and guides with their own colours change the roles
-    // but not these cards (app.css :root).
+    // exactly the role. Separate tokens only because guides whose own css sets colours change the roles but not these
+    // cards (app.css :root).
     '--ink-card': ink, '--muted-card': muted, '--line-card': line, '--paper-card': paper,
     '--deep-card': deep, '--strong-card': strong, '--fresh-card': fresh, '--light-card': light,
   };

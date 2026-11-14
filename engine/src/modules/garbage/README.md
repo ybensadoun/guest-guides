@@ -63,7 +63,7 @@ On Home, one wide widget in three states:
 | The page | `page.js` | Yes |
 | The Home widget | `widget.js` | Yes |
 | What Home and the section view call | `index.js`, listed in `../index.js` | Yes |
-| Its styles | `engine/src/styles/app.css` (classes starting `.g`, `.gt-tonight`, `.gt[data-k="garbage"]`, colours `--w-*`) and the four old layouts in `styles/presets/` | Not yet: they move when the one tile system (plan, proposal 4) rewrites the tiles, so the look is touched once |
+| Its styles | `engine/src/styles/app.css` (classes starting `.g`, `.gt-tonight`, `.gt[data-k="garbage"]`, colours `--w-*`) | Not yet: they move when the one tile system (plan, proposal 4) rewrites the tiles, so the look is touched once |
 | Its words | `engine/src/i18n/<lang>.json`, keys starting `g` (`gTonight`, `gWeek`, ...) and `garbage` | Not yet |
 | From the host's answers to the file | `engine/scripts/generate-site.py` (the rubbish part), `engine/scripts/garbage-defaults.json` | Not yet |
 | The maker's step and its preview | `onboarding-site/src/src.html` (the fields `rubbish...`), `start.js`, `editor.js`, `preview.js` | Not yet |

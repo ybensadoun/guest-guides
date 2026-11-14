@@ -300,7 +300,6 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .wp b{font-size:13px;line-height:1.2;text-align:center;font-weight:600}
 .wp-on{position:absolute;z-index:1;right:6px;top:6px;width:18px;height:18px;border-radius:50%;background:var(--ink);color:#fff;display:none;align-items:center;justify-content:center}
 .wp input:checked~.wp-on{display:flex}.wp-on svg{width:11px;height:11px}
-.wp-old{margin:10px 0 0}
 #cm_worlds > .wps{margin-bottom:12px}   /* the editor: room between the names and Fine-tune each colour */
 @media(max-width:700px){.wps{overflow-x:auto;scroll-snap-type:x proximity;margin-right:-16px;padding:3px 16px 6px 3px;margin-left:-3px}.wp{flex:0 0 92px;scroll-snap-align:start}}
 .lk-logo{display:flex;align-items:center;gap:10px;flex-wrap:wrap}

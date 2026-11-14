@@ -14,4 +14,4 @@ const i18n = Object.fromEntries(dir('i18n').map(f => [f.replace(/\.json$/, ''), 
 const priv = Object.fromEntries(dir('private').map(f => [f.replace(/\.json$/, ''), json(resolve(SD, 'private', f))]));
 const css = existsSync(resolve(SD, 'theme.css')) ? readFileSync(resolve(SD, 'theme.css'), 'utf8') : '';
 const { onboarding, ...siteOut } = site;
-process.stdout.write(JSON.stringify({ content: { site: siteOut, files, private: priv, i18n, assetBase }, theme: { css, preset: site.theme.preset, fonts: site.theme.fonts || [], ...(site.theme.world ? { world: site.theme.world } : {}) } }));
+process.stdout.write(JSON.stringify({ content: { site: siteOut, files, private: priv, i18n, assetBase }, theme: { css, fonts: site.theme.fonts || [], ...(site.theme.world ? { world: site.theme.world } : {}) } }));

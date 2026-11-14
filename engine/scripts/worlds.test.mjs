@@ -111,14 +111,15 @@ test('every token a world sets exists in app.css', () => {
 });
 
 // Bauhaus summer is today's look: every token it gives is app.css's own value, strong #D52B1E among them (13 Nov 2026,
-// once strong and fresh are fitted against white only). Its fonts are the bauhaus preset's (presets.json).
+// once strong and fresh are fitted against white only). Its fonts are app.css's Jost, the fonts of a guide with no world.
 test('Bauhaus: the world is today\'s app.css', () => {
   const comp = worldTokens(WORLDS.bauhaus), out = [];
   for (const [k, v] of Object.entries(comp)) { const now = val(k); if (!now || now.toUpperCase() !== v.toUpperCase()) out.push(`${k} ${now} -> ${v}`); }
   assert.deepEqual(out, []);
   assert.equal(comp['--red'], '#D52B1E');
   assert.deepEqual(worldTokens(BAUHAUS), Object.fromEntries(Object.entries(comp).filter(([k]) => !['--display', '--font'].includes(k))));
-  assert.deepEqual(WORLDS.bauhaus.fonts, JSON.parse(readFileSync(new URL('../src/presets.json', import.meta.url), 'utf8')).fonts.bauhaus);
+  assert.deepEqual(WORLDS.bauhaus.fonts, ['jost/400.css', 'jost/500.css', 'jost/600.css', 'jost/700.css']);
+  assert.match(val('--display'), /^"Jost"/); assert.match(val('--font'), /^"Jost"/);
 });
 // Its hand-set tints against what the formulas give from its roles: reported, so a change of formula can be judged.
 test('Bauhaus: the hand-set tints against the formulas (report)', t => {

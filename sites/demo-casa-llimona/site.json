@@ -21,7 +21,6 @@
     "map": true
   },
   "theme": {
-    "preset": "bauhaus",
     "fonts": ["outfit/400.css", "outfit/500.css", "outfit/600.css", "outfit/700.css"],
     "paper": "#F6F3EA",
     "manifestBackground": "#F6F3EA",

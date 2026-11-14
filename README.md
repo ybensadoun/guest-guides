@@ -66,19 +66,9 @@ Needs Node 20+. Run `npm install` once in this folder.
 | `theme.fonts` | `@fontsource` files to bundle (installed: jost, outfit, geist, instrument-serif) |
 | `theme.paper`, `manifestBackground`, `manifestTheme`, `darkMode` | browser colours and the dark-mode switch |
 
-## Layout presets
+## The look
 
-`site.json` → `theme.preset` changes the structure of the look, not just colours. Each look brings its own fonts (`engine/src/presets.json`, loaded on top of the site's own).
-
-| Preset | Name in the editor | Feel | Home sections |
-|---|---|---|---|
-| `bauhaus` | Big colour tiles | bold colour blocks and shapes (Ca La Kimberly; the engine's base `app.css`) | colour tiles, mosaic |
-| `soft` | Soft rounded cards | its own pastels (powder blue, butter, blush, lilac, peach, mint), soft shadows | pastel tiles, a crisp circle in the corner |
-| `minimal` | Clean and calm | black on white, one accent, thin lines (Geist titles, Jost text) | outlined two-column grid |
-| `mediterranean` | Mediterranean | whitewash and cobalt, Greek islands and the south of Spain (DM Serif Display, Outfit) | white tiles with a cobalt frame and solid cobalt ones, arched tops with an azulejo keystone, the cover as an arched window |
-| `rural` | Rural | wood, moss and warm earth (Fraunces, Nunito) | moss, wheat, rust, bark, honey and forest tiles, a leaf in the corner |
-
-Presets live in `engine/src/styles/presets/<name>.css`; the site's `theme.css` sits on top. Soft, Mediterranean and Rural set their tile colours per section, so a site's own palette changes the accents, not the tiles. The photo-led `editorial` look was dropped on 28 Oct 2026 (an old `editorial` answer becomes `minimal`).
+Every guide has the engine's base look (`app.css`: Ca La Kimberly's tiles) in a colour world: `site.json` → `theme.world`, one of the six of `engine/src/worlds.js` (bauhaus, sea, country, tropical, night, stone) or a world with colours of its own (`{ "base": ..., "deep": "#RRGGBB", ... }`); without one, the guide has the base look's own colours. The world brings its fonts (Bauhaus's without one), then `theme.fonts`. The four other layouts (`theme.preset` soft, minimal, mediterranean, rural) were removed on 14 Nov 2026: a site.json naming one stops the build.
 
 ## Modules
 
@@ -92,7 +82,7 @@ The host fills in the Porta onboarding page. Then:
 
 1. Export the submission (host document, uploads) into a folder.
 2. `python3 engine/scripts/generate-site.py <folder> --slug <slug> --lat <lat> --lng <lng> --src en`
-   writes site.json, theme.css (palette from the inspiration images, preset from the mood or the images), photos by room,
+   writes site.json (with the colour world the host picked, `answers.world`), theme.css, photos by room,
    logo and icons, house guide, arrival, extras, quick calls, sections, and `docs/research-todo.md`.
 3. Research the listed modules into `content/` (markets, eat, things to do, essentials, emergency...).
 4. Translate: fill `--translations` with the strings in `docs/untranslated.json` and run the script again.

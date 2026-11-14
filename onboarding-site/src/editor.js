@@ -762,7 +762,7 @@ function cmLook(c) {
   const th = CM.g.theme, css = th.css || '', blk = edBlockOf(css), h = (c.files || {}).house || {}, s = c.site || {};
   const fam = n => { const x = (edCssVar(blk, n) || edCssVar(css, n)).match(/"([^"]+)"/); return x ? x[1] : ''; };
   const dispSel = (ED_FONTS.find(f => f[1] === fam('--display')) || [])[0] || '', bodySel = (ED_FONTS.find(f => f[1] === fam('--font')) || [])[0] || '';
-  const pics = cmPhotos(c), busy = !!CM.artJob, n = i => `<span class="cm-n">${i}</span>`, tok = worldTok(edWorldNow(c)), sel = edWorldSel(c);
+  const pics = cmPhotos(c), busy = !!CM.artJob, n = i => `<span class="cm-n">${i}</span>`, tok = worldTok(edWorldNow(c));
   const fonts = (name, kind, sel) => `<div class="cm-fontlist" role="radiogroup" aria-label="${kind === 'display' ? 'Font for titles' : 'Font for text'}">${[['', 'Its own'], ...ED_FONTS].map(([id, nm]) => `<label class="chip"><input type="radio" name="${name}" data-design="${kind}" value="${id}"${sel === id ? ' checked' : ''}><span${id ? ` style="font-family:'${nm}',system-ui"` : ''}>${esc(nm)}</span></label>`).join('')}</div>`;
   edFontsLoad();
   return `<div class="f full"><span class="lab">${n(1)}Your logo</span><p class="hint">Optional. It shows on the welcome card and becomes the icon on guests’ phones. Without one, the guide shows no logo.</p><div class="cm-row cm-logo">${s.logo ? `<img src="${esc(edImg(s.logo))}" alt="Your logo">` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="site/logo" data-kind="logo">${s.logo ? 'Change the logo' : 'Add a logo'}</label>${s.logo ? '<button class="btn small" type="button" data-logodel>Remove</button>' : ''}</div></div>
@@ -776,7 +776,7 @@ function cmLook(c) {
         ${CM.artRes ? `<figure class="cm-artres"><img src="${esc(CM.artRes.url)}" alt="Your artistic cover"><figcaption class="cm-row"><button class="btn small primary" type="button" data-artuse>Use this cover</button><button class="btn small" type="button" data-art="again"${busy ? ' disabled' : ''}>Try again</button></figcaption></figure>` : ''}
         ${CM.artErr ? `<p class="hint cm-err">${esc(CM.artErr)}</p>` : ''}</div>` : ''}</div>
     <div class="f full" id="cm_worlds"><span class="lab" id="l_world">${n(3)}Colours</span><p class="hint">Each has its own colours and title font. Tap one to see your guide in it.</p>
-      ${edWorldsRow(c)}${sel ? '' : '<p class="hint wp-old">This guide uses an older layout. Pick its colours here to move it to the new look.</p>'}
+      ${edWorldsRow(c)}
       <details class="cm-more" data-open="look-colours"${CM.open.has('look-colours') ? ' open' : ''}><summary>Fine-tune each colour</summary><div class="cm-colors">${ED_ROLES.map(([r, v, l]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="role" data-role="${r}" value="${tok[v].toLowerCase()}"></label>`).join('')}</div></details></div>
     <details class="cm-more" data-open="look-fonts"${CM.open.has('look-fonts') ? ' open' : ''}><summary>Fonts <small>Optional: each set of colours comes with its own</small></summary>
       <span class="lab">Titles</span>${fonts('cfd', 'display', dispSel)}<span class="lab">Text</span>${fonts('cfb', 'body', bodySel)}</details>`;
@@ -785,12 +785,11 @@ function cmLook(c) {
 function edWorldNow(c = edC()) { const th = CM.g.theme || {}, w = th.world || ((c.site || {}).theme || {}).world; return WK.worldOf(w) ? w : 'bauhaus'; }
 // The phone selected when the step opens: the picture the colours came from (theme.worldFrom), else the guide's world (a
 // world with colours of its own: the world it is made from), else, for a guide with no world yet, Bauhaus (or the picture
-// an older "Colours: from my cover / logo" named); a guide on another old layout: none, and a line says so.
+// an older "Colours: from my cover / logo" named). An old layout its row may still name (theme.preset) is not read.
 function edWorldSel(c = edC()) {
   const th = CM.g.theme || {}, st = (c.site || {}).theme || {}, w = th.world || st.world;
   if ((th.worldFrom === 'cover' || th.worldFrom === 'logo') && edPicOf(th.worldFrom)) return th.worldFrom;
   if (WK.worldOf(w)) return worldBase(w);
-  if ((th.preset || st.preset || 'bauhaus') !== 'bauhaus') return null;
   if ((th.colorsFrom === 'cover' || th.colorsFrom === 'logo') && edPicOf(th.colorsFrom) && edPicWorldNow(th.colorsFrom) !== null) return th.colorsFrom;
   return 'bauhaus';
 }
@@ -807,8 +806,8 @@ function edWorldsRow(c = edC()) {
 }
 // A picture's colours arrived: the row shows them (only the row: nothing else on the step moves).
 function edWorldArrived() { if (route() === 'look') wpsSwap(edWorldsRow()); }
-// A phone picked: the guide takes that world, with Ca La Kimberly's tiles (preset bauhaus) and without the colours an older
-// layout or "from my picture" wrote into its css; its paper and main colour go to the phone's theme colours (site.theme).
+// A phone picked: the guide takes that world, without the colours an older layout or "from my picture" wrote into its
+// css; its paper and main colour go to the phone's theme colours (site.theme).
 // The fonts picked by hand in Fonts stay.
 async function edWorldPick(id) {
   if (id === 'cover' || id === 'logo') { const w = await edPicWorld(id); return w ? edWorldApply(w, id) : edWorldApply('bauhaus'); }
@@ -817,9 +816,9 @@ async function edWorldPick(id) {
 function edWorldApply(w, from) {
   const th = CM.g.theme = CM.g.theme || {}, site = edC().site = edC().site || {}, t = worldTok(w);
   th.world = w; if (from) th.worldFrom = from; else delete th.worldFrom;
-  th.preset = 'bauhaus'; delete th.colorsFrom;
+  delete th.preset; delete th.colorsFrom;
   th.css = (th.css || '').replace(ED_COLOR_VARS, '');
-  site.theme = { ...(site.theme || {}), preset: 'bauhaus', world: w, paper: t['--paper'], manifestBackground: t['--paper'], manifestTheme: t['--blue'] };
+  site.theme = { ...(site.theme || {}), world: w, paper: t['--paper'], manifestBackground: t['--paper'], manifestTheme: t['--blue'] }; delete site.theme.preset;
   cmQueue(); render(); setTimeout(() => wpsInView(true));
 }
 // The cover picture or the logo changed while the guide's colours come from it: read again from the new picture.

@@ -6,7 +6,7 @@ One engine, one folder per site. **Only ca-la-kimberly is published.** Everythin
 |---|---|---|
 | `ca-la-kimberly` | Our real Airbnb guest guide, site #1. Its `site.json` and `content/sections.json` are the reference for which sections a guide has | https://ca-la-kimberly.netlify.app (built by Netlify from GitHub: commit on main, the user clicks Push origin) |
 | `demo-casa-llimona` | Early dummy site (invented, EN/ES) that proved a guide is only data | no |
-| `torre-de-campos` | Test 2, 11 Oct 2026: a real public Airbnb listing taken through onboarding as a pretend host. Own designed look, host-supplied rubbish and restaurants, placeholder photos. Never publish (someone else's listing) | no |
+| `torre-de-campos` | Test 2, 11 Oct 2026: a real public Airbnb listing taken through onboarding as a pretend host. In the colour world Stone since 14 Nov 2026 (its own designed look was for a layout that is gone), host-supplied rubbish and restaurants, placeholder photos. Never publish (someone else's listing) | no |
 
 Other things that are published: the host onboarding at https://porta-guides.netlify.app (folder `onboarding-site/`), and the day-rental site (not launched).
 

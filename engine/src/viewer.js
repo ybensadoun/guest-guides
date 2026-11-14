@@ -2,18 +2,12 @@
 // Same app as a built guide; only the data source differs (see site-data.js).
 import './styles/app.css';
 import './styles/map.css';
-import soft from './styles/presets/soft.css?url';
-import minimal from './styles/presets/minimal.css?url';
-import mediterranean from './styles/presets/mediterranean.css?url';
-import rural from './styles/presets/rural.css?url';
-import LOOKS from './presets.json';
-import { worldOf, worldCss } from './worlds.js';
+import { WORLDS, worldOf, worldCss } from './worlds.js';
 
 // A guide's own address (ca-la-kimberly.netlify.app) is the same viewer built for one guide, served from the root:
 // GUIDE_SLUG=<slug> at build time (engine/vite.viewer.config.js). Otherwise the guide comes from the path /g/<slug>.
 const FIXED = import.meta.env.VITE_GUIDE_SLUG || '';
 const DB = { url: 'https://dmoxszfwulolqkgxtxcp.supabase.co', key: 'sb_publishable_4esKE09oxNusDwlEPNdeWg_sUroV5Kr' };   // public values
-const PRESET_CSS = { soft, minimal, mediterranean, rural };
 const V = () => document.getElementById('view');
 
 function say(title, text) {
@@ -104,13 +98,12 @@ function goOffline(site, files, base, slug, paper, icons = {}) {
   const base = c.assetBase || '';
   const site = withAssets(c.site, base), files = withAssets(c.files || {}, base);
   // Its colour world: the address's (?world), else the guide's own (theme.world); an id this viewer does not know is
-  // none. A world goes with the base look only: with a world, a preset the guide also names is not loaded (the builds
-  // refuse the pair, engine/site.config.js; here the world wins, so the guide still opens).
+  // none, and the guide shows in the base look (app.css). An old layout its row may still name (theme.preset: the four
+  // were removed on 14 Nov 2026) is ignored.
   const world = worldOf(ASKED) || worldOf(th.world || (site.theme || {}).world);
-  const preset = world ? 'bauhaus' : th.preset || (site.theme || {}).preset;
-  // The fonts this guide shows: the world's or the look's own, then the guide's (loaded from the CDN below, named on the
-  // credits page).
-  const fonts = [...new Set([...((world && world.fonts) || LOOKS.fonts[preset] || []), ...(th.fonts || (site.theme || {}).fonts || [])])];
+  // The fonts this guide shows: the world's (else the base look's, Bauhaus's), then the guide's own (loaded from the CDN
+  // below, named on the credits page).
+  const fonts = [...new Set([...(world || WORLDS.bauhaus).fonts, ...(th.fonts || (site.theme || {}).fonts || [])])];
   window.__GUIDE__ = { site, files, private: c.private || {}, i18n: c.i18n || {}, fonts };
   window.__VENDOR_BASE = import.meta.env.BASE_URL + 'vendor/maplibre/';
 
@@ -124,13 +117,12 @@ function goOffline(site, files, base, slug, paper, icons = {}) {
   const icon = k => { const v = (c.site.icons || {})[k]; return v ? (/^https?:/.test(v) ? v : base + v) : base + ICON_FILE[k]; };
   const ic = document.querySelector('link[rel="icon"]'); if (ic && c.favicon !== false) ic.href = icon('favicon');
 
-  // Fonts come from the CDN (the viewer does not bundle every font): the world's or the look's own, then this guide's;
-  // then the look's styles, the world's tokens, then this guide's own theme.
+  // Fonts come from the CDN (the viewer does not bundle every font): the world's (else the base look's), then this
+  // guide's; then the world's tokens, then this guide's own theme.
   for (const f of fonts) {
     const [fam, file] = f.replace(/^@fontsource\//, '').split('/');
     const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = `https://cdn.jsdelivr.net/npm/@fontsource/${fam}@5/${file}`; document.head.appendChild(l);
   }
-  if (PRESET_CSS[preset]) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = PRESET_CSS[preset]; document.head.appendChild(l); }
   if (world) { const s = document.createElement('style'); s.id = 'guideWorld'; s.textContent = worldCss(world); document.head.appendChild(s); }
   if (th.css) { const s = document.createElement('style'); s.id = 'guideTheme'; s.textContent = th.css; document.head.appendChild(s); }
 

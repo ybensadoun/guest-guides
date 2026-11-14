@@ -12,11 +12,6 @@ export const siteDir = slug => resolve(SITES, slug);
 export const listSites = () => readdirSync(SITES, { withFileTypes: true })
   .filter(e => e.isDirectory() && !e.name.startsWith('_') && existsSync(resolve(SITES, e.name, 'site.json'))).map(e => e.name);
 
-// Layout presets (the guide looks) and their fonts: src/presets.json. bauhaus is app.css itself; the others live in
-// src/styles/presets/<name>.css.
-const P = JSON.parse(readFileSync(resolve(ENGINE, 'src/presets.json'), 'utf8'));
-export const PRESETS = P.presets, PRESET_FONTS = P.fonts;
-
 // Languages the engine has UI strings for. A site picks a subset in site.json.
 export const ENGINE_LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
 
@@ -32,11 +27,19 @@ export function readSite(slug) {
   return s;
 }
 
+// Every guide has the base look (app.css: Ca La Kimberly's tiles) in a colour world. The four other layouts (soft,
+// minimal, mediterranean, rural) were removed on 14 Nov 2026: theme.preset absent or "bauhaus" is accepted and ignored,
+// any other value stops the build (sitePlugin).
+export function checkLook(site) {
+  const p = (site.theme || {}).preset;
+  if (p != null && p !== 'bauhaus') throw new Error(`${site.slug}: theme.preset "${p}" no longer exists: the layouts were removed on 14 Nov 2026 and a guide now picks a colour world (theme.world: ${Object.keys(WORLDS).join(', ')}).`);
+}
+
 // The colour world a build shows (src/worlds.js), or null: theme.world in site.json, or WORLD=<id> in the environment,
 // which builds the site as if its site.json said so (for the checks and pictures of each world; no site is changed).
-// A world goes with the base look only, so a world and another preset is an error, as is an unknown world.
+// An unknown world is an error.
 export function siteWorld(site) {
-  const env = process.env.WORLD, from = env ? 'WORLD' : 'theme.world', preset = site.theme.preset || 'bauhaus';
+  const env = process.env.WORLD, from = env ? 'WORLD' : 'theme.world';
   let asked = env || site.theme.world;
   if (!asked) return null;
   // A world with colours of its own ("From your picture"): an object in site.json, the same as JSON in WORLD.
@@ -44,15 +47,14 @@ export function siteWorld(site) {
   const name = typeof asked === 'string' ? asked : JSON.stringify(asked);
   if (!worldOf(asked)) throw new Error(`${site.slug}: unknown colour world ${name} (${from}). Worlds: ${Object.keys(WORLDS).join(', ')}, or { "base": one of them, and deep, strong, fresh, light, warm as #RRGGBB }`);
   if (typeof asked === 'object') for (const [k, v] of Object.entries(asked)) if (k !== 'base' && !(['deep', 'strong', 'fresh', 'light', 'warm'].includes(k) && /^#[0-9a-f]{6}$/i.test(String(v)))) throw new Error(`${site.slug}: colour world ${name} (${from}): "${k}" must be one of deep, strong, fresh, light, warm, as #RRGGBB`);
-  if (preset !== 'bauhaus') throw new Error(`${site.slug}: the colour world ${name} (${from}) goes with the base look only, not with the preset "${preset}". Drop one of the two.`);
   return worldOf(asked);
 }
 
-// The fonts a site bundles: its look's (its world's, else its preset's), then its own. "fonts": [] bundles none (the
+// The fonts a site bundles: its world's (else the base look's, Bauhaus's), then its own. "fonts": [] bundles none (the
 // shared viewer loads each guide's from the CDN).
 export function siteFonts(site, world = siteWorld(site)) {
-  const preset = site.theme.preset || 'bauhaus', own = site.theme.fonts;
-  return Array.isArray(own) && !own.length ? [] : [...new Set([...(world ? world.fonts : PRESET_FONTS[preset] || []), ...(own || [])])];
+  const own = site.theme.fonts;
+  return Array.isArray(own) && !own.length ? [] : [...new Set([...(world || WORLDS.bauhaus).fonts, ...(own || [])])];
 }
 
 const escAttr = v => String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -68,7 +70,8 @@ const escAttr = v => String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot
 // world from its row, src/viewer.js).
 export const GMAPS_PLACEHOLDER = '__GOOGLE_MAPS_BROWSER_KEY__';
 export function sitePlugin(slug, opts = {}) {
-  const site = readSite(slug), world = opts.world === false ? null : siteWorld(site);
+  const site = readSite(slug); checkLook(site);
+  const world = opts.world === false ? null : siteWorld(site);
   const vars = {
     name: site.name,
     description: site.description || site.name,
@@ -79,18 +82,13 @@ export function sitePlugin(slug, opts = {}) {
     lang: site.languages[0] || 'en',
     gmapsKey: opts.gmapsKey || ''
   };
-  const FONTS = 'virtual:site-fonts', PRESET = 'virtual:site-preset', CREDITS = 'virtual:site-credits', WORLD = 'virtual:site-world.css';
-  const preset = site.theme.preset || 'bauhaus';
-  const presetFile = resolve(ENGINE, 'src/styles/presets', preset + '.css');
-  if (preset !== 'bauhaus' && !existsSync(presetFile)) throw new Error(`Unknown theme preset "${preset}". Presets: ${PRESETS.join(', ')}`);
+  const FONTS = 'virtual:site-fonts', CREDITS = 'virtual:site-credits', WORLD = 'virtual:site-world.css';
   const fonts = siteFonts(site, world);
   return {
     name: 'guest-guide-site',
-    resolveId(id) { if (id === FONTS || id === PRESET || id === CREDITS || id === WORLD) return '\0' + id; },
+    resolveId(id) { if (id === FONTS || id === CREDITS || id === WORLD) return '\0' + id; },
     load(id) {
       if (id === '\0' + FONTS) return fonts.map(f => `import '@fontsource/${f}';`).join('\n');
-      // Bauhaus is the engine's base look (app.css), so it adds nothing. Other presets restyle on top of it.
-      if (id === '\0' + PRESET) return preset === 'bauhaus' ? '' : `import ${JSON.stringify(presetFile)};`;
       if (id === '\0' + WORLD) return world ? worldCss(world) + '\n' : '';
       if (id === '\0' + CREDITS) return `export const SITE_FONTS = ${JSON.stringify([...new Set(fonts.map(familyOf))])};\nexport const FONT_NAMES = ${JSON.stringify(Object.fromEntries(fontFamilies().map(f => [f, fontName(f)])))};`;
     },

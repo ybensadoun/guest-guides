@@ -1,9 +1,9 @@
 // The generator (engine/scripts/generate-site.py) gives a guide its colour world (engine/src/worlds.js) from the maker's
 // answers.world ('sea'..., or 'cover' / 'logo' with answers.worldOwn, the world the maker made from that picture), older
-// answers' colorsFrom, or Bauhaus summer; an old layout (mood soft, minimal, mediterranean, rural) keeps its old path,
-// byte for byte (fixtures/generate-legacy-*: what the generator of 14 Nov 2026, commit 0d3b041, wrote for those answers).
+// answers' colorsFrom, or Bauhaus summer. The old layouts (mood soft, minimal, mediterranean, rural, and --preset) were
+// removed on 14 Nov 2026: an old mood is Bauhaus summer, and --preset is an unknown argument.
 // Runs the generator on made-up answers into a site folder of its own, removed after; pictures are flat colours made
-// with Pillow. Needs python3 with Pillow and NumPy, as the worker does.   node --test 'worker/test/*.test.mjs'
+// with Pillow. Needs python3 with Pillow, as the worker does.   node --test 'worker/test/*.test.mjs'
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
@@ -15,7 +15,6 @@ import { WORLDS, worldOf, worldTokens } from '../../engine/src/worlds.js';
 import { swatches, worldFromPicture } from '../../engine/src/picture-world.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const FIX = resolve(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 const BASE = { placeName: 'Test house', town: 'Calafell', languages: ['en', 'es'] };
 let n = 0;
 
@@ -30,7 +29,7 @@ for path, mode, cols in json.loads(sys.argv[1]):
     im.save(path)`;
 
 // One generator run: answers, uploads [{ id, kind, mode, colours }], extra arguments. Gives the site's files and stdout.
-function generate(answers, uploads = [], args = [], before) {
+function generate(answers, uploads = [], args = [], before, fails = false) {
   const src = mkdtempSync(join(tmpdir(), 'gen-world-')), slug = `zz-test-world-${process.pid}-${++n}`, site = resolve(ROOT, 'sites', slug);
   try {
     mkdirSync(join(src, 'uploads')); mkdirSync(join(src, 'assets'));
@@ -43,6 +42,7 @@ function generate(answers, uploads = [], args = [], before) {
     }
     if (before) before(site);
     const r = spawnSync('python3', ['engine/scripts/generate-site.py', src, '--slug', slug, '--lat', '41.2', '--lng', '1.5', ...args], { cwd: ROOT, encoding: 'utf8', timeout: 60000 });
+    if (fails) return { status: r.status, stderr: r.stderr || '', made: existsSync(join(site, 'site.json')) };
     assert.equal(r.status, 0, (r.stderr || '').slice(-600));
     const files = Object.fromEntries(['site.json', 'theme.css', 'docs/style-brief.md'].map(f => [f, existsSync(join(site, f)) ? readFileSync(join(site, f), 'utf8') : null]));
     const read = f => files[f];
@@ -52,11 +52,14 @@ function generate(answers, uploads = [], args = [], before) {
 }
 // The world a flat picture of one colour makes, as the maker would (96 x 96, raw RGB).
 const flat = c => { const rgb = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)), b = Buffer.alloc(96 * 96 * 3); for (let i = 0; i < b.length; i += 3) b.set(rgb, i); return worldFromPicture(swatches(b, 3)); };
-// What every guide in a world has in common: the base look, the world's paper and deep, no fonts, a theme.css with no colour.
+// What every guide in a world has in common: the base look (no preset), the world's paper and deep, no fonts, a theme.css
+// with no colour, no style brief, and an onboarding block of world and palette only.
 function inWorld(g, world) {
   const t = worldTokens(worldOf(world));
   assert.deepEqual(g.site.theme.world, world);
-  assert.equal(g.site.theme.preset, 'bauhaus');
+  assert.ok(!('preset' in g.site.theme), JSON.stringify(g.site.theme));
+  assert.deepEqual(Object.keys(g.site.onboarding).sort(), ['palette', 'world']);
+  assert.ok(!/"preset"/.test(g.stdout));
   assert.equal(g.site.theme.paper, t['--paper']); assert.equal(g.site.theme.manifestBackground, t['--paper']);
   assert.equal(g.site.theme.manifestTheme, t['--blue']);
   assert.equal(g.site.theme.fonts, undefined);
@@ -108,25 +111,25 @@ test('generator: older answers with colours from the logo get the world the logo
   assert.equal(g.site.logo, 'logo-head.png');
 });
 
-test('generator: an old layout keeps the old path, byte for byte', () => {
-  const cases = {
-    'generate-legacy-rural': [{ mood: 'rural' }, []],
-    'generate-legacy-rural-brief': [{ mood: 'rural', styleBrief: 'Rustic farmhouse. Background #F4EFE6, text #2B2118, brand #4E6B3A, buttons #A3472B. Titles in Fraunces.' },
-      [{ id: 'i1', kind: 'inspiration', colours: ['#B5651D', '#6B8E23'] }, { id: 'l1', kind: 'logo', mode: 'RGBA', colours: ['#7A3E9D'] }]],
-  };
-  for (const [fix, [answers, uploads]] of Object.entries(cases)) {
-    let slug;
-    const g = generate(answers, uploads, [], s => { slug = s.split('/').pop(); });
-    const same = (got, f) => assert.equal(got.replaceAll(slug, 'SLUG'), readFileSync(join(FIX, fix, f), 'utf8'), `${fix}/${f}`);
-    same(g.read('site.json'), 'site.json'); same(g.css, 'theme.css'); same(g.read('docs/style-brief.md'), 'style-brief.md');
-    assert.equal(g.site.theme.world, undefined);
-    assert.ok(!/"world"/.test(g.stdout));
+test('generator: an old layout (answers.mood rural or soft) is no longer read: Bauhaus summer, no preset', () => {
+  for (const mood of ['rural', 'soft']) {
+    const g = generate({ mood, styleBrief: 'Rustic farmhouse. Background #F4EFE6, text #2B2118, brand #4E6B3A, buttons #A3472B. Titles in Fraunces.' },
+      [{ id: 'i1', kind: 'inspiration', colours: ['#B5651D', '#6B8E23'] }]);
+    inWorld(g, 'bauhaus');
+    assert.equal(g.site.theme.world, 'bauhaus');
+    assert.match(g.css, /colour world "bauhaus"/);
   }
 });
 
-test('generator: no world and no old layout is Bauhaus summer', () => {
+test('generator: --preset is an unknown argument now', () => {
+  const r = generate({}, [], ['--preset', 'bauhaus'], undefined, true);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /unrecognized arguments: --preset bauhaus/);
+  assert.equal(r.made, false);
+});
+
+test('generator: no world is Bauhaus summer', () => {
   for (const answers of [{}, { mood: 'bold' }, { mood: 'auto' }, { world: 'mars' }]) inWorld(generate(answers), 'bauhaus');
-  inWorld(generate({}, [], ['--preset', 'bauhaus']), 'bauhaus');
 });
 
 test('generator: a world from the maker that is not a colour world is not trusted', () => {

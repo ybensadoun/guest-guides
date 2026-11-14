@@ -3155,8 +3155,8 @@ async function gLookWorlds() {
     await p.screenshot({ path: join(SHOTS, `look-worlds-editor-${lang}-${w}.png`) });
     await p.click('#lk_world_sea', { force: true }); await settle(p, 1500);
     const d = draft(saved) || {}, th = d.theme || {}, st = ((d.content || {}).site || {}).theme || {};
-    ok(`${tag}: picking Sea writes the draft's theme.world "sea", preset bauhaus, Sea's paper in site.theme, and clears the colour tokens from the css (fonts stay)`,
-      th.world === 'sea' && th.preset === 'bauhaus' && !th.worldFrom && !('colorsFrom' in th) && st.preset === 'bauhaus' && st.world === 'sea' && st.paper === '#F3F1EA' && st.manifestBackground === '#F3F1EA' && st.manifestTheme === '#0E5A7A'
+    ok(`${tag}: picking Sea writes the draft's theme.world "sea", no preset, Sea's paper in site.theme, and clears the colour tokens from the css (fonts stay)`,
+      th.world === 'sea' && !('preset' in th) && !th.worldFrom && !('colorsFrom' in th) && !('preset' in st) && st.world === 'sea' && st.paper === '#F3F1EA' && st.manifestBackground === '#F3F1EA' && st.manifestTheme === '#0E5A7A'
       && !/--(paper|blue)\s*:/.test(th.css || '') && /--display\s*:\s*"Fraunces"/.test(th.css || '') && await checked(p) === 'sea', JSON.stringify({ world: th.world, preset: th.preset, st }));
     if (w === 1280 && lang === 'en') {
       await p.click('[data-open="look-colours"] > summary'); await settle(p, 300);
@@ -3186,13 +3186,17 @@ async function gLookWorlds() {
     ok(`look-worlds, builder, 1280 px, ${lang}: 8 phones, every label and "Welcome" fit, no word broken`, n === 8 && !clear.length, `${n} phones; ${clear.join('; ')}`);
     if (lang === 'fr') await p.screenshot({ path: join(SHOTS, 'look-worlds-builder-logo-fr-1280.png') });
     await ctx.close(); }
-  // A guide on an older layout: no phone selected, and one quiet line says what picking does.
-  { const G = { ...E, theme: { ...(E.theme || {}), preset: 'soft' }, content: { ...E.content, site: { ...E.content.site, theme: { ...(E.content.site.theme || {}), preset: 'soft' } } } }; delete G.theme.world; delete G.theme.worldFrom;
-    const { ctx, p, errors } = await open(browser, G, 1280, 860); await pictures(ctx);
+  // A guide whose row still names an old layout (removed on 14 Nov 2026): shown as any guide with no world, Bauhaus
+  // selected and no line about it; a pick writes the world and drops the old preset, in the theme and in site.theme.
+  { const G = { ...E, theme: { ...(E.theme || {}), preset: 'soft' }, content: { ...E.content, site: { ...E.content.site, theme: { ...(E.content.site.theme || {}), preset: 'soft' } } } }; delete G.theme.world; delete G.theme.worldFrom; delete G.content.site.theme.world;
+    const { ctx, p, errors } = await open(browser, G, 1280, 860); await pictures(ctx); const saved = saves(ctx);
     await p.goto('http://editor.test/#look'); await ready(p); await settle(p, 900);
-    const line = await p.$eval('#cm_worlds .wp-old', e => e.textContent).catch(() => '');
-    ok('look-worlds, editor: a guide on an older layout shows no phone selected, and the line saying it moves to the new look', !(await checked(p)) && /older layout/.test(line), line);
-    ok('look-worlds, editor, older layout: no page errors', !errors.length, errors.join(' | '));
+    const text = await p.$eval('#cm_worlds', e => e.textContent).catch(() => '');
+    ok('look-worlds, editor: a guide whose row names an old layout shows Bauhaus selected, and no line about an older layout', await checked(p) === 'bauhaus' && !/layout/i.test(text) && !(await p.$('#cm_worlds .wp-old')), `${await checked(p)} | ${text.slice(0, 160)}`);
+    await p.click('#lk_world_country', { force: true }); await settle(p, 1500);
+    const d = draft(saved) || {}, th = d.theme || {}, st = ((d.content || {}).site || {}).theme || {};
+    ok('look-worlds, editor, old layout: picking Country writes theme.world "country" and no preset, in the theme or in site.theme', th.world === 'country' && st.world === 'country' && !('preset' in th) && !('preset' in st) && await checked(p) === 'country', JSON.stringify({ th: { world: th.world, preset: th.preset }, st }));
+    ok('look-worlds, editor, old layout: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
 }
 async function gLayout() {
