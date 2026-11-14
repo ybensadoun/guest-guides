@@ -1,13 +1,11 @@
 // What's on, the end of Home (the frame's fixed end, ../README.md): one agenda by day, fed by the markets module
-// (modules/markets) and by Local events (views/section.js and events.js until events are a module). README.md beside this
-// file says what it shows and its rules.
+// (modules/markets) and by the events module (modules/events). README.md beside this file says what it shows and its rules.
 import { t, locale } from '../../i18n.js';
-import { SECTIONS, MODULE_ON } from '../../content.js';
+import { MODULE_ON } from '../../content.js';
 import { runsOn, statusLabel, cap, nextOpen } from '../../schedule.js';
 import { esc, title, catIcon, stHTML, distHTML } from '../../ui.js';
 import { MARKETS, todaysMarkets } from '../markets/data.js';
-import { upcoming, when, dayBadge } from '../../events.js';
-import { eventRow } from '../../views/section.js';
+import { upcoming, when, dayBadge, eventRow, EVENTS_SECTION } from '../events/index.js';
 
 // A market's times on a day, as the next two days' rows say them: "8-14", or "Morning" when only the morning is known.
 const hhmm = h => h.replace(/^0/, '');
@@ -22,7 +20,7 @@ export function widget(now = new Date()) {
   const mrow = m => `<a href="#map/m/${encodeURIComponent(m.id)}"><span class="dot" style="--cc:var(--c-${m.cat})">${catIcon(m.cat)}</span>
      <span class="nm">${esc(title(m))}<small>${esc(t('cat_' + m.cat))}</small>${distHTML(m)}</span>
      ${stHTML(statusLabel(m, now))}</a>`;
-  const evSec = SECTIONS.find(x => x.kind === 'events');
+  const evSec = EVENTS_SECTION;
   const evs = upcoming(evSec?.data?.items, now).filter(x => x.on || x.days <= 42);
   // Events expand in place with the same details as on the Local events page. Under Today, a later start shows only its
   // time and an event of today without a time shows no status (we do not know whether it is on yet).

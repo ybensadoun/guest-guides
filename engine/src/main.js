@@ -14,8 +14,7 @@ import { theme, applyTheme, cycleTheme, DARK_ENABLED } from './theme.js';
 import { renderHome } from './views/home.js';
 import { MODULES } from './modules/index.js';
 import { renderSection } from './views/section.js';
-import { renderMore, quickIcon } from './views/home.js';
-import { renderPlace } from './views/place.js';
+import { renderMore } from './views/home.js';
 import { renderCredits } from './views/credits.js';
 import { NAV_ICON } from './ui.js';
 import { watchRows, mountOpen } from './gcard.js';
@@ -145,7 +144,7 @@ function render() {
   else if (st.view === 'markets') MODULES.markets.page(V);   // the markets module's page (modules/markets)
   else if (st.view === 'section') renderSection(V, parse().id);
   else if (st.view === 'more') renderMore(V);
-  else if (st.view === 'place') renderPlace(V, parse().id, quickIcon);
+  else if (st.view === 'place') MODULES.highlight.page(V, parse().id);   // a highlight's own page (modules/highlights)
   else if (st.view === 'credits') renderCredits(V);
   // Google's hours card (gcard.js): the tile page's, and those of rows still open after a re-render, in the same frame.
   mountOpen(V);

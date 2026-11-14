@@ -1,7 +1,6 @@
 import qrcode from 'qrcode-generator';
-import { t, tx, locale } from '../i18n.js';
-import { mapItems, SECTIONS, QUICK, HOUSE, slots, SITE, MODULE_ON, quickShown, TRANSPORT_CARD, HOME_ARRANGEMENT } from '../content.js';
-import { statusLabel, closedStatus, seasonStatus } from '../schedule.js';
+import { t, tx } from '../i18n.js';
+import { mapItems, SECTIONS, HOUSE, SITE, MODULE_ON, TRANSPORT_CARD, HOME_ARRANGEMENT } from '../content.js';
 import { esc, SECTION_LOOK } from '../ui.js';
 import { MODULES } from '../modules/index.js';
 import { resolve } from '../modules/frame.js';
@@ -53,41 +52,15 @@ const THEMED_COVER = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax s
 const STAY_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M8 6l2-3h4l2 3"/><circle cx="12" cy="13" r="3.5"/></svg>';
 const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
 
-
-// Quick calls: the three numbers guests actually need day to day. One tap dials.
-// Quick tile icons, picked by the tile's "icon" (taxi, train, food, shop, pizza), else its id or the id's first part ("taxi-2").
-const QI = {
-  bus: '<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3M16 18v3"/><circle cx="8" cy="14.5" r=".8" fill="currentColor"/><circle cx="16" cy="14.5" r=".8" fill="currentColor"/>',
-  train: '<rect x="5" y="3" width="14" height="13" rx="3"/><path d="M5 10h14M9 20l-2 2M15 20l2 2M8 16l-1 4h10l-1-4"/><circle cx="9" cy="13" r=".8" fill="currentColor"/><circle cx="15" cy="13" r=".8" fill="currentColor"/>',
-  food: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-1.7 1-3 3.2-3 6v3h3v9"/>',
-  pizza: '<path d="M12 21L3.5 6.5a14 14 0 0 1 17 0z"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="14" cy="13" r="1.2" fill="currentColor"/><circle cx="12" cy="17" r="1" fill="currentColor"/>',
-  taxi: '<path d="M5 11l1.6-4.2A2 2 0 0 1 8.5 5.5h7a2 2 0 0 1 1.9 1.3L19 11"/><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M6 17v2M18 17v2M9 3h6"/><circle cx="7.5" cy="14" r="1" fill="currentColor"/><circle cx="16.5" cy="14" r="1" fill="currentColor"/>',
-  shop: '<path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 2.5c-.8.8-.8 1.7 0 2.5s.8 1.7 0 2.5M12.5 2.5c-.8.8-.8 1.7 0 2.5s.8 1.7 0 2.5" transform="translate(0 -1)"/><path d="M3 21h15"/>'
-};
-const qsvg = d => `<svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-const qKey = q => [q.icon, q.id, String(q.id || '').split('-')[0]].find(k => k && QI[k]) || 'shop';
-export const quickIcon = q => qsvg(QI[typeof q === 'string' ? qKey({ id: q }) : qKey(q)]);
-// A highlight: the white card of one place (content/quick.json, or the transport card), half or wide (modules/frame.js).
-// A card closed for the season and opening in more than 30 days is left out (content.js quickShown); its page still opens.
-const qcard = (q, size) => `<a class="qcall${size === 'wide' ? ' wide' : ''} s-${size}" data-q="${q.id}" href="${q.href || '#p/' + q.id}">
-  <span class="qi">${quickIcon(q)}</span><span class="qt"><b>${esc(tx(q.name))}</b>${q.sub ? `<small>${esc(tx(q.sub))}</small>` : ''}${qStatus(q)}</span></a>`;
-// Live status on the quick tiles that have opening hours (the bar next door, the pizzeria), or a season of ours and no
-// hours: then only "Closed · Opens 1 Jun" out of season, as on its page and in the lists.
-function qStatus(q) {
-  const m = { s: slots(q.schedule), season: q.season }, now = new Date();
-  if (!m.s.length) { const ss = seasonStatus(m, now); return ss ? `<span class="qst ${ss.cls}">${esc(ss.text)}${ss.sub ? `<small> · ${esc(ss.sub)}</small>` : ''}</span>` : ''; }
-  const s = statusLabel(m, now) || closedStatus(m, now);
-  return `<span class="qst ${s.cls}">${esc(s.text)}${s.sub ? `<small> · ${esc(s.sub)}</small>` : ''}</span>`;
-}
-
 // Tiles grouped as "At the house" and "Around the house" (Home and the "More" page), drawn from placements by the module
 // frame (modules/frame.js, modules/README.md): the guide's own content/home.json, else today's arrangement. Each tile and
-// card carries its size (s-half, s-wide, s-tall); a run of highlights is one .qcalls block, a run of tiles one .ggrid.
+// card carries its size (s-half, s-wide, s-tall); a run of highlights is one .qcalls block (each card drawn by
+// modules/highlights), a run of tiles one .ggrid.
 // Live tiles link and show live info, others say "Coming soon".
 // The guide as the frame sees it (modules/frame.js): sections, the white cards shown now, the map, the transport card.
 export const frameGuide = (now = new Date()) => ({
   sections: SECTIONS.map(({ id, kind, group, status }) => ({ id, kind, group, status })),
-  highlights: QUICK.filter(q => quickShown(q, now)).map(q => ({ id: q.id, wide: !!q.wide })),
+  highlights: MODULES.highlight.shown(now),   // the white cards shown today (modules/highlights)
   map: MODULE_ON('map'),
   transportCard: TRANSPORT_CARD,
   // What each module offers on Home (its widgets, modules/<kind>/offers.js), as the registry gives it.
@@ -118,14 +91,7 @@ function sectionGrid(now) {
     if (sec.kind === 'markets') { const x = MODULES.markets.widget(now); return tile(sec.id, t('markets'), '#markets/today', x.meta, x.live, sz(size, t('markets'), x.cls, w), x.extra); }
     if (sec.status !== 'live') return tile(sec.id, t(sec.labelKey), null, t('soon'), false, sz(size, t(sec.labelKey)));
     // A module draws its own widget (modules/index.js): Home only places it.
-    if (MODULES[sec.kind]?.widget) { const x = MODULES[sec.kind].widget(now); return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, x.meta, x.live, sz(size, t(sec.labelKey), x.cls, w), x.extra); }
-    if (sec.kind === 'events') {
-      // The next event on the tile, e.g. "Next: Santa Teresa Fair, 9 Oct".
-      const d0 = new Date(now); d0.setHours(0, 0, 0, 0);
-      const nx = (sec.data?.items || []).map(e => ({ e, o: e.dates.find(o => new Date(o.end + 'T00:00:00') >= d0) })).filter(x => x.o).sort((a, b) => a.o.start.localeCompare(b.o.start))[0];
-      const meta = nx ? t('nextEvent', { name: tx(nx.e.name), date: new Date(nx.o.start + 'T00:00:00').toLocaleDateString(locale(), { day: 'numeric', month: 'short' }) }) : '';
-      return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, meta, false, sz(size, t(sec.labelKey)));
-    }
+    if (MODULES[sec.kind]?.widget) { const x = MODULES[sec.kind].widget(now, sec); return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, x.meta, x.live, sz(size, t(sec.labelKey), x.cls, w), x.extra); }
     // Short label on the tile ("Emergencies"); the page itself keeps the full title.
     const label = t(sec.id === 'emergency' ? 'emergencyTile' : sec.labelKey);
     return tile(sec.id, label, '#s/' + sec.id, '', false, sz(size, label));
@@ -134,7 +100,7 @@ function sectionGrid(now) {
   const draw = x => x.kind === 'map' ? tile('map', t('mapTile'), '#map', t('nPlaces', { n: mapItems(now).length }), false, 'wide s-wide')
     : one(SECTIONS.find(s => s.id === x.id), x.size, x.widget);
   const group = g => R[g].map(run => run.type === 'highlights'
-    ? `<div class="qcalls">${run.items.map(x => qcard(QUICK.find(q => q.id === x.id), x.size)).join('')}</div>`
+    ? `<div class="qcalls">${run.items.map(x => MODULES.highlight.card(x.id, x.size)).join('')}</div>`
     : `<div class="ggrid${g === 'area' ? ' mosaic' : ''}">${run.items.map(draw).join('')}</div>`).join('\n   ');
   return `<h2 class="sh">${esc(t('atHouse'))}</h2>
    ${group('house')}

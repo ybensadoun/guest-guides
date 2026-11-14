@@ -6,7 +6,7 @@
 // spots rows (Eat and drink, Things to do, Nightlife), the Home quick tile page and, since 13 Nov 2026 (Yohann: Google as
 // the live backup "as we do for the rest"), the Markets page's rows for the markets held every week (street markets and
 // market halls; never a fair or a monthly market: modules/markets/plan.js WEEKLY); never events, contacts, Home's own rows or the map's
-// sheet. Everything about the card lives here; ui.js and place.js draw the slot, main.js mounts it.
+// sheet. Everything about the card lives here; ui.js and modules/highlights/page.js draw the slot, main.js mounts it.
 import { lang } from './i18n.js';
 import KINDS from './kinds.json';
 

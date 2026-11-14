@@ -2,9 +2,9 @@
 
 The end of Home: one agenda by day of what is on around the house, markets and Local events together, under the heading
 "What's on". It is not a section and has no page or tile of its own: it is the frame's fixed end (`../README.md`, rule 1),
-fed by the markets module (`../markets/`) and by Local events, which are not a module yet (`views/section.js`
-`eventRow`, `engine/src/events.js`). `widget(now)` gives its HTML; `views/home.js` puts it under the two groups. Read this
-page before changing what it shows, and write a changed rule here with its date.
+fed by the markets module (`../markets/`) and by the events module (`../events/`). `widget(now)` gives its HTML;
+`views/home.js` puts it under the two groups. Read this page before changing what it shows, and write a changed rule here
+with its date.
 
 ## The rules (as built, before the modules)
 
@@ -25,6 +25,6 @@ page before changing what it shows, and write a changed rule here with its date.
 | The agenda | `widget.js` (a market's times on a day, the rows, the three parts, the links) | Yes |
 | What Home calls | `index.js`; `views/home.js` `renderHome` | Yes |
 | Today's markets, the markets | `../markets/data.js` (`todaysMarkets`, `MARKETS`) | The markets module's |
-| The events, an event's row | `engine/src/events.js` (`upcoming`, `when`, `dayBadge`), `views/section.js` (`eventRow`) | Not yet: events are not a module |
+| The events, an event's row, the Local events section | `../events/` (`upcoming`, `when`, `dayBadge`, `eventRow`, `EVENTS_SECTION`) | The events module's |
 | Its styles | `engine/src/styles/app.css` (`.whatson`, `.wo-sec`, `.wo-day`, `.wo-more`, `.wo-links`, `.dayrow`, `.dbadge`, `.dday`, `.dbm`, `.mini`) | Not yet |
 | Its words | `engine/src/i18n/<lang>.json`: `whatsOn`, `today`, `todayOpenN`, `todayDone`, `nothingToday`, `moreMarkets`, `next2days`, `nMarkets`, `nEvent1`, `nEvents`, `comingUp`, `inDays`, `allMarkets`, `allEvents`, `morning` | Not yet |

@@ -1,7 +1,8 @@
 // The markets module's rules, with no guide in them (README.md says each rule, who decided it and when): what a market is
-// once read, which kinds Home and the page start from, which markets are held on a day, their order, which ask for Google's
-// own live line. Pure: content.js reads the guide's file with readMarkets, data.js binds the rest to the guide, and
-// engine/scripts/markets-data.test.mjs tests them. Only schedule.js's runsOn is used (the week of the month: weeks.js).
+// once read, which kinds Home and the page start from, which markets are held on a day, which ask for Google's own live
+// line. Their order, shared with the host's lists of places: engine/src/lists.js byDistance. Pure: content.js reads the
+// guide's file with readMarkets, data.js binds the rest to the guide, and engine/scripts/markets-data.test.mjs tests them.
+// Only schedule.js's runsOn is used (the week of the month: weeks.js).
 import { runsOn } from '../../schedule.js';
 
 // A guide's content/markets.json read as places, with the guide's shared readers (content.js: located for a position that
@@ -35,9 +36,3 @@ export const WEEKLY = new Set(['street', 'covered']);
 
 // The markets held on a day (a Date: its weekday, its week of the month, its season), among those keep() lets through.
 export const marketsOn = (markets, day, keep) => markets.filter(m => keep(m) && runsOn(m, day).length);
-
-// Nearest first, by road from the house or from the guest (distOf), a place with no distance known last; then by town.
-export function byDistance(list, distOf) {
-  const d = v => v == null ? 1e9 : v;   // no distance known: last
-  return list.slice().sort((a, b) => (d(distOf(a)) - d(distOf(b))) || a.town.localeCompare(b.town));
-}

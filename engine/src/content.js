@@ -1,8 +1,8 @@
 // All guest-facing content lives in sites/<site>/content/*.json and is bundled at build time,
 // so it works offline. New files are picked up automatically.
 import { SITE, FILES as files, PRIVATE } from './site-data.js';
-import { hiddenNow } from './schedule.js';
 import { readMarkets, noneFound } from './modules/markets/plan.js';
+import { readSpots, shownNow } from './modules/places/plan.js';
 const get = name => files[name];
 export { SITE };
 // Modules switched off in site.json ("modules": { "events": false }) disappear everywhere: tile, page, map pins.
@@ -45,22 +45,10 @@ export const MARKETS = MK.markets;
 
 export const SECTIONS = get('sections').sections.filter(s => MODULE_ON(s.id)).map(s => ({ ...s, data: s.kind === 'markets' ? null : locate(get(s.file || s.id)) }));
 
-// Live sections with map points (restaurants, places... and the glass container from garbage)
-// share the map with markets. Points from non-"spots" sections are utilities: shown only when zoomed in.
-export const SPOT_SECTIONS = SECTIONS.filter(s => s.status === 'live' && s.kind !== 'markets' && s.kind !== 'events' && (s.data?.items || []).length);
-export const SPOTS = SPOT_SECTIONS.flatMap(sec => (sec.data?.items || []).map(it => ({
-  ...it,
-  id: sec.id + '-' + it.id,
-  kind: 'spot',
-  section: sec.id,
-  utility: it.utility ?? sec.kind !== 'spots',
-  cat: it.cat || sec.color || sec.id,
-  km: it.km_from_house,
-  // Map pins group by town. (A spot's `group` is a list filter such as "sights" or "beach", not a place.)
-  groupKey: it.mapGroup || it.town,
-  groupSlug: slug(it.mapGroup || it.town),
-  s: slots(it.schedule)
-})));
+// Live sections with map points (restaurants, places... and the glass container from garbage) share the map with markets.
+// Points from non-"spots" sections are utilities: shown only when zoomed in. Read by the places module's rules
+// (modules/places/plan.js readSpots) and kept here because the map, the lists and rubbish's page share them.
+export const SPOTS = readSpots(SECTIONS, { slots, slug });
 
 export const MAP_CATS = [...CATS, ...new Set(SPOTS.map(s => s.cat))];
 // The local bar & shop next door (a Home quick tile) also belongs on the map, under Eat.
@@ -73,12 +61,9 @@ const QSHOP = (QUICK_FILE?.items || []).filter(q => q.id === 'shop' && q.lat && 
   groupKey: HOUSE.name, groupSlug: slug(HOUSE.name) + '-bar', s: slots(q.schedule)
 }));
 export const MAP_ITEMS = [...MARKETS.filter(m => !m.nomap), ...SPOTS.filter(s => !s.nomap), ...QSHOP];
-// Closed for the season and opening more than 30 days from now (schedule.js hiddenNow, our own season only, never Google's):
-// not shown to guests, asked at each drawing so a guide left open finds them back on the day. Markets have no season of this
-// kind (their own rows say their days). A Home tile is read as a place: its rows of hours, its season, its tags.
-export const shownNow = (m, now = new Date()) => !hiddenNow(m, now);
+// Closed for the season and opening more than 30 days from now: not shown to guests (modules/places/plan.js shownNow; a
+// Home card: modules/highlights). Markets have no season of this kind (their own rows say their days).
 export const mapItems = (now = new Date()) => MAP_ITEMS.filter(m => m.kind === 'market' || shownNow(m, now));
-export const quickShown = (q, now = new Date()) => shownNow({ ...q, s: slots(q.schedule) }, now);
 export const byId = id => MAP_ITEMS.find(m => m.id === id);
 
 export const GARBAGE = get('garbage');
@@ -86,7 +71,8 @@ export const GARBAGE = get('garbage');
 // Ratings and reviews (content/reviews.json, only when the host switched it on). Live, never curated by hand.
 export const REVIEWS = (MODULE_ON('reviews') && get('reviews')) || null;
 
-// One-tap call buttons on Home (pizza, taxi, the shop next door). Items without a phone are hidden.
+// The white cards on Home (pizza, taxi, the shop next door): content/quick.json, read once here because the map shares
+// the shop; drawn by the highlights module (modules/highlights).
 export const QUICK_ALL = QUICK_FILE?.items || [];
 // Getting around (section kind "transport", content/transport.json): taxis, then stations and stops, on their own page.
 // Its "tile" puts a one-tap tile at the end of the Home tiles (the section tile then stays off the Home grid).

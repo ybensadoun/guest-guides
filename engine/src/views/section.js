@@ -1,21 +1,17 @@
 import { t, tx, locale } from '../i18n.js';
-import { SECTIONS, SPOTS, slots, shownNow, quickShown } from '../content.js';
-import { hoursText, statusLabel, nextOpenText, closedStatus, runsOn, offSeason } from '../schedule.js';
-import { esc, ICON, row, card, SECTION_LOOK, stHTML } from '../ui.js';
-import { sorted } from '../modules/markets/data.js';
-import { sortRow } from '../modules/markets/page.js';
-import { overviewMap } from './map.js';
-import { st } from '../state.js';
-import { QUICK } from '../content.js';
-import { quickIcon } from './home.js';
+import { SECTIONS, slots, QUICK } from '../content.js';
+import { hoursText, statusLabel, closedStatus } from '../schedule.js';
+import { esc, ICON, SECTION_LOOK, stHTML } from '../ui.js';
 import { MODULES } from '../modules/index.js';
+import { icon as quickIcon } from '../modules/highlights/index.js';
 import { renderTransport } from './place.js';
-import { dateRange, upcoming, when } from '../events.js';
 import { HOUSE, MODULE_ON, SITE, REVIEWS } from '../content.js';
-import GROUPS_FILE from '../groups.json';
-const GROUPS = GROUPS_FILE.groups;
 
 const GI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+// The kinds of event, their icons and colours, drawn by the events module (modules/events/row.js). Kept here, written
+// as they are, because the maker's build (onboarding-site/src/build.py), its checks and the worker's test of event kinds
+// read them as text in this file, and content/events.json's _doc points here.
+export { EVENT_ICON, EVENT_TONE };
 const EVENT_TONE = { castells: 'var(--tone-red)', festa: 'var(--tone-orange)', carnival: 'var(--tone-green)', parade: 'var(--tone-blue)', food: 'var(--tone-wine)', fair: 'var(--tone-taxi)', film: 'var(--ink)', music: 'var(--tone-wine)', historical: 'var(--ink)', tradition: 'var(--tone-blue)', sports: 'var(--tone-red)', theatre: 'var(--tone-green)', art: 'var(--tone-orange)', kids: 'var(--tone-wine)', christmas: 'var(--tone-red)', religious: 'var(--tone-wine)', fireworks: 'var(--tone-blue)', flowers: 'var(--tone-green)' };
 const EVENT_ICON = {
   castells: GI('<circle cx="12" cy="3.5" r="1.5"/><circle cx="9" cy="8" r="1.5"/><circle cx="15" cy="8" r="1.5"/><circle cx="6" cy="13" r="1.5"/><circle cx="12" cy="13" r="1.5"/><circle cx="18" cy="13" r="1.5"/><path d="M4 21v-3a2 2 0 0 1 4 0v3M10 21v-3a2 2 0 0 1 4 0v3M16 21v-3a2 2 0 0 1 4 0v3"/>'),
@@ -57,24 +53,6 @@ const GUIDE_ICON = {
 
 const PHONE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg>';
 
-// Generic page for future sections: "spots" (restaurants, places...) or "info" (house rules...).
-// One event as an expandable row (Local events page and Home "What's on"): what happens, then Maps and website.
-// opts.dot replaces the type icon (Home uses a date badge), opts.right replaces the status on the right.
-export function eventRow(e, o, st, opts = {}) {
-  return `<details class="mrow" data-id="${esc(e.id)}" style="--cc:${EVENT_TONE[e.type] || 'var(--tone-blue)'}"><summary>
-        <span class="dot${opts.dot ? ' dbadge-wrap' : ''}">${opts.dot || EVENT_ICON[e.type] || EVENT_ICON.festa}</span>
-        <span class="nm">${esc(tx(e.name))}<small>${esc(e.town)} · ${esc(dateRange(o))}</small></span>
-        <span class="rt">${opts.right ?? (st && (st.on || st.at || st.today) ? `<span class="st ${st.on ? 'open' : 'plain'}">${esc(when(st))}</span>` : o.status === 'expected' ? `<span class="st plain">${esc(t('expected'))}</span>` : '')}<span class="chev" aria-hidden="true"></span></span></summary>
-        <div class="mbody">
-          <div class="note">${esc(tx(e.description))}</div>
-          ${o.status === 'expected' ? `<p class="hnote">${esc(t('expectedNote'))}</p>` : ''}
-          <div class="actions">
-            <a class="btn primary" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.venue + ', ' + e.town)}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>
-            ${e.url ? `<a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">${esc(t('website'))}</a>` : ''}
-          </div>
-        </div></details>`;
-}
-
 // A rating the way each language writes it (4.91, 4,91).
 const starsTxt = n => n.toLocaleString(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -95,11 +73,12 @@ function reviewsBlock(fallback) {
   </section>`;
 }
 
+// A section's page (#s/<id>). A module draws its own (modules/index.js: rubbish, markets, the host's lists of places, Local
+// events); the others are drawn here: Getting around, a section still to come, emergencies, the house, the house guide.
 export function renderSection(V, id) {
-  const prevF = V.dataset.secf;
   const sec = SECTIONS.find(s => s.id === id);
   if (!sec) { location.replace('#home'); return; }
-  if (MODULES[sec.kind]?.page && sec.status === 'live') { MODULES[sec.kind].page(V); return; }   // a module draws its own page
+  if (MODULES[sec.kind]?.page && sec.status === 'live') { MODULES[sec.kind].page(V, sec); return; }   // a module draws its own page
   if (sec.kind === 'transport' && sec.status === 'live' && sec.data) { const T = sec.data; renderTransport(V, { ...T, id: sec.id, title: t(sec.labelKey), tileIcon: QUICK.find(q => q.id === sec.id)?.icon }, quickIcon); return; }
   let body;
   if (sec.status !== 'live') {
@@ -148,70 +127,7 @@ export function renderSection(V, id) {
       ${reviewsBlock(rate)}
       ${h.url ? `<div class="actions"><a class="btn primary" href="${esc(h.url)}" target="_blank" rel="noopener">${esc(t('bookAirbnb'))}</a>${h.photosUrl ? `<a class="btn" href="${esc(h.photosUrl)}" target="_blank" rel="noopener">${esc(t('allPhotosAirbnb'))}</a>` : ''}</div>` : ''}`;
   }
-  else if (sec.kind === 'events') {
-    // Local events: next date of each, soonest first, grouped by month. Past dates (and today's finished ones) drop off.
-    const fmt = (d, o) => d.toLocaleDateString(locale(), o);
-    let month = '';
-    body = `<div class="mlist events">${upcoming(sec.data?.items).map(x => {
-      const m = fmt(new Date(x.o.start + 'T00:00:00'), { month: 'long', year: 'numeric' });
-      const head = m !== month ? `<h3 class="evm">${esc(m.charAt(0).toUpperCase() + m.slice(1))}</h3>` : '';
-      month = m;
-      return head + eventRow(x.e, x.o, x);
-    }).join('')}</div>`;
-  }
-  else if (sec.kind === 'spots') {
-    // Same pattern as Markets: an overview map, then rows ranked by distance (from the house or from you). A place with no
-    // hours of ours shows Google's card when its row opens (gcard: true, engine/src/gcard.js).
-    // A place closed for the season and opening in more than 30 days is not shown (content.js shownNow): the counts, the
-    // chips, the filters and the overview map follow, since they all start from this list.
-    const all = SPOTS.filter(s => s.section === id && shownNow(s));
-    // Quick filters when items have a "group" (What to do: Kids & fun, Beach, Sights & towns).
-    const groups = [...new Set(all.map(s => s.group).filter(g => g in GROUPS))];   // only groups with a label (engine/src/groups.json)
-    const gsel = groups.includes(st.sgroup[id]) ? st.sgroup[id] : 'all';
-    // Open now first, then places opening later today, then the rest; each block by distance.
-    // 3: no hours of ours (on purpose for many: Google's live line shows when the row opens, gcard.js), so not known. Open now
-    // and Opens later today keep them after the ones we know, under a quiet heading, so a guest never loses the host's picks.
-    const now0 = new Date(), nmin = now0.getHours() * 60 + now0.getMinutes();
-    const tm = h => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
-    // A season of ours and no hours (schedule.js seasonOnly): closed out of season, not known in season.
-    const stateOf = s => {
-      if (s.always) return 0;
-      if (!(s.s && s.s.length)) return offSeason(s, now0) ? 2 : 3;
-      const lab = statusLabel(s, now0);
-      if (lab && lab.cls === 'open') return 0;
-      return runsOn(s, now0).some(x => tm(x.o) > nmin) ? 1 : 2;
-    };
-    const timed = all.some(s => s.s && s.s.length);
-    let ofsel = timed && ['now', 'later'].includes(st.openf[id]) ? st.openf[id] : 'any';
-    const byGroup = gsel === 'all' ? all : all.filter(s => s.group === gsel);
-    
-    // Feature filters (restaurants, things to do): only the ones some place has; several can be on at once.
-    const FEATS = { menuDia: s => (s.setMenus || []).some(x => x.kind === 'menuDia'), tasting: s => (s.setMenus || []).some(x => /^tasting/.test(x.kind)), dogs: s => (s.tags || []).includes('dogs'), veggie: s => (s.tags || []).includes('veggie'), kidsfun: s => (s.tags || []).includes('kidsfun') };
-    const FEAT_SECS = { restaurants: ['menuDia', 'tasting', 'dogs', 'veggie'], todo: ['kidsfun', 'dogs'] };
-    const feats = (FEAT_SECS[id] || []).filter(k => all.some(FEATS[k]));
-    const fsel = (st.featf[id] || []).filter(k => feats.includes(k));
-    const byFeat = byGroup.filter(s => fsel.every(k => FEATS[k](s)));
-    const nNow = byFeat.filter(s => stateOf(s) === 0).length, nLater = byFeat.filter(s => stateOf(s) === 1).length;   // what we know only
-    // A filter with nothing in it is hidden, and falls back to Any time if it was selected.
-    if ((ofsel === 'now' && !nNow) || (ofsel === 'later' && !nLater)) ofsel = 'any';
-    const filtered = ofsel === 'any' ? byFeat : byFeat.filter(s => [ofsel === 'now' ? 0 : 1, 3].includes(stateOf(s)));
-    // The guest's sort inside each block; Any time keeps the not known among the closed, as before.
-    const kOf = s => (ofsel === 'any' ? Math.min(stateOf(s), 2) : stateOf(s));
-    const l = timed ? sorted(filtered).map((s, i) => ({ s, i, k: kOf(s) })).sort((a, b) => a.k - b.k || a.i - b.i).map(x => x.s) : sorted(filtered);
-    const k3 = ofsel === 'any' ? -1 : l.findIndex(s => stateOf(s) === 3);
-    const ochips = timed ? `<div class="gchips ochips" role="group">${[['any', 'f_anyTime', byFeat.length], ['now', 'f_openNow', nNow], ['later', 'f_openLater', nLater]].filter(([k, , n]) => k === 'any' || n).map(([k, key, n]) => `<button class="gchip" data-openf="${k}" data-sec="${id}" aria-pressed="${k === ofsel}"${k === 'now' ? ' style="--cc:var(--green)"' : k === 'later' ? ' style="--cc:var(--blue)"' : ''}>${esc(t(key))}<span class="n">${n}</span></button>`).join('')}</div>` : '';
-    const fchips = feats.length ? `<div class="gchips fchips" role="group">${feats.map(k => `<button class="gchip" data-featf="${k}" data-sec="${id}" aria-pressed="${fsel.includes(k)}">${esc(t('ff_' + k))}<span class="n">${byGroup.filter(FEATS[k]).length}</span></button>`).join('')}</div>` : '';
-    const toneOf = g => GROUPS[g] || all.find(s => s.group === g)?.tone;
-    const gchips = groups.length > 1 ? `<div class="gchips" role="group">${['all', ...groups].map(g => `<button class="gchip" data-sgroup="${g}" data-sec="${id}" aria-pressed="${g === gsel}"${g !== 'all' && toneOf(g) ? ` style="--cc:var(--tone-${toneOf(g)})"` : ''}>${esc(t('g_' + g))}<span class="n">${g === 'all' ? all.length : all.filter(s => s.group === g).length}</span></button>`).join('')}</div>` : '';
-    V.dataset.secf = gsel + '|' + ofsel;
-    const now = new Date();
-    // A Home quick tile shown on top of the page ("highlight" in sections.json), e.g. the bar next door.
-    const hq = sec.highlight && QUICK.find(q => q.id === sec.highlight && quickShown(q));
-    const hl = hq ? `<div class="qcalls"><a class="qcall wide" data-q="${hq.id}" href="#p/${hq.id}"><span class="qi">${quickIcon(hq)}</span><span class="qt"><b>${esc(tx(hq.name))}</b>${hq.sub ? `<small>${esc(tx(hq.sub))}</small>` : ''}</span></a></div>` : '';
-    body = all.length ? `${hl}<a class="pl-map secmap" href="#map" data-mapcat="${esc(all[0].cat)}" aria-label="${esc(t('openMap'))}"><div id="secmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openMap'))}</span></a>
-      ${gchips}${ochips}${fchips}${sortRow()}
-      ${l.length ? `<div class="mlist">${l.map((m, i) => (i === k3 ? `<h3 class="mgh">${esc(t('f_noHours'))}</h3>` : '') + row(m, { date: now, live: true, gcard: true })).join('')}</div>` : `<p class="empty">${esc(t('f_noneOpen'))}</p>`}` : `<div class="empty">${esc(t('soon'))}</div>`;
-  } else {
+  else {
     // Info page (House guide): one expandable row per topic, same look as the other lists.
     const tone = k => k === 'ink' ? 'var(--ink)' : k === 'yellow' ? 'var(--tone-taxi)' : `var(--tone-${k})`;
     const link = l => l.dir
@@ -227,29 +143,34 @@ export function renderSection(V, id) {
         ${b.links ? `<div class="actions">${b.links.map(link).join('')}</div>` : ''}
       </div></details>`).join('')}</div>${id === 'message' && !MODULE_ON('house') ? reviewsBlock() : ''}`;
   }
+  sectionFrame(V, sec, body, () => {
+    // The house: "Read more" opens the rest of the description; the slim bar on top comes back once the facts scroll away.
+    const tog = V.querySelector('.hd-tog');
+    if (tog) tog.addEventListener('click', () => { const m = V.querySelector('.hd-more'), open = m.hidden; m.hidden = !open; tog.setAttribute('aria-expanded', String(open)); tog.textContent = t(open ? 'showLess' : 'readMore'); });
+    // The rating under the house's facts jumps to the reviews further down.
+    const rb = V.querySelector('[data-rev]');
+    if (rb) rb.addEventListener('click', () => V.querySelector('#hrev')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    const hs = V.querySelector('#hsticky');
+    if (hs) { hs.addEventListener('click', e => { e.preventDefault(); scrollTo({ top: 0, behavior: 'smooth' }); }); houseBar(); }
+    V.querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => lightbox([...b.parentElement.querySelectorAll('[data-zoom] img')].map(i => i.getAttribute('src')), +b.dataset.zoom)));
+    const gal = V.querySelector('#hgal');
+    if (gal) gal.addEventListener('scroll', () => { const n = Math.round(gal.scrollLeft / gal.clientWidth) + 1; V.querySelector('#hcount').textContent = `${n} / ${gal.querySelectorAll('img').length}`; }, { passive: true });
+  });
+}
+
+// A section's page as every list and guide page has it: its title and lead, then its body. Rows the guest had opened stay
+// open when the page is drawn again (a filter, the status refreshed each minute); after(), the page's own wiring; then the
+// row a Home shortcut asked for (Wi-Fi, Check-out) is opened. Also used by the modules that draw a section's page in this
+// shape (modules/places, modules/events).
+export function sectionFrame(V, sec, body, after) {
   const openIds = new Set([...V.querySelectorAll('.mrow[open]')].map(e => e.dataset.id));
-  const oldMap = V.dataset.sec === id ? V.querySelector('#secmap') : null;
-  V.dataset.sec = id;
+  V.dataset.sec = sec.id;
   V.innerHTML = `<div class="wrap" style="gap:16px">
     <div><h2 class="title">${esc(t(sec.labelKey))}</h2>${t(sec.labelKey + 'Lead') !== sec.labelKey + 'Lead' ? `<p class="lead">${esc(t(sec.labelKey + 'Lead'))}</p>` : ''}</div>
     ${body}</div>`;
   V.querySelectorAll('.mrow').forEach(e => { if (openIds.has(e.dataset.id)) e.open = true; });
-  // The house: "Read more" opens the rest of the description; the slim bar on top comes back once the facts scroll away.
-  const tog = V.querySelector('.hd-tog');
-  if (tog) tog.addEventListener('click', () => { const m = V.querySelector('.hd-more'), open = m.hidden; m.hidden = !open; tog.setAttribute('aria-expanded', String(open)); tog.textContent = t(open ? 'showLess' : 'readMore'); });
-  // The rating under the house's facts jumps to the reviews further down.
-  const rb = V.querySelector('[data-rev]');
-  if (rb) rb.addEventListener('click', () => V.querySelector('#hrev')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-  const hs = V.querySelector('#hsticky');
-  if (hs) { hs.addEventListener('click', e => { e.preventDefault(); scrollTo({ top: 0, behavior: 'smooth' }); }); houseBar(); }
-  V.querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => lightbox([...b.parentElement.querySelectorAll('[data-zoom] img')].map(i => i.getAttribute('src')), +b.dataset.zoom)));
-  const gal = V.querySelector('#hgal');
-  if (gal) gal.addEventListener('scroll', () => { const n = Math.round(gal.scrollLeft / gal.clientWidth) + 1; V.querySelector('#hcount').textContent = `${n} / ${gal.querySelectorAll('img').length}`; }, { passive: true });
+  if (after) after();
   if (window.__openRow) { const r = V.querySelector(`.mrow[data-id="${window.__openRow}"]`); window.__openRow = null; if (r) { r.open = true; setTimeout(() => r.scrollIntoView({ block: 'center' }), 50); } }
-  const box = V.querySelector('#secmap');
-  if (box && oldMap && prevF === V.dataset.secf) box.replaceWith(oldMap);
-  else if (box) { const gs = (V.dataset.secf || '').split('|')[0]; const extra = id === 'restaurants' ? QUICK.filter(q => q.id === 'shop' && q.lat && quickShown(q)).map(q => ({ lat: q.lat, lng: q.lng, pinHtml: quickIcon('shop'), pinColor: 'var(--green)' })) : [];
-    overviewMap(box, SPOTS.filter(s => s.section === id && !s.nomap && shownNow(s) && (gs === 'all' || !gs || s.group === gs)).concat(extra)); }
 }
 
 // Full-screen photo viewer: swipe through the group, tap the cross or the backdrop to close.

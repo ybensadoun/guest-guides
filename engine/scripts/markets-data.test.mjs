@@ -1,8 +1,10 @@
 // The markets module's rules (engine/src/modules/markets/plan.js, README.md beside it): a guide's file read as markets, the
-// kinds Home and the page start from, which markets are held on a day, their order, which ask for Google's line. Written
-// from the guide's behaviour on 14 Nov 2026 (views/home.js todaysMarkets and views/markets.js before the module).
+// kinds Home and the page start from, which markets are held on a day, their order (engine/src/lists.js byDistance, shared
+// with the host's lists and tested in lists.test.mjs), which ask for Google's line. Written from the guide's behaviour on
+// 14 Nov 2026 (views/home.js todaysMarkets and views/markets.js before the module).
 // schedule.js reads its words from i18n.js, which only Vite can load: here a stand-in gives the English file's words, as in
-// schedule.test.mjs, so the real schedule.js runs as it is. Nothing is written.   node --test engine/scripts/markets-data.test.mjs
+// schedule.test.mjs, so the real schedule.js runs as it is; lists.js's own imports get small stand-ins (as in
+// lists.test.mjs). Nothing is written.   node --test engine/scripts/markets-data.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
@@ -14,9 +16,13 @@ export const t = (k, p) => Object.entries(p || {}).reduce((s, [a, b]) => s.split
 export const tx = v => (v && typeof v === 'object' ? v.en : v || ''); export const locale = () => 'en-GB'; export const typo = s => s;`;
 const KINDS = readFileSync(new URL('../src/kinds.json', import.meta.url), 'utf8');
 const fromSchedule = ctx => /\/engine\/src\/schedule\.js$/.test(ctx.parentURL || '');
+const LISTS = { './state.js': 'export const st = {};', './geo.js': 'export const kmMe = () => null;', './i18n.js': 'export const t = k => k;', './ui.js': 'export const esc = s => s;' };
+const fromLists = ctx => /\/engine\/src\/lists\.js$/.test(ctx.parentURL || '');
 registerHooks({ resolve: (spec, ctx, next) => (fromSchedule(ctx) && spec === './i18n.js' ? { url: 'data:text/javascript,' + encodeURIComponent(I18N), shortCircuit: true }
-  : fromSchedule(ctx) && spec === './kinds.json' ? { url: 'data:text/javascript,' + encodeURIComponent('export default ' + KINDS), shortCircuit: true } : next(spec, ctx)) });
-const { readMarkets, noneFound, defaultKinds, WEEKLY, marketsOn, byDistance } = await import('../src/modules/markets/plan.js');
+  : fromSchedule(ctx) && spec === './kinds.json' ? { url: 'data:text/javascript,' + encodeURIComponent('export default ' + KINDS), shortCircuit: true }
+  : fromLists(ctx) && LISTS[spec] ? { url: 'data:text/javascript,' + encodeURIComponent(LISTS[spec]), shortCircuit: true } : next(spec, ctx)) });
+const { readMarkets, noneFound, defaultKinds, WEEKLY, marketsOn } = await import('../src/modules/markets/plan.js');
+const { byDistance } = await import('../src/lists.js');
 
 const D = (y, m, d, h = 12, mi = 0) => new Date(y, m - 1, d, h, mi);
 // A schedule row as content.js slots() reads it: d weekdays (0 = Sunday), o/c open and close, nth the week of the month.
@@ -85,15 +91,6 @@ test('the page\'s filters do not change Home', () => {
   assert.deepEqual(ids(page(sat, new Set(['covered']))), ['hall']);
   assert.deepEqual(ids(page(sat, new Set(['flea']))), []);
   assert.deepEqual(ids(home(sat)), ['calafell-sat', 'vendrell-sat', 'nowhere']);                          // whatever the page holds
-});
-
-test('byDistance: from the house or from the guest, unknown distances last, then by town, the list itself untouched', () => {
-  const l = [LIST[8], LIST[3], LIST[1], LIST[0], LIST[2]];
-  assert.deepEqual(ids(byDistance(l, m => m.km)), ['bisbal-wed', 'calafell-sat', 'hall', 'vendrell-sat', 'nowhere']);   // 3, 8 Calafell, 8 El Vendrell (x2, kept in order), none
-  assert.deepEqual(ids(l), ['nowhere', 'hall', 'bisbal-wed', 'vendrell-sat', 'calafell-sat']);
-  const me = { nowhere: 1, hall: 40, 'bisbal-wed': null, 'vendrell-sat': 40, 'calafell-sat': 2 };   // the guest's distances (geo.js kmMe)
-  assert.deepEqual(ids(byDistance(l, m => me[m.id])), ['nowhere', 'calafell-sat', 'hall', 'vendrell-sat', 'bisbal-wed']);
-  assert.deepEqual(byDistance([], m => m.km), []);
 });
 
 test('WEEKLY: only a street market or a market hall asks for Google\'s line', () => {

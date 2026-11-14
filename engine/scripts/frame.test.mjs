@@ -193,17 +193,27 @@ test('thing: who offers which sizes and widgets', () => {
 });
 
 test('offers: what a module offers is read from its own folder, through the guide', () => {
-  // Each module says it (modules/<kind>/offers.js): rubbish its live tile, wide only; markets its entry tile in every size.
+  // Each module says it (modules/<folder>/offers.js), by the kind of section it serves: rubbish its live tile, wide only;
+  // markets and the host's lists of places (kind "spots") their entry tile in every size; Local events their entry tile,
+  // wide only; the highlights, under the kind of placement "highlight", a card half or wide.
   assert.deepEqual(OFFERS.garbage, { live: { sizes: ['wide'] } });
   assert.deepEqual(OFFERS.markets, { entry: { sizes: ['half', 'wide', 'tall'] } });
+  assert.deepEqual(OFFERS.spots, { entry: { sizes: ['half', 'wide', 'tall'] } });
+  assert.deepEqual(OFFERS.events, { entry: { sizes: ['wide'] } });
+  assert.deepEqual(OFFERS.highlight, { highlight: { sizes: ['half', 'wide'] } });
   assert.deepEqual(thing({ kind: 'section', id: 'markets' }, CLK).sizes, ['half', 'wide', 'tall']);
   assert.equal(thing({ kind: 'section', id: 'markets' }, CLK).widget, 'entry');
-  // A kind with no module keeps the frame's own word: events wide only, any other kind its entry tile in every size.
+  // Local events: wide only, from their module; a kind with no module keeps the frame's own word, its entry tile in every size.
   assert.deepEqual(thing({ kind: 'section', id: 'events' }, CLK).sizes, ['wide']);
   assert.deepEqual(thing({ kind: 'section', id: 'message' }, CLK).sizes, ['half', 'wide', 'tall']);
-  // The frame takes what the guide passes: without the offers, rubbish would be an entry tile like any other.
+  // The frame takes what the guide passes: without the offers, rubbish would be an entry tile like any other, and a
+  // highlight keeps the frame's own word (a card, half or wide).
   const bare = { ...CLK, offers: undefined };
   assert.equal(thing({ kind: 'section', id: 'garbage' }, bare).widget, 'entry');
+  assert.deepEqual(thing({ kind: 'highlight', id: 'pizza' }, bare), { kind: 'highlight', id: 'pizza', widget: 'highlight', sizes: ['half', 'wide'], group: 'area' });
+  // A module that offers its highlight in other sizes: the frame follows.
+  const wideCards = { ...CLK, offers: { ...OFFERS, highlight: { highlight: { sizes: ['wide'] } } } };
+  assert.deepEqual(thing({ kind: 'highlight', id: 'pizza' }, wideCards).sizes, ['wide']);
   // A module may offer another size: the frame then lets the guide's arrangement use it, and the default follows.
   const tallBins = { ...CLK, offers: { ...OFFERS, garbage: { live: { sizes: ['wide', 'half'] } } } };
   assert.deepEqual(thing({ kind: 'section', id: 'garbage' }, tallBins).sizes, ['wide', 'half']);
@@ -214,12 +224,19 @@ test('offers: what a module offers is read from its own folder, through the guid
 });
 
 test('offers: the node scripts\' registry (modules/offers.js) lists the same modules as the guide\'s (modules/index.js)', () => {
+  // Each module is listed under the kind it serves (a module's folder may have another name: "spots" is places/), with
+  // the same name for the same folder in both files, and every folder with an offers.js is listed.
   const dir = new URL('../src/modules/', import.meta.url);
-  const inIndex = [...readFileSync(new URL('index.js', dir), 'utf8').matchAll(/import \* as (\w+) from '\.\/(\w+)\/index\.js'/g)].map(m => m[2]).sort();
+  const read = (f, re) => Object.fromEntries([...readFileSync(new URL(f, dir), 'utf8').matchAll(re)].map(m => [m[1], m[2]]));
+  const inIndex = read('index.js', /import \* as (\w+) from '\.\/(\w+)\/index\.js'/g);
+  const inOffers = read('offers.js', /import \{ widgets as (\w+) \} from '\.\/(\w+)\/offers\.js'/g);
+  const registry = (readFileSync(new URL('index.js', dir), 'utf8').match(/export const MODULES = \{([^}]*)\}/) || [])[1].split(',').map(x => x.trim()).sort();
   const withOffers = readdirSync(dir, { withFileTypes: true }).filter(d => d.isDirectory() && existsSync(new URL(d.name + '/offers.js', dir))).map(d => d.name).sort();
-  assert.deepEqual(Object.keys(OFFERS).sort(), inIndex);
-  assert.deepEqual(withOffers, inIndex);
-  for (const k of inIndex) assert.match(readFileSync(new URL(k + '/index.js', dir), 'utf8'), /export \{ widgets \} from '\.\/offers\.js'/, k);
+  assert.deepEqual(inOffers, inIndex);
+  assert.deepEqual(Object.keys(OFFERS).sort(), Object.keys(inIndex).sort());
+  assert.deepEqual(registry, Object.keys(inIndex).sort());
+  assert.deepEqual(withOffers, Object.values(inIndex).sort());
+  for (const k of Object.values(inIndex)) assert.match(readFileSync(new URL(k + '/index.js', dir), 'utf8'), /export \{ widgets \} from '\.\/offers\.js'/, k);
 });
 
 test('check: plain messages for content/home.json', () => {

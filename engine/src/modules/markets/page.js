@@ -1,21 +1,15 @@
 // The Markets page (README.md, "Its look"): by day (a strip of the next 14 days) or all of them, the filters folded away,
 // a small map of the markets listed, then the list. Route #markets (main.js), also #s/<id> as every module's page.
 import { t, locale } from '../../i18n.js';
-import { MARKETS, CATS, sorted } from './data.js';
+import { MARKETS, CATS } from './data.js';
 import { WEEKLY, marketsOn } from './plan.js';
 import { st, DEFAULT_CATS } from '../../state.js';
 import { cap } from '../../schedule.js';
 import { esc, row, chips, ICON } from '../../ui.js';
+import { sorted, sortRow } from '../../lists.js';   // the order and the choice of distance, shared with the host's lists
 import { overviewMap } from '../../views/map.js';
 
 const FILTER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>';
-
-// The choice of distance, from the house or from the guest (data.js sorted): in the page's filters, and on the lists of the
-// host's places (views/section.js).
-export const sortRow = () => `<div class="row"><div class="pills" role="group">
-    <button data-sort="house" aria-pressed="${st.sort === 'house'}">${esc(t('fromHouse'))}</button>
-    <button data-sort="me" aria-pressed="${st.sort === 'me'}">${esc(t('fromMe'))}</button></div>
-    ${st.locState ? `<span class="sortnote" role="status">${esc(st.locState)}</span>` : ''}</div>`;
 
 // Empty result: a visible box, with a one-tap way back to all market types when some are filtered out.
 const emptyBox = () => `<div class="emptybox" role="status"><b>${esc(t('noneMatch'))}</b>${st.cats.size < CATS.length ? `<button class="btn" data-resetcats>${esc(t('showAllTypes'))}</button>` : ''}</div>`;

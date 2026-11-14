@@ -1,5 +1,7 @@
-import { t, locale } from './i18n.js';
-
+// The events module's rules, with no guide in them (README.md says each rule, who decided it and when): where an event's
+// date stands now, which events are upcoming and in which order, and which one Home's tile names. Pure, no imports
+// (tests: engine/scripts/events-plan.test.mjs).
+//
 // Local events: each event's next date that has not ended yet, soonest first.
 // A date may say when it starts ("time": "18:00", shown in its date line) and when it ends on its last day ("until").
 // With a time, an event of today says "Today" until it starts, "On now" while it runs (until "until", else about three
@@ -22,12 +24,10 @@ export function upcoming(items, now = new Date()) {
     return null;
   }).filter(Boolean).sort((a, b) => a.o.start.localeCompare(b.o.start) || (mins(a.o.time) ?? 0) - (mins(b.o.time) ?? 0));
 }
-const fmt = (d, o) => d.toLocaleDateString(locale(), o);
-export function dateRange(o) {
-  const a = D(o.start), b = D(o.end);
-  if (o.start === o.end) return fmt(a, { weekday: 'short', day: 'numeric', month: 'short' }) + (o.time ? ', ' + o.time : '');
-  return a.getMonth() === b.getMonth() ? `${a.getDate()}-${fmt(b, { day: 'numeric', month: 'short' })}` : `${fmt(a, { day: 'numeric', month: 'short' })} - ${fmt(b, { day: 'numeric', month: 'short' })}`;
+
+// The event Home's tile names ("Next: Santa Teresa Fair, 9 Oct"): of each event, its first date in the file that has not
+// ended before today, whatever the hour; the soonest start of those. undefined when there is none.
+export function nextEvent(items, now = new Date()) {
+  const d0 = new Date(now); d0.setHours(0, 0, 0, 0);
+  return (items || []).map(e => ({ e, o: e.dates.find(o => new Date(o.end + 'T00:00:00') >= d0) })).filter(x => x.o).sort((a, b) => a.o.start.localeCompare(b.o.start))[0];
 }
-// "On now", "Today", "Tomorrow", "In 5 days".
-export const when = x => (x.on ? t('onNow') : x.at || x.today ? t('today') : x.days === 1 ? t('tomorrow') : t('inDays', { n: x.days }));
-export const dayBadge = o => { const a = D(o.start); return { d: a.getDate(), m: fmt(a, { month: 'short' }).replace('.', '') }; };

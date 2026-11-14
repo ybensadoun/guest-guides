@@ -14,7 +14,8 @@
 //                                             then the transport card), in their order
 //   map: true | false                         the map's module is on
 //   transportCard: id | null                  the transport section shown as a highlight (its section tile then stays off)
-//   offers: { kind: { <widget>: { sizes } } } what each module says it offers (its widgets, modules/<kind>/offers.js):
+//   offers: { kind: { <widget>: { sizes } } } what each module says it offers (its widgets, modules/<folder>/offers.js),
+//                                             by the kind of section it serves, the highlights under "highlight":
 //                                             views/home.js passes the registry's (modules/index.js), the node scripts
 //                                             modules/offers.js; the first widget a module names is its widget on Home
 
@@ -24,16 +25,16 @@ export const WIDGETS = ['entry', 'live', 'highlight'];
 export const KINDS = ['section', 'highlight', 'map'];
 
 // What a kind of section offers on Home. A module says it in its own folder (guide.offers, above: rubbish its live tile,
-// wide only; markets its entry tile in every size). A kind not yet moved to a module is written here until it moves (plan,
-// proposal 22, step 2): events, an entry tile that carries the next event's name and date, so wide only (as a half or tall
-// tile "esdeveniments" and "evenementen" were wider than the tile, and the line with the event was cramped: frame-check.mjs,
-// 14 Nov 2026); every other kind, its entry tile in every size.
-const OWN = { events: { widget: 'entry', sizes: ['wide'] } };
+// wide only; markets, the host's lists of places, their entry tile in every size; Local events their entry tile with the
+// next event, wide only). A kind not yet moved to a module offers its entry tile in every size, until it moves (plan,
+// proposal 22, step 2). The highlights say theirs under "highlight" (a card, half or wide); the same when a guide is
+// given no offers.
 const ENTRY = { widget: 'entry', sizes: ['half', 'wide', 'tall'] };
-const offerOf = (kind, guide) => {
+const HIGHLIGHT = { widget: 'highlight', sizes: ['half', 'wide'] };
+const offerOf = (kind, guide, fallback = ENTRY) => {
   const w = (guide.offers || {})[kind];
   if (w && Object.keys(w).length) { const [widget, o] = Object.entries(w)[0]; return { widget, sizes: o.sizes }; }
-  return OWN[kind] || ENTRY;
+  return fallback;
 };
 
 const shown = s => s.status === 'live' || s.kind === 'markets';   // markets have their own tile, whatever their status
@@ -44,8 +45,8 @@ export function thing(p, guide) {
   if (!p || typeof p !== 'object') return null;
   if (p.kind === 'map') return guide.map ? { kind: 'map', id: 'map', widget: 'entry', sizes: ['wide'], group: 'area' } : null;
   if (p.kind === 'highlight') {
-    const q = (guide.highlights || []).find(x => x.id === p.id);
-    return q ? { kind: 'highlight', id: q.id, widget: 'highlight', sizes: ['half', 'wide'], group: 'area' } : null;
+    const q = (guide.highlights || []).find(x => x.id === p.id), o = offerOf('highlight', guide, HIGHLIGHT);
+    return q ? { kind: 'highlight', id: q.id, widget: o.widget, sizes: o.sizes, group: 'area' } : null;
   }
   if (p.kind === 'section') {
     const s = (guide.sections || []).find(x => x.id === p.id);
