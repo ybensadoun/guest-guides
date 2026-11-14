@@ -12,7 +12,7 @@ import { CATS } from './content.js';
 import { st, toggleIn, DEFAULT_CATS } from './state.js';
 import { theme, applyTheme, cycleTheme, DARK_ENABLED } from './theme.js';
 import { renderHome } from './views/home.js';
-import { renderMarkets } from './views/markets.js';
+import { MODULES } from './modules/index.js';
 import { renderSection } from './views/section.js';
 import { renderMore, quickIcon } from './views/home.js';
 import { renderPlace } from './views/place.js';
@@ -142,7 +142,7 @@ addEventListener('scroll', () => { if (!pbRaf) pbRaf = requestAnimationFrame(pag
 
 function render() {
   if (st.view === 'home') renderHome(V);
-  else if (st.view === 'markets') renderMarkets(V);
+  else if (st.view === 'markets') MODULES.markets.page(V);   // the markets module's page (modules/markets)
   else if (st.view === 'section') renderSection(V, parse().id);
   else if (st.view === 'more') renderMore(V);
   else if (st.view === 'place') renderPlace(V, parse().id, quickIcon);

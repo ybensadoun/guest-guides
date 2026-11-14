@@ -14,18 +14,27 @@
 //                                             then the transport card), in their order
 //   map: true | false                         the map's module is on
 //   transportCard: id | null                  the transport section shown as a highlight (its section tile then stays off)
+//   offers: { kind: { <widget>: { sizes } } } what each module says it offers (its widgets, modules/<kind>/offers.js):
+//                                             views/home.js passes the registry's (modules/index.js), the node scripts
+//                                             modules/offers.js; the first widget a module names is its widget on Home
 
 export const GROUPS = ['house', 'area'];
 export const SIZES = ['half', 'wide', 'tall'];
 export const WIDGETS = ['entry', 'live', 'highlight'];
 export const KINDS = ['section', 'highlight', 'map'];
 
-// What a kind of module offers on Home beyond the entry tile. Rubbish draws its own live tile, wide only (Yohann, 14 Nov
-// 2026). Each module will say this in its own folder once it moves there (plan, proposal 22, step 2).
-// Events: an entry tile that carries the next event's name and date, so wide only (as a half or tall tile "esdeveniments" and
-// "evenementen" were wider than the tile, and the line with the event was cramped: frame-check.mjs, 14 Nov 2026).
-const OWN = { garbage: { widget: 'live', sizes: ['wide'] }, events: { widget: 'entry', sizes: ['wide'] } };
+// What a kind of section offers on Home. A module says it in its own folder (guide.offers, above: rubbish its live tile,
+// wide only; markets its entry tile in every size). A kind not yet moved to a module is written here until it moves (plan,
+// proposal 22, step 2): events, an entry tile that carries the next event's name and date, so wide only (as a half or tall
+// tile "esdeveniments" and "evenementen" were wider than the tile, and the line with the event was cramped: frame-check.mjs,
+// 14 Nov 2026); every other kind, its entry tile in every size.
+const OWN = { events: { widget: 'entry', sizes: ['wide'] } };
 const ENTRY = { widget: 'entry', sizes: ['half', 'wide', 'tall'] };
+const offerOf = (kind, guide) => {
+  const w = (guide.offers || {})[kind];
+  if (w && Object.keys(w).length) { const [widget, o] = Object.entries(w)[0]; return { widget, sizes: o.sizes }; }
+  return OWN[kind] || ENTRY;
+};
 
 const shown = s => s.status === 'live' || s.kind === 'markets';   // markets have their own tile, whatever their status
 export const keyOf = p => (p.kind === 'map' ? 'map' : `${p.kind}:${p.id}`);
@@ -42,7 +51,7 @@ export function thing(p, guide) {
     const s = (guide.sections || []).find(x => x.id === p.id);
     // The house page is the welcome card's (never a tile); Getting around shown as a highlight is not repeated as a tile.
     if (!s || !shown(s) || s.kind === 'house' || (guide.transportCard && s.id === guide.transportCard)) return null;
-    const o = OWN[s.kind] || ENTRY;
+    const o = offerOf(s.kind, guide);
     return { kind: 'section', id: s.id, widget: o.widget, sizes: o.sizes, group: s.group, sectionKind: s.kind };
   }
   return null;
@@ -55,8 +64,8 @@ export function thing(p, guide) {
 export function defaultArrangement(guide) {
   const ok = s => !!thing({ kind: 'section', id: s.id }, guide);
   const secs = g => (guide.sections || []).filter(s => s.group === g && ok(s));
-  const house = secs('house'), live = house.filter(s => (OWN[s.kind] || ENTRY).widget === 'live');
-  const sec = (s, size) => ({ kind: 'section', id: s.id, size: (OWN[s.kind] || ENTRY).sizes.includes(size) ? size : (OWN[s.kind] || ENTRY).sizes[0] });
+  const house = secs('house'), live = house.filter(s => offerOf(s.kind, guide).widget === 'live');
+  const sec = (s, size) => ({ kind: 'section', id: s.id, size: offerOf(s.kind, guide).sizes.includes(size) ? size : offerOf(s.kind, guide).sizes[0] });
   const mosaic = secs('area').filter(s => s.kind !== 'events');
   const alone = i => i === mosaic.length - 1 && i >= 3 && (i - 3) % 2 === 0;
   return {

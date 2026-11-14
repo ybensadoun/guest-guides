@@ -1,22 +1,17 @@
-import { t, locale } from '../i18n.js';
-import { MARKETS, CATS } from '../content.js';
-import { st } from '../state.js';
-import { runsOn, dayName, cap } from '../schedule.js';
-import { kmMe } from '../geo.js';
-import { esc, row, chips, ICON } from '../ui.js';
-import { overviewMap } from './map.js';
+// The Markets page (README.md, "Its look"): by day (a strip of the next 14 days) or all of them, the filters folded away,
+// a small map of the markets listed, then the list. Route #markets (main.js), also #s/<id> as every module's page.
+import { t, locale } from '../../i18n.js';
+import { MARKETS, CATS, sorted } from './data.js';
+import { WEEKLY, marketsOn } from './plan.js';
+import { st, DEFAULT_CATS } from '../../state.js';
+import { cap } from '../../schedule.js';
+import { esc, row, chips, ICON } from '../../ui.js';
+import { overviewMap } from '../../views/map.js';
 
-// Google's own live line (gcard.js) only on the kinds of market held every week, a street market or a market hall. A fair,
-// a flea or antiques market held once a month or once a year never asks: Google's line gives weekly hours, and on the live
-// guide (13 Nov 2026) it said "Open · Closes 14:00" on a summer night market, from the listing of the town's weekly market.
-const WEEKLY = new Set(['street', 'covered']);
 const FILTER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>';
 
-export function sorted(list) {
-  const d = v => v == null ? 1e9 : v;   // no distance known: last
-  return list.slice().sort((a, b) => (st.sort === 'me' && st.me ? d(kmMe(a)) - d(kmMe(b)) : d(a.km) - d(b.km)) || a.town.localeCompare(b.town));
-}
-
+// The choice of distance, from the house or from the guest (data.js sorted): in the page's filters, and on the lists of the
+// host's places (views/section.js).
 export const sortRow = () => `<div class="row"><div class="pills" role="group">
     <button data-sort="house" aria-pressed="${st.sort === 'house'}">${esc(t('fromHouse'))}</button>
     <button data-sort="me" aria-pressed="${st.sort === 'me'}">${esc(t('fromMe'))}</button></div>
@@ -29,7 +24,7 @@ const list = (l, rowOpts) => (l.length ? `<div class="mlist">${l.map(m => row(m,
 // A compact map of the markets in the list; tapping it opens the full map on Markets.
 const mapBox = l => (l.length ? `<a class="pl-map secmap mkmapbox" href="#map" data-mapcat="${esc(l[0].cat)}" aria-label="${esc(t('openMap'))}"><div id="mkmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openMap'))}</span></a>` : '');
 
-export function renderMarkets(V) {
+export function page(V) {
   // Keep expanded rows open across re-renders (filters, the 1-minute status refresh).
   const openIds = new Set([...V.querySelectorAll('.mrow[open]')].map(e => e.dataset.id));
   const now = new Date();
@@ -43,11 +38,11 @@ export function renderMarkets(V) {
     const sel = dates[off];
     const rel = i => (i === 0 ? t('today') : i === 1 ? t('tomorrow') : '');
     const short = new Intl.DateTimeFormat(locale(), { weekday: 'short' });
-    const count = d => MARKETS.filter(m => vis(m) && runsOn(m, d).length).length;
+    const count = d => marketsOn(MARKETS, d, vis).length;
     const bar = `<div class="daybar" id="daybar">${dates.map((d, i) => `<button class="dchip ${i === 0 ? 'today' : ''}" data-day="${i}" aria-pressed="${i === off}">
       <span>${esc(cap(short.format(d)))} ${d.getDate()}</span><small>${esc(rel(i) ? rel(i) + ' · ' : '')}${count(d)}</small></button>`).join('')}</div>`;
     const head = (rel(off) ? rel(off) + ' · ' : '') + cap(new Intl.DateTimeFormat(locale(), { weekday: 'long', day: 'numeric', month: 'long' }).format(sel));
-    shown = MARKETS.filter(m => vis(m) && runsOn(m, sel).length); mkey = 'd' + off;
+    shown = marketsOn(MARKETS, sel, vis); mkey = 'd' + off;
     body = bar + mapBox(shown) + `<h3 class="section-h">${esc(head)}</h3>` +
       list(sorted(shown), m => ({ date: off === 0 ? now : sel, live: off === 0, gcard: WEEKLY.has(m.cat) }));
   } else {
@@ -60,7 +55,7 @@ export function renderMarkets(V) {
   const oldMap = V.dataset.mkkey === mkey ? V.querySelector('#mkmap') : null;
   // Filters (types and distance basis) live in a fold-out panel so the list starts high on the screen.
   // Badge = how many settings differ from the default (all types except covered, distance from the house).
-  const def = new Set(CATS.filter(c => c !== 'covered'));
+  const def = new Set(DEFAULT_CATS);
   const changed = CATS.filter(c => st.cats.has(c) !== def.has(c)).length + (st.sort === 'me' ? 1 : 0);
   V.innerHTML = `<div class="wrap" style="gap:14px">
     <h2 class="title">${esc(t('markets'))}</h2>

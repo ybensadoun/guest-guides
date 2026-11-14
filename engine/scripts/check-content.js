@@ -4,6 +4,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { ENGINE, ROOT, siteDir, readSite } from '../site.config.js';
 import { check as checkHome } from '../src/modules/frame.js';
+import { OFFERS } from '../src/modules/offers.js';
 const FLAGS = JSON.parse(readFileSync(resolve(ENGINE, 'src/flags.json'), 'utf8')).flags;   // the only warnings a place can carry
 const GROUPS = JSON.parse(readFileSync(resolve(ENGINE, 'src/groups.json'), 'utf8')).groups;   // the only quick-filter groups
 
@@ -114,7 +115,7 @@ if (existsSync(C('home'))) {
   const secs = read(C('sections')).sections.filter(s => on(s.id) && !(s.id === 'markets' && !nMarkets));
   const tr = secs.find(s => s.kind === 'transport' && s.status === 'live'), trTile = tr && existsSync(C(tr.file || tr.id)) && read(C(tr.file || tr.id)).tile;
   const quick = on('quick') && existsSync(C('quick')) ? read(C('quick')).items || [] : [];
-  const guide = { sections: secs.map(({ id, kind, group, status }) => ({ id, kind, group, status })), map: on('map'), transportCard: trTile ? tr.id : null,
+  const guide = { sections: secs.map(({ id, kind, group, status }) => ({ id, kind, group, status })), map: on('map'), transportCard: trTile ? tr.id : null, offers: OFFERS,
     highlights: [...quick.map(q => ({ id: q.id, wide: !!q.wide })), ...(trTile ? [{ id: tr.id, wide: !!trTile.wide }] : [])] };
   for (const m of checkHome(read(C('home')), guide)) errors.push(`content/${m}`);
 }

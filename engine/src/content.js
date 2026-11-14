@@ -2,10 +2,11 @@
 // so it works offline. New files are picked up automatically.
 import { SITE, FILES as files, PRIVATE } from './site-data.js';
 import { hiddenNow } from './schedule.js';
+import { readMarkets, noneFound } from './modules/markets/plan.js';
 const get = name => files[name];
 export { SITE };
 // Modules switched off in site.json ("modules": { "events": false }) disappear everywhere: tile, page, map pins.
-export const MODULE_ON = id => (SITE.modules || {})[id] !== false && !(id === 'markets' && !((files.markets || {}).markets || []).length);   // markets with nothing found vanish too, no dead-end tile
+export const MODULE_ON = id => (SITE.modules || {})[id] !== false && !(id === 'markets' && noneFound(files.markets));   // markets with nothing found vanish too, no dead-end tile (modules/markets)
 
 const DAY = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
 export const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -36,17 +37,11 @@ export const HOUSE = get('house');
 const PRIV_WIFI = PRIVATE.wifi;
 if (PRIV_WIFI) HOUSE.wifi = PRIV_WIFI;
 const mk = (MODULE_ON('markets') && get('markets')) || { categories: [], markets: [] };
-export const CATS = (mk.categories || []).filter(c => (mk.markets || []).some(m => m.category === c));
-
-export const MARKETS = mk.markets.map(x => located(x)).map(m => ({
-  ...m,
-  kind: 'market',
-  cat: m.category,
-  km: m.km_from_house,
-  groupKey: m.group || m.town,
-  groupSlug: slug(m.group || m.town),
-  s: slots(m.schedule)
-}));
+// The markets, read by their module's rules (modules/markets/plan.js readMarkets) and kept here because the map, its tabs
+// and the Markets page's filters share them: CATS, the kinds offered; MARKETS, every market as a place.
+const MK = readMarkets(mk, { located, slots, slug });
+export const CATS = MK.cats;
+export const MARKETS = MK.markets;
 
 export const SECTIONS = get('sections').sections.filter(s => MODULE_ON(s.id)).map(s => ({ ...s, data: s.kind === 'markets' ? null : locate(get(s.file || s.id)) }));
 

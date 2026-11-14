@@ -1,8 +1,9 @@
 import { CATS } from './content.js';
+import { defaultKinds } from './modules/markets/plan.js';
 
-// Default market types: everything except the covered market halls (open every day).
+// Default market types: everything except the covered market halls (open every day), the markets module's rule.
 // Home always uses this set; the Markets page filters start from it and never change Home.
-export const DEFAULT_CATS = CATS.filter(c => c !== 'covered');
+export const DEFAULT_CATS = defaultKinds(CATS);
 
 export const st = {
   view: 'home',

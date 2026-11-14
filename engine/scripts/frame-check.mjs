@@ -14,6 +14,7 @@
 import { createServer } from 'http'; import { spawnSync } from 'child_process';
 import { readFileSync, writeFileSync, existsSync, statSync, mkdtempSync, mkdirSync, rmSync, cpSync } from 'fs'; import { join, extname, resolve as rpath } from 'path'; import { tmpdir } from 'os';
 import { resolve, thing } from '../src/modules/frame.js';
+import { OFFERS } from '../src/modules/offers.js';
 import { measure } from './ux-measures.mjs';
 const [site, picsArg] = process.argv.slice(2);
 if (!site) { console.error('Usage: node engine/scripts/frame-check.mjs <site> [picture folder]'); process.exit(1); }
@@ -37,7 +38,7 @@ function frameGuide(d) {
   const secs = rd(d, 'sections').sections.filter(s => on2(s.id) && !(s.id === 'markets' && !nMarkets));
   const tr = secs.find(s => s.kind === 'transport' && s.status === 'live'), trTile = tr && has(d, tr.file || tr.id) && rd(d, tr.file || tr.id).tile;
   const quick = on2('quick') && has(d, 'quick') ? rd(d, 'quick').items || [] : [];
-  return { sections: secs.map(({ id, kind, group, status }) => ({ id, kind, group, status })), map: on2('map'), transportCard: trTile ? tr.id : null,
+  return { sections: secs.map(({ id, kind, group, status }) => ({ id, kind, group, status })), map: on2('map'), transportCard: trTile ? tr.id : null, offers: OFFERS,
     highlights: [...quick.map(q => ({ id: q.id, wide: !!q.wide })), ...(trTile ? [{ id: tr.id, wide: !!trTile.wide }] : [])] };
 }
 

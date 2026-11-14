@@ -8,7 +8,6 @@ import { runsOn } from '../schedule.js';
 import { esc, row, title, shortTitle, ICON, itemIcon, itemStyle } from '../ui.js';
 import { hav } from '../geo.js';
 import { scheme, onSchemeChange } from '../theme.js';
-import { sorted } from './markets.js';
 
 // Tiles: OpenFreeMap (free, no key, OpenStreetMap data). Light and dark styles follow the app theme (see src/theme.js).
 const STYLE = { light: 'https://tiles.openfreemap.org/styles/positron', dark: 'https://tiles.openfreemap.org/styles/dark' };

@@ -62,6 +62,7 @@ On Home, one wide widget in three states:
 | The guide's data, read once | `data.js` | Yes |
 | The page | `page.js` | Yes |
 | The Home widget | `widget.js` | Yes |
+| What it offers on Home: its live tile, wide only (Yohann, 14 Nov 2026) | `offers.js` (read by the frame, `../README.md`) | Yes |
 | What Home and the section view call | `index.js`, listed in `../index.js` | Yes |
 | Its styles | `engine/src/styles/app.css` (classes starting `.g`, `.gt-tonight`, `.gt[data-k="garbage"]`, colours `--w-*`) | Not yet: they move when the one tile system (plan, proposal 4) rewrites the tiles, so the look is touched once |
 | Its words | `engine/src/i18n/<lang>.json`, keys starting `g` (`gTonight`, `gWeek`, ...) and `garbage` | Not yet |
