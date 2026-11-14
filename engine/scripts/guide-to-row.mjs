@@ -1,5 +1,7 @@
 // Turns a built-site folder (sites/<slug>) into the JSON a database row holds: content and theme.
 // Usage: node engine/scripts/guide-to-row.mjs <slug> [assetBase] > row.json
+// The row's theme carries the site's colour world (theme.world: an id, or a world with colours of its own) when it has one:
+// the shared viewer and the editor read it there (engine/src/viewer.js).
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { siteDir, readSite } from '../site.config.js';
@@ -12,4 +14,4 @@ const i18n = Object.fromEntries(dir('i18n').map(f => [f.replace(/\.json$/, ''), 
 const priv = Object.fromEntries(dir('private').map(f => [f.replace(/\.json$/, ''), json(resolve(SD, 'private', f))]));
 const css = existsSync(resolve(SD, 'theme.css')) ? readFileSync(resolve(SD, 'theme.css'), 'utf8') : '';
 const { onboarding, ...siteOut } = site;
-process.stdout.write(JSON.stringify({ content: { site: siteOut, files, private: priv, i18n, assetBase }, theme: { css, preset: site.theme.preset, fonts: site.theme.fonts || [] } }));
+process.stdout.write(JSON.stringify({ content: { site: siteOut, files, private: priv, i18n, assetBase }, theme: { css, preset: site.theme.preset, fonts: site.theme.fonts || [], ...(site.theme.world ? { world: site.theme.world } : {}) } }));

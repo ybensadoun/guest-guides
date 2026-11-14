@@ -3,6 +3,7 @@
 "_keep": [
 "AVE",
 "Airbnb",
+"Bauhaus",
 "Booking.com",
 "Bricolage Grotesque",
 "Casa Sol",
@@ -37,6 +38,7 @@
 "Renfe",
 "Rodalies",
 "Space Grotesk",
+"Tropical",
 "Vrbo",
 "WhatsApp",
 "Wi-Fi"
@@ -840,11 +842,6 @@
 "ca": "Portada, colors, contingut",
 "es": "Portada, colores, contenido",
 "fr": "Couverture, couleurs, contenu"
-},
-"Logo, cover, layout, colours": {
-"ca": "Logotip, portada, disseny, colors",
-"es": "Logo, portada, diseño, colores",
-"fr": "Logo, couverture, mise en page, couleurs"
 },
 "Images and mood": {
 "ca": "Imatges i estil",
@@ -1796,31 +1793,6 @@
 "es": "Sobre el precio",
 "fr": "À propos du prix"
 },
-"Accent 1 (red)": {
-"ca": "Accent 1 (vermell)",
-"es": "Acento 1 (rojo)",
-"fr": "Accent 1 (rouge)"
-},
-"Accent 2 (blue)": {
-"ca": "Accent 2 (blau)",
-"es": "Acento 2 (azul)",
-"fr": "Accent 2 (bleu)"
-},
-"Accent 3 (yellow)": {
-"ca": "Accent 3 (groc)",
-"es": "Acento 3 (amarillo)",
-"fr": "Accent 3 (jaune)"
-},
-"Accent 4 (orange)": {
-"ca": "Accent 4 (taronja)",
-"es": "Acento 4 (naranja)",
-"fr": "Accent 4 (orange)"
-},
-"Accent 5 (green)": {
-"ca": "Accent 5 (verd)",
-"es": "Acento 5 (verde)",
-"fr": "Accent 5 (vert)"
-},
 "Add": {
 "ca": "Afegeix",
 "es": "Añadir",
@@ -1971,16 +1943,6 @@
 "es": "Llegada y aparcamiento",
 "fr": "Arrivée et stationnement"
 },
-"Back to the layout’s own colours.": {
-"ca": "Torna als colors propis del disseny.",
-"es": "Vuelve a los colores propios del diseño.",
-"fr": "Retour aux couleurs propres à la mise en page."
-},
-"Background": {
-"ca": "Fons",
-"es": "Fondo",
-"fr": "Fond"
-},
 "Before leaving": {
 "ca": "Abans de marxar",
 "es": "Antes de irse",
@@ -2001,11 +1963,6 @@
 "es": "En construcción",
 "fr": "En cours de création"
 },
-"Big colour tiles": {
-"ca": "Grans blocs de color",
-"es": "Grandes bloques de color",
-"fr": "Grands blocs de couleur"
-},
 "Bins must be out by": {
 "ca": "Els cubells han de ser fora abans de les",
 "es": "Los cubos deben estar fuera antes de las",
@@ -2015,11 +1972,6 @@
 "ca": "Cubells fora abans de (hora del matí de recollida)",
 "es": "Cubos fuera antes de (hora de la mañana de recogida)",
 "fr": "Poubelles sorties avant (heure le matin de collecte)"
-},
-"Blue and white, like the Greek islands and the south of Spain.": {
-"ca": "Blau i blanc, com les illes gregues i el sud d’Espanya.",
-"es": "Azul y blanco, como las islas griegas y el sur de España.",
-"fr": "Bleu et blanc, comme les îles grecques et le sud de l’Espagne."
 },
 "Build it again": {
 "ca": "Torna-la a crear",
@@ -2080,11 +2032,6 @@
 "ca": "No pot acabar amb un guionet",
 "es": "No puede terminar en guion",
 "fr": "Ne peut pas finir par un tiret"
-},
-"Cards": {
-"ca": "Targetes",
-"es": "Tarjetas",
-"fr": "Cartes"
 },
 "{x} · {n} to translate": {
 "ca": "{x} · {n} per traduir",
@@ -2160,11 +2107,6 @@
 "ca": "Tria fitxers",
 "es": "Elegir archivos",
 "fr": "Choisir des fichiers"
-},
-"Clean and calm": {
-"ca": "Net i tranquil",
-"es": "Limpio y tranquilo",
-"fr": "Épuré et calme"
 },
 "Closes": {
 "ca": "Tanca",
@@ -2326,21 +2268,6 @@
 "es": "Hazlo por mí",
 "fr": "Faites-le pour moi"
 },
-"Done: 5 colours from your cover picture.": {
-"ca": "Fet: 5 colors de la teva foto de portada.",
-"es": "Hecho: 5 colores de tu foto de portada.",
-"fr": "Terminé : 5 couleurs tirées de votre photo de couverture."
-},
-"Done: {n} colours from your cover picture.": {
-"ca": "Fet: {n} colors de la teva foto de portada.",
-"es": "Hecho: {n} colores de tu foto de portada.",
-"fr": "Terminé : {n} couleurs tirées de votre photo de couverture."
-},
-"Done: {n} colours from your logo.": {
-"ca": "Fet: {n} colors del teu logotip.",
-"es": "Hecho: {n} colores de tu logo.",
-"fr": "Terminé : {n} couleurs tirées de votre logo."
-},
 "Done. You can still change anything.": {
 "ca": "Fet. Encara pots canviar el que vulguis.",
 "es": "Hecho. Aún puedes cambiar lo que quieras.",
@@ -2360,16 +2287,6 @@
 "ca": "Durant l’estada",
 "es": "Durante tu estancia",
 "fr": "Pendant votre séjour"
-},
-"Each layout has its own colours. You can take them from your cover picture or your logo instead: every layout uses them in its own way.": {
-"ca": "Cada disseny té els seus colors. També els pots treure de la foto de portada o del logotip: cada disseny els fa servir a la seva manera.",
-"es": "Cada diseño tiene sus colores. También puedes sacarlos de tu foto de portada o de tu logo: cada diseño los usa a su manera.",
-"fr": "Chaque mise en page a ses couleurs. Vous pouvez aussi les tirer de votre photo de couverture ou de votre logo : chaque mise en page les utilise à sa façon."
-},
-"Each one shows the same sections in a different way.": {
-"ca": "Cadascun mostra les mateixes seccions d’una manera diferent.",
-"es": "Cada uno muestra las mismas secciones de una forma distinta.",
-"fr": "Chacune montre les mêmes sections d’une façon différente."
 },
 "Each place guests can take rubbish themselves, with what it takes. Even with collection at the house, glass often goes to a container.": {
 "ca": "Cada lloc on els hostes poden portar les escombraries, amb el que s’hi llença. Encara que es reculli a casa, el vidre sovint va al contenidor.",
@@ -2596,36 +2513,6 @@
 "es": "{x}, a {n} km de la casa",
 "fr": "{x}, à {n} km de la maison"
 },
-"Four steps: your logo, the cover picture, the layout and its colours. Preview shows the result before guests see it.": {
-"ca": "Quatre passos: el logotip, la foto de portada, el disseny i els colors. La vista prèvia mostra el resultat abans que el vegin els hostes.",
-"es": "Cuatro pasos: tu logo, la foto de portada, el diseño y sus colores. La vista previa muestra el resultado antes de que lo vean los huéspedes.",
-"fr": "Quatre étapes : votre logo, la photo de couverture, la mise en page et ses couleurs. L’aperçu montre le résultat avant que les voyageurs ne le voient."
-},
-"Four steps: your logo, the cover picture, the layout and its colours. All optional, and you can change them later.": {
-"ca": "Quatre passos: el logotip, la foto de portada, el disseny i els colors. Tot és opcional i ho pots canviar més tard.",
-"es": "Cuatro pasos: tu logo, la foto de portada, el diseño y sus colores. Todo es opcional y puedes cambiarlo más tarde.",
-"fr": "Quatre étapes : votre logo, la photo de couverture, la mise en page et ses couleurs. Tout est facultatif et modifiable plus tard."
-},
-"From my logo": {
-"ca": "Del meu logotip",
-"es": "De mi logo",
-"fr": "De mon logo"
-},
-"From my cover picture": {
-"ca": "De la meva foto de portada",
-"es": "De mi foto de portada",
-"fr": "De ma photo de couverture"
-},
-"The colours of the layout": {
-"ca": "Els colors del disseny",
-"es": "Los colores del diseño",
-"fr": "Les couleurs de la mise en page"
-},
-"From the cover": {
-"ca": "De la portada",
-"es": "De la portada",
-"fr": "De la couverture"
-},
 "From your listing": {
 "ca": "Del teu anunci",
 "es": "De tu anuncio",
@@ -2635,41 +2522,6 @@
 "ca": "Suggerit per a tu: revisa-ho",
 "es": "Sugerido para ti: revísalo",
 "fr": "Suggéré pour vous : à vérifier"
-},
-"Gentle pastels, rounded corners.": {
-"ca": "Pastels suaus, cantonades arrodonides.",
-"es": "Pasteles suaves, esquinas redondeadas.",
-"fr": "Pastels doux, coins arrondis."
-},
-"Like an app: bold blocks, strong shapes.": {
-"ca": "Com una app: blocs grans, formes marcades.",
-"es": "Como una app: bloques grandes, formas marcadas.",
-"fr": "Comme une appli : grands blocs, formes affirmées."
-},
-"Text first, thin lines, lots of white.": {
-"ca": "Primer el text, línies fines, molt de blanc.",
-"es": "Primero el texto, líneas finas, mucho blanco.",
-"fr": "Le texte d’abord, traits fins, beaucoup de blanc."
-},
-"Wood, moss and warm earth, for farmhouses and country homes.": {
-"ca": "Fusta, molsa i terra càlida, per a masies i cases de camp.",
-"es": "Madera, musgo y tierra cálida, para casas de campo y masías.",
-"fr": "Bois, mousse et terre chaude, pour les fermes et maisons de campagne."
-},
-"Soft rounded cards": {
-"ca": "Targetes suaus i arrodonides",
-"es": "Tarjetas suaves y redondeadas",
-"fr": "Cartes douces et arrondies"
-},
-"Mediterranean": {
-"ca": "Mediterrani",
-"es": "Mediterráneo",
-"fr": "Méditerranéen"
-},
-"Rural": {
-"ca": "Rural",
-"es": "Rural",
-"fr": "Rural"
 },
 "Getting around always has its own page. As a tile it also sits with your other Home tiles, one tap away.": {
 "ca": "Com moure’s sempre té la seva pàgina. Com a botó també és amb els altres botons de l’inici, a un toc.",
@@ -3491,11 +3343,6 @@
 "es": "Horario, en palabras",
 "fr": "Horaires, en toutes lettres"
 },
-"Optional: each layout comes with its own": {
-"ca": "Opcional: cada disseny porta els seus",
-"es": "Opcional: cada diseño trae los suyos",
-"fr": "Facultatif : chaque mise en page a les siennes"
-},
 "Optional. Anything you add here saves as you type.": {
 "ca": "Opcional. El que afegeixis aquí es desa mentre escrius.",
 "es": "Opcional. Lo que añadas aquí se guarda mientras escribes.",
@@ -4046,11 +3893,6 @@
 "es": "Buscar ahora",
 "fr": "Chercher maintenant"
 },
-"Secondary text": {
-"ca": "Text secundari",
-"es": "Texto secundario",
-"fr": "Texte secondaire"
-},
 "Text": {
 "ca": "Text",
 "es": "Texto",
@@ -4350,11 +4192,6 @@
 "ca": "La guia s’obre en l’idioma del mòbil de l’hoste quan pot. El primer és l’idioma principal.",
 "es": "La guía se abre en el idioma del móvil del huésped cuando puede. El primero es el idioma principal.",
 "fr": "Le guide s’ouvre dans la langue du téléphone du voyageur quand c’est possible. La première est la langue principale."
-},
-"The layout’s own": {
-"ca": "Els del disseny",
-"es": "Los del diseño",
-"fr": "Celles de la mise en page"
 },
 "The name on the guide and on guests’ phones, the text under a shared link and the languages.": {
 "ca": "El nom de la guia i als mòbils dels hostes, el text sota un enllaç compartit i els idiomes.",
@@ -5441,36 +5278,6 @@
 "es": "Elige hasta cuatro.",
 "fr": "Choisissez-en jusqu’à quatre."
 },
-"Which feels closest?": {
-"ca": "Quin s’hi acosta més?",
-"es": "¿Cuál se acerca más?",
-"fr": "Lequel s’en rapproche le plus ?"
-},
-"This sets the layout, not only the colours.": {
-"ca": "Això defineix el disseny, no només els colors.",
-"es": "Esto define el diseño, no solo los colores.",
-"fr": "Cela définit la mise en page, pas seulement les couleurs."
-},
-"Each layout comes with its own colours. You can also take them from your logo or your cover picture.": {
-"ca": "Cada disseny porta els seus colors. També els pots treure del logotip o de la foto de portada.",
-"es": "Cada diseño trae sus colores. También puedes sacarlos de tu logo o de tu foto de portada.",
-"fr": "Chaque mise en page a ses couleurs. Vous pouvez aussi les tirer de votre logo ou de votre photo de couverture."
-},
-"Each one shows the same sections in a different way. Not sure? Leave it: we pick one that suits your listing.": {
-"ca": "Cadascun mostra les mateixes seccions d’una manera diferent. No ho tens clar? Deixa-ho: en triem un que encaixi amb el teu anunci.",
-"es": "Cada uno muestra las mismas secciones de una forma distinta. ¿No lo tienes claro? Déjalo: elegimos uno que encaje con tu anuncio.",
-"fr": "Chacune montre les mêmes sections d’une façon différente. Vous hésitez ? Laissez : nous en choisissons une adaptée à votre annonce."
-},
-"Decide for me": {
-"ca": "Decideix per mi",
-"es": "Decide por mí",
-"fr": "Décidez pour moi"
-},
-"We match it to your images.": {
-"ca": "L’adaptem a les teves imatges.",
-"es": "Lo adaptamos a tus imágenes.",
-"fr": "Nous l’adaptons à vos images."
-},
 "Classic sights": {
 "ca": "Visites clàssiques",
 "es": "Visitas clásicas",
@@ -6510,11 +6317,6 @@
 "ca": "Aquesta guia encara no té contactes.",
 "es": "Esta guía aún no tiene contactos.",
 "fr": "Ce guide n’a pas encore de contacts."
-},
-"This picture has no colours we can use (only black, white or grey)": {
-"ca": "Aquesta imatge no té colors que puguem fer servir (només negre, blanc o gris)",
-"es": "Esta imagen no tiene colores que podamos usar (solo negro, blanco o gris)",
-"fr": "Cette image n’a pas de couleurs utilisables (seulement du noir, du blanc ou du gris)"
 },
 "Time and the short list before leaving.": {
 "ca": "L’hora i la llisteta abans de marxar.",
@@ -8345,5 +8147,105 @@
 "ca": "Els teus mercats encara no són a la teva guia.",
 "es": "Tus mercados todavía no están en tu guía.",
 "fr": "Vos marchés ne sont pas encore dans votre guide."
+},
+"Each has its own colours and title font. Tap one to see your guide in it.": {
+"ca": "Cadascun té els seus colors i el seu tipus de lletra per als títols. Toca’n un per veure-hi la teva guia.",
+"es": "Cada uno tiene sus colores y su tipografía para los títulos. Toca uno para ver tu guía con él.",
+"fr": "Chacun a ses couleurs et sa police de titres. Touchez-en un pour y voir votre guide."
+},
+"From your cover": {
+"ca": "De la teva portada",
+"es": "De tu portada",
+"fr": "De votre couverture"
+},
+"From your logo": {
+"ca": "Del teu logotip",
+"es": "De tu logo",
+"fr": "De votre logo"
+},
+"Sea": {
+"ca": "Mar",
+"es": "Mar",
+"fr": "Mer"
+},
+"Country": {
+"ca": "Camp",
+"es": "Campo",
+"fr": "Campagne"
+},
+"City night": {
+"ca": "Nit de ciutat",
+"es": "Noche de ciudad",
+"fr": "Nuit en ville"
+},
+"Stone": {
+"ca": "Pedra",
+"es": "Piedra",
+"fr": "Pierre"
+},
+"Welcome": {
+"ca": "Hola",
+"es": "Hola",
+"fr": "Bonjour"
+},
+"This guide uses an older layout. Pick its colours here to move it to the new look.": {
+"ca": "Aquesta guia fa servir un disseny antic. Tria’n els colors aquí per passar-la al nou estil.",
+"es": "Esta guía usa un diseño antiguo. Elige aquí sus colores para pasarla al nuevo estilo.",
+"fr": "Ce guide utilise une ancienne mise en page. Choisissez ses couleurs ici pour le passer au nouveau style."
+},
+"Main colour": {
+"ca": "Color principal",
+"es": "Color principal",
+"fr": "Couleur principale"
+},
+"Open now": {
+"ca": "Obert ara",
+"es": "Abierto ahora",
+"fr": "Ouvert maintenant"
+},
+"Light tiles": {
+"ca": "Blocs clars",
+"es": "Bloques claros",
+"fr": "Blocs clairs"
+},
+"Warm tiles": {
+"ca": "Blocs càlids",
+"es": "Bloques cálidos",
+"fr": "Blocs chauds"
+},
+"Optional: each set of colours comes with its own": {
+"ca": "Opcional: cada joc de colors porta els seus",
+"es": "Opcional: cada juego de colores trae las suyas",
+"fr": "Facultatif : chaque jeu de couleurs a les siennes"
+},
+"Its own": {
+"ca": "Els seus",
+"es": "Las suyas",
+"fr": "Les siennes"
+},
+"Your cover picture, its colours and your logo. All optional, and you can change them later.": {
+"ca": "La foto de portada, els seus colors i el logotip. Tot és opcional i ho pots canviar més tard.",
+"es": "Tu foto de portada, sus colores y tu logo. Todo es opcional y puedes cambiarlo más tarde.",
+"fr": "Votre photo de couverture, ses couleurs et votre logo. Tout est facultatif et modifiable plus tard."
+},
+"Three steps: your logo, the cover picture and the colours. Preview shows the result before guests see it.": {
+"ca": "Tres passos: el logotip, la foto de portada i els colors. La vista prèvia mostra el resultat abans que el vegin els hostes.",
+"es": "Tres pasos: tu logo, la foto de portada y los colores. La vista previa muestra el resultado antes de que lo vean los huéspedes.",
+"fr": "Trois étapes : votre logo, la photo de couverture et les couleurs. L’aperçu montre le résultat avant que les voyageurs ne le voient."
+},
+"Logo, cover, colours": {
+"ca": "Logotip, portada, colors",
+"es": "Logo, portada, colores",
+"fr": "Logo, couverture, couleurs"
+},
+"Own cover": {
+"ca": "Portada pròpia",
+"es": "Portada propia",
+"fr": "Couverture personnelle"
+},
+"Drawn cover": {
+"ca": "Portada dibuixada",
+"es": "Portada dibujada",
+"fr": "Couverture dessinée"
 }
 }

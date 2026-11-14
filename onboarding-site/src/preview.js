@@ -2,84 +2,156 @@
    Built in the browser from the host's own answers and photos, the moment they send (or press Preview).
    Lives at /<their-address> on this device. Researched sections (places, markets, events) show what the
    full guide will add. A Feedback button on every screen sends notes tagged with that screen. */
-const PV = { screen: 'home', palette: null, preset: null };
+const PV = { screen: 'home' };
 
-// The phone's colours (acc: blue, red, yellow, green). Each layout has its own (engine/src/styles/presets/*.css); the host
-// can take them from their cover picture or their logo instead (answers.colorsFrom), as the build does.
-const PRESET_PAL = {
-  bold: { paper: '#F3EEE3', ink: '#121212', acc: ['#1D4FA0', '#D52B1E', '#F5C400', '#0E7C46'] },
-  soft: { paper: '#F7F3EE', ink: '#2E2B37', acc: ['#7FA7DA', '#E0806F', '#F1C96A', '#6FB08B'] },
-  minimal: { paper: '#FFFFFF', ink: '#111111', acc: ['#2A5BD7', '#C8382B', '#2A5BD7', '#1F7A4D'] },
-  mediterranean: { paper: '#FBFAF6', ink: '#122B4C', acc: ['#1F4F96', '#BF5536', '#F2C64B', '#2D7A62'] },
-  rural: { paper: '#F2ECDF', ink: '#2A2318', acc: ['#4E6A3A', '#A3482B', '#E2B45A', '#3F6B3F'] }
-};
-const colorsFromKind = () => { const c = String(v('colorsFrom')).toLowerCase(); return /logo/.test(c) ? 'logo' : /cover|photo|picture/.test(c) ? 'cover' : 'look'; };
-// The picture the colours come from: the logo, or the cover (the host's own, else the listing photo, even when the cover
-// is drawn: engine/scripts/generate-site.py cover_im). None: the layout's own colours.
-function colourSource(){
-  const k = colorsFromKind(), up = kind => uploads.find(u => u.kind === kind), cur = String(A.coverUrl || '').split('?')[0];
-  if (k === 'logo') return up('logo') ? { src: srcOf(up('logo')), logo: true } : null;
-  if (k === 'cover') return up('cover') ? { src: srcOf(up('cover')) } : /^https:/.test(cur) ? { src: cur + '?im_w=480' } : null;
-  return null;
+/* ---------- The guide's colours: a colour world (engine/src/worlds.js, pasted by build.py as WK) ----------
+   The host picks one in The look (A.world): one of the six worlds, or 'cover' / 'logo', a world made from that picture by the
+   engine's own rule (engine/src/picture-world.js), kept in A.worldOwn with the picture it came from (A.worldSrc), so it is
+   read again only when that picture changes. Every guide has Ca La Kimberly's tiles (Yohann, 10 Nov 2026): no layouts. */
+const WORLD_IDS = ['bauhaus', 'sea', 'country', 'tropical', 'night', 'stone'];
+const WORLD_NAME = { bauhaus: 'Bauhaus', sea: 'Sea', country: 'Country', tropical: 'Tropical', night: 'City night', stone: 'Stone', cover: 'From your cover', logo: 'From your logo' };
+const isWorldId = id => typeof id === 'string' && WORLD_IDS.includes(id);
+// The picture a world can come from, as { key, src }: the logo, or the cover (the host's own, else the listing photo
+// chosen, even when the cover is drawn: engine/scripts/generate-site.py cover_im). key names the picture (A.worldSrc).
+function picOf(kind){
+  const up = k => uploads.find(u => u.kind === k);
+  if (kind === 'logo') return up('logo') ? { key: 'up:' + up('logo').id, src: srcOf(up('logo')) } : null;
+  if (kind !== 'cover') return null;
+  if (up('cover')) return { key: 'up:' + up('cover').id, src: srcOf(up('cover')) };
+  const cur = String(A.coverUrl || '').split('?')[0];
+  return /^https:/.test(cur) ? { key: cur, src: cur + '?im_w=480' } : null;
 }
-// Same steps as the build's palette (generate-site.py): k-means, a light paper, a dark ink, then each colour slot takes
-// the picture's colour nearest its hue (a logo's few colours each take the nearest free slot), made readable.
-async function paletteFrom(src, logo){
-  const im = await new Promise((res, rej) => { const i = new Image(); if (/^https?:/.test(src)) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = rej; i.src = src; });
-  const n = 64, c = document.createElement('canvas'); c.width = c.height = n; const x = c.getContext('2d', { willReadFrequently: true });
-  x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); x.drawImage(im, 0, 0, n, n);   // a transparent logo is read on white
-  const d = x.getImageData(0, 0, n, n).data, px = []; for (let i = 0; i < d.length; i += 4) px.push([d[i], d[i + 1], d[i + 2]]);
-  const hls = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; if (mx === mn) return [0, l, 0]; const dd = mx - mn, s = l > .5 ? dd / (2 - mx - mn) : dd / (mx + mn); const h = mx === r ? (g - b) / dd + (g < b ? 6 : 0) : mx === g ? (b - r) / dd + 2 : (r - g) / dd + 4; return [h / 6, l, s]; };
-  const fromHls = (h, l, s) => { const f = k0 => { const k = (k0 + h * 12) % 12, a = s * Math.min(l, 1 - l); return 255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))); }; return [f(0), f(8), f(4)]; };
-  const lum = cc => { const f = vv => { vv /= 255; return vv <= .03928 ? vv / 12.92 : ((vv + .055) / 1.055) ** 2.4; }; return .2126 * f(cc[0]) + .7152 * f(cc[1]) + .0722 * f(cc[2]); };
-  const con = (a, b) => { const [p, q] = [lum(a), lum(b)].sort((s, t) => t - s); return (p + .05) / (q + .05); };
-  const hex = cc => '#' + cc.map(vv => Math.round(vv).toString(16).padStart(2, '0')).join('').toUpperCase();
-  const hd = (a, b) => Math.min(Math.abs(a - b), 1 - Math.abs(a - b));
-  let cent = Array.from({ length: 9 }, (_, i) => px[Math.floor((i + .5) * px.length / 9)].slice()), lab = [];
-  for (let it = 0; it < 12; it++) {
-    lab = px.map(p => { let bi = 0, bd = 1e9; cent.forEach((q, i) => { const dd = (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2; if (dd < bd) { bd = dd; bi = i; } }); return bi; });
-    cent = cent.map((q, i) => { const m = px.filter((_, j) => lab[j] === i); return m.length ? [0, 1, 2].map(k => m.reduce((a, p) => a + p[k], 0) / m.length) : q; });
+// A picture's world: its pixels at 96 x 96 (drawn on white, so a transparent logo reads as on paper), then the engine's
+// rule. Rejects when the picture cannot be read (no CORS, gone).
+async function worldFromImage(src){
+  const im = await new Promise((res, rej) => { const i = new Image(); if (/^https?:/.test(src)) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => rej(new Error('unreadable')); i.src = src; });
+  const n = 96, c = document.createElement('canvas'); c.width = c.height = n; const x = c.getContext('2d', { willReadFrequently: true });
+  x.imageSmoothingQuality = 'high'; x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); x.drawImage(im, 0, 0, n, n);   // each pixel the average of its part of the picture
+  return WK.worldFromPicture(WK.swatches(x.getImageData(0, 0, n, n).data));
+}
+// Each picture read once per page (by its key): w is undefined while it is read, null when it cannot be, else its world.
+// The first answer redraws what shows it (worldArrived), never again, so nothing loops.
+const PICW = new Map();
+function picEntry(key, src, seed){
+  let e = PICW.get(key);
+  if (!e) {
+    e = { w: undefined }; PICW.set(key, e);
+    if (seed && WK.worldOf(seed)) { e.w = seed; e.p = Promise.resolve(seed); }   // read before, kept with the answers or the guide
+    else e.p = worldFromImage(src).then(w => w, () => null).then(w => { e.w = w; worldArrived(); return w; });
   }
-  const cl = cent.map((q, i) => ({ c: q, w: lab.filter(z => z === i).length / px.length })).filter(z => z.w > 0).sort((a, b) => b.w - a.w);
-  const lights = cl.map(z => z.c).filter(q => hls(q)[1] > .82 && hls(q)[2] < .5).sort((a, b) => hls(b)[1] - hls(a)[1]), baseH = hls(cl[0].c)[0];
-  let [h, l, s] = hls(lights[0] || fromHls(baseH, .965, .25)); const paper = fromHls(h, Math.max(l, .94), Math.min(s, .35));
-  [h, l, s] = hls(cl.map(z => z.c).sort((a, b) => hls(a)[1] - hls(b)[1])[0]); const ink = fromHls(h, Math.min(l, .13), Math.min(s, .35));
-  const acc = [];
-  for (const z of cl.slice().sort((a, b) => hls(b.c)[2] * (.3 + b.w) - hls(a.c)[2] * (.3 + a.w))) { const q = hls(z.c); if (q[2] < .25 || acc.some(a => hd(q[0], hls(a)[0]) < .06)) continue; acc.push(z.c); }
-  const real = acc.slice();
-  while (acc.length < 4) acc.push(fromHls(acc.length ? (hls(acc[acc.length - 1])[0] + .33) % 1 : baseH, .45, .55));
-  const T = { yellow: .14, red: 0, blue: .6, green: .33, orange: .07 }, slots = {}, pool = acc.slice(0, 6), own = logo && real.length;
-  if (own) for (const q of real.slice(0, 5)) { const free = Object.keys(T).filter(k => !slots[k]); slots[free.sort((a, b) => hd(hls(q)[0], T[a]) - hd(hls(q)[0], T[b]))[0]] = q; }
-  for (const [k, t] of Object.entries(T)) {
-    if (slots[k]) continue;
-    if (pool.length && !own) { const q = pool.slice().sort((a, b) => hd(hls(a)[0], t) - hd(hls(b)[0], t))[0]; if (hd(hls(q)[0], t) < .12) { slots[k] = q; pool.splice(pool.indexOf(q), 1); continue; } }
-    slots[k] = k === 'blue' ? fromHls(t, .40, .45) : fromHls(t, .5, .55);   // no colour of the picture near this hue
-  }
-  if (con(slots.yellow, paper) < 1.6 || hls(slots.yellow)[2] < .45) slots.yellow = fromHls(.12, .58, .75);
-  const onWhite = q => { let [a, b, e] = hls(q); while (con(q, [255, 255, 255]) < 3.2 && b > .08) { b -= .03; q = fromHls(a, b, e); } return q; };
-  const onInk = q => { let [a, b, e] = hls(q); while (con(q, ink) < 5 && b < .92) { b += .03; q = fromHls(a, b, e); } return q; };
-  return { paper: hex(paper), ink: hex(ink), acc: [onWhite(slots.blue), onWhite(slots.red), onInk(slots.yellow), onWhite(slots.green)].map(hex), own: true };
+  return e;
 }
-async function phonePalette(preset){
-  const cs = colourSource();
-  if (!cs) return PRESET_PAL[preset];
-  if (PV.palSrc !== cs.src) { PV.palSrc = cs.src; PV.palette = await paletteFrom(cs.src, cs.logo).catch(() => null); }
-  return PV.palette || PRESET_PAL[preset];
+// The builder's pictures: the one the host's colours were read from is not read again.
+const picWorldEntry = kind => { const pic = picOf(kind); if (!pic) return null; return picEntry(pic.key, pic.src, A.world === kind && A.worldSrc === pic.key ? A.worldOwn : null); };
+const picWorld = kind => { const e = picWorldEntry(kind); return e ? e.p : Promise.resolve(null); };
+const picWorldNow = kind => { const e = picWorldEntry(kind); return e ? e.w : null; };   // undefined: still reading
+// Old answers: "Colours: from my cover picture / my logo" (answers.colorsFrom) becomes that phone, once. The old layout
+// (answers.mood) is no longer read: every guide has the same tiles.
+function worldMigrate(){
+  if (A.world || !A.colorsFrom) return;
+  const c = String(A.colorsFrom).toLowerCase(), w = /logo/.test(c) ? 'logo' : /cover|photo|picture/.test(c) ? 'cover' : '';
+  if (w) A.world = w;
 }
-// The layout the host picked in The look, else Bauhaus ("Big colour tiles"), the guides' default (Yohann, 29 Oct 2026;
-// engine/scripts/generate-site.py picks Bauhaus too when there is nothing to go on).
-function choosePreset(){
-  const mood = v('mood');
-  if (mood === 'editorial') return 'minimal';   // an old answer
-  return PRESET_FONTS[mood] ? mood : 'bold';
+// The phone selected: the host's choice, Bauhaus when none, or when its picture is gone or cannot be read.
+function worldSel(){
+  worldMigrate();
+  const w = A.world;
+  if (w === 'cover' || w === 'logo') return picOf(w) && picWorldNow(w) !== null ? w : 'bauhaus';
+  return isWorldId(w) ? w : 'bauhaus';
 }
-const PRESET_FONTS = {
-  bold: ['Jost:wght@400;500;600;700', '"Jost",system-ui,sans-serif', '"Jost",system-ui,sans-serif'],
-  soft: ['Outfit:wght@400;500;600;700', '"Outfit",system-ui,sans-serif', '"Outfit",system-ui,sans-serif'],
-  minimal: ['Geist:wght@400;500;600;700&family=Jost:wght@400;500;600', '"Geist",system-ui,sans-serif', '"Jost",system-ui,sans-serif'],
-  mediterranean: ['DM+Serif+Display&family=Outfit:wght@400;500;600;700', '"DM Serif Display",Georgia,serif', '"Outfit",system-ui,sans-serif'],
-  rural: ['Fraunces:wght@400;600;700&family=Nunito:wght@400;600;700', '"Fraunces",Georgia,serif', '"Nunito",system-ui,sans-serif']
-};
+// What the stored answer says once a picture is read: its world and the picture (A.worldOwn, A.worldSrc), or Bauhaus
+// when the picture is gone or cannot be read (silently, as the build does).
+function worldStore(){
+  worldMigrate();
+  const k = A.world; if (k !== 'cover' && k !== 'logo') return false;
+  const pic = picOf(k), w = pic ? picWorldNow(k) : null;
+  if (w === undefined) return false;
+  if (w === null) { A.world = 'bauhaus'; delete A.worldOwn; delete A.worldSrc; queueSave(); return true; }
+  if (A.worldSrc === pic.key && JSON.stringify(A.worldOwn) === JSON.stringify(w)) return false;
+  A.worldOwn = w; A.worldSrc = pic.key; queueSave(); return true;
+}
+// A picture's colours just arrived: the answer, then The look (builder or editor) and the phone show them.
+let worldArrivedT = null;
+function worldArrived(){
+  clearTimeout(worldArrivedT);
+  worldArrivedT = setTimeout(() => {
+    if (CM.on) return edWorldArrived();
+    worldStore();
+    if (document.getElementById('lk_worlds')) { wpsSwap(lookWorldsRow()); lookPaint(); }
+    if (document.getElementById('phoneFrame')) { PHONE.build = false; phoneRender(); }
+  }, 30);
+}
+// The world to draw (an id or { base, ...roles }): the picture's once read; Bauhaus when it cannot be.
+async function worldResolved(){
+  const s = worldSel();
+  if (s === 'cover' || s === 'logo') return (await picWorld(s)) || 'bauhaus';
+  return s;
+}
+// The same at once, for what cannot wait (the drawn cover's colours, a researched card's kind): Stone while a picture is read.
+function worldNow(){
+  const s = worldSel();
+  if (s === 'cover' || s === 'logo') { const w = picWorldNow(s); return w === undefined ? 'stone' : w || 'bauhaus'; }
+  return s;
+}
+// A world's tokens after the contrast rule, and the title font of its base.
+const worldTok = w => WK.worldTokens(WK.worldOf(w) || WK.WORLDS.bauhaus);
+const worldBase = w => isWorldId(w) ? w : w && isWorldId(w.base) ? w.base : 'bauhaus';
+// The phone's palette, as the tiles use it (acc: blue, red, yellow, green), with the world's title font.
+function worldPal(w){
+  const t = worldTok(w), b = WK.WORLDS[worldBase(w)];
+  return { paper: t['--paper'], ink: t['--ink'], acc: [t['--blue'], t['--red'], t['--yellow'], t['--green']], display: b.display, plain: !!b.plain, base: worldBase(w) };
+}
+const phonePalette = async () => worldPal(await worldResolved());
+// The fonts of a world from Google Fonts: Jost for the text, the world's title family in the weights the engine bundles.
+function worldGF(id){
+  const w = WK.WORLDS[isWorldId(id) ? id : 'bauhaus'], fam = (w.display.match(/"([^"]+)"/) || [])[1] || 'Jost', slug = fam.toLowerCase().replace(/ /g, '-');
+  const ws = w.fonts.filter(f => f.startsWith(slug + '/')).map(f => f.split('/')[1].replace(/\.css$/, '')), q = fam.replace(/ /g, '+');
+  const title = fam === 'Jost' ? '' : '&family=' + q + (ws.length === 1 && ws[0] === '400' ? '' : ':wght@' + ws.join(';'));
+  return 'Jost:wght@400;500;600;700' + title;
+}
+// The six title fonts for the small phones, once, when The look opens (builder or editor): weight 600, DM Serif Display 400.
+function worldFontsLoad(){
+  if (document.getElementById('wpFonts')) return;
+  const l = document.createElement('link'); l.id = 'wpFonts'; l.rel = 'stylesheet';
+  l.href = 'https://fonts.googleapis.com/css2?' + WORLD_IDS.map(id => { const fam = (WK.WORLDS[id].display.match(/"([^"]+)"/) || [])[1], plain = WK.WORLDS[id].plain; return 'family=' + fam.replace(/ /g, '+') + (plain ? '' : ':wght@600'); }).join('&') + '&display=swap';
+  document.head.appendChild(l);
+}
+// The row of small phones, one per world, the host's own guide in each (builder and editor, the same markup).
+// o: { sel: the id selected or null, cover: the cover picture's address or '', name: the radio name, pics: { cover, logo }:
+// the picture's world (undefined while read: Stone for that moment) or absent when there is no such picture }.
+const WP_TICK = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.4l2.3 2.3 4.7-5"/></svg>';
+function worldPhone(id, w, cover, on){
+  const t = worldTok(w), b = WK.WORLDS[worldBase(w)];
+  const st = `--p:${t['--paper']};--i:${t['--ink']};--deep:${t['--blue']};--strong:${t['--red']};--fresh:${t['--green']};--light:${t['--yellow']};--warm:${t['--orange']};--d:${b.display};--dw:${b.plain ? 400 : 600}`;
+  return `<label class="wp"><input type="radio" name="world" id="lk_world_${id}" value="${id}"${on ? ' checked' : ''}>
+    <span class="wp-ph" style="${esc(st)}" aria-hidden="true"><span class="wp-cv"${cover ? ` style="background-image:url('${esc(cover)}')"` : ''}></span><span class="wp-nm">Welcome</span>
+      <span class="wp-g"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i><span class="e"><i></i><i></i></span></span></span>
+    <span class="wp-on" aria-hidden="true">${WP_TICK}</span><b>${esc(WORLD_NAME[id])}</b></label>`;
+}
+function worldRowHTML(o){
+  worldFontsLoad();
+  const phones = [...['cover', 'logo'].filter(k => k in o.pics && o.pics[k] !== null).map(k => worldPhone(k, o.pics[k] === undefined ? 'stone' : o.pics[k], o.cover, o.sel === k)),
+    ...WORLD_IDS.map(id => worldPhone(id, id, o.cover, o.sel === id))];
+  return `<div class="wps" role="radiogroup" aria-labelledby="l_world">${phones.join('')}</div>`;
+}
+// The selected phone in view in the sliding row (360 px), and the row where the host left it after a redraw.
+const WPS = { x: 0 };
+document.addEventListener('scroll', e => { if (e.target && e.target.classList && e.target.classList.contains('wps')) WPS.x = e.target.scrollLeft; }, true);
+function wpsInView(keep){
+  const st = document.querySelector('.wps'); if (!st || st.scrollWidth <= st.clientWidth) return;
+  if (keep) st.scrollLeft = WPS.x;
+  const x = st.querySelector('input:checked'), r = x && x.closest('.wp').getBoundingClientRect(), q = st.getBoundingClientRect();
+  if (r && (r.right > q.right || r.left < q.left)) st.scrollLeft += r.left - q.left - 8;
+  WPS.x = st.scrollLeft;
+}
+// The row drawn again where it is (a picture's colours arrived): the rest of the step stays as it is, the focus too.
+function wpsSwap(html){
+  const r = document.querySelector('.wps'); if (!r) return;
+  const id = document.activeElement && r.contains(document.activeElement) ? document.activeElement.id : '', t = document.createElement('div');
+  t.innerHTML = html; r.replaceWith(t.firstElementChild);
+  wpsInView(true);
+  if (id) { const el = document.getElementById(id); if (el) el.focus({ preventScroll: true }); }
+}
 
 // The guide's sections, built from what the host chose and wrote.
 const lines = k => (v(k) || '').split('\n').map(x => x.replace(/^\s*[-*•]\s*/, '').trim()).filter(Boolean);
@@ -128,10 +200,11 @@ function guideSections(){
 const FIRST = { 'Wi-Fi': 'wifi', 'Check-out time': 'stay', 'House guide': 'houseguide', 'How to get in': 'arrival', 'Places to eat': 'eat', 'What’s on today': 'events', 'Beaches': 'todo', 'Map': 'map', 'Your phone number': 'emergency', 'Rubbish tonight': 'rubbish' };
 function ordered(S){ const pri = (A.homeFirst || []).map(x => FIRST[x]).filter(Boolean); return [...S].sort((a, b) => { const ia = pri.indexOf(a.id), ib = pri.indexOf(b.id); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); }
 
-function pvStyle(p, preset){
-  const [fam, disp, body] = PRESET_FONTS[preset];
+// The phone's styles: Ca La Kimberly's tiles (the Bauhaus look) in the chosen world's colours, its titles in the world's
+// font, the text in Jost, as in the guide (engine/src/worlds.js).
+function pvStyle(p){
   const a = p.acc;
-  const base = `:root{--pp:${p.paper};--pi:${p.ink};--a1:${a[0]};--a2:${a[1]};--a3:${a[2]};--a4:${a[3]};--pd:${disp};--pb:${body}}`;
+  const base = `:root{--pp:${p.paper};--pi:${p.ink};--a1:${a[0]};--a2:${a[1]};--a3:${a[2]};--a4:${a[3]};--pd:${p.display};--pb:"Jost",system-ui,sans-serif}${p.plain ? '.pv{font-synthesis-weight:none}' : ''}`;
   const shared = `html,body{background:var(--pp)!important;margin:0!important;padding:0!important}
 .pv{background:var(--pp);color:var(--pi);font:16px/1.5 var(--pb);min-height:100vh;padding-bottom:96px}
 .pv *{box-sizing:border-box}.pv a{color:inherit}
@@ -187,53 +260,17 @@ function pvStyle(p, preset){
 .fbs-card .stars{display:flex;gap:6px}.fbs-card .stars button{width:42px;height:42px;border-radius:10px;border:1.5px solid #ddd;background:#f6f5f1;font:700 16px system-ui;cursor:pointer;color:#151515}
 .fbs-card .stars button[aria-pressed="true"]{background:#F2B33D;border-color:#F2B33D}
 .fbs-card .hint{font-size:13px;color:#666;margin:0}`;
-  const P = {
-    bold: `.pv-secs{grid-template-columns:1fr 1fr}
+  const tiles = `.pv-secs{grid-template-columns:1fr 1fr}
 .pv-sec{min-height:156px;padding:14px;border-radius:20px;color:var(--st,#fff);background:var(--sc);justify-content:flex-start;gap:4px}
 .pv-sec::before{content:"";position:absolute;z-index:-1;top:0;right:0;width:54px;height:54px;background:var(--ss);border-radius:0 0 0 54px}
 .pv-sec:nth-child(3n+2)::before{width:0;height:0;background:none;border-radius:0;border-left:25px solid transparent;border-right:25px solid transparent;border-top:44px solid var(--ss);right:12px}
 .pv-sec:nth-child(3n)::before{width:46px;height:46px;border-radius:50%;top:-12px;right:-12px}
 .pv-sec .ic{min-height:50px}.pv-sec .ic svg{width:26px;height:26px}
-.pv-sec .tx{display:flex;flex-direction:column;gap:2px}.pv-sec b{font-family:var(--pb);font-weight:700;font-size:20px;line-height:1.12}.pv-sec small{font-size:13.5px}
+.pv-sec .tx{display:flex;flex-direction:column;gap:2px}.pv-sec b{font-family:var(--pd);font-weight:700;font-size:20px;line-height:1.12}.pv-sec small{font-size:13.5px}
 .pv-sec .ar{display:grid;place-items:center;align-self:flex-end;margin-top:auto;width:32px;height:32px;border-radius:50%;background:#fff;color:#121212;font-weight:700}
 .pv-sec.lt .ar{background:var(--pi);color:#fff}.pv-sec.wide{grid-column:1/-1;min-height:120px}
-.pv-fact{background:#fff;border-radius:14px;border:2px solid var(--pi)}.pv-h{font-weight:700}.pv h1,.pv h2{font-weight:700}`,
-    soft: `.pv-sec{min-height:130px;padding:16px;border-radius:26px;background:color-mix(in srgb,var(--sc) 24%,#fff);box-shadow:0 6px 22px rgba(0,0,0,.07)}
-.pv-sec::before{content:"";position:absolute;z-index:-1;width:130px;height:130px;border-radius:50%;background:var(--sc);filter:blur(26px);opacity:.45;right:-30px;top:-30px}
-.pv-sec .ic{margin-bottom:auto}.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:90px}
-.pv-fact{background:#fff;border-radius:18px;box-shadow:0 4px 16px rgba(0,0,0,.06)}.pv-cover{border-radius:0 0 28px 28px}.pv h1,.pv h2{font-weight:600}.pv-card{border-radius:22px}`,
-    mediterranean: `.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:96px}
-.pv-sec{min-height:140px;padding:16px;border-radius:22px;color:#fff;background:var(--sc)}
-.pv-sec:nth-child(6n+1){--sc:#1F4F96!important}.pv-sec:nth-child(6n+2){--sc:#D6E6F5!important;color:#122B4C}.pv-sec:nth-child(6n+3){--sc:#BF5536!important}
-.pv-sec:nth-child(6n+4){--sc:#122B4C!important}.pv-sec:nth-child(6n+5){--sc:#F2C64B!important;color:#122B4C}.pv-sec:nth-child(6n){--sc:#17748A!important}
-.pv-sec::before{content:"";position:absolute;z-index:-1;width:62px;height:62px;border-radius:10px;right:-12px;top:-12px;background:#fff radial-gradient(circle,#1F4F96 0 4.5px,transparent 5px) 0 0/15px 15px}
-.pv-sec .ic svg{width:22px;height:22px}.pv-sec b{font-size:18px;font-weight:400;font-family:var(--pd)}.pv-sec .tx{display:flex;flex-direction:column}
-.pv-fact{background:#fff;color:#122B4C;border:1px solid #DCE2EA;border-radius:12px}.pv h1,.pv h2{font-weight:400}.pv-h{font-size:15px;font-weight:600;opacity:.7}
-.pv-cover{height:clamp(200px,32vh,280px)}`,
-    rural: `.pv-secs{grid-template-columns:1fr 1fr}.pv-sec.wide{grid-column:1/-1;min-height:96px}
-.pv-sec{min-height:140px;padding:16px;border-radius:18px;color:#FFFDF8;background:var(--sc)}
-.pv-sec:nth-child(6n+1){--sc:#5A7034!important}.pv-sec:nth-child(6n+2){--sc:#E8D7A5!important;color:#3B2E21}.pv-sec:nth-child(6n+3){--sc:#A3482B!important}
-.pv-sec:nth-child(6n+4){--sc:#3B2E21!important}.pv-sec:nth-child(6n+5){--sc:#DFA54A!important;color:#3B2E21}.pv-sec:nth-child(6n){--sc:#2F5236!important}
-.pv-sec::before{content:"";position:absolute;z-index:-1;width:54px;height:54px;border-radius:0 100% 0 100%;right:-8px;top:-8px;background:#D9C98F}
-.pv-sec .ic svg{width:22px;height:22px}.pv-sec b{font-size:17px;font-weight:600;font-family:var(--pd)}.pv-sec .tx{display:flex;flex-direction:column}
-.pv-fact{background:#FFFDF8;color:#2A2318;border:1px solid #DDD2BF;border-radius:10px}.pv h1,.pv h2{font-weight:600}.pv-h{font-size:15px;font-weight:600;opacity:.7}
-.pv-cover{height:clamp(200px,32vh,280px)}`,
-    minimal: `.pv-secs{gap:0;border:1px solid color-mix(in srgb,var(--pi) 15%,transparent);border-radius:10px;overflow:hidden;background:#fff;color:#111}
-.pv-sec{flex-direction:row;align-items:center;gap:14px;justify-content:flex-start;padding:14px 16px;border-top:1px solid #eee}.pv-sec:first-child{border-top:0}
-.pv-sec .ic{color:var(--a1)}.pv-sec .ic svg{width:22px;height:22px}.pv-sec b{font-size:17px;font-weight:600;font-family:var(--pb)}.pv-sec .tx{display:flex;flex-direction:column}
-.pv-fact{background:#fff;color:#111;border:1px solid #eee;border-radius:10px}.pv h1,.pv h2{font-weight:600;letter-spacing:-.02em}.pv-h{font-size:15px;font-weight:600;opacity:.7}
-.pv-cover{height:clamp(200px,32vh,280px)}`
-  };
-  // Colours from a picture reach the tiles of Mediterranean and Rural too, which have their own (same mapping as the
-  // build's layout_vars in engine/scripts/generate-site.py, and the editor's edLayoutVars).
-  if (p.own && P[preset] && (preset === 'mediterranean' || preset === 'rural')) {
-    const mix = (x, y, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(x.slice(i, i + 2), 16) * (1 - t) + parseInt(y.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('').toUpperCase();
-    const [bl, rd, ye, gr] = a, W = '#FFFFFF', K = '#000000';
-    const to = preset === 'mediterranean' ? { '#1F4F96': bl, '#D6E6F5': mix(bl, W, .88), '#BF5536': rd, '#122B4C': mix(bl, K, .45), '#F2C64B': ye, '#17748A': gr }
-      : { '#5A7034': gr, '#E8D7A5': mix(ye, W, .62), '#A3482B': rd, '#3B2E21': mix(rd, K, .62), '#DFA54A': ye, '#2F5236': mix(gr, K, .35), '#D9C98F': mix(ye, W, .45) };
-    P[preset] = P[preset].replace(/#[0-9A-Fa-f]{6}\b/g, h => to[h.toUpperCase()] || h);
-  }
-  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fam}&display=swap"><style>${base}${shared}${P[preset]}</style>`;
+.pv-fact{background:#fff;border-radius:14px;border:2px solid var(--pi)}.pv-h{font-weight:700}.pv h1,.pv h2{font-weight:700}`;
+  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${worldGF(p.base)}&display=swap"><style>${base}${shared}${tiles}</style>`;
 }
 
 // The drawn cover, same scene as the guide's (engine/src/views/home.js THEMED_COVER).
@@ -242,7 +279,7 @@ const PV_ART = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" 
 // One screen of the guide as guests will see it, built from the answers: the cover, the name, the sections. Used by the
 // phone in the builder (the wow, and next to the steps) and by the full-page preview.
 async function pvParts(screen){
-  const preset = PV.preset || choosePreset(), p = await phonePalette(preset);
+  const p = await phonePalette();
   const S = ordered(guideSections()), name = v('guideName') || v('placeName') || WOW.name || 'Your guide';
   // Same rule as the guide (engine/scripts/generate-site.py): the host's own cover, else the listing photo they chose,
   // unless they asked for a cover drawn from the colours.
@@ -262,13 +299,13 @@ async function pvParts(screen){
   // As on the guide's Home: Wi-Fi and check-out are the two facts on top, arrival is inside the House guide; the tiles follow in two groups.
   const atHouse = ['rubbish', 'houseguide', 'emergency'].map(id => S.find(x => x.id === id)).filter(Boolean), around = S.filter(x => !atHouse.includes(x) && !['house', 'wifi', 'stay', 'arrival'].includes(x.id));
   const tile = (x, i, wide) => `<button type="button" class="pv-sec${wide ? ' wide' : ''}${light(colours[i % colours.length]) ? ' lt' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]};--ss:${shapes[i % shapes.length]};--st:${light(colours[i % colours.length]) ? p.ink : '#fff'}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span><span class="ar" aria-hidden="true">→</span></button>`;
-  const group = (list, title, from) => list.length ? `<h2 class="pv-h">${esc(title)}</h2><div class="pv-secs">${list.map((x, i) => tile(x, from + i, ['bold', 'soft', 'mediterranean', 'rural'].includes(preset) && i === list.length - 1 && list.length % 2 === 1)).join('')}</div>` : '';
+  const group = (list, title, from) => list.length ? `<h2 class="pv-h">${esc(title)}</h2><div class="pv-secs">${list.map((x, i) => tile(x, from + i, i === list.length - 1 && list.length % 2 === 1)).join('')}</div>` : '';
   const ph = id => { const r = (S.find(x => x.id === 'houseguide') || {}).rooms || []; return id === 'houseguide' && r.find(x => x.photos.length) ? r.find(x => x.photos.length).photos[0] : null; };
   const home = `<div class="pv-cover${cover ? '' : ' pv-art'}" data-pv="house"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}<div class="pv-name">${logo ? `<img class="pv-logo" src="${esc(logo)}" alt="">` : ''}<small>Welcome to</small><h1>${esc(name)}</h1></div></div>
     ${/search/i.test(v('navStyle')) ? `<input class="pv-search" id="pvSearch" placeholder="Search the guide: wifi, bins, beach…" aria-label="Search the guide">` : ''}
     ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
     ${group(atHouse, 'At the house', 0)}${group(around, 'Around the house', atHouse.length)}`;
-  return { name, style: pvStyle(p, preset), body: `<div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
+  return { name, style: pvStyle(p), body: `<div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
       <div class="pv-in">${sec ? pageHTML(sec) : home}</div></div>` };
 }
 async function renderPreview(){

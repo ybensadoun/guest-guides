@@ -279,19 +279,34 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .lk-up small{position:static;background:none;color:var(--muted);padding:0}
 .lk-up:focus-within{outline:3px solid var(--focus,var(--sea));outline-offset:2px}
 .lk-x{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:16px;line-height:1}
-.lk-moods{grid-template-columns:repeat(5,minmax(108px,1fr));gap:8px;overflow-x:auto;padding:5px;margin:-5px;scrollbar-width:thin}
-.lk-moods .box{padding:6px;gap:6px;border-radius:13px}
-.lk-moods .mock{height:56px;padding:5px;border-radius:8px;grid-template-rows:14px 3px 1fr 1fr}
-.lk-moods .mock:not(.m-min){gap:3px}
-.lk-moods b{font-size:13.5px;line-height:1.2}
-.lk-cols .chip span{padding:5px 14px 5px 6px}
-.lk-cols img{width:26px;height:26px;border-radius:50%;object-fit:cover;flex:none}
-.lk-dots{display:inline-grid;grid-template-columns:repeat(2,11px);gap:2px;padding:1px}
-.lk-dots i{width:11px;height:11px;border-radius:50%}
+/* The colours: a row of small phones, one per colour world, the host's guide in each (builder and editor, 14 Nov 2026).
+   At 700 px and less the row slides sideways, 92 px phones. */
+.wps{display:flex;gap:8px;margin-top:10px}
+.wp{flex:1 1 0;min-width:0;position:relative;cursor:pointer;display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.wp input{position:absolute;opacity:0;inset:0;cursor:pointer;z-index:2;margin:0}
+.wp-ph{display:flex;flex-direction:column;aspect-ratio:9/17;border:2px solid var(--line);border-radius:13px;overflow:hidden;background:var(--p)}
+.wp input:checked~.wp-ph{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
+.wp input:focus-visible~.wp-ph{outline:3px solid var(--focus);outline-offset:2px}
+.wp-cv{flex:0 0 25%;background:var(--deep) center/cover no-repeat}
+.wp-nm{flex:none;background:#fff;color:var(--i);font:var(--dw,600) 10.5px/1 var(--d);padding:5px 6px 5px;white-space:nowrap;overflow:hidden;border-bottom:1px solid rgba(0,0,0,.08)}
+.wp-g{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1.2fr 1fr 1.15fr;gap:3px;padding:4px}
+.wp-g i{border-radius:5px;position:relative;overflow:hidden;display:block}
+.wp-g i::after{content:"";position:absolute;right:-28%;top:-28%;width:56%;aspect-ratio:1;border-radius:50%}
+.wp-g .a{grid-column:1/3;background:var(--deep)}.wp-g .a::after{background:var(--light);width:22%;right:-6%;top:auto;bottom:-30%}
+.wp-g .b{background:var(--light)}.wp-g .b::after{background:var(--i)}
+.wp-g .c{background:var(--strong)}.wp-g .c::after{background:var(--i);border-radius:0;transform:rotate(45deg);right:-20%;top:-40%}
+.wp-g .d{background:var(--i)}.wp-g .d::after{background:var(--warm)}
+.wp-g .e{display:grid;grid-template-rows:1fr 1fr;gap:3px}.wp-g .e i:first-child{background:var(--warm)}.wp-g .e i:last-child{background:var(--fresh)}.wp-g .e i::after{display:none}
+.wp b{font-size:13px;line-height:1.2;text-align:center;font-weight:600}
+.wp-on{position:absolute;z-index:1;right:6px;top:6px;width:18px;height:18px;border-radius:50%;background:var(--ink);color:#fff;display:none;align-items:center;justify-content:center}
+.wp input:checked~.wp-on{display:flex}.wp-on svg{width:11px;height:11px}
+.wp-old{margin:10px 0 0}
+#cm_worlds > .wps{margin-bottom:12px}   /* the editor: room between the names and Fine-tune each colour */
+@media(max-width:700px){.wps{overflow-x:auto;scroll-snap-type:x proximity;margin-right:-16px;padding:3px 16px 6px 3px;margin-left:-3px}.wp{flex:0 0 92px;scroll-snap-align:start}}
 .lk-logo{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .lk-logo img{width:44px;height:44px;object-fit:contain;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px var(--line)}
 .lk-logo small{color:var(--muted);font-size:13.5px;flex:1 1 180px}
-@media (min-width:621px){.lk-in{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;column-gap:12px}.lk-in .lk-hd{min-height:0}}   /* Colours and Logo: one line each */
+@media (min-width:621px){.lk-in{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;column-gap:12px}.lk-in .lk-hd{min-height:0}}   /* the Logo: one line */
 @media (min-width:1240px){
   .split.has-phone.slim-step{grid-template-columns:240px minmax(0,1fr)}
   /* the header, the choices and the note box in the first column; the phone beside all three, its extra height in a last row */
@@ -405,7 +420,7 @@ header.top.tight .save>span:last-child{position:absolute;width:1px;height:1px;ov
 /* Reading: lines of about 72 characters at most (55ch: "ch" is the width of a 0, wider than the average letter of Onest),
    no word left alone on a last line, titles balanced */
 p,.hint,small,li,figcaption,dd,label,.todo{text-wrap-style:pretty}
-h1,h2,h3,.sg,.lab,.cm-h,.mood small{text-wrap-style:balance}   /* a layout's two-line description: two even lines */
+h1,h2,h3,.sg,.lab,.cm-h,.wp b{text-wrap-style:balance}   /* a colour world's two-line name: two even lines */
 .card p,.card .hint,.todo,.resetrow p,.rv-more p,.note>div{max-width:55ch}
 .col .resetrow p{margin-inline:auto}   /* centred under Start over */
 .card p.pl-src{max-width:none}   /* where a place's facts came from: one quiet line under them whenever the panel has the room */

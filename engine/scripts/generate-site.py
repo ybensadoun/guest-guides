@@ -10,8 +10,9 @@ Usage:
   uploads/<id>.json         one document per upload (kind, room, dataUrl or assetId)
   assets/<assetId>.<ext>    files for uploads stored as assets (fetched separately)
 
-What it does: site.json (name, languages, modules, preset, palette), theme.css from the
-inspiration images, house.json, the house guide (message.json) from the host's own words,
+What it does: site.json (name, languages, modules, the colour world: answers.world, see "the
+look" below; an old layout keeps its preset and palette), theme.css (a comment only in a colour
+world), house.json, the house guide (message.json) from the host's own words,
 arrival/extras pages, quick calls, sections.json, photos, logo and icons, and research-todo.md:
 the list of researched modules (eat, markets, things to do...) still to fill by hand or by an agent.
 Texts are kept in the host's language; --translations adds the other languages
@@ -125,8 +126,7 @@ logo_up = (by_kind.get('logo') or [None])[0]
 logo_im = load_upload(logo_up) if logo_up else None
 def on_white_bg(im):   # a transparent logo is read on white, not on black
     im = ImageOps.exif_transpose(im).convert('RGBA'); bg = Image.new('RGBA', im.size, (255, 255, 255, 255)); bg.alpha_composite(im); return bg.convert('RGB')
-# Colours: the chosen look's own, unless the host asked for those of their logo or of their cover picture
-# (answers.colorsFrom). Inspiration images only help "Decide for me" pick a look.
+# Colours from the host's logo or cover picture, in older answers (answers.colorsFrom, before the colour worlds).
 CF = str(A.get('colorsFrom') or '').lower()
 COLORS_FROM = 'logo' if 'logo' in CF else 'cover' if ('cover' in CF or 'photo' in CF or 'picture' in CF) else 'look'
 def cover_im():
@@ -138,199 +138,235 @@ def cover_im():
         except Exception as e: print('cover for the colours not downloaded:', e)
     return im
 import urllib.request
-SRC = [on_white_bg(logo_im)] if COLORS_FROM == 'logo' and logo_im else [c for c in [cover_im()] if c] if COLORS_FROM == 'cover' else []
-OWN_COLORS = bool(SRC)
-insp = SRC or [im for im in (load_upload(u) for u in by_kind.get('inspiration', [])) if im]
-stats = {}
-if insp:
-    px = np.concatenate([np.asarray(ImageOps.exif_transpose(im).convert('RGB').resize((120, 120))).reshape(-1, 3).astype(float) for im in insp])
-    clusters = kmeans(px, 9)
-    sat = np.array([hls(c)[2] for c, _ in clusters]); light = np.array([hls(c)[1] for c, _ in clusters]); w = np.array([f for _, f in clusters])
-    stats = {'saturation': float((sat * w).sum()), 'lightness': float((light * w).sum()), 'spread': float(light.max() - light.min()),
-             'colourful': int(((sat > .45) & (w > .04)).sum())}
-    # Paper: a light, quiet colour from the image, or near white tinted by it.
-    lights = sorted([c for c, f in clusters if hls(c)[1] > .82 and hls(c)[2] < .5], key=lambda c: -hls(c)[1])
-    base_h = hls(clusters[0][0])[0]
-    paper = lights[0] if lights else from_hls(base_h, .965, .25)
-    h, l, s = hls(paper); paper = from_hls(h, max(l, .94), min(s, .35))
-    # Ink: the darkest colour, pushed dark enough for long text.
-    dark = min((c for c, _ in clusters), key=lambda c: hls(c)[1])
-    h, l, s = hls(dark); ink = from_hls(h, min(l, .13), min(s, .35))
-    # Accents: the most saturated distinct colours, adjusted to read on paper.
-    acc = []
-    for c, f in sorted(clusters, key=lambda x: -(hls(x[0])[2] * (0.3 + x[1]))):
-        h, l, s = hls(c)
-        if s < .25: continue
-        if any(min(abs(h - hls(a)[0]), 1 - abs(h - hls(a)[0])) < .06 for a in acc): continue
-        acc.append(c)
-    real = list(acc)   # the image's own colours, before the made-up ones below
-    while len(acc) < 4:
-        h = (hls(acc[-1])[0] + .33) % 1 if acc else base_h
-        acc.append(from_hls(h, .45, .55))
-    # Tiles: blue, red and green carry white text, yellow and orange carry ink text.
-    def on_white(c, min_c=3.2):
-        h, l, s = hls(c)
-        while contrast(c, (255, 255, 255)) < min_c and l > .08:
-            l -= .03; c = from_hls(h, l, s)
-        return c
-    def on_ink(c, min_c=5):
-        h, l, s = hls(c)
-        while contrast(c, ink) < min_c and l < .92:
-            l += .03; c = from_hls(h, l, s)
-        return c
-    # Each engine colour slot takes the image colour nearest its hue; missing ones are derived.
-    hd = lambda x, y: min(abs(x - y), 1 - abs(x - y))
-    pool = list(acc[:6]); slots = {}
-    # A logo has few colours: each one, most visible first, takes the free slot nearest its hue, however far.
-    TARGET = {'yellow': .14, 'red': .0, 'blue': .6, 'green': .33, 'orange': .07}
-    for c in (real[:5] if COLORS_FROM == 'logo' and OWN_COLORS else []):
-        free = [k for k in TARGET if k not in slots]
-        slots[min(free, key=lambda k: hd(hls(c)[0], TARGET[k]))] = c
-    for slot, target in TARGET.items():
-        if slot in slots: continue
-        if pool and not (COLORS_FROM == 'logo' and OWN_COLORS):
-            c = min(pool, key=lambda c: hd(hls(c)[0], target))
-            if hd(hls(c)[0], target) < .12:
-                slots[slot] = c; pool.remove(c); continue
-        # No image colour near this slot's hue: derive one at the slot's own hue, never at another colour's hue
-        # (a purple "blue" next to terracotta photos looked wrong). Blue is a calm deep blue, the others mid-tone.
-        slots[slot] = from_hls(target, .40, .45) if slot == 'blue' else from_hls(target, .5, .55)
-    # Yellow must stand apart from the paper: a pale cream "yellow" disappears on the page.
-    if contrast(slots['yellow'], tuple(x for x in paper)) < 1.6 or hls(slots['yellow'])[2] < .45:
-        slots['yellow'] = from_hls(.12, .58, .75)
-    accents = [on_white(slots['blue']), on_white(slots['red']), on_ink(slots['yellow']), on_ink(slots['orange']), on_white(slots['green'])]
-    palette = {'paper': hexc(paper), 'ink': hexc(ink), 'accents': [hexc(c) for c in accents]}
+# ---------- the look: a colour world ----------
+# A guide's colours come from a colour world (engine/src/worlds.js; Yohann, 10 Nov 2026: a host picks a colour world
+# instead of a layout), the maker's answers.world: one of the six worlds, or 'cover' / 'logo', "From your picture", with
+# answers.worldOwn, the world the maker made from that picture in the browser and showed the host (engine/src/
+# picture-world.js), kept as it is. Older answers have no world: colorsFrom naming the logo or the cover picture is that
+# choice; an old layout other than Big colour tiles (answers.mood or --preset: soft, minimal, mediterranean, rural, and
+# editorial, which was minimal) keeps the old layouts' path as it was; anything else is the world Bauhaus summer.
+WORLD_IDS = ['bauhaus', 'sea', 'country', 'tropical', 'night', 'stone']   # engine/src/worlds.js WORLDS
+OLD_LAYOUTS = ['soft', 'minimal', 'mediterranean', 'rural', 'editorial']
+_asked = A.get('world')
+if isinstance(_asked, str) and (_asked in WORLD_IDS or _asked in ('cover', 'logo')): CHOICE = _asked
+elif COLORS_FROM in ('cover', 'logo'): CHOICE = COLORS_FROM
+elif (args.preset or A.get('mood')) in OLD_LAYOUTS: CHOICE = None
+else: CHOICE = 'bauhaus'
+LEGACY = CHOICE is None
+if LEGACY:
+    # The old layouts' path (presets soft, minimal, mediterranean, rural, with their own colours from inspiration images,
+    # the host's written brief and the style kits): kept as it was for guides that still have one, until those layouts
+    # are removed; it then goes whole. Nothing else reaches the brief, kit or inspiration code.
+    SRC = [on_white_bg(logo_im)] if COLORS_FROM == 'logo' and logo_im else [c for c in [cover_im()] if c] if COLORS_FROM == 'cover' else []
+    OWN_COLORS = bool(SRC)
+    insp = SRC or [im for im in (load_upload(u) for u in by_kind.get('inspiration', [])) if im]
+    stats = {}
+    if insp:
+        px = np.concatenate([np.asarray(ImageOps.exif_transpose(im).convert('RGB').resize((120, 120))).reshape(-1, 3).astype(float) for im in insp])
+        clusters = kmeans(px, 9)
+        sat = np.array([hls(c)[2] for c, _ in clusters]); light = np.array([hls(c)[1] for c, _ in clusters]); w = np.array([f for _, f in clusters])
+        stats = {'saturation': float((sat * w).sum()), 'lightness': float((light * w).sum()), 'spread': float(light.max() - light.min()),
+                 'colourful': int(((sat > .45) & (w > .04)).sum())}
+        # Paper: a light, quiet colour from the image, or near white tinted by it.
+        lights = sorted([c for c, f in clusters if hls(c)[1] > .82 and hls(c)[2] < .5], key=lambda c: -hls(c)[1])
+        base_h = hls(clusters[0][0])[0]
+        paper = lights[0] if lights else from_hls(base_h, .965, .25)
+        h, l, s = hls(paper); paper = from_hls(h, max(l, .94), min(s, .35))
+        # Ink: the darkest colour, pushed dark enough for long text.
+        dark = min((c for c, _ in clusters), key=lambda c: hls(c)[1])
+        h, l, s = hls(dark); ink = from_hls(h, min(l, .13), min(s, .35))
+        # Accents: the most saturated distinct colours, adjusted to read on paper.
+        acc = []
+        for c, f in sorted(clusters, key=lambda x: -(hls(x[0])[2] * (0.3 + x[1]))):
+            h, l, s = hls(c)
+            if s < .25: continue
+            if any(min(abs(h - hls(a)[0]), 1 - abs(h - hls(a)[0])) < .06 for a in acc): continue
+            acc.append(c)
+        real = list(acc)   # the image's own colours, before the made-up ones below
+        while len(acc) < 4:
+            h = (hls(acc[-1])[0] + .33) % 1 if acc else base_h
+            acc.append(from_hls(h, .45, .55))
+        # Tiles: blue, red and green carry white text, yellow and orange carry ink text.
+        def on_white(c, min_c=3.2):
+            h, l, s = hls(c)
+            while contrast(c, (255, 255, 255)) < min_c and l > .08:
+                l -= .03; c = from_hls(h, l, s)
+            return c
+        def on_ink(c, min_c=5):
+            h, l, s = hls(c)
+            while contrast(c, ink) < min_c and l < .92:
+                l += .03; c = from_hls(h, l, s)
+            return c
+        # Each engine colour slot takes the image colour nearest its hue; missing ones are derived.
+        hd = lambda x, y: min(abs(x - y), 1 - abs(x - y))
+        pool = list(acc[:6]); slots = {}
+        # A logo has few colours: each one, most visible first, takes the free slot nearest its hue, however far.
+        TARGET = {'yellow': .14, 'red': .0, 'blue': .6, 'green': .33, 'orange': .07}
+        for c in (real[:5] if COLORS_FROM == 'logo' and OWN_COLORS else []):
+            free = [k for k in TARGET if k not in slots]
+            slots[min(free, key=lambda k: hd(hls(c)[0], TARGET[k]))] = c
+        for slot, target in TARGET.items():
+            if slot in slots: continue
+            if pool and not (COLORS_FROM == 'logo' and OWN_COLORS):
+                c = min(pool, key=lambda c: hd(hls(c)[0], target))
+                if hd(hls(c)[0], target) < .12:
+                    slots[slot] = c; pool.remove(c); continue
+            # No image colour near this slot's hue: derive one at the slot's own hue, never at another colour's hue
+            # (a purple "blue" next to terracotta photos looked wrong). Blue is a calm deep blue, the others mid-tone.
+            slots[slot] = from_hls(target, .40, .45) if slot == 'blue' else from_hls(target, .5, .55)
+        # Yellow must stand apart from the paper: a pale cream "yellow" disappears on the page.
+        if contrast(slots['yellow'], tuple(x for x in paper)) < 1.6 or hls(slots['yellow'])[2] < .45:
+            slots['yellow'] = from_hls(.12, .58, .75)
+        accents = [on_white(slots['blue']), on_white(slots['red']), on_ink(slots['yellow']), on_ink(slots['orange']), on_white(slots['green'])]
+        palette = {'paper': hexc(paper), 'ink': hexc(ink), 'accents': [hexc(c) for c in accents]}
+    else:
+        palette = {'paper': '#F7F5F0', 'ink': '#1E1E1E', 'accents': ['#2F5D8A', '#C2502E', '#E2A93B', '#3E7D4F']}
+
+    # ---------- layout preset ----------
+    mood = args.preset or A.get('mood') or 'bold'   # none picked: Big colour tiles, as the builder shows it (preview.js choosePreset)
+    MAP = {'bold': 'bauhaus', 'editorial': 'minimal', 'soft': 'soft', 'minimal': 'minimal', 'mediterranean': 'mediterranean', 'rural': 'rural'}   # editorial: an old answer, the look is gone
+    if mood in MAP: preset = MAP[mood]
+    elif mood in MAP.values(): preset = mood
+    else:  # decide from the images
+        if not stats: preset = 'bauhaus'
+        elif stats['saturation'] < .18: preset = 'minimal'
+        elif stats['lightness'] > .68 and stats['saturation'] < .5: preset = 'soft'
+        elif stats['colourful'] >= 3 and stats['saturation'] > .45: preset = 'bauhaus'
+        else: preset = 'bauhaus'
+
+
+    # ---------- style: the host describes it in words; we start from the closest kit, then a design pass makes it theirs ----------
+    W = lambda fam, ws: [f'{fam}/{x}.css' for x in ws]
+    KITS = {
+     'rustic':   dict(words='rustic warm earthy cosy farmhouse country countryside tuscan authentic wine terracotta olive handmade natural traditional', preset='rural',
+                      fonts=W('fraunces', [400, 600, 700]) + W('dm-sans', [400, 500, 700]), display='"Fraunces",Georgia,serif', font='"DM Sans",system-ui,sans-serif', r='18px', rs='10px'),
+     'elegant':  dict(words='elegant luxurious luxury refined boutique hotel classic sophisticated chic upscale quiet', preset='minimal',
+                      fonts=W('cormorant-garamond', [400, 500, 600, 700]) + W('jost', [400, 500, 600]), display='"Cormorant Garamond",Georgia,serif', font='"Jost",system-ui,sans-serif', r='2px', rs='2px'),
+     'playful':  dict(words='playful fun colourful colorful bright kids family children cheerful happy lively cartoon picture', preset='bauhaus',
+                      fonts=W('bricolage-grotesque', [400, 500, 600, 700]) + W('nunito', [400, 600, 700]), display='"Bricolage Grotesque",system-ui,sans-serif', font='"Nunito",system-ui,sans-serif', r='24px', rs='14px'),
+     'modern':   dict(words='modern minimal clean simple sleek scandinavian white crisp contemporary tech', preset='minimal',
+                      fonts=W('space-grotesk', [400, 500, 600, 700]) + W('inter', [400, 500, 600]), display='"Space Grotesk",system-ui,sans-serif', font='"Inter",system-ui,sans-serif', r='10px', rs='8px'),
+     'coastal':  dict(words='sea beach coastal mediterranean blue breezy relaxed surf sun sand island nautical summer greek andalusia whitewashed', preset='mediterranean',
+                      fonts=W('dm-serif-display', [400]) + W('dm-sans', [400, 500, 700]), display='"DM Serif Display",Georgia,serif', font='"DM Sans",system-ui,sans-serif', r='20px', rs='12px'),
+     'magazine': dict(words='magazine editorial photo story journal design art gallery', preset='minimal',
+                      fonts=W('instrument-serif', [400]) + W('geist', [400, 500, 600, 700]), display='"Instrument Serif",Georgia,serif', font='"Geist",system-ui,sans-serif', r='4px', rs='4px'),
+    }
+    # The host's own words only: feelWords are written by the listing reader now, and the guide must be the look the builder showed.
+    style_text = ' '.join([A.get('styleBrief') or '', A.get('lookLikes') or '', A.get('refLinks') or '']).lower()
+    score = {k: sum(style_text.count(w) for w in v['words'].split()) for k, v in KITS.items()}
+    kit_id = max(score, key=score.get) if any(score.values()) else None
+    KIT = KITS.get(kit_id)
+    if KIT and not args.preset and A.get('mood') in (None, '', 'auto'): preset = KIT['preset']
+
+    # ---------- the host's written brief wins: palette and fonts ----------
+    def _hx(h): return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
+    def _mix(a, b, t): return '#%02X%02X%02X' % tuple(round(x + (y - x) * t) for x, y in zip(_hx(a), _hx(b)))
+    def brief_palette(text):
+        roles, found = {}, []
+        for ln in text.splitlines():
+            low = ln.lower()
+            for m in re.finditer(r'#[0-9a-fA-F]{6}\b', ln):
+                h = m.group(0).upper(); found.append(h)
+                for role, kw in (('paper', 'background|backdrop'), ('ink', 'typograph|text|icons'), ('cta', 'call to action|calls to action|cta|buttons'),
+                                 ('primary', 'brand|identity|selected'), ('stone', 'divider|secondary|surface|border')):
+                    if re.search(kw, low) and role not in roles: roles[role] = h
+        found = list(dict.fromkeys(found))
+        if len(found) >= 3 and not all(k in roles for k in ('paper', 'ink', 'primary', 'cta')):   # no labels: guess from the colours themselves
+            by_l = sorted(found, key=lambda h: lum(_hx(h)))
+            roles.setdefault('ink', by_l[0]); roles.setdefault('paper', by_l[-1])
+            rest = [h for h in found if h not in (roles['ink'], roles['paper'])]
+            rest.sort(key=lambda h: -hls(_hx(h))[2])
+            if rest: roles.setdefault('cta', rest[0])
+            if len(rest) > 1: roles.setdefault('primary', rest[1])
+        return roles if all(k in roles for k in ('paper', 'ink', 'primary', 'cta')) else None
+    BRIEF = A.get('styleBrief') or ''
+    BP = brief_palette(BRIEF)
+    FONTS_DIR = ROOT / 'node_modules/@fontsource'
+    SERIFS = {'Cormorant Garamond': ('cormorant-garamond', [500, 600, 700]), 'Playfair Display': ('playfair-display', [500, 600, 700]), 'Fraunces': ('fraunces', [400, 600, 700]),
+              'DM Serif Display': ('dm-serif-display', [400]), 'Instrument Serif': ('instrument-serif', [400])}
+    SANSES = {'Inter': ('inter', [400, 500, 600, 700]), 'Jost': ('jost', [400, 500, 600]), 'DM Sans': ('dm-sans', [400, 500, 700]), 'Nunito': ('nunito', [400, 600, 700]),
+              'Geist': ('geist', [400, 500, 600, 700]), 'Space Grotesk': ('space-grotesk', [400, 500, 600, 700])}
+    WARN = []
+    def brief_font(table):
+        hits = sorted((BRIEF.lower().find(n.lower()), n) for n in table if n.lower() in BRIEF.lower())
+        for _, n in hits:
+            d, ws = table[n]
+            got = [w for w in ws if (FONTS_DIR / d / f'{w}.css').exists()]
+            if got: return n, [f'{d}/{w}.css' for w in got]
+            WARN.append(f'Font "{n}" is named in the brief but is not installed: add @fontsource/{d} to use it.')
+        return None, []
+    DISP, DISP_FILES = brief_font(SERIFS)
+    TXT, TXT_FILES = brief_font(SANSES)
+    if BP:
+        palette = {'paper': BP['paper'], 'ink': BP['ink'], 'accents': [BP['primary'], BP['cta'], BP.get('stone', _mix(BP['paper'], BP['ink'], .12))]}
+
+    a = palette['accents'] + palette['accents']
+    # Colours from the host's logo or cover picture go the colour world's way now (below), never to an old layout: this
+    # path always has the layout's own colours.
+    theme_css = f"""/* {A.get('guideName') or A.get('placeName')}: the colours and fonts of the preset "{preset}", as they are.
+   Edit freely: tokens here sit on top of the engine look and the preset. */"""
+    _tc = SITE / 'theme.css'
+    if _tc.exists() and _tc.read_text().lstrip().startswith('/* designed:'):
+        print('theme.css was designed by hand: kept as is')   # the design pass owns it once it starts with "/* designed:"
+    elif BP:   # designed from the brief: the template keeps the layout that worked (full-bleed cover, hairline frames, quiet chrome), the brief supplies colours and fonts
+        PAPER, INK, PRIMARY, CTA = BP['paper'], BP['ink'], BP['primary'], BP['cta']
+        STONE = BP.get('stone') or _mix(PAPER, INK, .12)
+        sub = {'PAPER': PAPER, 'INK': INK, 'PRIMARY': PRIMARY, 'CTA': CTA, 'STONE': STONE, 'WHITE': _mix(PAPER, '#FFFFFF', .55),   # cards are a lighter tint of the page colour, never grey
+               'MUTED': _mix(INK, PAPER, .25), 'FAINT': _mix(INK, PAPER, .5), 'OCHRE': _mix(PRIMARY, CTA, .4), 'SLATE': _mix(PRIMARY, INK, .3),
+               'DISPLAY_NAME': DISP or (KIT and KIT['display'].split(',')[0].strip('"')) or 'Cormorant Garamond', 'TEXT_NAME': TXT or (KIT and KIT['font'].split(',')[0].strip('"')) or 'Inter',
+               'HEADER': f"/* generated-design: {A.get('guideName') or A.get('placeName')}, built from the host's written brief (palette, fonts) on engine/templates/designed-theme.css.\n   Rename this comment to /* designed: once a person has edited the file, and the generator will never overwrite it. */"}
+        css = (ROOT / 'engine/templates/designed-theme.css').read_text()
+        for k, v in sub.items(): css = css.replace('{{' + k + '}}', v)
+        _tc.write_text(css)
+    else: _tc.write_text(theme_css)
 else:
-    palette = {'paper': '#F7F5F0', 'ink': '#1E1E1E', 'accents': ['#2F5D8A', '#C2502E', '#E2A93B', '#3E7D4F']}
-
-# ---------- layout preset ----------
-mood = args.preset or A.get('mood') or 'bold'   # none picked: Big colour tiles, as the builder shows it (preview.js choosePreset)
-MAP = {'bold': 'bauhaus', 'editorial': 'minimal', 'soft': 'soft', 'minimal': 'minimal', 'mediterranean': 'mediterranean', 'rural': 'rural'}   # editorial: an old answer, the look is gone
-if mood in MAP: preset = MAP[mood]
-elif mood in MAP.values(): preset = mood
-else:  # decide from the images
-    if not stats: preset = 'bauhaus'
-    elif stats['saturation'] < .18: preset = 'minimal'
-    elif stats['lightness'] > .68 and stats['saturation'] < .5: preset = 'soft'
-    elif stats['colourful'] >= 3 and stats['saturation'] > .45: preset = 'bauhaus'
-    else: preset = 'bauhaus'
-
-
-# ---------- style: the host describes it in words; we start from the closest kit, then a design pass makes it theirs ----------
-W = lambda fam, ws: [f'{fam}/{x}.css' for x in ws]
-KITS = {
- 'rustic':   dict(words='rustic warm earthy cosy farmhouse country countryside tuscan authentic wine terracotta olive handmade natural traditional', preset='rural',
-                  fonts=W('fraunces', [400, 600, 700]) + W('dm-sans', [400, 500, 700]), display='"Fraunces",Georgia,serif', font='"DM Sans",system-ui,sans-serif', r='18px', rs='10px'),
- 'elegant':  dict(words='elegant luxurious luxury refined boutique hotel classic sophisticated chic upscale quiet', preset='minimal',
-                  fonts=W('cormorant-garamond', [400, 500, 600, 700]) + W('jost', [400, 500, 600]), display='"Cormorant Garamond",Georgia,serif', font='"Jost",system-ui,sans-serif', r='2px', rs='2px'),
- 'playful':  dict(words='playful fun colourful colorful bright kids family children cheerful happy lively cartoon picture', preset='bauhaus',
-                  fonts=W('bricolage-grotesque', [400, 500, 600, 700]) + W('nunito', [400, 600, 700]), display='"Bricolage Grotesque",system-ui,sans-serif', font='"Nunito",system-ui,sans-serif', r='24px', rs='14px'),
- 'modern':   dict(words='modern minimal clean simple sleek scandinavian white crisp contemporary tech', preset='minimal',
-                  fonts=W('space-grotesk', [400, 500, 600, 700]) + W('inter', [400, 500, 600]), display='"Space Grotesk",system-ui,sans-serif', font='"Inter",system-ui,sans-serif', r='10px', rs='8px'),
- 'coastal':  dict(words='sea beach coastal mediterranean blue breezy relaxed surf sun sand island nautical summer greek andalusia whitewashed', preset='mediterranean',
-                  fonts=W('dm-serif-display', [400]) + W('dm-sans', [400, 500, 700]), display='"DM Serif Display",Georgia,serif', font='"DM Sans",system-ui,sans-serif', r='20px', rs='12px'),
- 'magazine': dict(words='magazine editorial photo story journal design art gallery', preset='minimal',
-                  fonts=W('instrument-serif', [400]) + W('geist', [400, 500, 600, 700]), display='"Instrument Serif",Georgia,serif', font='"Geist",system-ui,sans-serif', r='4px', rs='4px'),
-}
-# The host's own words only: feelWords are written by the listing reader now, and the guide must be the look the builder showed.
-style_text = ' '.join([A.get('styleBrief') or '', A.get('lookLikes') or '', A.get('refLinks') or '']).lower()
-score = {k: sum(style_text.count(w) for w in v['words'].split()) for k, v in KITS.items()}
-kit_id = max(score, key=score.get) if any(score.values()) else None
-KIT = KITS.get(kit_id)
-if KIT and not args.preset and A.get('mood') in (None, '', 'auto'): preset = KIT['preset']
-
-# ---------- the host's written brief wins: palette and fonts ----------
-def _hx(h): return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
-def _mix(a, b, t): return '#%02X%02X%02X' % tuple(round(x + (y - x) * t) for x, y in zip(_hx(a), _hx(b)))
-def brief_palette(text):
-    roles, found = {}, []
-    for ln in text.splitlines():
-        low = ln.lower()
-        for m in re.finditer(r'#[0-9a-fA-F]{6}\b', ln):
-            h = m.group(0).upper(); found.append(h)
-            for role, kw in (('paper', 'background|backdrop'), ('ink', 'typograph|text|icons'), ('cta', 'call to action|calls to action|cta|buttons'),
-                             ('primary', 'brand|identity|selected'), ('stone', 'divider|secondary|surface|border')):
-                if re.search(kw, low) and role not in roles: roles[role] = h
-    found = list(dict.fromkeys(found))
-    if len(found) >= 3 and not all(k in roles for k in ('paper', 'ink', 'primary', 'cta')):   # no labels: guess from the colours themselves
-        by_l = sorted(found, key=lambda h: lum(_hx(h)))
-        roles.setdefault('ink', by_l[0]); roles.setdefault('paper', by_l[-1])
-        rest = [h for h in found if h not in (roles['ink'], roles['paper'])]
-        rest.sort(key=lambda h: -hls(_hx(h))[2])
-        if rest: roles.setdefault('cta', rest[0])
-        if len(rest) > 1: roles.setdefault('primary', rest[1])
-    return roles if all(k in roles for k in ('paper', 'ink', 'primary', 'cta')) else None
-BRIEF = A.get('styleBrief') or ''
-BP = brief_palette(BRIEF)
-FONTS_DIR = ROOT / 'node_modules/@fontsource'
-SERIFS = {'Cormorant Garamond': ('cormorant-garamond', [500, 600, 700]), 'Playfair Display': ('playfair-display', [500, 600, 700]), 'Fraunces': ('fraunces', [400, 600, 700]),
-          'DM Serif Display': ('dm-serif-display', [400]), 'Instrument Serif': ('instrument-serif', [400])}
-SANSES = {'Inter': ('inter', [400, 500, 600, 700]), 'Jost': ('jost', [400, 500, 600]), 'DM Sans': ('dm-sans', [400, 500, 700]), 'Nunito': ('nunito', [400, 600, 700]),
-          'Geist': ('geist', [400, 500, 600, 700]), 'Space Grotesk': ('space-grotesk', [400, 500, 600, 700])}
-WARN = []
-def brief_font(table):
-    hits = sorted((BRIEF.lower().find(n.lower()), n) for n in table if n.lower() in BRIEF.lower())
-    for _, n in hits:
-        d, ws = table[n]
-        got = [w for w in ws if (FONTS_DIR / d / f'{w}.css').exists()]
-        if got: return n, [f'{d}/{w}.css' for w in got]
-        WARN.append(f'Font "{n}" is named in the brief but is not installed: add @fontsource/{d} to use it.')
-    return None, []
-DISP, DISP_FILES = brief_font(SERIFS)
-TXT, TXT_FILES = brief_font(SANSES)
-if BP:
-    palette = {'paper': BP['paper'], 'ink': BP['ink'], 'accents': [BP['primary'], BP['cta'], BP.get('stone', _mix(BP['paper'], BP['ink'], .12))]}
-
-a = palette['accents'] + palette['accents']
-# Colours from the host's picture reach every layout in its own way (29 Oct 2026): the presets keep their tile colours in
-# their own tokens (engine/src/styles/presets/*.css), so those come from the picture too, for all layouts at once.
-# Same mapping as the editor (onboarding-site/src/editor.js edLayoutVars).
-def _azulejo(c, l):
-    from urllib.parse import quote
-    svg = (f"<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><rect width='40' height='40' fill='#fff'/><g fill='{c}'>"
-           "<circle cx='0' cy='0' r='7'/><circle cx='40' cy='0' r='7'/><circle cx='0' cy='40' r='7'/><circle cx='40' cy='40' r='7'/><ellipse cx='20' cy='10.5' rx='3.4' ry='6.5'/>"
-           "<ellipse cx='20' cy='29.5' rx='3.4' ry='6.5'/><ellipse cx='10.5' cy='20' rx='6.5' ry='3.4'/><ellipse cx='29.5' cy='20' rx='6.5' ry='3.4'/>"
-           f"<path d='M20 0l3 3-3 3-3-3zM20 34l3 3-3 3-3-3zM0 20l3-3 3 3-3 3zM34 20l3-3 3 3-3 3z'/></g><circle cx='20' cy='20' r='4.2' fill='{l}'/><circle cx='20' cy='20' r='1.6' fill='{c}'/>"
-           f"<path d='M0 .5h40M.5 0v40' stroke='{c}' stroke-opacity='.35' stroke-width='1'/></svg>")
-    return 'url("data:image/svg+xml,' + quote(svg, safe='') + '")'
-def layout_vars(blue, red, yellow, orange, green):
-    W, K = '#FFFFFF', '#000000'
-    def dk(c):   # white text stays readable on it
-        for _ in range(12):
-            if contrast(_hx(c), (255, 255, 255)) >= 3.2: break
-            c = _mix(c, K, .12)
-        return c
-    blue, red, green = dk(blue), dk(red), dk(green)
-    o = {'--med-cobalt': blue, '--med-navy': _mix(blue, K, .45), '--med-sky': _mix(blue, W, .88), '--med-lemon': yellow, '--med-clay': red, '--med-azulejo': _azulejo(blue, yellow),
-         '--ru-moss': green, '--ru-forest': _mix(green, K, .35), '--ru-bark': _mix(red, K, .62), '--ru-wheat': _mix(yellow, W, .62), '--ru-honey': yellow, '--ru-rust': red, '--ru-leaf': _mix(yellow, W, .45)}
-    for k, c in [('blue', blue), ('butter', yellow), ('blush', red), ('lilac', _mix(blue, red, .5)), ('peach', orange), ('mint', green)]:
-        o[f'--sf-{k}'] = _mix(c, W, .78); o[f'--sf-{k}-d'] = _mix(c, W, .42)
-    return ';'.join(f'{k}:{v}' for k, v in o.items()) + ';'
-ink_on = lambda c: '#FFFFFF' if contrast(tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)), (255, 255, 255)) >= 3 else palette['ink']
-_from = {'logo': "the host's logo", 'cover': "the host's cover picture"}.get(COLORS_FROM, '')
-theme_css = (f"""/* {A.get('guideName') or A.get('placeName')}: colours from {_from} (preset "{preset}").
-   Edit freely: these tokens sit on top of the engine look and the preset. */
-:root{{
-  --paper:{palette['paper']};--ink:{palette['ink']};
-  --blue:{a[0]};--red:{a[1]};--yellow:{a[2]};--orange:{a[3]};--green:{a[4] if len(palette['accents']) > 4 else a[3]};
-  --accent:{a[0]};--k-sky:var(--blue);
-  {layout_vars(a[0], a[1], a[2], a[3], a[4] if len(palette['accents']) > 4 else a[3])}
-}}""" if OWN_COLORS else f"""/* {A.get('guideName') or A.get('placeName')}: the colours and fonts of the preset "{preset}", as they are.
-   Edit freely: tokens here sit on top of the engine look and the preset. */""")
-_tc = SITE / 'theme.css'
-if _tc.exists() and _tc.read_text().lstrip().startswith('/* designed:'):
-    print('theme.css was designed by hand: kept as is')   # the design pass owns it once it starts with "/* designed:"
-elif BP:   # designed from the brief: the template keeps the layout that worked (full-bleed cover, hairline frames, quiet chrome), the brief supplies colours and fonts
-    PAPER, INK, PRIMARY, CTA = BP['paper'], BP['ink'], BP['primary'], BP['cta']
-    STONE = BP.get('stone') or _mix(PAPER, INK, .12)
-    sub = {'PAPER': PAPER, 'INK': INK, 'PRIMARY': PRIMARY, 'CTA': CTA, 'STONE': STONE, 'WHITE': _mix(PAPER, '#FFFFFF', .55),   # cards are a lighter tint of the page colour, never grey
-           'MUTED': _mix(INK, PAPER, .25), 'FAINT': _mix(INK, PAPER, .5), 'OCHRE': _mix(PRIMARY, CTA, .4), 'SLATE': _mix(PRIMARY, INK, .3),
-           'DISPLAY_NAME': DISP or (KIT and KIT['display'].split(',')[0].strip('"')) or 'Cormorant Garamond', 'TEXT_NAME': TXT or (KIT and KIT['font'].split(',')[0].strip('"')) or 'Inter',
-           'HEADER': f"/* generated-design: {A.get('guideName') or A.get('placeName')}, built from the host's written brief (palette, fonts) on engine/templates/designed-theme.css.\n   Rename this comment to /* designed: once a person has edited the file, and the generator will never overwrite it. */"}
-    css = (ROOT / 'engine/templates/designed-theme.css').read_text()
-    for k, v in sub.items(): css = css.replace('{{' + k + '}}', v)
-    _tc.write_text(css)
-else: _tc.write_text(theme_css)
+    # The world path: the colour world gives every colour (worlds.js worldTokens, through engine/scripts/world-of.mjs, the
+    # engine's own rule; Python keeps no copy of it). theme.css sets no colour, and the world's own fonts are added by the
+    # engine (site.config.js siteFonts), so theme.fonts lists none.
+    ROLES = ('deep', 'strong', 'fresh', 'light', 'warm')
+    def own_world(w):   # a world with colours of its own, as engine/site.config.js siteWorld accepts it, nothing more
+        return (isinstance(w, dict) and isinstance(w.get('base'), str) and w['base'] in WORLD_IDS
+                and all(k == 'base' or (k in ROLES and isinstance(v, str) and re.fullmatch(r'#[0-9a-fA-F]{6}', v)) for k, v in w.items()))
+    def world_of(ask):   # {world} or {pixels}: {world, tokens}; a failure stops the build
+        import shutil, subprocess
+        node, script = shutil.which('node'), ROOT / 'engine/scripts/world-of.mjs'
+        if not node: sys.exit(f'generate-site: node is not on the PATH, and the colour world needs it ({script.relative_to(ROOT)})')
+        try: r = subprocess.run([node, str(script)], input=json.dumps(ask), capture_output=True, text=True, timeout=60)
+        except Exception as e: sys.exit(f'generate-site: {script.relative_to(ROOT)} could not be run: {e}')
+        if r.returncode != 0: sys.exit(f'generate-site: {script.relative_to(ROOT)} failed (exit {r.returncode}): {(r.stderr or r.stdout).strip()}')
+        return json.loads(r.stdout)
+    FROM_PICTURE = {'cover': "the host's cover picture", 'logo': "the host's logo"}
+    picked = None   # the picture the world was made from: 'cover' or 'logo'
+    if CHOICE in ('cover', 'logo'):
+        own = A.get('worldOwn')
+        if own_world(own): WO, picked = world_of({'world': own}), CHOICE   # the look the maker showed, as it is
+        else:
+            if own is not None: print('worldOwn is not a colour world, made again from the picture:', json.dumps(own)[:200])
+            # The picture as the maker reads it: on white (a transparent logo reads as on paper), 96 x 96, its RGB bytes.
+            try:
+                im = (logo_im if CHOICE == 'logo' else cover_im())
+                px = on_white_bg(im).resize((96, 96)).tobytes() if im else None
+            except Exception as e:
+                print(f'{FROM_PICTURE[CHOICE]} could not be read:', e); px = None
+            if px: WO, picked = world_of({'pixels': base64.b64encode(px).decode()}), CHOICE
+            else:
+                print(f'colours from {FROM_PICTURE[CHOICE]}: no picture to read, the guide is in the world "bauhaus"')
+                WO = world_of({'world': 'bauhaus'})
+    else: WO = world_of({'world': CHOICE})
+    WORLD, T = WO['world'], WO['tokens']
+    preset, stats, kit_id, DISP_FILES, TXT_FILES, WARN = 'bauhaus', {}, None, [], [], []
+    # The world's colours wherever a colour is needed below (the icons' tile, the maskable icon's paper, the manifest):
+    # accents in the old order, blue, red, yellow, orange, green, the roles after the contrast rule.
+    palette = {'paper': T['--paper'], 'ink': T['--ink'], 'accents': [T['--blue'], T['--red'], T['--yellow'], T['--orange'], T['--green']]}
+    a = palette['accents'] + palette['accents']
+    _which = f'the colour world "{WORLD}"' if isinstance(WORLD, str) else f'the colour world "{WORLD["base"]}" with colours of its own'
+    _tc = SITE / 'theme.css'
+    if _tc.exists() and _tc.read_text().lstrip().startswith('/* designed:'):
+        print('theme.css was designed by hand: kept as is')   # the design pass owns it once it starts with "/* designed:"
+    else:
+        _tc.write_text(f"""/* {A.get('guideName') or A.get('placeName')}: {_which}{', from ' + FROM_PICTURE[picked] if picked else ''} (engine/src/worlds.js, theme.world in site.json) gives every colour and the titles' font: this file sets none.
+   Edit freely: tokens here sit on top of the engine look and the world. */
+""")
 
 # ---------- photos, cover, logo, icons ----------
 # Cover photo: the host's own upload wins; otherwise the listing's cover photo is saved below (house.jpg), and the host
@@ -852,10 +888,11 @@ site = {
     **({'logo': 'logo-head.png'} if logo_im else {}), 'shareImage': 'house.jpg' if HAS_PHOTO else ('logo-head.png' if logo_im else 'favicon.png'), 'languages': LANGS, 'storageKey': args.slug,
     'area': {'radiusKm': {'15 min': 15, '30 min': 30, '45 min': 45, '1 hour': 60}.get(A.get('radius'), 30)},
     'modules': modules,
-    'theme': {'preset': preset, **({'fonts': DISP_FILES + TXT_FILES} if (DISP_FILES or TXT_FILES) else {}), 'paper': palette['paper'], 'manifestBackground': palette['paper'], 'manifestTheme': a[0], 'darkMode': False,
+    'theme': {'preset': preset, **({} if LEGACY else {'world': WORLD}), **({'fonts': DISP_FILES + TXT_FILES} if (DISP_FILES or TXT_FILES) else {}), 'paper': palette['paper'], 'manifestBackground': palette['paper'], 'manifestTheme': a[0], 'darkMode': False,
               **({'coverMade': 'ai'} if own_cover and cover.get('made') == 'ai' else {})},   # the cover-art job's drawing: the credits say it was made with AI
     'previewImages': (['logo-head.png'] if logo_im else []) + ['favicon.png'] + (['house.jpg'] if HAS_PHOTO else []),
-    'onboarding': {'mood': A.get('mood'), 'styleKit': kit_id, 'imageStats': stats, 'palette': palette, 'presetChosen': preset}
+    'onboarding': {'mood': A.get('mood'), 'styleKit': kit_id, 'imageStats': stats, 'palette': palette, 'presetChosen': preset} if LEGACY
+                  else {'mood': A.get('mood'), 'world': CHOICE, 'palette': palette, 'presetChosen': preset}
 }
 (SITE / 'site.json').write_text(json.dumps(site, ensure_ascii=False, indent=2))
 
@@ -869,7 +906,7 @@ for sid in research:
 todo += ['', f'Interests: {", ".join(A.get("interests") or [])}', f'Guests: {", ".join(A.get("guests") or [])}',
          f'Avoid: {A.get("avoidPlaces") or "-"}', f'Extra ideas from the host: {A.get("moduleIdeas") or "-"}']
 (SITE / 'docs/research-todo.md').write_text('\n'.join(todo) + '\n')
-(SITE / 'docs/style-brief.md').write_text('\n'.join([f'# Style brief for {name}', '',
+if LEGACY: (SITE / 'docs/style-brief.md').write_text('\n'.join([f'# Style brief for {name}', '',
     'The host described the look in their own words. The generator picks the closest starting kit (fonts, radii, layout base) and the palette from their images;',
     'the design pass then writes this guide\'s own theme.css so it does not look like any other guide.', '',
     f'- In their words: {A.get("styleBrief") or "-"}', f'- Feel words: {", ".join(A.get("feelWords") or []) or "-"}', f'- Apps/sites they love: {A.get("refLinks") or "-"}',
@@ -881,6 +918,6 @@ nf = SITE / 'netlify.toml'
 if not nf.exists():
     nf.write_text(f'# Netlify: set "Base directory" to sites/{args.slug}.\n[build]\n  command = "cd ../.. && npm ci && npm run build -- {args.slug}"\n  publish = "dist"\n\n[[headers]]\n  for = "/sw.js"\n  [headers.values]\n    Cache-Control = "no-cache"\n')
 
-print(json.dumps({'site': str(SITE.relative_to(ROOT)), 'preset': preset, 'palette': palette, 'imageStats': stats,
+print(json.dumps({'site': str(SITE.relative_to(ROOT)), 'preset': preset, **({} if LEGACY else {'world': WORLD}), 'palette': palette, 'imageStats': stats,
                   'languages': LANGS, 'sections': [(s['id'], s['status']) for s in sections], 'research': research,
                   'warnings': WARN, 'untranslated': len(untranslated), 'photos': {k: len(v) for k, v in room_photos.items()}}, indent=1))

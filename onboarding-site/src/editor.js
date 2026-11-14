@@ -7,9 +7,8 @@ const CM = { on: false, g: null, live: null, lang: 'en', timer: null, marks: nul
 const ED_LANGS = { en: 'English', es: 'Español', fr: 'Français', ca: 'Català', de: 'Deutsch', nl: 'Nederlands' };
 const ED_DAYS = [['mon', 'Mo'], ['tue', 'Tu'], ['wed', 'We'], ['thu', 'Th'], ['fri', 'Fr'], ['sat', 'Sa'], ['sun', 'Su']];
 const ED_FONTS = [['jost', 'Jost'], ['inter', 'Inter'], ['cormorant-garamond', 'Cormorant Garamond'], ['dm-sans', 'DM Sans'], ['dm-serif-display', 'DM Serif Display', [400]], ['fraunces', 'Fraunces'], ['geist', 'Geist'], ['instrument-serif', 'Instrument Serif', [400]], ['nunito', 'Nunito'], ['outfit', 'Outfit'], ['space-grotesk', 'Space Grotesk'], ['bricolage-grotesque', 'Bricolage Grotesque']];
-// Same layouts and skeletons as "The look" in the onboarding (MOODS), named by the guide's own presets.
-const ED_PRESETS = [['bauhaus', 'Big colour tiles', 'Like an app: bold blocks, strong shapes.', 'm-bold'], ['soft', 'Soft rounded cards', 'Gentle pastels, rounded corners.', 'm-soft'], ['minimal', 'Clean and calm', 'Text first, thin lines, lots of white.', 'm-min'], ['mediterranean', 'Mediterranean', 'Blue and white, like the Greek islands and the south of Spain.', 'm-med'], ['rural', 'Rural', 'Wood, moss and warm earth, for farmhouses and country homes.', 'm-rural']];
-const ED_COLORS = [['--paper', 'Background', '#F3EEE3'], ['--white', 'Cards', '#FFFFFF'], ['--ink', 'Text', '#121212'], ['--muted', 'Secondary text', '#4A4A4A'], ['--red', 'Accent 1 (red)', '#D52B1E'], ['--blue', 'Accent 2 (blue)', '#1D4FA0'], ['--yellow', 'Accent 3 (yellow)', '#F5C400'], ['--orange', 'Accent 4 (orange)', '#EC6A1C'], ['--green', 'Accent 5 (green)', '#0E7C46']];
+// The five roles of a colour world (engine/src/worlds.js), as "Fine-tune each colour" offers them: role, its token, its name.
+const ED_ROLES = [['deep', '--blue', 'Main colour'], ['strong', '--red', 'Emergencies'], ['fresh', '--green', 'Open now'], ['light', '--yellow', 'Light tiles'], ['warm', '--orange', 'Warm tiles']];
 const ED_SEC = { transport: ['Getting around', 'Taxis, train stations and bus stops.'], house: ['The house page', 'Photos, rooms and what the house offers.'], garbage: ['Rubbish and recycling', 'Which bin goes out tonight.'], message: ['House guide', 'How everything works, room by room.'], emergency: ['Emergency contacts', '112, health, police, town services.'], quick: ['Home tiles', 'One tap for a taxi, the station, a favourite.'], markets: ['Local markets', 'Street, covered and flea markets, with what is on today.'], restaurants: ['Eat and drink', 'Restaurants, cafés and bars you send friends to.'], todo: ['Attractions', 'Museums, parks, activities and sights nearby.'], nightlife: ['Nightlife', 'Late bars, clubs and live music you recommend.'], events: ['Local events', 'Festivals, fairs and traditions during the stay.'], reviews: ['Ratings and reviews', 'Your listing rating and reviews.'], map: ['Map', 'Every place in the guide on one map.'] };
 
 const edIs18 = o => !!o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length > 0 && Object.keys(o).every(k => k in ED_LANGS);
@@ -45,8 +44,8 @@ const CSTEPS = [
   { id: 'guide', group: 'basics', title: 'Name and languages', sub: 'What guests see', icon: 'tag', tc: 'var(--sun)', ti: '#1b1407', sh: 'var(--tomato)', shape: 'half', lang: true,
     lead: 'The name on the guide and on guests’ phones, the text under a shared link and the languages.',
     paths: ['content/site/name', 'content/site/description', 'content/site/shareDescription', 'content/site/languages', 'content/files/house/name', 'content/files/house/listing'], body: c => cmGuide(c) },
-  { id: 'look', group: 'basics', title: 'The look', sub: 'Logo, cover, layout, colours', icon: 'eye', tc: 'var(--tomato)', sh: 'var(--ink)', shape: 'tri',
-    lead: 'Four steps: your logo, the cover picture, the layout and its colours. Preview shows the result before guests see it.',
+  { id: 'look', group: 'basics', title: 'The look', sub: 'Logo, cover, colours', icon: 'eye', tc: 'var(--tomato)', sh: 'var(--ink)', shape: 'tri',
+    lead: 'Three steps: your logo, the cover picture and the colours. Preview shows the result before guests see it.',
     paths: ['theme', 'content/site/theme', 'content/site/logo', 'content/site/icons', 'content/files/house/cover', 'content/files/house/photo'], body: c => cmLook(c) },
   { id: 'sections', group: 'basics', title: 'Guide sections', sub: 'What goes in', icon: 'grid', tc: 'var(--ink)', ti: '#fff', sh: 'var(--sky)', shape: 'square',
     lead: 'A section you switch off disappears from the guide, its page and the map. Its step here goes too, until you switch it back on.',
@@ -754,17 +753,17 @@ function edCoverMade(path) {
   const s = edC().site = edC().site || {}, th = s.theme = s.theme || {};
   if (edArt(path)) th.coverMade = 'ai'; else delete th.coverMade;
 }
-// The look, in four steps: logo, cover picture (one of the guide's photos, an upload, drawn from the colours, or an
-// artistic version of a photo), layout, colours. Fonts are optional, folded away and shown in their own typeface.
+// The look, in three steps: logo, cover picture (one of the guide's photos, an upload, drawn from the colours, or an
+// artistic version of a photo), colours (a row of small phones, one per colour world, as in the builder: theme.world).
+// Fine-tuning a colour and the fonts are optional, folded away.
 const cmPhotos = c => { const f = c.files || {}, out = [], add = x => { if (typeof x === 'string' && x && !out.includes(x)) out.push(x); };
   add((f.house || {}).photo); ((f['house-page'] || {}).photos || []).forEach(add); (((f.message || {}).blocks) || []).forEach(b => (b.photos || []).forEach(add)); return out.slice(0, 18); };
 function cmLook(c) {
   const th = CM.g.theme, css = th.css || '', blk = edBlockOf(css), h = (c.files || {}).house || {}, s = c.site || {};
-  const val = (n, d) => { const x = edCssVar(blk, n) || edCssVar(css, n); return /^#[0-9a-fA-F]{6}$/.test(x) ? x : d; };
   const fam = n => { const x = (edCssVar(blk, n) || edCssVar(css, n)).match(/"([^"]+)"/); return x ? x[1] : ''; };
   const dispSel = (ED_FONTS.find(f => f[1] === fam('--display')) || [])[0] || '', bodySel = (ED_FONTS.find(f => f[1] === fam('--font')) || [])[0] || '';
-  const preset = th.preset || ((c.site || {}).theme || {}).preset || 'bauhaus', pics = cmPhotos(c), busy = !!CM.artJob, n = i => `<span class="cm-n">${i}</span>`;
-  const fonts = (name, kind, sel) => `<div class="cm-fontlist" role="radiogroup" aria-label="${kind === 'display' ? 'Font for titles' : 'Font for text'}">${[['', 'The layout’s own'], ...ED_FONTS].map(([id, nm]) => `<label class="chip"><input type="radio" name="${name}" data-design="${kind}" value="${id}"${sel === id ? ' checked' : ''}><span${id ? ` style="font-family:'${nm}',system-ui"` : ''}>${esc(nm)}</span></label>`).join('')}</div>`;
+  const pics = cmPhotos(c), busy = !!CM.artJob, n = i => `<span class="cm-n">${i}</span>`, tok = worldTok(edWorldNow(c)), sel = edWorldSel(c);
+  const fonts = (name, kind, sel) => `<div class="cm-fontlist" role="radiogroup" aria-label="${kind === 'display' ? 'Font for titles' : 'Font for text'}">${[['', 'Its own'], ...ED_FONTS].map(([id, nm]) => `<label class="chip"><input type="radio" name="${name}" data-design="${kind}" value="${id}"${sel === id ? ' checked' : ''}><span${id ? ` style="font-family:'${nm}',system-ui"` : ''}>${esc(nm)}</span></label>`).join('')}</div>`;
   edFontsLoad();
   return `<div class="f full"><span class="lab">${n(1)}Your logo</span><p class="hint">Optional. It shows on the welcome card and becomes the icon on guests’ phones. Without one, the guide shows no logo.</p><div class="cm-row cm-logo">${s.logo ? `<img src="${esc(edImg(s.logo))}" alt="Your logo">` : ''}<label class="btn small cm-file"><input class="sr" type="file" accept="image/*" data-phset="site/logo" data-kind="logo">${s.logo ? 'Change the logo' : 'Add a logo'}</label>${s.logo ? '<button class="btn small" type="button" data-logodel>Remove</button>' : ''}</div></div>
     <div class="f full"><span class="lab">${n(2)}Cover picture</span><p class="hint">Pick one of your photos, upload a picture, or let us draw an artistic version of your cover photo.</p>
@@ -776,13 +775,58 @@ function cmLook(c) {
         ${busy ? progBar('art', 'Drawing your cover') : ''}
         ${CM.artRes ? `<figure class="cm-artres"><img src="${esc(CM.artRes.url)}" alt="Your artistic cover"><figcaption class="cm-row"><button class="btn small primary" type="button" data-artuse>Use this cover</button><button class="btn small" type="button" data-art="again"${busy ? ' disabled' : ''}>Try again</button></figcaption></figure>` : ''}
         ${CM.artErr ? `<p class="hint cm-err">${esc(CM.artErr)}</p>` : ''}</div>` : ''}</div>
-    <div class="f full"><span class="lab" id="l_cpreset">${n(3)}Layout</span><p class="hint">Each one shows the same sections in a different way.</p><div class="moods" role="radiogroup" aria-labelledby="l_cpreset">${ED_PRESETS.map(([id, nm, d, cls]) => `<label class="mood"><input type="radio" name="cpreset" data-design="preset" value="${id}"${preset === id ? ' checked' : ''}><div class="box"><div class="mock ${cls}">${'<i></i>'.repeat(6)}</div><b>${nm}</b><small>${d}</small></div></label>`).join('')}</div></div>
-    <div class="f full"><span class="lab">${n(4)}Colours</span><p class="hint">Each layout has its own colours. You can take them from your cover picture or your logo instead: every layout uses them in its own way.</p>
-      <div class="cm-row" role="group" aria-label="Colours">${[['look', 'The layout’s own', true], ['cover', 'From my cover picture', h.photo], ['logo', 'From my logo', s.logo]].filter(x => x[2]).map(([k, l]) => `<button class="btn small" type="button" data-colorsfrom="${k}" aria-pressed="${(th.colorsFrom || 'look') === k}">${l}</button>`).join('')}</div>
-      ${CM.logoCol ? `<p class="hint" id="cmLogoCol">${esc(CM.logoCol)}</p>` : ''}
-      <details class="cm-more" data-open="look-colours"${CM.open.has('look-colours') ? ' open' : ''}><summary>Fine-tune each colour</summary><div class="cm-colors">${ED_COLORS.map(([v, l, d]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="color" data-var="${v}" value="${val(v, d)}"></label>`).join('')}</div></details></div>
-    <details class="cm-more" data-open="look-fonts"${CM.open.has('look-fonts') ? ' open' : ''}><summary>Fonts <small>Optional: each layout comes with its own</small></summary>
+    <div class="f full" id="cm_worlds"><span class="lab" id="l_world">${n(3)}Colours</span><p class="hint">Each has its own colours and title font. Tap one to see your guide in it.</p>
+      ${edWorldsRow(c)}${sel ? '' : '<p class="hint wp-old">This guide uses an older layout. Pick its colours here to move it to the new look.</p>'}
+      <details class="cm-more" data-open="look-colours"${CM.open.has('look-colours') ? ' open' : ''}><summary>Fine-tune each colour</summary><div class="cm-colors">${ED_ROLES.map(([r, v, l]) => `<label class="f"><span class="hint">${l}</span><input type="color" data-design="role" data-role="${r}" value="${tok[v].toLowerCase()}"></label>`).join('')}</div></details></div>
+    <details class="cm-more" data-open="look-fonts"${CM.open.has('look-fonts') ? ' open' : ''}><summary>Fonts <small>Optional: each set of colours comes with its own</small></summary>
       <span class="lab">Titles</span>${fonts('cfd', 'display', dispSel)}<span class="lab">Text</span>${fonts('cfb', 'body', bodySel)}</details>`;
+}
+// The guide's colour world: its own (theme.world, else what its build named, site.theme.world), else Bauhaus.
+function edWorldNow(c = edC()) { const th = CM.g.theme || {}, w = th.world || ((c.site || {}).theme || {}).world; return WK.worldOf(w) ? w : 'bauhaus'; }
+// The phone selected when the step opens: the picture the colours came from (theme.worldFrom), else the guide's world (a
+// world with colours of its own: the world it is made from), else, for a guide with no world yet, Bauhaus (or the picture
+// an older "Colours: from my cover / logo" named); a guide on another old layout: none, and a line says so.
+function edWorldSel(c = edC()) {
+  const th = CM.g.theme || {}, st = (c.site || {}).theme || {}, w = th.world || st.world;
+  if ((th.worldFrom === 'cover' || th.worldFrom === 'logo') && edPicOf(th.worldFrom)) return th.worldFrom;
+  if (WK.worldOf(w)) return worldBase(w);
+  if ((th.preset || st.preset || 'bauhaus') !== 'bauhaus') return null;
+  if ((th.colorsFrom === 'cover' || th.colorsFrom === 'logo') && edPicOf(th.colorsFrom) && edPicWorldNow(th.colorsFrom) !== null) return th.colorsFrom;
+  return 'bauhaus';
+}
+// The guide's pictures a world can come from: its cover photo and its logo (the draft's).
+function edPicOf(kind) { const c = edC(), p = kind === 'logo' ? (c.site || {}).logo : kind === 'cover' ? ((c.files || {}).house || {}).photo : ''; return p ? { key: 'ed:' + p, src: edImg(p) } : null; }
+const edPicWorld = kind => { const pic = edPicOf(kind); return pic ? picEntry(pic.key, pic.src).p : Promise.resolve(null); };
+const edPicWorldNow = kind => { const pic = edPicOf(kind); return pic ? picEntry(pic.key, pic.src).w : null; };
+// The row: the guide's own cover on top of each phone (the drawn cover: the world's main colour). The picture the guide's
+// colours came from shows the guide's colours themselves (a fine-tuned colour included).
+function edWorldsRow(c = edC()) {
+  const th = CM.g.theme || {}, h = (c.files || {}).house || {}, pics = {};
+  for (const k of ['cover', 'logo']) if (edPicOf(k)) pics[k] = th.worldFrom === k && WK.worldOf(th.world) && typeof th.world === 'object' ? th.world : edPicWorldNow(k);
+  return worldRowHTML({ sel: edWorldSel(c), cover: edCoverPhoto(h) ? edImg(h.photo) : '', pics });
+}
+// A picture's colours arrived: the row shows them (only the row: nothing else on the step moves).
+function edWorldArrived() { if (route() === 'look') wpsSwap(edWorldsRow()); }
+// A phone picked: the guide takes that world, with Ca La Kimberly's tiles (preset bauhaus) and without the colours an older
+// layout or "from my picture" wrote into its css; its paper and main colour go to the phone's theme colours (site.theme).
+// The fonts picked by hand in Fonts stay.
+async function edWorldPick(id) {
+  if (id === 'cover' || id === 'logo') { const w = await edPicWorld(id); return w ? edWorldApply(w, id) : edWorldApply('bauhaus'); }
+  if (isWorldId(id)) edWorldApply(id);
+}
+function edWorldApply(w, from) {
+  const th = CM.g.theme = CM.g.theme || {}, site = edC().site = edC().site || {}, t = worldTok(w);
+  th.world = w; if (from) th.worldFrom = from; else delete th.worldFrom;
+  th.preset = 'bauhaus'; delete th.colorsFrom;
+  th.css = (th.css || '').replace(ED_COLOR_VARS, '');
+  site.theme = { ...(site.theme || {}), preset: 'bauhaus', world: w, paper: t['--paper'], manifestBackground: t['--paper'], manifestTheme: t['--blue'] };
+  cmQueue(); render(); setTimeout(() => wpsInView(true));
+}
+// The cover picture or the logo changed while the guide's colours come from it: read again from the new picture.
+async function edWorldFollow(kind) {
+  if ((CM.g.theme || {}).worldFrom !== kind) return;
+  const w = edPicOf(kind) ? await edPicWorld(kind) : null;
+  edWorldApply(w || 'bauhaus', w ? kind : undefined);
 }
 // The fonts' names in their own typeface: one stylesheet for the list, loaded once.
 function edFontsLoad() {
@@ -1791,63 +1835,16 @@ async function edIconsFrom(src, fit) {   // fit: 'contain' for a logo (never cut
 }
 async function edLogoRemove() {
   const s = edC().site, h = (edC().files || {}).house || {};
-  delete s.logo; delete s.icons; CM.logoCol = ''; cmQueue(); render();
+  delete s.logo; delete s.icons; cmQueue(); render();
+  edWorldFollow('logo');   // the guide's colours came from the logo: back to Bauhaus
   if (h.photo) { try { s.icons = await edIconsFrom(edImg(h.photo), 'cover'); cmQueue(); } catch (e) { /* the build's icons stay */ } }
 }
-// Colours from a picture (the logo or the cover): its most visible distinct colours, each to the accent slot nearest its hue, made readable
-// (white text on red, blue and green tiles; dark text on yellow and orange ones). Same idea as the build's palette.
-const edHsl = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn; if (!d) return [0, 0, l]; const s = d / (1 - Math.abs(2 * l - 1)); const h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return [h / 6, s, l]; };
-const edRgb = ([h, s, l]) => { const k = n => (n + h * 12) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)); return [f(0), f(8), f(4)].map(x => Math.round(x * 255)); };
+// Contrast of two colours (WCAG 2), for the fair's icon on its tone (cmBadge).
 const edLum = c => { const [r, g, b] = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 const edContrast = (a, b) => { const [x, y] = [edLum(a), edLum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
-const edHueGap = (a, b) => Math.min(Math.abs(a - b), 1 - Math.abs(a - b));
-async function edImageColours(src) {
-  const im = await edLoad(src), n = 64, cv = document.createElement('canvas'); cv.width = cv.height = n;
-  const x = cv.getContext('2d', { willReadFrequently: true }); x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); x.drawImage(im, 0, 0, n, n);
-  const px = x.getImageData(0, 0, n, n).data, bins = new Map();
-  for (let i = 0; i < px.length; i += 4) {
-    const c = [px[i], px[i + 1], px[i + 2]], [, s, l] = edHsl(c); if (s < .25 || l < .12 || l > .9) continue;   // no white, black or grey
-    const k = (c[0] >> 4) << 8 | (c[1] >> 4) << 4 | c[2] >> 4, e = bins.get(k) || [0, 0, 0, 0]; e[0]++; e[1] += c[0]; e[2] += c[1]; e[3] += c[2]; bins.set(k, e);
-  }
-  const picked = [];
-  for (const e of [...bins.values()].sort((a, b) => b[0] - a[0])) { const c = [e[1] / e[0], e[2] / e[0], e[3] / e[0]]; if (picked.every(p => edHueGap(edHsl(p)[0], edHsl(c)[0]) > .06)) picked.push(c); if (picked.length === 5) break; }
-  if (!picked.length) throw new Error('This picture has no colours we can use (only black, white or grey)');
-  const T = { '--yellow': .14, '--red': 0, '--blue': .6, '--green': .33, '--orange': .07 }, out = {};
-  for (const c of picked) {
-    const k = Object.keys(T).filter(v => !out[v]).sort((a, b) => edHueGap(edHsl(c)[0], T[a]) - edHueGap(edHsl(c)[0], T[b]))[0];
-    let [h, s, l] = edHsl(c); const dark = !['--yellow', '--orange'].includes(k);
-    for (let i = 0; i < 30 && (dark ? edContrast(edRgb([h, s, l]), [255, 255, 255]) < 3.2 : edContrast(edRgb([h, s, l]), [18, 18, 18]) < 5); i++) l += dark ? -0.03 : 0.03;
-    out[k] = '#' + edRgb([h, s, l]).map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
-  }
-  return out;
-}
-// The layout's own colours: every colour token comes out of the theme (the generated ones and the editor's), fonts stay.
+// The colours an older layout or "from my picture" wrote into the theme's css: every colour token (the generated ones and
+// the editor's) comes out when a colour world is picked, so the world's colours show; fonts stay.
 const ED_COLOR_VARS = /--(paper|white|ink|muted|faint|line|red|blue|yellow|orange|green|accent|k-sky|med-[a-z]+|ru-[a-z]+|sf-[a-z]+(?:-d)?)\s*:\s*[^;}]+;?/g;
-// Colours from a picture reach every layout, in its own way (Yohann, 29 Oct 2026: "only Big colour tiles adapts"): the
-// layouts keep their tile colours in their own tokens (engine/src/styles/presets/*.css), so those come from the picture too,
-// for all layouts at once (changing layout later keeps them). Same mapping as engine/scripts/generate-site.py layout_vars.
-const edMix = (a, b, t) => { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), x = p(a), y = p(b); return '#' + x.map((c, i) => Math.round(c + (y[i] - c) * t).toString(16).padStart(2, '0')).join('').toUpperCase(); };
-const edAzulejo = (c, l) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><rect width='40' height='40' fill='#fff'/><g fill='${c}'><circle cx='0' cy='0' r='7'/><circle cx='40' cy='0' r='7'/><circle cx='0' cy='40' r='7'/><circle cx='40' cy='40' r='7'/><ellipse cx='20' cy='10.5' rx='3.4' ry='6.5'/><ellipse cx='20' cy='29.5' rx='3.4' ry='6.5'/><ellipse cx='10.5' cy='20' rx='6.5' ry='3.4'/><ellipse cx='29.5' cy='20' rx='6.5' ry='3.4'/><path d='M20 0l3 3-3 3-3-3zM20 34l3 3-3 3-3-3zM0 20l3-3 3 3-3 3zM34 20l3-3 3 3-3 3z'/></g><circle cx='20' cy='20' r='4.2' fill='${l}'/><circle cx='20' cy='20' r='1.6' fill='${c}'/><path d='M0 .5h40M.5 0v40' stroke='${c}' stroke-opacity='.35' stroke-width='1'/></svg>`).replace(/'/g, '%27')}")`;
-function edLayoutVars(v) {
-  const pick = (...ks) => ks.map(k => v[k]).find(Boolean), W = '#FFFFFF', K = '#000000';
-  const dk = c => { for (let i = 0; i < 12 && edContrast([1, 3, 5].map(j => parseInt(c.slice(j, j + 2), 16)), [255, 255, 255]) < 3.2; i++) c = edMix(c, K, .12); return c; };   // white text stays readable on it
-  const blue = dk(pick('--blue', '--green', '--red', '--orange', '--yellow')), red = dk(pick('--red', '--orange', '--yellow', '--blue', '--green')),
-    yellow = pick('--yellow', '--orange', '--green', '--red', '--blue'), orange = pick('--orange', '--yellow', '--red', '--green', '--blue'), green = dk(pick('--green', '--blue', '--yellow', '--orange', '--red'));
-  const o = { '--accent': blue,
-    '--med-cobalt': blue, '--med-navy': edMix(blue, K, .45), '--med-sky': edMix(blue, W, .88), '--med-lemon': yellow, '--med-clay': red, '--med-azulejo': edAzulejo(blue, yellow),
-    '--ru-moss': green, '--ru-forest': edMix(green, K, .35), '--ru-bark': edMix(red, K, .62), '--ru-wheat': edMix(yellow, W, .62), '--ru-honey': yellow, '--ru-rust': red, '--ru-leaf': edMix(yellow, W, .45) };
-  for (const [k, c] of [['blue', blue], ['butter', yellow], ['blush', red], ['lilac', edMix(blue, red, .5)], ['peach', orange], ['mint', green]]) { o[`--sf-${k}`] = edMix(c, W, .78); o[`--sf-${k}-d`] = edMix(c, W, .42); }
-  return o;
-}
-async function edColoursFrom(kind) {
-  const th = CM.g.theme = CM.g.theme || {}, c = edC();
-  if (kind === 'look') { th.css = (th.css || '').replace(ED_COLOR_VARS, ''); delete th.colorsFrom; CM.logoCol = 'Back to the layout’s own colours.'; cmQueue(); return render(); }
-  try {
-    const vars = await edImageColours(edImg(kind === 'logo' ? c.site.logo : c.files.house.photo));
-    th.css = (th.css || '').replace(ED_COLOR_VARS, '');   // each choice starts from the layout's own colours
-    edWriteVars(th, { ...vars, ...edLayoutVars(vars) }); th.colorsFrom = kind; CM.logoCol = `Done: ${Object.keys(vars).length} colours from your ${kind === 'logo' ? 'logo' : 'cover picture'}.`; cmQueue(); render();
-  } catch (e) { CM.logoCol = e.message; render(); }
-}
 async function edPhotoInput(t) {
   const files = [...t.files]; if (!files.length) return;
   setSave('busy', files.length > 1 ? `Uploading ${files.length} photos…` : 'Uploading…');
@@ -1855,8 +1852,8 @@ async function edPhotoInput(t) {
     for (const f of files) {
       const name = await edUpload(f, t.dataset.kind);
       if (t.dataset.phadd) { const p = edPath(t.dataset.phadd); let a = edGet(edC(), p); if (!Array.isArray(a)) { edSet(edC(), p, []); a = edGet(edC(), p); } a.push(name); }
-      else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') { edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(name); } }
-      if (t.dataset.phset === 'site/logo') { setSave('busy', 'Making the icons for phones…'); edC().site.icons = await edIconsFrom(f, 'contain'); CM.logoCol = ''; }
+      else { edSet(edC(), edPath(t.dataset.phset), name); if (t.dataset.phset === 'files/house/photo') { edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(name); edWorldFollow('cover'); } }
+      if (t.dataset.phset === 'site/logo') { setSave('busy', 'Making the icons for phones…'); edC().site.icons = await edIconsFrom(f, 'contain'); edWorldFollow('logo'); }
     }
     cmQueue(); render();
   } catch (e) { setSave('err', 'Not uploaded: ' + (e.message || 'try again')); }
@@ -1927,8 +1924,9 @@ function edWriteVars(th, vars) {
 }
 function edApplyDesign(kind, el) {
   const th = CM.g.theme = CM.g.theme || {}, site = edC().site = edC().site || {};
-  if (kind === 'preset') { th.preset = el.value; site.theme = { ...(site.theme || {}), preset: el.value }; return cmQueue(); }
-  if ((kind === 'display' || kind === 'body') && !el.value) {   // the layout's own font: no token, no extra font files
+  // A colour fine-tuned: into the world itself ({ base, ...its own roles }), never a raw token, so the contrast rule applies to it
+  if (kind === 'role') { const w = edWorldNow(); return edWorldApply({ ...(isWorldId(w) ? { base: w } : w), [el.dataset.role]: el.value.toUpperCase() }, th.worldFrom); }
+  if ((kind === 'display' || kind === 'body') && !el.value) {   // the world's own font: no token, no extra font files
     const v = kind === 'display' ? '--display' : '--font';
     th.css = (th.css || '').replace(new RegExp(v + '\\s*:\\s*[^;}]+;?', 'g'), '');
     const keep = ['--display', '--font'].map(x => (edCssVar(th.css, x).match(/"([^"]+)"/) || [])[1]).filter(Boolean), fs = [];
@@ -1936,15 +1934,12 @@ function edApplyDesign(kind, el) {
     if (fs.length) { th.fonts = fs; site.theme = { ...(site.theme || {}), fonts: fs }; } else { delete th.fonts; if (site.theme) delete site.theme.fonts; }
     return cmQueue();
   }
-  const decl = edVarsOf(th.css || '');
-  if (kind === 'color') decl[el.dataset.var] = el.value;
-  else {
-    const f = ED_FONTS.find(x => x[0] === el.value), disp = kind === 'display';
-    decl[disp ? '--display' : '--font'] = `"${f[1]}",${/serif|fraunces|cormorant|instrument/i.test(f[0]) && !/sans/i.test(f[0]) ? 'Georgia,serif' : 'system-ui,sans-serif'}`;
-    const d = ED_FONTS.find(x => x[1] === ((decl['--display'] || '').match(/"([^"]+)"/) || [])[1]) || ED_FONTS[0], b = ED_FONTS.find(x => x[1] === ((decl['--font'] || '').match(/"([^"]+)"/) || [])[1]) || d;
-    const fonts = []; for (const x of [d, b]) for (const w of (x[2] || [400, 500, 600, 700])) { const s = `${x[0]}/${w}.css`; if (!fonts.includes(s)) fonts.push(s); }
-    th.fonts = fonts; site.theme = { ...(site.theme || {}), fonts };
-  }
+  if (kind !== 'display' && kind !== 'body') return;
+  const decl = edVarsOf(th.css || ''), f = ED_FONTS.find(x => x[0] === el.value), disp = kind === 'display';
+  decl[disp ? '--display' : '--font'] = `"${f[1]}",${/serif|fraunces|cormorant|instrument/i.test(f[0]) && !/sans/i.test(f[0]) ? 'Georgia,serif' : 'system-ui,sans-serif'}`;
+  const d = ED_FONTS.find(x => x[1] === ((decl['--display'] || '').match(/"([^"]+)"/) || [])[1]) || ED_FONTS[0], b = ED_FONTS.find(x => x[1] === ((decl['--font'] || '').match(/"([^"]+)"/) || [])[1]) || d;
+  const fonts = []; for (const x of [d, b]) for (const w of (x[2] || [400, 500, 600, 700])) { const s = `${x[0]}/${w}.css`; if (!fonts.includes(s)) fonts.push(s); }
+  th.fonts = fonts; site.theme = { ...(site.theme || {}), fonts };
   edWriteVars(th, decl);
   cmQueue();
 }
@@ -1975,6 +1970,7 @@ document.addEventListener('change', e => {
     if (pos || /^https?:\/\//.test(url)) { cmQueue(); render(); if (!pos) toast('Link saved. To move the pin, paste the long link from the browser bar.'); }
   }
   else if (t.dataset.cmod) { const s = edC().site = edC().site || {}; s.modules = { ...(s.modules || {}), [t.dataset.cmod]: !!t.checked }; cmQueue(); render(); }
+  else if (t.name === 'world' && t.closest('#cm_worlds')) edWorldPick(t.value);
   else if (t.dataset.design) edApplyDesign(t.dataset.design, t);
   else if (t.dataset.phadd !== undefined || t.dataset.phset !== undefined) edPhotoInput(t);
   else if (t.dataset.clang) { const s = edC().site = edC().site || {}; s.languages = [...(s.languages || ['en'])]; const l = t.dataset.clang, i = s.languages.indexOf(l); if (t.checked && i < 0) s.languages.push(l); else if (!t.checked && i > 0) s.languages.splice(i, 1); cmQueue(); render(); }
@@ -1990,7 +1986,6 @@ document.addEventListener('click', e => {
   const done = () => { cmQueue(); render(); };
   if (d.cpreview !== undefined) return cmPreview(e, t);
   if (d.logodel !== undefined) return edLogoRemove();
-  if (d.colorsfrom !== undefined) return edColoursFrom(d.colorsfrom);
   if (d.cpublish !== undefined) return cmPublish(t);
   if (d.cunpublish !== undefined) return cmUnpublish(t);
   if (d.cdiscard !== undefined) return cmDiscard(t);
@@ -2005,14 +2000,14 @@ document.addEventListener('click', e => {
   if (d.pfagain) { const it = edGet(edC(), edPath(d.pfagain)), j = it && CM.pf[it.id]; return pfStart(d.pfagain, (j && j.website) || ''); }
   if (d.cover) { edSet(edC(), ['files', 'house', 'cover'], d.cover); edCoverMade(d.cover === 'photo' ? ((edC().files || {}).house || {}).photo : ''); return done(); }
   if (d.allpics !== undefined) { CM.allPics = true; return render(); }
-  if (d.coverpic) { edSet(edC(), ['files', 'house', 'photo'], d.coverpic); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(d.coverpic); return done(); }
+  if (d.coverpic) { edSet(edC(), ['files', 'house', 'photo'], d.coverpic); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(d.coverpic); done(); return edWorldFollow('cover'); }
   if (d.art) {
     const src = edImg(((edC().files || {}).house || {}).photo || '');
     if (d.art === 'words') { CM.artWords = CM.artWords || ''; render(); setTimeout(() => { const x = document.getElementById('c_artw'); if (x) x.focus(); }, 0); return; }
     if (d.art === 'draw') { const w = (document.getElementById('c_artw') || {}).value || ''; CM.artWords = w; return w.trim() ? artStart(src, w.trim()) : toast('Say how it should look first.'); }
     return artStart(src, d.art === 'again' ? CM.artLast : null);
   }
-  if (d.artuse !== undefined && CM.artRes) { edSet(edC(), ['files', 'house', 'photo'], CM.artRes.path); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(CM.artRes.path); CM.artRes = null; toast('Your new cover is set. Preview to see it.'); return done(); }
+  if (d.artuse !== undefined && CM.artRes) { edSet(edC(), ['files', 'house', 'photo'], CM.artRes.path); edSet(edC(), ['files', 'house', 'cover'], 'photo'); edCoverMade(CM.artRes.path); CM.artRes = null; toast('Your new cover is set. Preview to see it.'); done(); return edWorldFollow('cover'); }
   if (d.daytog) { const o = edGet(edC(), edPath(d.daytog)); if (o) { const s = new Set(o.days || []); s.has(d.d) ? s.delete(d.d) : s.add(d.d); o.days = ED_DAYS.map(x => x[0]).filter(x => s.has(x)); done(); } return; }
   if (d.cflag) { const it = edGet(edC(), edPath(d.cflag)); if (it) { const s = new Set(it.flags || []); s.has(d.f) ? s.delete(d.f) : s.add(d.f); it.flags = [...s]; done(); } return; }
   // A place (cPlace): favourite, the form behind Change, its kind, marks, set menus, open 24 hours, part of the year.

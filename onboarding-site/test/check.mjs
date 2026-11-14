@@ -62,14 +62,15 @@ const inPhone = (p, fn) => p.evaluate(fn => { const d = document.getElementById(
 mkdirSync(SHOTS, { recursive: true });
 // Each result goes to the runner as it comes (it prints them when the group ends, or at once with CHECK_LIVE=1).
 const results = [], ok = (name, pass, more = '') => { const l = `${pass ? 'PASS' : 'FAIL'}  ${name}${more ? '  (' + more + ')' : ''}`; results.push(l); if (process.send) process.send({ t: 'r', l }); else if (env.CHECK_LIVE) console.error(l); };
-// A 4x4 picture in four colours (blue, red, yellow, green), for the colour checks.
-const PNG4 = (() => { const W = 4, rows = [], C = [[29, 79, 160], [213, 43, 30], [245, 196, 0], [14, 124, 70]];
+// A 4x4 picture in four colours (blue, red, yellow, green), for the colour checks; pngOf(C) the same in other colours.
+const pngOf = C => { const W = 4, rows = [];
   for (let y = 0; y < W; y++) { rows.push(0); for (let x = 0; x < W; x++) rows.push(...C[(x >> 1) + 2 * (y >> 1)]); }
   const T = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; T[n] = c >>> 0; }
   const crc = b => { let r = -1; for (const x of b) r = T[(r ^ x) & 255] ^ (r >>> 8); return (r ^ -1) >>> 0; };
   const chunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([len, td, c]); };
   const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(W, 4); ihdr[8] = 8; ihdr[9] = 2;
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(Buffer.from(rows))), chunk('IEND', Buffer.alloc(0))]); })();
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(Buffer.from(rows))), chunk('IEND', Buffer.alloc(0))]); };
+const PNG4 = pngOf([[29, 79, 160], [213, 43, 30], [245, 196, 0], [14, 124, 70]]);
 const json = (route, body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 // The database on a web address: what slug_check answers (the real function is checked against real rows, not here).
 const slugAnswer = (route, b, taken) => { const free = !taken.has(b.p_wanted); return json(route, { free, options: free ? [] : [b.p_town ? `${b.p_wanted}-${b.p_town}` : `${b.p_wanted}-2`, `${b.p_wanted}-3`, `${b.p_wanted}-4`] }); };
@@ -216,7 +217,7 @@ function groupList() {
   return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'research-deck': gResearchDeck, 'deck-steady': gDeckSteady, 'build-ready': gBuildReady, 'web-address': gWebAddress,
     'houses': gHouses, 'builder': gBuilder, 'rooms-offers': gRoomsOffers, 'nearby': gNearby, 'wow': gWow, 'editor': gEditor, 'editor-names': gEditorNames,
     'place-card': gPlaceCard, 'place-season': gPlaceSeason, 'still-open': gStillOpen, 'place-facts': gPlaceFacts, 'market-event': gMarketEvent,
-    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea };
+    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea };
 }
 
   // Inside a navy start card (sel): nothing touches anything (the eyebrow, title and text by their words, the panel, the moon
@@ -1058,8 +1059,8 @@ async function gBuilder() {
     await p.goto('http://editor.test/'); await ready(p);
     ok('builder: opens on the first step that needs the host (name and languages), no overview', (await p.evaluate(() => location.hash)) === '#guide' && !(await p.$('.hero')), await p.evaluate(() => location.hash));
     await go(p, '#look'); await settle(p, 300);
-    ok('builder: The look is one screen: cover, layout, colours, logo and what goes in the guide, the layout already picked',
-      (await p.$$eval('.lk-card .lk-row b[id], .lk-card .lk-row .lk-hd b', els => [...new Set(els.map(e => e.textContent))].join(' | '))) === 'Cover picture | Layout | Colours | Your logo | What goes in your guide' && (await p.$eval('.lk-moods input:checked', e => e.value).catch(() => '')) === 'bold',
+    ok('builder: The look is one screen: cover, colours, logo and what goes in the guide, the colours already picked (Bauhaus)',
+      (await p.$$eval('.lk-card .lk-row b[id], .lk-card .lk-row .lk-hd b', els => [...new Set(els.map(e => e.textContent))].join(' | '))) === 'Cover picture | Colours | Your logo | What goes in your guide' && (await p.$eval('#lk_worlds input:checked', e => e.value).catch(() => '')) === 'bauhaus',
       await p.$$eval('.lk-card .lk-hd b', els => els.map(e => e.textContent).join(' | ')));
     const pinned = async () => p.$eval('.look-page .side-phone', e => { const r = e.getBoundingClientRect(); return getComputedStyle(e).display !== 'none' && r.top >= -1 && r.bottom > 150; }).catch(() => false);
     const pinnedTop = await pinned();
@@ -1725,7 +1726,7 @@ async function gWow() {
     await p.screenshot({ path: join(SHOTS, 'step-with-phone-desktop.png') });
     const arrows = () => inPhone(p, d => { const a = d.querySelector('.pv-sec .ar'); return a ? getComputedStyle(a).display !== 'none' : null; });
     await go(p, '#look'); await settle(p, 700);   // The look shows the guide's home in the phone
-    ok('desktop: no layout picked, the phone shows Bauhaus (colour tiles with arrows)', (await arrows()) === true);
+    ok('desktop: no colours picked, the phone shows Bauhaus (colour tiles with arrows)', (await arrows()) === true && (await inPhone(p, d => getComputedStyle(d.querySelector('.pv')).backgroundColor)) === 'rgb(243, 238, 227)');
     await p.screenshot({ path: join(SHOTS, 'look-bauhaus-desktop.png') });
     ok('desktop: the phone draws the guide at a phone\'s width (390 px), scaled into the frame', await p.$eval('#phoneFrame', f => f.offsetWidth === 390 && /scale\(0\.\d+\)/.test(f.style.transform)).catch(() => false));
     const clash = await inPhone(p, d => [...d.querySelectorAll('.pv-sec')].flatMap(el => { const s = getComputedStyle(el, '::before'), b = el.getBoundingClientRect(), n = x => parseFloat(x) || 0;
@@ -1734,15 +1735,15 @@ async function gWow() {
       return [...el.querySelectorAll('b, small, .ic svg, .ar')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent); }));
     ok('desktop: in the phone, no tile text under its corner shape', Array.isArray(clash) && clash.length === 0 && !!(await inPhone(p, d => d.querySelectorAll('.pv-sec').length)), (clash || []).join('; '));
     const logoEnd = await p.$eval('.lk-logo', e => e.getBoundingClientRect().bottom), barTop = await p.$eval('#navbar', e => e.getBoundingClientRect().top);
-    ok('desktop: The look fits on one screen, its four choices above the bottom bar', logoEnd <= barTop, `logo row ends at ${Math.round(logoEnd)}, bar at ${Math.round(barTop)}`);
-    await p.click('.moods input[value="minimal"]', { force: true }); await settle(p, 700);
-    ok('desktop: picking another layout changes the phone at once', (await arrows()) === false);
+    ok('desktop: The look fits on one screen, its three choices above the bottom bar', logoEnd <= barTop, `logo row ends at ${Math.round(logoEnd)}, bar at ${Math.round(barTop)}`);
     const tile = () => inPhone(p, d => getComputedStyle(d.querySelector('.pv-sec')).backgroundColor);
-    await p.click('.moods input[value="rural"]', { force: true }); await settle(p, 700);
-    const ruralOwn = await tile();
-    await p.click('#lk_cf_cover', { force: true }); await settle(p, 1500);
-    const ruralCover = await tile();
-    ok('desktop: colours from the cover picture recolour Rural\'s own tiles in the phone', ruralOwn === 'rgb(90, 112, 52)' && !!ruralCover && ruralCover !== ruralOwn, `${ruralOwn} -> ${ruralCover}`);
+    const own = await tile();
+    await p.click('#lk_world_country', { force: true }); await settle(p, 700);
+    const country = await tile();
+    ok('desktop: picking Country changes the phone at once, the same tiles in its colours', (await arrows()) === true && own === 'rgb(29, 79, 160)' && country === 'rgb(73, 100, 54)', `${own} -> ${country}`);
+    await p.click('#lk_world_cover', { force: true }); await settle(p, 1500);
+    const cover = await tile();
+    ok('desktop: colours from the cover picture recolour the tiles in the phone', !!cover && cover !== own && cover !== country, `${country} -> ${cover}`);
     await p.click('#lk_drawn'); await settle(p, 900);
     ok('desktop: the drawn cover shows in the phone at once', !!(await inPhone(p, d => d.querySelector('.pv-cover.pv-art svg'))) && (await p.$eval('#lk_drawn', e => e.getAttribute('aria-pressed'))) === 'true');
     ok('desktop wow: no page errors', !errors.length, errors.join(' | '));
@@ -3021,26 +3022,177 @@ async function gNightlifeColours() {
     ok('editor: the first place makes the Nightlife section, right after Attractions (things to do)', ids.indexOf('nightlife') === ids.indexOf('todo') + 1 && ids.indexOf('todo') >= 0, ids.join(', '));
     ok('editor, Nightlife: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
-  // The look, Colours: the layout's own is chosen until another is picked, and the chosen one stays highlighted.
+  // The look, Colours: Bauhaus is chosen until another is picked, and the chosen one stays highlighted; a picture's world.
   { const { ctx, p, errors } = await open(browser, E, 360, 780);
     await ctx.route(/\.(jpe?g|png|webp)(\?.*)?$/i, route => route.fulfill({ status: 200, contentType: 'image/png', headers: { 'Access-Control-Allow-Origin': '*' }, body: PNG4 }));
     const saved = []; await ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
     await p.goto('http://editor.test/#look'); await ready(p); await settle(p, 300);
-    const pressed = () => p.$$eval('[data-colorsfrom]', bs => bs.filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.colorsfrom).join()).catch(() => '');
+    const pressed = () => p.$eval('#cm_worlds input:checked', e => e.value).catch(() => '');
     const first = await pressed();
-    await p.click('[data-colorsfrom="cover"]'); await p.waitForFunction(() => document.querySelector('[data-colorsfrom="cover"][aria-pressed="true"]') || /could not|not/i.test((document.getElementById('cmLogoCol') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
-    const second = await pressed(), bg = await p.$eval('[data-colorsfrom="cover"]', b => getComputedStyle(b).backgroundColor).catch(() => '');
-    await p.click('[data-colorsfrom="look"]'); await settle(p, 300);
+    await p.click('#lk_world_cover', { force: true }); await settle(p, 1200);
+    const second = await pressed();
+    await p.click('#lk_world_bauhaus', { force: true }); await settle(p, 1200);
     const third = await pressed();
-    ok('editor, Colours: "The layout\'s own" is highlighted at first, the picked one after, and back', first === 'look' && second === 'cover' && third === 'look' && bg !== 'rgba(0, 0, 0, 0)', `${first} -> ${second} (${bg}) -> ${third}`);
-    await p.click('[data-colorsfrom="cover"]'); await settle(p, 1800); await p.screenshot({ path: join(SHOTS, 'editor-colours-360.png') });
-    const last = saved[saved.length - 1] || '';
-    ok('editor, Colours: the picture\'s colours reach every layout (Mediterranean, Rural, Soft, Clean)', ['--med-cobalt', '--med-azulejo', '--ru-moss', '--sf-mint', '--accent'].every(k => last.includes(k)) && !/in this layout the tiles keep/.test(await p.textContent('.edz')), saved.length + ' saves');
+    ok('editor, Colours: Bauhaus is selected at first, the picked one after, and back', first === 'bauhaus' && second === 'cover' && third === 'bauhaus', `${first} -> ${second} -> ${third}`);
+    await p.click('#lk_world_cover', { force: true }); await settle(p, 1800); await p.screenshot({ path: join(SHOTS, 'editor-colours-360.png') });
+    const last = (() => { try { return JSON.parse(saved[saved.length - 1] || '{}').draft.theme; } catch (e) { return {}; } })();
+    ok('editor, Colours: the picture\'s colours are a world of the engine\'s ({ base, roles as #RRGGBB }), from the cover', !!last.world && typeof last.world === 'object' && /^(bauhaus|sea|country|tropical|night|stone)$/.test(last.world.base) && Object.entries(last.world).every(([k, v]) => k === 'base' || /^#[0-9A-F]{6}$/.test(v)) && last.worldFrom === 'cover', JSON.stringify(last.world));
     ok('editor, Colours: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const { ctx, p } = await open(browser, E, 360, 780);
     await p.goto('http://editor.test/#guide'); await ready(p); await settle(p, 400);
     ok('editor, 360 px: no phone is loaded (it is hidden on small screens)', !(await p.$('#cmPhoneFrame')) && !(ctx.viewer || 0));
+    await ctx.close(); }
+}
+// The look, Colours (proposal 4, part 4, 14 Nov 2026): one row of small phones, one per colour world, in the builder and the
+// editor; a tap picks, the phone shows it. A picture's world is read by the engine's own rule (picture-world.js).
+async function gLookWorlds() {
+  const WORLDS = ['bauhaus', 'sea', 'country', 'tropical', 'night', 'stone'], HEX = /^#[0-9A-F]{6}$/;
+  const TEAL = pngOf([[0, 128, 128], [0, 128, 128], [0, 128, 128], [240, 200, 60]]);
+  const coverKey = String(B.answers.coverUrl || '').split('?')[0], other = (B.answers.listingPhotos || []).map(x => String(x).split('?')[0]).find(x => x && x !== coverKey);
+  // Pictures: the listing's cover in four colours, any other photo teal; broken: not a picture (it cannot be read: the same
+  // answer as a picture without CORS, which a faked answer here does not reproduce, Chromium reading it all the same).
+  const pictures = (ctx, broken = false, body = u => u.includes(coverKey) ? PNG4 : TEAL) => ctx.route(/\.(jpe?g|png|webp)(\?.*)?$/i, route => { const u = route.request().url();
+    return route.fulfill({ status: 200, contentType: 'image/png', headers: { 'Access-Control-Allow-Origin': '*' }, body: broken ? Buffer.from('89504e470d0a1a0a', 'hex') : body(u) }); });
+  const row = p => p.$$eval('.wps input[name="world"]', els => els.map(e => e.value)).catch(() => []);
+  const checked = p => p.$eval('.wps input:checked', e => e.value).catch(() => '');
+  const paper = p => inPhone(p, d => getComputedStyle(d.querySelector('.pv')).backgroundColor);
+  // Nothing in the row overlaps, every label within its phone's width, no word broken across lines, "Welcome" whole.
+  const rowClear = p => p.evaluate(() => {
+    const out = [], R = e => e.getBoundingClientRect(), ph = [...document.querySelectorAll('.wps .wp')]; if (!ph.length) return ['no row'];
+    for (let i = 0; i < ph.length; i++) for (let j = i + 1; j < ph.length; j++) { const a = R(ph[i]), b = R(ph[j]); if (a.right > b.left + 0.5 && b.right > a.left + 0.5 && a.bottom > b.top + 0.5 && b.bottom > a.top + 0.5) out.push(`phones ${i} and ${j} overlap`); }
+    for (const w of ph) {
+      const b = w.querySelector('b'), box = R(w), name = b.textContent, t = b.firstChild, g = document.createRange();
+      g.selectNodeContents(b); for (const r of g.getClientRects()) if (r.left < box.left - 0.5 || r.right > box.right + 0.5) out.push(`"${name}" wider than its phone`);
+      if (R(b).top < R(w.querySelector('.wp-ph')).bottom - 0.5) out.push(`"${name}" under its phone`);
+      if (t && t.nodeType === 3) for (const m of t.data.matchAll(/\S+/g)) { g.setStart(t, m.index); g.setEnd(t, m.index + m[0].length); const lines = new Set([...g.getClientRects()].map(r => Math.round(r.top))); if (lines.size > 1) out.push(`"${m[0]}" broken across lines`); }
+      const nm = w.querySelector('.wp-nm'); if (nm.scrollWidth > nm.clientWidth + 1) out.push(`"${nm.textContent}" cut in ${name}`);
+    }
+    return out;
+  });
+  // ---- Builder: 1280 and 360 px, in English and in French ----
+  for (const [w, h] of [[1280, 860], [360, 780]]) for (const lang of ['en', 'fr']) {
+    const tag = `look-worlds, builder, ${w} px, ${lang}`;
+    const { ctx, p, errors } = await open(browser, B, w, h, { 'porta-lang-v1': lang }); await pictures(ctx);
+    await p.goto('http://editor.test/#look'); await ready(p); await settle(p, 900);
+    await p.evaluate(() => document.fonts.ready);
+    const r0 = await row(p);
+    ok(`${tag}: one row of 7 phones, From your cover first, then the six worlds in order, Bauhaus selected`, r0.join() === ['cover', ...WORLDS].join() && await checked(p) === 'bauhaus', r0.join());
+    ok(`${tag}: the phone shows Bauhaus (its paper)`, (await paper(p)) === 'rgb(243, 238, 227)', await paper(p));
+    const clear = await rowClear(p);
+    ok(`${tag}: nothing in the row overlaps, no label cut or broken mid-word`, !clear.length, clear.join('; '));
+    if (w === 360) {
+      const sx = await p.evaluate(() => { const r = document.querySelector('.wps'); return { row: r.scrollWidth > r.clientWidth + 20, page: document.documentElement.scrollWidth - innerWidth }; });
+      ok(`${tag}: the row slides sideways, the page does not`, sx.row && sx.page <= 0, JSON.stringify(sx));
+    }
+    await p.$eval('#lk_worlds', e => e.scrollIntoView({ block: 'center' })); await settle(p, 200);
+    await p.screenshot({ path: join(SHOTS, `look-worlds-builder-${lang}-${w}.png`) });
+    const y0 = await p.evaluate(() => scrollY);
+    await p.click('#lk_world_sea', { force: true }); await settle(p, 900);
+    const a1 = await stored(p), y1 = await p.evaluate(() => scrollY);
+    ok(`${tag}: picking Sea stores world "sea", the phone's paper becomes Sea's (#F3F1EA), the page does not jump`, a1.world === 'sea' && !a1.worldOwn && (await paper(p)) === 'rgb(243, 241, 234)' && await checked(p) === 'sea' && Math.abs(y1 - y0) <= 2, `${a1.world}, ${await paper(p)}, ${y0} -> ${y1}`);
+    if (w === 360) {
+      await p.focus('#lk_world_sea'); for (let i = 0; i < 4; i++) { await p.keyboard.press('ArrowRight'); await settle(p, 400); }
+      const k = await stored(p), seen = await p.evaluate(() => { const r = document.querySelector('.wps').getBoundingClientRect(), x = document.querySelector('.wps input:checked').closest('.wp').getBoundingClientRect(); return x.left >= r.left - 1 && x.right <= r.right + 1; });
+      ok(`${tag}: the arrow keys move through the phones (a radio group), the picked one stays in view in the sliding row, the focus stays on it`, k.world === 'stone' && seen && (await p.evaluate(() => document.activeElement && document.activeElement.id)) === 'lk_world_stone', `${k.world}, in view ${seen}`);
+    }
+    await p.click('#lk_world_cover', { force: true }); await settle(p, 1200);
+    const a2 = await stored(p);
+    ok(`${tag}: picking From your cover stores the picture's world ({ base, roles as #RRGGBB }) and the picture it came from`, a2.world === 'cover' && !!a2.worldOwn && WORLDS.includes(a2.worldOwn.base) && Object.entries(a2.worldOwn).every(([k, v]) => k === 'base' || (['deep', 'strong', 'fresh', 'light', 'warm'].includes(k) && HEX.test(v))) && a2.worldSrc === coverKey && await checked(p) === 'cover', JSON.stringify(a2.worldOwn) + ' ' + a2.worldSrc);
+    ok(`${tag}: no page errors`, !errors.length, errors.join(' | '));
+    if (w === 1280 && lang === 'en' && other) {
+      await p.click(`[data-obcover="${other}"]`, { force: true }); await settle(p, 1500);
+      const a3 = await stored(p);
+      ok('look-worlds, builder: another cover picture, its colours are read again (From your cover stays picked)', a3.world === 'cover' && a3.worldSrc === other && JSON.stringify(a3.worldOwn) !== JSON.stringify(a2.worldOwn) && await checked(p) === 'cover', JSON.stringify(a3.worldOwn));
+      await p.setInputFiles('[data-file="logo"]', { name: 'logo.png', mimeType: 'image/png', buffer: TEAL }); await settle(p, 1500);
+      const r8 = await row(p);
+      ok('look-worlds, builder: with a logo, 8 phones: From your cover, From your logo, then the six worlds', r8.join() === ['cover', 'logo', ...WORLDS].join(), r8.join());
+      const clear8 = await rowClear(p);
+      ok('look-worlds, builder, 1280 px: 8 phones, nothing overlaps, no label cut', !clear8.length, clear8.join('; '));
+      await p.screenshot({ path: join(SHOTS, 'look-worlds-builder-logo-1280.png') });
+    }
+    await ctx.close();
+  }
+  // No picture at all: the six worlds only, each phone's cover in its own main colour.
+  { const G = { ...B, answers: { ...B.answers } }; delete G.answers.coverUrl; delete G.answers.coverChoice;
+    const { ctx, p, errors } = await open(browser, G, 1280, 860); await pictures(ctx);
+    await p.goto('http://editor.test/#look'); await ready(p); await settle(p, 700);
+    const r = await row(p), cv = await p.$$eval('.wps .wp-cv', els => els.map(e => getComputedStyle(e).backgroundImage));
+    ok('look-worlds, builder, no picture: 6 phones, the six worlds, Bauhaus selected, no picture on their covers', r.join() === WORLDS.join() && await checked(p) === 'bauhaus' && cv.every(x => x === 'none'), r.join());
+    ok('look-worlds, builder, no picture: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // A picture that cannot be read (no CORS): From your cover is gone and the colours fall back to Bauhaus.
+  { const G = { ...B, answers: { ...B.answers, world: 'cover', worldOwn: undefined, worldSrc: undefined } };
+    const { ctx, p, errors } = await open(browser, G, 1280, 860); await pictures(ctx, true);
+    await p.goto('http://editor.test/#look'); await ready(p); await settle(p, 1500);
+    const a = await stored(p), r = await row(p);
+    ok('look-worlds, builder: a cover that cannot be read falls back to Bauhaus (stored), and its phone is not offered', a.world === 'bauhaus' && !a.worldOwn && await checked(p) === 'bauhaus' && !r.includes('cover') && (await paper(p)) === 'rgb(243, 238, 227)', `${a.world} ${r.join()}`);
+    ok('look-worlds, builder, unreadable picture: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // Old answers ("Colours: From my cover picture", a layout): moved to the cover's phone, once; the layout no longer read.
+  { const G = { ...B, answers: { ...B.answers, colorsFrom: 'From my cover picture', mood: 'rural' } }; delete G.answers.world;
+    const { ctx, p, errors } = await open(browser, G, 1280, 860); await pictures(ctx);
+    await p.goto('http://editor.test/#look'); await ready(p); await settle(p, 1500);
+    const a = await stored(p);
+    ok('look-worlds, builder: old answers with colorsFrom (the cover) are moved to world "cover", its colours read; the old layout is not used', a.world === 'cover' && !!a.worldOwn && a.worldSrc === coverKey && await checked(p) === 'cover' && !!(await inPhone(p, d => d.querySelector('.pv-sec .ar'))), JSON.stringify({ world: a.world, own: a.worldOwn }));
+    ok('look-worlds, builder, old answers: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // ---- Editor: 1280 and 360 px, in English and in French ----
+  const saves = ctx => { const out = []; ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); out.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); }); return out; };
+  const draft = list => { for (const b of list.slice().reverse()) { try { const d = JSON.parse(b).draft; if (d) return d; } catch (e) { /* not a save */ } } return null; };
+  const OLD = '\n/* editor:start */\n:root{--paper:#FFFFFF;--blue:#123456;--display:"Fraunces",Georgia,serif}\n/* editor:end */';
+  for (const [w, h] of [[1280, 860], [360, 780]]) for (const lang of ['en', 'fr']) {
+    const tag = `look-worlds, editor, ${w} px, ${lang}`, G = { ...E, theme: { ...(E.theme || {}), css: ((E.theme || {}).css || '') + OLD } }; delete G.theme.world; delete G.theme.worldFrom;
+    const { ctx, p, errors } = await open(browser, G, w, h, { 'porta-lang-v1': lang }); await pictures(ctx); const saved = saves(ctx);
+    await p.goto('http://editor.test/#look'); await ready(p); await settle(p, 1200);
+    const r = await row(p), want = ['cover', ...((G.content.site || {}).logo ? ['logo'] : []), ...WORLDS];
+    ok(`${tag}: the same row (${want.length} phones: From your cover${want.includes('logo') ? ', From your logo' : ''}, then the six worlds), Bauhaus selected for a guide with no world`, r.join() === want.join() && await checked(p) === 'bauhaus', r.join());
+    const clear = await rowClear(p);
+    ok(`${tag}: nothing in the row overlaps, no label cut or broken mid-word`, !clear.length, clear.join('; '));
+    if (w === 360) { const sx = await p.evaluate(() => { const r = document.querySelector('.wps'); return { row: r.scrollWidth > r.clientWidth + 20, page: document.documentElement.scrollWidth - innerWidth }; });
+      ok(`${tag}: the row slides sideways, the page does not`, sx.row && sx.page <= 0, JSON.stringify(sx)); }
+    await p.$eval('#cm_worlds', e => e.scrollIntoView({ block: 'center' })); await settle(p, 200);
+    await p.screenshot({ path: join(SHOTS, `look-worlds-editor-${lang}-${w}.png`) });
+    await p.click('#lk_world_sea', { force: true }); await settle(p, 1500);
+    const d = draft(saved) || {}, th = d.theme || {}, st = ((d.content || {}).site || {}).theme || {};
+    ok(`${tag}: picking Sea writes the draft's theme.world "sea", preset bauhaus, Sea's paper in site.theme, and clears the colour tokens from the css (fonts stay)`,
+      th.world === 'sea' && th.preset === 'bauhaus' && !th.worldFrom && !('colorsFrom' in th) && st.preset === 'bauhaus' && st.world === 'sea' && st.paper === '#F3F1EA' && st.manifestBackground === '#F3F1EA' && st.manifestTheme === '#0E5A7A'
+      && !/--(paper|blue)\s*:/.test(th.css || '') && /--display\s*:\s*"Fraunces"/.test(th.css || '') && await checked(p) === 'sea', JSON.stringify({ world: th.world, preset: th.preset, st }));
+    if (w === 1280 && lang === 'en') {
+      await p.click('[data-open="look-colours"] > summary'); await settle(p, 300);
+      const roles = await p.$$eval('[data-design="role"]', els => els.map(e => [e.dataset.role, e.value]));
+      ok('look-worlds, editor: Fine-tune each colour holds the five roles, each with the world\'s colour', roles.map(x => x[0]).join() === 'deep,strong,fresh,light,warm' && roles[0][1] === '#0e5a7a', JSON.stringify(roles));
+      await p.$eval('[data-role="deep"]', e => { e.value = '#aa2200'; e.dispatchEvent(new Event('change', { bubbles: true })); }); await settle(p, 1500);
+      const t2 = (draft(saved) || {}).theme || {};
+      ok('look-worlds, editor: a fine-tuned colour goes into the world ({ base: "sea", deep }), never into the css; Sea stays selected', JSON.stringify(t2.world) === JSON.stringify({ base: 'sea', deep: '#AA2200' }) && !/--blue\s*:/.test(t2.css || '') && await checked(p) === 'sea', JSON.stringify(t2.world));
+      await p.click('#lk_world_cover', { force: true }); await settle(p, 1500);
+      const t3 = (draft(saved) || {}).theme || {};
+      ok('look-worlds, editor: From your cover writes the picture\'s world ({ base, roles as #RRGGBB }) and worldFrom "cover"', !!t3.world && typeof t3.world === 'object' && WORLDS.includes(t3.world.base) && Object.entries(t3.world).every(([k, v]) => k === 'base' || HEX.test(v)) && t3.worldFrom === 'cover' && await checked(p) === 'cover', JSON.stringify(t3.world));
+      const pic = await p.$eval('[data-coverpic]:not([aria-pressed="true"])', b => b.dataset.coverpic).catch(() => '');
+      if (pic) { await ctx.unroute(/\.(jpe?g|png|webp)(\?.*)?$/i); await pictures(ctx, false, () => PNG4);
+        await p.click(`[data-coverpic="${pic}"]`); await settle(p, 1800);
+        const t4 = (draft(saved) || {}).theme || {};
+        ok('look-worlds, editor: another cover picture, the colours from the cover are read again', t4.worldFrom === 'cover' && JSON.stringify(t4.world) !== JSON.stringify(t3.world) && !!t4.world && typeof t4.world === 'object' && WORLDS.includes(t4.world.base), JSON.stringify(t4.world)); }
+    }
+    ok(`${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // The labels and "Welcome" with 8 phones at 1280 px (the narrowest they get, 67 px) in French, Catalan and Spanish.
+  for (const lang of ['fr', 'ca', 'es']) {
+    const { ctx, p } = await open(browser, B, 1280, 860, { 'porta-lang-v1': lang }); await pictures(ctx);
+    await p.goto('http://editor.test/#look'); await ready(p); await settle(p, 700);
+    await p.setInputFiles('[data-file="logo"]', { name: 'logo.png', mimeType: 'image/png', buffer: TEAL }); await settle(p, 1200); await p.evaluate(() => document.fonts.ready);
+    const n = (await row(p)).length, clear = await rowClear(p);
+    ok(`look-worlds, builder, 1280 px, ${lang}: 8 phones, every label and "Welcome" fit, no word broken`, n === 8 && !clear.length, `${n} phones; ${clear.join('; ')}`);
+    if (lang === 'fr') await p.screenshot({ path: join(SHOTS, 'look-worlds-builder-logo-fr-1280.png') });
+    await ctx.close(); }
+  // A guide on an older layout: no phone selected, and one quiet line says what picking does.
+  { const G = { ...E, theme: { ...(E.theme || {}), preset: 'soft' }, content: { ...E.content, site: { ...E.content.site, theme: { ...(E.content.site.theme || {}), preset: 'soft' } } } }; delete G.theme.world; delete G.theme.worldFrom;
+    const { ctx, p, errors } = await open(browser, G, 1280, 860); await pictures(ctx);
+    await p.goto('http://editor.test/#look'); await ready(p); await settle(p, 900);
+    const line = await p.$eval('#cm_worlds .wp-old', e => e.textContent).catch(() => '');
+    ok('look-worlds, editor: a guide on an older layout shows no phone selected, and the line saying it moves to the new look', !(await checked(p)) && /older layout/.test(line), line);
+    ok('look-worlds, editor, older layout: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
 }
 async function gLayout() {
@@ -3139,7 +3291,8 @@ async function gLayout() {
 }
 // ======== Running ========
 // WALK=1: no checks, only a picture of every screen a host meets, for a design review (walk.mjs, into shots/walk/), in this process.
-if (env.WALK) { await launch(); try { await (await import('./walk.mjs')).default({ browser, open, ready, go, json, inPhone, E, B, N, A0, photos, PAGE, WRITE, HTML, SB, HERE }); } finally { await browser.close(); } process.exit(0); }
+// WALK_FILE=<path>: another module run with the same harness instead (a design draft pictured in the real page, before it is built).
+if (env.WALK) { await launch(); try { await (await import(env.WALK_FILE || './walk.mjs')).default({ browser, open, ready, go, json, inPhone, E, B, N, A0, photos, PAGE, WRITE, HTML, SB, HERE }); } finally { await browser.close(); } process.exit(0); }
 if (CHILD) {
   // One group, in a process of its own: its results go to the runner as they come; an error in it is a FAIL, never a silent end.
   const fn = groupList()[CHILD], t0 = Date.now();

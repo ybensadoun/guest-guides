@@ -143,38 +143,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 .thumb.pending{opacity:.6}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .err{color:var(--danger);font-size:14px;margin:0}
-/* Mood cards */
-.moods{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}
-.mood{position:relative;cursor:pointer}
-.mood input{position:absolute;opacity:0;inset:0;cursor:pointer;z-index:2}
-.mood .box{border:2px solid var(--line);border-radius:16px;padding:9px;display:flex;flex-direction:column;gap:7px;background:var(--surface);height:100%}
-.mood input:checked~.box{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
-.mood input:focus-visible~.box{outline:3px solid var(--focus);outline-offset:2px}
-/* Layout choice: a skeleton of each guide layout (cover, house name, then the Home sections). */
-.mock{height:128px;border-radius:9px;overflow:hidden;display:grid;gap:4px;padding:7px}
-.mock i{display:block;min-height:0}
-.mood b{font-size:15px}.mood small{color:var(--muted);font-size:12.5px;line-height:1.35}
-.m-bold,.m-soft,.m-min,.m-med,.m-rural{grid-template-columns:1fr 1fr;grid-template-rows:34px 6px 1fr 1fr}
-.m-bold i:nth-child(1),.m-soft i:nth-child(1),.m-min i:nth-child(1),.m-med i:nth-child(1),.m-rural i:nth-child(1){grid-column:1/-1}
-.m-bold i:nth-child(2),.m-soft i:nth-child(2),.m-min i:nth-child(2),.m-med i:nth-child(2),.m-rural i:nth-child(2){grid-column:1/-1;width:55%;border-radius:3px}
-.m-bold{background:#F3EEE3}
-.m-bold i{border-radius:6px}
-.m-bold i:nth-child(1){background:linear-gradient(135deg,#7f93a8,#c9b48a)}.m-bold i:nth-child(2){background:#121212}
-.m-bold i:nth-child(3){background:#1D4FA0}.m-bold i:nth-child(4){background:#F5C400}.m-bold i:nth-child(5){background:#D52B1E}.m-bold i:nth-child(6){background:#121212}
-.m-soft{background:#F6EEF0}
-.m-soft i{border-radius:13px}
-.m-soft i:nth-child(1){background:linear-gradient(135deg,#d9c7cf,#f3dcc8)}.m-soft i:nth-child(2){background:#8a7a80}
-.m-soft i:nth-child(3){background:#D3E3F6}.m-soft i:nth-child(4){background:#F7E6B0}.m-soft i:nth-child(5){background:#F6D0C8}.m-soft i:nth-child(6){background:#D3EBDC}
-.m-med{background:#FBFAF6}.m-med i{border-radius:50% 50% 5px 5px / 16px 16px 5px 5px;background:#fff;box-shadow:inset 0 0 0 2px #1F4F96}
-.m-med i:nth-child(1){border-radius:50% 50% 4px 4px / 22px 22px 4px 4px;box-shadow:none;background:linear-gradient(135deg,#9fc2e0,#f2e6c9)}.m-med i:nth-child(2){border-radius:3px;box-shadow:none;background:#1F4F96}
-.m-med i:nth-child(4),.m-med i:nth-child(5){background:#1F4F96;box-shadow:none}
-.m-rural{background:#F2ECDF}.m-rural i{border-radius:6px}
-.m-rural i:nth-child(1){background:linear-gradient(135deg,#7d8f5a,#d9c08a)}.m-rural i:nth-child(2){background:#2A2318}
-.m-rural i:nth-child(3){background:#5A7034}.m-rural i:nth-child(4){background:#E8D7A5}.m-rural i:nth-child(5){background:#A3482B}.m-rural i:nth-child(6){background:#2F5236}
-.m-min{background:#fff;gap:0}
-.m-min i{border:1px solid #e2e2e2}
-.m-min i:nth-child(1){background:#ededed;border:0;margin-bottom:4px}.m-min i:nth-child(2){background:#111;border:0;margin-bottom:4px}
-.m-auto{background:repeating-linear-gradient(45deg,var(--sunk),var(--sunk) 8px,var(--surface) 8px,var(--surface) 16px);place-items:center;font:700 26px var(--display);color:var(--faint)}
 /* Section picker */
 .mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .mod{position:relative}
@@ -263,14 +231,6 @@ const LANGS = [['en','English'],['es','Español'],['fr','Français'],['ca','Cata
 const GUESTS = ['Families with kids','Couples','Groups of friends','Remote workers','Older guests','Guests with pets','Wedding or event guests'];
 const ROOMS = ['Outside','Living room','Kitchen','Bedroom','Bathroom','Pool','Garden','Terrace','Office','Laundry','View','Other'];
 const INTERESTS = ['Beaches','Wine and food','Hiking and nature','Culture and history','Local markets','Nightlife','Festivals','Sports','Shopping','Wellness'];
-const MOODS = [
-  {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},
-  {id:'soft',name:'Soft rounded cards',d:'Gentle pastels, rounded corners.',cls:'m-soft',n:6},
-  {id:'minimal',name:'Clean and calm',d:'Text first, thin lines, lots of white.',cls:'m-min',n:6},
-  {id:'mediterranean',name:'Mediterranean',d:'Blue and white, like the Greek islands and the south of Spain.',cls:'m-med',n:6},
-  {id:'rural',name:'Rural',d:'Wood, moss and warm earth, for farmhouses and country homes.',cls:'m-rural',n:6},
-  {id:'auto',name:'Decide for me',d:'We match it to your images.',cls:'m-auto',n:0}
-];
 
 /* ---------- Guide sections (what the finished guide contains) ---------- */
 // Same sections as the live Ca La Kimberly guide, plus Nightlife (part of the design since 29 Oct 2026, off unless the host
@@ -356,7 +316,6 @@ const Q = {
   guests:{t:'chips',label:'Who usually stays',opts:GUESTS,opt:true},
   styleBrief:{t:'area',rows:4,label:'In your own words, what should your guide feel like?',full:true,ph:'Like a small hotel in Tuscany: warm, earthy, lots of white space. Or: bright and playful, like a children\u2019s picture book.',hint:'The more specific you are, the more different your guide looks. We design a look just for you, not from a template.'},
   lookLikes:{t:'area',rows:3,label:'What do you like about them?',opt:true,full:true,ph:'The blue of the sea, the hand-drawn feel…'},
-  mood:{t:'mood',label:'Which feels closest?',hint:'This sets the layout, not only the colours.'},
   lookAvoid:{t:'area',rows:2,label:'Anything to avoid?',opt:true,full:true,ph:'No pink, nothing too corporate…'},
   moduleIdeas:{t:'area',rows:2,label:'An idea we don’t have yet?',opt:true,full:true,ph:'A page about the vineyard next door…',hint:'We build new ideas as new sections.'},
   amenities:{t:'amen',label:'What the place offers',opt:true},
@@ -499,7 +458,6 @@ function field(k){
   if (t === 'plan') { const cur = A[k] || {}; return `<div class="f full"><span class="lab" id="l_${k}">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="plan">${BIN_ROWS.map(([id, lab]) => `<div class="plan-row"><b>${esc(lab)}</b><div class="chips" role="group" aria-label="${esc(lab)}">${DAYS7.map(([d, dl]) => `<label class="chip"><input type="checkbox" data-plan="${k}" data-bin="${id}" value="${d}"${(cur[id] || []).includes(d) ? ' checked' : ''}><span>${dl}</span></label>`).join('')}</div></div>`).join('')}</div></div>`; }
   if (t === 'containers') return containersHTML(k, head, hint);
   if (t === 'places') { const rows = placeRowsRaw(k); return `<div class="f full" id="pl_${k}"><span class="lab">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="pl">${rows.map((r, i) => `<div class="pl-row"><input type="text" data-pl="${k}" data-i="${i}" data-f="p" ${psAttrs(`sug_${k}_${i}`)} value="${esc(r.p)}" placeholder="${r.gid && !String(r.p || '').trim() ? PS_ASK : 'Start typing the name'}" aria-label="Place ${i + 1}"><div class="pl-sug" id="sug_${k}_${i}" role="listbox" aria-label="Places on Google" hidden></div>${plAt(r)}<textarea data-pl="${k}" data-i="${i}" data-f="c" rows="2" placeholder="Your comment: what to order, when to go…" aria-label="Comment on place ${i + 1}">${esc(r.c)}</textarea><button type="button" class="x" data-plrm="${k}" data-i="${i}" aria-label="Remove place ${i + 1}">×</button></div>`).join('')}</div><button type="button" class="btn small" data-pladd="${k}">+ ${esc(q.add || 'Add a place')}</button></div>`; }
-  if (t === 'mood') return `<div class="f full"><span class="lab" id="l_${k}">${head}</span>${hint?`<p class="hint">${esc(hint)}</p>`:''}<div class="moods" role="radiogroup" aria-labelledby="l_${k}">${MOODS.map(m => `<label class="mood"><input type="radio" name="mood" data-radio="mood" value="${m.id}"${v('mood')===m.id?' checked':''}><div class="box"><div class="mock ${m.cls}">${m.n?'<i></i>'.repeat(m.n):'?'}</div><b>${m.name}</b><small>${m.d}</small></div></label>`).join('')}</div></div>`;
   if (t === 'select') return `<div class="f${q.full?' full':''}"><label for="f_${k}">${head}</label><select id="f_${k}" data-k="${k}"><option value="">Choose…</option>${q.opts.map(x => `<option${v(k)===x?' selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
   const inp = t === 'area' ? `<textarea id="f_${k}" data-k="${k}" rows="${q.rows||4}" placeholder="${esc(q.ph||'')}">${esc(v(k))}</textarea>`
     : `<input id="f_${k}" data-k="${k}" type="${t}" value="${esc(v(k))}" placeholder="${esc(q.ph||'')}"${t==='number'?' inputmode="numeric"':''}>`;
@@ -559,7 +517,7 @@ function summary(m){
   switch (m.id) {
     case 'listing': return [v('placeName'), v('propertyType'), [v('town'), v('region')].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'Not filled';
     case 'guide': return [v('guideName') || v('placeName'), (A.languages || []).map(l => l.toUpperCase()).join(' '), n('logo') ? 'logo' : 'no logo'].filter(Boolean).join(' · ');
-    case 'look': return [n('logo') ? 'Logo' : '', n('cover') ? 'Own cover' : A.coverChoice === 'drawn' ? 'Drawn cover' : A.coverUrl ? 'Listing photo' : '', (MOODS.find(x => x.id === v('mood')) || {}).name || ''].filter(Boolean).join(' · ') || 'Not started';
+    case 'look': return [n('logo') ? 'Logo' : '', n('cover') ? 'Own cover' : A.coverChoice === 'drawn' ? 'Drawn cover' : A.coverUrl ? 'Listing photo' : '', WORLD_NAME[worldSel()] || ''].filter(Boolean).join(' · ') || 'Not started';
     case 'sections': return SECTIONS.filter(s => secOn(s.id)).map(s => s.name).join(', ');
     case 'photos': return `${roomsNow().length} rooms, ${n('photo')} photos`;
     case 'howto': return `${lines('howTos')} how-tos`;

@@ -64,20 +64,12 @@ seg1=rep(seg1,"need:['languages'],fields:['guideName','tagline','languages','gue
 # (the step was called "Name, address, languages" until 12 Nov 2026: it has no address, only the guide's web address, so it
 # keeps the editor's name, "Name and languages")
 seg1=rep(seg1,"need:['upload:inspiration','mood','upload:cover'],fields:['styleBrief','up:inspiration','lookLikes','mood','up:cover','lookAvoid']",
- "need:[],fields:['up:logo','up:cover','mood','colorsFrom']")
+ "need:[],fields:['up:logo','up:cover','world']")
 seg1=rep(seg1,"title:'The look',sub:'Images and mood'","title:'The look',sub:'Cover, colours, what goes in'")
 seg1=rep(seg1,"lead:'Upload one to three images: an artwork you love, a photo of the place, a poster, or a screenshot of a website whose style you like. Colours, shapes and layout are built from them.',",
- "lead:'Four steps: your logo, the cover picture, the layout and its colours. All optional, and you can change them later.',")
-seg1=rep(seg1,"""  {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},
-""","")
-seg1=rep(seg1,""",
-  {id:'auto',name:'Decide for me',d:'We match it to your images.',cls:'m-auto',n:0}
-];""","""
-];""")
-seg1=rep(seg1,"const MOODS = [\n","const MOODS = [\n  {id:'bold',name:'Big colour tiles',d:'Like an app: bold blocks, strong shapes.',cls:'m-bold',n:6},\n")
-seg1=rep(seg1,"  mood:{t:'mood',label:'Which feels closest?',hint:'This sets the layout, not only the colours.'},",
-"""  mood:{t:'mood',label:'Layout',opt:true,hint:'Each one shows the same sections in a different way. Not sure? Leave it: we pick one that suits your listing.'},
-  colorsFrom:{t:'radio',label:'Colours',opt:true,def:'The colours of the layout',opts:['The colours of the layout','From my logo','From my cover picture'],hint:'Each layout comes with its own colours. You can also take them from your logo or your cover picture.'},
+ "lead:'Your cover picture, its colours and your logo. All optional, and you can change them later.',")
+seg1=rep(seg1,"  lookAvoid:{t:'area',rows:2,label:'Anything to avoid?',opt:true,full:true,ph:'No pink, nothing too corporate…'},",
+"""  lookAvoid:{t:'area',rows:2,label:'Anything to avoid?',opt:true,full:true,ph:'No pink, nothing too corporate…'},
   slug:{t:'slug',label:'Web address of your guide',hint:'The first part is ours, the last part is yours. Short and easy to type works best.'},
   refLinks:{t:'area',rows:2,label:'Apps or websites you love using',opt:true,full:true,ph:'Airbnb, Citymapper, a hotel site, a magazine…',hint:'Names or links. We read them for the overall feel, like the fonts and how round or sharp the corners are. Your guide keeps its own sections.'},
   feelWords:{t:'chips',label:'Words for the feel',opt:true,opts:['Cosy','Elegant','Playful','Modern','Rustic','Calm','Local and authentic','Luxurious','Family friendly','Colourful']},
@@ -128,6 +120,21 @@ ENG_DATA=('const ENG_KINDS = '+_jsn.dumps(_eng('kinds.json'),ensure_ascii=False,
   +'const ENG_T = '+_jsn.dumps({l: {k: v for k, v in _eng('i18n/'+l+'.json').items() if _ENGW.match(k)} for l in ('en','ca','es','fr')},ensure_ascii=False,separators=(',',':'))+';\n'
   +_re.sub(r'(?m)^export ','',open(__import__('os').path.join(_ES,'weeks.js'),encoding='utf-8').read())   # the week of the month and its word (nthKey), the guide's own rule
   +_re.sub(r'(?m)^export ','',open(__import__('os').path.join(_ES,'season.js'),encoding='utf-8').read()))   # a place's season and whether guests see it today, the guide's own rule
+# The colour worlds and "From your picture" (engine/src/worlds.js, picture-world.js): the guide's own rule for its colours,
+# the contrast rule included, so the maker's small phones, its big phone and the editor show what the guide will. Each file
+# in a scope of its own (their many short names, hex, mix, fit, at, full..., never meet the maker's), one object out: WK.
+_wsrc=open(__import__('os').path.join(_ES,'worlds.js'),encoding='utf-8').read()
+_psrc=open(__import__('os').path.join(_ES,'picture-world.js'),encoding='utf-8').read()
+for _need in ('export const WORLDS = {','export function worldTokens(','export function worldOf('):
+    assert _need in _wsrc,'engine/src/worlds.js: '+_need+' not found'
+for _need in ("import { WORLDS } from './worlds.js';\n",'export function swatches(','export function worldFromPicture('):
+    assert _need in _psrc,'engine/src/picture-world.js: '+_need.strip()+' not found'
+assert not _re.search(r'(?m)^import ',_psrc.replace("import { WORLDS } from './worlds.js';\n",'')),'engine/src/picture-world.js: an import the maker does not paste'
+assert not _re.search(r'(?m)^import ',_wsrc),'engine/src/worlds.js: an import the maker does not paste'
+ENG_DATA+=('const WK = (() => {\n'
+  +'const W = (() => {\n'+_re.sub(r'(?m)^export ','',_wsrc)+'\nreturn { WORLDS, worldTokens, worldOf };\n})();\n'
+  +'const P = (() => {\nconst { WORLDS } = W;\n'+_re.sub(r'(?m)^export ','',_psrc.replace("import { WORLDS } from './worlds.js';\n",''))+'\nreturn { swatches, worldFromPicture };\n})();\n'
+  +'return { ...W, ...P };\n})();\n')
 views=views[:a]+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'nav.js')).read()+'\n'+ENG_ICONS+ENG_DATA+'const AMENS = '+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src','amenities.json')).read().strip()+';\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'amen.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'prefill.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'preview.js')).read()+'\n'+_re.sub(r'(?m)^export ','',open(__import__('os').path.join(__import__('os').path.dirname(__file__),'placename.js')).read())+'\n'+_re.sub(r'(?m)^export ','',open(__import__('os').path.join(__import__('os').path.dirname(__file__),'towns.js')).read())+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'start.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'account.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'editor.js')).read()+'\n'+views[b:]
 views=rep(views,"function badge(k){ const q = k.startsWith('up:') ? UP[k.slice(3)] : Q[k]; if (!q || q.opt) return '<span class=\"opt\">optional</span>'; const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k;",
  "const NEEDED = new Set(MODULES.flatMap(m => m.need));\nfunction badge(k){ const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k; if (!NEEDED.has(key)) return '<span class=\"opt\">optional</span>';")

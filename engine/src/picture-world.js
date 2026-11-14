@@ -9,7 +9,7 @@
 //   2. worldFromPicture(): each family, biggest first, takes the role of a ready-made world whose colour it is closest
 //      to in hue, and gives that role its own hue and fullness at the role's lightness (a sky blue becomes a deep
 //      blue under white text, a stone ochre a sand under dark text). The world is the one the picture fills best,
-//      its main colour (deep) first. The roles the picture does not fill keep the world's colours, quietened when the
+//      its main colour (deep) first, and the one that leaves the least of the picture's colour out. The roles the picture does not fill keep the world's colours, quietened when the
 //      picture is a quiet one; the world's paper, text colour and fonts stay.
 // What keeps a guide readable and sane whatever the picture:
 //   - a role only moves a limited way round the colour wheel (LIMIT), so the five roles stay apart as in the world;
@@ -98,7 +98,7 @@ export function swatches(data, step = 4) {
 }
 
 // How far round the wheel a role may move from the world's own colour to take a picture's, in degrees.
-const LIMIT = { deep: 40, strong: 22, fresh: 45, light: 30, warm: 35 };
+const LIMIT = { deep: 40, strong: 22, fresh: 45, light: 22, warm: 35 };   // light stays a yellow: an olive green made a lime tile
 const RED = f => (f.h >= 350 || f.h <= 40) && f.c >= 0.08;   // a real red: pink-red to brick, not a brown or an orange
 const GREEN = f => f.h >= 105 && f.h <= 205;                  // olive green to teal
 const allowed = (role, f) => (role !== 'strong' || RED(f)) && (role !== 'fresh' || GREEN(f));
@@ -106,6 +106,7 @@ const allowed = (role, f) => (role !== 'strong' || RED(f)) && (role !== 'fresh' 
 const QUIET = { deep: 0.3, strong: 0.55, fresh: 0.4, light: 0.33, warm: 0.4 };
 const RED_FULL = 0.7;   // the least full a red of the picture's is as strong
 const MAIN = 1.5, LEAD = 0.2;   // deep's weight in the choice of a world; how much fuller than the picture the rest may be
+const LEFT = 0.5;               // what a world loses for each part of the picture's colour it leaves out (a pool's blue, 35% of a photo, was left out for a lawn's green)
 const TWINS = [['light', 'warm'], ['deep', 'fresh'], ['deep', 'strong'], ['fresh', 'strong']], ALIKE = 0.05;   // OKLab distance under which two tiles are twins
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 export const apart = (x, y) => { const [L1, C1, h1] = oklch(x), [L2, C2, h2] = oklch(y), r = Math.PI / 180;
@@ -121,7 +122,7 @@ export function worldFromPicture(sw) {
     let score = 0;
     for (const f of sw) {
       const r = PICKS.filter(k => !took[k] && allowed(k, f) && turn(f.h, roles[k][2]) <= LIMIT[k]).sort((x, y) => turn(f.h, roles[x][2]) - turn(f.h, roles[y][2]))[0];
-      if (!r) continue;
+      if (!r) { score -= LEFT * f.share; continue; }   // a colour of the picture this world has no place for
       // How well it sits there: near in hue, near in fullness (a pool's blue is no nearer Stone's slate than Sea's
       // blue for sharing its hue). deep counts more: it is the guide's main colour, the widest tile and the links,
       // so a picture's colour that can be it makes a world the picture's own.

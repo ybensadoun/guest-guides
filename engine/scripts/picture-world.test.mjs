@@ -63,6 +63,18 @@ test('a brand\'s colour becomes the main colour, and stays itself', () => {
   assert.equal(purple.base, 'night'); assert.ok(hueIn(oklch(purple.deep)[2], 295, 310));
 });
 
+test('a photo of two colours keeps both: a pool and its lawn', () => {
+  // A real cover (14 Nov 2026): 54% lawn green, 35% pool blue. By a hair it gave Country, green all over and no blue.
+  const w = worldOf(worldFromPicture(swatches(picture([['#617731', 54], ['#4A83C5', 35]]))));
+  assert.ok(hueIn(oklch(w.deep)[2], 240, 270), `the pool's blue is the main colour: ${w.deep}`);
+  assert.ok(hueIn(oklch(w.fresh)[2], 110, 140), `the lawn's green is there too: ${w.fresh}`);
+});
+
+test('an olive green never becomes the light tile (it made a lime one)', () => {
+  const w = worldFromPicture(swatches(picture([['#9DBBD7', 33], ['#8A985A', 33], ['#C7A673', 28]])));
+  assert.ok(!w.light || hueIn(oklch(w.light)[2], 60, 113), JSON.stringify(w));
+});
+
 test('Emergencies stays red: an ochre, a brown or an orange never takes strong; a real red does', () => {
   for (const c of ['#A67C45', '#7A4A22', '#C2693F', '#EC8A1C', '#8A6A3A', '#B08D57']) {
     const w = worldFromPicture(swatches(picture([[c, 80]]))), strong = worldOf(w).strong;

@@ -368,8 +368,8 @@ function swCardRefresh(count){
 }
 // The card as drawn: a researched one with Google's live photo and rating when there is a photo (else its kind's icon).
 const swLive = p => { const L = isOurs(p.id) && p.gid && SW.live.get(p.gid); return L && typeof L === 'object' ? { ...p, ...L } : p; };
-// The guide's own colour for Things to do (the engine's green), as the phone shows it: the layout's, or the picture's.
-const swKindColour = () => { const cs = colourSource(); return ((cs && PV.palSrc === cs.src && PV.palette) || PRESET_PAL[choosePreset()]).acc[3]; };
+// The guide's own colour for Things to do (the engine's green), as the phone shows it: the chosen world's.
+const swKindColour = () => worldPal(worldNow()).acc[3];
 const isOurs = id => String(id).startsWith('r:');
 // A decision as the screen shows it: the live card (Google's from memory, ours from the research) with the host's comment.
 // A Google card not in memory (after a reload, before the deck is loaded again) is a kept place with no name, and its link.
@@ -955,19 +955,20 @@ document.addEventListener('focusin', e => {
 });
 
 /* ---------- The look on one screen (docs/plan-fast-builder.md, step 4) ----------
-   The cover, the layout, the colours and the logo, each already chosen for the host: one tap changes one, and the phone
-   shows it at once. On wide screens the phone sits next to the choices; on smaller ones it stays pinned above them.
+   The cover, the colours and the logo, each already chosen for the host: one tap changes one, and the phone shows it at
+   once. The colours are a row of small phones, one per colour world, the host's own guide in each (proposal 4, 14 Nov
+   2026: they replace the layouts and the colour chips). On wide screens the phone sits next to the choices; on smaller ones it stays pinned above them.
    The cover: one of the listing's photos (its own cover by default), the host's own picture, one drawn from the colours,
    or an artistic version of the chosen picture (drawn by the guide builder: the same "cover-art" job and progress bar as
    in the editor, so it needs the account). ---------- */
 const obOwnCover = () => uploads.find(u => u.kind === 'cover');
 const obSized = u => u + (u.includes('?') ? '' : '?im_w=480');
 function lookHTML(m){
-  setTimeout(() => { lookPaint(); const x = document.querySelector('.lk-strip [aria-pressed="true"]'); if (x) { const st = x.parentElement, r = x.getBoundingClientRect(), q = st.getBoundingClientRect(); if (r.right > q.right) st.scrollLeft += r.left - q.left - 8; } });   // the drawn cover's colours, once the phone knows them; the cover chosen in view
+  setTimeout(() => { lookPaint(); const x = document.querySelector('.lk-strip [aria-pressed="true"]'); if (x) { const st = x.parentElement, r = x.getBoundingClientRect(), q = st.getBoundingClientRect(); if (r.right > q.right) st.scrollLeft += r.left - q.left - 8; } WPS.x = 0; wpsInView(); });   // the drawn cover's colours, once the phone knows them; the cover and the colours chosen in view
   return slimStep(m, 'Already chosen for you. Tap anything to change it.', `<section class="card lk-card" id="lookCard">${lookCardHTML()}</section>`, 'look-page');
 }
 const lookSectionsHTML = () => `<div class="lk-row"><div class="lk-hd"><b>What goes in your guide</b></div><p class="hint">Switch off what you do not need: its step here and its tile in the guide go too.</p>${sectionPicker()}</div>`;
-const lookCardHTML = () => lookCoverHTML() + lookLayoutHTML() + lookColoursHTML() + lookLogoHTML() + lookSectionsHTML()
+const lookCardHTML = () => lookCoverHTML() + lookWorldsHTML() + lookLogoHTML() + lookSectionsHTML()
   + ((A._done || {}).look ? '<div class="row"><button class="btn small" type="button" data-undone="look">Mark as not done</button></div>' : '');
 // After a choice: the choices and the phone are drawn again, not the page, so the phone, the photo strip and the focus stay put.
 async function lookRefresh(){
@@ -975,11 +976,12 @@ async function lookRefresh(){
   const id = document.activeElement && document.activeElement.id, x = c.querySelector('.lk-strip'), sx = x ? x.scrollLeft : 0;
   c.innerHTML = lookCardHTML();
   const y = c.querySelector('.lk-strip'); if (y) y.scrollLeft = sx;
+  wpsInView(true);
   if (id) { const el = document.getElementById(id); if (el && el !== document.activeElement) el.focus({ preventScroll: true }); }
   softRefresh(); PHONE.build = false; await phoneRender(); lookPaint();
 }
 const lookPalVars = p => `--a1:${p.acc[0]};--a2:${p.acc[1]};--a3:${p.acc[2]};--a4:${p.acc[3]};--pp:${p.paper};--pi:${p.ink}`;
-async function lookPaint(){ const d = document.querySelector('.lk-drawn'); if (d) d.style.cssText = lookPalVars(await phonePalette(choosePreset())); }
+async function lookPaint(){ const d = document.querySelector('.lk-drawn'); if (d) d.style.cssText = lookPalVars(await phonePalette()); }
 const lookArtOpen = () => !!(CM.artOpen || CM.artJob || CM.artRes || CM.artErr || CM.artWords != null);
 function lookCoverHTML(){
   const own = obOwnCover(), drawn = !own && A.coverChoice === 'drawn', cur = String(A.coverUrl || '').split('?')[0];
@@ -988,7 +990,7 @@ function lookCoverHTML(){
   return `<div class="lk-row"><div class="lk-hd"><b id="l_cover">Cover picture</b></div><p class="hint">Use one of your photos as it is, or have a new one drawn from it.</p>
     <div class="lk-strip" role="group" aria-labelledby="l_cover">
       <label class="lk-pic lk-up"><input class="sr" type="file" accept="image/*" data-obcoverfile="1"><b aria-hidden="true">+</b><small>Your own</small></label>
-      <button type="button" class="lk-pic lk-drawn" id="lk_drawn" data-coverchoice="drawn" aria-pressed="${drawn}" aria-label="A cover drawn from the colours" style="${lookPalVars(PRESET_PAL[choosePreset()])}">${PV_ART}<small>Drawn</small></button>
+      <button type="button" class="lk-pic lk-drawn" id="lk_drawn" data-coverchoice="drawn" aria-pressed="${drawn}" aria-label="A cover drawn from the colours" style="${lookPalVars(worldPal(worldNow()))}">${PV_ART}<small>Drawn</small></button>
       ${own ? `<span class="lk-pic lk-own"><img src="${esc(srcOf(own))}" alt="Your own picture, the cover now"><button class="lk-x" type="button" data-del="${own.id}" aria-label="Remove your picture">×</button></span>` : ''}
       ${pics.map((p, i) => `<button type="button" class="lk-pic" id="lk_pic${i}" data-obcover="${esc(p)}" aria-pressed="${!own && !drawn && p === cur}" aria-label="Use this photo as the cover"><img src="${esc(obSized(p))}" alt="" loading="lazy"></button>`).join('')}
     </div>${shown ? `<div class="lk-artrow"><span>Want something unique? We redraw the photo you picked as an artwork.</span><button class="btn small" type="button" id="lk_art" data-lkart="1" aria-expanded="${lookArtOpen()}">Make it artistic</button></div>` : ''}${shown && lookArtOpen() ? lookArtHTML(shown) : ''}</div>`;
@@ -1002,21 +1004,15 @@ function lookArtHTML(shown){
       ${CM.artRes ? `<figure class="cm-artres"><img src="${esc(CM.artRes.url)}" alt="Your artistic cover"><figcaption class="cm-row"><button class="btn small primary" type="button" data-obartuse="1">Use this cover</button><button class="btn small" type="button" data-obart="again"${busy ? ' disabled' : ''}>Try again</button></figcaption></figure>` : ''}
       ${CM.artErr ? `<p class="hint cm-err">${esc(CM.artErr)}</p>` : ''}`}</div>`;
 }
-// The layouts as small pictures of a guide's home; none picked means Big colour tiles, the guides' default (preview.js choosePreset).
-function lookLayoutHTML(){
-  const cur = choosePreset();
-  return `<div class="lk-row"><div class="lk-hd"><b id="l_mood">Layout</b></div>
-    <div class="moods lk-moods" role="radiogroup" aria-labelledby="l_mood">${MOODS.filter(x => x.n).map(x => `<label class="mood" title="${esc(x.d)}"><input type="radio" id="lk_mood_${x.id}" name="mood" data-radio="mood" value="${x.id}"${x.id === cur ? ' checked' : ''}><div class="box"><div class="mock ${x.cls}">${'<i></i>'.repeat(x.n)}</div><b>${esc(x.name)}</b></div></label>`).join('')}</div></div>`;
-}
-// Colours: the layout's own (its colours as dots), or those of the cover picture or the logo (that picture, small). A choice
-// whose picture is gone falls back to the layout's own, as the build does.
-function lookColoursHTML(){
-  const logo = uploads.find(u => u.kind === 'logo'), own = obOwnCover(), cur = String(A.coverUrl || '').split('?')[0];
-  const pics = { cover: own ? srcOf(own) : /^https:/.test(cur) ? obSized(cur) : '', logo: logo ? srcOf(logo) : '' };
-  const k = colorsFromKind(), on = pics[k] ? k : 'look';
-  const opts = [['look', 'The colours of the layout', 'The layout’s own'], ['cover', 'From my cover picture', 'From the cover'], ['logo', 'From my logo', 'From my logo']].filter(([id]) => id === 'look' || pics[id]);
-  return `<div class="lk-row lk-in"><div class="lk-hd"><b id="l_colorsFrom">Colours</b></div>
-    <div class="chips lk-cols" role="radiogroup" aria-labelledby="l_colorsFrom">${opts.map(([id, val, label]) => `<label class="chip"><input type="radio" id="lk_cf_${id}" name="colorsFrom" data-radio="colorsFrom" value="${esc(val)}"${on === id ? ' checked' : ''}><span>${id === 'look' ? `<i class="lk-dots" aria-hidden="true">${PRESET_PAL[choosePreset()].acc.map(c => `<i style="background:${c}"></i>`).join('')}</i>` : `<img src="${esc(pics[id])}" alt="">`}${esc(label)}</span></label>`).join('')}</div></div>`;
+// Colours: one small phone per colour world, the host's cover on top and the tiles in its colours. "From your cover" and
+// "From your logo" come first when there is such a picture (and it can be read); until it is read (a moment, it starts
+// as the step is drawn) its phone shows Stone. None picked: Bauhaus.
+const lookWorldsHTML = () => `<div class="lk-row" id="lk_worlds"><div class="lk-hd"><b id="l_world">Colours</b></div><p class="hint">Each has its own colours and title font. Tap one to see your guide in it.</p>
+    ${lookWorldsRow()}</div>`;
+function lookWorldsRow(){
+  const own = obOwnCover(), cur = String(A.coverUrl || '').split('?')[0], cover = own ? srcOf(own) : A.coverChoice !== 'drawn' && /^https:/.test(cur) ? obSized(cur) : '';
+  const pics = {}; for (const k of ['cover', 'logo']) if (picOf(k)) pics[k] = picWorldNow(k);
+  return worldRowHTML({ sel: worldSel(), cover, pics });
 }
 function lookLogoHTML(){
   const logo = uploads.find(u => u.kind === 'logo'), adding = [...pending.values()].some(p => p.kind === 'logo');
@@ -1025,11 +1021,18 @@ function lookLogoHTML(){
       : `<span data-drop="logo" data-max="1"><label class="btn small"><input class="sr" type="file" accept="image/*" data-file="logo">${adding ? 'Adding your logo' : 'Add your logo'}</label></span>`}
       <small>Optional. On the welcome card, and the app icon on guests’ phones.</small></div></div>`;
 }
+async function lookWorldPick(id){
+  if (id === 'cover' || id === 'logo') { A.world = id; delete A.worldOwn; delete A.worldSrc; worldStore(); }
+  else if (isWorldId(id)) { A.world = id; delete A.worldOwn; delete A.worldSrc; }
+  else return;
+  queueSave(); await lookRefresh();
+  if (id === 'cover' || id === 'logo') { await picWorld(id); if (worldStore()) await lookRefresh(); }
+}
 async function obDropCovers(){ for (const u of uploads.filter(x => x.kind === 'cover')) { try { await idb.del(u.id); } catch (e) { /* gone from memory anyway */ } } uploads = uploads.filter(x => x.kind !== 'cover'); }
 document.addEventListener('change', async e => {
   const t = e.target;
-  // A layout or colours choice: the dots and the drawn cover follow it (after runtime.js has saved the answer)
-  if (t.dataset && /^(mood|colorsFrom)$/.test(t.dataset.radio || '') && !CM.on && route() === 'look') return setTimeout(lookRefresh);
+  // A colour world: saved (a picture's with its colours and the picture they came from), then the row and the phone redraw
+  if (t.name === 'world' && !CM.on && route() === 'look') return lookWorldPick(t.value);
   if (!t.dataset || !t.dataset.obcoverfile || !t.files.length) return;
   const f = [...t.files]; t.value = ''; await obDropCovers(); delete A.coverChoice; addFiles('cover', f, 1);
 });
