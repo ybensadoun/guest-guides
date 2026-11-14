@@ -3,6 +3,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { ENGINE, ROOT, siteDir, readSite } from '../site.config.js';
+import { check as checkHome } from '../src/modules/frame.js';
 const FLAGS = JSON.parse(readFileSync(resolve(ENGINE, 'src/flags.json'), 'utf8')).flags;   // the only warnings a place can carry
 const GROUPS = JSON.parse(readFileSync(resolve(ENGINE, 'src/groups.json'), 'utf8')).groups;   // the only quick-filter groups
 
@@ -106,6 +107,17 @@ for (const s of read(C('sections')).sections) {
 
 // Home quick tiles may carry the same season (their page and tile say it like a list row).
 if (on('quick') && existsSync(C('quick'))) for (const q of read(C('quick')).items || []) if (seasonBad(q)) errors.push(`quick "${q.id}" season must be { from: "MM-DD", to: "MM-DD" }, both ends, two different days`);
+
+// Home's arrangement (content/home.json, optional; engine/src/modules/README.md): two groups, known kinds, ids that exist,
+// sizes each thing offers, nothing twice. Every quick.json item counts as known (a card left out for the season still is).
+if (existsSync(C('home'))) {
+  const secs = read(C('sections')).sections.filter(s => on(s.id) && !(s.id === 'markets' && !nMarkets));
+  const tr = secs.find(s => s.kind === 'transport' && s.status === 'live'), trTile = tr && existsSync(C(tr.file || tr.id)) && read(C(tr.file || tr.id)).tile;
+  const quick = on('quick') && existsSync(C('quick')) ? read(C('quick')).items || [] : [];
+  const guide = { sections: secs.map(({ id, kind, group, status }) => ({ id, kind, group, status })), map: on('map'), transportCard: trTile ? tr.id : null,
+    highlights: [...quick.map(q => ({ id: q.id, wide: !!q.wide })), ...(trTile ? [{ id: tr.id, wide: !!trTile.wide }] : [])] };
+  for (const m of checkHome(read(C('home')), guide)) errors.push(`content/${m}`);
+}
 
 // Typography (docs/TYPOGRAPHY.md): Spanish ¿ ¡, Catalan punt volat, Dutch IJ, German quotes, German du (not Sie).
 const formal = [];

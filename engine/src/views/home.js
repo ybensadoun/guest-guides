@@ -1,11 +1,12 @@
 import qrcode from 'qrcode-generator';
 import { t, tx, locale } from '../i18n.js';
-import { MARKETS, mapItems, SECTIONS, CATS, QUICK, HOUSE, slots, SITE, MODULE_ON, TRANSPORT, quickShown } from '../content.js';
+import { MARKETS, mapItems, SECTIONS, CATS, QUICK, HOUSE, slots, SITE, MODULE_ON, quickShown, TRANSPORT_CARD, HOME_ARRANGEMENT } from '../content.js';
 import { runsOn, statusLabel, cap, nextOpen, closedStatus, seasonStatus } from '../schedule.js';
 import { esc, title, catIcon, SECTION_LOOK, stHTML, distHTML } from '../ui.js';
 import { sorted } from './markets.js';
 import { st, DEFAULT_CATS } from '../state.js';
 import { MODULES } from '../modules/index.js';
+import { resolve } from '../modules/frame.js';
 import { upcoming, dateRange, when, dayBadge } from '../events.js';
 import { eventRow } from './section.js';
 
@@ -143,9 +144,10 @@ const QI = {
 const qsvg = d => `<svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const qKey = q => [q.icon, q.id, String(q.id || '').split('-')[0]].find(k => k && QI[k]) || 'shop';
 export const quickIcon = q => qsvg(QI[typeof q === 'string' ? qKey({ id: q }) : qKey(q)]);
-// A tile closed for the season and opening in more than 30 days is left out (content.js quickShown); its page still opens.
-const quickRow = () => QUICK.some(q => quickShown(q)) ? `<div class="qcalls">${QUICK.filter(q => quickShown(q)).map(q => `<a class="qcall${q.wide ? ' wide' : ''}" data-q="${q.id}" href="${q.href || '#p/' + q.id}">
-  <span class="qi">${quickIcon(q)}</span><span class="qt"><b>${esc(tx(q.name))}</b>${q.sub ? `<small>${esc(tx(q.sub))}</small>` : ''}${qStatus(q)}</span></a>`).join('')}</div>` : '';
+// A highlight: the white card of one place (content/quick.json, or the transport card), half or wide (modules/frame.js).
+// A card closed for the season and opening in more than 30 days is left out (content.js quickShown); its page still opens.
+const qcard = (q, size) => `<a class="qcall${size === 'wide' ? ' wide' : ''} s-${size}" data-q="${q.id}" href="${q.href || '#p/' + q.id}">
+  <span class="qi">${quickIcon(q)}</span><span class="qt"><b>${esc(tx(q.name))}</b>${q.sub ? `<small>${esc(tx(q.sub))}</small>` : ''}${qStatus(q)}</span></a>`;
 // Live status on the quick tiles that have opening hours (the bar next door, the pizzeria), or a season of ours and no
 // hours: then only "Closed · Opens 1 Jun" out of season, as on its page and in the lists.
 function qStatus(q) {
@@ -155,8 +157,24 @@ function qStatus(q) {
   return `<span class="qst ${s.cls}">${esc(s.text)}${s.sub ? `<small> · ${esc(s.sub)}</small>` : ''}</span>`;
 }
 
-// Tiles grouped as "At the house" and "Around the house" (Home and the "More" page).
-// Garbage and the map are wide tiles; live ones link and show live info, others say "Coming soon".
+// Tiles grouped as "At the house" and "Around the house" (Home and the "More" page), drawn from placements by the module
+// frame (modules/frame.js, modules/README.md): the guide's own content/home.json, else today's arrangement. Each tile and
+// card carries its size (s-half, s-wide, s-tall); a run of highlights is one .qcalls block, a run of tiles one .ggrid.
+// Live tiles link and show live info, others say "Coming soon".
+// The guide as the frame sees it (modules/frame.js): sections, the white cards shown now, the map, the transport card.
+export const frameGuide = (now = new Date()) => ({
+  sections: SECTIONS.map(({ id, kind, group, status }) => ({ id, kind, group, status })),
+  highlights: QUICK.filter(q => quickShown(q, now)).map(q => ({ id: q.id, wide: !!q.wide })),
+  map: MODULE_ON('map'),
+  transportCard: TRANSPORT_CARD
+});
+// A wide entry tile whose title is longer than 20 characters takes a smaller title (21 px), so that "Our favourite places
+// to eat" holds on two lines at 360 px (modules/README.md). Soft hyphens do not count.
+const LONG = 20, long = label => String(label).replace(/\u00ad/g, '').length > LONG;
+// A tall tile's title is drawn larger only when each of its words is short enough to stay on its line at 360 px
+// ("Emergencies", "stationnement" were wider than the tile): the words are not shortened and never cut, the title keeps
+// the size it has on a half tile (frame-check.mjs, 14 Nov 2026).
+const WORD = 9, wordy = label => String(label).replace(/\u00ad/g, '').split(/[\s\-\u2010-\u2014/]+/).some(w => w.length > WORD);
 function sectionGrid(now, todayCount) {
   const tile = (key, label, href, meta, live, cls = '', extra = '') => {
     const look = SECTION_LOOK[key] || SECTION_LOOK.todo;
@@ -167,38 +185,34 @@ function sectionGrid(now, todayCount) {
       <span class="gt-tx"><span class="gt-t">${esc(label)}</span>${href && meta ? `<span class="gt-m">${esc(meta)}</span>` : ''}</span>${extra}${href ? `<span class="go" aria-hidden="true">${ARROW}</span>` : `<span class="soon-tag">${esc(t('soonShort'))}</span>`}`;
     return href ? `<a class="gt${live ? ' live' : ''} ${cls}" data-k="${key}" style="${vars}" href="${href}">${inner}</a>` : `<div class="gt soon ${cls}" data-k="${key}" style="${vars}" aria-label="${esc(label)}, ${esc(meta)}">${inner}</div>`;
   };
-  const one = (sec, cls = '') => {
-    if (sec.kind === 'markets') return tile(sec.id, t('markets'), '#markets/today', t('openToday', { n: todayCount ?? todaysMarkets(now).length }), true);
-    if (sec.status !== 'live') return tile(sec.id, t(sec.labelKey), null, t('soon'), false);
+  // The classes of a size: "wide" (which older rules read) with "s-wide", or "s-half", "s-tall"; a live widget "w-live".
+  const sz = (size, label, more = '', w = 'entry') => [size === 'wide' ? 'wide' : '', 's-' + size, w === 'live' ? 'w-live' : '', size === 'wide' && w === 'entry' && long(label) ? 't-long' : '', size === 'tall' && wordy(label) ? 't-word' : '', ...String(more).split(/\s+/).filter(c => c && c !== 'wide')].filter(Boolean).join(' ');
+  const one = (sec, size, w) => {
+    if (sec.kind === 'markets') return tile(sec.id, t('markets'), '#markets/today', t('openToday', { n: todayCount ?? todaysMarkets(now).length }), true, sz(size, t('markets')));
+    if (sec.status !== 'live') return tile(sec.id, t(sec.labelKey), null, t('soon'), false, sz(size, t(sec.labelKey)));
     // A module draws its own widget (modules/index.js): Home only places it.
-    if (MODULES[sec.kind]?.widget) { const w = MODULES[sec.kind].widget(now); return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, w.meta, w.live, w.cls, w.extra); }
+    if (MODULES[sec.kind]?.widget) { const x = MODULES[sec.kind].widget(now); return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, x.meta, x.live, sz(size, t(sec.labelKey), x.cls, w), x.extra); }
     if (sec.kind === 'events') {
       // The next event on the tile, e.g. "Next: Santa Teresa Fair, 9 Oct".
       const d0 = new Date(now); d0.setHours(0, 0, 0, 0);
       const nx = (sec.data?.items || []).map(e => ({ e, o: e.dates.find(o => new Date(o.end + 'T00:00:00') >= d0) })).filter(x => x.o).sort((a, b) => a.o.start.localeCompare(b.o.start))[0];
       const meta = nx ? t('nextEvent', { name: tx(nx.e.name), date: new Date(nx.o.start + 'T00:00:00').toLocaleDateString(locale(), { day: 'numeric', month: 'short' }) }) : '';
-      return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, meta, false, 'wide');
+      return tile(sec.id, t(sec.labelKey), '#s/' + sec.id, meta, false, sz(size, t(sec.labelKey)));
     }
-    // Short label on the half-width tile ("Emergencies"); the page itself keeps the full title.
-    return tile(sec.id, t(sec.id === 'emergency' ? 'emergencyTile' : sec.labelKey), '#s/' + sec.id, '', false, cls);
+    // Short label on the tile ("Emergencies"); the page itself keeps the full title.
+    const label = t(sec.id === 'emergency' ? 'emergencyTile' : sec.labelKey);
+    return tile(sec.id, label, '#s/' + sec.id, '', false, sz(size, label));
   };
-  const live = x => x.status === 'live';
-  // Order follows content/sections.json. A section with nothing in it yet is not shown to guests (markets have their own tile).
-  const group = g => SECTIONS.filter(x => x.group === g && (live(x) || x.kind === 'markets'));
-  // Getting around shown as a Home tile (its "tile") is not repeated as a section tile.
-  const house = group('house').filter(x => x.kind !== 'house' && !(x.kind === 'transport' && TRANSPORT && TRANSPORT.tile)), area = group('area');
-  // Garbage wide on top, then the other house tiles side by side.
-  // Around the house: the first tile (markets) is tall, the others stack next to it. Map last, wide.
-  const wideHouse = house.filter(x => x.kind === 'garbage' && live(x));
-  // Around the house: the first tile is tall, the next two stack beside it, then two a row. A tile left alone in its last
-  // row is wide (with Nightlife: markets, eat and drink, things to do, then Nightlife under them).
-  const mosaic = area.filter(x => x.kind !== 'events'), alone = i => i === mosaic.length - 1 && i >= 3 && (i - 3) % 2 === 0;
-  const smallHouse = house.filter(x => !wideHouse.includes(x));
+  const R = resolve(HOME_ARRANGEMENT, frameGuide(now));
+  const draw = x => x.kind === 'map' ? tile('map', t('mapTile'), '#map', t('nPlaces', { n: mapItems(now).length }), false, 'wide s-wide')
+    : one(SECTIONS.find(s => s.id === x.id), x.size, x.widget);
+  const group = g => R[g].map(run => run.type === 'highlights'
+    ? `<div class="qcalls">${run.items.map(x => qcard(QUICK.find(q => q.id === x.id), x.size)).join('')}</div>`
+    : `<div class="ggrid${g === 'area' ? ' mosaic' : ''}">${run.items.map(draw).join('')}</div>`).join('\n   ');
   return `<h2 class="sh">${esc(t('atHouse'))}</h2>
-   <div class="ggrid">${wideHouse.map(one).join('')}${smallHouse.map(one).join('')}</div>
+   ${group('house')}
    <h2 class="sh">${esc(t('aroundHouse'))}</h2>
-   ${quickRow()}
-   <div class="ggrid mosaic">${mosaic.map((x, i) => one(x, alone(i) ? 'wide' : '')).join('')}${MODULE_ON('map') ? tile('map', t('mapTile'), '#map', t('nPlaces', { n: mapItems(now).length }), false, 'wide') : ''}</div>`;
+   ${group('area')}`;
 }
 
 export function renderMore(V) {

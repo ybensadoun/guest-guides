@@ -144,13 +144,10 @@ a.gt:active{transform:scale(.98)}
 .gt-bins{display:flex;gap:10px;align-items:flex-end;margin-top:12px;align-self:flex-start;background:var(--white);border-radius:14px;padding:10px 14px 8px;position:relative;z-index:1}
 .gt-bins .gbin{width:30px;height:38px}
 
-/* Around the house: Markets tall, the two others stacked next to it */
-.ggrid.mosaic > .gt:first-child{grid-row:span 2}
-.ggrid.mosaic > .gt:first-child .gt-t{font-size:30px}
-.ggrid.mosaic > .gt:first-child .ib,.ggrid.mosaic > .gt:first-child .ib .ci{width:42px;height:42px}
-.gt[data-k="map"]{flex-direction:row;align-items:center;gap:14px;min-height:0;padding:18px}
-.gt[data-k="map"] .ib{margin:0}
-.gt[data-k="map"] .gt-tx{margin:0}
+/* The frame's tall size (modules/README.md): one column, two rows (Markets in Ca La Kimberly), the tiles beside it stacked */
+.gt.s-tall{grid-row:span 2}
+.gt.s-tall .gt-t{font-size:30px}
+.gt.s-tall .ib,.gt.s-tall .ib .ci{width:42px;height:42px}
 
 /* ---------- Home: market widgets ---------- */
 .hero-today{background:var(--white);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden}
@@ -601,11 +598,6 @@ body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .mlist > .mgh{border-top:1.5px solid var(--line);text-wrap:balance}
 .mlist > .mgh + .mrow{border-top:0}
 .events .mrow .dot svg{width:22px;height:22px}
-.gt[data-k="events"]::before{width:120px;height:60px;border-radius:120px 120px 0 0;background:var(--red);right:-20px;bottom:-4px}
-.gt[data-k="events"]{flex-direction:row;align-items:center;gap:14px;min-height:0;padding:18px 64px 18px 18px}
-.gt[data-k="events"] .ib{margin:0}
-.gt[data-k="events"] .gt-tx{margin:0}
-.gt[data-k="events"]::before{width:96px;height:48px;border-radius:96px 96px 0 0;background:var(--red);right:-6px;bottom:-2px;top:auto}
 /* Live status as plain coloured text (like Google Maps), not pills: green open, red closed + next opening. */
 .st,.status,.chours .st,.pl-hours .st{display:inline-flex;flex-direction:column;align-items:flex-end;text-align:right;background:none!important;box-shadow:none!important;padding:0!important;border-radius:0;font-size:15px;font-weight:600;line-height:1.25;white-space:nowrap}
 .st.open,.status.open,.chours .st.open,.pl-hours .st.open{color:var(--green)!important}
@@ -1018,8 +1010,6 @@ body:not(.is-home) #view h2.title{min-height:44px;display:flex;align-items:cente
 .gt[data-k="markets"] .gt-tx,.gt[data-k="message"] .gt-tx,.gt[data-k="restaurants"] .gt-tx,.gt[data-k="todo"] .gt-tx{padding-right:4px}
 .gt[data-k="message"]::before{top:-2px;bottom:auto;right:60px;width:56px;height:28px;transform:rotate(180deg)}
 .gt[data-k="markets"]::after{top:auto;bottom:auto;top:46%;right:18px;width:34px;height:34px}
-.gt[data-k="map"] .gt-tx{padding-right:64px}
-.gt[data-k="map"] .go{top:auto;bottom:auto;align-self:center;right:14px}
 .gt[data-k="map"]::before{width:96px;height:96px;right:-38px;top:-40px}
 .gt[data-k="map"]::after{right:auto;left:18px;bottom:0;width:56px;height:8px}
 .gt[data-k="emergency"]::before{top:-18px;bottom:auto;right:-16px;transform:rotate(180deg)}
@@ -1035,14 +1025,8 @@ body:not(.is-home) #view h2.title{min-height:44px;display:flex;align-items:cente
 .gt[data-k="message"]::before{width:64px;height:32px;border-radius:64px 64px 0 0;background:var(--ink);right:-6px;top:-2px;bottom:auto;transform:rotate(180deg)}
 .gt[data-k="emergency"]::before{width:0;height:0;border-left:34px solid transparent;border-right:34px solid transparent;border-bottom:46px solid var(--ink);right:-6px;top:-4px;bottom:auto;transform:rotate(180deg)}
 .gt[data-k="transport"]::before{width:44px;height:44px;background:var(--yellow);right:-10px;top:-10px;bottom:auto;transform:rotate(14deg)}
-/* Nightlife, wide when it has a row of its own (as Events): the crescent at the far right, the arrow just left of it, the text before both */
-.gt.wide[data-k="nightlife"]{padding-right:110px!important}
-.gt.wide[data-k="nightlife"] .go{top:50%!important;bottom:auto!important;margin-top:-18px;right:62px}
 .gt[data-k="nightlife"]::before{width:56px;height:56px;border-radius:50%;background:transparent;box-shadow:inset -14px 8px 0 0 var(--yellow);right:-4px;top:-6px;bottom:auto;transform:rotate(-12deg)}
-.gt.wide[data-k="nightlife"]::before{right:2px;top:50%;margin-top:-28px}
 /* Wide tiles: the shape takes the far right edge, the arrow sits just left of it, the text stops before both. */
-.gt[data-k="map"] .gt-tx{padding-right:96px}
-.gt[data-k="map"] .go{bottom:auto!important;top:50%!important;right:52px;margin-top:-18px}
 .gt[data-k="map"]::before{width:80px;height:80px;right:-44px;top:50%;margin-top:-40px;bottom:auto}
 .gt[data-k="map"]::after{right:auto;left:0;bottom:0;width:56px;height:6px}
 .gt[data-k="garbage"]::before{width:96px;height:96px;right:-40px;bottom:-40px;top:auto}
@@ -1054,9 +1038,6 @@ body:not(.is-home) #view h2.title{min-height:44px;display:flex;align-items:cente
 .gt.wide[data-k="garbage"]:not(.has-bins)::before{width:80px;height:80px;right:-44px;top:50%;margin-top:-40px;bottom:auto}
 /* The same short tile on an evening with nothing to take out: its "Nothing tonight" line needs no room kept for the arrow (13 Nov 2026). */
 .gt.wide[data-k="garbage"]:not(.has-bins) .gt-tonight{margin-right:0!important}
-.gt[data-k="events"] .go{top:50%!important;bottom:auto!important;margin-top:-18px;right:52px}
-.gt[data-k="events"]{padding-right:96px!important}
-.gt[data-k="events"]::before{width:80px;height:80px;border-radius:50%;right:-44px;top:50%;margin-top:-40px;bottom:auto}
 /* The arrow gets its own spot at the bottom right, below the text, so the title keeps the full tile width
    (no words cut to make room for it). */
 .gt:not(.wide) .gt-tx{padding-right:0}
@@ -1064,7 +1045,39 @@ body:not(.is-home) #view h2.title{min-height:44px;display:flex;align-items:cente
 /* A single word must never break mid-word: tile titles scale with the tile width (long phrases are shortened instead, docs/UX-GUIDELINES.md) */
 .gt{container-type:inline-size}
 .gt:not(.wide) .gt-t{font-size:clamp(19px,15.5cqi,23px);overflow-wrap:normal}
-.ggrid.mosaic > .gt:not(.wide):first-child .gt-t{font-size:clamp(22px,17cqi,30px)}
+.gt.s-tall:not(.wide) .gt-t{font-size:clamp(22px,17cqi,30px)}
+/* A tall tile whose title has a long word keeps the half tile's title size (views/home.js wordy). */
+.gt.s-tall.t-word:not(.wide) .gt-t{font-size:clamp(19px,15.5cqi,23px)}
+/* The frame's wide size for an entry tile (modules/README.md, Yohann, 14 Nov 2026): one bar for every module, the Map's
+   look. The icon, then the text; the arrow just left of the module's shape, vertically centred; the shape at the far
+   right edge, vertically centred (each module's own below). A module with no shape keeps its arrow at the right edge.
+   The rubbish tile is a live tile (w-live) and keeps its own layout. */
+.gt.s-wide:not(.w-live){--wide-go:18px;--wide-r:62px;flex-direction:row;align-items:center;gap:14px;min-height:0;padding:18px}
+.gt.s-wide:not(.w-live) .ib{margin:0}
+.gt.s-wide:not(.w-live) .gt-tx{margin:0;padding-right:var(--wide-r)}
+.gt.s-wide:not(.w-live) .go{top:50%!important;bottom:auto!important;align-self:center;right:var(--wide-go);margin-top:-18px}
+.gt.s-wide:is([data-k="map"],[data-k="markets"],[data-k="restaurants"],[data-k="todo"],[data-k="events"],[data-k="message"],[data-k="emergency"],[data-k="transport"]){--wide-go:52px;--wide-r:96px}
+.gt.s-wide[data-k="nightlife"]{--wide-go:62px;--wide-r:106px}
+/* A wide entry tile's long title (more than 20 characters, views/home.js): 21 px, so "Our favourite places to eat" holds on two lines at 360 px. */
+.gt.t-long .gt-t{font-size:21px}
+/* Each module's shape in each size: half and tall in the top-right corner (tall larger), wide at the far right edge,
+   vertically centred. Kind and colour stay the module's own; the sizes that existed before the frame keep their rules above. */
+.gt.s-wide[data-k="markets"]::before,.gt.s-wide[data-k="restaurants"]::before,.gt.s-wide[data-k="events"]::before{width:80px;height:80px;border-radius:50%;right:-44px;top:50%;margin-top:-40px;bottom:auto}
+.gt.s-wide[data-k="markets"]::after{display:none}
+.gt.s-half[data-k="markets"]::before{width:84px;height:84px;right:-30px;top:-34px}
+.gt.s-wide[data-k="message"]::before{width:40px;height:80px;border-radius:80px 0 0 80px;right:-2px;top:50%;margin-top:-40px;bottom:auto;transform:none}
+.gt.s-tall[data-k="message"]::before{width:80px;height:40px;border-radius:80px 80px 0 0;right:-8px}
+.gt.s-wide[data-k="emergency"]::before{border-left:0;border-top:34px solid transparent;border-bottom:34px solid transparent;border-right:46px solid var(--ink);right:-6px;top:50%;margin-top:-34px;bottom:auto;transform:none}
+.gt.s-tall[data-k="emergency"]::before{border-left-width:42px;border-right-width:42px;border-bottom-width:58px;right:-8px;top:-6px}
+.gt.s-wide[data-k="todo"]::before{border-left:0;border-top:30px solid transparent;border-bottom:30px solid transparent;border-right:40px solid var(--yellow);right:-6px;top:50%;margin-top:-30px;bottom:auto;transform:none}
+.gt.s-tall[data-k="todo"]::before{border-left-width:38px;border-right-width:38px;border-bottom-width:50px;right:-8px;top:-6px}
+.gt.s-wide[data-k="transport"]::before{width:56px;height:56px;right:-28px;top:50%;margin-top:-28px;bottom:auto}
+.gt.s-tall[data-k="transport"]::before{width:56px;height:56px;right:-12px;top:-12px}
+.gt.s-tall[data-k="restaurants"]::before{width:104px;height:104px;right:-40px;top:-44px}
+.gt.s-wide[data-k="nightlife"]::before{right:2px;top:50%;margin-top:-28px}
+.gt.s-tall[data-k="nightlife"]::before{width:70px;height:70px;box-shadow:inset -18px 10px 0 0 var(--yellow);right:-6px;top:-8px}
+.gt[data-k="events"]::before{width:84px;height:84px;border-radius:50%;background:var(--red);right:-30px;top:-34px;bottom:auto}
+.gt.s-tall[data-k="events"]::before{width:104px;height:104px;right:-40px;top:-44px}
 /* Place pages and Getting around: the title sits on the row of the floating back and language buttons like on every
    inner page, and the icon goes under it, beside the kind and the distance, so the back button never covers the icon
    (checked by engine/scripts/ux-check.mjs). */
