@@ -152,7 +152,7 @@ function render() {
 }
 
 document.addEventListener('click', e => {
-  // Home shortcuts that open one row of the House guide (Wifi, Check-out).
+  // Home's shortcut that opens one row of the House guide (Check-out; Wi-Fi opens its own sheet, modules/house).
   const op = e.target.closest('a[data-open]');
   if (op) window.__openRow = op.dataset.open;
   // The plain Map link (Home) always opens on "All".

@@ -71,5 +71,3 @@ decision to take, one at a time:
 - The reviews come at the end of the house guide only when the section's id is `message`, Ca La Kimberly's id for it.
 - Home's Check-out fact links to `#s/message` and opens the row `checkout`, by Ca La Kimberly's ids (`../house/welcome.js`).
 - The house page link shows `house.jpg` when the guide has no `photo` in `content/house.json`.
-- The comment in `main.js` names two Home shortcuts that open a row, "Wifi, Check-out"; the Wi-Fi fact opens the Wi-Fi
-  sheet instead (`../house/wifi.js`), so only Check-out does (as built).

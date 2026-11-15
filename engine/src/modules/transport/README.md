@@ -15,7 +15,7 @@ Ca La Kimberly's page and its card are the reference: the move was checked pixel
 | # | Rule | Decided |
 |---|---|---|
 | 1 | Every option is visible on the first screen as a row (what, how long, the verdict); a tap opens the details, the call button or the directions. Taxis first, then stations and stops by kind (trains, then buses), each kind under its heading. | Code comment, before the modules (`views/place.js`) |
-| 2 | The small map of the stations sits under the first kind's heading, above its rows, when a station has a pin. | As built. The code comment says "the stations map last": the code and the comment disagree; the code is kept |
+| 2 | The small map of the stations sits under the first kind's heading, above its rows, when a station has a pin. | As built, before the modules (the code comment said "the stations map last"; corrected 15 Nov 2026) |
 | 3 | A station never placed (0, 0, new in the editor) is left out; one whose Google position ran out (30 days) stays in the list, off the map, with directions by its name. | Code comment, before the modules; `../CLAUDE.md` (Google's terms: "its position for 30 days") |
 | 4 | A station's lines are badges in their colours (Rodalies lines; long-distance trains in one colour); a line with no name is left out, since the editor's "Add a line" starts one empty. | Code comment, before the modules |
 | 5 | Journey times in two columns, so the destinations keep their width on a phone, the note ("1 change") under its destination. | Code comment, before the modules |
@@ -27,6 +27,8 @@ Ca La Kimberly's page and its card are the reference: the move was checked pixel
 | 11 | A Getting around section with no file is drawn as an empty text page. | As built (the section view's last branch); no origin found |
 | 12 | Its tile on Home, when there is no card, is an entry tile, half, wide or tall. | Yohann, 14 Nov 2026 (proposal 22); the sizes: what the frame gave every section with no module of its own |
 | 13 | Never tell guests to contact the hosts, never the hosts' numbers: the taxis are the taxi companies'. | `../CLAUDE.md` ("Privacy and safety") |
+| 14 | A page with a single row (one taxi and no station, or one station and no taxi) shows it open: the number or the journey times without a tap. With several rows they start closed. | Yohann, 15 Nov 2026 ("Yes, open it", on the pool house's page: one closed row over an empty screen) |
+| 15 | When the page is drawn again (each minute, a change of language, coming back to the guide after a call or the directions), every row stays as the guest left it. Before, an opened row closed at each redraw. | Claude, 15 Nov 2026, found while building rule 14: the other lists already keep their opened rows (`views/section.js` `sectionFrame`) |
 
 ## Its data
 

@@ -13,6 +13,9 @@ export const modeOf = s => MODES.find(m => m[0] === (s.mode || 'train')) || MODE
 export const stopsOf = stations => (stations || []).filter(s => s.nomap || (typeof s.lat === 'number' && !(s.lat === 0 && s.lng === 0)));
 // The headings of the page: each kind that has a station, in MODES' order, with its stations: [[word, stations]].
 export const groupsOf = stops => MODES.map(([mode, label]) => [label, stops.filter(s => modeOf(s)[0] === mode)]).filter(([, l]) => l.length);
+// A page with a single row (one taxi and no station, or one station and no taxi) shows it open: there is nothing else to
+// choose from, and a closed row over an empty screen only costs a tap (Yohann, 15 Nov 2026).
+export const loneRow = (g, stops) => (g.taxis || []).length + stops.length === 1;
 // The page's icon: the card's own (the section's card on Home), else the taxi when there are taxis or no station, else the
 // first station's kind.
 export const pageIcon = (g, stops) => g.tileIcon || ((g.taxis || []).length || !stops.length ? 'taxi' : modeOf(stops[0])[0]);

@@ -49,7 +49,8 @@ export function widget(now = new Date()) {
   const todayRows = [...todaysS.slice(0, 3).map(mrow), ...(todays.length > 3 ? [`<a class="wo-more" href="#markets/today">${esc(t('moreMarkets', { n: todays.length - 3 }))}</a>`] : []), ...evToday.map(erow)];
   // Next 2 days: the markets of each day as one row, plus events starting then.
   const soonRows = [1, 2].flatMap(n => { const l = todaysMarkets(plus(n)); return [...(l.length ? [msum(l, '#markets/day/' + n, plus(n))] : []), ...evs.filter(x => x.days === n).map(erow)]; });
-  // Coming up (from day 3, 6 weeks): events only, plus the monthly antiques markets, which are worth planning for.
+  // Coming up (from day 3, 6 weeks): events, plus at most two markets held on a week of the month (the monthly ones, of any
+  // kind: worth planning for).
   const monthly = MARKETS.filter(m => m.s.some(x => x.nth)).map(m => { const nx = nextOpen(m, plus(3)); return nx && { m, d: nx.date, days: Math.round((nx.date - plus(0).setHours(0, 0, 0, 0)) / 864e5) }; }).filter(x => x && x.days <= 42);
   const later = [...evs.filter(x => x.days > 2).map(x => ({ k: x.o.start, html: erow(x) })),
     ...monthly.slice(0, 2).map(x => { const iso = x.d.toLocaleDateString('sv'); const b = dayBadge({ start: iso }); return { k: iso, html: `<a href="#map/m/${encodeURIComponent(x.m.id)}"><span class="dbadge dbm"><b>${b.d}</b><small>${esc(b.m)}</small></span>

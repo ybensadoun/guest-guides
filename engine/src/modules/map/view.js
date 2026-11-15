@@ -186,8 +186,9 @@ async function loadInline(src) {
   return lib;
 }
 
-// Overview: centred on the chosen place (the house by default), showing the places within 40 km,
-// or the 5 nearest when none are that close. Bounds are mirrored around the centre so it stays in the middle.
+// Overview: centred on the chosen place (the house by default), showing the places within the guide's radius (site.json
+// area.radiusKm, 40 km by default), or the 5 nearest when fewer than 3 are that close. Bounds are mirrored around the
+// centre so it stays in the middle.
 function overviewBounds() {
   const a = anchor();
   const vis = (visibleItems().length ? visibleItems() : mapItems()).map(m => ({ m, d: hav(a.lat, a.lng, m.lat, m.lng) })).sort((x, y) => x.d - y.d);
@@ -491,7 +492,8 @@ export function refreshMapLang() {
 
 export function refreshMapStatus() { if (built) renderSheet(); }
 
-// Small static map for place pages: the place and the house, no interaction (tapping opens Google Maps).
+// Small static map for place pages: the place, with the house's area in its bounds (no pin for the house, on any map), no
+// interaction (tapping opens Google Maps).
 // Your position on the small maps too, once location is known (no prompt here).
 function meDot(m, b) {
   if (!st.me) return;
@@ -512,7 +514,8 @@ export async function miniMap(box, lng, lat) {
   m.fitBounds(b, { padding: 50, maxZoom: 15, duration: 0 });
 }
 
-// Overview of one section's places (Bars & restaurants...) with the house, non-interactive.
+// Overview of one section's places (Bars & restaurants...) with the house's area in its bounds (no pin for it),
+// non-interactive.
 export async function overviewMap(box, items) {
   if (!box || !items.length) return;
   try { await loadLib(); } catch (e) { box.classList.add('off'); return; }

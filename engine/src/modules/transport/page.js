@@ -7,7 +7,7 @@ import { esc, ICON, itemIcon, PHONE, WEB, tel } from '../../ui.js';
 import { overviewMap } from '../map/index.js';
 import { icon as quickIcon } from '../highlights/index.js';
 import { page as textPage } from '../info/index.js';
-import { modeOf, stopsOf, groupsOf, pageIcon } from './plan.js';
+import { modeOf, stopsOf, groupsOf, pageIcon, loneRow } from './plan.js';
 
 // The section's page: its file, with the icon of its card on Home when it has one. A Getting around section with no file
 // is drawn as a text page with nothing in it (as built: the section view's last branch).
@@ -17,7 +17,9 @@ export function page(V, sec) {
 }
 
 // Getting around: every option visible on the first screen as a row (what, how long, the verdict); tap a row for the
-// details, the call button or directions. Taxis first, then stations and stops by kind, the stations map last.
+// details, the call button or directions. Taxis first, then stations and stops by kind, the stations' map under the first
+// kind's heading. A page with a single row shows it open (plan.js loneRow). When the page is drawn again (each minute, a
+// change of language, coming back to the guide after a call or the directions), every row stays as the guest left it.
 // From the Getting around section (content/transport.json) or, in older guides, a Home tile with "trains" (plan.js
 // transportOf).
 export function renderTransport(V, g, icons) {
@@ -43,11 +45,15 @@ export function renderTransport(V, g, icons) {
  ${s.gid || s.gmaps ? `<a class="btn" href="${esc(gSearch(s))}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
      ${s.link ? `<a class="btn" href="${esc(s.link)}" target="_blank" rel="noopener">${WEB}${esc(t(s.linkKey || 'timetable'))}</a>` : ''}</div>`, badges(s)); };
   const groups = groupsOf(stops);
+  const prev = V.querySelector('.transport'), was = prev && prev.dataset.q === String(g.id) ? [...prev.querySelectorAll('.mrow')].map(e => e.open) : null;
   V.innerHTML = `<div class="wrap place transport" style="gap:14px" data-q="${esc(g.id)}">
     <div class="pl-head"><span class="qi">${icons({ icon: pageIcon(g, stops) })}</span>
       <div><h2 class="title">${esc(typeof g.title === 'string' ? g.title : tx(g.title))}</h2>${g.lead ? `<p class="lead">${esc(tx(g.lead))}</p>` : ''}</div></div>
     ${taxis ? `<h3 class="section-h">${esc(t('taxiH'))}</h3><div class="mlist">${taxis}</div>` : ''}
     ${groups.map(([label, l], i) => `<h3 class="section-h">${esc(t(label))}</h3>${i === 0 && pins.length ? '<div class="pl-map secmap"><div id="trmap"></div></div>' : ''}<div class="mlist">${l.map(station).join('')}</div>`).join('')}
   </div>`;
+  const rows = [...V.querySelectorAll('.mrow')];
+  if (was && was.length === rows.length) rows.forEach((e, i) => { e.open = was[i]; });
+  else if (loneRow(g, stops)) rows[0].open = true;
   if (pins.length) overviewMap(V.querySelector('#trmap'), pins.map(s => ({ lat: s.lat, lng: s.lng, icon: modeOf(s)[0], tone: modeOf(s)[3], cat: 'todo' })));
 }

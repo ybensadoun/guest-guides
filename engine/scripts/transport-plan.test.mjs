@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { MODES, modeOf, stopsOf, groupsOf, pageIcon, iconOf, cardOf, transportOf } from '../src/modules/transport/plan.js';
+import { MODES, modeOf, stopsOf, groupsOf, pageIcon, iconOf, cardOf, transportOf, loneRow } from '../src/modules/transport/plan.js';
 
 test('modeOf: train when none, bus, an unknown mode drawn as a train', () => {
   assert.equal(modeOf({}), MODES[0]);
@@ -56,4 +56,16 @@ test('transportOf: an old taxi card with "trains" as a Getting around page', () 
   assert.deepEqual(transportOf(p), { id: 'taxi', title: p.name, lead: p.kind, taxis: [{ name: p.name, sub: undefined, phone: '600 000 000', what: p.what, alt: [], always: true }], stations: [{ id: 's' }] });
   assert.deepEqual(transportOf({ id: 'x', name: 'N', title: 'T', taxiName: 'Cab', taxiSub: 'S' }).taxis[0].name, 'Cab');
   assert.deepEqual(transportOf({ id: 'x' }).stations, []);
+});
+
+test('loneRow: a page with a single row shows it open (15 Nov 2026)', () => {
+  const st = { id: 's', lat: 41.2, lng: 1.5 };
+  assert.equal(loneRow({ taxis: [{ name: 'Taxi' }] }, []), true);            // the pool house: one taxi
+  assert.equal(loneRow({ taxis: [] }, [st]), true);                           // one station
+  assert.equal(loneRow({}, [st]), true);
+  assert.equal(loneRow({ taxis: [{ name: 'Taxi' }] }, [st]), false);          // something to choose from: rows start closed
+  assert.equal(loneRow({ taxis: [{ name: 'A' }, { name: 'B' }] }, []), false);
+  assert.equal(loneRow({}, []), false);
+  // A station never placed is not a row: one taxi beside it is still alone.
+  assert.equal(loneRow({ taxis: [{ name: 'Taxi' }] }, stopsOf([{ id: 'new', lat: 0, lng: 0 }])), true);
 });
