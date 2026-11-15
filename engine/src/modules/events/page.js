@@ -1,5 +1,5 @@
 // The Local events page (README.md, "Its look"): the next date of each event, soonest first, under the name of its month.
-// Past dates (and today's finished ones) drop off. Route #s/<id>, as every section's page (views/section.js asks the
+// Past dates drop off; an event of today stays for the day, the ended ones after the others (plan.js). Route #s/<id>, as every section's page (views/section.js asks the
 // module, modules/index.js).
 import { esc } from '../../ui.js';
 import { locale } from '../../i18n.js';

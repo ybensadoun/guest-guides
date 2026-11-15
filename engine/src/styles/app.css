@@ -604,6 +604,9 @@ body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .st.later,.status.later,.chours .st.later,.pl-hours .st.later{color:var(--blue)!important}
 .st.closed,.status.closed,.chours .st.closed,.pl-hours .st.closed{color:var(--red)!important}
 .st small{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+/* An event of today that has ended stays for the day, quiet (modules/events): its name and its icon greyed, "Ended" on the right. */
+.mrow.ev-over .nm{color:var(--muted)}
+.mrow.ev-over .dot{filter:grayscale(1);opacity:.6}
 /* Home's short rows (.mini > a): a closed market's status is wide in some languages ("Geschlossen", "Öffnet morgen um 8:00") and
    left 105 px for the name at 360 px, so German names were cut mid-word. It goes under the name as one line, in the size
    of the lines above it; an open market keeps its status at the right. In these rows a name breaks only between words or

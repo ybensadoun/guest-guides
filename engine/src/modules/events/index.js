@@ -5,5 +5,5 @@ export { page } from './page.js';
 export { widget } from './widget.js';
 export { widgets } from './offers.js';
 export { upcoming } from './plan.js';
-export { eventRow, when, dayBadge } from './row.js';
+export { eventRow, when, evStatus, dayBadge } from './row.js';
 export { EVENTS_SECTION } from './data.js';

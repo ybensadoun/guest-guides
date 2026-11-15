@@ -5,7 +5,7 @@ import { MODULE_ON } from '../../content.js';
 import { runsOn, statusLabel, cap, nextOpen } from '../../schedule.js';
 import { esc, title, catIcon, stHTML, distHTML } from '../../ui.js';
 import { MARKETS, todaysMarkets } from '../markets/data.js';
-import { upcoming, when, dayBadge, eventRow, EVENTS_SECTION } from '../events/index.js';
+import { upcoming, evStatus, dayBadge, eventRow, EVENTS_SECTION } from '../events/index.js';
 
 // A market's times on a day, as the next two days' rows say them: "8-14", or "Morning" when only the morning is known.
 const hhmm = h => h.replace(/^0/, '');
@@ -24,7 +24,7 @@ export function widget(now = new Date()) {
   const evs = upcoming(evSec?.data?.items, now).filter(x => x.on || x.days <= 42);
   // Events expand in place with the same details as on the Local events page. Under Today, a later start shows only its
   // time and an event of today without a time shows no status (we do not know whether it is on yet).
-  const erow = x => { const b = dayBadge(x.o); return eventRow(x.e, x.o, x, { dot: `<span class="dbadge"><b>${b.d}</b><small>${esc(b.m)}</small></span>`, right: x.today ? '' : `<span class="st ${x.on ? 'open' : 'plain'}">${esc(x.at || when(x))}</span>` }); };
+  const erow = x => { const b = dayBadge(x.o); return eventRow(x.e, x.o, x, { dot: `<span class="dbadge"><b>${b.d}</b><small>${esc(b.m)}</small></span>`, right: x.today ? '' : x.at ? `<span class="st plain">${esc(x.at)}</span>` : evStatus(x) }); };
   // One row per day for the next two days: "Tue 6 Oct · 9 markets", red like the market icons.
   const msum = (list, href, d) => `<details class="mrow dayrow"><summary><span class="dbadge dday"><small>${esc(fmtWd(d))}</small><b>${d.getDate()}</b></span>
      <span class="nm">${esc(shortDay(d))}<small>${esc(t('nMarkets', { n: list.length }))} · ${esc([...new Set(list.map(m => m.town))].slice(0, 3).join(', '))}${list.length > 3 ? '…' : ''}</small></span>
@@ -42,9 +42,10 @@ export function widget(now = new Date()) {
   const live = m => { const l = statusLabel(m, now); return l && l.cls === 'open' ? 0 : runsOn(m, now).some(x => !x.m && tmin(x.o) > nmin) ? 1 : 2; };
   const todaysS = todays.map((m, i) => ({ m, i, k: live(m) })).sort((a, b) => a.k - b.k || a.i - b.i).map(x => x.m);
   const nOpen = todays.filter(m => live(m) === 0).length;
-  // Today's events: on now, or starting later today (shown with their start time); finished ones are already gone from evs.
-  const evToday = evs.filter(x => x.on || x.days === 0);
-  const todayLive = todays.some(m => live(m) < 2) || evToday.length > 0;
+  // Today's events: on now, or starting later today (shown with their start time), then the ones that have ended,
+  // which stay for the day (events/plan.js).
+  const evToday = evs.filter(x => x.days <= 0);
+  const todayLive = todays.some(m => live(m) < 2) || evToday.some(x => !x.ended);
   const todayRows = [...todaysS.slice(0, 3).map(mrow), ...(todays.length > 3 ? [`<a class="wo-more" href="#markets/today">${esc(t('moreMarkets', { n: todays.length - 3 }))}</a>`] : []), ...evToday.map(erow)];
   // Next 2 days: the markets of each day as one row, plus events starting then.
   const soonRows = [1, 2].flatMap(n => { const l = todaysMarkets(plus(n)); return [...(l.length ? [msum(l, '#markets/day/' + n, plus(n))] : []), ...evs.filter(x => x.days === n).map(erow)]; });
