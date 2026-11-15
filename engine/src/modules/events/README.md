@@ -57,7 +57,7 @@ icon by the section's id (`ui.js` `SECTION_LOOK.events`).
 | The Home widget | `widget.js` | Yes |
 | What it offers on Home: its entry tile, wide only | `offers.js` (read by the frame through `views/home.js`, and by the node scripts through `../offers.js`) | Yes |
 | What Home, the section view and What's on call | `index.js`, listed in `../index.js` | Yes |
-| The kinds' icons and colours | `engine/src/views/section.js` (`EVENT_ICON`, `EVENT_TONE`, exported for `row.js`) | Not moved: the maker's build (`onboarding-site/src/build.py`), its checks (`onboarding-site/test/check.mjs`) and `worker/test/event-kinds.test.mjs` read them as text there, and the file's `_doc` points there |
+| The kinds' icons and colours | `kinds.js` (`EVENT_ICON`, `EVENT_TONE`, for `row.js`; moved from `views/section.js` on 14 Nov 2026) | Yes. Kept written as they are (one line per kind, the colours on one line): the maker's build (`onboarding-site/src/build.py`), its checks (`onboarding-site/test/check.mjs`) and `worker/test/event-kinds.test.mjs` read them as text in this file. The `_doc` of `content/events.json` still says "engine section.js" (a guide's file, not changed by the move) |
 | A page's title, lead, opened rows kept | `engine/src/views/section.js` (`sectionFrame`) | No: shared with every section's page |
 | What's on | `../whatson/` | A module of its own, fed by this one |
 | Its styles | `engine/src/styles/app.css` (`.mlist.events`, `.evm`, `.mrow`, `.dbadge`, `.gt[data-k="events"]`, the tones `--tone-*`) | Not yet: they move with the one tile system (plan, proposal 4) |

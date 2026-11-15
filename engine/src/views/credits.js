@@ -4,7 +4,7 @@
 import { t } from '../i18n.js';
 import { esc } from '../ui.js';
 import { SECTIONS, HOUSE, REVIEWS, SITE } from '../content.js';
-import { COVER_PHOTO } from './home.js';
+import { COVER_PHOTO } from '../modules/house/index.js';
 import { SITE_FONTS, FONT_NAMES } from 'virtual:site-credits';
 import { hasKey } from '../gcard.js';
 

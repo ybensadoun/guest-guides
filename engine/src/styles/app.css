@@ -44,7 +44,7 @@
   --warm-word:#8A4B00;      /* warm as a word on the page (a warning): warm, 42% toward black, at least 4.5 on paper */
   --on-warm:#FFFFFF;        /* an icon on a warm badge (a place to eat, a flea market): white while it reaches 3 to 1 on warm, else ink */
   --paper-glass:rgba(243,238,227,.82);   /* paper at 82%, behind the blurred header */
-  /* Things to do and events tones (views/section.js, ui.js itemStyle): the roles, their tints, two of their own */
+  /* Things to do and events tones (modules/events/kinds.js, ui.js itemStyle): the roles, their tints, two of their own */
   --tone-blue:var(--blue);--tone-blue-s:var(--deep-soft);--tone-red:var(--red);--tone-red-s:var(--strong-soft);--tone-orange:var(--orange);--tone-orange-s:var(--warm-soft);
   --tone-purple:#121212;--tone-purple-s:var(--ink-soft);   /* the sights group: ink */
   --tone-green:var(--green);--tone-green-s:var(--fresh-soft);--tone-pink:var(--green);--tone-pink-s:var(--fresh-soft);

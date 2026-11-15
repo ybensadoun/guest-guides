@@ -77,9 +77,10 @@ red circle and the yellow square (`.gt[data-k="markets"]`).
 | What Home, the router and the section view call | `index.js`, listed in `../index.js` | Yes |
 | Reading the file, the kinds offered, the default kinds | Called from `engine/src/content.js` (`MARKETS`, `CATS`, `MODULE_ON`) and `engine/src/state.js` (`DEFAULT_CATS`), which keep the names the map and the router import | The code is; the names stay there |
 | The routes `#markets`, `#markets/today`, `#markets/day/<n>`, the filters' taps, the reset from Home | `engine/src/main.js` | Not yet |
-| The tile's link and label (`#markets/today`, "Markets") and its status exception | `engine/src/views/home.js` (`sectionGrid`), `../frame.js` (`shown`) | Not yet |
+| The tile's link and label (`#markets/today`, "Markets") | `widget.js` (`label`, `href`, since 14 Nov 2026; Home draws a widget's own link whatever the section's status) | Yes |
+| The tile's status exception (placed whatever the section's status) | `../frame.js` (`shown`) | Not yet |
 | What's on, fed by this module | `../whatson/` | A module of its own |
-| The map's Markets tab and "Open today only" | `engine/src/views/map.js` (`tabOf`, `MAP_TABS`) | Not yet: shared with every place |
+| The map's Markets tab and "Open today only" | `../map/view.js` (`tabOf`, `MAP_TABS`) | No: the map's module |
 | A row, hours, statuses, the week of the month | `engine/src/ui.js` (`row`, `chips`), `schedule.js`, `weeks.js` | No: shared machinery |
 | Google's live line | `engine/src/gcard.js` (`wantsCard`); the kinds that ask: `plan.js` `WEEKLY` | The kinds are; the card is shared |
 | Its styles | `engine/src/styles/app.css` (`.mk-top`, `.daybar`, `.dchip`, `.filters`, `.filt`, `.nbadge`, `.sortnote`, `.emptybox`, `.mkmapbox`, `.gt[data-k="markets"]`, the kinds' colours `--c-covered`, `--c-street`, `--c-flea`, `--c-antiques`, `--c-events`) | Not yet: they move with the one tile system (plan, proposal 4), so the look is touched once |

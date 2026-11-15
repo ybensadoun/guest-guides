@@ -1,14 +1,14 @@
 // A highlight's own page (#p/<id>, README.md "Its look"): see where it is, what it is, when it is open, then decide to call,
 // get directions or open the official page. Every item of content/quick.json has one, also when Home leaves its card out
-// for the season. An old guide's taxi card with "trains" opens Getting around's page instead (views/place.js, transport's).
+// for the season. An old guide's taxi card with "trains" opens Getting around's page instead (../transport).
 import { t, tx } from '../../i18n.js';
 import { HOUSE, TRANSPORT, slots } from '../../content.js';
 import { hoursText, statusLabel, closedStatus, seasonStatus, seasonText } from '../../schedule.js';
-import { stHTML, esc, ICON } from '../../ui.js';
+import { stHTML, esc, ICON, PHONE, WEB, tel } from '../../ui.js';
 import { hav, kmMe, gSearch, gDir } from '../../geo.js';
-import { miniMap } from '../../views/map.js';
+import { miniMap } from '../map/index.js';
 import { wantsCard, sectionHTML, slotHTML } from '../../gcard.js';
-import { renderTransport, transportOf, PHONE, WEB, tel } from '../../views/place.js';
+import { renderTransport, transportOf } from '../transport/index.js';
 import { QUICK_ALL } from './data.js';
 import { icon } from './icons.js';
 

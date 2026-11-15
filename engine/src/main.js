@@ -16,9 +16,8 @@ import { MODULES } from './modules/index.js';
 import { renderSection } from './views/section.js';
 import { renderMore } from './views/home.js';
 import { renderCredits } from './views/credits.js';
-import { NAV_ICON } from './ui.js';
 import { watchRows, mountOpen } from './gcard.js';
-import { showMap, refreshMapLang, refreshMapStatus, locate, tabOf } from './views/map.js';
+import { showMap, refreshMapLang, refreshMapStatus, locate, tabOf } from './modules/map/index.js';
 
 const V = document.getElementById('view');
 const MV = document.getElementById('mapview');

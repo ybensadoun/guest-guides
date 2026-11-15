@@ -7,7 +7,7 @@ import { t } from '../../i18n.js';
 import { esc, ICON, row } from '../../ui.js';
 import { st } from '../../state.js';
 import { sorted, sortRow } from '../../lists.js';
-import { overviewMap } from '../../views/map.js';
+import { overviewMap } from '../map/index.js';
 import { sectionFrame } from '../../views/section.js';
 import { pageCard, mapPin } from '../highlights/index.js';
 import { GROUPS, placesOf, pinsOf } from './data.js';

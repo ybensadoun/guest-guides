@@ -1,13 +1,13 @@
-import { t, tx, lang } from '../i18n.js';
-import { HOUSE, CATS, MAP_ITEMS, mapItems, byId, SITE } from '../content.js';
+import { t, lang } from '../../i18n.js';
+import { HOUSE, CATS, MAP_ITEMS, mapItems, byId, SITE } from '../../content.js';
 // The search box looks for places in this box (site.json area.searchBbox), default about 150 km around the house.
 const BBOX = (SITE.area?.searchBbox || [HOUSE.lng - 1.5, HOUSE.lat - 1.2, HOUSE.lng + 1.5, HOUSE.lat + 1.2]).join(',');
 const RADIUS = SITE.area?.radiusKm || 40;
-import { st } from '../state.js';
-import { runsOn } from '../schedule.js';
-import { esc, row, title, shortTitle, ICON, itemIcon, itemStyle } from '../ui.js';
-import { hav } from '../geo.js';
-import { scheme, onSchemeChange } from '../theme.js';
+import { st } from '../../state.js';
+import { runsOn } from '../../schedule.js';
+import { esc, row, title, shortTitle, ICON, itemIcon, itemStyle } from '../../ui.js';
+import { hav } from '../../geo.js';
+import { scheme, onSchemeChange } from '../../theme.js';
 
 // Tiles: OpenFreeMap (free, no key, OpenStreetMap data). Light and dark styles follow the app theme (see src/theme.js).
 const STYLE = { light: 'https://tiles.openfreemap.org/styles/positron', dark: 'https://tiles.openfreemap.org/styles/dark' };
@@ -35,7 +35,7 @@ const countLabel = items => t(items.every(m => m.kind === 'market') ? 'nMarkets'
 
 // Map filters: one tab per kind of place, every place belongs to exactly one tab (All shows everything).
 // eat: places to eat and the bar next door · markets: every market · todo: What to do · night: Nightlife · useful: recycling centre and other practical spots.
-export const MAP_TABS = ['all', 'eat', 'markets', 'todo', 'night', 'useful'];   // a tab without places is not shown (Nightlife is optional)
+const MAP_TABS = ['all', 'eat', 'markets', 'todo', 'night', 'useful'];   // a tab without places is not shown (Nightlife is optional)
 const TAB_LABEL = { all: 'mapAll', eat: 'mapEat', markets: 'mapMarkets', todo: 'mapDo', night: 'mapNight', useful: 'mapUseful' };
 export const tabOf = m => (m.kind === 'market' || CATS.includes(m.cat) ? 'markets' : m.section === 'restaurants' || m.cat === 'restaurants' ? 'eat' : m.section === 'nightlife' ? 'night' : ['todo', 'kids', 'daytrips'].includes(m.section) || m.cat === 'todo' ? 'todo' : 'useful');
 // The places shown today: one closed for the season and opening in more than 30 days has no pin (content.js mapItems).

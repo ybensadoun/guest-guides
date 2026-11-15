@@ -15,9 +15,10 @@
 //   map: true | false                         the map's module is on
 //   transportCard: id | null                  the transport section shown as a highlight (its section tile then stays off)
 //   offers: { kind: { <widget>: { sizes } } } what each module says it offers (its widgets, modules/<folder>/offers.js),
-//                                             by the kind of section it serves, the highlights under "highlight":
-//                                             views/home.js passes the registry's (modules/index.js), the node scripts
-//                                             modules/offers.js; the first widget a module names is its widget on Home
+//                                             by the kind of section it serves, the highlights under "highlight", the
+//                                             map under "map": views/home.js passes the registry's (modules/index.js), the
+//                                             node scripts modules/offers.js; the first widget a module names is its
+//                                             widget on Home, and a module that names none (the house) is never placed
 
 export const GROUPS = ['house', 'area'];
 export const SIZES = ['half', 'wide', 'tall'];
@@ -25,16 +26,18 @@ export const WIDGETS = ['entry', 'live', 'highlight'];
 export const KINDS = ['section', 'highlight', 'map'];
 
 // What a kind of section offers on Home. A module says it in its own folder (guide.offers, above: rubbish its live tile,
-// wide only; markets, the host's lists of places, their entry tile in every size; Local events their entry tile with the
-// next event, wide only). A kind not yet moved to a module offers its entry tile in every size, until it moves (plan,
-// proposal 22, step 2). The highlights say theirs under "highlight" (a card, half or wide); the same when a guide is
-// given no offers.
+// wide only; markets, the host's lists of places, the text pages, Emergencies, Getting around, their entry tile in every
+// size; Local events their entry tile with the next event, wide only; the house nothing, an empty offer: it is the
+// welcome card, never placed). Every kind of section has its module (14 Nov 2026); a kind none knows offers its entry
+// tile in every size. The highlights say theirs under "highlight" (a card, half or wide), the map under "map" (its bar,
+// wide only); the same when a guide is given no offers. Returns { widget, sizes }, or null for a module that offers nothing.
 const ENTRY = { widget: 'entry', sizes: ['half', 'wide', 'tall'] };
 const HIGHLIGHT = { widget: 'highlight', sizes: ['half', 'wide'] };
+const MAP = { widget: 'entry', sizes: ['wide'] };
 const offerOf = (kind, guide, fallback = ENTRY) => {
   const w = (guide.offers || {})[kind];
   if (w && Object.keys(w).length) { const [widget, o] = Object.entries(w)[0]; return { widget, sizes: o.sizes }; }
-  return fallback;
+  return w ? null : fallback;
 };
 
 const shown = s => s.status === 'live' || s.kind === 'markets';   // markets have their own tile, whatever their status
@@ -43,16 +46,17 @@ export const keyOf = p => (p.kind === 'map' ? 'map' : `${p.kind}:${p.id}`);
 // What a placement names, if the guide has it to show now: { kind, id, widget, sizes, group }, else null.
 export function thing(p, guide) {
   if (!p || typeof p !== 'object') return null;
-  if (p.kind === 'map') return guide.map ? { kind: 'map', id: 'map', widget: 'entry', sizes: ['wide'], group: 'area' } : null;
+  if (p.kind === 'map') { const o = offerOf('map', guide, MAP); return guide.map && o ? { kind: 'map', id: 'map', widget: o.widget, sizes: o.sizes, group: 'area' } : null; }
   if (p.kind === 'highlight') {
     const q = (guide.highlights || []).find(x => x.id === p.id), o = offerOf('highlight', guide, HIGHLIGHT);
     return q ? { kind: 'highlight', id: q.id, widget: o.widget, sizes: o.sizes, group: 'area' } : null;
   }
   if (p.kind === 'section') {
     const s = (guide.sections || []).find(x => x.id === p.id);
-    // The house page is the welcome card's (never a tile); Getting around shown as a highlight is not repeated as a tile.
-    if (!s || !shown(s) || s.kind === 'house' || (guide.transportCard && s.id === guide.transportCard)) return null;
-    const o = offerOf(s.kind, guide);
+    // A module that offers nothing (the house: the welcome card opens its page) has no tile; Getting around shown as a
+    // highlight is not repeated as a tile.
+    const o = s && offerOf(s.kind, guide);
+    if (!s || !shown(s) || !o || (guide.transportCard && s.id === guide.transportCard)) return null;
     return { kind: 'section', id: s.id, widget: o.widget, sizes: o.sizes, group: s.group, sectionKind: s.kind };
   }
   return null;
@@ -191,7 +195,7 @@ export function check(arrangement, guide) {
         if (p.kind === 'section') {
           const s = (guide.sections || []).find(x => x.id === p.id);
           out.push(!s ? `${at}: no section "${p.id}" in sections.json (or its module is off)`
-            : s.kind === 'house' ? `${at}: section "${p.id}" is the house page, which the welcome card opens: it has no tile`
+            : !offerOf(s.kind, guide) ? `${at}: section "${p.id}" is the house page, which the welcome card opens: it has no tile`
             : guide.transportCard === s.id ? `${at}: section "${p.id}" is shown as a highlight (transport.json "tile"): place it as a highlight`
             : `${at}: section "${p.id}" is not live, so guests do not see it`);
         } else if (p.kind === 'highlight') out.push(`${at}: no highlight "${p.id}" (an item of quick.json, or the transport section with a "tile")`);

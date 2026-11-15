@@ -7,7 +7,7 @@ import { st, DEFAULT_CATS } from '../../state.js';
 import { cap } from '../../schedule.js';
 import { esc, row, chips, ICON } from '../../ui.js';
 import { sorted, sortRow } from '../../lists.js';   // the order and the choice of distance, shared with the host's lists
-import { overviewMap } from '../../views/map.js';
+import { overviewMap } from '../map/index.js';
 
 const FILTER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>';
 

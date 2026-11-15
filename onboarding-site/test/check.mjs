@@ -43,9 +43,10 @@ const row = async slug => (await (await fetch(`${SB}/rest/v1/guides?select=id,ow
 const { E, B0 } = CHILD ? await new Promise(r => process.once('message', r)) : { E: await row(process.argv[2] || 'ca-la-kimberly'), B0: await row(process.argv[3] || 'home-in-tordera') };
 if (!E || !B0) { console.error('Guide not found.'); process.exit(1); }
 E.draft = null; if (E.content.private) E.content.private = {};
-// The builder's host: listing read, nothing else answered, done or seen yet.
+// The builder's host: listing read, nothing else answered, done or seen yet (no colour world picked either: the guide the
+// answers come from has one since 14 Nov 2026).
 const a = { ...B0.answers, _done: { listing: true }, _seen: [], _savedAt: Date.now(), _acct: B0.owner };
-for (const k of ['_sentAt', '_last', 'wifiName', 'wifiPassword', 'wifiNote', 'rubbishMode', 'hostPhone', 'arrival', 'swipes', 'favDo', 'favourites']) delete a[k];
+for (const k of ['_sentAt', '_last', 'wifiName', 'wifiPassword', 'wifiNote', 'rubbishMode', 'hostPhone', 'arrival', 'swipes', 'favDo', 'favourites', 'world', 'worldOwn', 'worldSrc', 'colorsFrom']) delete a[k];
 const B = { id: B0.id, owner: B0.owner, answers: a, status: 'draft', slug: B0.slug, origin: null, content: null, theme: null, draft: null };
 const N = { id: B0.id, owner: B0.owner, answers: { _savedAt: Date.now(), _acct: B0.owner }, status: 'draft', slug: null, origin: null, content: null, theme: null, draft: null };
 const photos = (B0.answers._remote || []).map(u => u.src).filter(Boolean).slice(0, 12), A0 = B0.answers;
@@ -2731,7 +2732,7 @@ async function gEventKinds() {
     // grid), and in the guide's row dot with the guide's own rules (engine app.css .dot, .events .mrow .dot svg); new ones marked.
     { const { ctx, p } = await run(1280, 860); await p.goto('http://editor.test/#events'); await ready(p); await settle(p, 300);
       await p.click(card(FP) + ' > summary'); await p.click(card(FP) + ' [data-ckinds]'); await settle(p, 250);   // the maker's own tiles, as its grid draws them
-      const sec = readFileSync(join(ROOT, 'engine/src/views/section.js'), 'utf8'), GI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+      const sec = readFileSync(join(ROOT, 'engine/src/modules/events/kinds.js'), 'utf8'), GI = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
       const icon = Object.fromEntries([...sec.slice(sec.indexOf('const EVENT_ICON = {')).split('\n};')[0].matchAll(/^\s+([a-z]+): GI\('(.*)'\),?$/gm)].map(m => [m[1], GI(m[2])]));
       const tone = Object.fromEntries([...sec.match(/\nconst EVENT_TONE = \{([^\n]*)\};/)[1].matchAll(/([a-z]+): '([^']+)'/g)].map(m => [m[1], m[2]]));
       const css = readFileSync(join(ROOT, 'engine/src/styles/app.css'), 'utf8'), rule = sel => { const i = css.indexOf('\n' + sel + '{'); return i < 0 ? '' : css.slice(i + 1, css.indexOf('}', i) + 1); };

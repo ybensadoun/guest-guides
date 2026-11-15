@@ -203,7 +203,7 @@ test('offers: what a module offers is read from its own folder, through the guid
   assert.deepEqual(OFFERS.highlight, { highlight: { sizes: ['half', 'wide'] } });
   assert.deepEqual(thing({ kind: 'section', id: 'markets' }, CLK).sizes, ['half', 'wide', 'tall']);
   assert.equal(thing({ kind: 'section', id: 'markets' }, CLK).widget, 'entry');
-  // Local events: wide only, from their module; a kind with no module keeps the frame's own word, its entry tile in every size.
+  // Local events: wide only, from their module; a text page (kind "info", its module) its entry tile in every size.
   assert.deepEqual(thing({ kind: 'section', id: 'events' }, CLK).sizes, ['wide']);
   assert.deepEqual(thing({ kind: 'section', id: 'message' }, CLK).sizes, ['half', 'wide', 'tall']);
   // The frame takes what the guide passes: without the offers, rubbish would be an entry tile like any other, and a
@@ -221,6 +221,21 @@ test('offers: what a module offers is read from its own folder, through the guid
   // A module that offers an entry tile wide only is placed wide by the default, whatever its place.
   const wideMarkets = { ...CLK, offers: { ...OFFERS, markets: { entry: { sizes: ['wide'] } } } };
   assert.equal(defaultArrangement(wideMarkets).area.find(p => p.id === 'markets').size, 'wide');
+});
+
+test('offers: the text pages, Emergencies and Getting around their entry tile in every size; the map its bar, wide; the house nothing', () => {
+  // Moved into modules on 14 Nov 2026: what they offer is what the frame gave them before (its ENTRY, its own map line, its
+  // own line for the house page), now said in their folders.
+  for (const k of ['info', 'contacts', 'transport']) assert.deepEqual(OFFERS[k], { entry: { sizes: ['half', 'wide', 'tall'] } }, k);
+  assert.deepEqual(OFFERS.map, { entry: { sizes: ['wide'] } });
+  assert.deepEqual(OFFERS.house, {});
+  assert.deepEqual(thing({ kind: 'map' }, CLK), { kind: 'map', id: 'map', widget: 'entry', sizes: ['wide'], group: 'area' });
+  assert.equal(thing({ kind: 'section', id: 'house' }, CLK), null);                        // the welcome card opens it
+  assert.deepEqual(thing({ kind: 'section', id: 'emergency' }, CLK).sizes, ['half', 'wide', 'tall']);
+  assert.equal(thing({ kind: 'section', id: 'transport' }, CLK), null);                    // shown as a card
+  assert.deepEqual(thing({ kind: 'section', id: 'transport' }, { ...CLK, transportCard: null }).sizes, ['half', 'wide', 'tall']);
+  // A guide given no offers: the map keeps the frame's own word (wide only), as the highlights do.
+  assert.deepEqual(thing({ kind: 'map' }, { ...CLK, offers: undefined }).sizes, ['wide']);
 });
 
 test('offers: the node scripts\' registry (modules/offers.js) lists the same modules as the guide\'s (modules/index.js)', () => {

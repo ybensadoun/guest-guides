@@ -88,7 +88,7 @@ takes Things to do's.
 | The filters' taps, the guest's choices | `engine/src/main.js` (`data-sgroup`, `data-featf`, `data-openf`, `data-sort`), `engine/src/state.js` (`sgroup`, `featf`, `openf`, `sort`) | Not yet |
 | A row, hours, statuses, a place's season | `engine/src/ui.js` (`row`), `schedule.js`, `season.js` (shared with the maker, which pastes it, and the worker), `kinds.json`, `groups.json` | No: shared machinery |
 | Google's live line | `engine/src/gcard.js` (`wantsCard`: every row of these lists asks, with `gcard: true`; checked by `engine/scripts/gcard-check.mjs`) | No: shared |
-| The map's tabs and pins of these lists | `engine/src/views/map.js` | No: shared with every place |
+| The map's tabs and pins of these lists, the small map | `../map/` (`view.js`: `tabOf`, `overviewMap`) | No: the map's module |
 | Its styles | `engine/src/styles/app.css` (`.gchips`, `.gchip`, `.ochips`, `.mgh`, `.secmap`, `.pl-map-cta`, `.mlist`, `.mrow`, `.empty`, `.gt[data-k="restaurants"]`, `[data-k="todo"]`, `[data-k="nightlife"]`, the groups' tones) | Not yet: they move with the one tile system (plan, proposal 4), so the look is touched once |
 | Its words | `engine/src/i18n/<lang>.json`: `barsRestaurants`, `whatToDo`, `nightlife` and their `...Lead`, `f_anyTime`, `f_openNow`, `f_openLater`, `f_noHours`, `f_noneOpen`, `ff_<feature>`, `g_<group>`, `t_<tag>`, `f_<flag>`, `soon`, `openMap`, `seeHours` | Not yet |
 | From the host's answers to the files | `engine/scripts/generate-site.py` | Not yet |

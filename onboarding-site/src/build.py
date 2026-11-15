@@ -99,13 +99,13 @@ ENG_ICONS=('const ENG_P = d => `<svg class="ci" viewBox="0 0 24 24" fill="none" 
   +_re.sub(r'\bP\(','ENG_P(',_ui[_ii:_ij+3].replace('const ITEM_ICON = {','const ENG_ICON = {'))+'\n'
   +'const ENG_TODO = '+_re.sub(r'\bP\(','ENG_P(',_todo.group(1))+';\n')
 # The engine's icons of the market kinds (CAT_ICON, five categories) and of the event kinds with their colours (EVENT_ICON,
-# EVENT_TONE in engine/src/views/section.js), for the market and event cards in the editor.
+# EVENT_TONE in engine/src/modules/events/kinds.js), for the market and event cards in the editor.
 _ci=_ui.index('export const CAT_ICON = {'); _cj=_ui.index('\n};',_ci)
 _cat=[l for l in _ui[_ci:_cj].split('\n') if _re.match(r'\s+(covered|street|flea|antiques|events): P\(',l)]
 assert len(_cat)==5,'engine/src/ui.js: the five market kinds of CAT_ICON not found'
-_sec=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src','views','section.js'),encoding='utf-8').read()
+_sec=open(__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src','modules','events','kinds.js'),encoding='utf-8').read()
 _et=_re.search(r'\nconst EVENT_TONE = (\{[^\n]*\});',_sec); _ei=_sec.index('const EVENT_ICON = {'); _ej=_sec.index('\n};',_ei)
-assert _et,'engine/src/views/section.js: EVENT_TONE not found'
+assert _et,'engine/src/modules/events/kinds.js: EVENT_TONE not found'
 ENG_ICONS+=('const ENG_CAT = {\n'+_re.sub(r'\bP\(','ENG_P(','\n'.join(_cat))+'\n};\n'
   +'const ENG_EV_TONE = '+_et.group(1)+';\n'
   +_re.sub(r'\bGI\(','ENG_P(',_sec[_ei:_ej+3].replace('const EVENT_ICON = {','const ENG_EV_ICON = {'))+'\n')

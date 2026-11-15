@@ -1,4 +1,4 @@
-// The one list of kinds of event, wherever it lives: the guide draws each with an icon and a colour (engine section.js
+// The one list of kinds of event, wherever it lives: the guide draws each with an icon and a colour (engine modules/events/kinds.js
 // EVENT_ICON, EVENT_TONE), the maker offers them in its grid (editor.js EV_KINDS, names in i18n/ui.json, other words in
 // EV_WORDS), the worker's research may use them (guide-worker.mjs EVENT_SHAPE), the events file says them (its _doc).
 // Read as text: nothing runs.   node --test 'worker/test/*.test.mjs'
@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const read = f => readFileSync(resolve(ROOT, f), 'utf8');
 const block = (src, start) => { const i = src.indexOf(start); assert.ok(i >= 0, `${start} not found`); return src.slice(i, src.indexOf('\n};', i)); };
-const sec = read('engine/src/views/section.js'), ed = read('onboarding-site/src/editor.js'), css = read('engine/src/styles/app.css');
+const sec = read('engine/src/modules/events/kinds.js'), ed = read('onboarding-site/src/editor.js'), css = read('engine/src/styles/app.css');
 const ICON = new Set([...block(sec, 'const EVENT_ICON = {').matchAll(/^\s+([a-z]+): GI\('/gm)].map(m => m[1]));
 const TONE = Object.fromEntries([...(sec.match(/\nconst EVENT_TONE = \{([^\n]*)\};/) || [])[1].matchAll(/([a-z]+): '([^']+)'/g)].map(m => [m[1], m[2]]));
 const KINDS = [...(ed.match(/\nconst EV_KINDS = (\[[^\n]*\]);/) || [])[1].matchAll(/\['([a-z]+)', '([^']+)'\]/g)].map(m => [m[1], m[2]]);

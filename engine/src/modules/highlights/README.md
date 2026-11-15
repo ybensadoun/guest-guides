@@ -59,7 +59,7 @@ description, "Opening hours" (status, the week, the note, the price, or Google's
 | What it offers on Home: a highlight, half or wide | `offers.js` (read by the frame through `views/home.js`, and by the node scripts through `../offers.js`) | Yes |
 | What Home, the router, the lists and Getting around call | `index.js`, listed in `../index.js` as `highlight` | Yes |
 | Reading the file, Getting around's card, the bar on the map | `engine/src/content.js` (`QUICK_ALL`, `QUICK`, `QSHOP`, `TRANSPORT_CARD`) | No: shared with the map and transport |
-| Getting around's page, also an old taxi card's | `engine/src/views/place.js` (`renderTransport`, `transportOf`) | No: transport's, not moved now |
+| Getting around's page, also an old taxi card's | `../transport/` (`renderTransport`, `transportOf`) | No: Getting around's module |
 | The route `#p/<id>` | `engine/src/main.js` | Not yet |
 | Hours, statuses, seasons | `engine/src/schedule.js`, `season.js` | No: shared machinery |
 | Google's live line | `engine/src/gcard.js` (`wantsCard`, `sectionHTML`, `slotHTML`) | No: shared |

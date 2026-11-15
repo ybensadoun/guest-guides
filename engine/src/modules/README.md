@@ -1,10 +1,11 @@
 # The module frame (Home)
 
-How Home places the parts of a guide: which tile or card, in which size, in which order. The modules themselves (rubbish
-first, `garbage/README.md`; markets second, `markets/README.md`; then the host's lists of places, `places/README.md`, the
-white cards, `highlights/README.md`, and Local events, `events/README.md`) say what they show and what they offer; the
-frame says where and how big. Read this page before changing how Home
-is arranged, and write a changed rule here with its date.
+How Home places the parts of a guide: which tile or card, in which size, in which order. The modules themselves say what
+they show and what they offer; the frame says where and how big. Every part of a guide is a module of its own (14 Nov
+2026), each with its README: the house and its welcome card (`house/`), rubbish (`garbage/`), the text pages such as the
+house guide (`info/`), Emergencies (`contacts/`), Getting around (`transport/`), markets (`markets/`), the host's lists of
+places (`places/`), Local events (`events/`), the white cards (`highlights/`), the map (`map/`) and What's on
+(`whatson/`). Read this page before changing how Home is arranged, and write a changed rule here with its date.
 
 The design is the plan's proposal 22 (`docs/plan-ca-la-kimberly-through-the-maker.md`, "Proposal 22, the module frame").
 This is part 1 of its work: the sizes and the placements in the engine. Ca La Kimberly's Home is the reference: with no
@@ -53,16 +54,23 @@ there so that a module can offer a second widget later.
 | The host's lists of places (kind `spots`: Eat and drink, Things to do, Nightlife), their entry tile | Half, wide, tall | `places/offers.js` |
 | Local events (kind `events`), its entry tile with the next event | Wide | `events/offers.js` |
 | A highlight (a card of `quick.json`, or Getting around's) | Half, wide | `highlights/offers.js` (listed as `highlight`; `frame.js` keeps the same as its own word when a guide is given no offers) |
-| The map | Wide | `frame.js` |
-| Every other section's entry tile | Half, wide, tall | `frame.js` (`ENTRY`) |
+| The text pages (kind `info`: the house guide, arrival, extras), their entry tile | Half, wide, tall | `info/offers.js` |
+| Emergencies (kind `contacts`), its entry tile | Half, wide, tall | `contacts/offers.js` |
+| Getting around (kind `transport`), its entry tile when it has no card | Half, wide, tall | `transport/offers.js` |
+| The map, its bar | Wide | `map/offers.js` (listed as `map`, the kind of placement; `frame.js` keeps the same as its own word when a guide is given no offers) |
+| The house (kind `house`) | Nothing: the welcome card, the frame's fixed top | `house/offers.js` (an empty offer: the frame never makes it a tile) |
+| A kind of section no module knows | Half, wide, tall | `frame.js` (`ENTRY`) |
 
 A module says what it offers in its own folder (14 Nov 2026): `offers.js` exports `widgets`, `{ <widget>: { sizes } }`,
 the first widget named being the one Home draws (`{ live: { sizes: ['wide'] } }` for rubbish). Its `index.js` exports it
 with the rest, and `views/home.js` passes the registry's offers to the frame in the guide (`offers`); the node scripts
 (`check-content.js`, `frame-check.mjs`, the tests) read the same files through `offers.js` beside this page, which lists
 the same modules under the same names as `index.js` (a test checks it). Both list a module by the kind of section it
-serves, which is not always its folder's name (`spots` is `places/`), and the highlights under the kind of placement,
-`highlight`. The frame stays pure: it is given what each kind offers and imports no module.
+serves, which is not always its folder's name (`spots` is `places/`), and the highlights and the map under the kind of
+placement, `highlight` and `map`. A module that offers nothing (`{}`: the house) is never placed. A widget may give its
+own label and link (markets: "Markets" and the day's list; Emergencies: its short label; the map: its bar's classes);
+`views/home.js` draws whatever a widget gives and names no module. The frame stays pure: it is given what each kind
+offers and imports no module.
 
 ## The rules
 
@@ -78,7 +86,7 @@ serves, which is not always its folder's name (`spots` is `places/`), and the hi
 | 8 | What a guide's arrangement does not mention but Home shows by default (a live section, a highlight shown now, the map) is added in its own group where the default would put it: a highlight after the group's last highlight (else first); a tile after the nearest tile before it in the default that is placed there, else before the nearest one after it, else before the map; the map last. So a new section or card never goes missing. | Yohann, 14 Nov 2026 (the exact order of insertion, 14 Nov 2026) |
 | 9 | Getting around shown as a highlight (its `tile` in `transport.json`) is not repeated as a section tile, in either group. | Before the frame (views/home.js); now in both groups |
 | 10 | A card closed for the season and opening in more than 30 days is left out (`highlights/data.js` `quickShown`); its page still opens. | Before the frame |
-| 11 | The house page has no tile: the welcome card opens it. | Before the frame |
+| 11 | The house page has no tile: the welcome card opens it. Since 14 Nov 2026 the house module says so itself, with an empty offer (`house/offers.js`), and the frame no longer names it; `check()` still answers "is the house page, which the welcome card opens" for a section whose module offers nothing (only the house). | Before the frame |
 | 12 | Local events are wide only: their tile carries the next event's name and date, and as a half or tall tile "esdeveniments" and "evenementen" were wider than the tile. | Claude, 14 Nov 2026, from the frame check; to confirm with Yohann |
 | 13 | A tall tile's title is drawn larger (as Markets' always was) only when each of its words has 9 letters or fewer; otherwise it keeps the size it has on a half tile (class `t-word`): "Emergencies", "aparcamiento" and "stationnement" were wider than a tall tile at 360 px. Words are never shortened or cut for this, and no font goes below the half tile's. | Claude, 14 Nov 2026, from the frame check; to confirm with Yohann |
 
@@ -117,7 +125,8 @@ also `w-live`. The More page shows the same groups.
 |---|---|
 | The frame: default, resolving, packing, checking; pure, no DOM | `frame.js` (tests: `engine/scripts/frame.test.mjs`) |
 | What each module offers, for the node scripts | `offers.js` (each module's own `offers.js`) |
-| Home drawn from placements | `engine/src/views/home.js` (`sectionGrid`, `frameGuide`) |
+| Home drawn from placements, the welcome card on top and What's on at the bottom | `engine/src/views/home.js` (`renderHome`, `sectionGrid`, `frameGuide`; the card from `house/`, What's on from `whatson/`) |
+| A section's page asked of its module | `engine/src/views/section.js` (`renderSection`; and the shared `sectionFrame`, `zoomable`) |
 | The guide's arrangement, read once | `engine/src/content.js` (`HOME_ARRANGEMENT`, `TRANSPORT_CARD`) |
 | The sizes' styles | `engine/src/styles/app.css` (`.gt.s-tall`, `.gt.s-wide:not(.w-live)`, `.gt.t-long`, the per-module shapes by size) |
 | The check of `home.json` | `engine/scripts/check-content.js` (with `check()` of `frame.js`) |
@@ -125,12 +134,10 @@ also `w-live`. The More page shows the same groups.
 
 ## Not built yet
 
-- The modules other than rubbish, markets, the host's lists of places, the highlights and Local events (moved on 13 and
-  14 Nov 2026): each kind of section moves to its own folder with its widgets, and says there what it offers in its
-  `offers.js` (proposal 22, step 2). Still in `views/`: the house page, the house guide (`info`), emergencies
-  (`contacts`) and Getting around (`transport`, whose card the highlights draw), and the map.
+- Every part of the guide is a module since 14 Nov 2026 (proposal 22, step 2). What each module has not moved yet (its
+  styles, its words, the generator's part, the maker's steps) is listed in its own README, under "Where its code is".
 - The arranger in the maker: the step "Home tiles" becomes "Home page", the two groups as lists to drag, a switch of sizes,
   "Add to your home page", "Back to the arrangement we suggest" (proposal 22, step 3). Until then no guide has a
-  `home.json`, and every Home is the default.
-- The rule "every product guide has exactly Ca La Kimberly's sections" becoming "every guide starts from Ca La Kimberly's
-  arrangement, and a host may rearrange it": Yohann's to confirm.
+  `home.json`, and every Home is the default. With it, the rule "every product guide has exactly Ca La Kimberly's
+  sections" would become "every guide starts from Ca La Kimberly's arrangement, and a host may rearrange it": Yohann's to
+  confirm.

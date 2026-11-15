@@ -1,8 +1,8 @@
 // An event as a row and its dates in words: the Local events page (page.js) and What's on (../whatson/) draw the same row.
-// The event kinds' icons and colours stay in views/section.js (EVENT_ICON, EVENT_TONE: README.md, "Where its code is").
+// The event kinds' icons and colours: kinds.js.
 import { t, tx, locale } from '../../i18n.js';
 import { esc, ICON } from '../../ui.js';
-import { EVENT_ICON, EVENT_TONE } from '../../views/section.js';
+import { EVENT_ICON, EVENT_TONE } from './kinds.js';
 
 const D = s => new Date(s + 'T00:00:00');
 const fmt = (d, o) => d.toLocaleDateString(locale(), o);

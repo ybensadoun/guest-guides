@@ -273,7 +273,7 @@ function pvStyle(p){
   return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${worldGF(p.base)}&display=swap"><style>${base}${shared}${tiles}</style>`;
 }
 
-// The drawn cover, same scene as the guide's (engine/src/views/home.js THEMED_COVER).
+// The drawn cover, same scene as the guide's (engine/src/modules/house/welcome.js THEMED_COVER).
 const PV_ART = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect class="a-sky" width="400" height="160"/><circle class="a-sun" cx="246" cy="48" r="15"/><path class="a-far" d="M0 112C60 86 120 88 186 104S318 84 400 98V160H0z"/><path class="a-mid" d="M0 128C80 110 150 114 228 126S350 116 400 120V160H0z"/><path class="a-wall" d="M178 104h44v32h-44z"/><path class="a-roof" d="M173 106l27-18 27 18z"/><path class="a-win" d="M186 112h8v8h-8zM206 112h8v8h-8z"/><path class="a-door" d="M196 123h8v13h-8z"/><path class="a-tree" d="M238 136c-4 0-5-9-5-19s2-20 5-25c3 5 5 15 5 25s-1 19-5 19zM251 136c-3 0-4-6-4-13s2-14 4-18c2 4 4 11 4 18s-1 13-4 13z"/><path class="a-near" d="M0 140C100 130 220 132 300 138S380 136 400 136V160H0z"/></svg>`;
 
 // One screen of the guide as guests will see it, built from the answers: the cover, the name, the sections. Used by the

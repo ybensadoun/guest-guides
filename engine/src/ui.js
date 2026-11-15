@@ -23,6 +23,14 @@ export const ICON = {
   back: svg('<path d="M15 18l-6-6 6-6"/>'),
   down: svg('<path d="M6 9l6 6 6-6"/>')
 };
+// The same line drawing for the icons of the modules (the house guide's rooms, the house page's facts, the kinds of event).
+export const GI = svg;
+// Shared by the modules that call or link out (Emergencies, Getting around, a highlight's page): the phone and website
+// icons, and a number as a tel: link (spaces dropped). The round arrow of Home's welcome card and tiles.
+export const PHONE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg>';
+export const WEB = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>';
+export const tel = n => 'tel:' + n.replace(/\s+/g, '');
+export const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
 
 // One clear pictogram per type, used in filters, lists, card badges and map pins.
 const P = d => `<svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
