@@ -27,7 +27,7 @@ So the launch desk comes first; the play area and the feedback box, which the fi
 ## Its rules
 | # | Rule | Decided |
 |---|---|---|
-| 1 | Only the owner. The page's files hold nothing private (the repo is public); the database decides: `is_owner()` answers true for the account whose id is in the table `owners`, which nobody can write through the site, and every table of this page lets only that account in. Anyone else, or no login, sees a notice and nothing more. | Claude's proposal, 16 Nov 2026; Yohann's yes to the statement still to come |
+| 1 | Only the owner. The page's files hold nothing private (the repo is public); the database decides: `is_owner()` answers true for the account whose id is in the table `owners`, which nobody can read or write through the site, and every table of this page lets only that account in. Anyone else, or no login, sees a notice and nothing more. | Claude's proposal, 16 Nov 2026; Yohann, 17 Nov 2026: "Yes, create them" |
 | 2 | One list of parts and countries, in the code: `engine/src/modules/available.json`. This folder's `available.json` is a copy made by `build.mjs` (Netlify serves only `onboarding-site/`): never edit it. The owner's switches are rows in the database and win over the list. | The brief (MODULE-CONVERSATIONS.md, 15): "one list in the code, never a second copy of a rule" |
 | 3 | The first version records and shows. The maker and the generator do not read the switches yet: that is the second step. | The brief |
 | 4 | Never a mock, never a second editor: the stage is the maker itself in a frame (`/?step=<id>`) and the shared viewer with the draft (`/g/<slug>?preview`). At "Desktop" the maker is drawn at 1280 px, where it shows its own phone beside the step; at "Phone" both are 360 px wide, side by side; on a small screen one side at a time at the screen's width. | The brief |
@@ -50,15 +50,15 @@ So the launch desk comes first; the play area and the feedback box, which the fi
 | `test/pictures.mjs` | Every module pictured five ways on a sample house: the guide on a phone and a desktop screen, the maker's step on both, its Countries tab |
 | `../../engine/scripts/available.test.mjs` | The list is well made, the copies are in step |
 
-## The database (to be created: needs Yohann's yes, statement in the hand-over note)
-In `database.sql`, proposed, not applied. For the launch desk: `owners` (the owner's account id), `is_owner()`,
+## The database
+In `database.sql`. For the launch desk, created on 17 Nov 2026 on Yohann's yes and tried as nobody, as another account and as the owner: `owners` (the owner's account id), `is_owner()`,
 `launch_countries` (country, state), `module_switches` (module, part, country, is_on, note), `launch_public()` (what the
 maker will read without a login: states and switches, never the notes), `module_feedback` (kind request or feedback,
-module, part, country, words, across, seen, state). For the play area, later: two guards on sample houses (never
+module, part, country, words, across, seen, state). For the play area, proposed and not applied: two guards on sample houses (never
 published, no paid job) and their three rows.
 
 ## Where it stands (17 Nov 2026)
-Built in code, on a branch, not pushed. The database part does not exist yet, so the live page would only say "Not set
-up yet". Not built: the switches and the countries' states acting on the maker and the generator (the next step, and
+Built in code, on a branch, not pushed: the page is not live. The launch desk's tables exist since 17 Nov 2026 and are
+empty. Not built: the switches and the countries' states acting on the maker and the generator (the next step, and
 the point of the desk); the builder's side; a module's Home tile in each
 size by one tap (today: the step "Its tile on Home" opens the board, where a tap on the tile gives its sizes).
