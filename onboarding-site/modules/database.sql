@@ -2,6 +2,9 @@
 -- PROPOSED on 17 Nov 2026, NOT APPLIED: blocks 1 to 3 are the launch desk and go together on Yohann's yes; blocks 4 and
 -- 5 are for the play area and wait for their own yes. When a block is applied, write the date here. Nothing in this file
 -- is secret; the owner's email is not written in it (the repo is public): put it in place of <the owner's email>.
+-- Who may apply it: the launch desk's conversation (conversation 15), block by block, each on Yohann's own yes. Never a
+-- module conversation. updated_at is set by the page in every write it makes (console.js: swSet, countryPut); a write
+-- made any other way sets it itself.
 
 -- 1. Who the owner is. One row, his account's id. Nobody reads or writes the table through the site; is_owner() only
 --    answers yes or no about the account that asks.
