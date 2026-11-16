@@ -351,5 +351,7 @@
   "crWorkbox": "Utilisation hors ligne : Workbox.",
   "crLicenses": "Toutes les licences",
   "crTrainsH": "Trains",
-  "crRenfe": "Les gares, leurs lignes et les temps de trajet viennent des horaires ouverts de Renfe : « {renfe} », données du {date}, licence {ccby}. Ce sont des temps habituels en train direct : vérifiez-les avant de partir."
+  "crRenfe": "Les gares, leurs lignes et les temps de trajet viennent des horaires ouverts de Renfe : « {renfe} », données du {date}, licence {ccby}. Ce sont des temps habituels en train direct : vérifiez-les avant de partir.",
+  "rideAppSub": "Réservez et payez dans l'appli",
+  "openApp": "Ouvrir {name}"
 }

@@ -472,10 +472,23 @@ def found_taxis():
     if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no taxis from the directory', file=sys.stderr); return []
     return json.loads(r.stdout).get('taxis') or []
 taxis += found_taxis()
+# The ride apps (engine/src/modules/transport/apps.js through engine/scripts/apps-of.mjs): answers.apps (the ids the host
+# approved) when present, even empty, else the ones found near the house (answers._appsFound), by themselves.
+def found_apps():
+    import shutil, subprocess, datetime
+    node, script = shutil.which('node'), ROOT / 'engine/scripts/apps-of.mjs'
+    approved = A.get('apps') if isinstance(A.get('apps'), list) else None
+    found = A.get('_appsFound') if isinstance(A.get('_appsFound'), list) else []
+    if not node or (approved is None and not found): return []
+    try: r = subprocess.run([node, str(script)], input=json.dumps({'approved': approved, 'found': found, 'at': datetime.date.today().isoformat()}), capture_output=True, text=True, timeout=60)
+    except Exception as e: print(f'generate-site: {script.relative_to(ROOT)} could not be run: {e}: no ride apps', file=sys.stderr); return []
+    if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no ride apps', file=sys.stderr); return []
+    return json.loads(r.stdout).get('apps') or []
+apps = found_apps()
 (SITE / 'content/quick.json').write_text(json.dumps({'items': quick}, ensure_ascii=False, indent=1))
-if taxis or stations:
-    (SITE / 'content/transport.json').write_text(json.dumps({'_doc': 'Getting around: taxis and stations or stops, on their own page; tile = a one-tap tile on Home (null: the section\'s own tile). Written by generate-site.py: the taxi the host typed, the taxis of our open directory they approved or the nearest (src: {from: overture, id, at}), the train stations from onboarding-site/stations-es.json (Renfe, src: {from, at}) by engine/src/modules/transport/pick.js.',
-        'taxis': taxis, 'stations': stations, 'tile': {'name': L('Taxi'), 'sub': taxis[0]['name']} if taxis else None}, ensure_ascii=False, indent=1))
+if taxis or stations or apps:
+    (SITE / 'content/transport.json').write_text(json.dumps({'_doc': 'Getting around: taxis and stations or stops, on their own page; tile = a one-tap tile on Home (null: the section\'s own tile). Written by generate-site.py: the taxi the host typed, the taxis of our open directory they approved or the nearest (src: {from: overture, id, at}), apps: [{id, name, link, src}] the ride apps approved or found near the house, the train stations from onboarding-site/stations-es.json (Renfe, src: {from, at}) by engine/src/modules/transport/pick.js.',
+        'taxis': taxis, **({'apps': apps} if apps else {}), 'stations': stations, 'tile': {'name': L('Taxi'), 'sub': taxis[0]['name']} if taxis else None}, ensure_ascii=False, indent=1))
 
 
 # ---------- host-supplied content: how rubbish works, and the places the host recommends ----------
@@ -688,7 +701,7 @@ for sid, grp, kind, label, extra, mod in SEC:
     if sid == 'garbage': want = want and bool(rmode)   # only the host can tell us: no answer, no section
     if sid == 'restaurants': want = want and bool(fav)
     if sid == 'nightlife': want = on('nightlife', False) and bool(night)
-    if sid == 'transport': want = want and bool(taxis or stations)
+    if sid == 'transport': want = want and bool(taxis or stations or apps)
     modules[sid] = bool(want)
     if not want: continue
     live = kind == 'markets' and (SITE / 'content/markets.json').exists() or has_items(sid)

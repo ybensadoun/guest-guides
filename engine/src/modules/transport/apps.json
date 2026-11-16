@@ -1,0 +1,8 @@
+{
+ "_doc": "The ride apps Getting around offers (README.md, rules 35 to 39). apps: [{id, name, link}], in the order a guide shows them; link: the app's own plain home address, which sends a phone to the app or its store. No logos, no brand colours. Read by apps.js's callers: the worker (worker/ride-apps.mjs), the maker (pasted by onboarding-site/src/build.py) and the generator (engine/scripts/apps-of.mjs).",
+ "apps": [
+  { "id": "uber", "name": "Uber", "link": "https://www.uber.com/" },
+  { "id": "cabify", "name": "Cabify", "link": "https://cabify.com/" },
+  { "id": "bolt", "name": "Bolt", "link": "https://bolt.eu/" }
+ ]
+}

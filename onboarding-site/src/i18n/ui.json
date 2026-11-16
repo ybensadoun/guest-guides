@@ -4,8 +4,10 @@
 "AVE",
 "Airbnb",
 "Bauhaus",
+"Bolt",
 "Booking.com",
 "Bricolage Grotesque",
+"Cabify",
 "Casa Sol",
 "Català",
 "Cormorant Garamond",
@@ -40,6 +42,7 @@
 "Rodalies",
 "Space Grotesk",
 "Tropical",
+"Uber",
 "Vrbo",
 "WhatsApp",
 "Wi-Fi",
@@ -8644,5 +8647,30 @@
 "ca": "Un altre taxi: nom i número",
 "es": "Otro taxi: nombre y número",
 "fr": "Un autre taxi : nom et numéro"
+},
+"Ride apps that work near you": {
+"ca": "Apps de transport que funcionen a prop teu",
+"es": "Apps de transporte que funcionan cerca de ti",
+"fr": "Applis de VTC qui fonctionnent près de chez vous"
+},
+"Book and pay in the app": {
+"ca": "Reserva i paga a l’app",
+"es": "Reserva y paga en la app",
+"fr": "Réservez et payez dans l’appli"
+},
+"Ride apps": {
+"ca": "Apps de transport",
+"es": "Apps de transporte",
+"fr": "Applis de VTC"
+},
+"Apps guests can book a ride with: they get a button that opens the app.": {
+"ca": "Apps amb què els hostes poden demanar un cotxe: tenen un botó que obre l’app.",
+"es": "Apps con las que los huéspedes pueden pedir un coche: tienen un botón que abre la app.",
+"fr": "Applis avec lesquelles vos voyageurs réservent une course : ils ont un bouton qui ouvre l’appli."
+},
+"works near your house": {
+"ca": "funciona a prop de casa teva",
+"es": "funciona cerca de tu casa",
+"fr": "fonctionne près de chez vous"
 }
 }

@@ -351,5 +351,7 @@
   "crWorkbox": "Offline-Nutzung: Workbox.",
   "crLicenses": "Alle Lizenzen",
   "crTrainsH": "Züge",
-  "crRenfe": "Die Bahnhöfe, ihre Linien und die Fahrzeiten stammen aus den offenen Fahrplänen von Renfe: „{renfe}“, Stand {date}, Lizenz {ccby}. Es sind übliche Zeiten mit Direktzügen: Prüfe sie vor der Fahrt."
+  "crRenfe": "Die Bahnhöfe, ihre Linien und die Fahrzeiten stammen aus den offenen Fahrplänen von Renfe: „{renfe}“, Stand {date}, Lizenz {ccby}. Es sind übliche Zeiten mit Direktzügen: Prüfe sie vor der Fahrt.",
+  "rideAppSub": "In der App buchen und bezahlen",
+  "openApp": "{name} öffnen"
 }

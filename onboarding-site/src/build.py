@@ -174,6 +174,11 @@ assert _ximp in _xsrc and len(_re.findall(r'(?m)^import ',_xsrc))==1,'engine/src
 for _need in ('export function txPick(','export function txEntry(','export const txKey','export function txName('):
     assert _need in _xsrc,'engine/src/modules/transport/taxis.js: '+_need+' not found'
 ENG_DATA+=_re.sub(r'(?m)^export ','',_xsrc.replace(_ximp,''))+'\n'
+# The ride apps (engine/src/modules/transport/apps.js and apps.json): the builder's ticks and the editor's switches.
+_asrc=open(__import__('os').path.join(_MD,'transport','apps.js'),encoding='utf-8').read()
+_aimp="import { tpLine, tpPlaced } from './pick.js';\n"
+assert _aimp in _asrc and len(_re.findall(r'(?m)^import ',_asrc))==1,'engine/src/modules/transport/apps.js: its imports are not as expected'
+ENG_DATA+=_re.sub(r'(?m)^export ','',_asrc.replace(_aimp,''))+'\nconst AX_APPS = '+__import__('json').dumps(__import__('json').load(open(__import__('os').path.join(_MD,'transport','apps.json'),encoding='utf-8'))['apps'])+';\n'
 # Home's tiles as the guide draws them (engine/src/ui.js SECTION_LOOK: each section's icon, colour and dark text), the old
 # colour names they use (app.css :root, "--k-blue:var(--blue)"), each tile's corner shape colour and a card's icon colour
 # (app.css .gt[data-k] ::before, .qcall .qi): read from the engine, so the board draws the guide's own colours in the

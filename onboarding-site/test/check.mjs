@@ -1422,7 +1422,7 @@ async function gTrains() {
   const ROLE = { en: ['Closest', 'Faster', 'High speed'], fr: ['La plus proche', 'Plus rapide', 'Grande vitesse'] };
   for (const [w, h, tag, lang] of [[1280, 860, '1280 px', 'en'], [360, 780, '360 px', 'en'], [1280, 860, '1280 px, French', 'fr'], [360, 780, '360 px, French', 'fr']]) {
     const fr = lang === 'fr', { ctx, p, errors } = await open(browser, G0, w, h, fr ? { 'porta-lang-v1': 'fr' } : {}), saved = [], asked = [];
-    p.on('request', r => { const u = r.url(); if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(u)) saved.push(r.postData()); if (/\/api\/places\?(?!probe)|guide_jobs/.test(u) && !/"what":"taxis"/.test(r.postData() || '') && !/id=eq\.(job-taxis|undefined)/.test(u)) asked.push(u); });
+    p.on('request', r => { const u = r.url(); if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(u)) saved.push(r.postData()); if (/\/api\/places\?(?!probe)|guide_jobs/.test(u) && !/"what":"(taxis|apps)"/.test(r.postData() || '') && !/id=eq\.(job-taxis|undefined)/.test(u)) asked.push(u); });
     await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 400);
     const near = await nearNow(p, '#c_trnear .cm-nearl');
     ok(`near your house, ${tag}: with no train station, the rule's three stations are offered without typing, with their lines, distance and role`, cmpSame(near.map(x => x.n), ['El Vendrell', 'Sant Vicenç de Calders', 'Camp de Tarragona']) && cmpSame(near.map(x => x.role), ROLE[lang]) && near.every(x => x.badges > 0 && /^\d+\s?km$/.test(x.km.replace(/ /, ' '))) && /Near your house|Près de chez vous/.test(await textNow(p, '.cm-trnh')), JSON.stringify(near));
@@ -1471,7 +1471,7 @@ async function gTrains() {
   // two companies' badges on the station where it stands; El Vendrell (no high speed) queues nothing; a failure says nothing.
   const BR = join(SHOTS, 'brands'); mkdirSync(BR, { recursive: true });
   const fakeJobs = (ctx, state) => ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), route => { const req = route.request();
-    if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'); if ((b.params || {}).what === 'taxis') return json(route, [{ id: 'job-taxis' }]); state.posted.push(b); return json(route, [{ id: 'job-br-' + state.posted.length }]); }   // the step's taxis job: gTaxis
+    if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'); if (['taxis', 'apps'].includes((b.params || {}).what)) return json(route, [{ id: 'job-taxis' }]); state.posted.push(b); return json(route, [{ id: 'job-br-' + state.posted.length }]); }   // the step's taxis job: gTaxis
     if (/id=eq\.job-taxis/.test(req.url())) return json(route, [{ status: 'done', result: { taxis: [] } }]);
     state.polled++;
     if (state.mode === 'failed') return json(route, [{ status: 'failed', message: 'Something went wrong', result: null }]);
@@ -1554,6 +1554,7 @@ async function gTaxis() {
   const around = (h, km, i, more = {}) => ({ id: 'tx-rec-' + i, name: `Taxi Prova ${i}`, phone: `+34 900 000 0${String(i).padStart(2, '0')}`, town: 'Provaville', lat: +h.lat + km * 0.008993, lng: +h.lng, km: Math.round(km * 1.3), web: '', ...more });
   // The research's taxis for a house: five within 15 km (out of order), one past it, one a second listing of the nearest.
   const FAKE = h => [around(h, 6, 3), around(h, 2, 1), around(h, 9, 4), around(h, 4, 2), around(h, 12, 5), around(h, 18, 6), around(h, 3, 7, { phone: '+34 900 000 001' })];
+  const AX_FOUND = [{ id: 'uber', name: 'Uber', link: 'https://www.uber.com/', src: { from: 'search', at: '2026-11-15' } }, { id: 'cabify', name: 'Cabify', link: 'https://cabify.com/', src: { from: 'search', at: '2026-11-15' } }];
   const rows = p => p.evaluate(() => [...document.querySelectorAll('#txf .tx-row')].map(r => ({ n: r.querySelector('b').textContent, l: r.querySelector('small').textContent, on: r.querySelector('input').checked })));
   // ---- The builder ----
   for (const [w, h, tag, lang] of [[1280, 860, '1280 px', 'en'], [360, 780, '360 px', 'en'], [1280, 860, '1280 px, French', 'fr'], [360, 780, '360 px, French', 'fr']]) {
@@ -1562,7 +1563,7 @@ async function gTaxis() {
     await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => r.request().method() === 'POST' ? json(r, [{ id: JID, status: 'queued' }]) : json(r, [job]));
     await p.goto('http://editor.test/#known'); await ready(p); await settle(p, 400);
     ok(`taxis, builder, ${tag}: before the research answers, the taxi field alone as before, nothing waiting`, !(await p.$('#txf')) && !!(await p.$('#f_taxi')) && !/looking|cherch|buscando|buscant/i.test(await textNow(p, '#f_taxi', '')) && !(Array.isArray((await stored(p)).taxis)));
-    job = { status: 'running', result: { taxis: FAKE(A0) } };
+    job = { status: 'running', result: { taxis: FAKE(A0), apps: AX_FOUND } };
     await p.waitForSelector('#txf', { timeout: 15000 }).catch(() => {}); await settle(p, 1300, { net: false });
     const r1 = await rows(p), A1 = await stored(p);
     ok(`taxis, builder, ${tag}: "Taxis near your house" comes by itself, 4 rows nearest first, one per number, none past 15 km`, cmpSame(r1.map(x => x.n), ['Taxi Prova 1', 'Taxi Prova 2', 'Taxi Prova 3', 'Taxi Prova 4']) && r1.every(x => /Provaville · \d+.km/.test(x.l)), JSON.stringify(r1));
@@ -1570,6 +1571,13 @@ async function gTaxis() {
     ok(`taxis, builder, ${tag}: the field is now for another taxi`, fr ? /Un autre taxi/.test(await textNow(p, 'label[for="f_taxi"]')) : /Another taxi: name and number/.test(await textNow(p, 'label[for="f_taxi"]')), await textNow(p, 'label[for="f_taxi"]'));
     ok(`taxis, builder, ${tag}: nothing in the list overlaps, sticks out, is cut, or breaks a word`, !(await boxClear(p, '#txf .tx-row', 'input, b, small')).length, (await boxClear(p, '#txf .tx-row', 'input, b, small')).join('; '));
     await p.locator('#txf').scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(TX_DIR, `builder-${lang}-${w}.png`) });
+    // The ride apps under the taxis: all ticked for the host, marked, kept as ids at once; one unticked.
+    { const ar = await p.evaluate(() => [...document.querySelectorAll('#axf .tx-row')].map(r => ({ n: r.querySelector('b').textContent, on: r.querySelector('input').checked })));
+      ok(`ride apps, builder, ${tag}: "Ride apps that work near you" under the taxis, each ticked for the host, marked, kept at once`, cmpSame(ar, [{ n: 'Uber', on: true }, { n: 'Cabify', on: true }]) && !!(await p.$('#l_axf .frm.sug')) && cmpSame((await stored(p)).apps, ['uber', 'cabify']) && (await p.evaluate(() => { const a = document.getElementById('axf'), f = document.getElementById('f_taxi'); return !!a && !!f && (f.compareDocumentPosition(a) & 4) > 0; })), JSON.stringify(ar));
+      ok(`ride apps, builder, ${tag}: nothing in it overlaps or is cut`, !(await boxClear(p, '#axf .tx-row', 'input, b, small')).length, (await boxClear(p, '#axf .tx-row', 'input, b, small')).join('; '));
+      await p.locator('#axf').scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(TX_DIR, `apps-builder-${lang}-${w}.png`) });
+      await p.click('#axf .tx-row:nth-child(2) input'); await settle(p, 1300);
+      ok(`ride apps, builder, ${tag}: unticked, Cabify leaves the answers and the mark goes`, cmpSame((await stored(p)).apps, ['uber']) && !(await p.$('#l_axf .frm'))); }
     await p.click('#txf .tx-row:nth-child(1) input'); await settle(p, 1300);
     ok(`taxis, builder, ${tag}: unticked, none is kept, and the mark goes`, cmpSame((await stored(p)).taxis, []) && !(await p.$('#l_txf .frm')), JSON.stringify((await stored(p)).taxis));
     await p.click('#txf .tx-row:nth-child(3) input'); await settle(p, 1300);
@@ -1596,9 +1604,10 @@ async function gTaxis() {
   const mine = ((E.content.files.transport || {}).taxis || [])[0] || {}, H = E.content.files.house;
   const EF = () => [around(H, 3, 11), { ...around(H, 1, 10), phone: mine.phone || '+34 900 000 010' }, around(H, 5, 12), around(H, 8, 13)];
   for (const [w, h, tag, lang] of [[1280, 860, '1280 px', 'en'], [360, 780, '360 px', 'en'], [1280, 860, '1280 px, French', 'fr'], [360, 780, '360 px, French', 'fr']]) {
-    const fr = lang === 'fr', { ctx, p, errors } = await open(browser, E, w, h, fr ? { 'porta-lang-v1': 'fr' } : {}), st = { posted: [], release: false }, saved = [];
+    const fr = lang === 'fr', { ctx, p, errors } = await open(browser, E, w, h, fr ? { 'porta-lang-v1': 'fr' } : {}), st = { posted: [], apps: [], release: false }, saved = [];
     p.on('request', r => { if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(r.url())) saved.push(r.postData()); });
-    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => { if (r.request().method() === 'POST') { st.posted.push(JSON.parse(r.request().postData() || '{}')); return json(r, [{ id: 'job-tx-1' }]); }
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => { if (r.request().method() === 'POST') { const b = JSON.parse(r.request().postData() || '{}'); if ((b.params || {}).what === 'apps') { st.apps.push(b); return json(r, [{ id: 'job-ax-1' }]); } st.posted.push(b); return json(r, [{ id: 'job-tx-1' }]); }
+      if (/id=eq\.job-ax-1/.test(r.request().url())) return json(r, [{ status: 'done', message: '1 ride app near the house', result: { apps: [AX_FOUND[0]] } }]);
       return json(r, [st.release ? { status: 'done', message: '3 taxis found', result: { taxis: EF() } } : { status: 'running', message: 'Looking for taxis near the house', result: null }]); });
     await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 600);
     ok(`taxis, editor, ${tag}: the step asks once for the taxis near the house, with nothing shown while it runs`, st.posted.length === 1 && cmpSame(st.posted[0].params, { what: 'taxis' }) && st.posted[0].kind === 'find-transport' && !(await textNow(p, '#c_txnear')).trim() && !/Looking for taxis|Cherch|Buscando/.test(await p.innerText('body')), JSON.stringify(st.posted));
@@ -1615,6 +1624,17 @@ async function gTaxis() {
     ok(`taxis, editor, ${tag}: it is no longer offered`, !(await p.evaluate(() => [...document.querySelectorAll('#c_txnear button b')].some(b => b.textContent === 'Taxi Prova 11'))));
     ok(`taxis, editor, ${tag}: the opened taxi overlaps nothing`, !(await boxClear(p, 'details.cmi[open] .cmb', '.cm-txsrc, label, input, textarea')).length, (await boxClear(p, 'details.cmi[open] .cmb', '.cm-txsrc, label, input, textarea')).join('; '));
     await p.locator('details.cmi[open]').first().scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(TX_DIR, `editor-opened-${lang}-${w}.png`) });
+    // The ride apps: three switches; the one that works near the house says so; on writes it, off removes it.
+    await p.waitForFunction(() => /works near your house|fonctionne près de chez vous/.test((document.getElementById('c_axapps') || {}).textContent || ''), null, { timeout: 10000 }).catch(() => {});
+    const sw = await p.evaluate(() => [...document.querySelectorAll('#c_axapps [data-axapp]')].map(b => ({ id: b.dataset.axapp, on: b.getAttribute('aria-checked') === 'true', note: ((b.closest('.cm-swrow') || {}).querySelector ? (b.closest('.cm-swrow').querySelector('.hint') || {}).textContent : '') || '' })));
+    ok(`ride apps, editor, ${tag}: three switches, the step asked once, Uber says it works near the house`, st.apps.length === 1 && cmpSame(sw.map(x => [x.id, x.on]), [['uber', false], ['cabify', false], ['bolt', false]]) && /works near your house|fonctionne près de chez vous/.test(sw[0].note) && !sw[1].note, JSON.stringify(sw));
+    ok(`ride apps, editor, ${tag}: nothing in the switches overlaps or is cut`, !(await boxClear(p, '#c_axapps .cm-swrow', '.cm-sw-track, .cm-sw-label, .cm-sw-state, .hint')).length, (await boxClear(p, '#c_axapps .cm-swrow', '.cm-sw-track, .cm-sw-label, .cm-sw-state, .hint')).join('; '));
+    await p.locator('#c_axapps').scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(TX_DIR, `apps-editor-${lang}-${w}.png`) });
+    await p.click('[data-axapp="cabify"]'); await settle(p, 1300);
+    const appsSaved = () => { let a = null; for (const b of saved) { try { const t = JSON.parse(b).draft.content.files.transport; a = t.apps || []; } catch (e) { /* another save */ } } return a; };
+    ok(`ride apps, editor, ${tag}: switched on, Cabify is written into the guide's apps`, cmpSame((appsSaved() || []).map(a => [a.id, a.link, a.src && a.src.from]), [['cabify', 'https://cabify.com/', 'search']]) && (await p.getAttribute('[data-axapp="cabify"]', 'aria-checked')) === 'true', JSON.stringify(appsSaved()));
+    await p.click('[data-axapp="cabify"]'); await settle(p, 1300);
+    ok(`ride apps, editor, ${tag}: switched off, it is removed`, cmpSame(appsSaved(), []), JSON.stringify(appsSaved()));
     ok(`taxis, editor, ${tag}: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -2220,7 +2240,7 @@ async function gEditorNames() {
     const saved = []; p.on('request', r => { if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(r.url())) saved.push(r.postData()); });
     await ctx.route(u => u.pathname === '/api/places', route => json(route, { ok: true, place: { id: 'g-calafell', lat: 41.19, lng: 1.57, km: 9 } }));
     await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), route => { const req = route.request();
-      if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'); if ((b.params || {}).what === 'taxis') return json(route, [{ id: 'job-taxis' }]); jobs.push(b); return json(route, [{ id: 'job-tr-1' }]); }   // the step's own taxis job (gTaxis checks it) set aside
+      if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'); if (['taxis', 'apps'].includes((b.params || {}).what)) return json(route, [{ id: 'job-taxis' }]); jobs.push(b); return json(route, [{ id: 'job-tr-1' }]); }   // the step's own taxis job (gTaxis checks it) set aside
       if (/id=eq\.job-taxis/.test(req.url())) return json(route, [{ status: 'done', result: { taxis: [] } }]);
       return json(route, [{ status: 'done', message: '1 line, 1 destination', result: { id: (jobs[0] || {}).params && jobs[0].params.id, badges: [{ t: 'R2 Sud', c: '#00A651', ink: false }], to: [{ dest: { en: 'Barcelona Sants' }, time: '50 min', note: { en: 'direct' } }], link: 'https://example.org/timetable', operator: 'Rodalies', checked: '2026-10-29' } }]); });
     await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 300);

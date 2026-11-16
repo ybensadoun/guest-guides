@@ -14,12 +14,13 @@ import { spawnSync, spawn } from 'node:child_process';
 import { hav, nameOf, sameName, locateItem } from './places.mjs';
 import { checkResearch } from './research-check.mjs';   // the research's check: Google locates, our own sources fill
 import { hostPlaces, placesOf } from './host-places.mjs';   // a host's own places: located by Google, filled from our own table
-import { townPoint, municipalityAt, overtureTaxis } from './place-facts.mjs';   // the house's town in GeoNames, when its position is Google's; the municipality it lies in
+import { townPoint, municipalityAt, overtureTaxis, gazetteer, featureFor } from './place-facts.mjs';   // the house's town in GeoNames, when its position is Google's; the municipality it lies in
 import { researchPrompt, HOURS_RULE, MARKETS_RULE, TODO_RULE, earlyRules, EV_REACH, EV_MAIN, EV_EARLY, evFits, inReach, eventsInReach, holdMarkets } from './research-brief.mjs';   // the research's brief, how far it reaches
 import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
 import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
 import { txPick } from '../engine/src/modules/transport/taxis.js';   // the taxis a house is offered, from our open directory (Getting around)
+import { appsJob, refreshApps, appsNear, appsPrompt, readApps, APPS } from './ride-apps.mjs';   // Uber, Cabify, Bolt (find-transport, what: apps)
 import { brandsJob, refreshBrands, applyToFiles, brandsList, hsStations, brandsPrompt, readBrands } from './rail-brands.mjs';   // iryo and Ouigo on high speed stations (find-transport, what: brands)
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
@@ -250,6 +251,7 @@ async function build(g) {
   // The taxis of our open directory around the house (free): the generator writes the host's approved ones, or the nearest
   // when the host never saw them (engine/scripts/taxis-of.mjs). No list on any error: a build never fails for it.
   A._taxisFound = await within(taxisAt({ lat: A.lat, lng: A.lng }), 120000, []);
+  A._appsFound = await appsAt(A, RESEARCHING ? appsAsk({ usd: 0 }) : null);   // the ride apps near the house: the host's approved ones win (engine/scripts/apps-of.mjs)
   const remote = (A._remote || []).filter(u => u && u.src && String(u.src).startsWith('https://a0.muscache.com/'));
   const clean = { ...A }; delete clean._remote; delete clean._uploads;
   writeFileSync(join(job, 'src/host.json'), JSON.stringify({ answers: clean }));
@@ -621,10 +623,23 @@ async function taxisAt(pos, have = []) {
   try { const p = { lat: +pos.lat, lng: +pos.lng }; return txPick(await overtureTaxis(p, { python: env.OVERTURE_PYTHON || 'python3', log: (...a) => log(' ', ...a) }), p, { max: 6, have }); }
   catch (e) { log('  taxis not looked up:', e.message); return []; }
 }
+// Ride apps (worker/ride-apps.mjs): a city's position from our gazetteer (GeoNames), looked for near the rough point the
+// answer gave; one not found there is dropped. The apps near a point: from the shared record, renewed first when it is old
+// and ask is given (research on, the visitors' budget not spent); 90 seconds at most, never failing what it is part of.
+async function placeCities(cities) {
+  const g = await gazetteer('ES', cities.map((c, i) => ({ id: 'c' + i, lat: c.lat, lng: c.lng, names: [c.name] })), { log: (...a) => log(' ', ...a) });
+  return cities.map((c, i) => { const f = featureFor((((g && g.pins) || {})['c' + i] || []).filter(x => x && x.cls === 'P')); return f ? { name: c.name, lat: f.lat, lng: f.lng } : null; }).filter(Boolean);
+}
+const appsAsk = meter => prompt => claudeJson(prompt, 'ride-apps', meter);
+async function appsAt(pos, ask = null, meter = { usd: 0 }) {
+  try { return await within(refreshApps({ rest, ask, place: placeCities, meter, log }).then(r => appsNear({ lat: +pos.lat, lng: +pos.lng }, r.rows)), 90000, []); }
+  catch (e) { log('  ride apps not looked up:', e.message); return []; }
+}
 const within = (p, ms, dflt) => Promise.race([p, new Promise(r => setTimeout(() => r(dflt), ms).unref())]);
 async function transportJob(j, jp, { dry = false } = {}) {
   if ((j.params || {}).what === 'brands') { const meter = { usd: 0 }; return brandsJob(j, jp, { rest, ask: brandsAsk(meter), meter, log }); }
   if ((j.params || {}).what === 'taxis') return taxisJob(j, jp);
+  if ((j.params || {}).what === 'apps') { const meter = { usd: 0 }; return appsJob(j, jp, { rest, ask: appsAsk(meter), place: placeCities, meter, log }); }
   const P = j.params || {}, since = new Date(Date.now() - 864e5).toISOString();
   const recent = await rest(`/rest/v1/guide_jobs?select=id&guide_id=eq.${j.guide_id}&kind=eq.find-transport&id=neq.${j.id}&created_at=gt.${encodeURIComponent(since)}`);
   if ((recent || []).length >= 20) throw new Error('You have looked up a lot of lines today. Try again tomorrow.');
@@ -749,8 +764,8 @@ async function runArea(only) {
     const midnight = new Date(); midnight.setUTCHours(0, 0, 0, 0);
     const spent = ((await rest('/rest/v1/area_research?select=usd&usd=not.is.null&finished_at=gte.' + midnight.toISOString())) || []).reduce((s, r) => s + (+r.usd || 0), 0);
     if (spent >= VISITOR_USD) { log(`area research for ${row.town || row.id.slice(0, 8)} left to the build: about ${spent.toFixed(2)} USD spent today (VISITOR_USD_PER_DAY=${VISITOR_USD})`);
-      const taxis = await within(taxisAt(row), 60000, []);   // free, no Claude: the builder shows them all the same
-      await ap({ status: 'limited', message: 'Left to the build: today\'s research for visitors is spent', ...(taxis.length ? { result: { taxis } } : {}), finished_at: new Date().toISOString() }); return null; }
+      const [taxis, apps] = await Promise.all([within(taxisAt(row), 60000, []), appsAt(row)]);   // free, no Claude (the visitors' budget is spent: the ride apps as kept)
+      await ap({ status: 'limited', message: 'Left to the build: today\'s research for visitors is spent', ...(taxis.length || apps.length ? { result: { ...(taxis.length ? { taxis } : {}), ...(apps.length ? { apps } : {}) } } : {}), finished_at: new Date().toISOString() }); return null; }
   }
   const won = await rest('/rest/v1/area_research?id=eq.' + row.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running' }, headers: { Prefer: 'return=representation' } });
   if (!won || !won[0]) return;
@@ -758,6 +773,7 @@ async function runArea(only) {
   const work = (async () => {
     const dir = join(HERE, 'jobs', 'area-' + row.id), meter = { usd: 0 };
     const taxisP = taxisAt(row);   // free, beside the paid search; written even when that fails
+    const appsP = appsAt(row, RESEARCHING ? appsAsk(meter) : null, meter);   // ride apps: free when the record is fresh, else one search on this row's meter
     try {
       rmSync(dir, { recursive: true, force: true });
       // The municipality of the row's point (GeoNames, ours to keep): the brief names it, nothing of the host's is needed.
@@ -767,10 +783,11 @@ async function runArea(only) {
       if (!Object.keys(result).length) throw new Error('Nothing came back from the research');
       if (m) result.place = { town: m.town, province: m.province, ...(m.sea ? { sea: m.sea } : {}), source: 'geonames', fetched: m.fetched };   // the row's point is the area's, not exactly the house's: the builder does not fill a town or tick Beaches from it
       const taxis = await taxisP; if (taxis.length) result.taxis = taxis;
+      const apps = await appsP; if (apps.length) result.apps = apps;
       const reach = Math.max(0, ...(((result.markets || {}).markets) || []).filter(m => m.lat != null && m.lng != null).map(m => kmBetween(+row.lat, +row.lng, +m.lat, +m.lng)));   // the database shares it within half of this
       await ap({ status: 'done', result, reach_km: reach ? +reach.toFixed(2) : null, usd: claudeApi ? +meter.usd.toFixed(3) : null, message: null, finished_at: new Date().toISOString() });
       log(`  area researched (reach ${reach.toFixed(1)} km): ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
-    } catch (e) { log('  area research FAILED:', e.message); const taxis = await taxisP; await ap({ status: 'failed', message: String(e.message).slice(0, 200), ...(taxis.length ? { result: { taxis } } : {}), usd: claudeApi ? +meter.usd.toFixed(3) : null, finished_at: new Date().toISOString() }); }
+    } catch (e) { log('  area research FAILED:', e.message); const taxis = await taxisP, apps = await appsP; await ap({ status: 'failed', message: String(e.message).slice(0, 200), ...(taxis.length || apps.length ? { result: { ...(taxis.length ? { taxis } : {}), ...(apps.length ? { apps } : {}) } } : {}), usd: claudeApi ? +meter.usd.toFixed(3) : null, finished_at: new Date().toISOString() }); }
     finally { rmSync(dir, { recursive: true, force: true }); }
   })();
   RUNNING.set(row.id, { guide: null, kind: 'area', work });
@@ -800,9 +817,10 @@ async function researchJob(j, jp) {
     // the deck and at the build (research-brief.mjs); their interests stay out of it.
     // The taxis around the house, free (our open directory), for the builder's "Taxis near your house": in the result as
     // soon as they come, beside the paid search, which never waits for them.
-    let taxis = [], placeNow = null;
-    const read = () => ({ ...Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))])), ...(placeNow ? { place: placeNow } : {}), ...(taxis.length ? { taxis } : {}) });
+    let taxis = [], apps = [], placeNow = null;
+    const read = () => ({ ...Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))])), ...(placeNow ? { place: placeNow } : {}), ...(taxis.length ? { taxis } : {}), ...(apps.length ? { apps } : {}) });
     const taxisP = taxisAt(A).then(t => { taxis = t; return t.length ? jp({ result: read() }) : null; }).catch(() => {});
+    const appsP = appsAt(A, appsAsk(meter), meter).then(a => { apps = a; return a.length ? jp({ result: read() }) : null; }).catch(() => {});
     const m = await muniSoon({ lat: +A.lat, lng: +A.lng });
     const place = m ? { town: m.town, province: m.province, ...(m.sea ? { sea: m.sea } : {}), source: 'geonames', fetched: m.fetched } : null;   // sea: the nearest beach, for the builder's Beaches
     placeNow = place;
@@ -819,11 +837,11 @@ async function researchJob(j, jp) {
       if (kind === 'markets') { const f = join(dir, 'markets.json'), o = JSON.parse(readFileSync(f, 'utf8'));
         o.markets = await checkOnGoogle(o.markets || [], 'markets', { lat: +A.lat, lng: +A.lng }, () => {}); writeFileSync(f, JSON.stringify(o, null, 1)); }
       await jp({ result: read() }); } });
-    await within(taxisP, 60000, null);
+    await within(Promise.all([taxisP, appsP]), 90000, null);
     const result = read();
     const events = await firstEvents(A, meter).catch(e => { log('  events search skipped:', e.message); return null; });
     if (events) result.events = events;
-    if (!Object.keys(result).filter(k => k !== 'place' && k !== 'taxis').length) throw new Error('Nothing came back from the research. Try again later.');
+    if (!Object.keys(result).filter(k => k !== 'place' && k !== 'taxis' && k !== 'apps').length) throw new Error('Nothing came back from the research. Try again later.');
     await jp({ status: 'done', result, message: Object.keys(result).join(', '), finished_at: new Date().toISOString() });
     log(`  guide area researched: ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
   } finally { rmSync(dir, { recursive: true, force: true }); }
@@ -956,6 +974,21 @@ if (process.argv.includes('--area-research')) {
 // printed (each company's stations, its sources, whether it was sure, the cost) and written nowhere.
 // node worker/guide-worker.mjs --find find-taxis --slug <slug>: the taxis of our open directory around a guide's house, as
 // the editor's "Near your house" gets them (free), printed and written nowhere.
+// node worker/guide-worker.mjs --find find-ride-apps: the ride apps' search, asked once whatever the record's age, the
+// cities placed by our gazetteer, printed (each app's cities, its sources, whether it was sure, the cost), written nowhere.
+if (process.argv.includes('--find') && process.argv[process.argv.indexOf('--find') + 1] === 'find-ride-apps') {
+  const meter = { usd: 0 };
+  log(`Ride apps (${APPS.map(a => a.name).join(', ')}). Research: ${RESEARCH === 'api' ? 'Claude API' : 'claude command'}. Nothing is written.`);
+  const r = await refreshApps({ rest: async p => { if (/ride_apps\?select/.test(p)) return []; throw new Error('the dry run writes nothing'); }, ask: appsAsk(meter), place: placeCities, meter, log, force: true, dry: true });
+  if (!r.asked) { log('did not work: nothing was asked'); process.exit(1); }
+  for (const a of APPS) {
+    const x = r.answer[a.id], raw = ((r.answer && r.answer[a.id]) || {});
+    console.log(`\n${a.name}: ${x.sure ? 'sure, ' + x.cities.length + ' cities placed' : 'NOT sure (' + x.why + '), nothing would be kept'}`);
+    if (x.sure) console.log('  ' + x.cities.map(c => c.name).join(', ')); console.log('  sources: ' + ((raw.sources) || []).join(', '));
+  }
+  console.log(`\nabout ${meter.usd.toFixed(2)} USD${RESEARCH === 'api' ? '' : ' (the claude command does not say)'}`);
+  process.exit(0);
+}
 if (process.argv.includes('--find') && process.argv[process.argv.indexOf('--find') + 1] === 'find-taxis') {
   const slug = (process.argv[process.argv.indexOf('--slug') + 1] || '').replace(/^--.*/, '');
   if (!slug) { console.error('Use: --find find-taxis --slug <slug>'); process.exit(1); }

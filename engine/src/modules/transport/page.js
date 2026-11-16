@@ -30,6 +30,10 @@ export function renderTransport(V, g, icons) {
     `${x.what ? `<div class="note">${esc(tx(x.what))}</div>` : ''}
      <div class="actions">${x.phone ? `<a class="btn primary" href="${tel(x.phone)}">${PHONE}${esc(t('callNow'))} ${esc(x.phone)}</a>` : ''}
      ${(x.alt || []).map(a => `<a class="btn" href="${tel(a.phone)}">${PHONE}${esc(tx(a.name))} ${esc(a.phone)}</a>`).join('')}</div>`)).join('');
+  // Ride apps (README.md rules 35 to 39): under the taxis, in the Taxi part, each a row in the taxis' look: a phone in the
+  // taxi's colour, its name, "Book and pay in the app", and opened one button that opens the app's own address.
+  const apps = (g.apps || []).filter(a => a && a.name && /^https?:\/\//.test(a.link || '')).map(a => row(PHONE.replace('<svg ', '<svg width="22" height="22" '), 'var(--tone-taxi)', String(a.name), [t('rideAppSub')], '',
+    `<div class="actions"><a class="btn primary" href="${esc(a.link)}" target="_blank" rel="noopener">${esc(t('openApp', { name: a.name }))}</a></div>`)).join('');
   // Line badges in the line colours (Rodalies lines; long-distance trains in one colour), then journey times. A line
   // with no name is left out (the editor's "Add a line" starts one empty).
   const badges = s => `<span class="lbadges">${(s.badges || []).filter(b => String(b.t ?? '').trim()).map(b => `<i class="lbadge${b.ink ? ' ink' : ''}" style="--lc:${b.c}">${esc(b.t)}</i>`).join('')}</span>`;
@@ -49,7 +53,7 @@ export function renderTransport(V, g, icons) {
   V.innerHTML = `<div class="wrap place transport" style="gap:14px" data-q="${esc(g.id)}">
     <div class="pl-head"><span class="qi">${icons({ icon: pageIcon(g, stops) })}</span>
       <div><h2 class="title">${esc(typeof g.title === 'string' ? g.title : tx(g.title))}</h2>${g.lead ? `<p class="lead">${esc(tx(g.lead))}</p>` : ''}</div></div>
-    ${taxis ? `<h3 class="section-h">${esc(t('taxiH'))}</h3><div class="mlist">${taxis}</div>` : ''}
+    ${taxis || apps ? `<h3 class="section-h">${esc(t('taxiH'))}</h3><div class="mlist">${taxis}${apps}</div>` : ''}
     ${groups.map(([label, l], i) => `<h3 class="section-h">${esc(t(label))}</h3>${i === 0 && pins.length ? '<div class="pl-map secmap"><div id="trmap"></div></div>' : ''}<div class="mlist">${l.map(station).join('')}</div>`).join('')}
   </div>`;
   const rows = [...V.querySelectorAll('.mrow')];

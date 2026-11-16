@@ -56,6 +56,11 @@ made from Renfe's open timetables. The rules below are on top of those above; no
 | 32 | A found taxi is written as any taxi (`txEntry`): its name tidied (a name all in capitals or small letters in title case), its town as the line under it, its number as the guide's others are written (a Spanish one without its country code, "977 66 61 11"), no words of the host's (`what` empty, never "The taxi we use and trust."), and `src: { from: 'overture', id, at }`. The Home card as before when there is a taxi. | The design, 16 Nov 2026 |
 | 33 | Nothing waits: the builder shows "Taxis near your house" (up to 4, the nearest ticked, "Suggested for you: please check") only once the research of the area has answered, above the field, which then asks for "Another taxi: name and number"; the ticks are `answers.taxis` from the moment the list is shown. The editor asks once when the step opens and shows "Near your house" for taxis when it answers, one tap adding one, opened, with its source line ("From an open directory, <date>."); nothing found or the job failing: nothing shown. | `../../../../CLAUDE.md` ("Quick for the host", "Nothing waits for the host"); the brief of 16 Nov 2026 |
 | 34 | A found taxi is not checked again after it is added (no monthly check of taxis yet). | Not built: to decide |
+| 35 | Ride apps: Uber, Cabify, Bolt (`apps.json`: each app's own plain home address, no logos, no brand colours). The host approves them: the builder ticks those that work near the house for the host, the editor has a switch for each, and a guide whose host never saw them gets those found near the house by themselves. | Yohann, 16 Nov 2026: "you would select apps that work for ride sharing"; "we suggest apps: uber, cabify etc.. and they approve"; "yes, we can start on Uber, Cabify, Bolt" |
+| 36 | Where an app works: within 12 km in a straight line of one of its cities' centres (`apps.js` `axNear`), from a shared record (`ride_apps`, one row per app, the worker's only), looked up on request with one question for the three apps (the cities of Spain where each offers rides today, its own pages first) and renewed only when older than 30 days (7 after an unsure search). A sure answer needs at least 2 cities placed and a source; a city's position is GeoNames', looked for near the rough point the answer gave, and a city it cannot place is dropped. A new list does not rewrite other guides: an app is the host's choice once approved. | The design, 16 Nov 2026 |
+| 37 | For guests: under the taxis, in the Taxi part, each app is a row in the taxis' look: a phone in the taxi's colour, its name, "Book and pay in the app", and opened one button "Open <name>" with the app's address. A page whose only row is an app shows it open (rule 14). The Home card and the entry tile are unchanged. | The design, 16 Nov 2026 |
+| 38 | Nothing waits: the builder shows "Ride apps that work near you" only when the research has an answer with at least one near the house, all ticked with "Suggested for you: please check", kept as `answers.apps` (ids) from the moment they are shown. The editor asks once (no waiting state); an app that works near the house and is off says "works near your house". | The design, 16 Nov 2026 |
+| 39 | No credit line: which city an app serves is a fact looked up on the companies' own pages, not a licensed file. | The design, 16 Nov 2026 |
 
 ## Its data
 
@@ -75,6 +80,11 @@ Our file of stations, `onboarding-site/stations-es.json` (its `_doc` says every 
 licence, the date of the data, the Tuesday counted), `cities` `[{ id, ids, name, i18n, lat, lng, main }]`, `stations`
 `[{ id, name, lat, lng, lines: [{ t, c, ink }], hs, to: [{ id, n, min }] }]` (`n`, the direct trains that day, is for
 the picking rule only and never shown). The brands' colours: `brands.json` here.
+
+Ride apps (rules 35 to 39): `apps: [{ id, name, link, src: { from: 'search', at } }]` in `content/transport.json` (the name
+is not translated; absent or empty, nothing is shown). The builder's answers: `apps` (the ids the host approved) and
+`_appsFound` (what the worker found for the build). The shared record is the table `public.ride_apps` (`app`, `cities`
+`[{ name, lat, lng }]`, `sources`, `checked_at`, `tried_at`, `usd`; its statement in `../../../../worker/README.md`).
 
 A taxi found in our open directory (rules 30 to 34) carries `src: { from: 'overture', id: <the record's id>, at: 'YYYY-MM-DD' }`
 and an id "tx" and a short stable code from the record's id. The builder's answers: `taxis` (the taxis the host approved, as
@@ -112,6 +122,7 @@ kind's colour, the name with its line badges `.lbadges`, the verdict and minutes
 | The maker's step Getting around | `onboarding-site/src/editor.js` (`cmTransport`, `cStation`; the trains typed from our file: `trsLoad`, `trsType`, `trsPick`) | No: the maker's |
 | Which stations a house gets, a station as a guide holds it, the maker's matching as the host types | `pick.js` (`pickStations`, `stationEntry`, `stationsFor`, `tpFind`, `tpHave`, `cmMin`; tests: `engine/scripts/transport-pick.test.mjs`), pasted into the maker by `onboarding-site/src/build.py` | Yes |
 | The brands' colours of long distance trains | `brands.json` (iryo's `#E20613` from iryo.eu's theme colour, 16 Nov 2026) | Yes |
+| The ride apps: the rule, the apps | `apps.js` (`axNear`, `axEntry`; tests: `engine/scripts/transport-apps.test.mjs`), `apps.json`; the rows on the page in `page.js` (`rideAppSub`, `openApp` in `engine/src/i18n/<lang>.json`); the search and the job in `worker/ride-apps.mjs` (tests: `worker/test/ride-apps.test.mjs`), wired in `worker/guide-worker.mjs` (`appsAt`, `placeCities`, `--find find-ride-apps`); the generator's `engine/scripts/apps-of.mjs`; the builder's `axListHTML` (`onboarding-site/src/start.js`), the editor's `axsHTML`, `axsAsk`, `axsToggle` | Partly: the rule and the page are |
 | The taxis found: the rule, a taxi as the guide holds it | `taxis.js` (`txPick`, `txAuto`, `txEntry`; tests: `engine/scripts/transport-taxis.test.mjs`), pasted into the maker by `onboarding-site/src/build.py` | Yes |
 | The directory's taxi records, the research, the build, the editor's job, the dry run | `worker/overture.py` (its question `taxis`), `worker/place-facts.mjs` (`overtureTaxis`), `worker/guide-worker.mjs` (`taxisAt`, `runArea`, `researchJob`, `build`, `taxisJob`, `--find find-taxis`) | No: the worker's |
 | The generator's taxis | `engine/scripts/taxis-of.mjs` (asked by `generate-site.py`; tests: `worker/test/generate-taxis.test.mjs`) | No: the generator's |
@@ -125,7 +136,7 @@ kind's colour, the name with its line badges `.lbadges`, the verdict and minutes
 
 The stations found and their lines are Spain only: they come from Renfe's files (rules 16 to 21), and a house elsewhere gets
 none (a house near the border may get a Spanish station within 30 km). Where the main city is far (Galicia, Asturias, the
-islands), a house may get only its nearest station, alone. iryo and Ouigo are looked up only among our high speed stations: Spain only. The taxis found work anywhere our open directory lists taxis (Overture covers the world; the rule is not Spain's), with their numbers written the Spanish way only for Spanish numbers. Their credit is the places' line of Sources and credits, which every guide shows. Taxis, stations added by name or link, and bus stops work
+islands), a house may get only its nearest station, alone. iryo and Ouigo are looked up only among our high speed stations: Spain only. The ride apps are looked up among Spain's cities only (the search asks for Spain's): Spain only. The taxis found work anywhere our open directory lists taxis (Overture covers the world; the rule is not Spain's), with their numbers written the Spanish way only for Spanish numbers. Their credit is the places' line of Sources and credits, which every guide shows. Taxis, stations added by name or link, and bus stops work
 anywhere. Nothing in the code reads this yet (`../README.md`, "Not built yet").
 
 ## Still Ca La Kimberly's own

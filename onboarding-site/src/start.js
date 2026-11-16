@@ -149,14 +149,15 @@ async function areaWatch(){
   try {
     if (A._research && !AREA.quick) { const r = await sb('/rest/v1/rpc/area_research_status', { method: 'POST', token: SB.key, body: { p_id: A._research } });
       if (r && r.status === 'done' && r.result) AREA.quick = r.result; else if (r && ['queued', 'running'].includes(r.status)) wait = true;
-      if (r && r.result && Array.isArray(r.result.taxis)) AREA.taxis = r.result.taxis; }   // free: also when the paid part was limited or failed
+      if (r && r.result && Array.isArray(r.result.taxis)) AREA.taxis = r.result.taxis;
+      if (r && r.result && Array.isArray(r.result.apps)) AREA.apps = r.result.apps; }   // free: also when the paid part was limited or failed
     if (A._researchJob && AUTH && (!AREA.full || AREA.fullOpen)) { const r = ((await sb('/rest/v1/guide_jobs?select=status,result&id=eq.' + A._researchJob)) || [])[0];
       if (r && r.result) AREA.full = r.result;   // things to do come first, while the rest goes on
       AREA.fullOpen = !!r && ['queued', 'running'].includes(r.status); if (AREA.fullOpen) wait = true; }
   } catch (e) { wait = true; }   // no connection: try again
   const before = JSON.stringify(AREA.result);
   AREA.result = (AREA.quick || AREA.full) ? { ...(AREA.quick || {}), ...(AREA.full || {}) } : null;
-  townFromResearch(); seaFromResearch(); txRefresh();
+  townFromResearch(); seaFromResearch(); txRefresh(); axRefresh();
   if (JSON.stringify(AREA.result) !== before) phoneSoon();
   moreRefresh();
   if (wait && ++AREA.tries < 150) AREA.timer = setTimeout(areaWatch, AREA.tries < 30 ? 6000 : 20000);
@@ -729,6 +730,28 @@ document.addEventListener('change', e => {
   A._taxisTouched = true; queueSave(); log('taxis', t.checked ? 'ticked' : 'unticked');
   const m = document.querySelector('#l_txf .frm'); if (m) m.remove();
   softRefresh(); phoneSoon();
+});
+/* ---------- Ride apps that work near you (16 Nov 2026, engine/src/modules/transport/README.md, "The ride apps") ----------
+   The research of the area brings the ride apps (Uber, Cabify, Bolt) that work near its point, from our shared record of
+   their cities (worker/ride-apps.mjs). Under the taxis, one tick per app, all ticked for the host with the mark of what we
+   filled in; the ticks are answers.apps (ids) from the moment they are shown. None near the house: nothing. Yohann, 16 Nov
+   2026: "we suggest apps: uber, cabify etc.. and they approve". */
+const axRecords = () => ((AREA.result && Array.isArray(AREA.result.apps) ? AREA.result.apps : null) || AREA.apps || []).filter(a => a && AX_APPS.some(x => x.id === a.id));
+function axListHTML(){
+  const L = axRecords(); if (!L.length) return '';
+  if (!Array.isArray(A.apps)) { A.apps = L.map(a => a.id); queueSave(); log('apps', 'suggested'); }
+  return `<div class="f full ax-found" id="axf"><span class="lab" id="l_axf">Ride apps that work near you${A._appsTouched ? '' : ' <span class="frm sug">Suggested for you: please check</span>'}</span>
+    <div class="tx-list" role="group" aria-labelledby="l_axf">${L.map(a => `<label class="tx-row"><input type="checkbox" data-axb="${esc(a.id)}"${A.apps.includes(a.id) ? ' checked' : ''}><span><b translate="no">${esc(a.name)}</b><small>Book and pay in the app</small></span></label>`).join('')}</div></div>`;
+}
+function axRefresh(){
+  const f = document.getElementById('f_taxi'); if (!f || document.getElementById('axf')) return;
+  const html = axListHTML(); if (html) { f.closest('.f').insertAdjacentHTML('afterend', html); softRefresh(); }
+}
+document.addEventListener('change', e => {
+  const t = e.target; if (!t.dataset || t.dataset.axb === undefined) return;
+  const cur = new Set(Array.isArray(A.apps) ? A.apps : []); t.checked ? cur.add(t.dataset.axb) : cur.delete(t.dataset.axb);
+  A.apps = AX_APPS.map(a => a.id).filter(id => cur.has(id)); A._appsTouched = true; queueSave(); log('apps', t.checked ? 'ticked' : 'unticked');
+  const m = document.querySelector('#l_axf .frm'); if (m) m.remove(); softRefresh();
 });
 /* ---------- Towns as things to do (fault 2 of the acceptance test, 12 Nov 2026) ----------
    A host who types "Barcelona" to add it was offered the airport and a company: Google's suggestions are businesses and

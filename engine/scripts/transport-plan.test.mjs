@@ -66,6 +66,8 @@ test('loneRow: a page with a single row shows it open (15 Nov 2026)', () => {
   assert.equal(loneRow({ taxis: [{ name: 'Taxi' }] }, [st]), false);          // something to choose from: rows start closed
   assert.equal(loneRow({ taxis: [{ name: 'A' }, { name: 'B' }] }, []), false);
   assert.equal(loneRow({}, []), false);
+  assert.equal(loneRow({ apps: [{ id: 'uber' }] }, []), true);              // a ride app alone is a single row (16 Nov 2026)
+  assert.equal(loneRow({ taxis: [{ name: 'Taxi' }], apps: [{ id: 'uber' }] }, []), false);
   // A station never placed is not a row: one taxi beside it is still alone.
   assert.equal(loneRow({ taxis: [{ name: 'Taxi' }] }, stopsOf([{ id: 'new', lat: 0, lng: 0 }])), true);
 });

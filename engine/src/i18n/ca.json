@@ -351,5 +351,7 @@
   "crWorkbox": "Ús sense connexió: Workbox.",
   "crLicenses": "Totes les llicències",
   "crTrainsH": "Trens",
-  "crRenfe": "Les estacions de tren, les seves línies i els temps de viatge venen dels horaris oberts de Renfe: «{renfe}», dades del {date}, llicència {ccby}. Són temps habituals en tren directe: comprova'ls abans de viatjar."
+  "crRenfe": "Les estacions de tren, les seves línies i els temps de viatge venen dels horaris oberts de Renfe: «{renfe}», dades del {date}, llicència {ccby}. Són temps habituals en tren directe: comprova'ls abans de viatjar.",
+  "rideAppSub": "Reserva i paga a l'app",
+  "openApp": "Obre {name}"
 }

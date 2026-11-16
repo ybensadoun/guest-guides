@@ -48,3 +48,13 @@ test('an empty list: the host took them all out, none written', () => {
   assert.deepEqual(T ? T.taxis : [], []);
   assert.ok(!T || T.tile === null);
 });
+
+// Ride apps (engine/scripts/apps-of.mjs): the host's approved ids (answers.apps) when present, even empty; else the ones
+// found near the house (answers._appsFound), by themselves; in apps.json's order.
+const FOUND_APPS = [{ id: 'cabify', name: 'Cabify', link: 'https://cabify.com/', src: { from: 'search', at: '2026-11-15' } }, { id: 'uber', name: 'Uber', link: 'https://www.uber.com/', src: { from: 'search', at: '2026-11-15' } }];
+test('ride apps: found ones by themselves, the host\'s choice when there is one, none when they took them all out', () => {
+  const T1 = generate({ _appsFound: FOUND_APPS });
+  assert.deepEqual(T1.apps.map(a => a.id), ['uber', 'cabify']); assert.deepEqual(T1.apps[0], { id: 'uber', name: 'Uber', link: 'https://www.uber.com/', src: { from: 'search', at: '2026-11-15' } });
+  assert.deepEqual(generate({ _appsFound: FOUND_APPS, apps: ['bolt'] }).apps.map(a => a.id), ['bolt']);
+  assert.ok(!('apps' in generate({ _appsFound: FOUND_APPS, apps: [] })));
+});

@@ -351,5 +351,7 @@
   "crWorkbox": "Offline gebruik: Workbox.",
   "crLicenses": "Alle licenties",
   "crTrainsH": "Treinen",
-  "crRenfe": "De treinstations, hun lijnen en de reistijden komen uit de open dienstregelingen van Renfe: ‘{renfe}’, gegevens van {date}, licentie {ccby}. Het zijn gebruikelijke tijden met een rechtstreekse trein: controleer ze voordat je vertrekt."
+  "crRenfe": "De treinstations, hun lijnen en de reistijden komen uit de open dienstregelingen van Renfe: ‘{renfe}’, gegevens van {date}, licentie {ccby}. Het zijn gebruikelijke tijden met een rechtstreekse trein: controleer ze voordat je vertrekt.",
+  "rideAppSub": "Boek en betaal in de app",
+  "openApp": "Open {name}"
 }

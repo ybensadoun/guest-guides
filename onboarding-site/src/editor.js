@@ -1115,6 +1115,7 @@ function cmTransport(c) {
   const rows = mode => S.map((x, i) => [x, i]).filter(([x]) => (x.mode === 'bus') === (mode === 'bus')).map(([x, i]) => cStation(`${P}/stations/${i}`, x)).join('');
   trsLoad();   // our file of Spain's stations, once, in the background: there before the host types
   txsAsk();    // the taxis of our open directory near the house, once, in the background
+  axsAsk();    // the ride apps that work near the house, once, in the background
   const trains = rows('train'), buses = rows('bus');
   const top = T ? `${cSwitch('data-trtile', 'Show as a tile on the home page', !!T.tile, 'Getting around always has its own page. As a card it also sits on your home page, one tap away: move it in Home page.')}
     ${T.tile ? `<div class="grid">${cf('Tile title', P + '/tile/name', T.tile.name, { i18n: true, half: true, ph: 'Taxi & train' })}${cf('Line under it', P + '/tile/sub', T.tile.sub, { i18n: true, half: true, ph: 'Taxi in 30 min, 3 stations' })}</div>` : ''}
@@ -1124,6 +1125,7 @@ function cmTransport(c) {
     <div class="cm-list">${((T && T.taxis) || []).map((x, i) => cTaxi(`${P}/taxis/${i}`, x)).join('') || '<p class="hint">No taxi yet.</p>'}</div>
     <div id="c_txnear">${txsNearHTML()}</div>
     <div class="cm-row"><button class="btn small" type="button" data-tradd="taxi">+ Add a taxi</button></div>
+    <div id="c_axapps">${axsHTML()}</div>
     <h3 class="cm-h">Trains</h3><p class="hint cm-hl">The train stations guests can use. Type one: its lines and journey times come with it.</p>
     <div class="cm-list">${trains || `<div id="c_trnear">${trsNearHTML()}</div>`}</div>
     <div class="cm-trfind"><label for="c_trq">Type a train station</label>
@@ -1168,6 +1170,37 @@ function txsPick(i) {
   const t = (TXS.shown || [])[i]; if (!t) return;
   const T = cmTrEnsure(); (T.taxis = T.taxis || []).push(txEntry(t, edLangs(), { at: new Date().toISOString().slice(0, 10) }));
   CM.open.add('files/transport/taxis/' + (T.taxis.length - 1)); cmQueue(); render();
+}
+/* --- Ride apps (16 Nov 2026, engine/src/modules/transport/README.md, "The ride apps"): three switches, Uber, Cabify,
+   Bolt. The step asks once which work near the house (job find-transport, params { what: 'apps' }, from our shared record;
+   no waiting state); one that does and is off says so quietly. On writes the app into the guide's apps, off removes it;
+   the host may switch on any of the three (they know their town better than our record). */
+const AXS = { asked: false, near: [] };
+function axsHTML() {
+  const T = edF().transport || {}, on = new Set((T.apps || []).map(a => a.id)), near = new Set(AXS.near.map(a => a.id));
+  return `<div class="cm-axapps"><b class="cm-axh">Ride apps</b><p class="hint">Apps guests can book a ride with: they get a button that opens the app.</p>
+    ${AX_APPS.map(a => cSwitch(`data-axapp="${esc(a.id)}"`, a.name, on.has(a.id), near.has(a.id) && !on.has(a.id) ? 'works near your house' : '')).join('')}</div>`;
+}
+async function axsAsk() {
+  const h = edF().house || {}; if (AXS.asked || !CM.g || !tpPlaced(h)) return; AXS.asked = true;
+  try {
+    await ensureFresh();
+    const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'find-transport', langs: edLangs(), params: { what: 'apps' } } });
+    const jid = j && j[0] && j[0].id; if (!jid) return;
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, i ? 4000 : 2000)); await ensureFresh();
+      const r = await sb('/rest/v1/guide_jobs?select=status,result&id=eq.' + jid), x = r && r[0]; if (!x) continue;
+      if (x.status === 'failed') return;
+      if (x.status === 'done') { AXS.near = Array.isArray((x.result || {}).apps) ? x.result.apps : []; const b = document.getElementById('c_axapps'); if (b) b.innerHTML = axsHTML(); return; }
+    }
+  } catch (e) { /* nothing said: the switches stay as they are */ }
+}
+function axsToggle(id) {
+  const a = AX_APPS.find(x => x.id === id); if (!a) return;
+  const T = cmTrEnsure(), cur = T.apps || [];
+  if (cur.some(x => x.id === id)) T.apps = cur.filter(x => x.id !== id);
+  else { const found = AXS.near.find(x => x.id === id); T.apps = AX_APPS.filter(x => x.id === id || cur.some(c => c.id === x.id)).map(x => cur.find(c => c.id === x.id) || axEntry(found || x, new Date().toISOString().slice(0, 10))); }
+  if (!T.apps.length) delete T.apps;
 }
 // Where a taxi from our directory came from, in the place's quiet source line ("From an open directory, 16 Nov 2026.").
 function txsFrom(x) {
@@ -2229,6 +2262,7 @@ document.addEventListener('click', e => {
   if (d.trold !== undefined) { CM.trOld = !CM.trOld; render(); if (CM.trOld) { const q = document.getElementById('c_stopq_train'); if (q) q.focus(); } return; }
   if (d.trlines) return cmLines(d.trlines);
   if (d.trtile !== undefined) { cmTrTile(); return done(); }
+  if (d.axapp !== undefined) { axsToggle(d.axapp); return done(); }
   if (d.cbool) { const q = edPath(d.cbool), o = edGet(edC(), q.slice(0, -1)); if (o) { o[q[q.length - 1]] = !o[q[q.length - 1]]; done(); } return; }
   if (d.addalt) { arr(d.addalt).push({ name: L6(''), phone: '' }); return done(); }
   if (d.addbadge) { arr(d.addbadge).push({ t: '', c: '#1D4FA0' }); return done(); }
@@ -2374,6 +2408,9 @@ function cmInit() {
 .cm-brandsat{white-space:normal}
 .cm-txnear{margin:4px 0 2px}
 .cm-txsrc{margin:0 0 12px}
+.cm-axapps{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.cm-axapps .hint{margin:0}
+.cm-axh{font-size:16px}
 .cm-trs .cm-trrole::before{content:'· ';font-weight:400;color:var(--muted)}
 .cm-trnear{display:flex;flex-direction:column;gap:6px}
 .cm-trnh{font-size:16px}
