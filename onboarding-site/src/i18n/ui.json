@@ -20,6 +20,7 @@
 "Figtree",
 "Français",
 "Fraunces",
+"Freenow",
 "Geist",
 "Gloock",
 "Google Maps",
@@ -8651,7 +8652,7 @@
 "Ride apps that work near you": {
 "ca": "Apps de transport que funcionen a prop teu",
 "es": "Apps de transporte que funcionan cerca de ti",
-"fr": "Applis de VTC qui fonctionnent près de chez vous"
+"fr": "Applis de taxi et de VTC près de chez vous"
 },
 "Book and pay in the app": {
 "ca": "Reserva i paga a l’app",
@@ -8661,7 +8662,7 @@
 "Ride apps": {
 "ca": "Apps de transport",
 "es": "Apps de transporte",
-"fr": "Applis de VTC"
+"fr": "Applis de taxi et de VTC"
 },
 "Apps guests can book a ride with: they get a button that opens the app.": {
 "ca": "Apps amb què els hostes poden demanar un cotxe: tenen un botó que obre l’app.",

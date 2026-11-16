@@ -20,7 +20,7 @@ import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
 import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
 import { txPick } from '../engine/src/modules/transport/taxis.js';   // the taxis a house is offered, from our open directory (Getting around)
-import { appsJob, refreshApps, appsNear, appsPrompt, readApps, APPS } from './ride-apps.mjs';   // Uber, Cabify, Bolt (find-transport, what: apps)
+import { appsJob, refreshApps, appsNear, appsPrompt, readApps, APPS } from './ride-apps.mjs';   // Uber, Cabify, Bolt, Freenow (find-transport, what: apps)
 import { brandsJob, refreshBrands, applyToFiles, brandsList, hsStations, brandsPrompt, readBrands } from './rail-brands.mjs';   // iryo and Ouigo on high speed stations (find-transport, what: brands)
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');

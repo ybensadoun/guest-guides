@@ -732,7 +732,7 @@ document.addEventListener('change', e => {
   softRefresh(); phoneSoon();
 });
 /* ---------- Ride apps that work near you (16 Nov 2026, engine/src/modules/transport/README.md, "The ride apps") ----------
-   The research of the area brings the ride apps (Uber, Cabify, Bolt) that work near its point, from our shared record of
+   The research of the area brings the ride apps (Uber, Cabify, Bolt, Freenow) that work near its point, from our shared record of
    their cities (worker/ride-apps.mjs). Under the taxis, one tick per app, all ticked for the host with the mark of what we
    filled in; the ticks are answers.apps (ids) from the moment they are shown. None near the house: nothing. Yohann, 16 Nov
    2026: "we suggest apps: uber, cabify etc.. and they approve". */

@@ -1,6 +1,6 @@
-// Ride apps (Uber, Cabify, Bolt) in Getting around (engine/src/modules/transport/README.md, "The ride apps"). Yohann,
+// Ride apps (Uber, Cabify, Bolt, Freenow) in Getting around (engine/src/modules/transport/README.md, "The ride apps"). Yohann,
 // 16 Nov 2026: "you would select apps that work for ride sharing"; "we suggest apps: uber, cabify etc.. and they approve".
-// The design, 16 Nov 2026, as rail-brands.mjs: one question for the three apps (the cities of Spain where each offers rides
+// The design, 16 Nov 2026, as rail-brands.mjs: one question for all the apps (the cities of Spain where each offers rides
 // today, from the company's own pages first), kept in one shared record (table ride_apps, one row per app, the worker's
 // only), renewed on a request only when older than 30 days (7 days after a search that was not sure); a sure answer
 // replaces a list, anything else changes nothing. A city's position is GeoNames' (place, the worker's gazetteer), never
@@ -21,9 +21,9 @@ const isUrl = u => { try { return /^https?:$/.test(new URL(String(u)).protocol);
 const num = v => typeof v === 'number' && Number.isFinite(v);
 
 export function appsPrompt() {
-  return `You check in which cities of Spain three ride apps offer rides today, for the "Getting around" page of holiday homes' guest guides.
+  return `You check in which cities of Spain ${APPS.length} ride and taxi apps offer rides today, for the "Getting around" page of holiday homes' guest guides.
 The apps: ${APPS.map(a => `"${a.id}": ${a.name}`).join('; ')}.
-For each app, list the cities of Spain where it offers rides today. Sources in this order: the company's own pages first (its list of cities, its city pages), then, only to confirm, another recent reliable page. A city that is announced but not served today is not a city of the app. Never a guess. When you cannot confirm an app's list, give "sure": false for it.
+For each app, list the cities of Spain where it offers rides today. Sources in this order: the company's own pages first (its list of cities, its city pages), then, only to confirm, another recent reliable page. An app that books the town's own taxis counts like one with its own drivers. A city that is announced but not served today is not a city of the app. Never a guess. When you cannot confirm an app's list, give "sure": false for it.
 For each city give its name and a rough position (lat, lng, two decimals: it only says where to look for the town in our own gazetteer).
 Return only JSON:
 {${APPS.map(a => `"${a.id}":{"sure":true,"cities":[{"name":"","lat":0,"lng":0}],"sources":[""]}`).join(',')}}`;

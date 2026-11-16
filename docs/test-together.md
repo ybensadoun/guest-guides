@@ -16,7 +16,7 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 | 1.1 | Open Getting around | Three parts in order: Taxi, Trains, Bus stops |
 | 1.2 | Look under the taxi | "Near your house": taxis from our directory, each with town, distance and number; the guide's own taxi is not among them |
 | 1.3 | Pick one of them | It is added at once, opened, with "From an open directory" and the date; it leaves the list |
-| 1.4 | Look at "Ride apps" | Three switches (Uber, Cabify, Bolt), none marked "works near your house" (no served city within 12 km). The first time, this makes the one search for the three apps (paid, about 0.70 USD) |
+| 1.4 | Look at "Ride apps" | Four switches (Uber, Cabify, Bolt, Freenow), none marked "works near your house" (no served city within 12 km). The first time, this makes the one search for the four apps (paid, about 0.70 USD) |
 | 1.5 | Switch Uber on, then off | The step says "Changed"; on and off both save |
 | 1.6 | Look at Trains | "Near your house": El Vendrell (Closest), Sant Vicenç de Calders (Faster), Camp de Tarragona (High speed), with their lines in colour |
 | 1.7 | Pick Camp de Tarragona | Added at once with AVE, Euromed, Avant, Intercity and journey times. Within a minute or two, iryo and Ouigo badges join, with "checked on" and the date. The first time, this makes the one search for the two companies (paid, about 0.70 USD) |

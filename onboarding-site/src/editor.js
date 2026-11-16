@@ -1171,10 +1171,10 @@ function txsPick(i) {
   const T = cmTrEnsure(); (T.taxis = T.taxis || []).push(txEntry(t, edLangs(), { at: new Date().toISOString().slice(0, 10) }));
   CM.open.add('files/transport/taxis/' + (T.taxis.length - 1)); cmQueue(); render();
 }
-/* --- Ride apps (16 Nov 2026, engine/src/modules/transport/README.md, "The ride apps"): three switches, Uber, Cabify,
-   Bolt. The step asks once which work near the house (job find-transport, params { what: 'apps' }, from our shared record;
+/* --- Ride apps (16 Nov 2026, engine/src/modules/transport/README.md, "The ride apps"): one switch per app (Uber, Cabify,
+   Bolt, Freenow). The step asks once which work near the house (job find-transport, params { what: 'apps' }, from our shared record;
    no waiting state); one that does and is off says so quietly. On writes the app into the guide's apps, off removes it;
-   the host may switch on any of the three (they know their town better than our record). */
+   the host may switch on any of them (they know their town better than our record). */
 const AXS = { asked: false, near: [] };
 function axsHTML() {
   const T = edF().transport || {}, on = new Set((T.apps || []).map(a => a.id)), near = new Set(AXS.near.map(a => a.id));

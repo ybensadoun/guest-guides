@@ -9,8 +9,8 @@ const APPS = JSON.parse(readFileSync(new URL('../src/modules/transport/apps.json
 const at = km => ({ lat: 40 + km * 0.008993, lng: 0 });
 const H = at(0), city = (name, km) => ({ name, ...at(km) });
 
-test('apps.json: Uber, Cabify, Bolt, each with its own address', () => {
-  assert.deepEqual(APPS.map(a => a.id), ['uber', 'cabify', 'bolt']);
+test('apps.json: Uber, Cabify, Bolt, Freenow, each with its own address', () => {
+  assert.deepEqual(APPS.map(a => a.id), ['uber', 'cabify', 'bolt', 'freenow']);
   assert.ok(APPS.every(a => /^https:\/\//.test(a.link) && a.name));
 });
 
