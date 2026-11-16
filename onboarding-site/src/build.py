@@ -135,7 +135,53 @@ ENG_DATA+=('const WK = (() => {\n'
   +'const W = (() => {\n'+_re.sub(r'(?m)^export ','',_wsrc)+'\nreturn { WORLDS, worldTokens, worldOf };\n})();\n'
   +'const P = (() => {\nconst { WORLDS } = W;\n'+_re.sub(r'(?m)^export ','',_psrc.replace("import { WORLDS } from './worlds.js';\n",''))+'\nreturn { swatches, worldFromPicture };\n})();\n'
   +'return { ...W, ...P };\n})();\n')
-views=views[:a]+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'nav.js')).read()+'\n'+ENG_ICONS+ENG_DATA+'const AMENS = '+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src','amenities.json')).read().strip()+';\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'amen.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'prefill.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'preview.js')).read()+'\n'+_re.sub(r'(?m)^export ','',open(__import__('os').path.join(__import__('os').path.dirname(__file__),'placename.js')).read())+'\n'+_re.sub(r'(?m)^export ','',open(__import__('os').path.join(__import__('os').path.dirname(__file__),'towns.js')).read())+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'start.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'account.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'editor.js')).read()+'\n'+views[b:]
+# The module frame (engine/src/modules/frame.js) and what each module offers on Home (engine/src/modules/<folder>/offers.js,
+# listed by engine/src/modules/offers.js): the guide's own rule for Home's arrangement, so the maker's step Home page
+# (board.js) shows what guests will see and writes what the guide reads. One rule, never a second copy: FR.
+_MD=__import__('os').path.join(_ES,'modules')
+_fsrc=open(__import__('os').path.join(_MD,'frame.js'),encoding='utf-8').read()
+assert not _re.search(r'(?m)^import ',_fsrc),'engine/src/modules/frame.js: an import the maker does not paste'
+for _need in ('export function placements(','export function resolve(','export function place(','export function check(','export function thing(','export const keyOf'):
+    assert _need in _fsrc,'engine/src/modules/frame.js: '+_need+' not found'
+_osrc=open(__import__('os').path.join(_MD,'offers.js'),encoding='utf-8').read()
+_oimp=_re.findall(r"(?m)^import \{ widgets as (\w+) \} from '\./(\w+)/offers\.js';$",_osrc)
+_olist=_re.search(r'export const OFFERS = \{ ([\w, ]+) \};',_osrc)
+assert _oimp and _olist,'engine/src/modules/offers.js: its imports or OFFERS not found'
+assert [x.strip() for x in _olist.group(1).split(',')]==[n for n,_ in _oimp],'engine/src/modules/offers.js: OFFERS does not list its imports in order'
+_offs=[]
+for _n,_d in _oimp:
+    _src=open(__import__('os').path.join(_MD,_d,'offers.js'),encoding='utf-8').read()
+    assert not _re.search(r'(?m)^import ',_src),'engine/src/modules/'+_d+'/offers.js: an import the maker does not paste'
+    _m=_re.search(r'(?m)^export const widgets = (\{.*\});$',_src)
+    assert _m,'engine/src/modules/'+_d+'/offers.js: export const widgets not found'
+    _offs.append(_n+': '+_m.group(1))
+ENG_DATA+=('const FR = (() => {\n'+_re.sub(r'(?m)^export ','',_fsrc)
+  +'\nconst OFFERS = { '+', '.join(_offs)+' };\n'
+  +'return { GROUPS, SIZES, keyOf, thing, defaultArrangement, placements, resolve, place, check, OFFERS };\n})();\n')
+# Home's tiles as the guide draws them (engine/src/ui.js SECTION_LOOK: each section's icon, colour and dark text), the old
+# colour names they use (app.css :root, "--k-blue:var(--blue)"), each tile's corner shape colour and a card's icon colour
+# (app.css .gt[data-k] ::before, .qcall .qi): read from the engine, so the board draws the guide's own colours in the
+# guide's colour world (board.js), never a table typed in the maker.
+_si=_ui.index('const P = d => `<svg class="ci"'); _sj=_ui.index('export const catIcon')
+_sblk=_ui[_si:_sj]
+assert 'export const SECTION_LOOK = {' in _sblk and not _re.search(r'(?m)^import ',_sblk),'engine/src/ui.js: SECTION_LOOK block not as expected'
+ENG_DATA+=('const ENG_LOOK = (() => {\n'+_re.sub(r'(?m)^export ','',_sblk)+'\nreturn SECTION_LOOK;\n})();\n')
+_css=open(__import__('os').path.join(_ES,'styles','app.css'),encoding='utf-8').read()
+_kv=_re.search(r'(--k-blue:var\(--blue\);[^\n]*?;)\s*\n',_css)
+assert _kv,'engine/src/styles/app.css: the --k- names not found'
+_kmap={a:b for a,b in _re.findall(r'(--k-[\w-]+):var\((--[\w-]+)\)',_kv.group(1))}
+_shape={}
+for _k,_body in _re.findall(r'\.gt\[data-k="(\w+)"\]::before\{([^}]*)\}',_css):
+    _c=_re.findall(r'var\((--[\w-]+)\)',_body)
+    if _c: _shape[_k]=_c[-1]
+_qi=_re.search(r'\n\.qcall \.qi\{[^}]*background:var\((--[\w-]+)\)',_css)
+assert _qi and _shape,'engine/src/styles/app.css: the tiles\' shapes or the card icon\'s colour not found'
+_qt={'_':[_qi.group(1),'']}
+for _sel,_body in _re.findall(r'\n((?:\.qcall\[data-q="\w+"\] \.qi,?)+)\{([^}]*)\}',_css):
+    _bg=_re.search(r'background:var\((--[\w-]+)\)',_body); _fg=_re.search(r'(?:^|;)color:var\((--[\w-]+)\)',_body)
+    for _q in _re.findall(r'data-q="(\w+)"',_sel): _qt[_q]=[_bg.group(1) if _bg else _qi.group(1), _fg.group(1) if _fg else '']
+ENG_DATA+=('const ENG_TILE = '+_jsn.dumps({'k':_kmap,'shape':_shape,'card':_qt},separators=(',',':'))+';\n')
+views=views[:a]+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'nav.js')).read()+'\n'+ENG_ICONS+ENG_DATA+'const AMENS = '+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src','amenities.json')).read().strip()+';\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'amen.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'prefill.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'preview.js')).read()+'\n'+_re.sub(r'(?m)^export ','',open(__import__('os').path.join(__import__('os').path.dirname(__file__),'placename.js')).read())+'\n'+_re.sub(r'(?m)^export ','',open(__import__('os').path.join(__import__('os').path.dirname(__file__),'towns.js')).read())+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'start.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'account.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'editor.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'board.js')).read()+'\n'+views[b:]
 views=rep(views,"function badge(k){ const q = k.startsWith('up:') ? UP[k.slice(3)] : Q[k]; if (!q || q.opt) return '<span class=\"opt\">optional</span>'; const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k;",
  "const NEEDED = new Set(MODULES.flatMap(m => m.need));\nfunction badge(k){ const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k; if (!NEEDED.has(key)) return '<span class=\"opt\">optional</span>';")
 seg1=rep(seg1,"need:['placeName','town'],fields:['listingUrl','listingText','placeName'","need:['placeName','town'],fields:['listingUrl','listingText','fillBtn','placeName'")

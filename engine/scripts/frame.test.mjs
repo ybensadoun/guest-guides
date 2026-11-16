@@ -2,7 +2,7 @@
 // Pure, no guide needed.   node --test 'engine/scripts/*.test.mjs'
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultArrangement, resolve, pack, place, holes, runs, check, thing } from '../src/modules/frame.js';
+import { defaultArrangement, resolve, placements, pack, place, holes, runs, check, thing } from '../src/modules/frame.js';
 import { OFFERS } from '../src/modules/offers.js';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 
@@ -175,6 +175,30 @@ test('resolve: what the arrangement does not mention is added where the default 
 test('resolve: a card left out for the season is not drawn, and the run packs without it', () => {
   const g = { ...CLK, highlights: [{ id: 'shop', wide: true }, { id: 'transport', wide: false }] };
   assert.equal(drawn(resolve(null, g)).area, 'highlights[shop:wide transport:wide] tiles[markets:tall restaurants:half todo:half map:wide]');
+});
+
+test('placements: the sizes asked for, before packing; resolve is placements packed, run by run', () => {
+  // The default, before packing: today's sizes (Ca La Kimberly's arrangement has no hole, so the same as drawn).
+  const P0 = placements(null, CLK);
+  assert.equal(brief(P0.house), 'garbage:wide message:half emergency:half');
+  assert.equal(brief(P0.area), 'shop:wide pizza:half transport:half markets:tall restaurants:half todo:half map:wide');
+  // The host's pick is kept where the no holes rule shows another size: message alone is half here, wide when drawn;
+  // markets tall with one tile beside it stays tall here, half when drawn.
+  const A = { house: [{ kind: 'section', id: 'garbage', size: 'wide' }, { kind: 'section', id: 'emergency', size: 'wide' }, { kind: 'section', id: 'message', size: 'half' }],
+    area: [{ kind: 'section', id: 'markets', size: 'tall' }, { kind: 'section', id: 'todo', size: 'half' }, { kind: 'map', size: 'wide' }] };
+  const P = placements(A, CLK);
+  assert.equal(brief(P.house), 'garbage:wide emergency:wide message:half');
+  assert.equal(brief(P.area), 'shop:wide pizza:half transport:half markets:tall restaurants:half todo:half map:wide');   // restaurants, not named, comes back after markets
+  assert.equal(drawn(resolve(A, CLK)).house, 'tiles[garbage:wide emergency:wide message:wide]');
+  // Each item carries its widget, as resolve's do; written back as the guide's own arrangement it passes check() and
+  // draws the same Home.
+  assert.ok([...P.house, ...P.area].every(x => typeof x.widget === 'string'));
+  const back = Object.fromEntries(['house', 'area'].map(g => [g, P[g].map(x => (x.kind === 'map' ? { kind: 'map', size: x.size } : { kind: x.kind, id: x.id, size: x.size }))]));
+  assert.deepEqual(check(back, CLK), []);
+  assert.deepEqual(drawn(resolve(back, CLK)), drawn(resolve(A, CLK)));
+  assert.deepEqual(drawn(resolve(placements(null, CLK), CLK)), drawn(resolve(null, CLK)));
+  for (const g of [CLK, guide(['garbage', 'markets', 'nightlife']), guide(['message', 'todo'], { map: false })])
+    assert.deepEqual({ house: runs(placements(null, g).house), area: runs(placements(null, g).area) }, resolve(null, g));
 });
 
 test('runs: highlights and tiles in runs of their own, each packed', () => {

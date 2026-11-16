@@ -90,6 +90,27 @@ offers and imports no module.
 | 12 | Local events are wide only: their tile carries the next event's name and date, and as a half or tall tile "esdeveniments" and "evenementen" were wider than the tile. | Claude, 14 Nov 2026, from the frame check; to confirm with Yohann |
 | 13 | A tall tile's title is drawn larger (as Markets' always was) only when each of its words has 9 letters or fewer; otherwise it keeps the size it has on a half tile (class `t-word`): "Emergencies", "aparcamiento" and "stationnement" were wider than a tall tile at 360 px. Words are never shortened or cut for this, and no font goes below the half tile's. | Claude, 14 Nov 2026, from the frame check; to confirm with Yohann |
 
+## The arranger (maker)
+
+The maker's step Home page (step id `tiles`, route `#tiles`; it was "Home tiles"): a board, a plan of the guide's Home whose
+tiles a host drags to move, taps to resize, and adds to (`onboarding-site/src/board.js`). Yohann chose it on 15 Nov 2026
+("The board") over the list of rows agreed on 14 Nov, on drawings made on the real maker pages; built 15 and 16 Nov 2026.
+The rules below are that design's: Claude's, shown to Yohann in the drawings and in words, his own words where quoted.
+
+| # | Rule | Decided |
+|---|---|---|
+| 1 | The board shows exactly what guests will see, in shape: it is drawn from `resolve(home, guide)` of this frame, with the modules' own offers. The maker never holds a second copy of a frame rule or of an offer: `build.py` pastes `frame.js` and each module's `offers.js` (as listed by `offers.js` here) into the page as `FR`, as it pastes `worlds.js` (`WK`). | Yohann, 15 Nov 2026 ("The board": tiles a host moves like on a phone's home screen); one rule everywhere: this repo's `CLAUDE.md` |
+| 2 | The guide as the frame sees it is made from the draft the editor holds, as `content.js` and `views/home.js` `frameGuide` make it: a module switched off disappears (markets with none found too), Getting around with a `tile` is a card, a card closed for the season and opening in more than 30 days is left out (`season.js` `hiddenOn`, pasted, as `highlights/plan.js` `shownOn`). | The design, 15 Nov 2026 |
+| 3 | Two groups, "At the house" and "Around the house", between two locked ends drawn as rows: the welcome card, always first; What's on, always last. A tile moves within its own group only. Cards and tiles may be interleaved, as the frame allows. | The design, 15 Nov 2026 |
+| 4 | A tile is drawn in the guide's own colour for its section (`ui.js` `SECTION_LOOK` and `app.css`'s corner shapes, pasted, in the guide's colour world) and named as hosts know it in the maker (Guide sections' names: Eat and drink, Attractions, Local markets, House guide...); a card by its own name in the language being edited. Half is one column, wide both, tall one column and two rows. | The design, 15 Nov 2026 |
+| 5 | A tap (or Enter) selects a tile and shows its panel: its name, one line on what it shows guests, the sizes it offers (`thing(...).sizes`; one size only: one line instead, "Always wide: it shows tonight's bins."), Earlier and Later within its group, a link to its section's step, and for a card "Edit its words" and "Remove from the home page" (Local events: "Remove" too). On a phone the panel is a bar above the step bar, and the page scrolls so that the tile stays above it; a tap outside the board and the bar lets go. | The design, 15 Nov 2026 |
+| 6 | No holes is the frame's rule, not the host's problem: when the frame shows a tile in another size than the host picked (rule 5 of the frame), the board shows what guests see, the switch keeps the host's pick, and one quiet line says why ("Shown wide for now: it is alone in its row."). | The design, 15 Nov 2026 |
+| 7 | Drag: with a mouse after about 6 px of movement; on a touch screen after a press of about 300 ms, so that the page still scrolls under a finger. While dragging the other tiles make room (the order tried goes through `resolve`); the tile goes to the order whose slot is under the pointer, the order drawn winning a tie, so tiles never swap back and forth. Dropping commits; Escape, or dropping outside its group, cancels; near the top or bottom edge the page scrolls. A press without movement is a tap. After a move a polite live region says it ("Markets is now before Eat and drink."). | The design, 15 Nov 2026; the slot under the pointer: Claude, 15 Nov 2026, from the first drawings (swapping by the tile under the pointer went back and forth when sizes differ) |
+| 8 | The first change writes the whole arrangement into the file (`{ _doc, house, area }`), with the host's sizes (`placements`: the default arrangement's own sizes for what was never touched, not the sizes after the no holes rule), then the change. It always passes `check()`: a placement of something the guide no longer has (a card removed, a section switched off) leaves the file before each save. A change is a draft until "Publish changes". | The design, 15 Nov 2026 |
+| 9 | "Add to your home page" offers only what the guide has and Home does not show: a place to eat, something to do, Nightlife (a place of that list as a card, picked from a short searchable list: "Show on the home page", with its list's icon), a bar, restaurant or shop that is in none of the lists (a card of the host's own words), Getting around's card (when the section is live and has none), Local events (its tile with the next event, wide, when the section is live and not placed). What is added comes on the board, selected. | The design, 15 Nov 2026 |
+| 10 | "Back to the arrangement we suggest", shown only when the guide has its own arrangement, removes the file after one confirmation ("Sure? Tap again"); the cards stay. | The design, 15 Nov 2026 |
+| 11 | Size is set on the board only. A card has no "wide" field of its own in the maker (it had none before either); a guide with no file keeps the card's own `wide` as its default size. | The design, 15 Nov 2026 |
+
 ## What the frame check proves, and what it only notes
 
 `node engine/scripts/frame-check.mjs <site>` draws every section's tile in each size it offers and every highlight in both,
@@ -100,7 +121,8 @@ and a highlight made half cuts "conve-nience", "épi-cerie", "buurt-winkel". The
 
 ## Its file
 
-`content/home.json`, optional, one per guide. No guide has one yet.
+`content/home.json`, optional, one per guide (in a guide built by the maker, the file `home` among its files). A guide has one
+once its host changes Home in the maker's step Home page ("The arranger (maker)", below); with none, Home is the default.
 
 ```json
 {
@@ -123,7 +145,7 @@ also `w-live`. The More page shows the same groups.
 
 | Part | Where |
 |---|---|
-| The frame: default, resolving, packing, checking; pure, no DOM | `frame.js` (tests: `engine/scripts/frame.test.mjs`) |
+| The frame: default, placements (the sizes asked for, before packing), resolving, packing, checking; pure, no DOM | `frame.js` (tests: `engine/scripts/frame.test.mjs`) |
 | What each module offers, for the node scripts | `offers.js` (each module's own `offers.js`) |
 | Home drawn from placements, the welcome card on top and What's on at the bottom | `engine/src/views/home.js` (`renderHome`, `sectionGrid`, `frameGuide`; the card from `house/`, What's on from `whatson/`) |
 | A section's page asked of its module | `engine/src/views/section.js` (`renderSection`; and the shared `sectionFrame`, `zoomable`) |
@@ -131,13 +153,10 @@ also `w-live`. The More page shows the same groups.
 | The sizes' styles | `engine/src/styles/app.css` (`.gt.s-tall`, `.gt.s-wide:not(.w-live)`, `.gt.t-long`, the per-module shapes by size) |
 | The check of `home.json` | `engine/scripts/check-content.js` (with `check()` of `frame.js`) |
 | Every module in every size, measured and pictured | `node engine/scripts/frame-check.mjs <site> [picture folder]` |
+| The arranger, the maker's step Home page | `onboarding-site/src/board.js` (this frame pasted as `FR` by `onboarding-site/src/build.py`; checked by the group `home-page` of `onboarding-site/test/check.mjs`) |
 
 ## Not built yet
 
 - Every part of the guide is a module since 14 Nov 2026 (proposal 22, step 2). What each module has not moved yet (its
   styles, its words, the generator's part, the maker's steps) is listed in its own README, under "Where its code is".
-- The arranger in the maker: the step "Home tiles" becomes "Home page", the two groups as lists to drag, a switch of sizes,
-  "Add to your home page", "Back to the arrangement we suggest" (proposal 22, step 3). Until then no guide has a
-  `home.json`, and every Home is the default. With it, the rule "every product guide has exactly Ca La Kimberly's
-  sections" would become "every guide starts from Ca La Kimberly's arrangement, and a host may rearrange it": Yohann's to
-  confirm.
+- Moving a tile from one group to the other ("At the house" to "Around the house"): not in the arranger's first version.

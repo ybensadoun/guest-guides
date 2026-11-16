@@ -9,7 +9,7 @@ const ED_DAYS = [['mon', 'Mo'], ['tue', 'Tu'], ['wed', 'We'], ['thu', 'Th'], ['f
 const ED_FONTS = [['jost', 'Jost'], ['inter', 'Inter'], ['cormorant-garamond', 'Cormorant Garamond'], ['dm-sans', 'DM Sans'], ['dm-serif-display', 'DM Serif Display', [400]], ['fraunces', 'Fraunces'], ['geist', 'Geist'], ['instrument-serif', 'Instrument Serif', [400]], ['nunito', 'Nunito'], ['outfit', 'Outfit'], ['space-grotesk', 'Space Grotesk'], ['bricolage-grotesque', 'Bricolage Grotesque']];
 // The five roles of a colour world (engine/src/worlds.js), as "Fine-tune each colour" offers them: role, its token, its name.
 const ED_ROLES = [['deep', '--blue', 'Main colour'], ['strong', '--red', 'Emergencies'], ['fresh', '--green', 'Open now'], ['light', '--yellow', 'Light tiles'], ['warm', '--orange', 'Warm tiles']];
-const ED_SEC = { transport: ['Getting around', 'Taxis, train stations and bus stops.'], house: ['The house page', 'Photos, rooms and what the house offers.'], garbage: ['Rubbish and recycling', 'Which bin goes out tonight.'], message: ['House guide', 'How everything works, room by room.'], emergency: ['Emergency contacts', '112, health, police, town services.'], quick: ['Home tiles', 'One tap for a taxi, the station, a favourite.'], markets: ['Local markets', 'Street, covered and flea markets, with what is on today.'], restaurants: ['Eat and drink', 'Restaurants, cafés and bars you send friends to.'], todo: ['Attractions', 'Museums, parks, activities and sights nearby.'], nightlife: ['Nightlife', 'Late bars, clubs and live music you recommend.'], events: ['Local events', 'Festivals, fairs and traditions during the stay.'], reviews: ['Ratings and reviews', 'Your listing rating and reviews.'], map: ['Map', 'Every place in the guide on one map.'] };
+const ED_SEC = { transport: ['Getting around', 'Taxis, train stations and bus stops.'], house: ['The house page', 'Photos, rooms and what the house offers.'], garbage: ['Rubbish and recycling', 'Which bin goes out tonight.'], message: ['House guide', 'How everything works, room by room.'], emergency: ['Emergency contacts', '112, health, police, town services.'], quick: ['Places on the home page', 'One tap for a taxi, the station, a favourite.'], markets: ['Local markets', 'Street, covered and flea markets, with what is on today.'], restaurants: ['Eat and drink', 'Restaurants, cafés and bars you send friends to.'], todo: ['Attractions', 'Museums, parks, activities and sights nearby.'], nightlife: ['Nightlife', 'Late bars, clubs and live music you recommend.'], events: ['Local events', 'Festivals, fairs and traditions during the stay.'], reviews: ['Ratings and reviews', 'Your listing rating and reviews.'], map: ['Map', 'Every place in the guide on one map.'] };
 
 const edIs18 = o => !!o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length > 0 && Object.keys(o).every(k => k in ED_LANGS);
 const edPath = s => s.split('/').map(k => /^\d+$/.test(k) ? +k : k);
@@ -68,9 +68,11 @@ const CSTEPS = [
   { id: 'transport', group: 'practical', sec: 'transport', title: 'Getting around', sub: c => cmTrSub(c), icon: 'train', tc: 'var(--pine)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
     lead: 'Taxis, train stations and bus stops, on their own page in the guide. Show it as a tile on the home page too if you like.',
     paths: ['content/files/transport'], body: c => cmTransport(c) },
-  { id: 'tiles', group: 'practical', sec: 'quick', title: 'Home tiles', sub: c => cmCount(cmLen('files/quick/items'), 'tile', 'tiles'), icon: 'star', tc: 'var(--sun)', ti: '#1b1407', sh: 'var(--sky)', shape: 'square', lang: true,
-    lead: 'One tap from the home page: the bar next door, a shop you love. Each tile opens a page with its map and your words.',
-    paths: ['content/files/quick'], body: c => cmHomeTiles(c) },
+  // Home page (15 Nov 2026, "The board"): the guide's Home as a board to arrange (board.js); every guide has one, so the
+  // step no longer waits for the cards' module ("quick") to be on.
+  { id: 'tiles', group: 'practical', title: 'Home page', sub: c => (c.files || {}).home ? 'Your own arrangement' : 'Arranged for you', icon: 'star', tc: 'var(--sun)', ti: '#1b1407', sh: 'var(--sky)', shape: 'square', lang: true,
+    lead: 'What guests see first. It is arranged for you: change only what you want.',
+    paths: ['content/files/quick', 'content/files/home'], body: () => hbStepHTML() },
   { id: 'todo', group: 'area', sec: 'todo', title: 'Attractions', sub: c => cmCount(cmLen('files/todo/items'), 'place', 'places'), icon: 'compass', tc: 'var(--pine)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
     lead: 'Places guests go to visit or to do something: museums, castles, theme parks, karting, beaches, nature. Restaurants and bars go in Eat and drink. Open a place to change its words, links, position and opening hours.',
     paths: ['content/files/todo'], body: () => cmPlaces('files/todo/items', 'place') },
@@ -547,20 +549,23 @@ function evKind(p, it) {
 }
 function evPick(p, k) { const it = edGet(edC(), edPath(p)); if (!it || !EV_KINDS.some(x => x[0] === k)) return; it.type = k; kClose(p); }
 const kPick = p => p.startsWith(MK_PATH + '/') ? mkPick : p.startsWith(EV_PATH + '/') ? evPick : plPick;
-// A restaurant pinned to the home page becomes a Home tile (one tap, its own page), a copy of the restaurant that the
-// host can reword in Home tiles: "from" remembers which restaurant it came from.
+// A place pinned to the home page becomes a card there (one tap, its own page), a copy of the place that the host can
+// reword in Home page: "from" remembers which place it came from. From Eat and drink, or from Home page's "Add to your
+// home page" (board.js) for Things to do and Nightlife too, each with its list's icon (engine highlights/icons.js).
 const cPinned = it => ((((edC().files || {}).quick || {}).items) || []).some(q => q.from && q.from === it.id);
 function cPin(p, it) {
-  return cSwitch(`data-cpin="${p}"`, 'Show on the home page', cPinned(it), 'A tile on the home page, one tap away, like the bar next door. You can change its words in Home tiles.');
+  return cSwitch(`data-cpin="${p}"`, 'Show on the home page', cPinned(it), 'A card on the home page, one tap away, like the bar next door. You can move it and change its words in Home page.');
 }
+const PIN_AS = { 'files/restaurants/items': ['food', 'food'], 'files/todo/items': ['todo', 'todo'], 'files/nightlife/items': ['night', 'nightlife'] };
 function cmPin(p) {
   const it = edGet(edC(), edPath(p)); if (!it) return;
+  const [pre, icon] = PIN_AS[p.replace(/\/\d+$/, '')] || PIN_AS['files/restaurants/items'];
   const f = edF(), q = f.quick = f.quick || { items: [] }; q.items = q.items || [];
   const i = q.items.findIndex(x => x.from === it.id);
   if (i >= 0) { q.items.splice(i, 1); return; }
   // Only what the restaurant has, and no hours of Google's (hoursSource "google", from an older check): those may not be kept.
   const pick = k => it[k] != null ? { [k]: cmClone(it[k]) } : {}, type = it.type && edShown(it.type) ? { sub: cmClone(it.type), kind: cmClone(it.type) } : {};
-  q.items.push({ id: 'food-' + it.id, icon: 'food', from: it.id, name: cmClone(it.name), ...type, title: cmClone(it.name), what: cmClone(it.description || {}),
+  q.items.push({ id: pre + '-' + it.id, icon, from: it.id, name: cmClone(it.name), ...type, title: cmClone(it.name), what: cmClone(it.description || {}),
     ...pick('phone'), ...pick('lat'), ...pick('lng'), ...pick('pos'), ...pick('gmaps'), ...(it.hoursSource === 'google' ? {} : pick('schedule')), ...pick('hours'), ...pick('price'), ...pick('priceNote') });
   const s = edC().site = edC().site || {}; s.modules = { ...(s.modules || {}), quick: true };
 }
@@ -855,7 +860,7 @@ async function artPoll() {
 function cmSections(c) {
   const ids = [...((((c.files || {}).sections || {}).sections) || []).map(x => x.id)];
   if (!ids.includes('quick')) ids.push('quick');
-  if (!ids.includes('transport')) ids.splice(Math.max(0, ids.indexOf('emergency') + 1) || ids.length, 0, 'transport');   // Getting around: switched on, its step appears   // Home tiles: the step appears once switched on, and its first tile makes the file
+  if (!ids.includes('transport')) ids.splice(Math.max(0, ids.indexOf('emergency') + 1) || ids.length, 0, 'transport');   // Getting around: switched on, its step appears   // the cards on the home page (quick): its first card makes the file
   if ((c.files || {}).reviews && !ids.includes('reviews')) ids.push('reviews');
   const night = ids.includes('nightlife'); if (!night) ids.splice(ids.includes('todo') ? ids.indexOf('todo') + 1 : ids.length, 0, 'nightlife');   // Nightlife: optional, off until switched on
   if (!ids.includes('map')) ids.push('map');
@@ -929,14 +934,9 @@ function cmContacts(c) {
   return groups.map((g, gi) => `<h3 class="cm-h">${esc(title[g.id] || g.id)}</h3><div class="cm-list">${(g.items || []).map((it, i) => cItem(`files/emergency/groups/${gi}/items`, it, i, 'contact')).join('')}</div>
     <button class="btn small cm-add" type="button" data-addit="files/emergency/groups/${gi}/items">+ Add a contact</button>`).join('') || '<div class="note"><div>This guide has no contacts yet.</div></div>';
 }
-// Taxis, stations and bus stops are in Getting around; a bar or restaurant from your list can also be pinned from Eat and drink.
+// A card of the host's own words on the home page (Home page, "Another place", board.js).
+// Taxis, stations and bus stops are in Getting around; a place from a list is pinned with cmPin.
 const ED_TILES = [['food', 'Add a bar or restaurant', 'Restaurant', { phone: '', lat: 0, lng: 0, gmaps: '' }], ['shop', 'Add a shop', 'Shop', { phone: '', lat: 0, lng: 0, gmaps: '' }]];
-function cmHomeTiles(c) {
-  const items = ((c.files || {}).quick || {}).items || [];
-  return `<div class="cm-list">${items.map((it, i) => cItem('files/quick/items', it, i, 'tile')).join('') || '<p class="hint">No tiles yet.</p>'}</div>
-    <div class="cm-row">${ED_TILES.map(([icon, label]) => `<button class="btn small" type="button" data-addtile="${icon}">+ ${esc(label)}</button>`).join('')}</div>
-    <p class="hint">Taxis, train stations and bus stops go in <a href="#transport">Getting around</a>, which can have its own tile here.</p>`;
-}
 function edAddTile(icon) {
   const f = edF(), q = f.quick = f.quick || { items: [] }; q.items = q.items || [];
   const [, , kind, extra] = ED_TILES.find(t => t[0] === icon), L = x => Object.fromEntries(edLangs().map(l => [l, x]));
@@ -976,7 +976,7 @@ function cmUnname(t) {
 }
 
 /* --- Getting around: taxis, then stations and stops, on their own page (content/transport.json, section kind "transport") ---
-   Its "tile" puts a one-tap tile on Home (the engine adds it after the Home tiles). Positions come from a Google Maps link. */
+   Its "tile" puts a one-tap tile on Home (the engine adds it after the other cards of Home). Positions come from a Google Maps link. */
 I.train = svg('<rect x="5.5" y="3" width="13" height="13" rx="3"/><path d="M5.5 10h13"/><circle cx="9" cy="13" r=".9" fill="currentColor"/><circle cx="15" cy="13" r=".9" fill="currentColor"/><path d="M8.5 16l-2 4.5M15.5 16l2 4.5M7.5 19h9"/>');
 I.star = svg('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>');
 const GA = { en: 'Getting around', es: 'Cómo moverse', fr: 'Se déplacer', ca: "Com moure's", de: 'Unterwegs', nl: 'Vervoer' };
@@ -1098,7 +1098,7 @@ function cmTransport(c) {
       ${CM.stopMsg ? `<p class="hint" role="status">${esc(CM.stopMsg)}</p>` : ''}</div>
     <div class="cm-row"><button class="btn small" type="button" data-tradd="taxi">+ Add a taxi</button></div>`;
   if (!T) return `<div class="note"><div>No taxis or stations yet. Add the ones you would tell a friend about.</div></div>${adds}`;
-  return `${cSwitch('data-trtile', 'Show as a tile on the home page', !!T.tile, 'Getting around always has its own page. As a tile it also sits with your other Home tiles, one tap away.')}
+  return `${cSwitch('data-trtile', 'Show as a tile on the home page', !!T.tile, 'Getting around always has its own page. As a card it also sits on your home page, one tap away: move it in Home page.')}
     ${T.tile ? `<div class="grid">${cf('Tile title', P + '/tile/name', T.tile.name, { i18n: true, half: true, ph: 'Taxi & train' })}${cf('Line under it', P + '/tile/sub', T.tile.sub, { i18n: true, half: true, ph: 'Taxi in 30 min, 3 stations' })}</div>` : ''}
     <div class="grid">${cf('Line under the page title', P + '/lead', T.lead, { i18n: true, ph: 'Three ways to get around without a car.' })}</div>
     <h3 class="cm-h">Taxis</h3><div class="cm-list">${(T.taxis || []).map((x, i) => cTaxi(`${P}/taxis/${i}`, x)).join('') || '<p class="hint">No taxi yet.</p>'}</div>
@@ -1690,7 +1690,7 @@ function cmMarks() {
 
 /* --- Saving the draft, publishing, undoing --- */
 const cmSaveText = () => cmDirty() ? 'Draft saved, not live yet' : cmLive() ? 'Everything is live' : 'Saved, not published';
-function cmQueue() { setSave('busy', 'Saving…'); clearTimeout(CM.timer); CM.timer = setTimeout(cmSave, 900); cmMarks(); }
+function cmQueue() { hbTidy(); setSave('busy', 'Saving…'); clearTimeout(CM.timer); CM.timer = setTimeout(cmSave, 900); cmMarks(); }
 async function cmSave() {
   clearTimeout(CM.timer); CM.timer = null;
   if (CM.saving) { CM.again = true; return CM.saving; }
@@ -1718,7 +1718,7 @@ const CM_ROWS = {
   schedule: r => !(r.days || []).length && (edBlank(r.open) && edBlank(r.close) || r.open === '09:00' && r.close === '14:00'),   // opening hours with no day, and no time or the times Add puts in
   dates: d => edBlank(d.start)                                          // dates with no start
 };
-// The entries a host adds one by one, by step: places, markets, events, nightlife, Home tiles, contacts, taxis, stations
+// The entries a host adds one by one, by step: places, markets, events, nightlife, the cards of Home page, contacts, taxis, stations
 // and stops, house page highlights.
 const cmEntries = c => { const f = c.files || {}, T = f.transport || {};
   return [['todo', (f.todo || {}).items], ['restaurants', (f.restaurants || {}).items], ['nightlife', (f.nightlife || {}).items], ['markets', (f.markets || {}).markets], ['events', (f.events || {}).items], ['tiles', (f.quick || {}).items],
@@ -1763,6 +1763,7 @@ const cmNamelessText = miss => { const n = miss.reduce((s, x) => s + x.n, 0);
 async function cmPublishNow(o = {}) {
   clearTimeout(CM.timer); while (CM.saving) await CM.saving;
   if (cmTidy(CM.g.content)) CM.open.clear();   // empty entries never go live (and leave the draft too)
+  hbTidy();   // nor does a place on Home that has gone with them (board.js)
   const miss = cmNameless(CM.g.content);
   if (miss.length) { cmQueue(); throw Object.assign(new Error(cmNamelessText(miss)), { miss }); }
   await ensureFresh();

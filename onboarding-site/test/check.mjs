@@ -25,7 +25,7 @@ import { deflateSync } from 'node:zlib';
 import { execSync, fork } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '../..'), SHOTS = join(HERE, 'shots'), TIMES = join(SHOTS, 'check-times.json');
 const env = { ...process.env }, ef = join(ROOT, 'worker/.env.local'), CHILD = process.env.CHECK_CHILD || '';
 if (env.LIST) {   // the groups, nothing run
@@ -79,8 +79,8 @@ const plainKey = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/
 const cmpSame = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const slugOf = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-async function open(browser, G, w, h, stored = {}, listing = null) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h } }); ctx.taken = new Set();
+async function open(browser, G, w, h, stored = {}, listing = null, more = {}) {   // more: other options of the context (a touch screen: hasTouch)
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, ...more }); ctx.taken = new Set();
   await ctx.addInitScript(([g, stored]) => {
     if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', '1');
     localStorage.setItem('porta-auth-v1', JSON.stringify({ access_token: 'test', refresh_token: 'test', expires_at: Math.floor(Date.now() / 1000) + 86400, user: { id: g.owner, email: 'test@example.org' } }));
@@ -218,7 +218,7 @@ function groupList() {
   return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'research-deck': gResearchDeck, 'deck-steady': gDeckSteady, 'build-ready': gBuildReady, 'web-address': gWebAddress,
     'houses': gHouses, 'builder': gBuilder, 'rooms-offers': gRoomsOffers, 'nearby': gNearby, 'wow': gWow, 'editor': gEditor, 'editor-names': gEditorNames,
     'place-card': gPlaceCard, 'place-season': gPlaceSeason, 'still-open': gStillOpen, 'place-facts': gPlaceFacts, 'market-event': gMarketEvent,
-    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea };
+    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea, 'home-page': gHomePage };
 }
 
   // Inside a navy start card (sel): nothing touches anything (the eyebrow, title and text by their words, the panel, the moon
@@ -3291,6 +3291,198 @@ async function gLayout() {
     const extra = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     ok(`editor, 360 px, editing in ${lang}: no sideways scroll`, extra <= 0, extra > 0 ? `${extra} px too wide` : '');
     await p.screenshot({ path: join(SHOTS, `editor-guide-${lang}-360.png`) });
+    await ctx.close();
+  }
+}
+// ---- Home page (the step "tiles", 15 Nov 2026): the board of the guide's Home (onboarding-site/src/board.js; its rules in
+// engine/src/modules/README.md, "The arranger (maker)"). The board is checked against the engine's own frame, imported here
+// from engine/src (frame.js, the modules' offers, season.js), on the guide as engine/src/content.js reads it. At 1280 and
+// 360 px, in English and French; a mouse drag at 1280, a finger (emulated touch) at 360. Saves are answered here and kept
+// in memory: nothing reaches the database.
+async function gHomePage() {
+  const ES = join(ROOT, 'engine/src'), imp = f => import(pathToFileURL(join(ES, f)).href);
+  const FRM = await imp('modules/frame.js'), { OFFERS } = await imp('modules/offers.js'), { seasonKinds, hiddenOn } = await imp('season.js');
+  const SK = seasonKinds(JSON.parse(readFileSync(join(ES, 'kinds.json'), 'utf8')));
+  // The guide as the frame sees it (content.js: modules switched off and markets with none found disappear, Getting around's
+  // card when transport has a "tile", the cards shown today; views/home.js frameGuide). all: every card, seasons aside (check()).
+  const guideOf = (c, all = false) => {
+    const f = c.files || {}, mods = (c.site || {}).modules || {}, on = id => mods[id] !== false && !(id === 'markets' && !((f.markets || {}).markets || []).length);
+    const secs = ((f.sections || {}).sections || []).filter(s => on(s.id)), tr = secs.find(s => s.kind === 'transport' && s.status === 'live'), T = tr && f[tr.file || tr.id];
+    const quick = on('quick') ? (f.quick || {}).items || [] : [];
+    return { sections: secs.map(({ id, kind, group, status }) => ({ id, kind, group, status })), map: on('map'), transportCard: T && T.tile ? tr.id : null, offers: OFFERS,
+      highlights: [...quick.filter(q => all || !hiddenOn(q, SK, new Date())).map(q => ({ id: q.id, wide: !!q.wide })), ...(T && T.tile ? [{ id: tr.id, wide: !!T.tile.wide }] : [])] };
+  };
+  const drawnOf = R => Object.fromEntries(['house', 'area'].map(g => [g, R[g].map(r => `${r.type}[${r.items.map(x => FRM.keyOf(x) + ':' + x.size).join(' ')}]`).join(' ')]));
+  const want = c => drawnOf(FRM.resolve((c.files || {}).home || null, guideOf(c)));
+  const board = p => p.evaluate(() => Object.fromEntries([...document.querySelectorAll('.hb-plan .hb-grp')].map(g => [g.dataset.g, [...g.querySelectorAll(':scope > .hb-grid')]
+    .map(r => `${r.classList.contains('hl') ? 'highlights' : 'tiles'}[${[...r.querySelectorAll('[data-hbk]')].map(t => t.dataset.hbk + ':' + (t.className.match(/\bs-(half|wide|tall)\b/) || [])[1]).join(' ')}]`).join(' ')])));
+  const order = (c, g) => (((c.files || {}).home || {})[g] || []).map(x => (x.kind === 'map' ? 'map' : `${x.kind}:${x.id}`));
+  // What on the board, its panel or its bar touches something else, sticks out, splits a word or leaves the screen.
+  const hbClear = p => p.evaluate(() => {
+    const out = [], shown = e => !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+    const hit = (a, b, m = 1) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > m && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > m;
+    const nm = e => (e.textContent || e.getAttribute('aria-label') || e.tagName).trim().replace(/\s+/g, ' ').slice(0, 30);
+    const split = e => { const bad = [], w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); for (let n; (n = w.nextNode());) for (const m of n.data.matchAll(/\S+/g)) { const r = document.createRange(); r.setStart(n, m.index); r.setEnd(n, m.index + m[0].length); if ([...r.getClientRects()].filter(x => x.width > 0).length > 1) bad.push(m[0]); } return bad; };
+    const tiles = [...document.querySelectorAll('.hb-plan [data-hbk]')].filter(shown), tr = tiles.map(t => t.getBoundingClientRect());
+    tiles.forEach((t, i) => tiles.slice(i + 1).forEach((u, j) => { if (hit(tr[i], tr[i + 1 + j])) out.push(`tiles overlap: ${nm(t)} / ${nm(u)}`); }));
+    tiles.forEach((t, i) => {
+      const r = tr[i], n = t.querySelector('.hb-n'), g = document.createRange(); g.selectNodeContents(n); const words = [...g.getClientRects()].filter(x => x.width > 0);
+      if (words.some(x => x.left < r.left - 0.5 || x.right > r.right + 0.5 || x.top < r.top - 0.5 || x.bottom > r.bottom + 0.5)) out.push('name out of its tile: ' + nm(t));
+      const ic = t.querySelector(':scope > svg, .hb-q'); if (ic && words.some(x => hit(x, ic.getBoundingClientRect()))) out.push('name on its icon: ' + nm(t));
+      if (!t.classList.contains('card')) { const wide = t.classList.contains('s-wide'), cy = (r.top + r.bottom) / 2, sh = wide ? { left: r.right - 19, right: r.right, top: cy - 19, bottom: cy + 19 } : { left: r.right - 25, right: r.right, top: r.top, bottom: r.top + 25 };
+        if (words.some(x => hit(x, sh))) out.push('name under its corner shape: ' + nm(t)); }
+      for (const w of split(n)) out.push(`word split: ${w} (${nm(t)})`);
+    });
+    for (const box of [...document.querySelectorAll('.hb-side .hb-pan, .hb-dock, .hb-side > p')].filter(shown)) {
+      const b = box.getBoundingClientRect(), els = [...box.querySelectorAll('h3, p, button, a, b, small, input, .hb-l, .hb-ic')].filter(shown), rs = els.map(e => e.getBoundingClientRect());
+      els.forEach((e, i) => { if (rs[i].left < b.left - 0.5 || rs[i].right > b.right + 0.5) out.push('out of its panel: ' + nm(e));
+        if (e.matches('button, a, b, h3') && e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).display !== 'inline') out.push('wider than its box: ' + nm(e));
+        for (const w of split(e)) if (!e.querySelector('button, a, b, small, span:not(.sh)')) out.push(`word split: ${w} (${nm(e)})`); });
+      els.forEach((e, i) => els.slice(i + 1).forEach((f, j) => { if (!e.contains(f) && !f.contains(e) && hit(rs[i], rs[i + 1 + j])) out.push(`overlap: ${nm(e)} / ${nm(f)}`); }));
+    }
+    const dock = document.querySelector('.hb-dock'), nb = document.getElementById('navbar');
+    if (shown(dock)) { const d = dock.getBoundingClientRect(), n = nb && !nb.hidden ? nb.getBoundingClientRect() : null;
+      if (d.left < 0 || d.right > innerWidth || d.top < 0 || (n && n.height && d.bottom > n.top + 0.5)) out.push(`the bar is not inside the screen above the step bar (${Math.round(d.top)}-${Math.round(d.bottom)}, step bar at ${n ? Math.round(n.top) : '-'})`); }
+    if (document.documentElement.scrollWidth > innerWidth) out.push('page wider than the screen');
+    return [...new Set(out)];
+  });
+  const T_LONE = { en: 'Shown wide for now: it is alone in its row.', fr: 'Affichée en large pour l’instant : elle est seule sur sa ligne.' };
+  const T_BINS = { en: 'Always wide: it shows tonight’s bins.', fr: 'Toujours large : elle montre les poubelles de ce soir.' };
+  const T_TITLE = { en: 'Home page', fr: 'Page d’accueil' };
+  for (const [w, h] of [[1280, 900], [360, 780]]) for (const lang of ['en', 'fr']) {
+    const tag = `home-page, ${w} px, ${lang}`, phone = w < 700, side = phone ? '.hb-dock' : '.hb-side .hb-pan.sel', pre = phone ? '#hbd' : '#hbs';
+    const o = await open(browser, E, w, h, { 'porta-lang-v1': lang }, null, phone ? { hasTouch: true, isMobile: true } : {}), { ctx, p, errors } = o;
+    // Saves answered here (204), kept in memory; every call to the database is counted, and each must be one answered here.
+    const saved = [], sb = { seen: 0, ours: 0 };
+    p.on('request', r => { if (new URL(r.url()).origin === SB) sb.seen++; });
+    await ctx.route(u => u.origin === SB, route => { sb.ours++; if (route.request().method() !== 'PATCH') return route.fallback(); saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
+    const last = () => { for (const b of saved.slice().reverse()) { try { const j = JSON.parse(b); if ('draft' in j) return j.draft; } catch (e) { /* not a save */ } } return undefined; };
+    const now = () => { const d = last(); return d ? d.content : E.content; };   // the draft as saved last (no draft: the live guide)
+    const sel = k => p.click(`.hb-plan [data-hbk="${k}"]`).then(() => settle(p, 300));
+    const pick = async size => { await p.click(`${pre}_${size}`); await settle(p, 1300); };
+    const sideText = s => p.$eval(`${side} ${s}`, e => e.textContent.trim()).catch(() => '');
+    await p.goto('http://editor.test/#tiles'); await ready(p); await settle(p, 600); await p.evaluate(() => document.fonts.ready);
+    const head = await p.$eval('.mhead h1', e => e.textContent.trim()).catch(() => '');
+    ok(`${tag}: the step is called ${T_TITLE[lang]}, opened without writing anything`, head === T_TITLE[lang] && !saved.length, `"${head}", ${saved.length} saves`);
+    let b = await board(p), wnt = want(E.content);
+    ok(`${tag}: the board is the frame's own Home for the guide (same things, same order, same sizes, same runs)`, JSON.stringify(b) === JSON.stringify(wnt), JSON.stringify(b) + ' / ' + JSON.stringify(wnt));
+    const ends = await p.$$eval('.hb-plan > *', els => els.map(e => e.className.split(' ')[0]));
+    ok(`${tag}: two locked ends, the welcome card first and What's on last, around the two groups`, ends[0] === 'hb-fix' && ends[ends.length - 1] === 'hb-fix' && ends.filter(x => x === 'hb-grp').length === 2, ends.join(' '));
+    let c = await hbClear(p);
+    ok(`${tag}, nothing selected: nothing overlaps, no word split or wider than its box, nothing wider than the screen`, !c.length, c.join('; '));
+    if (!phone) { const lay = await p.evaluate(() => { const pl = document.querySelector('.hb-plan').getBoundingClientRect(), f = document.querySelector('.hb-side > *'), s = f.getBoundingClientRect(); return { gap: Math.round(s.top - pl.top), first: f.classList.contains('hb-addp') || !!f.querySelector('.hb-addp'), hints: [...document.querySelectorAll('.hb-hint, .hb-side > p')].filter(e => e.getClientRects().length).length, plan: Math.round(pl.width) }; });
+      // The hint above the board says how to move and resize: it is not said a second time beside it (16 Nov 2026).
+      ok(`${tag}: the board on the left (about 300 px), the right column starts at once with Add to your home page, the hint said once`, lay.gap < 30 && lay.first && lay.hints === 1 && lay.plan >= 280 && lay.plan <= 320, JSON.stringify(lay)); }
+    await p.screenshot({ path: join(SHOTS, `home-page-${lang}-${w}.png`) });
+    // A tap selects: the panel (desktop) or the bar above the step bar (phone), with the sizes the frame offers.
+    await sel('section:markets');
+    const pan = await p.evaluate(([side, phone]) => { const e = document.querySelector(side), t = document.querySelector('.hb-plan [data-hbk="section:markets"]'), d = document.querySelector('.hb-dock');
+      const r = t.getBoundingClientRect(), dr = d && d.getBoundingClientRect();
+      return { shown: !!e && e.getClientRects().length > 0, sizes: [...e.querySelectorAll('[data-hbsize]')].map(x => x.dataset.hbsize + (x.getAttribute('aria-pressed') === 'true' ? '*' : '')).join(' '), pressed: t.getAttribute('aria-pressed'),
+        other: phone ? !!document.querySelector('.hb-side .hb-pan.sel') && document.querySelector('.hb-side .hb-pan.sel').getClientRects().length > 0 : !!d && d.getClientRects().length > 0,
+        above: !phone || (r.top >= 0 && r.bottom <= dr.top + 0.5) }; }, [side, phone]);
+    ok(`${tag}: a tap on Markets shows its ${phone ? 'bar (and not the side panel)' : 'panel (and no bar)'}: half, wide and tall, tall pressed${phone ? ', the tile above the bar' : ''}`, pan.shown && !pan.other && pan.sizes === 'half wide tall*' && pan.pressed === 'true' && pan.above, JSON.stringify(pan));
+    c = await hbClear(p); ok(`${tag}, Markets selected: nothing overlaps, no word split, ${phone ? 'the bar inside the screen above the step bar' : 'nothing wider than the screen'}`, !c.length, c.join('; '));
+    await p.screenshot({ path: join(SHOTS, `home-page-${lang}-${w}-markets.png`) });
+    // A size: the first change writes the whole arrangement, the board flows again, the frame's check passes.
+    await pick('half');
+    let d = now(), hm = (d.files || {}).home;
+    ok(`${tag}: Half writes files.home (house and area, every thing placed, Markets half), which passes the frame's check()`, !!hm && Array.isArray(hm.house) && Array.isArray(hm.area) && (hm.area.find(x => x.id === 'markets') || {}).size === 'half'
+      && !FRM.check(hm, guideOf(d, true)).length && order(d, 'area').length === hm.area.length, JSON.stringify(hm) + ' ' + JSON.stringify(hm ? FRM.check(hm, guideOf(d, true)) : []));
+    const P0 = FRM.placements(null, guideOf(E.content, true));
+    ok(`${tag}: what was not touched keeps the default's own sizes (the house group as the default has it)`, !!hm && JSON.stringify(hm.house.map(x => x.id + ':' + x.size)) === JSON.stringify(P0.house.map(x => x.id + ':' + x.size)), JSON.stringify(hm && hm.house));
+    b = await board(p); ok(`${tag}: after Half the board is again the frame's Home for the new arrangement`, JSON.stringify(b) === JSON.stringify(want(d)), JSON.stringify(b) + ' / ' + JSON.stringify(want(d)));
+    // A lone half is shown wide, with its line; the switch keeps the host's pick.
+    await sel('section:message'); await pick('wide'); await sel('section:emergency');
+    const lone = await p.evaluate(([side]) => ({ cls: document.querySelector('.hb-plan [data-hbk="section:emergency"]').className, pressed: [...document.querySelectorAll(`${side} [data-hbsize][aria-pressed="true"]`)].map(x => x.dataset.hbsize).join(), why: (document.querySelector(`${side} .hb-why`) || {}).textContent || '' }), [side]);
+    ok(`${tag}: with House guide wide, Emergencies alone in its row is shown wide, its switch keeps Half, one line says why`, /\bs-wide\b/.test(lone.cls) && lone.pressed === 'half' && lone.why === T_LONE[lang], JSON.stringify(lone));
+    c = await hbClear(p); ok(`${tag}, a tile shown wide with its line: nothing overlaps, no word split`, !c.length, c.join('; '));
+    // Earlier and Later: one place within its group, said for screen readers.
+    await p.click(phone ? '#hbdEarlier' : '#hbEarlier'); await settle(p, 1300); d = now();
+    const live = await p.$eval('#hbLive', e => e.textContent).catch(() => '');
+    ok(`${tag}: Earlier moves Emergencies before House guide, in the file and on the board, and the move is said ("${live}")`, order(d, 'house').join() === 'section:garbage,section:emergency,section:message' && JSON.stringify(await board(p)) === JSON.stringify(want(d))
+      && (lang === 'en' ? live === 'Emergency contacts is now before House guide.' : /est maintenant avant/.test(live)), order(d, 'house').join());
+    await p.click(phone ? '#hbdLater' : '#hbLater'); await settle(p, 1300); d = now();
+    ok(`${tag}: Later moves it back`, order(d, 'house').join() === 'section:garbage,section:message,section:emergency', order(d, 'house').join());
+    await sel('section:garbage');
+    const bins = await p.evaluate(([side]) => ({ one: ((document.querySelector(`${side} .hb-one`) || {}).textContent || '').trim(), sizes: document.querySelectorAll(`${side} [data-hbsize]`).length, earlier: !!document.querySelector(`${side} [data-hbmove="-1"]:disabled`) }), [side]);
+    ok(`${tag}: Rubbish says its one size instead of a switch ("${bins.one}"), and Earlier is off at the top of its group`, bins.one === T_BINS[lang] && !bins.sizes && bins.earlier, JSON.stringify(bins));
+    if (lang === 'en') await p.screenshot({ path: join(SHOTS, `home-page-${w}-rubbish.png`) });
+    // Outside the board and its bar, a tap lets go of the tile.
+    await p.click('.hb-hint'); await settle(p, 200);
+    ok(`${tag}: a tap outside the board and its bar lets go of the tile`, !(await p.$('.hb-plan .hb-t.sel')) && !(await p.$('.hb-dock')));
+    if (!phone) {
+      // A mouse drag: after a few pixels, the other tiles make room; dropped, the order is the guide's.
+      const box = async k => { await p.$eval(`.hb-plan [data-hbk="${k}"]`, e => e.scrollIntoView({ block: 'center' })); const r = await p.$eval(`.hb-plan [data-hbk="${k}"]`, e => { const q = e.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2 }; }); return r; };
+      const drag = async (a, z, fin = 'up') => { const A = await box(a), Z = await p.$eval(`.hb-plan [data-hbk="${z}"]`, e => { const q = e.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2 }; });
+        await p.mouse.move(A.x, A.y); await p.mouse.down(); await p.mouse.move(A.x + 4, A.y + 3); await p.mouse.move(A.x + 10, A.y + 8, { steps: 3 });
+        await p.mouse.move(Z.x, Z.y, { steps: 12 }); await settle(p, 100);
+        const mid = await p.evaluate(() => ({ ghost: !!document.querySelector('.hb-ghost'), slot: !!document.querySelector('.hb-plan .hb-ph') }));
+        if (fin === 'esc') await p.keyboard.press('Escape');
+        await p.mouse.up(); await settle(p, 1300); return mid; };
+      const before = order(now(), 'area'), n0 = saved.length;
+      const mid = await drag('section:todo', 'section:markets'); d = now();
+      const after = order(d, 'area'), ti = after.indexOf('section:todo'), mi = after.indexOf('section:markets');
+      ok(`${tag}: a mouse drag of Attractions onto Markets lifts it (a ghost, its slot) and drops it before Markets; the board is the frame's Home`, mid.ghost && mid.slot && ti >= 0 && ti < mi && ti !== before.indexOf('section:todo') && saved.length > n0 && JSON.stringify(await board(p)) === JSON.stringify(want(d)), `${before.join()} -> ${after.join()} ${JSON.stringify(mid)}`);
+      await p.screenshot({ path: join(SHOTS, `home-page-${lang}-1280-dragged.png`) });
+      let n1 = saved.length, h0 = JSON.stringify((now().files || {}).home);
+      await drag('section:message', 'map'); d = now();
+      ok(`${tag}: dropped in the other group, the drag is cancelled: nothing moves, nothing is written`, saved.length === n1 && JSON.stringify((d.files || {}).home) === h0 && !(await p.$('.hb-ghost')), `${saved.length - n1} saves`);
+      n1 = saved.length;
+      await drag('section:restaurants', 'section:todo', 'esc'); d = now();
+      ok(`${tag}: Escape during a drag cancels it: nothing moves, nothing is written`, saved.length === n1 && JSON.stringify((d.files || {}).home) === h0 && !(await p.$('.hb-ghost')), `${saved.length - n1} saves`);
+      const sel0 = await p.$('.hb-plan .hb-t.sel');
+      ok(`${tag}: a drag is not a tap: no tile is selected after it`, !sel0);
+    } else {
+      // A finger: a long press (300 ms) lifts the tile and it moves with the finger; a quick swipe scrolls the page.
+      const cdp = await ctx.newCDPSession(p), T = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: Math.round(x), y: Math.round(y) }] });
+      const ctr = k => p.$eval(`.hb-plan [data-hbk="${k}"]`, e => { const q = e.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2 }; });
+      await p.$eval('.hb-plan [data-hbk="section:markets"]', e => e.scrollIntoView({ block: 'center' })); await settle(p, 200);
+      const before = order(now(), 'area'), A = await ctr('section:todo'), Z = await ctr('section:markets'), n0 = saved.length;
+      await T('touchStart', A.x, A.y); await p.waitForTimeout(450);
+      const lifted = await p.evaluate(() => !!document.querySelector('.hb-ghost'));
+      for (let i = 1; i <= 12; i++) { await T('touchMove', A.x + (Z.x - A.x) * i / 12, A.y + (Z.y - A.y) * i / 12); await p.waitForTimeout(25); }
+      await T('touchEnd'); await settle(p, 1300); d = now();
+      const after = order(d, 'area');
+      ok(`${tag}: a long press lifts Attractions and the finger drops it before Markets; the board is the frame's Home`, lifted && saved.length > n0 && after.indexOf('section:todo') >= 0 && after.indexOf('section:todo') < after.indexOf('section:markets') && JSON.stringify(await board(p)) === JSON.stringify(want(d)), `${before.join()} -> ${after.join()}, lifted ${lifted}`);
+      await p.$eval('.hb-plan [data-hbk="section:garbage"]', e => e.scrollIntoView({ block: 'start' })); await settle(p, 200);
+      const y0 = await p.evaluate(() => scrollY), S = await ctr('section:garbage'), h0 = JSON.stringify((now().files || {}).home), n1 = saved.length;
+      await T('touchStart', S.x, S.y + 120); for (let i = 1; i <= 8; i++) { await T('touchMove', S.x, S.y + 120 - i * 30); await p.waitForTimeout(16); } await T('touchEnd'); await settle(p, 600);
+      const y1 = await p.evaluate(() => scrollY);
+      ok(`${tag}: a quick swipe over the tiles scrolls the page and moves nothing`, y1 > y0 + 40 && saved.length === n1 && JSON.stringify((now().files || {}).home) === h0 && !(await p.$('.hb-ghost')), `scroll ${y0} -> ${y1}`);
+    }
+    // Add to your home page: Local events, a place to eat (searched), a place in none of the lists.
+    await p.click('[data-hbadd="events"]'); await settle(p, 1300); d = now();
+    const evSec = (((d.files || {}).sections || {}).sections || []).find(s => s.kind === 'events');
+    ok(`${tag}: Add, Local events: its tile comes on the board, wide and selected, written in files.home`, !!evSec && order(d, 'area').includes('section:' + evSec.id) && await p.$eval(`.hb-plan [data-hbk="section:${evSec.id}"]`, e => e.classList.contains('s-wide') && e.getAttribute('aria-pressed') === 'true').catch(() => false) && !FRM.check(d.files.home, guideOf(d, true)).length);
+    const rest = (((d.files || {}).restaurants || {}).items || []), quick0 = ((d.files || {}).quick || {}).items || [];
+    const free = rest.find(r => r.name && (r.name.en || '').length > 3 && !quick0.some(q => q.from === r.id));
+    await p.click('[data-hbadd="restaurants"]'); await settle(p, 300);
+    await p.fill('#hbQ', (free.name[lang] || free.name.en).slice(0, 4)); await settle(p, 200);
+    const hits = await p.$$eval('#hbPl [data-hbpin]', els => els.map(e => e.dataset.hbpin));
+    await p.click(`#hbPl [data-hbpin="files/restaurants/items/${rest.indexOf(free)}"]`); await settle(p, 1300); d = now();
+    const pinned = (((d.files || {}).quick || {}).items || []).find(q => q.from === free.id);
+    ok(`${tag}: Add, A place to eat: the search finds it, a tap puts it on the board as a card, selected (its words from the place)`, hits.length >= 1 && !!pinned && await p.$eval(`.hb-plan [data-hbk="highlight:${pinned.id}"]`, e => e.getAttribute('aria-pressed') === 'true').catch(() => false) && JSON.stringify(await board(p)) === JSON.stringify(want(d)), `${hits.length} found; ${pinned && pinned.id}`);
+    if (lang === 'en') await p.screenshot({ path: join(SHOTS, `home-page-${w}-added.png`) });
+    await p.click('[data-hbadd="own"]'); await settle(p, 300); await p.click('[data-hbown="shop"]'); await settle(p, 1300); d = now();
+    const own = (((d.files || {}).quick || {}).items || []).find(q => /^shop-/.test(q.id) && !q.from);
+    const ownOpen = own ? await p.$(`details.cmi[open][data-open="files/quick/items/${d.files.quick.items.indexOf(own)}"]`) : null;
+    ok(`${tag}: Add, a shop not in the lists: a card of your own words comes on the board, selected, its card open to fill in below`, !!own && !!ownOpen && await p.$eval(`.hb-plan [data-hbk="highlight:${own.id}"]`, e => e.getAttribute('aria-pressed') === 'true').catch(() => false) && JSON.stringify(await board(p)) === JSON.stringify(want(d)));
+    c = await hbClear(p); ok(`${tag}, a card selected: nothing overlaps, no word split${phone ? ', the bar inside the screen' : ''}`, !c.length, c.join('; '));
+    // Remove from the home page: the card of your own words after "Sure? Tap again", the pinned place at once (it stays in
+    // Eat and drink), Local events out of the arrangement.
+    const del = phone ? '.hb-dock [data-hbdel]' : '.hb-side .hb-pan.sel [data-hbdel]';
+    await p.click(del); await settle(p, 200); const asked = !!(await p.$(`.hb-plan [data-hbk="highlight:${own.id}"]`)); await p.click(del); await settle(p, 1300); d = now();
+    ok(`${tag}: Remove, a card of your own words: asks once more, then it leaves the board and the guide`, asked && !(await p.$(`.hb-plan [data-hbk="highlight:${own.id}"]`)) && !(((d.files || {}).quick || {}).items || []).some(q => q.id === own.id));
+    await sel('highlight:' + pinned.id); await p.click(del); await settle(p, 1300); d = now();
+    ok(`${tag}: Remove, a pinned place: off the board at once, still in Eat and drink`, !(await p.$(`.hb-plan [data-hbk="highlight:${pinned.id}"]`)) && !(((d.files || {}).quick || {}).items || []).some(q => q.from === free.id) && ((d.files.restaurants || {}).items || []).some(r => r.id === free.id) && !FRM.check(d.files.home, guideOf(d, true)).length);
+    await sel('section:' + evSec.id); await p.click(del); await settle(p, 1300); d = now();
+    ok(`${tag}: Remove, Local events: out of files.home and off the board, which passes the check`, !order(d, 'area').includes('section:' + evSec.id) && !(await p.$(`.hb-plan [data-hbk="section:${evSec.id}"]`)) && !FRM.check(d.files.home, guideOf(d, true)).length);
+    // Back to the arrangement we suggest: after one confirmation, files.home goes (the cards stay).
+    await p.click('#hbReset'); await settle(p, 200); const still = !!(now().files || {}).home; await p.click('#hbReset'); await settle(p, 1300); d = now();
+    ok(`${tag}: Back to the arrangement we suggest asks once more, then removes files.home; the board is the default again`, still && !(d.files || {}).home && !(await p.$('#hbReset')) && JSON.stringify(await board(p)) === JSON.stringify(want(E.content)), JSON.stringify((d.files || {}).home || null));
+    ok(`${tag}: every call to the database was answered here, none reached it (${sb.seen} calls, ${saved.length} saves kept in memory)`, sb.seen > 0 && sb.seen === sb.ours, `${sb.seen} seen, ${sb.ours} answered`);
+    ok(`${tag}: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close();
   }
 }

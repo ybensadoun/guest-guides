@@ -141,9 +141,11 @@ export function runs(list) {
   return out.map(x => ({ ...x, items: pack(x.items) }));
 }
 
-// The arrangement to draw: the guide's own (content/home.json) laid over the default, then packed.
-// Returns { house: [runs], area: [runs] }, each item { kind, id, size, widget }.
-export function resolve(arrangement, guide) {
+// The placements the guide's own arrangement (content/home.json) makes, laid over the default, before packing: each thing
+// in the size asked for (or its default when it is not offered), in its order. Returns { house: [items], area: [items] },
+// each item { kind, id, size, widget }. The maker's arranger writes these sizes back (the host's pick, not the size the no
+// holes rule shows: onboarding-site/src/board.js); resolve() packs them.
+export function placements(arrangement, guide) {
   const def = defaultArrangement(guide), defSize = new Map();
   for (const g of GROUPS) for (const p of def[g]) defSize.set(keyOf(p), p.size);
   const placed = { house: [], area: [] }, seen = new Set();
@@ -171,6 +173,13 @@ export function resolve(arrangement, guide) {
     for (let j = i + 1; j < def[g].length; j++) { const at = idx(def[g][j]); if (at >= 0) { L.splice(at, 0, it); return; } }
     L.splice(L.length && L[L.length - 1].kind === 'map' ? L.length - 1 : L.length, 0, it);
   });
+  return placed;
+}
+
+// The arrangement to draw: the guide's own (content/home.json) laid over the default (placements), then packed.
+// Returns { house: [runs], area: [runs] }, each item { kind, id, size, widget }.
+export function resolve(arrangement, guide) {
+  const placed = placements(arrangement, guide);
   return { house: runs(placed.house), area: runs(placed.area) };
 }
 

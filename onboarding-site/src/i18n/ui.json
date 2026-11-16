@@ -8242,5 +8242,270 @@
 "ca": "Portada dibuixada",
 "es": "Portada dibujada",
 "fr": "Couverture dessinée"
+},
+"Home page": {
+"ca": "Pàgina d’inici",
+"es": "Página de inicio",
+"fr": "Page d’accueil"
+},
+"Your own arrangement": {
+"ca": "La teva disposició",
+"es": "Tu propia disposición",
+"fr": "Votre disposition"
+},
+"Arranged for you": {
+"ca": "Organitzada per a tu",
+"es": "Organizada para ti",
+"fr": "Organisée pour vous"
+},
+"What guests see first. It is arranged for you: change only what you want.": {
+"ca": "El primer que veuen els hostes. Ja està organitzada: canvia només el que vulguis.",
+"es": "Lo primero que ven los huéspedes. Ya está organizada: cambia solo lo que quieras.",
+"fr": "Ce que les voyageurs voient en premier. Elle est organisée pour vous : changez seulement ce que vous voulez."
+},
+"Places on the home page": {
+"ca": "Llocs a la pàgina d’inici",
+"es": "Sitios en la página de inicio",
+"fr": "Lieux sur la page d’accueil"
+},
+"A card on the home page, one tap away, like the bar next door. You can move it and change its words in Home page.": {
+"ca": "Una targeta a la pàgina d’inici, a un toc, com el bar del costat. Pots moure-la i canviar-ne el text a Pàgina d’inici.",
+"es": "Una tarjeta en la página de inicio, a un toque, como el bar de al lado. Puedes moverla y cambiar su texto en Página de inicio.",
+"fr": "Une fiche sur la page d’accueil, à portée de doigt, comme le bar d’à côté. Vous pouvez la déplacer et changer son texte dans Page d’accueil."
+},
+"Getting around always has its own page. As a card it also sits on your home page, one tap away: move it in Home page.": {
+"ca": "Com moure’s sempre té la seva pàgina. Com a targeta també és a la pàgina d’inici, a un toc: mou-la a Pàgina d’inici.",
+"es": "Cómo moverse siempre tiene su propia página. Como tarjeta también está en la página de inicio, a un toque: muévela en Página de inicio.",
+"fr": "Se déplacer a toujours sa propre page. En fiche, il est aussi sur votre page d’accueil, à portée de doigt : déplacez-le dans Page d’accueil."
+},
+"Drag a tile to move it, tap it to change its size.": {
+"ca": "Arrossega un botó per moure’l, toca’l per canviar-ne la mida.",
+"es": "Arrastra un botón para moverlo, tócalo para cambiar su tamaño.",
+"fr": "Faites glisser une vignette pour la déplacer, touchez-la pour changer sa taille."
+},
+"Your home page": {
+"ca": "La teva pàgina d’inici",
+"es": "Tu página de inicio",
+"fr": "Votre page d’accueil"
+},
+"Welcome card": {
+"ca": "Targeta de benvinguda",
+"es": "Tarjeta de bienvenida",
+"fr": "Fiche d’accueil"
+},
+"always first": {
+"ca": "sempre la primera",
+"es": "siempre la primera",
+"fr": "toujours en premier"
+},
+"What’s on": {
+"ca": "Què hi ha",
+"es": "Qué hay",
+"fr": "Au programme"
+},
+"always last": {
+"ca": "sempre l’última",
+"es": "siempre la última",
+"fr": "toujours en dernier"
+},
+"Shows what goes out tonight.": {
+"ca": "Mostra què es treu aquesta nit.",
+"es": "Muestra qué se saca esta noche.",
+"fr": "Montre ce qui sort ce soir."
+},
+"Opens your markets and says how many are on today.": {
+"ca": "Obre els teus mercats i diu quants n’hi ha avui.",
+"es": "Abre tus mercados y dice cuántos hay hoy.",
+"fr": "Ouvre vos marchés et dit combien ont lieu aujourd’hui."
+},
+"Opens your list of places.": {
+"ca": "Obre la teva llista de llocs.",
+"es": "Abre tu lista de sitios.",
+"fr": "Ouvre votre liste de lieux."
+},
+"Names the next event, with its date.": {
+"ca": "Diu el proper esdeveniment, amb la data.",
+"es": "Indica el próximo evento, con su fecha.",
+"fr": "Annonce le prochain événement, avec sa date."
+},
+"Opens this page of your guide.": {
+"ca": "Obre aquesta pàgina de la guia.",
+"es": "Abre esta página de tu guía.",
+"fr": "Ouvre cette page de votre guide."
+},
+"Opens the numbers guests may need.": {
+"ca": "Obre els números que poden necessitar els hostes.",
+"es": "Abre los números que pueden necesitar los huéspedes.",
+"fr": "Ouvre les numéros dont les voyageurs peuvent avoir besoin."
+},
+"Opens taxis, train stations and bus stops.": {
+"ca": "Obre els taxis, les estacions de tren i les parades d’autobús.",
+"es": "Abre los taxis, las estaciones de tren y las paradas de autobús.",
+"fr": "Ouvre les taxis, les gares et les arrêts de bus."
+},
+"Opens the map of every place in your guide.": {
+"ca": "Obre el mapa de tots els llocs de la guia.",
+"es": "Abre el mapa de todos los sitios de tu guía.",
+"fr": "Ouvre la carte de tous les lieux de votre guide."
+},
+"One place, one tap away, with open or closed now.": {
+"ca": "Un lloc, a un toc, amb si és obert o tancat ara.",
+"es": "Un sitio, a un toque, con si está abierto o cerrado ahora.",
+"fr": "Un lieu, à portée de doigt, avec ouvert ou fermé maintenant."
+},
+"Opens Getting around, one tap away.": {
+"ca": "Obre Com moure’s, a un toc.",
+"es": "Abre Cómo moverse, a un toque.",
+"fr": "Ouvre Se déplacer, à portée de doigt."
+},
+"Always wide: it shows tonight’s bins.": {
+"ca": "Sempre ampli: mostra els contenidors d’aquesta nit.",
+"es": "Siempre ancho: muestra los cubos de esta noche.",
+"fr": "Toujours large : elle montre les poubelles de ce soir."
+},
+"Always wide: a bar across the page.": {
+"ca": "Sempre ampli: una barra d’un costat a l’altre.",
+"es": "Siempre ancho: una barra de lado a lado.",
+"fr": "Toujours large : une barre sur toute la largeur."
+},
+"Always wide: it names the next event and its date.": {
+"ca": "Sempre ampli: diu el proper esdeveniment i la data.",
+"es": "Siempre ancho: indica el próximo evento y su fecha.",
+"fr": "Toujours large : elle annonce le prochain événement et sa date."
+},
+"Half": {
+"ca": "Mig",
+"es": "Medio",
+"fr": "Demi"
+},
+"Wide": {
+"ca": "Ample",
+"es": "Ancho",
+"fr": "Large"
+},
+"Tall": {
+"ca": "Alt",
+"es": "Alto",
+"fr": "Haut"
+},
+"Size": {
+"ca": "Mida",
+"es": "Tamaño",
+"fr": "Taille"
+},
+"Position": {
+"ca": "Posició",
+"es": "Posición",
+"fr": "Position"
+},
+"Shown wide for now: it is alone in its row.": {
+"ca": "De moment es veu ample: està sol a la seva fila.",
+"es": "Por ahora se ve ancho: está solo en su fila.",
+"fr": "Affichée en large pour l’instant : elle est seule sur sa ligne."
+},
+"Shown half for now: a tall tile needs two tiles beside it.": {
+"ca": "De moment es veu mig: un botó alt necessita dos botons al costat.",
+"es": "Por ahora se ve medio: un botón alto necesita dos botones al lado.",
+"fr": "Affichée en demi pour l’instant : une vignette haute a besoin de deux vignettes à côté."
+},
+"Edit its words": {
+"ca": "Canvia’n el text",
+"es": "Cambiar su texto",
+"fr": "Modifier son texte"
+},
+"Edit this section": {
+"ca": "Edita aquesta secció",
+"es": "Editar esta sección",
+"fr": "Modifier cette section"
+},
+"Remove from the home page": {
+"ca": "Treu de la pàgina d’inici",
+"es": "Quitar de la página de inicio",
+"fr": "Retirer de la page d’accueil"
+},
+"↑ Earlier": {
+"ca": "↑ Abans",
+"es": "↑ Antes",
+"fr": "↑ Avant"
+},
+"↓ Later": {
+"ca": "↓ Després",
+"es": "↓ Después",
+"fr": "↓ Après"
+},
+"A place to eat": {
+"ca": "Un lloc per menjar",
+"es": "Un sitio para comer",
+"fr": "Un lieu où manger"
+},
+"Something to do": {
+"ca": "Alguna cosa per fer",
+"es": "Algo que hacer",
+"fr": "Une chose à faire"
+},
+"One of your {n} places, with open or closed now": {
+"ca": "Un dels teus {n} llocs, amb si és obert o tancat ara",
+"es": "Uno de tus {n} sitios, con si está abierto o cerrado ahora",
+"fr": "Un de vos {n} lieux, avec ouvert ou fermé maintenant"
+},
+"One of your {n} places": {
+"ca": "Un dels teus {n} llocs",
+"es": "Uno de tus {n} sitios",
+"fr": "Un de vos {n} lieux"
+},
+"Another place": {
+"ca": "Un altre lloc",
+"es": "Otro sitio",
+"fr": "Un autre lieu"
+},
+"A bar, restaurant or shop that is not in your lists, in your own words": {
+"ca": "Un bar, restaurant o botiga que no és a les teves llistes, amb les teves paraules",
+"es": "Un bar, restaurante o tienda que no está en tus listas, con tus palabras",
+"fr": "Un bar, un restaurant ou un commerce absent de vos listes, avec vos propres mots"
+},
+"As a card: taxis and stations, one tap away": {
+"ca": "Com a targeta: taxis i estacions, a un toc",
+"es": "Como tarjeta: taxis y estaciones, a un toque",
+"fr": "En fiche : taxis et gares, à portée de doigt"
+},
+"The next event, with its date": {
+"ca": "El proper esdeveniment, amb la data",
+"es": "El próximo evento, con su fecha",
+"fr": "Le prochain événement, avec sa date"
+},
+"Add to your home page": {
+"ca": "Afegeix a la pàgina d’inici",
+"es": "Añadir a tu página de inicio",
+"fr": "Ajouter à votre page d’accueil"
+},
+"What each part of your guide can show here.": {
+"ca": "El que cada part de la guia pot mostrar aquí.",
+"es": "Lo que cada parte de tu guía puede mostrar aquí.",
+"fr": "Ce que chaque partie de votre guide peut montrer ici."
+},
+"Nothing with that name.": {
+"ca": "Res amb aquest nom.",
+"es": "Nada con ese nombre.",
+"fr": "Rien de ce nom."
+},
+"Back to the arrangement we suggest": {
+"ca": "Torna a la disposició que proposem",
+"es": "Volver a la disposición que proponemos",
+"fr": "Revenir à la disposition que nous proposons"
+},
+"Places on your home page": {
+"ca": "Llocs a la teva pàgina d’inici",
+"es": "Sitios en tu página de inicio",
+"fr": "Lieux sur votre page d’accueil"
+},
+"{x} is now before {y}.": {
+"ca": "{x} ara és abans de {y}.",
+"es": "{x} ahora está antes de {y}.",
+"fr": "{x} est maintenant avant {y}."
+},
+"{x} is now after {y}.": {
+"ca": "{x} ara és després de {y}.",
+"es": "{x} ahora está después de {y}.",
+"fr": "{x} est maintenant après {y}."
 }
 }
