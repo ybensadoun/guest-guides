@@ -30,7 +30,9 @@ export function checkList(a) {
       ps.add(p.id);
       if (!p.name) bad.push(`${k}: no name`);
       if (!(p.where === 'any' || (Array.isArray(p.where) && p.where.length && p.where.every(isCode)))) bad.push(`${k}: where is "any" or a list of country codes`);
-      if (!p.why || /—/.test(p.why + p.name)) bad.push(`${k}: a why, without an em-dash`);
+      if (!p.why || /\u2014/.test(p.why + p.name)) bad.push(`${k}: a why, without an em-dash`);
+      if (p.where !== 'any' && (!p.needs || /\u2014/.test(p.needs))) bad.push(`${k}: tied to countries, so it says what it needs elsewhere, without an em-dash`);
+      if (p.where === 'any' && p.needs) bad.push(`${k}: works anywhere, so it needs nothing`);
     }
   }
   return bad;

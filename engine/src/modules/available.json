@@ -1,13 +1,13 @@
 {
-  "_doc": "Where each part of the guide works today, and why (Yohann, 16 Nov 2026: 'For each module that we're building, we should also say in which country it's available'). The one list in the code: modules by the conversation that owns them (MODULE-CONVERSATIONS.md, 1 to 14, in that order), each with its parts. A part: id, name, where ('any', or a list of ISO country codes where it works), why (the source or rule that ties it, in one sentence). 'any' means no country rule was found in the code or the docs: nothing has been tried outside Spain yet. countries: the countries the owner's modules page shows first. Read by that page (onboarding-site/modules/, through its build's copy); the owner's switches are kept in the database (table module_switches) and win over this list. Not read by the maker or the generator yet (engine/src/modules/README.md, 'Not built yet'). A module's README says the same in words under 'Where it is available': change both together.",
+  "_doc": "Where each part of the guide works today, and why (Yohann, 16 Nov 2026: 'For each module that we're building, we should also say in which country it's available'). The one list in the code: modules by the conversation that owns them (MODULE-CONVERSATIONS.md, 1 to 14, in that order), each with its parts. A part: id, name, where ('any', or a list of ISO country codes where it works), why (the source or rule that ties it, in one sentence), and for a part tied to countries, needs (what would make it work in another country, in one sentence: the owner's page shows it when a country is prepared). 'any' means no country rule was found in the code or the docs: nothing has been tried outside Spain yet. countries: the countries the owner's modules page shows first. Read by that page (onboarding-site/modules/, through its build's copy); the owner's switches are kept in the database (table module_switches) and win over this list. Not read by the maker or the generator yet (engine/src/modules/README.md, 'Not built yet'). A module's README says the same in words under 'Where it is available': change both together.",
   "countries": ["ES"],
   "modules": [
     { "id": "transport", "name": "Getting around", "parts": [
       { "id": "taxis", "name": "Taxis found near the house", "where": "any", "why": "From our open directory (Overture), which covers the world; numbers are written the Spanish way only for Spanish numbers. A taxi the host types works anywhere." },
-      { "id": "apps", "name": "Ride apps", "where": ["ES"], "why": "Uber, Cabify, Bolt and Freenow are looked up among Spain's cities only." },
-      { "id": "trains", "name": "Train stations and lines", "where": ["ES"], "why": "Stations, lines and journey times come from Renfe's open timetable files. A station added by its name or link works anywhere." },
-      { "id": "brands", "name": "iryo and Ouigo", "where": ["ES"], "why": "Looked up only among our high speed stations, which are Spain's." },
-      { "id": "stops", "name": "Metro, tram and bus stops", "where": ["ES"], "why": "From the open timetables of Spain's national access point. A stop added by its name or link works anywhere." }
+      { "id": "apps", "name": "Ride apps", "where": ["ES"], "why": "Uber, Cabify, Bolt and Freenow are looked up among Spain's cities only.", "needs": "The ride apps that work in the country and the cities each one serves." },
+      { "id": "trains", "name": "Train stations and lines", "where": ["ES"], "why": "Stations, lines and journey times come from Renfe's open timetable files. A station added by its name or link works anywhere.", "needs": "The country's open train timetables, read into our stations file as Renfe's are." },
+      { "id": "brands", "name": "iryo and Ouigo", "where": ["ES"], "why": "Looked up only among our high speed stations, which are Spain's.", "needs": "The country's other train companies, if it has any, and where they stop." },
+      { "id": "stops", "name": "Metro, tram and bus stops", "where": ["ES"], "why": "From the open timetables of Spain's national access point. A stop added by its name or link works anywhere.", "needs": "The country's open timetables for metro, tram and bus: its national access point, or each city's own files." }
     ] },
     { "id": "home", "name": "Home page", "parts": [
       { "id": "frame", "name": "Home's tiles and sizes", "where": "any", "why": "Drawn from the guide's own sections: no country rule." },
@@ -16,24 +16,24 @@
       { "id": "sections", "name": "Guide sections", "where": "any", "why": "Switches a section on or off: no country rule." }
     ] },
     { "id": "markets", "name": "Markets and What's on", "parts": [
-      { "id": "found", "name": "Markets found for the host", "where": ["ES"], "why": "The research is Spain only for now (the product's rule), and a weekly market is the Spanish case." },
+      { "id": "found", "name": "Markets found for the host", "where": ["ES"], "why": "The research is Spain only for now (the product's rule), and a weekly market is the Spanish case.", "needs": "The research told what a market is in that country and where its markets are listed." },
       { "id": "own", "name": "Markets the host adds", "where": "any", "why": "The host's own words, days and hours: no country rule." },
       { "id": "whatson", "name": "What's on", "where": "any", "why": "An agenda of the guide's own markets and events: no country rule." }
     ] },
     { "id": "events", "name": "Local events", "parts": [
-      { "id": "found", "name": "Events found and kept up to date", "where": ["ES"], "why": "The research is Spain only for now; the search and the kinds of event are tuned for Spain's traditions." },
+      { "id": "found", "name": "Events found and kept up to date", "where": ["ES"], "why": "The research is Spain only for now; the search and the kinds of event are tuned for Spain's traditions.", "needs": "The search told the country's own traditions and kinds of event." },
       { "id": "own", "name": "The host's own events", "where": "any", "why": "Typed by the host: no country rule." }
     ] },
     { "id": "restaurants", "name": "Restaurants", "parts": [
       { "id": "own", "name": "The host's own list", "where": "any", "why": "The host's words; Google only locates the place." },
-      { "id": "facts", "name": "A place's hours, phone and website", "where": ["ES"], "why": "Read from our open directory and the place's own website with Spain's towns and Spain's usual seasons; shared with Things to do and Nightlife." },
+      { "id": "facts", "name": "A place's hours, phone and website", "where": ["ES"], "why": "Read from our open directory and the place's own website with Spain's towns and Spain's usual seasons; shared with Things to do and Nightlife.", "needs": "The country's towns (GeoNames' file for it) and its usual seasons." },
       { "id": "open-now", "name": "Google's open-now line", "where": "any", "why": "Google's own live card for a place that has a Google id: no country rule." }
     ] },
     { "id": "todo", "name": "Things to do", "parts": [
       { "id": "own", "name": "Places the host adds", "where": "any", "why": "The host's words; Google only locates the place." },
       { "id": "deck", "name": "The swipe deck", "where": "any", "why": "Google's places near the house, shown live: no country limit found in the code." },
-      { "id": "towns", "name": "Towns as things to do", "where": ["ES"], "why": "The list of towns is made from GeoNames' file for Spain." },
-      { "id": "found", "name": "Research and Find more", "where": ["ES"], "why": "The research is Spain only for now (the product's rule)." }
+      { "id": "towns", "name": "Towns as things to do", "where": ["ES"], "why": "The list of towns is made from GeoNames' file for Spain.", "needs": "GeoNames' file for the country, made into our list of towns." },
+      { "id": "found", "name": "Research and Find more", "where": ["ES"], "why": "The research is Spain only for now (the product's rule).", "needs": "The research told what to look for in that country." }
     ] },
     { "id": "house", "name": "The house page", "parts": [
       { "id": "page", "name": "Photos, rooms and beds", "where": "any", "why": "From the listing and the host: no country rule." },
@@ -44,7 +44,7 @@
       { "id": "bins", "name": "Bins and collection days", "where": "any", "why": "The host tells us, nothing is researched. The sentences we suggest name Spain's container colours." }
     ] },
     { "id": "contacts", "name": "Contacts", "parts": [
-      { "id": "found", "name": "Emergency numbers and services found", "where": ["ES"], "why": "The research is Spain only for now: the emergency number, the health line and the services near the house." },
+      { "id": "found", "name": "Emergency numbers and services found", "where": ["ES"], "why": "The research is Spain only for now: the emergency number, the health line and the services near the house.", "needs": "The country's emergency number, its health line and the services the research should look for." },
       { "id": "own", "name": "Contacts the host adds", "where": "any", "why": "Typed by the host: no country rule." }
     ] },
     { "id": "nightlife", "name": "Nightlife", "parts": [

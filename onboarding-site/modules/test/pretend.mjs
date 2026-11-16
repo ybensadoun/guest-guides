@@ -14,7 +14,7 @@ if (!samples.length) { console.error('No fixtures: run samples/make.mjs, then bu
 
 // The pretend database: what the page, the maker and the viewer ask of it.
 export function world({ owner = true, empty = true } = {}) {
-  const db = { owner, calls: [], switches: [], feedback: [], nextId: 1,
+  const db = { owner, calls: [], switches: [], countries: [], feedback: [], nextId: 1,
     guides: samples.map((s, i) => { const fx = JSON.parse(readFileSync(resolve(HERE, `../samples/${s.slug}.json`), 'utf8'));
       return { id: `00000000-0000-4000-8000-00000000010${i}`, owner: USER.id, slug: s.slug, status: 'draft', origin: 'imported', answers: {}, content: empty && i === samples.length - 1 ? {} : fx.content, theme: fx.theme || {}, draft: null, finished_at: null }; }) };
   const shape = g => ({ ...g, name: ((g.content || {}).site || {}).name || null, saved: (g.draft || {}).savedAt || null, guideName: null, place: null });
@@ -31,6 +31,10 @@ export function world({ owner = true, empty = true } = {}) {
       if (m === 'GET') return json(db.switches);
       if (m === 'POST') { const b = body(); db.calls.push(['switch', b]); db.switches = [...db.switches.filter(x => !(x.module === b.module && x.part === b.part && x.country === b.country)), b]; return json(null, 201); }
       if (m === 'DELETE') { db.calls.push(['switch-delete', u.search]); db.switches = db.switches.filter(x => !(u.search.includes('module=eq.' + x.module) && u.search.includes('part=eq.' + x.part) && u.search.includes('country=eq.' + x.country))); return json(null, 204); }
+    }
+    if (p === '/rest/v1/launch_countries') {
+      if (m === 'GET') return json(db.countries);
+      if (m === 'POST') { const b = body(); db.calls.push(['country', b.country, b.state]); db.countries = [...db.countries.filter(x => x.country !== b.country), b]; return json(null, 201); }
     }
     if (p === '/rest/v1/module_feedback') {
       if (m === 'GET') return json(db.feedback);
