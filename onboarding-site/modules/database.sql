@@ -1,6 +1,9 @@
 -- The launch desk's part of the database (onboarding-site/modules/README.md).
--- PROPOSED on 17 Nov 2026, NOT APPLIED: blocks 1 to 3 are the launch desk and go together on Yohann's yes; blocks 4 and
--- 5 are for the play area and wait for their own yes. When a block is applied, write the date here. Nothing in this file
+-- Blocks 1 to 3, the launch desk: APPLIED on 17 Nov 2026 on Yohann's yes ("Yes, create them"), as the migration
+-- launch_desk_owner_countries_switches_feedback, and tried the same day as nobody, as another account and as the owner:
+-- the first two are refused everywhere and get only launch_public() (states and switches, never a note); the owner
+-- reads and writes his rows; nobody reads the table owners through the site, the owner included.
+-- Blocks 4 and 5, for the play area: PROPOSED, NOT APPLIED, each waits for its own yes. Nothing in this file
 -- is secret; the owner's email is not written in it (the repo is public): put it in place of <the owner's email>.
 -- Who may apply it: the launch desk's conversation (conversation 15), block by block, each on Yohann's own yes. Never a
 -- module conversation. updated_at is set by the page in every write it makes (console.js: swSet, countryPut); a write
@@ -83,7 +86,7 @@ revoke all on table public.module_feedback from anon;
 create policy "owner reads and writes module feedback" on public.module_feedback
   for all to authenticated using ((select public.is_owner())) with check ((select public.is_owner()));
 
--- LATER, with the play area (their own yes):
+-- NOT APPLIED. Later, with the play area (their own yes):
 
 -- 4. Sample houses: guides of the owner whose web address starts with "sample-". Two guards, whoever asks: one is
 --    never published (guests never see it as a real guide), and none starts a search that costs money (every job but
