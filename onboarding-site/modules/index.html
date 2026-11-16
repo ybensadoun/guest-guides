@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Modules · Guest Guide Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Onest:wght@400;500;600;700&display=swap">
+<!-- The owner's modules page (Yohann, 16 Nov 2026): the fourteen modules of the guide, where each part works, the real
+     maker step beside the real guest page on sample houses, and feedback for the right conversation. A real file, like
+     /privacy/, so the catch-all rewrite to the maker does not touch it. Nothing private is in this file or its scripts:
+     the database's rules decide who gets an answer (README.md beside it). -->
+<link rel="stylesheet" href="/modules/console.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/"><span class="door" aria-hidden="true"></span><b>Modules</b></a>
+  <span class="who" id="who"></span>
+  <a class="tolink" href="/">Open the maker</a>
+</header>
+<main id="main"><p class="wait">One moment…</p></main>
+<aside class="fb" id="fb" hidden aria-label="Feedback"></aside>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script src="/modules/console.js"></script>
+</body>
+</html>
