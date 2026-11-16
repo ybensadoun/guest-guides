@@ -443,3 +443,11 @@ body:has(#main > :is(.start,.yours,.bwrap)) #ver{padding-bottom:18px}
   #main:has(> :is(.start,.yours,.bwrap)){min-height:calc(100dvh - 142px);justify-content:center}
   #main:has(> :is(.start,.yours,.bwrap))::after{content:"";flex:0 0 8vh}
 }
+/* Taxis near your house (start.js txListHTML): the directory's taxis, each with a tick for the host to approve */
+.tx-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-s);overflow:hidden;background:var(--surface)}
+.tx-row{display:flex;gap:12px;align-items:center;padding:10px 12px;min-height:52px;border-top:1px solid var(--line);cursor:pointer}
+.tx-row:first-child{border-top:0}
+.tx-row input{width:20px;height:20px;flex:none;margin:0}
+.tx-row > span{display:flex;flex-direction:column;min-width:0}
+.tx-row b{overflow-wrap:break-word}
+.tx-row small{color:var(--muted);font-size:13px}

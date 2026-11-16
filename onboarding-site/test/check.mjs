@@ -220,7 +220,7 @@ function groupList() {
   return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'research-deck': gResearchDeck, 'deck-steady': gDeckSteady, 'build-ready': gBuildReady, 'web-address': gWebAddress,
     'houses': gHouses, 'builder': gBuilder, 'rooms-offers': gRoomsOffers, 'nearby': gNearby, 'wow': gWow, 'editor': gEditor, 'editor-names': gEditorNames,
     'place-card': gPlaceCard, 'place-season': gPlaceSeason, 'still-open': gStillOpen, 'place-facts': gPlaceFacts, 'market-event': gMarketEvent,
-    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea, 'home-page': gHomePage, 'trains': gTrains };
+    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea, 'home-page': gHomePage, 'trains': gTrains, 'taxis': gTaxis };
 }
 
   // Inside a navy start card (sel): nothing touches anything (the eyebrow, title and text by their words, the panel, the moon
@@ -1330,6 +1330,17 @@ async function gAreaSea() {
 // Spain's stations (Renfe's timetables, stations-es.json) as the host types, the nearest first, accents and capitals aside;
 // a pick adds the station at once, opened, with its lines and journey times, credited to Renfe, without any request;
 // a station already in the guide is not offered again; "Not in the list?" opens the old way; bus stops keep the old way.
+// Nothing in a box of rows (or the closed cards) overlaps, sticks out, is cut, or breaks a word; no sideways scroll.
+const boxClear = (p, rowSel, parts) => p.evaluate(([rowSel, parts]) => { const out = [];
+  const hit = (a, c) => Math.min(a.right, c.right) - Math.max(a.left, c.left) > 1 && Math.min(a.bottom, c.bottom) - Math.max(a.top, c.top) > 1;
+  for (const row of document.querySelectorAll(rowSel)) { const rr = row.getBoundingClientRect(), ps = [...row.querySelectorAll(parts)].filter(e => e.getClientRects().length).map(e => [e, e.getBoundingClientRect()]);
+    for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) if (!ps[i][0].contains(ps[j][0]) && !ps[j][0].contains(ps[i][0]) && hit(ps[i][1], ps[j][1])) out.push(`${ps[i][0].textContent.slice(0, 20)} / ${ps[j][0].textContent.slice(0, 20)}`);
+    for (const [e, r] of ps) { if (r.right > rr.right + 0.5 || r.left < rr.left - 0.5) out.push('outside: ' + e.textContent.slice(0, 24)); if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible') out.push('cut: ' + e.textContent.slice(0, 24));
+      const t = e.firstChild && e.firstChild.nodeType === 3 ? e.firstChild : null;
+      if (t) for (const m of t.data.matchAll(/[\p{L}\p{N}'’·-]{3,}/gu)) { const g = document.createRange(); g.setStart(t, m.index); g.setEnd(t, m.index + m[0].length); if (g.getClientRects().length > 1) out.push('word broken: ' + m[0]); } } }
+  if (document.documentElement.scrollWidth > innerWidth) out.push('sideways scroll');
+  return out; }, [rowSel, parts]);
+
 async function gTrains() {
   // The guide without its stations (its taxi kept), so that each one can be added; its house is Ca La Kimberly's.
   const c0 = JSON.parse(JSON.stringify(E.content)); c0.files.transport.stations = [];
@@ -1408,20 +1419,10 @@ async function gTrains() {
   // list when the field is focused and empty. The field's example is the nearest station. Closed rows show coloured badges.
   const M2 = join(SHOTS, 'maker2'); mkdirSync(M2, { recursive: true });
   const nearNow = (p, sel) => p.evaluate(sel => [...document.querySelectorAll(sel + ' button')].map(e => ({ n: (e.querySelector('b') || {}).textContent, badges: e.querySelectorAll('.cm-badge').length, km: (e.querySelector('.cm-trkm') || {}).textContent || '', role: (e.querySelector('.cm-trrole') || {}).textContent || '' })), sel);
-  // Nothing in a box of rows (or the closed cards) overlaps, sticks out, is cut, or breaks a word; no sideways scroll.
-  const boxClear = (p, rowSel, parts) => p.evaluate(([rowSel, parts]) => { const out = [];
-    const hit = (a, c) => Math.min(a.right, c.right) - Math.max(a.left, c.left) > 1 && Math.min(a.bottom, c.bottom) - Math.max(a.top, c.top) > 1;
-    for (const row of document.querySelectorAll(rowSel)) { const rr = row.getBoundingClientRect(), ps = [...row.querySelectorAll(parts)].filter(e => e.getClientRects().length).map(e => [e, e.getBoundingClientRect()]);
-      for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) if (!ps[i][0].contains(ps[j][0]) && !ps[j][0].contains(ps[i][0]) && hit(ps[i][1], ps[j][1])) out.push(`${ps[i][0].textContent.slice(0, 20)} / ${ps[j][0].textContent.slice(0, 20)}`);
-      for (const [e, r] of ps) { if (r.right > rr.right + 0.5 || r.left < rr.left - 0.5) out.push('outside: ' + e.textContent.slice(0, 24)); if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible') out.push('cut: ' + e.textContent.slice(0, 24));
-        const t = e.firstChild && e.firstChild.nodeType === 3 ? e.firstChild : null;
-        if (t) for (const m of t.data.matchAll(/[\p{L}\p{N}'’·-]{3,}/gu)) { const g = document.createRange(); g.setStart(t, m.index); g.setEnd(t, m.index + m[0].length); if (g.getClientRects().length > 1) out.push('word broken: ' + m[0]); } } }
-    if (document.documentElement.scrollWidth > innerWidth) out.push('sideways scroll');
-    return out; }, [rowSel, parts]);
   const ROLE = { en: ['Closest', 'Faster', 'High speed'], fr: ['La plus proche', 'Plus rapide', 'Grande vitesse'] };
   for (const [w, h, tag, lang] of [[1280, 860, '1280 px', 'en'], [360, 780, '360 px', 'en'], [1280, 860, '1280 px, French', 'fr'], [360, 780, '360 px, French', 'fr']]) {
     const fr = lang === 'fr', { ctx, p, errors } = await open(browser, G0, w, h, fr ? { 'porta-lang-v1': 'fr' } : {}), saved = [], asked = [];
-    p.on('request', r => { const u = r.url(); if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(u)) saved.push(r.postData()); if (/\/api\/places\?(?!probe)|guide_jobs/.test(u)) asked.push(u); });
+    p.on('request', r => { const u = r.url(); if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(u)) saved.push(r.postData()); if (/\/api\/places\?(?!probe)|guide_jobs/.test(u) && !/"what":"taxis"/.test(r.postData() || '') && !/id=eq\.(job-taxis|undefined)/.test(u)) asked.push(u); });
     await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 400);
     const near = await nearNow(p, '#c_trnear .cm-nearl');
     ok(`near your house, ${tag}: with no train station, the rule's three stations are offered without typing, with their lines, distance and role`, cmpSame(near.map(x => x.n), ['El Vendrell', 'Sant Vicenç de Calders', 'Camp de Tarragona']) && cmpSame(near.map(x => x.role), ROLE[lang]) && near.every(x => x.badges > 0 && /^\d+\s?km$/.test(x.km.replace(/ /, ' '))) && /Near your house|Près de chez vous/.test(await textNow(p, '.cm-trnh')), JSON.stringify(near));
@@ -1470,7 +1471,8 @@ async function gTrains() {
   // two companies' badges on the station where it stands; El Vendrell (no high speed) queues nothing; a failure says nothing.
   const BR = join(SHOTS, 'brands'); mkdirSync(BR, { recursive: true });
   const fakeJobs = (ctx, state) => ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), route => { const req = route.request();
-    if (req.method() === 'POST') { state.posted.push(JSON.parse(req.postData() || '{}')); return json(route, [{ id: 'job-br-' + state.posted.length }]); }
+    if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'); if ((b.params || {}).what === 'taxis') return json(route, [{ id: 'job-taxis' }]); state.posted.push(b); return json(route, [{ id: 'job-br-' + state.posted.length }]); }   // the step's taxis job: gTaxis
+    if (/id=eq\.job-taxis/.test(req.url())) return json(route, [{ status: 'done', result: { taxis: [] } }]);
     state.polled++;
     if (state.mode === 'failed') return json(route, [{ status: 'failed', message: 'Something went wrong', result: null }]);
     if (!state.release) return json(route, [{ status: 'running', message: 'Checking other train companies', result: null }]);
@@ -1539,6 +1541,90 @@ async function gTrains() {
     await p.click('#c_trq'); await p.locator('#c_trq').pressSequentially('vendr', { delay: 15 }); await settle(p, 300);
     const msg = await textNow(p, '#c_trmsg');
     ok('trains, the stations file failing to load: no list, the field says to use "Not in the list?", no error', !(await sugNow(p)).length && /could not be loaded/.test(msg) && !errors.length, msg + errors.join(' | '));
+    await ctx.close(); }
+}
+
+// Taxis found for the host (16 Nov 2026): the builder's "Taxis near your house" from the research of the area (the nearest
+// ticked, with the mark of what we filled in; untick, tick another, the typed one beside it; nothing before the research;
+// the ticks kept in the answers) and the editor's "Near your house" for taxis (one tap adds one, opened, with its source
+// line; the guide's own number not offered; the job failing shows nothing). Made-up taxis and numbers around each house.
+async function gTaxis() {
+  const TX_DIR = join(SHOTS, 'taxis'); mkdirSync(TX_DIR, { recursive: true });
+  const JID = '00000000-0000-0000-0000-0000000ta711';
+  const around = (h, km, i, more = {}) => ({ id: 'tx-rec-' + i, name: `Taxi Prova ${i}`, phone: `+34 900 000 0${String(i).padStart(2, '0')}`, town: 'Provaville', lat: +h.lat + km * 0.008993, lng: +h.lng, km: Math.round(km * 1.3), web: '', ...more });
+  // The research's taxis for a house: five within 15 km (out of order), one past it, one a second listing of the nearest.
+  const FAKE = h => [around(h, 6, 3), around(h, 2, 1), around(h, 9, 4), around(h, 4, 2), around(h, 12, 5), around(h, 18, 6), around(h, 3, 7, { phone: '+34 900 000 001' })];
+  const rows = p => p.evaluate(() => [...document.querySelectorAll('#txf .tx-row')].map(r => ({ n: r.querySelector('b').textContent, l: r.querySelector('small').textContent, on: r.querySelector('input').checked })));
+  // ---- The builder ----
+  for (const [w, h, tag, lang] of [[1280, 860, '1280 px', 'en'], [360, 780, '360 px', 'en'], [1280, 860, '1280 px, French', 'fr'], [360, 780, '360 px, French', 'fr']]) {
+    const fr = lang === 'fr', ans = { ...B.answers, _researchJob: JID, taxi: '' }; delete ans.taxis; delete ans._taxisTouched;
+    const { ctx, p, errors } = await open(browser, { ...B, answers: ans }, w, h, fr ? { 'porta-lang-v1': 'fr' } : {}); let job = { status: 'running', result: null };
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => r.request().method() === 'POST' ? json(r, [{ id: JID, status: 'queued' }]) : json(r, [job]));
+    await p.goto('http://editor.test/#known'); await ready(p); await settle(p, 400);
+    ok(`taxis, builder, ${tag}: before the research answers, the taxi field alone as before, nothing waiting`, !(await p.$('#txf')) && !!(await p.$('#f_taxi')) && !/looking|cherch|buscando|buscant/i.test(await textNow(p, '#f_taxi', '')) && !(Array.isArray((await stored(p)).taxis)));
+    job = { status: 'running', result: { taxis: FAKE(A0) } };
+    await p.waitForSelector('#txf', { timeout: 15000 }).catch(() => {}); await settle(p, 1300, { net: false });
+    const r1 = await rows(p), A1 = await stored(p);
+    ok(`taxis, builder, ${tag}: "Taxis near your house" comes by itself, 4 rows nearest first, one per number, none past 15 km`, cmpSame(r1.map(x => x.n), ['Taxi Prova 1', 'Taxi Prova 2', 'Taxi Prova 3', 'Taxi Prova 4']) && r1.every(x => /Provaville · \d+.km/.test(x.l)), JSON.stringify(r1));
+    ok(`taxis, builder, ${tag}: the nearest is ticked for the host, marked as filled in for them, and kept in the answers at once`, r1[0].on && r1.slice(1).every(x => !x.on) && !!(await p.$('#l_txf .frm.sug')) && Array.isArray(A1.taxis) && A1.taxis.length === 1 && A1.taxis[0].id === 'tx-rec-1' && A1.taxis[0].phone, JSON.stringify(A1.taxis));
+    ok(`taxis, builder, ${tag}: the field is now for another taxi`, fr ? /Un autre taxi/.test(await textNow(p, 'label[for="f_taxi"]')) : /Another taxi: name and number/.test(await textNow(p, 'label[for="f_taxi"]')), await textNow(p, 'label[for="f_taxi"]'));
+    ok(`taxis, builder, ${tag}: nothing in the list overlaps, sticks out, is cut, or breaks a word`, !(await boxClear(p, '#txf .tx-row', 'input, b, small')).length, (await boxClear(p, '#txf .tx-row', 'input, b, small')).join('; '));
+    await p.locator('#txf').scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(TX_DIR, `builder-${lang}-${w}.png`) });
+    await p.click('#txf .tx-row:nth-child(1) input'); await settle(p, 1300);
+    ok(`taxis, builder, ${tag}: unticked, none is kept, and the mark goes`, cmpSame((await stored(p)).taxis, []) && !(await p.$('#l_txf .frm')), JSON.stringify((await stored(p)).taxis));
+    await p.click('#txf .tx-row:nth-child(3) input'); await settle(p, 1300);
+    ok(`taxis, builder, ${tag}: another one ticked is kept`, cmpSame(((await stored(p)).taxis || []).map(t => t.id), ['tx-rec-3']));
+    await p.fill('#f_taxi', 'Taxi Mine 900 000 099'); await p.keyboard.press('Tab'); await settle(p, 1300);
+    { const A2 = await stored(p); ok(`taxis, builder, ${tag}: the host's own taxi typed beside it, both kept`, A2.taxi === 'Taxi Mine 900 000 099' && cmpSame((A2.taxis || []).map(t => t.id), ['tx-rec-3']), JSON.stringify({ taxi: A2.taxi, taxis: (A2.taxis || []).map(t => t.id) })); }
+    if (w > 900) { await inPhone(p, d => { const b = d.querySelector('[data-pv="emergency"]'); b && b.click(); return 1; }); await settle(p, 500);
+      const ph = ((await inPhone(p, d => d.body.textContent)) || '').replace(/\s+/g, ' ');
+      ok(`taxis, builder, ${tag}: the phone shows the ticked taxi where it showed the typed one`, /Taxi\s*Taxi Prova 3/.test(ph) && /Taxi Mine/.test(ph), ph.slice(0, 200)); }
+    // Back to the step: the ticks as the host left them.
+    await p.goto('http://editor.test/#home'); await settle(p, 300); await p.goto('http://editor.test/#known'); await settle(p, 500);
+    { const r3 = await rows(p); ok(`taxis, builder, ${tag}: coming back, the ticks are as the host left them, without the mark`, cmpSame(r3.map(x => x.on), [false, false, true, false]) && !(await p.$('#l_txf .frm')), JSON.stringify(r3)); }
+    ok(`taxis, builder, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // The research found none: the field alone, and nothing kept.
+  { const ans = { ...B.answers, _researchJob: JID, taxi: '' }; delete ans.taxis;
+    const { ctx, p, errors } = await open(browser, { ...B, answers: ans }, 360, 780);
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ status: 'done', result: { taxis: [] } }]));
+    await p.goto('http://editor.test/#known'); await ready(p); await settle(p, 1500);
+    ok('taxis, builder: none found, the field alone as before, nothing kept', !(await p.$('#txf')) && !Array.isArray((await stored(p)).taxis) && !errors.length);
+    await ctx.close(); }
+  // ---- The editor ----
+  const mine = ((E.content.files.transport || {}).taxis || [])[0] || {}, H = E.content.files.house;
+  const EF = () => [around(H, 3, 11), { ...around(H, 1, 10), phone: mine.phone || '+34 900 000 010' }, around(H, 5, 12), around(H, 8, 13)];
+  for (const [w, h, tag, lang] of [[1280, 860, '1280 px', 'en'], [360, 780, '360 px', 'en'], [1280, 860, '1280 px, French', 'fr'], [360, 780, '360 px, French', 'fr']]) {
+    const fr = lang === 'fr', { ctx, p, errors } = await open(browser, E, w, h, fr ? { 'porta-lang-v1': 'fr' } : {}), st = { posted: [], release: false }, saved = [];
+    p.on('request', r => { if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(r.url())) saved.push(r.postData()); });
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => { if (r.request().method() === 'POST') { st.posted.push(JSON.parse(r.request().postData() || '{}')); return json(r, [{ id: 'job-tx-1' }]); }
+      return json(r, [st.release ? { status: 'done', message: '3 taxis found', result: { taxis: EF() } } : { status: 'running', message: 'Looking for taxis near the house', result: null }]); });
+    await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 600);
+    ok(`taxis, editor, ${tag}: the step asks once for the taxis near the house, with nothing shown while it runs`, st.posted.length === 1 && cmpSame(st.posted[0].params, { what: 'taxis' }) && st.posted[0].kind === 'find-transport' && !(await textNow(p, '#c_txnear')).trim() && !/Looking for taxis|Cherch|Buscando/.test(await p.innerText('body')), JSON.stringify(st.posted));
+    st.release = true;
+    await p.waitForSelector('#c_txnear .cm-txnear', { timeout: 12000 }).catch(() => {}); await settle(p, 200, { net: false });
+    const near = await p.evaluate(() => [...document.querySelectorAll('#c_txnear button')].map(b => ({ n: b.querySelector('b').textContent, l: b.querySelector('small').textContent })));
+    ok(`taxis, editor, ${tag}: "Near your house" lists the directory's taxis, not the one the guide has (same number)`, cmpSame(near.map(x => x.n), ['Taxi Prova 11', 'Taxi Prova 12', 'Taxi Prova 13']) && near.every(x => /Provaville\s*\d+.km/.test(x.l)) && /Near your house|Près de chez vous/.test(await textNow(p, '#c_txnear .cm-trnh')), JSON.stringify(near));
+    ok(`taxis, editor, ${tag}: nothing in it overlaps, sticks out, is cut, or breaks a word`, !(await boxClear(p, '#c_txnear button', '.pl-ic, b, small, .cm-trkm')).length, (await boxClear(p, '#c_txnear button', '.pl-ic, b, small, .cm-trkm')).join('; '));
+    await p.locator('#c_txnear').scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(TX_DIR, `editor-near-${lang}-${w}.png`) });
+    await p.click('#c_txnear button'); await settle(p, 1300);
+    const card = await p.evaluate(() => { const d = [...document.querySelectorAll('details.cmi[open]')].find(x => /Taxi Prova 11/.test(x.querySelector('summary').textContent)); return d ? { head: d.querySelector('summary').textContent.replace(/\s+/g, ' ').trim(), src: (d.querySelector('.cm-txsrc') || {}).textContent || '', name: (d.querySelector('input[data-p$="/name/en"], input[data-p*="/name"]') || {}).value } : null; });
+    let saved1 = null; for (const b of saved) { try { saved1 = JSON.parse(b).draft.content.files.transport.taxis.find(t => /Taxi Prova 11/.test(t.name.en)) || saved1; } catch (e) { /* another save */ } }
+    ok(`taxis, editor, ${tag}: one tap adds it, opened, its number written as the guide's, with where it came from`, !!card && /900 00 00 11/.test(card.head) && (fr ? /D’après un annuaire ouvert|un annuaire ouvert/ : /From an open directory, \d+/).test(card.src) && !!saved1 && saved1.src && saved1.src.from === 'overture' && saved1.src.id === 'tx-rec-11' && saved1.phone === '900 00 00 11' && Object.values(saved1.what).every(x => x === ''), JSON.stringify({ card, saved: saved1 && { phone: saved1.phone, src: saved1.src } }));
+    ok(`taxis, editor, ${tag}: it is no longer offered`, !(await p.evaluate(() => [...document.querySelectorAll('#c_txnear button b')].some(b => b.textContent === 'Taxi Prova 11'))));
+    ok(`taxis, editor, ${tag}: the opened taxi overlaps nothing`, !(await boxClear(p, 'details.cmi[open] .cmb', '.cm-txsrc, label, input, textarea')).length, (await boxClear(p, 'details.cmi[open] .cmb', '.cm-txsrc, label, input, textarea')).join('; '));
+    await p.locator('details.cmi[open]').first().scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(TX_DIR, `editor-opened-${lang}-${w}.png`) });
+    ok(`taxis, editor, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // The job failing: nothing shown, nothing said.
+  { const { ctx, p, errors } = await open(browser, E, 360, 780); let polled = 0;
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => { if (r.request().method() === 'POST') return json(r, [{ id: 'job-tx-2' }]); polled++; return json(r, [{ status: 'failed', message: 'The guide does not know where the house is.' }]); });
+    await p.goto('http://editor.test/#transport'); await ready(p);
+    for (let i = 0; i < 30 && !polled; i++) await new Promise(r => setTimeout(r, 300));
+    await settle(p, 600, { net: false });
+    ok('taxis, editor: the job failing shows nothing and says nothing', polled >= 1 && !(await textNow(p, '#c_txnear')).trim() && !/does not know where/.test(await p.innerText('body')) && !errors.length, `${polled} ${errors.join(' | ')}`);
     await ctx.close(); }
 }
 
@@ -2134,7 +2220,8 @@ async function gEditorNames() {
     const saved = []; p.on('request', r => { if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(r.url())) saved.push(r.postData()); });
     await ctx.route(u => u.pathname === '/api/places', route => json(route, { ok: true, place: { id: 'g-calafell', lat: 41.19, lng: 1.57, km: 9 } }));
     await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), route => { const req = route.request();
-      if (req.method() === 'POST') { jobs.push(JSON.parse(req.postData() || '{}')); return json(route, [{ id: 'job-tr-1' }]); }
+      if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'); if ((b.params || {}).what === 'taxis') return json(route, [{ id: 'job-taxis' }]); jobs.push(b); return json(route, [{ id: 'job-tr-1' }]); }   // the step's own taxis job (gTaxis checks it) set aside
+      if (/id=eq\.job-taxis/.test(req.url())) return json(route, [{ status: 'done', result: { taxis: [] } }]);
       return json(route, [{ status: 'done', message: '1 line, 1 destination', result: { id: (jobs[0] || {}).params && jobs[0].params.id, badges: [{ t: 'R2 Sud', c: '#00A651', ink: false }], to: [{ dest: { en: 'Barcelona Sants' }, time: '50 min', note: { en: 'direct' } }], link: 'https://example.org/timetable', operator: 'Rodalies', checked: '2026-10-29' } }]); });
     await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 300);
     ok('Getting around: a station Renfe does not run, the old way behind "Not in the list?": a name or a Google Maps link', !(await p.$('#c_stopq_train')) && !(await p.$('[data-tradd="train"]')) && !(await p.click('[data-trold]')) && !!(await p.$('#c_stopq_train')));

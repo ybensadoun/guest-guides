@@ -455,9 +455,26 @@ def stations_of(lat, lng):   # the house's stations as transport.json holds them
     if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no train stations', file=sys.stderr); return []
     return json.loads(r.stdout).get('stations') or []
 stations = stations_of(args.lat, args.lng)
+# The taxis of our open directory (engine/src/modules/transport/taxis.js, through engine/scripts/taxis-of.mjs; Python keeps
+# no copy of the rule): answers.taxis is what the host approved in the builder (a list, even empty, is their choice);
+# absent (the host never saw it), the nearest of answers._taxisFound (what the worker found), alone. After the typed one,
+# never the same number twice; no words of the host's (what empty), credited to the directory (src).
+def found_taxis():
+    import shutil, subprocess, datetime
+    node, script = shutil.which('node'), ROOT / 'engine/scripts/taxis-of.mjs'
+    approved = A.get('taxis') if isinstance(A.get('taxis'), list) else None
+    found = A.get('_taxisFound') if isinstance(A.get('_taxisFound'), list) else []
+    if approved is None and not found: return []
+    if not node: print(f'generate-site: node is not on the PATH: no taxis from the directory ({script.relative_to(ROOT)})', file=sys.stderr); return []
+    ask = {'approved': approved, 'found': found, 'house': {'lat': args.lat, 'lng': args.lng}, 'langs': LANGS, 'have': [t['phone'] for t in taxis], 'at': datetime.date.today().isoformat()}
+    try: r = subprocess.run([node, str(script)], input=json.dumps(ask), capture_output=True, text=True, timeout=60)
+    except Exception as e: print(f'generate-site: {script.relative_to(ROOT)} could not be run: {e}: no taxis from the directory', file=sys.stderr); return []
+    if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no taxis from the directory', file=sys.stderr); return []
+    return json.loads(r.stdout).get('taxis') or []
+taxis += found_taxis()
 (SITE / 'content/quick.json').write_text(json.dumps({'items': quick}, ensure_ascii=False, indent=1))
 if taxis or stations:
-    (SITE / 'content/transport.json').write_text(json.dumps({'_doc': 'Getting around: taxis and stations or stops, on their own page; tile = a one-tap tile on Home (null: the section\'s own tile). Written by generate-site.py: the taxi from the host\'s answer, the train stations from onboarding-site/stations-es.json (Renfe, src: {from, at}) by engine/src/modules/transport/pick.js.',
+    (SITE / 'content/transport.json').write_text(json.dumps({'_doc': 'Getting around: taxis and stations or stops, on their own page; tile = a one-tap tile on Home (null: the section\'s own tile). Written by generate-site.py: the taxi the host typed, the taxis of our open directory they approved or the nearest (src: {from: overture, id, at}), the train stations from onboarding-site/stations-es.json (Renfe, src: {from, at}) by engine/src/modules/transport/pick.js.',
         'taxis': taxis, 'stations': stations, 'tile': {'name': L('Taxi'), 'sub': taxis[0]['name']} if taxis else None}, ensure_ascii=False, indent=1))
 
 

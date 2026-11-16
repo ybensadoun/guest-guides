@@ -21,7 +21,7 @@ const readyMods = () => visible().filter(m => !needsYou(m));
 const ANSWERED = { listing: () => !!A._draftAt || (!!A._skipStart && hasSource()), guide: () => (A._seen || []).includes('guide') && !slugProblem(v('slug')) && filled('languages'), area: () => filled('interests'), nearby: () => Object.keys(A.swipes || {}).length > 0 || placeRows('favDo').length > 0,
   favourites: () => placeRows('favEat').length > 0 || filled('localTips'),
   nightlife: () => placeRows('favNight').length > 0,
-  wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('taxi'),
+  wifi: () => filled('wifiName') && filled('wifiPassword'), arrival: () => filled('arrival'), rubbish: () => filled('rubbishMode'), contacts: () => filled('taxi') || (Array.isArray(A.taxis) && A.taxis.length > 0),
   known: () => knownParts().every(p => p.id === 'contacts' || p.done()) };   // the taxi is optional
 // Something in this step came from the listing (or is there): only then is it "Ready". Sections are always chosen for them.
 const hasContent = m => preKeys(m).length > 0 || m.fields.some(k => filled(k.startsWith('up:') ? 'upload:' + k.slice(3) : k));
@@ -301,7 +301,7 @@ function blLines(){
   add(v('arrival'), 'How to get in, in your own words.');
   add(v('rubbishMode'), 'Which bin goes out on which day.');
   add(v('localTips'), 'Your local tips, in the house guide.');
-  add(v('taxi'), 'The taxi number, for guests without a car.');
+  add(v('taxi') || (Array.isArray(A.taxis) && A.taxis.length), 'The taxi number, for guests without a car.');
   add(secOn('map'), 'Every place in the guide on one map.');
   const more = typeof moreLeft === 'function' && AUTH ? moreLeft() : 0; add(more > 1, `We found ${more} more places nearby: you choose once it is built.`);
   add(true, 'Guests open it from a link: no app to install.');

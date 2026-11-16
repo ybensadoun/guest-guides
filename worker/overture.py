@@ -6,6 +6,11 @@
 #   stdout: {"release": "...", "pins": {"<id>": [candidates...]}, "towns": {"<id>": "El Vendrell"}, "looked": ["<id>", ...]}, and nothing
 #   else (progress goes to stderr). looked: the pins whose records were read (a pin far from the house past the first FAR_PINS
 #   is not: its empty list says nothing about the place, worker/check-guides.mjs must know).
+# A second question, the taxis around the house (Getting around, engine/src/modules/transport/taxis.js):
+#   stdin:  {"house": {"lat", "lng"}, "km": 60, "taxis": true}
+#   stdout: {"release": "...", "taxis": [{"id", "name", "category", "status", "confidence", "phones", "websites", "town", "lat", "lng"}]}
+#   every record of the house's box within TAXI_KM whose category has "taxi" in it or whose name has the word "taxi", raw:
+#   which of them a house is offered is taxis.js's rule, not this file's. The pins' answer is not changed by it.
 # towns: the town around each pin, from the records' own addresses (a place's town when its record is not found; never
 # from Google's address, which its terms do not let us keep). A pin with no town clear enough is left out.
 # Needs pyarrow and overturemaps==2.1.0 (that package wants Python 3.11+). On the Mac:
@@ -18,7 +23,8 @@ CACHE = os.environ.get('OVERTURE_CACHE') or os.path.join(os.path.expanduser('~')
 COLS = ['id', 'bbox', 'names', 'basic_category', 'operating_status', 'confidence', 'websites', 'phones', 'socials', 'addresses']
 NEAR_KM, NAMED, ANY_KM, ANY_MAX, MAX, NAMELESS_MAX = 0.15, 5, 0.06, 4, 9, 12   # as measured on 10 Nov 2026 (pick.py in the session's scratch)
 FAR_PINS, FAR_PAD = 6, 0.01                                 # pins outside the house's box: a small box each, at most 6
-TOWN_KM, TOWN_MIN, TOWN_FAR_KM, TOWN_FAR_N = 0.4, 3, 2.0, 15   # the town around a pin: most records within 400 m (at least 3), else the 15 nearest within 2 km
+TOWN_KM, TOWN_MIN, TOWN_FAR_KM, TOWN_FAR_N = 0.4, 3, 2.0, 15
+TAXI_KM = 20                                                # the taxis' question: records this far from the house (the rule keeps 15 km)   # the town around a pin: most records within 400 m (at least 3), else the 15 nearest within 2 km
 
 def say(*a): print(*a, file=sys.stderr, flush=True)
 def fail(msg): say('overture: ' + msg); sys.exit(1)
@@ -151,6 +157,29 @@ def candidates(p, rows):
                     'websites': r.get('websites') or [], 'phones': r.get('phones') or [], 'socials': r.get('socials') or [], 'town': a.get('locality') or None})
     return out
 
+# The taxis' records within TAXI_KM of the house, raw (the second question above).
+TAXI_WORD = re.compile(r'\btaxi', re.I)
+def taxis_near(t, hlat, hlng, far=TAXI_KM):
+    import pyarrow.compute as pc
+    if not t.num_rows: return []
+    dy = far / 111.32; dx = dy / max(0.2, math.cos(hlat * math.pi / 180))
+    x, y = pc.struct_field(t['bbox'], 'xmin'), pc.struct_field(t['bbox'], 'ymin')
+    t = t.filter(pc.and_(pc.and_(pc.greater_equal(x, hlng - dx), pc.less_equal(x, hlng + dx)), pc.and_(pc.greater_equal(y, hlat - dy), pc.less_equal(y, hlat + dy))))
+    out = []
+    for r in t.to_pylist():
+        b = r.get('bbox') or {}
+        if b.get('ymin') is None or b.get('xmin') is None: continue
+        name = ((r.get('names') or {}).get('primary') or '').strip(); cat = r.get('basic_category') or ''
+        fold = unicodedata.normalize('NFKD', name).encode('ascii', 'ignore').decode()
+        if not ('taxi' in cat.lower() or TAXI_WORD.search(fold)): continue
+        lat, lng = (b['ymin'] + b['ymax']) / 2, (b['xmin'] + b['xmax']) / 2
+        if km(hlat, hlng, lat, lng) > far: continue
+        a = (r.get('addresses') or [None])[0] or {}
+        out.append({'id': r['id'], 'name': name, 'category': cat or None, 'status': r.get('operating_status'), 'confidence': round(r.get('confidence') or 0, 2),
+                    'phones': r.get('phones') or [], 'websites': r.get('websites') or [], 'town': (a.get('locality') or '').strip() or None, 'lat': round(lat, 6), 'lng': round(lng, 6)})
+    out.sort(key=lambda r: r['id'])
+    return out
+
 def main():
     try:
         q = json.load(sys.stdin); h = q['house']; hlat, hlng = float(h['lat']), float(h['lng']); reach = float(q.get('km') or 60)
@@ -161,6 +190,8 @@ def main():
     rel = release()
     dlat = reach / 111.32; dlng = reach / (111.32 * max(0.2, math.cos(hlat * math.pi / 180)))
     main_box = box(hlat, hlng, dlat, dlng, 0.1)
+    if q.get('taxis'):
+        sys.stdout.write(json.dumps({'release': rel, 'taxis': taxis_near(read(fetch(main_box, rel)), hlat, hlng)}, ensure_ascii=False)); sys.stdout.flush(); return
     inside = [p for p in pins if main_box[0] <= p['lng'] <= main_box[2] and main_box[1] <= p['lat'] <= main_box[3]]
     outside = [p for p in pins if p not in inside]
     res, towns = {p['id']: [] for p in pins}, {}

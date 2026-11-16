@@ -978,6 +978,7 @@ function cmUnname(t) {
 /* --- Getting around: taxis, then stations and stops, on their own page (content/transport.json, section kind "transport") ---
    Its "tile" puts a one-tap tile on Home (the engine adds it after the other cards of Home). Positions come from a Google Maps link. */
 I.train = svg('<rect x="5.5" y="3" width="13" height="13" rx="3"/><path d="M5.5 10h13"/><circle cx="9" cy="13" r=".9" fill="currentColor"/><circle cx="15" cy="13" r=".9" fill="currentColor"/><path d="M8.5 16l-2 4.5M15.5 16l2 4.5M7.5 19h9"/>');
+I.taxi = svg('<path d="M5 11l1.6-4.2A2 2 0 0 1 8.5 5.5h7a2 2 0 0 1 1.9 1.3L19 11"/><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M6 17v2M18 17v2M9 3h6"/><circle cx="7.5" cy="14" r="1" fill="currentColor"/><circle cx="16.5" cy="14" r="1" fill="currentColor"/>');   // the guide's own taxi (engine/src/modules/highlights/icons.js)
 I.star = svg('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>');
 const GA = { en: 'Getting around', es: 'Cómo moverse', fr: 'Se déplacer', ca: "Com moure's", de: 'Unterwegs', nl: 'Vervoer' };
 const L6 = x => Object.fromEntries(edLangs().map(l => [l, typeof x === 'object' ? (x[l] || x.en || '') : x]));
@@ -1002,7 +1003,7 @@ function cmTrEnsure() {
 }
 const cmMode = s => s.mode === 'bus' ? 'bus stop' : 'station';
 function cTaxi(p, x) {
-  return cCard(p, edShown(x.name) || 'New taxi', [x.phone, x.always ? 'open 24 h' : ''].filter(Boolean).join(' · '), `<div class="grid">${cf('Name', p + '/name', x.name, { i18n: true, half: true })}${cf('Phone', p + '/phone', x.phone || '', { type: 'tel', half: true })}
+  return cCard(p, edShown(x.name) || 'New taxi', [x.phone, x.always ? 'open 24 h' : ''].filter(Boolean).join(' · '), `${txsFrom(x)}<div class="grid">${cf('Name', p + '/name', x.name, { i18n: true, half: true })}${cf('Phone', p + '/phone', x.phone || '', { type: 'tel', half: true })}
     ${cf('Line under the name', p + '/sub', x.sub, { i18n: true, ph: 'Home pickup in about 30 min' })}${cf('What guests need to know', p + '/what', x.what, { i18n: true, long: true })}</div>
     ${cSwitch(`data-cbool="${p}/always"`, 'Open 24 h', !!x.always)}
     <div class="f full"><span class="lab">Other numbers</span>${(x.alt || []).map((a, j) => `<div class="cm-dayrow"><div class="grid" style="flex:1">${cf('Name', `${p}/alt/${j}/name`, a.name, { i18n: true, half: true })}${cf('Phone', `${p}/alt/${j}/phone`, a.phone || '', { type: 'tel', half: true })}</div><button class="cm-x" type="button" data-cdel="${p}/alt/${j}" data-now="1" aria-label="Remove this number">×</button></div>`).join('')}
@@ -1113,6 +1114,7 @@ function cmTransport(c) {
   const T = (c.files || {}).transport, P = 'files/transport', S = (T && T.stations) || [];
   const rows = mode => S.map((x, i) => [x, i]).filter(([x]) => (x.mode === 'bus') === (mode === 'bus')).map(([x, i]) => cStation(`${P}/stations/${i}`, x)).join('');
   trsLoad();   // our file of Spain's stations, once, in the background: there before the host types
+  txsAsk();    // the taxis of our open directory near the house, once, in the background
   const trains = rows('train'), buses = rows('bus');
   const top = T ? `${cSwitch('data-trtile', 'Show as a tile on the home page', !!T.tile, 'Getting around always has its own page. As a card it also sits on your home page, one tap away: move it in Home page.')}
     ${T.tile ? `<div class="grid">${cf('Tile title', P + '/tile/name', T.tile.name, { i18n: true, half: true, ph: 'Taxi & train' })}${cf('Line under it', P + '/tile/sub', T.tile.sub, { i18n: true, half: true, ph: 'Taxi in 30 min, 3 stations' })}</div>` : ''}
@@ -1120,6 +1122,7 @@ function cmTransport(c) {
   return `${top}
     <h3 class="cm-h">Taxi</h3><p class="hint cm-hl">The taxis you would call yourself, with their numbers.</p>
     <div class="cm-list">${((T && T.taxis) || []).map((x, i) => cTaxi(`${P}/taxis/${i}`, x)).join('') || '<p class="hint">No taxi yet.</p>'}</div>
+    <div id="c_txnear">${txsNearHTML()}</div>
     <div class="cm-row"><button class="btn small" type="button" data-tradd="taxi">+ Add a taxi</button></div>
     <h3 class="cm-h">Trains</h3><p class="hint cm-hl">The train stations guests can use. Type one: its lines and journey times come with it.</p>
     <div class="cm-list">${trains || `<div id="c_trnear">${trsNearHTML()}</div>`}</div>
@@ -1132,6 +1135,45 @@ function cmTransport(c) {
     <h3 class="cm-h">Bus stops</h3><p class="hint cm-hl">The bus stops guests can use near the house.</p>
     <div class="cm-list">${buses || '<p class="hint">No bus stop yet.</p>'}</div>
     ${cmStopBox('bus')}`;
+}
+/* --- Taxis near the house (16 Nov 2026, engine/src/modules/transport/README.md, "The taxis found"): when the step opens
+   and the house has a position, the worker is asked once for the taxis of our open directory around it (job
+   find-transport, params { what: 'taxis' }: free, nothing written into the guide). No waiting state. When it answers,
+   "Near your house" under the guide's taxis, in the stations' look; each one a button that adds it at once, opened, as
+   the generator writes one (taxis.js txEntry: its name, town and number, credited to the directory, no words of the
+   host's). A taxi the guide has (same number) is not offered. Nothing found, no position, or the job failing: nothing. */
+const TXS = { asked: false, list: [] };
+const txsHave = () => ((edF().transport || {}).taxis || []).flatMap(t => [t.phone, ...((t.alt || []).map(a => a.phone))]).filter(Boolean);
+const txsNear = () => { const have = new Set(txsHave().map(txKey)); return TXS.list.filter(t => !have.has(txKey(t.phone))).slice(0, 4); };
+function txsNearHTML() {
+  const L = TXS.shown = txsNear(); if (!L.length) return '';
+  return `<section class="cm-trnear cm-txnear" aria-label="Near your house"><b class="cm-trnh">Near your house</b><p class="hint">From an open directory. Pick one to add it.</p>
+    <div class="pl-sug cm-nearl">${L.map((t, i) => `<button type="button" class="pl-tw cm-trs" data-txnear="${i}">${kTile(I.taxi, 'var(--tomato)', true)}<span><b translate="no">${esc(txName(t.name))}</b><small translate="no">${esc(t.town)}<span class="cm-trkm">${t.km}\u00a0km</span><span class="cm-trkm">${esc(txPhone(t.phone))}</span></small></span></button>`).join('')}</div></section>`;
+}
+async function txsAsk() {
+  const h = edF().house || {}; if (TXS.asked || !CM.g || !tpPlaced(h)) return; TXS.asked = true;
+  try {
+    await ensureFresh();
+    const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'find-transport', langs: edLangs(), params: { what: 'taxis' } } });
+    const jid = j && j[0] && j[0].id; if (!jid) return;
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, i ? 4000 : 2000)); await ensureFresh();
+      const r = await sb('/rest/v1/guide_jobs?select=status,result&id=eq.' + jid), x = r && r[0]; if (!x) continue;
+      if (x.status === 'failed') return;
+      if (x.status === 'done') { TXS.list = Array.isArray((x.result || {}).taxis) ? x.result.taxis : []; const b = document.getElementById('c_txnear'); if (b) b.innerHTML = txsNearHTML(); return; }
+    }
+  } catch (e) { /* nothing said: the host types their own */ }
+}
+function txsPick(i) {
+  const t = (TXS.shown || [])[i]; if (!t) return;
+  const T = cmTrEnsure(); (T.taxis = T.taxis || []).push(txEntry(t, edLangs(), { at: new Date().toISOString().slice(0, 10) }));
+  CM.open.add('files/transport/taxis/' + (T.taxis.length - 1)); cmQueue(); render();
+}
+// Where a taxi from our directory came from, in the place's quiet source line ("From an open directory, 16 Nov 2026.").
+function txsFrom(x) {
+  if (!x || !x.src || x.src.from !== 'overture') return '';
+  const d = /^\d{4}-\d\d-\d\d$/.test(x.src.at || '') ? new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(x.src.at + 'T00:00:00Z')) : '';
+  return `<p class="pl-src cm-txsrc" translate="no">${esc(tr(d ? 'From ‹a›, ‹d›.' : 'From ‹a›.')).split('‹a›').join(esc(tr('an open directory'))).split('‹d›').join(esc(d))}</p>`;
 }
 /* --- Trains from our own file (16 Nov 2026): onboarding-site/stations-es.json, Spain's stations with their lines and usual
    journey times from Renfe's open timetables (src/stations.py), loaded once when the step opens (as towns-es.json is in
@@ -2183,6 +2225,7 @@ document.addEventListener('click', e => {
   if (d.stopadd !== undefined) return cmStopAdd(t);
   if (d.tri !== undefined) return trsPick(+d.tri);
   if (d.trnear !== undefined) return trsPick(+d.trnear, TRS.near || []);
+  if (d.txnear !== undefined) return txsPick(+d.txnear);
   if (d.trold !== undefined) { CM.trOld = !CM.trOld; render(); if (CM.trOld) { const q = document.getElementById('c_stopq_train'); if (q) q.focus(); } return; }
   if (d.trlines) return cmLines(d.trlines);
   if (d.trtile !== undefined) { cmTrTile(); return done(); }
@@ -2329,6 +2372,8 @@ function cmInit() {
 .cm-trs .cm-trkm{margin-left:2px;white-space:nowrap}
 .cm-trs .cm-trrole{white-space:nowrap;font-weight:600;color:var(--ink)}
 .cm-brandsat{white-space:normal}
+.cm-txnear{margin:4px 0 2px}
+.cm-txsrc{margin:0 0 12px}
 .cm-trs .cm-trrole::before{content:'· ';font-weight:400;color:var(--muted)}
 .cm-trnear{display:flex;flex-direction:column;gap:6px}
 .cm-trnh{font-size:16px}

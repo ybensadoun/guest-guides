@@ -51,6 +51,11 @@ made from Renfe's open timetables. The rules below are on top of those above; no
 | 27 | Their badges (`by: 'brand'`, iryo then Ouigo, after Renfe's, in the brands' own colours of `brands.json`) go on a station of our file whose Renfe id a company's list holds; the station carries `brands: { at }`, the date of the newest sure search used. A station not from our file (written by hand, as Ca La Kimberly's) is never touched. | The design, 16 Nov 2026 (`pick.js` `tpBrandBadges`, `tpBrandsStale`) |
 | 28 | Nothing waits for the host: the editor asks once, shows no waiting state, and when the answer comes puts the badges on the station where it stands (an opened card stays opened, a field being typed in keeps its text and focus); a failure says nothing. An opened station says, quietly, "iryo and Ouigo: checked on <date>". Hosts are never shown Claude's name. | `../../../../CLAUDE.md` ("Nothing waits for the host"); the brief of 16 Nov 2026 |
 | 29 | No credit line for these two on the Sources and credits page: their stations are facts we looked up on their own pages, not a licensed file. | The brief of 16 Nov 2026 |
+| 30 | A taxi is filled in for the host from our open directory (Overture's places, which the guides already hold and credit), and the host approves it: keeps it, removes it, picks another, or types the number they know. A new guide whose host never saw the list gets the nearest one by itself. | Yohann, 16 Nov 2026: "taxi would have its way of searching for a taxi, or you would enter a phone number, or you would select apps that work for ride sharing"; asked whether found taxis are only offered or added by themselves: "Add them by themselves", then "picks a number if they know, or we suggest apps: uber, cabify etc.. and they approve". Ride apps: the next piece |
+| 31 | The taxis a house is offered (`taxis.js` `txPick`): nearest first, at most 4 (6 kept by the research, so that another house sharing it sorts them again); left out a record marked closed (permanently or for now), one with no phone, no town in its address, a name without "taxi" (a driver under his own name), confidence under 0.4, farther than 15 km in a straight line, or the same number (its last 9 digits) as a nearer one or a taxi the guide has. km by road as elsewhere (1.3 times the line, `pick.js` `tpRoadKm`). | The design, 16 Nov 2026 (the filter and the numbers, tried on five town centres from the cached box) |
+| 32 | A found taxi is written as any taxi (`txEntry`): its name tidied (a name all in capitals or small letters in title case), its town as the line under it, its number as the guide's others are written (a Spanish one without its country code, "977 66 61 11"), no words of the host's (`what` empty, never "The taxi we use and trust."), and `src: { from: 'overture', id, at }`. The Home card as before when there is a taxi. | The design, 16 Nov 2026 |
+| 33 | Nothing waits: the builder shows "Taxis near your house" (up to 4, the nearest ticked, "Suggested for you: please check") only once the research of the area has answered, above the field, which then asks for "Another taxi: name and number"; the ticks are `answers.taxis` from the moment the list is shown. The editor asks once when the step opens and shows "Near your house" for taxis when it answers, one tap adding one, opened, with its source line ("From an open directory, <date>."); nothing found or the job failing: nothing shown. | `../../../../CLAUDE.md` ("Quick for the host", "Nothing waits for the host"); the brief of 16 Nov 2026 |
+| 34 | A found taxi is not checked again after it is added (no monthly check of taxis yet). | Not built: to decide |
 
 ## Its data
 
@@ -70,6 +75,10 @@ Our file of stations, `onboarding-site/stations-es.json` (its `_doc` says every 
 licence, the date of the data, the Tuesday counted), `cities` `[{ id, ids, name, i18n, lat, lng, main }]`, `stations`
 `[{ id, name, lat, lng, lines: [{ t, c, ink }], hs, to: [{ id, n, min }] }]` (`n`, the direct trains that day, is for
 the picking rule only and never shown). The brands' colours: `brands.json` here.
+
+A taxi found in our open directory (rules 30 to 34) carries `src: { from: 'overture', id: <the record's id>, at: 'YYYY-MM-DD' }`
+and an id "tx" and a short stable code from the record's id. The builder's answers: `taxis` (the taxis the host approved, as
+`txPick` gives them) and `_taxisFound` (what the worker found for the build).
 
 iryo and Ouigo (rules 25 to 29): a badge they add carries `by: 'brand'` (`{ t, c, ink, by }`), and the station `brands: { at:
 'YYYY-MM-DD' }`. The shared record is the table `public.rail_brands` (one row per company: `brand`, `stations` Renfe ids,
@@ -103,6 +112,10 @@ kind's colour, the name with its line badges `.lbadges`, the verdict and minutes
 | The maker's step Getting around | `onboarding-site/src/editor.js` (`cmTransport`, `cStation`; the trains typed from our file: `trsLoad`, `trsType`, `trsPick`) | No: the maker's |
 | Which stations a house gets, a station as a guide holds it, the maker's matching as the host types | `pick.js` (`pickStations`, `stationEntry`, `stationsFor`, `tpFind`, `tpHave`, `cmMin`; tests: `engine/scripts/transport-pick.test.mjs`), pasted into the maker by `onboarding-site/src/build.py` | Yes |
 | The brands' colours of long distance trains | `brands.json` (iryo's `#E20613` from iryo.eu's theme colour, 16 Nov 2026) | Yes |
+| The taxis found: the rule, a taxi as the guide holds it | `taxis.js` (`txPick`, `txAuto`, `txEntry`; tests: `engine/scripts/transport-taxis.test.mjs`), pasted into the maker by `onboarding-site/src/build.py` | Yes |
+| The directory's taxi records, the research, the build, the editor's job, the dry run | `worker/overture.py` (its question `taxis`), `worker/place-facts.mjs` (`overtureTaxis`), `worker/guide-worker.mjs` (`taxisAt`, `runArea`, `researchJob`, `build`, `taxisJob`, `--find find-taxis`) | No: the worker's |
+| The generator's taxis | `engine/scripts/taxis-of.mjs` (asked by `generate-site.py`; tests: `worker/test/generate-taxis.test.mjs`) | No: the generator's |
+| The builder's "Taxis near your house", the editor's "Near your house" for taxis | `onboarding-site/src/start.js` (`txListHTML`, `txRefresh`), `src.html` (`field`), `preview.js`; `onboarding-site/src/editor.js` (`txsAsk`, `txsNearHTML`, `txsPick`, `txsFrom`) | No: the maker's |
 | iryo and Ouigo: the search, the shared record, the editor's job, the other guides, the build, the dry run | `worker/rail-brands.mjs` (tests: `worker/test/rail-brands.test.mjs`), wired in `worker/guide-worker.mjs` (`transportJob` with `what: 'brands'`, `brandsOnSite`, `--find find-rail-brands`); the badges' rule in `pick.js` (`tpBrandBadges`, `tpBrandsStale`); the editor's `trsBrands`, `trsBrandsApply` | Partly: the rule is |
 | Our file of Spain's stations, and the script that makes it from Renfe's files | `onboarding-site/stations-es.json`, `onboarding-site/src/stations.py` (tests: `onboarding-site/test/stations_test.py`) | No: the maker serves the file |
 | The generator's stations | `engine/scripts/stations-of.mjs` (asked by `engine/scripts/generate-site.py`; tests: `worker/test/generate-stations.test.mjs`) | No: the generator's |
@@ -112,7 +125,7 @@ kind's colour, the name with its line badges `.lbadges`, the verdict and minutes
 
 The stations found and their lines are Spain only: they come from Renfe's files (rules 16 to 21), and a house elsewhere gets
 none (a house near the border may get a Spanish station within 30 km). Where the main city is far (Galicia, Asturias, the
-islands), a house may get only its nearest station, alone. iryo and Ouigo are looked up only among our high speed stations: Spain only. Taxis, stations added by name or link, and bus stops work
+islands), a house may get only its nearest station, alone. iryo and Ouigo are looked up only among our high speed stations: Spain only. The taxis found work anywhere our open directory lists taxis (Overture covers the world; the rule is not Spain's), with their numbers written the Spanish way only for Spanish numbers. Their credit is the places' line of Sources and credits, which every guide shows. Taxis, stations added by name or link, and bus stops work
 anywhere. Nothing in the code reads this yet (`../README.md`, "Not built yet").
 
 ## Still Ca La Kimberly's own

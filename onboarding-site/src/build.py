@@ -166,6 +166,14 @@ assert not _re.search(r'(?m)^import ',_tsrc),'engine/src/modules/transport/pick.
 for _need in ('export function pickStations(','export function stationEntry(','export function tpFind(','export const cmMin'):
     assert _need in _tsrc,'engine/src/modules/transport/pick.js: '+_need+' not found'
 ENG_DATA+=_re.sub(r'(?m)^export ','',_tsrc)+'\n'
+# The taxis a house is offered from our open directory (engine/src/modules/transport/taxis.js): the builder's "Taxis near
+# your house" and the editor's. Its one import is pick.js, pasted just above.
+_xsrc=open(__import__('os').path.join(_MD,'transport','taxis.js'),encoding='utf-8').read()
+_ximp="import { tpLine, tpRoadKm, tpPlaced } from './pick.js';\n"
+assert _ximp in _xsrc and len(_re.findall(r'(?m)^import ',_xsrc))==1,'engine/src/modules/transport/taxis.js: its imports are not as expected'
+for _need in ('export function txPick(','export function txEntry(','export const txKey','export function txName('):
+    assert _need in _xsrc,'engine/src/modules/transport/taxis.js: '+_need+' not found'
+ENG_DATA+=_re.sub(r'(?m)^export ','',_xsrc.replace(_ximp,''))+'\n'
 # Home's tiles as the guide draws them (engine/src/ui.js SECTION_LOOK: each section's icon, colour and dark text), the old
 # colour names they use (app.css :root, "--k-blue:var(--blue)"), each tile's corner shape colour and a card's icon colour
 # (app.css .gt[data-k] ::before, .qcall .qi): read from the engine, so the board draws the guide's own colours in the

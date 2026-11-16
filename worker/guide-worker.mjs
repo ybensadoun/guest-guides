@@ -14,11 +14,12 @@ import { spawnSync, spawn } from 'node:child_process';
 import { hav, nameOf, sameName, locateItem } from './places.mjs';
 import { checkResearch } from './research-check.mjs';   // the research's check: Google locates, our own sources fill
 import { hostPlaces, placesOf } from './host-places.mjs';   // a host's own places: located by Google, filled from our own table
-import { townPoint, municipalityAt } from './place-facts.mjs';   // the house's town in GeoNames, when its position is Google's; the municipality it lies in
+import { townPoint, municipalityAt, overtureTaxis } from './place-facts.mjs';   // the house's town in GeoNames, when its position is Google's; the municipality it lies in
 import { researchPrompt, HOURS_RULE, MARKETS_RULE, TODO_RULE, earlyRules, EV_REACH, EV_MAIN, EV_EARLY, evFits, inReach, eventsInReach, holdMarkets } from './research-brief.mjs';   // the research's brief, how far it reaches
 import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
 import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
+import { txPick } from '../engine/src/modules/transport/taxis.js';   // the taxis a house is offered, from our open directory (Getting around)
 import { brandsJob, refreshBrands, applyToFiles, brandsList, hsStations, brandsPrompt, readBrands } from './rail-brands.mjs';   // iryo and Ouigo on high speed stations (find-transport, what: brands)
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
@@ -246,6 +247,9 @@ async function build(g) {
   }
   rmSync(job, { recursive: true, force: true }); rmSync(siteDir, { recursive: true, force: true });
   mkdirSync(join(job, 'src'), { recursive: true });
+  // The taxis of our open directory around the house (free): the generator writes the host's approved ones, or the nearest
+  // when the host never saw them (engine/scripts/taxis-of.mjs). No list on any error: a build never fails for it.
+  A._taxisFound = await within(taxisAt({ lat: A.lat, lng: A.lng }), 120000, []);
   const remote = (A._remote || []).filter(u => u && u.src && String(u.src).startsWith('https://a0.muscache.com/'));
   const clean = { ...A }; delete clean._remote; delete clean._uploads;
   writeFileSync(join(job, 'src/host.json'), JSON.stringify({ answers: clean }));
@@ -611,8 +615,16 @@ function applyLines(s, r, langs) {
 // iryo and Ouigo (worker/rail-brands.mjs): the same kind of job with params.what === 'brands', queued by the editor when a
 // host adds one of our high speed stations; one search for both companies, kept in rail_brands, at most once in 30 days.
 const brandsAsk = meter => prompt => claudeJson(prompt, 'rail-brands', meter);
+// The taxis of our open directory around a point (engine/src/modules/transport/taxis.js txPick, at most 6, each with its
+// position so that a house sharing a research row sorts them again): free, no Claude; an empty list on any failure.
+async function taxisAt(pos, have = []) {
+  try { const p = { lat: +pos.lat, lng: +pos.lng }; return txPick(await overtureTaxis(p, { python: env.OVERTURE_PYTHON || 'python3', log: (...a) => log(' ', ...a) }), p, { max: 6, have }); }
+  catch (e) { log('  taxis not looked up:', e.message); return []; }
+}
+const within = (p, ms, dflt) => Promise.race([p, new Promise(r => setTimeout(() => r(dflt), ms).unref())]);
 async function transportJob(j, jp, { dry = false } = {}) {
   if ((j.params || {}).what === 'brands') { const meter = { usd: 0 }; return brandsJob(j, jp, { rest, ask: brandsAsk(meter), meter, log }); }
+  if ((j.params || {}).what === 'taxis') return taxisJob(j, jp);
   const P = j.params || {}, since = new Date(Date.now() - 864e5).toISOString();
   const recent = await rest(`/rest/v1/guide_jobs?select=id&guide_id=eq.${j.guide_id}&kind=eq.find-transport&id=neq.${j.id}&created_at=gt.${encodeURIComponent(since)}`);
   if ((recent || []).length >= 20) throw new Error('You have looked up a lot of lines today. Try again tomorrow.');
@@ -655,6 +667,18 @@ Only facts you found on the web: never invent a line, a time or a colour. When a
   const s2 = (((draft.content.files || {}).transport || {}).stations || []).find(x => x.id === P.id);
   if (s2 && !dry) { applyLines(s2, result, langs.length ? langs : ['en']); await rest('/rest/v1/guides?id=eq.' + j.guide_id, { method: 'PATCH', body: { draft: { ...draft, savedAt: new Date().toISOString() } }, headers: { Prefer: 'return=minimal' } }); }
   await jp({ status: 'done', message: `${badges.length} line${badges.length === 1 ? '' : 's'}, ${to.length} destination${to.length === 1 ? '' : 's'}`, result, finished_at: new Date().toISOString() });
+}
+
+// The editor's "Near your house" for taxis (find-transport, params.what === 'taxis'): the directory's taxis around the
+// house, without the numbers the guide already has. Free, no Claude; nothing is written into the guide.
+async function taxisJob(j, jp) {
+  await jp({ message: 'Looking for taxis near the house' });
+  const g = ((await rest('/rest/v1/guides?select=content,draft&id=eq.' + j.guide_id)) || [])[0];
+  const c = (g && (g.draft && g.draft.content ? g.draft.content : g.content)) || {}, h = (c.files || {}).house || {};
+  if (!(typeof h.lat === 'number' && typeof h.lng === 'number' && (h.lat || h.lng))) throw new Error('The guide does not know where the house is.');
+  const have = (((c.files || {}).transport || {}).taxis || []).flatMap(t => [t.phone, ...((t.alt || []).map(a => a.phone))]).filter(Boolean);
+  const taxis = await taxisAt(h, have);
+  await jp({ status: 'done', message: taxis.length ? `${taxis.length} ${taxis.length === 1 ? 'taxi' : 'taxis'} found` : 'No taxi found near the house', result: { taxis }, finished_at: new Date().toISOString() });
 }
 
 /* ---------- Artistic cover: one of the host's photos redrawn (OpenAI image editing, OPENAI_API_KEY in .env.local) ----------
@@ -724,13 +748,16 @@ async function runArea(only) {
   if (claudeApi) {
     const midnight = new Date(); midnight.setUTCHours(0, 0, 0, 0);
     const spent = ((await rest('/rest/v1/area_research?select=usd&usd=not.is.null&finished_at=gte.' + midnight.toISOString())) || []).reduce((s, r) => s + (+r.usd || 0), 0);
-    if (spent >= VISITOR_USD) { log(`area research for ${row.town || row.id.slice(0, 8)} left to the build: about ${spent.toFixed(2)} USD spent today (VISITOR_USD_PER_DAY=${VISITOR_USD})`); await ap({ status: 'limited', message: 'Left to the build: today\'s research for visitors is spent', finished_at: new Date().toISOString() }); return null; }
+    if (spent >= VISITOR_USD) { log(`area research for ${row.town || row.id.slice(0, 8)} left to the build: about ${spent.toFixed(2)} USD spent today (VISITOR_USD_PER_DAY=${VISITOR_USD})`);
+      const taxis = await within(taxisAt(row), 60000, []);   // free, no Claude: the builder shows them all the same
+      await ap({ status: 'limited', message: 'Left to the build: today\'s research for visitors is spent', ...(taxis.length ? { result: { taxis } } : {}), finished_at: new Date().toISOString() }); return null; }
   }
   const won = await rest('/rest/v1/area_research?id=eq.' + row.id + '&status=eq.queued', { method: 'PATCH', body: { status: 'running' }, headers: { Prefer: 'return=representation' } });
   if (!won || !won[0]) return;
   log('researching the area of', row.town || `${row.lat}, ${row.lng}`, row.id.slice(0, 8));
   const work = (async () => {
     const dir = join(HERE, 'jobs', 'area-' + row.id), meter = { usd: 0 };
+    const taxisP = taxisAt(row);   // free, beside the paid search; written even when that fails
     try {
       rmSync(dir, { recursive: true, force: true });
       // The municipality of the row's point (GeoNames, ours to keep): the brief names it, nothing of the host's is needed.
@@ -739,10 +766,11 @@ async function runArea(only) {
       const result = Object.fromEntries(AREA_KINDS.filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))]));
       if (!Object.keys(result).length) throw new Error('Nothing came back from the research');
       if (m) result.place = { town: m.town, province: m.province, ...(m.sea ? { sea: m.sea } : {}), source: 'geonames', fetched: m.fetched };   // the row's point is the area's, not exactly the house's: the builder does not fill a town or tick Beaches from it
+      const taxis = await taxisP; if (taxis.length) result.taxis = taxis;
       const reach = Math.max(0, ...(((result.markets || {}).markets) || []).filter(m => m.lat != null && m.lng != null).map(m => kmBetween(+row.lat, +row.lng, +m.lat, +m.lng)));   // the database shares it within half of this
       await ap({ status: 'done', result, reach_km: reach ? +reach.toFixed(2) : null, usd: claudeApi ? +meter.usd.toFixed(3) : null, message: null, finished_at: new Date().toISOString() });
       log(`  area researched (reach ${reach.toFixed(1)} km): ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
-    } catch (e) { log('  area research FAILED:', e.message); await ap({ status: 'failed', message: String(e.message).slice(0, 200), usd: claudeApi ? +meter.usd.toFixed(3) : null, finished_at: new Date().toISOString() }); }
+    } catch (e) { log('  area research FAILED:', e.message); const taxis = await taxisP; await ap({ status: 'failed', message: String(e.message).slice(0, 200), ...(taxis.length ? { result: { taxis } } : {}), usd: claudeApi ? +meter.usd.toFixed(3) : null, finished_at: new Date().toISOString() }); }
     finally { rmSync(dir, { recursive: true, force: true }); }
   })();
   RUNNING.set(row.id, { guide: null, kind: 'area', work });
@@ -770,10 +798,15 @@ async function researchJob(j, jp) {
     // municipality the house lies in (GeoNames, ours to keep) goes into the brief, and to the builder at once (start.js
     // fills the town with it when the host and the listing gave none). The host's distance cuts what was found later, in
     // the deck and at the build (research-brief.mjs); their interests stay out of it.
+    // The taxis around the house, free (our open directory), for the builder's "Taxis near your house": in the result as
+    // soon as they come, beside the paid search, which never waits for them.
+    let taxis = [], placeNow = null;
+    const read = () => ({ ...Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))])), ...(placeNow ? { place: placeNow } : {}), ...(taxis.length ? { taxis } : {}) });
+    const taxisP = taxisAt(A).then(t => { taxis = t; return t.length ? jp({ result: read() }) : null; }).catch(() => {});
     const m = await muniSoon({ lat: +A.lat, lng: +A.lng });
     const place = m ? { town: m.town, province: m.province, ...(m.sea ? { sea: m.sea } : {}), source: 'geonames', fetched: m.fetched } : null;   // sea: the nearest beach, for the builder's Beaches
-    if (m) { A.place = m; await jp({ result: { place } }); }
-    const read = () => ({ ...Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))])), ...(place ? { place } : {}) });
+    placeNow = place;
+    if (m) { A.place = m; await jp({ result: { place } }); if (taxis.length) await jp({ result: read() }); }
     // Things to do first: as soon as they are checked the host gets them as cards (start.js, researchCards), the rest goes on.
     // One after the other, not side by side: the big questions stay within the API's tokens per minute (see research()).
     await research(A, dir, null, { meter, parts: ['todo', 'markets'], rules: earlyRules(A), early: true, onPart: async kind => {
@@ -786,10 +819,11 @@ async function researchJob(j, jp) {
       if (kind === 'markets') { const f = join(dir, 'markets.json'), o = JSON.parse(readFileSync(f, 'utf8'));
         o.markets = await checkOnGoogle(o.markets || [], 'markets', { lat: +A.lat, lng: +A.lng }, () => {}); writeFileSync(f, JSON.stringify(o, null, 1)); }
       await jp({ result: read() }); } });
+    await within(taxisP, 60000, null);
     const result = read();
     const events = await firstEvents(A, meter).catch(e => { log('  events search skipped:', e.message); return null; });
     if (events) result.events = events;
-    if (!Object.keys(result).filter(k => k !== 'place').length) throw new Error('Nothing came back from the research. Try again later.');
+    if (!Object.keys(result).filter(k => k !== 'place' && k !== 'taxis').length) throw new Error('Nothing came back from the research. Try again later.');
     await jp({ status: 'done', result, message: Object.keys(result).join(', '), finished_at: new Date().toISOString() });
     log(`  guide area researched: ${Object.keys(result).join(', ')}${claudeApi ? `, about ${meter.usd.toFixed(2)} USD` : ''}`);
   } finally { rmSync(dir, { recursive: true, force: true }); }
@@ -920,6 +954,21 @@ if (process.argv.includes('--area-research')) {
 // computer or server, or RESEARCH=api, without the queue (and alongside a running worker).
 // node worker/guide-worker.mjs --find find-rail-brands: the iryo and Ouigo search, asked once whatever the record's age,
 // printed (each company's stations, its sources, whether it was sure, the cost) and written nowhere.
+// node worker/guide-worker.mjs --find find-taxis --slug <slug>: the taxis of our open directory around a guide's house, as
+// the editor's "Near your house" gets them (free), printed and written nowhere.
+if (process.argv.includes('--find') && process.argv[process.argv.indexOf('--find') + 1] === 'find-taxis') {
+  const slug = (process.argv[process.argv.indexOf('--slug') + 1] || '').replace(/^--.*/, '');
+  if (!slug) { console.error('Use: --find find-taxis --slug <slug>'); process.exit(1); }
+  const g = ((await rest(`/rest/v1/guides?select=id,content,draft&slug=eq.${encodeURIComponent(slug)}`)) || [])[0];
+  if (!g) { console.error(`No guide ${slug}.`); process.exit(1); }
+  const c = g.draft && g.draft.content ? g.draft.content : g.content, h = ((c || {}).files || {}).house || {};
+  const have = ((((c || {}).files || {}).transport || {}).taxis || []).map(t => t.phone).filter(Boolean);
+  log(`Taxis near ${slug}'s house, from our open directory. Nothing is written.`);
+  const t = await taxisAt(h, have);
+  for (const x of t) console.log(`  ${x.name}, ${x.town}, ${x.km} km${x.web ? ', has a website' : ''}`);
+  console.log(t.length ? `${t.length} taxis (the guide's own numbers left out)` : 'No taxi found near the house');
+  process.exit(0);
+}
 if (process.argv.includes('--find') && process.argv[process.argv.indexOf('--find') + 1] === 'find-rail-brands') {
   const hs = hsStations(), meter = { usd: 0 };
   log(`iryo and Ouigo, ${hs.length} high speed stations. Research: ${RESEARCH === 'api' ? 'Claude API' : 'claude command'}. Nothing is written.`);

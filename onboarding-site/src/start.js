@@ -148,14 +148,15 @@ async function areaWatch(){
   clearTimeout(AREA.timer); let wait = false;
   try {
     if (A._research && !AREA.quick) { const r = await sb('/rest/v1/rpc/area_research_status', { method: 'POST', token: SB.key, body: { p_id: A._research } });
-      if (r && r.status === 'done' && r.result) AREA.quick = r.result; else if (r && ['queued', 'running'].includes(r.status)) wait = true; }
+      if (r && r.status === 'done' && r.result) AREA.quick = r.result; else if (r && ['queued', 'running'].includes(r.status)) wait = true;
+      if (r && r.result && Array.isArray(r.result.taxis)) AREA.taxis = r.result.taxis; }   // free: also when the paid part was limited or failed
     if (A._researchJob && AUTH && (!AREA.full || AREA.fullOpen)) { const r = ((await sb('/rest/v1/guide_jobs?select=status,result&id=eq.' + A._researchJob)) || [])[0];
       if (r && r.result) AREA.full = r.result;   // things to do come first, while the rest goes on
       AREA.fullOpen = !!r && ['queued', 'running'].includes(r.status); if (AREA.fullOpen) wait = true; }
   } catch (e) { wait = true; }   // no connection: try again
   const before = JSON.stringify(AREA.result);
   AREA.result = (AREA.quick || AREA.full) ? { ...(AREA.quick || {}), ...(AREA.full || {}) } : null;
-  townFromResearch(); seaFromResearch();
+  townFromResearch(); seaFromResearch(); txRefresh();
   if (JSON.stringify(AREA.result) !== before) phoneSoon();
   moreRefresh();
   if (wait && ++AREA.tries < 150) AREA.timer = setTimeout(areaWatch, AREA.tries < 30 ? 6000 : 20000);
@@ -692,6 +693,42 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && n) { e.preventDefault(); e.stopPropagation(); PS.turn++; PS.list = []; PS.towns = []; psDraw(); }
   else if (e.key === 'Enter' && PS.on >= 0) { e.preventDefault(); psPick(PS.on); }
   else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && n) { e.preventDefault(); PS.on = (PS.on + (e.key === 'ArrowDown' ? 1 : n)) % n; psDraw(); }
+});
+/* ---------- Taxis near your house (16 Nov 2026, engine/src/modules/transport/README.md, "The taxis found") ----------
+   The research of the area brings the taxis of our open directory around its point (free, worker/guide-worker.mjs
+   taxisAt). Where the host is asked for the taxi they trust (Getting around, Only you know), they come first: up to 4
+   rows, sorted again from this house (a research row may be another house's, close by: txPick in the page, past 15 km
+   left out), the nearest ticked for the host with the mark of what we filled in. Yohann, 16 Nov 2026: "Add them by
+   themselves", "picks a number if they know [...] and they approve". The ticks are answers.taxis, the full taxis, from
+   the moment the list is shown (a host who saw it and left the tick has approved it), and the field is for another one.
+   Nothing waits: no list before the research answers, or when it found none; it comes quietly into the step. */
+const TXB = { shown: '' };
+const txRecords = () => (AREA.result && Array.isArray(AREA.result.taxis) ? AREA.result.taxis : null) || AREA.taxis || [];
+const txList = () => A.lat && A.lng ? txPick(txRecords(), { lat: +A.lat, lng: +A.lng }) : [];
+function txListHTML(){
+  const L = txList(); if (!L.length) return '';
+  if (!Array.isArray(A.taxis)) { A.taxis = [L[0]]; queueSave(); log('taxis', 'suggested'); }   // shown: the nearest is the host's until they change it
+  const on = new Set(A.taxis.map(t => txKey(t.phone)));
+  return `<div class="f full tx-found" id="txf"><span class="lab" id="l_txf">Taxis near your house${A._taxisTouched ? '' : ' <span class="frm sug">Suggested for you: please check</span>'}</span>
+    <p class="hint">From an open directory. Tick the ones you would call: guests see them in the guide.</p>
+    <div class="tx-list" role="group" aria-labelledby="l_txf">${L.map(t => `<label class="tx-row"><input type="checkbox" data-txb="${esc(t.id)}"${on.has(txKey(t.phone)) ? ' checked' : ''}><span><b translate="no">${esc(txName(t.name))}</b><small translate="no">${esc([t.town, t.km + '\u00a0km', txPhone(t.phone)].filter(Boolean).join(' · '))}</small></span></label>`).join('')}</div></div>`;
+}
+// The research answered while the step is open: the list comes in above the field, which is relabelled, nothing else moves.
+function txRefresh(){
+  const f = document.getElementById('f_taxi'); if (!f || document.getElementById('txf')) return;
+  const html = txListHTML(); if (!html) return;
+  const box = f.closest('.f'); box.insertAdjacentHTML('beforebegin', html);
+  const lab = box.querySelector('label'); if (lab && lab.firstChild && lab.firstChild.nodeType === 3) lab.firstChild.data = 'Another taxi: name and number ';
+  softRefresh(); phoneSoon();
+}
+document.addEventListener('change', e => {
+  const t = e.target; if (!t.dataset || t.dataset.txb === undefined) return;
+  const x = txList().find(z => z.id === t.dataset.txb); if (!x) return;
+  const cur = (Array.isArray(A.taxis) ? A.taxis : []).filter(z => txKey(z.phone) !== txKey(x.phone));
+  A.taxis = t.checked ? [...cur, x].sort((a, b) => txList().findIndex(z => z.id === a.id) - txList().findIndex(z => z.id === b.id)) : cur;
+  A._taxisTouched = true; queueSave(); log('taxis', t.checked ? 'ticked' : 'unticked');
+  const m = document.querySelector('#l_txf .frm'); if (m) m.remove();
+  softRefresh(); phoneSoon();
 });
 /* ---------- Towns as things to do (fault 2 of the acceptance test, 12 Nov 2026) ----------
    A host who types "Barcelona" to add it was offered the airport and a company: Google's suggestions are businesses and

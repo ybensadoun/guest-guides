@@ -64,6 +64,15 @@ export function nearby(house, pins, { km = 60, python = process.env.OVERTURE_PYT
     take: r => ({ release: r.release || null, pins: r.pins || {}, towns: r.towns && typeof r.towns === 'object' ? r.towns : {}, looked: Array.isArray(r.looked) ? r.looked.map(String) : null }) });
 }
 
+// The taxis of our open directory around the house (worker/overture.py, its second question): the raw records, within
+// 20 km, which engine/src/modules/transport/taxis.js (txPick) turns into the taxis a house is offered. An empty list when
+// Python or the box is not there: never throws to its caller.
+export function overtureTaxis(house, { km = 60, python = process.env.OVERTURE_PYTHON || 'python3', log = console.error } = {}) {
+  if (!house || !Number.isFinite(+house.lat) || !Number.isFinite(+house.lng)) return Promise.resolve([]);
+  return runPython('overture.py', { house: { lat: +house.lat, lng: +house.lng }, km, taxis: true }, { python, log, tag: 'overture', none: 'no taxis',
+    empty: () => [], take: r => Array.isArray(r.taxis) ? r.taxis : [] }).catch(() => []);
+}
+
 // GeoNames' features near each pin that carry one of its names (worker/geonames.py, open data under CC BY 4.0: the
 // guide credits GeoNames): towns, beaches, mountains, springs, monuments, which Overture does not list. country: two
 // capital letters (the file fetched). pins: as for nearby(). Returns { fetched, pins: { id: [features] } }; if Python or

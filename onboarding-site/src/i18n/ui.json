@@ -8624,5 +8624,25 @@
 "ca": "iryo i Ouigo: comprovat el {x}.",
 "es": "iryo y Ouigo: comprobado el {x}.",
 "fr": "iryo et Ouigo : vérifié le {x}."
+},
+"From an open directory. Pick one to add it.": {
+"ca": "D’un directori obert. Tria’n un per afegir-lo.",
+"es": "De un directorio abierto. Elige uno para añadirlo.",
+"fr": "D’après un annuaire ouvert. Choisissez-en un pour l’ajouter."
+},
+"Taxis near your house": {
+"ca": "Taxis a prop de casa teva",
+"es": "Taxis cerca de tu casa",
+"fr": "Taxis près de chez vous"
+},
+"From an open directory. Tick the ones you would call: guests see them in the guide.": {
+"ca": "D’un directori obert. Marca els que trucaries: els hostes els veuen a la guia.",
+"es": "De un directorio abierto. Marca los que llamarías: los huéspedes los ven en la guía.",
+"fr": "D’après un annuaire ouvert. Cochez ceux que vous appelleriez : vos voyageurs les voient dans le guide."
+},
+"Another taxi: name and number": {
+"ca": "Un altre taxi: nom i número",
+"es": "Otro taxi: nombre y número",
+"fr": "Un autre taxi : nom et numéro"
 }
 }

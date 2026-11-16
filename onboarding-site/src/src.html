@@ -448,8 +448,12 @@ function field(k){
   if (k === 'up:cover' && typeof coverChoiceHTML === 'function') return coverChoiceHTML();
   if (k === 'up:photo' && typeof roomsHTML === 'function') return roomsHTML();
   if (k.startsWith('up:')) return drop(k.slice(3));
-  const q = Q[k]; if (!q) return '';
-  if (q.show && !q.show()) return '';
+  const q0 = Q[k]; if (!q0) return '';
+  if (q0.show && !q0.show()) return '';
+  // The taxi: the taxis our open directory found near the house first, ticked for the host to approve (start.js txListHTML);
+  // the field is then for another one.
+  const pre = k === 'taxi' && typeof txListHTML === 'function' ? txListHTML() : '';
+  const q = pre ? { ...q0, label: 'Another taxi: name and number' } : q0;
   const hint = q.hintFn ? q.hintFn() : q.hint;
   const head = `${esc(q.label)} ${badge(k)}`;
   const t = q.t || 'text';
@@ -461,7 +465,7 @@ function field(k){
   if (t === 'select') return `<div class="f${q.full?' full':''}"><label for="f_${k}">${head}</label><select id="f_${k}" data-k="${k}"><option value="">Choose…</option>${q.opts.map(x => `<option${v(k)===x?' selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
   const inp = t === 'area' ? `<textarea id="f_${k}" data-k="${k}" rows="${q.rows||4}" placeholder="${esc(q.ph||'')}">${esc(v(k))}</textarea>`
     : `<input id="f_${k}" data-k="${k}" type="${t}" value="${esc(v(k))}" placeholder="${esc(q.ph||'')}"${t==='number'?' inputmode="numeric"':''}>`;
-  return `<div class="f${q.full?' full':''}"><label for="f_${k}">${head}</label>${hint?`<p class="hint">${esc(hint)}</p>`:''}${inp}</div>`;
+  return `${pre}<div class="f${q.full?' full':''}"><label for="f_${k}">${head}</label>${hint?`<p class="hint">${esc(hint)}</p>`:''}${inp}</div>`;
 }
 function drop(kind){
   const o = UP[kind]; const mine = uploads.filter(u => u.kind === kind && !u.round), pend = [...pending.values()].filter(p => p.kind === kind);
