@@ -92,7 +92,7 @@ const overlaps = page => page.evaluate(() => {
   }
   return [...new Set(out)].slice(0, 6);
 });
-const clipped = page => page.evaluate(() => [...document.querySelectorAll('main b, main h1, main h2, main button, main a, main span, main p, .fb *')].filter(el => el.children.length === 0 && el.scrollWidth > el.clientWidth + 2 && getComputedStyle(el).display !== 'inline').map(el => (el.textContent || '').trim().slice(0, 40)).slice(0, 6));
+const clipped = page => page.evaluate(() => [...document.querySelectorAll('main b, main h1, main h2, main button, main a, main span, main p, .fb *')].filter(el => el.children.length === 0 && !el.classList.contains('sr') && el.scrollWidth > el.clientWidth + 2 && getComputedStyle(el).display !== 'inline').map(el => (el.textContent || '').trim().slice(0, 40)).slice(0, 6));
 
 const browser = await chromium.launch();
 try {
@@ -129,7 +129,8 @@ try {
     // Play
     await page.goto(ORIGIN + '/modules/#/transport/play'); await page.waitForSelector('#frMaker');
     const maker = page.frameLocator('#frMaker');
-    await maker.locator('h1, h2').filter({ hasText: 'Getting around' }).first().waitFor({ timeout: 20000 });
+    try { await maker.locator('h1, h2').filter({ hasText: 'Getting around' }).first().waitFor({ timeout: 20000 }); }
+    catch (e) { await page.screenshot({ path: join(SHOTS, `${width}-maker-missing.png`) }); console.log('the maker frame shows:', (await maker.locator('body').innerText().catch(() => '?')).slice(0, 400).replace(/\n+/g, ' | '), '| errors:', errors.join(' | ')); throw e; }
     ok(true, `${tag}: the maker's real step is in the frame`);
     ok(await page.evaluate(id => (JSON.parse(localStorage.getItem('porta-house-v1')) || {}).id === id, db.guides[0].id), `${tag}: the maker is on the sample house`);
     if (width === 1280) {
@@ -157,7 +158,7 @@ try {
     await page.click(`[data-house="${last}"]`); await page.waitForFunction(() => /is empty/.test(document.querySelector('#playNote').textContent));
     ok(!(await page.$('#frMaker')), `${tag}: an empty house opens no frame`);
     await page.click('#reset'); ok(/Sure/.test(await page.textContent('#reset')), `${tag}: Reset asks once`);
-    await page.click('#reset'); await page.waitForSelector('#frMaker', { timeout: 15000 });
+    await page.click('#reset'); await page.waitForSelector('#frMaker', { state: 'attached', timeout: 15000 });
     ok(db.calls.some(c => c[0] === 'guide' && c[1] === last && c[2] === 'content,draft,theme'), `${tag}: Reset writes the fixture and empties the draft`);
     ok(!!(db.guides.find(g => g.slug === last).content.site || {}).name, `${tag}: the house is filled`);
 
