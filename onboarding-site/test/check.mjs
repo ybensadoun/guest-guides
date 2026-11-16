@@ -6,7 +6,10 @@
 //   node onboarding-site/test/check.mjs [editor slug] [builder slug]    defaults ca-la-kimberly, home-in-tordera
 // The builder is shown as a host just after their listing was read: the builder slug's answers, with what only the host
 // knows (Wi-Fi, rubbish, phone, arrival) and every Done and seen step taken out. Build the page first (src: python3 build.py).
-// Needs SUPABASE_SERVICE_KEY (worker/.env.local or the environment) and Playwright (npm i --no-save playwright).
+// Needs Playwright (npm i --no-save playwright) and the two guides it shows: read with SUPABASE_SERVICE_KEY
+// (worker/.env.local or the environment) and kept as a copy on this computer (~/.cache/guest-guides/check-rows.json, the
+// owner's eyes only, never in git), so that a copy of the repo without the key (a module conversation's worktree, 16 Nov
+// 2026: the key is never copied or linked) runs the same checks from that copy. CHECK_NO_KEY=1 tries that path.
 //
 // The checks are in groups (groupList() below) that share nothing but the two guides read at the start and the built page:
 // each group runs in a process of its own, with its own browser, and several run at once.
@@ -23,7 +26,8 @@
 import { createRequire } from 'node:module';
 import { deflateSync } from 'node:zlib';
 import { execSync, fork } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, chmodSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '../..'), SHOTS = join(HERE, 'shots'), TIMES = join(SHOTS, 'check-times.json');
@@ -34,14 +38,23 @@ if (env.LIST) {   // the groups, nothing run
   process.exit(0);
 }
 if (!CHILD && existsSync(ef)) for (const l of readFileSync(ef, 'utf8').split('\n')) { const m = l.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/); if (m && !(m[1] in env)) env[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); }
-if (!CHILD && !env.SUPABASE_SERVICE_KEY) { console.error('Missing SUPABASE_SERVICE_KEY (worker/.env.local).'); process.exit(1); }
+if (env.CHECK_NO_KEY) delete env.SUPABASE_SERVICE_KEY;
+const KEPT = join(homedir(), '.cache/guest-guides/check-rows.json');
+let kept = null; if (!CHILD && !env.SUPABASE_SERVICE_KEY) { try { kept = JSON.parse(readFileSync(KEPT, 'utf8')); } catch (e) { /* none kept */ }
+  if (!kept) { console.error('No SUPABASE_SERVICE_KEY here (worker/.env.local) and no kept copy of the guides: run the check once in the main checkout, which keeps one in ' + KEPT + '.'); process.exit(1); }
+  console.log(`no key here: the guides are read from the copy kept on ${kept.at} (${Object.keys(kept.rows).join(', ')})`); }
 const { chromium } = createRequire(join(ROOT, 'package.json'))('playwright');
 const SB = 'https://dmoxszfwulolqkgxtxcp.supabase.co', HTML = readFileSync(env.CHECK_HTML ? resolve(env.CHECK_HTML) : join(ROOT, 'onboarding-site/index.html'), 'utf8');
 const TOWNS = readFileSync(join(ROOT, 'onboarding-site/towns-es.json'), 'utf8');   // the towns the maker offers (GeoNames), served as the site serves it
 const STATIONS = readFileSync(join(ROOT, 'onboarding-site/stations-es.json'), 'utf8');   // Spain's train stations (Renfe's timetables), the same
-const row = async slug => (await (await fetch(`${SB}/rest/v1/guides?select=id,owner,answers,status,slug,origin,content,theme,draft&slug=eq.${encodeURIComponent(slug)}`, { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: 'Bearer ' + env.SUPABASE_SERVICE_KEY } })).json())[0];
-// The two guides: read once by the runner, handed to each group's process (in memory, never on disk).
-const { E, B0 } = CHILD ? await new Promise(r => process.once('message', r)) : { E: await row(process.argv[2] || 'ca-la-kimberly'), B0: await row(process.argv[3] || 'home-in-tordera') };
+const row = async slug => { if (kept) { if (!kept.rows[slug]) { console.error(`No kept copy of ${slug}: run the check with it once in the main checkout.`); process.exit(1); } return kept.rows[slug]; }
+  return (await (await fetch(`${SB}/rest/v1/guides?select=id,owner,answers,status,slug,origin,content,theme,draft&slug=eq.${encodeURIComponent(slug)}`, { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: 'Bearer ' + env.SUPABASE_SERVICE_KEY } })).json())[0]; };
+// The two guides: read once by the runner, handed to each group's process in memory. With the key they are also kept as a
+// copy outside the repo (see the top), merged with what is kept so that other slugs stay.
+const SLUGS = [process.argv[2] || 'ca-la-kimberly', process.argv[3] || 'home-in-tordera'];
+const { E, B0 } = CHILD ? await new Promise(r => process.once('message', r)) : { E: await row(SLUGS[0]), B0: await row(SLUGS[1]) };
+if (!CHILD && !kept && E && B0) { try { let old = {}; try { old = JSON.parse(readFileSync(KEPT, 'utf8')).rows || {}; } catch (e) { /* first copy */ }
+  mkdirSync(dirname(KEPT), { recursive: true }); writeFileSync(KEPT, JSON.stringify({ at: new Date().toISOString().slice(0, 10), rows: { ...old, [SLUGS[0]]: E, [SLUGS[1]]: B0 } }), { mode: 0o600 }); chmodSync(KEPT, 0o600); } catch (e) { /* the copy is a convenience: the run goes on */ } }
 if (!E || !B0) { console.error('Guide not found.'); process.exit(1); }
 E.draft = null; if (E.content.private) E.content.private = {};
 // The builder's host: listing read, nothing else answered, done or seen yet (no colour world picked either: the guide the
