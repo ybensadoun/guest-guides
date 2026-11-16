@@ -435,17 +435,30 @@ def info(fid, title_key_text, paras, icon='car', tone='blue'):
         {'id': fid, 'icon': icon, 'tone': tone, 'title': L(title_key_text), 'items': [L(p) for p in paras]}]}, ensure_ascii=False, indent=1))
 
 # Home tiles start empty (the host pins places in the editor). The taxi they trust goes to Getting around (section
-# "transport", content/transport.json) with a one-tap tile on Home; stations and bus stops are added in the editor.
+# "transport", content/transport.json) with a one-tap tile on Home. The train stations near the house come from our file of
+# Spain's stations (onboarding-site/stations-es.json, Renfe's open timetables), picked by the module's one rule
+# (engine/src/modules/transport/pick.js) through engine/scripts/stations-of.mjs: Python keeps no copy of it. With
+# stations and no taxi, the section has no card (tile null): Home shows its entry tile, which the frame places like any
+# other (engine/src/modules/README.md). Bus stops and other stations are added in the editor.
 quick = []
 def phone_of(s): m = re.search(r'\+?\d[\d\s]{6,}\d', s or ''); return m.group(0).strip() if m else None
 taxis = []
 if A.get('taxi') and phone_of(A['taxi']):
     nm = re.sub(r'[,:]?\s*\+?\d[\d\s]{6,}\d.*$', '', A['taxi']).strip() or 'Taxi'
     taxis.append({'id': 'taxi', 'name': L(nm), 'phone': phone_of(A['taxi']), 'what': L('The taxi we use and trust.')})
+def stations_of(lat, lng):   # the house's stations as transport.json holds them; none when the script fails (said on stderr)
+    import shutil, subprocess
+    node, script = shutil.which('node'), ROOT / 'engine/scripts/stations-of.mjs'
+    if not node: print(f'generate-site: node is not on the PATH: no train stations ({script.relative_to(ROOT)})', file=sys.stderr); return []
+    try: r = subprocess.run([node, str(script)], input=json.dumps({'lat': lat, 'lng': lng, 'langs': LANGS}), capture_output=True, text=True, timeout=60)
+    except Exception as e: print(f'generate-site: {script.relative_to(ROOT)} could not be run: {e}: no train stations', file=sys.stderr); return []
+    if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no train stations', file=sys.stderr); return []
+    return json.loads(r.stdout).get('stations') or []
+stations = stations_of(args.lat, args.lng)
 (SITE / 'content/quick.json').write_text(json.dumps({'items': quick}, ensure_ascii=False, indent=1))
-if taxis:
-    (SITE / 'content/transport.json').write_text(json.dumps({'_doc': 'Getting around: taxis and stations or stops, on their own page; tile = a one-tap tile on Home. Written by generate-site.py from the host\'s taxi answer.',
-        'taxis': taxis, 'stations': [], 'tile': {'name': L('Taxi'), 'sub': taxis[0]['name']}}, ensure_ascii=False, indent=1))
+if taxis or stations:
+    (SITE / 'content/transport.json').write_text(json.dumps({'_doc': 'Getting around: taxis and stations or stops, on their own page; tile = a one-tap tile on Home (null: the section\'s own tile). Written by generate-site.py: the taxi from the host\'s answer, the train stations from onboarding-site/stations-es.json (Renfe, src: {from, at}) by engine/src/modules/transport/pick.js.',
+        'taxis': taxis, 'stations': stations, 'tile': {'name': L('Taxi'), 'sub': taxis[0]['name']} if taxis else None}, ensure_ascii=False, indent=1))
 
 
 # ---------- host-supplied content: how rubbish works, and the places the host recommends ----------
@@ -658,7 +671,7 @@ for sid, grp, kind, label, extra, mod in SEC:
     if sid == 'garbage': want = want and bool(rmode)   # only the host can tell us: no answer, no section
     if sid == 'restaurants': want = want and bool(fav)
     if sid == 'nightlife': want = on('nightlife', False) and bool(night)
-    if sid == 'transport': want = want and bool(taxis)
+    if sid == 'transport': want = want and bool(taxis or stations)
     modules[sid] = bool(want)
     if not want: continue
     live = kind == 'markets' and (SITE / 'content/markets.json').exists() or has_items(sid)
@@ -712,4 +725,4 @@ if not nf.exists():
 
 print(json.dumps({'site': str(SITE.relative_to(ROOT)), 'world': WORLD, 'palette': palette,
                   'languages': LANGS, 'sections': [(s['id'], s['status']) for s in sections], 'research': research,
-                  'untranslated': len(untranslated), 'photos': {k: len(v) for k, v in room_photos.items()}}, indent=1))
+                  'untranslated': len(untranslated), 'photos': {k: len(v) for k, v in room_photos.items()}, 'stations': len(stations)}, indent=1))

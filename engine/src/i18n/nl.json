@@ -349,5 +349,7 @@
   "crFonts": "Lettertypen: {fonts}, onder de SIL Open Font License.",
   "crQr": "De wifi-QR-code wordt gemaakt met qrcode-generator.",
   "crWorkbox": "Offline gebruik: Workbox.",
-  "crLicenses": "Alle licenties"
+  "crLicenses": "Alle licenties",
+  "crTrainsH": "Treinen",
+  "crRenfe": "De treinstations, hun lijnen en de reistijden komen uit de open dienstregelingen van Renfe: ‘{renfe}’, gegevens van {date}, licentie {ccby}. Het zijn gebruikelijke tijden met een rechtstreekse trein: controleer ze voordat je vertrekt."
 }

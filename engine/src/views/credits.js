@@ -1,9 +1,9 @@
 // Sources and credits (#credits): every source the guide uses, credited as its terms ask (docs/CREDITS.md), opened from the
 // quiet link at the foot of Home. Proper names, licence names and the two quoted notices stay as they are in every language.
 // The licences of the software and fonts are in licenses.txt, written at the build (engine/scripts/licenses.mjs).
-import { t } from '../i18n.js';
+import { t, locale } from '../i18n.js';
 import { esc } from '../ui.js';
-import { SECTIONS, HOUSE, REVIEWS, SITE } from '../content.js';
+import { SECTIONS, HOUSE, REVIEWS, SITE, TRANSPORT } from '../content.js';
 import { COVER_PHOTO } from '../modules/house/index.js';
 import { SITE_FONTS, FONT_NAMES } from 'virtual:site-credits';
 import { hasKey } from '../gcard.js';
@@ -20,6 +20,9 @@ const say = (key, links = {}, vars) => Object.entries(links).reduce((s, [k, a]) 
 // Quoted as the source writes it, in English in every language.
 const FOURSQUARE = 'Copyright 2024 Foursquare Labs, Inc. All rights reserved. Foursquare data was transformed to the Overture schema.';
 const DENSO = 'QR Code is a registered trademark of DENSO WAVE INCORPORATED.';
+// Renfe's open timetables (CC BY 4.0, data.renfe.com/legal): the credit in Spanish as its terms word it, inside a sentence in
+// each language, with the date of the data. Shown when a station of the guide came from them (src.from 'renfe').
+const RENFE = 'Origen de los datos: Renfe Operadora';
 const LISTING_SITES = [['airbnb.', 'Airbnb'], ['booking.com', 'Booking.com'], ['vrbo.', 'Vrbo']];
 
 export function renderCredits(V) {
@@ -31,6 +34,9 @@ export function renderCredits(V) {
   const aiCover = COVER_PHOTO && (SITE.theme || {}).coverMade === 'ai';
   const fonts = [...new Set((G ? G.fonts || [] : SITE_FONTS).map(f => String(f).replace(/^@fontsource\//, '').split('/')[0]))].map(f => FONT_NAMES[f] || f);
   const licenses = import.meta.env.BASE_URL + 'licenses.txt';
+  // The newest date of Renfe's data among the guide's stations, written in the guide's language; none: no section.
+  const renfeAt = ((TRANSPORT && TRANSPORT.stations) || []).filter(s => s && s.src && s.src.from === 'renfe' && /^\d{4}-\d\d-\d\d$/.test(s.src.at || '')).map(s => s.src.at).sort().pop();
+  const renfeDate = renfeAt ? new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(renfeAt + 'T12:00:00Z')) : '';
   const sec = (h, body) => `<section class="hsec crs"><h3 class="cr-h">${esc(t(h))}</h3>${body}</section>`;
   const p = x => `<p>${x}</p>`;
   V.innerHTML = `<div class="wrap credits" style="gap:14px">
@@ -39,6 +45,7 @@ export function renderCredits(V) {
       + p(say('crSearch', { photon: ext('https://photon.komoot.io', 'Photon') })))}
     ${sec('crPlacesH', p(say('crPlaces', { overture: ext('https://overturemaps.org', 'Overture Maps Foundation'), cdla: ext('https://cdla.dev/permissive-2-0/', 'Community Data License Agreement Permissive 2.0'), geonames: ext('https://www.geonames.org', 'GeoNames'), ccby: ext('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0') }))
       + p(say('crHours')) + `<p class="cr-q" lang="en">${esc(FOURSQUARE)}</p>`)}
+    ${renfeAt ? sec('crTrainsH', p(say('crRenfe', { renfe: `<span class="pn" lang="es">${esc(RENFE)}</span>`, ccby: ext('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0') }, { date: renfeDate }))) : ''}
     ${sec('crGoogleH', p(say('crGoogle')) + (hasKey() ? p(say('crGoogleCard')) : ''))}
     ${sec('crWordsH', (photos ? p(listing ? say('crPhotosFrom', {}, { src: listing }) : say('crPhotos')) : '') + p(say('crAi')) + (aiCover ? p(say('crAiCover')) : ''))}
     ${sec('crSoftH', `<ul class="glist cr-l">

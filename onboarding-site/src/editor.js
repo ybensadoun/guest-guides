@@ -124,9 +124,9 @@ function cPhotos(path, arr) {
   return `${(arr || []).length ? `<div class="thumbs">${arr.map((n, i) => `<div class="thumb"><img src="${esc(edImg(n))}" alt="" loading="lazy"><div class="cm-phb"><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="-1" aria-label="Move earlier">‹</button><button class="btn small" type="button" data-phmove="${path}/${i}" data-dir="1" aria-label="Move later">›</button></div><button class="x" type="button" data-cdel="${path}/${i}" data-now="1" aria-label="Remove photo ${i + 1}">×</button></div>`).join('')}</div>` : ''}
     <label class="btn small cm-file"><input class="sr" type="file" accept="image/*" multiple data-phadd="${path}">+ Add photos</label>`;
 }
-function cCard(p, title, meta, inner, order, lead = '', note = '') {   // note: quiet lines under the row's meta, one or a list, each words or { t: words, c: class } (a place hidden from guests for the season; is it still open, lkNote)   // lead: what goes before the name in the row (a place's kind)   // order: [this card's place, how many there are], for a list the host can put in order
+function cCard(p, title, meta, inner, order, lead = '', note = '', after = '') {   // after: HTML under the meta line (a station's line badges, cStation); no other card passes it   // note: quiet lines under the row's meta, one or a list, each words or { t: words, c: class } (a place hidden from guests for the season; is it still open, lkNote)   // lead: what goes before the name in the row (a place's kind)   // order: [this card's place, how many there are], for a list the host can put in order
   const mv = order ? `<div class="cm-ord"><button type="button" data-cardmove="${esc(p)}" data-dir="-1" aria-label="Move ${esc(title)} up"${order[0] ? '' : ' disabled'}>↑</button><button type="button" data-cardmove="${esc(p)}" data-dir="1" aria-label="Move ${esc(title)} down"${order[0] < order[1] - 1 ? '' : ' disabled'}>↓</button></div>` : '';
-  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary>${lead}<span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}${[].concat(note || []).filter(Boolean).map(x => `<small class="pl-hid${x.c ? ' ' + x.c : ''}">${esc(x.t || x)}</small>`).join('')}</span>${mv}<i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
+  return `<details class="cmi" data-open="${esc(p)}"${CM.open.has(p) ? ' open' : ''}><summary>${lead}<span><b>${esc(title)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}${after}${[].concat(note || []).filter(Boolean).map(x => `<small class="pl-hid${x.c ? ' ' + x.c : ''}">${esc(x.t || x)}</small>`).join('')}</span>${mv}<i class="chev" aria-hidden="true"></i></summary><div class="cmb">${inner}</div></details>`;
 }
 
 /* --- One place, contact or tile: its texts, links, position, hours or dates --- */
@@ -1013,10 +1013,16 @@ function cStation(p, s) {
   const placed = typeof s.lat === 'number' && !(s.lat === 0 && s.lng === 0), L = (CM.lines || {})[s.id] || {}, auto = s.auto || {}, more = p + '/more';
   const badges = (s.badges || []).filter(b => b.t).map(b => `<span class="cm-badge" style="background:${esc(b.c || '#1D4FA0')};color:${b.ink ? '#121212' : '#fff'}">${esc(b.t)}</span>`).join('');
   const to = (s.to || []).filter(d => edShown(d.dest)).map(d => `<li><b>${esc(edShown(d.dest))}</b>${d.time ? ' ' + esc(d.time) : ''}${edShown(d.note) ? ' · ' + esc(edShown(d.note)) : ''}</li>`).join('');
-  const found = `<div class="cm-found"><div class="cm-row cm-foundh"><b>Lines and where they go</b><button class="btn small" type="button" data-trlines="${esc(s.id)}"${L.busy || !placed ? ' disabled' : ''}>${L.busy ? 'Looking…' : badges ? 'Refresh the lines' : 'Find the lines'}</button></div>
+  const ours = !!s.src && s.src.from === 'renfe';   // from our file of Renfe's timetables: nothing to look up, nothing to refresh
+  const found = ours ? `<div class="cm-found"><div class="cm-row cm-foundh"><b>Lines and where they go</b></div>
+      <p class="hint">${esc(`From Renfe's timetables, data of ${/^\d{4}-\d\d-\d\d$/.test(s.src.at || '') ? new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(s.src.at + 'T00:00:00Z')).replace(/ /g, '\u00a0') : '?'}. Usual times by direct train.`)}</p>
+      ${badges ? `<div class="cm-badges">${badges}</div>` : ''}${to ? `<ul class="cm-to">${to}</ul>` : ''}
+      <p class="hint cm-trfacts">${s.km ? `<span>${esc(`${s.km} km from the house, about ${s.min || cmMin(s.km)} min by car.`)}</span> ` : ''}${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">Timetable</a>` : ''}</p></div>`
+    : `<div class="cm-found"><div class="cm-row cm-foundh"><b>Lines and where they go</b><button class="btn small" type="button" data-trlines="${esc(s.id)}"${L.busy || !placed ? ' disabled' : ''}>${L.busy ? 'Looking…' : badges ? 'Refresh the lines' : 'Find the lines'}</button></div>
       <p class="hint" id="cmLines-${esc(s.id)}" role="status">${esc(L.msg || (!placed ? 'Set its pin first (below), then we look up its lines.' : auto.checked ? `Found on the web${auto.operator ? ' (' + auto.operator + ')' : ''}, checked ${auto.checked}. Refresh any time.` : badges ? 'Refresh to look them up again.' : 'We look up the lines through it and where they go. Nothing to type.'))}</p>
       ${badges ? `<div class="cm-badges">${badges}</div>` : ''}${to ? `<ul class="cm-to">${to}</ul>` : ''}</div>`;
-  return cCard(p, edShown(s.name) || 'New ' + cmMode(s), [s.mode === 'bus' ? 'Bus' : 'Train', s.min ? s.min + ' min by car' : '', (s.badges || []).filter(b => b.t).map(b => b.t).slice(0, 4).join(' '), placed ? '' : 'no pin yet'].filter(Boolean).join(' · '), `${found}
+  const rowBadges = (s.badges || []).filter(b => String(b.t || '').trim()).map(trsBadge).join('');   // the lines in their colours in the closed row (the coordinator's review, 16 Nov 2026)
+  return cCard(p, edShown(s.name) || 'New ' + cmMode(s), [s.mode === 'bus' ? 'Bus' : 'Train', s.min ? s.min + ' min by car' : '', placed ? '' : 'no pin yet'].filter(Boolean).join(' · '), `${found}
     <div class="grid">${cf('In a few words', p + '/tag', s.tag, { i18n: true, half: true, ph: 'Reliable, slow' })}${cf('Minutes by car from the house', p + '/min', s.min, { type: 'number', half: true })}
     ${cf('What guests need to know', p + '/what', s.what, { i18n: true, long: true, ph: 'What only you know: is it reliable, is there internet on the way, where to park, which ticket to buy' })}</div>
     <details class="cm-more" data-open="${esc(more)}"${CM.open.has(more) ? ' open' : ''}><summary>Change the name, the pin, the lines or the times by hand</summary><div class="grid">
@@ -1028,16 +1034,17 @@ function cStation(p, s) {
     <div class="f full"><span class="lab">Journey times</span>${(s.to || []).map((d, j) => `<div class="cm-sub"><div class="grid">${cf('To', `${p}/to/${j}/dest`, d.dest, { i18n: true, half: true, ph: 'Barcelona' })}${cf('Time', `${p}/to/${j}/time`, d.time || '', { half: true, ph: '1 h 30' })}${cf('Note', `${p}/to/${j}/note`, d.note, { i18n: true, ph: '1 change' })}</div><div><button class="btn small danger" type="button" data-cdel="${p}/to/${j}" data-now="1">Remove this destination</button></div></div>`).join('')}
       <button class="btn small cm-add" type="button" data-addto="${p}/to">+ Add a destination</button></div>
     </details>
-    <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${cmMode(s)}</button></div>`);
+    <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${cmMode(s)}</button></div>`, null, '', '', rowBadges ? `<span class="cm-cbadges" translate="no">${rowBadges}</span>` : '');
 }
 // Stations and stops (29 Oct 2026, Yohann: "the host only adds added-value data"): the host gives a name or a Google Maps
 // link; Google gives the place, and the guide worker looks up the lines through it and the main places they reach (job
 // "find-transport", worker/guide-worker.mjs transportJob), in the guide's languages. "Refresh the lines" asks again. The host
 // writes only what only they know; everything we found stays editable under "by hand".
 const cmStopWord = /station|estaci|gare|bahnhof|stazione|halt|stop|parada|arr[eê]t|\bbus\b|tren|train|metro|tram/i;
-const cmMin = km => km ? Math.max(2, Math.round(km * 1.1 + 1)) : 0;   // by car from the house: a first guess the host can change
+// cmMin (minutes by car from the house, a first guess the host can change) is engine/src/modules/transport/pick.js's, pasted by build.py.
 async function cmStopAdd(btn) {
-  const mode = (document.getElementById('c_stopmode') || {}).value === 'bus' ? 'bus' : 'train', v = ((document.getElementById('c_stopq') || {}).value || '').trim(), h = edF().house || {};
+  const mode = btn && btn.dataset.stopadd === 'bus' ? 'bus' : 'train', v = ((document.getElementById('c_stopq_' + mode) || {}).value || '').trim(), h = edF().house || {};
+  CM.stopMode = mode;
   if (!v) { CM.stopMsg = 'Type its name, or paste its Google Maps link.'; return render(); }
   CM.stopMsg = 'Looking it up on Google…'; if (btn) btn.disabled = true; render();
   try {
@@ -1091,19 +1098,106 @@ function cmLinesApply(r) {
   s.auto = { checked: r.checked, operator: r.operator || '', link: r.link || '', sources: r.sources || [] };
   return (r.badges || []).length;
 }
-function cmTransport(c) {
-  const T = (c.files || {}).transport, P = 'files/transport';
-  const adds = `<div class="cm-find cm-stopadd"><b>Add a train station or bus stop</b><p class="hint">Its name, or its Google Maps link. We find it on the map, then look up its lines and where they go.</p>
-      <div class="cm-row"><select id="c_stopmode" aria-label="Train station or bus stop"><option value="train">Train station</option><option value="bus">Bus stop</option></select><input id="c_stopq" type="text" enterkeyhint="go" placeholder="Name or Google Maps link" aria-label="Its name, or its Google Maps link"><button class="btn small primary" type="button" data-stopadd>Add</button></div>
-      ${CM.stopMsg ? `<p class="hint" role="status">${esc(CM.stopMsg)}</p>` : ''}</div>
-    <div class="cm-row"><button class="btn small" type="button" data-tradd="taxi">+ Add a taxi</button></div>`;
-  if (!T) return `<div class="note"><div>No taxis or stations yet. Add the ones you would tell a friend about.</div></div>${adds}`;
-  return `${cSwitch('data-trtile', 'Show as a tile on the home page', !!T.tile, 'Getting around always has its own page. As a card it also sits on your home page, one tap away: move it in Home page.')}
-    ${T.tile ? `<div class="grid">${cf('Tile title', P + '/tile/name', T.tile.name, { i18n: true, half: true, ph: 'Taxi & train' })}${cf('Line under it', P + '/tile/sub', T.tile.sub, { i18n: true, half: true, ph: 'Taxi in 30 min, 3 stations' })}</div>` : ''}
-    <div class="grid">${cf('Line under the page title', P + '/lead', T.lead, { i18n: true, ph: 'Three ways to get around without a car.' })}</div>
-    <h3 class="cm-h">Taxis</h3><div class="cm-list">${(T.taxis || []).map((x, i) => cTaxi(`${P}/taxis/${i}`, x)).join('') || '<p class="hint">No taxi yet.</p>'}</div>
-    <h3 class="cm-h">Stations and stops</h3><div class="cm-list">${(T.stations || []).map((x, i) => cStation(`${P}/stations/${i}`, x)).join('') || '<p class="hint">No station or stop yet.</p>'}</div>${adds}`;
+// The step, mode by mode (Yohann, 16 Nov 2026: "you would go like from mode to mode. So like taxi [...] Then you would move
+// into trains, and then here you'd just be able to type a train station, and by default it would add it [...] Then we
+// could do the same thing with bus stops"): Taxi, then Trains (typed from our file of Spain's stations, trsLoad and trsPick
+// below; "Not in the list?" opens the old way, a name or a Google Maps link and the worker's lookup), then Bus stops (the
+// old way). Each kind under its heading with one line on what goes there. Nothing of an older guide is rewritten.
+function cmStopBox(mode) {
+  const train = mode === 'train', q = 'c_stopq_' + mode;
+  return `<div class="cm-find cm-stopadd"><b>${train ? 'Add another station' : 'Add a bus stop'}</b><p class="hint">Its name, or its Google Maps link. We find it on the map, then look up its lines and where they go.</p>
+      <div class="cm-row"><input id="${q}" type="text" enterkeyhint="go" placeholder="Name or Google Maps link" aria-label="Its name, or its Google Maps link"><button class="btn small primary" type="button" data-stopadd="${mode}">Add</button></div>
+      ${CM.stopMsg && (CM.stopMode || 'train') === mode ? `<p class="hint" role="status">${esc(CM.stopMsg)}</p>` : ''}</div>`;
 }
+function cmTransport(c) {
+  const T = (c.files || {}).transport, P = 'files/transport', S = (T && T.stations) || [];
+  const rows = mode => S.map((x, i) => [x, i]).filter(([x]) => (x.mode === 'bus') === (mode === 'bus')).map(([x, i]) => cStation(`${P}/stations/${i}`, x)).join('');
+  trsLoad();   // our file of Spain's stations, once, in the background: there before the host types
+  const trains = rows('train'), buses = rows('bus');
+  const top = T ? `${cSwitch('data-trtile', 'Show as a tile on the home page', !!T.tile, 'Getting around always has its own page. As a card it also sits on your home page, one tap away: move it in Home page.')}
+    ${T.tile ? `<div class="grid">${cf('Tile title', P + '/tile/name', T.tile.name, { i18n: true, half: true, ph: 'Taxi & train' })}${cf('Line under it', P + '/tile/sub', T.tile.sub, { i18n: true, half: true, ph: 'Taxi in 30 min, 3 stations' })}</div>` : ''}
+    <div class="grid">${cf('Line under the page title', P + '/lead', T.lead, { i18n: true, ph: 'Three ways to get around without a car.' })}</div>` : '';
+  return `${top}
+    <h3 class="cm-h">Taxi</h3><p class="hint cm-hl">The taxis you would call yourself, with their numbers.</p>
+    <div class="cm-list">${((T && T.taxis) || []).map((x, i) => cTaxi(`${P}/taxis/${i}`, x)).join('') || '<p class="hint">No taxi yet.</p>'}</div>
+    <div class="cm-row"><button class="btn small" type="button" data-tradd="taxi">+ Add a taxi</button></div>
+    <h3 class="cm-h">Trains</h3><p class="hint cm-hl">The train stations guests can use. Type one: its lines and journey times come with it.</p>
+    <div class="cm-list">${trains || `<div id="c_trnear">${trsNearHTML()}</div>`}</div>
+    <div class="cm-trfind"><label for="c_trq">Type a train station</label>
+      <input id="c_trq" type="text" data-trq role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="c_trsug" autocomplete="off" enterkeyhint="search" placeholder="${esc(trsExample())}">
+      <div class="pl-sug" id="c_trsug" role="listbox" aria-label="Train stations" hidden></div>
+      <p class="hint" id="c_trmsg" role="status">${TRS.failed ? esc('The list of stations could not be loaded. Use “Not in the list?” below.') : ''}</p>
+      <button class="pl-link cm-trold" type="button" data-trold aria-expanded="${!!CM.trOld}">Not in the list?</button></div>
+    ${CM.trOld ? cmStopBox('train') : ''}
+    <h3 class="cm-h">Bus stops</h3><p class="hint cm-hl">The bus stops guests can use near the house.</p>
+    <div class="cm-list">${buses || '<p class="hint">No bus stop yet.</p>'}</div>
+    ${cmStopBox('bus')}`;
+}
+/* --- Trains from our own file (16 Nov 2026): onboarding-site/stations-es.json, Spain's stations with their lines and usual
+   journey times from Renfe's open timetables (src/stations.py), loaded once when the step opens (as towns-es.json is in
+   start.js), matched in memory by the module's own rule (engine/src/modules/transport/pick.js tpFind, pasted by build.py):
+   accents and capitals aside, the nearest to the house first. A station picked is added at once, opened, as the generator
+   writes one (stationEntry): its lines, journey times, timetable link, distance and minutes by car, credited to Renfe
+   (src), no network call, no waiting. The host's words stay theirs (tag, what). A station already in the guide is not
+   offered again (tpHave). If the file does not load, "Not in the list?" is the way, as before. */
+const TRS = { data: null, asked: null, failed: false, list: [], on: -1, near: [] };
+function trsLoad() {
+  if (TRS.asked) return;
+  TRS.asked = fetch('/stations-es.json').then(r => r.ok ? r.json() : null).then(d => {
+    TRS.data = d && Array.isArray(d.stations) && Array.isArray(d.cities) ? d : null;
+    if (!TRS.data) { TRS.failed = true; const m = document.getElementById('c_trmsg'); if (m) m.textContent = 'The list of stations could not be loaded. Use “Not in the list?” below.'; return; }
+    const el = document.getElementById('c_trq'); if (el) el.placeholder = trsExample();
+    const nb = document.getElementById('c_trnear'); if (nb) nb.innerHTML = trsNearHTML();   // near the house: shown now, no full redraw
+    if (el && (el.value.trim() || document.activeElement === el)) trsType(el);   // typed (or the field focused) before the file came: shown now
+  }).catch(() => { TRS.failed = true; });
+}
+// Never an empty form (the coordinator's review, 16 Nov 2026): the module's rule picks the stations for the house
+// (pick.js tpNear: those the guide does not have yet, each with its role). With no train station in the guide they sit
+// under "Near your house" in place of the empty line; with one, they are the list when the field has the focus and is
+// empty. No position, no file, nothing found: nothing shown. The field's example is the station nearest to the house.
+const trsStations = () => (edF().transport || {}).stations || [];
+const trsHasTrain = () => trsStations().some(x => x.mode !== 'bus');
+const trsNear = () => TRS.data ? tpNear(edF().house || {}, TRS.data, trsStations()) : [];
+const trsBadge = b => `<i class="cm-badge" style="background:${esc(b.c || '#1D4FA0')};color:${b.ink ? '#121212' : '#fff'}">${esc(b.t)}</i>`;
+const trsRole = x => { const r = x.role && tpTagOf(x.st, x.role); return r ? `<span class="cm-trrole" translate="no">${esc(TP_TAG[r][UIL] || TP_TAG[r].en)}</span>` : ''; };
+const trsRow = (x, attrs) => `<button type="button" class="pl-tw cm-trs" ${attrs}>${kTile(ENG_ICON.train, 'var(--pine)', true)}<span><b translate="no">${esc(x.st.name)}</b><small translate="no">${(x.st.lines || []).map(trsBadge).join('')}${x.km != null ? `<span class="cm-trkm">${x.km}\u00a0km</span>` : ''}${trsRole(x)}</small></span></button>`;
+function trsExample() { const n = TRS.data && tpNearest(edF().house || {}, TRS.data); return n ? `Its name, like ${n.name}` : 'Its name'; }
+function trsNearHTML() {
+  const L = TRS.near = trsNear();
+  if (!L.length) return '<p class="hint">No train station yet.</p>';
+  return `<section class="cm-trnear" aria-label="Near your house"><b class="cm-trnh">Near your house</b><p class="hint">From Renfe's timetables. Pick one to add it.</p>
+    <div class="pl-sug cm-nearl">${L.map((x, i) => trsRow(x, `data-trnear="${i}"`)).join('')}<span class="pl-gm" aria-hidden="true" translate="no">Renfe</span></div></section>`;
+}
+function trsType(el) {
+  const v = el.value.trim();
+  TRS.list = !TRS.data ? [] : !v ? (trsHasTrain() ? trsNear() : []) : tpFind(TRS.data, el.value, edF().house || {}, tpHave(TRS.data, trsStations())); TRS.on = -1; trsDraw();
+  const m = document.getElementById('c_trmsg'); if (!m || !TRS.data) return;
+  m.textContent = el.value.trim().length < 2 || TRS.list.length ? '' : tpFind(TRS.data, el.value, edF().house || {}, [], 1).length ? 'Already in your guide.' : 'No Renfe station by that name.';   // in English: the page's table translates what reaches the screen
+}
+function trsDraw() {
+  const el = document.getElementById('c_trq'), box = document.getElementById('c_trsug'); if (!el || !box) return;
+  const L = TRS.list;
+  box.innerHTML = L.map((x, i) => trsRow(x, `role="option" id="c_trsug_${i}" data-tri="${i}" aria-selected="${i === TRS.on}"`)).join('')
+    + (L.length ? '<span class="pl-gm" aria-hidden="true" translate="no">Renfe</span>' : '');
+  box.hidden = !L.length; el.setAttribute('aria-expanded', String(!!L.length));
+  if (TRS.on >= 0) el.setAttribute('aria-activedescendant', `c_trsug_${TRS.on}`); else el.removeAttribute('aria-activedescendant');
+}
+function trsPick(i, from) {   // from: the list (TRS.list) or "Near your house" (TRS.near); a station near the house keeps its role's words as its verdict
+  const x = (from || TRS.list)[i]; if (!x || !TRS.data) return;
+  const T = cmTrEnsure(), e = stationEntry(x.st, edF().house || {}, x.role || null, TRS.data, edLangs());
+  (T.stations = T.stations || []).push(e); CM.open.add('files/transport/stations/' + (T.stations.length - 1));
+  TRS.list = []; TRS.on = -1; cmQueue(); render();
+}
+document.addEventListener('input', e => { if (CM.on && e.target && e.target.id === 'c_trq') trsType(e.target); });
+document.addEventListener('focusin', e => { if (CM.on && e.target && e.target.id === 'c_trq') { trsLoad(); if (!e.target.value.trim()) trsType(e.target); } });
+document.addEventListener('focusout', e => { if (CM.on && e.target && e.target.id === 'c_trq') setTimeout(() => { if (document.activeElement && document.activeElement.id === 'c_trq') return; if (!e.target.value.trim() && TRS.list.length) { TRS.list = []; TRS.on = -1; trsDraw(); } }, 200); });
+document.addEventListener('mousedown', e => { if (e.target.closest && e.target.closest('#c_trsug')) e.preventDefault(); });   // the field keeps the focus, so the list stays for the click
+document.addEventListener('keydown', e => {
+  if (!CM.on || !e.target || e.target.id !== 'c_trq') return; const n = TRS.list.length;
+  if (e.key === 'Escape' && n) { e.preventDefault(); e.stopPropagation(); TRS.list = []; TRS.on = -1; trsDraw(); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (n) trsPick(TRS.on >= 0 ? TRS.on : 0); }
+  else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && n) { e.preventDefault(); TRS.on = (TRS.on + (e.key === 'ArrowDown' ? 1 : n)) % n; trsDraw(); }
+});
 function cmTrAdd(kind) {
   const T = cmTrEnsure(), id = kind + '-' + Date.now().toString(36);
   if (kind === 'taxi') { (T.taxis = T.taxis || []).push({ id, name: L6(''), sub: L6(''), phone: '', what: L6('') }); CM.open.add('files/transport/taxis/' + (T.taxis.length - 1)); }
@@ -1977,7 +2071,7 @@ document.addEventListener('change', e => {
 });
 addEventListener('porta-lang', () => { if (CM.on) render(); });   // kinds, marks, days and months are written in the maker's language
 document.addEventListener('toggle', e => { const d = e.target; if (CM.on && d.matches && d.matches('details.cmi,details.cm-more[data-open]')) d.open ? CM.open.add(d.dataset.open) : CM.open.delete(d.dataset.open); }, true);
-document.addEventListener('keydown', e => { if (CM.on && e.key === 'Enter' && e.target && e.target.id === 'c_stopq') { e.preventDefault(); cmStopAdd(document.querySelector('[data-stopadd]')); }
+document.addEventListener('keydown', e => { if (CM.on && e.key === 'Enter' && e.target && /^c_stopq_(train|bus)$/.test(e.target.id)) { e.preventDefault(); cmStopAdd(document.querySelector(`[data-stopadd="${e.target.id.slice(8)}"]`)); }
   if (CM.on && e.key === 'Enter' && e.target && e.target.dataset && e.target.dataset.pfweb) { e.preventDefault(); e.target.blur(); } });   // the pasted website: Enter reads it
 document.addEventListener('click', e => {
   if (!CM.on) return;
@@ -2051,6 +2145,9 @@ document.addEventListener('click', e => {
   if (d.evrun !== undefined) return cmEvBusy() ? undefined : evAuto().on ? cmEvRun() : cmFindStart(EV_PATH);
   if (d.tradd) { cmTrAdd(d.tradd); return done(); }
   if (d.stopadd !== undefined) return cmStopAdd(t);
+  if (d.tri !== undefined) return trsPick(+d.tri);
+  if (d.trnear !== undefined) return trsPick(+d.trnear, TRS.near || []);
+  if (d.trold !== undefined) { CM.trOld = !CM.trOld; render(); if (CM.trOld) { const q = document.getElementById('c_stopq_train'); if (q) q.focus(); } return; }
   if (d.trlines) return cmLines(d.trlines);
   if (d.trtile !== undefined) { cmTrTile(); return done(); }
   if (d.cbool) { const q = edPath(d.cbool), o = edGet(edC(), q.slice(0, -1)); if (o) { o[q[q.length - 1]] = !o[q[q.length - 1]]; done(); } return; }
@@ -2186,6 +2283,23 @@ function cmInit() {
 .cm-badge{font-weight:700;font-size:13px;line-height:1.2;padding:3px 9px;border-radius:6px}
 .cm-to{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
 .cm-stopadd .cm-row input{flex:3 1 180px}
+.cm-hl{margin:-4px 0 0}
+.cm-trfind{display:flex;flex-direction:column;gap:6px}
+.cm-trfind label{font-weight:700}
+.cm-trfind .hint:empty{display:none}
+.cm-trfind .cm-trold{align-self:flex-start;margin-left:0;padding:8px 0;min-height:44px;font-weight:600;color:var(--muted)}
+.cm-trs small{display:flex;flex-wrap:wrap;align-items:center;gap:4px 5px;margin-top:4px}
+.cm-trs .cm-badge{display:inline-block;font-style:normal;font-size:12px;padding:2px 6px;border-radius:5px}
+.cm-trs .cm-trkm{margin-left:2px;white-space:nowrap}
+.cm-trs .cm-trrole{white-space:nowrap;font-weight:600;color:var(--ink)}
+.cm-trs .cm-trrole::before{content:'· ';font-weight:400;color:var(--muted)}
+.cm-trnear{display:flex;flex-direction:column;gap:6px}
+.cm-trnh{font-size:16px}
+.cm-trnear .hint{margin:0}
+.cm-nearl{margin-top:2px}
+.cmi>summary .cm-cbadges{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px;margin-top:5px}
+.cm-cbadges .cm-badge{display:inline-block;font-style:normal;font-size:12px;padding:2px 6px;border-radius:5px;white-space:nowrap}
+.cm-trfacts{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
 .cm-more>summary{cursor:pointer;font-weight:700;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;min-height:32px}
 .cm-more>summary small{font-weight:500;color:var(--muted);font-size:13.5px}
 .cm-more[open]>summary{margin-bottom:12px}

@@ -349,5 +349,7 @@
   "crFonts": "Fonts: {fonts}, under the SIL Open Font License.",
   "crQr": "The Wi-Fi QR code is made with qrcode-generator.",
   "crWorkbox": "Offline use: Workbox.",
-  "crLicenses": "All licences"
+  "crLicenses": "All licences",
+  "crTrainsH": "Trains",
+  "crRenfe": "The train stations, their lines and the journey times come from Renfe's open timetables: “{renfe}”, data of {date}, licence {ccby}. They are usual times by direct train: check them before you travel."
 }

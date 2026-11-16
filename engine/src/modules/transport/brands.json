@@ -1,0 +1,16 @@
+{
+ "_doc": "The colours of long distance and high speed train services, for a station's line badges (Getting around, README.md). Yohann, 16 Nov 2026: \"If it's high speed, you know, Irio, Avlo, etc., then just use the same color coding that they have.\" brands: [{t (the name on tickets), c (#RRGGBB), ink (true: dark text reads better on it, the rule of lumOf in worker/guide-worker.mjs), src (the page the colour was read on, or \"neutral\")}]. A brand whose colour could not be read on its own website (16 Nov 2026) has the neutral colour, the one long distance badges had in Ca La Kimberly's guide, and src \"neutral\": never an invented colour. neutral: that colour, also for a service not listed here. Read by onboarding-site/src/stations.py when it writes onboarding-site/stations-es.json.",
+ "neutral": { "c": "#5B2C83", "ink": false },
+ "brands": [
+  { "t": "AVE", "c": "#001F4C", "ink": false, "src": "https://www.renfe.com/etc.clientlibs/renfe-viajeros/clientlibs/clientlib-renfe-viajeros/resources/rv-ui-kit-1793712804647.css (--trains-ave-light, on renfe.com/es/es)" },
+  { "t": "Avlo", "c": "#5FCBC6", "ink": true, "src": "https://www.renfe.com/etc.clientlibs/renfe-viajeros/clientlibs/clientlib-renfe-viajeros/resources/rv-ui-kit-1793712804647.css (--trains-avlo-light, on renfe.com/es/es)" },
+  { "t": "Avant", "c": "#5B2C83", "ink": false, "src": "neutral" },
+  { "t": "Euromed", "c": "#5B2C83", "ink": false, "src": "neutral" },
+  { "t": "Alvia", "c": "#5B2C83", "ink": false, "src": "neutral" },
+  { "t": "Intercity", "c": "#5B2C83", "ink": false, "src": "neutral" },
+  { "t": "Regional", "c": "#5B2C83", "ink": false, "src": "neutral" },
+  { "t": "MD", "c": "#5B2C83", "ink": false, "src": "neutral" },
+  { "t": "iryo", "c": "#5B2C83", "ink": false, "src": "neutral" },
+  { "t": "Ouigo", "c": "#E50A70", "ink": false, "src": "https://www.ouigo.com/es/themes/custom/ouigo/logo.svg (the logo's fill, on ouigo.com/es)" }
+ ]
+}

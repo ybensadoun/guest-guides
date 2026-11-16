@@ -349,5 +349,7 @@
   "crFonts": "Schriften: {fonts}, unter der SIL Open Font License.",
   "crQr": "Der WLAN-QR-Code wird mit qrcode-generator erstellt.",
   "crWorkbox": "Offline-Nutzung: Workbox.",
-  "crLicenses": "Alle Lizenzen"
+  "crLicenses": "Alle Lizenzen",
+  "crTrainsH": "Züge",
+  "crRenfe": "Die Bahnhöfe, ihre Linien und die Fahrzeiten stammen aus den offenen Fahrplänen von Renfe: „{renfe}“, Stand {date}, Lizenz {ccby}. Es sind übliche Zeiten mit Direktzügen: Prüfe sie vor der Fahrt."
 }

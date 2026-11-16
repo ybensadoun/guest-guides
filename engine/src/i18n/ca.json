@@ -349,5 +349,7 @@
   "crFonts": "Tipus de lletra: {fonts}, sota la llicència SIL Open Font License.",
   "crQr": "El codi QR del wifi es fa amb qrcode-generator.",
   "crWorkbox": "Ús sense connexió: Workbox.",
-  "crLicenses": "Totes les llicències"
+  "crLicenses": "Totes les llicències",
+  "crTrainsH": "Trens",
+  "crRenfe": "Les estacions de tren, les seves línies i els temps de viatge venen dels horaris oberts de Renfe: «{renfe}», dades del {date}, llicència {ccby}. Són temps habituals en tren directe: comprova'ls abans de viatjar."
 }

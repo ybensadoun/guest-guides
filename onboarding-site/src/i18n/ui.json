@@ -8507,5 +8507,115 @@
 "ca": "{x} ara és després de {y}.",
 "es": "{x} ahora está después de {y}.",
 "fr": "{x} est maintenant après {y}."
+},
+"The taxis you would call yourself, with their numbers.": {
+"ca": "Els taxis que trucaries tu, amb els seus números.",
+"es": "Los taxis a los que llamarías tú, con sus números.",
+"fr": "Les taxis que vous appelleriez vous-même, avec leurs numéros."
+},
+"Trains": {
+"ca": "Trens",
+"es": "Trenes",
+"fr": "Trains"
+},
+"The train stations guests can use. Type one: its lines and journey times come with it.": {
+"ca": "Les estacions de tren que poden fer servir els hostes. Escriu-ne una: les línies i els temps de viatge hi arriben sols.",
+"es": "Las estaciones de tren que pueden usar los huéspedes. Escribe una: sus líneas y tiempos de viaje llegan solos.",
+"fr": "Les gares que vos voyageurs peuvent prendre. Tapez-en une : ses lignes et ses temps de trajet viennent avec."
+},
+"No train station yet.": {
+"ca": "Encara no hi ha cap estació de tren.",
+"es": "Aún no hay ninguna estación de tren.",
+"fr": "Pas encore de gare."
+},
+"Type a train station": {
+"ca": "Escriu una estació de tren",
+"es": "Escribe una estación de tren",
+"fr": "Tapez une gare"
+},
+"Train stations": {
+"ca": "Estacions de tren",
+"es": "Estaciones de tren",
+"fr": "Gares"
+},
+"The list of stations could not be loaded. Use “Not in the list?” below.": {
+"ca": "No s’ha pogut carregar la llista d’estacions. Fes servir «No és a la llista?» a sota.",
+"es": "No se ha podido cargar la lista de estaciones. Usa «¿No está en la lista?» abajo.",
+"fr": "La liste des gares n’a pas pu être chargée. Utilisez « Pas dans la liste ? » plus bas."
+},
+"Not in the list?": {
+"ca": "No és a la llista?",
+"es": "¿No está en la lista?",
+"fr": "Pas dans la liste ?"
+},
+"No Renfe station by that name.": {
+"ca": "Cap estació de Renfe amb aquest nom.",
+"es": "Ninguna estación de Renfe con ese nombre.",
+"fr": "Aucune gare Renfe de ce nom."
+},
+"Add another station": {
+"ca": "Afegeix una altra estació",
+"es": "Añadir otra estación",
+"fr": "Ajouter une autre gare"
+},
+"Bus stops": {
+"ca": "Parades d’autobús",
+"es": "Paradas de autobús",
+"fr": "Arrêts de bus"
+},
+"The bus stops guests can use near the house.": {
+"ca": "Les parades d’autobús que poden fer servir els hostes a prop de la casa.",
+"es": "Las paradas de autobús que pueden usar los huéspedes cerca de la casa.",
+"fr": "Les arrêts de bus que vos voyageurs peuvent prendre près de la maison."
+},
+"No bus stop yet.": {
+"ca": "Encara no hi ha cap parada d’autobús.",
+"es": "Aún no hay ninguna parada de autobús.",
+"fr": "Pas encore d’arrêt de bus."
+},
+"Add a bus stop": {
+"ca": "Afegeix una parada d’autobús",
+"es": "Añadir una parada de autobús",
+"fr": "Ajouter un arrêt de bus"
+},
+"From Renfe's timetables, data of {x}. Usual times by direct train.": {
+"ca": "Dels horaris de Renfe, dades del {x}. Temps habituals en tren directe.",
+"es": "De los horarios de Renfe, datos del {x}. Tiempos habituales en tren directo.",
+"fr": "Des horaires de Renfe, données du {x}. Temps habituels en train direct."
+},
+"{n} km from the house, about {m} min by car.": {
+"ca": "A {n} km de la casa, uns {m} min en cotxe.",
+"es": "A {n} km de la casa, unos {m} min en coche.",
+"fr": "À {n} km de la maison, environ {m} min en voiture."
+},
+"Timetable": {
+"ca": "Horaris",
+"es": "Horarios",
+"fr": "Horaires"
+},
+"Already in your guide.": {
+"ca": "Ja és a la teva guia.",
+"es": "Ya está en tu guía.",
+"fr": "Déjà dans votre guide."
+},
+"Near your house": {
+"ca": "A prop de casa teva",
+"es": "Cerca de tu casa",
+"fr": "Près de chez vous"
+},
+"From Renfe's timetables. Pick one to add it.": {
+"ca": "Dels horaris de Renfe. Tria’n una per afegir-la.",
+"es": "De los horarios de Renfe. Elige una para añadirla.",
+"fr": "D’après les horaires de Renfe. Choisissez-en une pour l’ajouter."
+},
+"Its name": {
+"ca": "El nom",
+"es": "Su nombre",
+"fr": "Son nom"
+},
+"Its name, like {x}": {
+"ca": "El nom, com {x}",
+"es": "Su nombre, como {x}",
+"fr": "Son nom, comme {x}"
 }
 }

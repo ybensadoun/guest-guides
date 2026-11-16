@@ -8,7 +8,9 @@ worker/.env.local
 worker/jobs
 test-submissions
 archive
-onboarding-site
+onboarding-site/*
+# The generator reads our file of Spain's train stations (engine/scripts/stations-of.mjs, Getting around).
+!onboarding-site/stations-es.json
 sites/*
 !sites/README.md
 docs

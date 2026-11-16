@@ -30,6 +30,23 @@ Ca La Kimberly's page and its card are the reference: the move was checked pixel
 | 14 | A page with a single row (one taxi and no station, or one station and no taxi) shows it open: the number or the journey times without a tap. With several rows they start closed. | Yohann, 15 Nov 2026 ("Yes, open it", on the pool house's page: one closed row over an empty screen) |
 | 15 | When the page is drawn again (each minute, a change of language, coming back to the guide after a call or the directions), every row stays as the guest left it. Before, an opened row closed at each redraw. | Claude, 15 Nov 2026, found while building rule 14: the other lists already keep their opened rows (`views/section.js` `sectionFrame`) |
 
+## The stations found (16 Nov 2026)
+
+A new guide gets its train stations by itself, and a host adds one by typing its name, from our own file of Spain's stations
+made from Renfe's open timetables. The rules below are on top of those above; nothing about how the page looks changed.
+
+| # | Rule | Decided |
+|---|---|---|
+| 16 | The stations, their lines and the journey times come from a file of ours (`onboarding-site/stations-es.json`), made by hand from Renfe's two open timetable files when they are renewed (`onboarding-site/src/stations.py`), never looked up live. | Yohann, 16 Nov 2026: "it's not an app where we need to fetch real time every time. We can have a database that we store every once in a while." |
+| 17 | A station's lines are badges: a suburban line as its file names it, "C" and the number (Cercanías), "R" and the number (Rodalies, R2S and R2N written "R2 Sud" and "R2 Nord" as on their signs), in the file's own colour; then the long distance services by their names on tickets (AVE, Avlo, Avant, Euromed, Alvia, Intercity; Regional or MD only when those trains are not a suburban line already), in the brand's own colour (`brands.json`, each colour with the page it was read on; one that could not be read is the neutral colour long distance badges had, never invented). | Yohann, 16 Nov 2026: "if it's a Cercanía in Madrid, just put C and the number. If it's a Rodalia in Barcelona, put R and the number. Keep the color coding. If it's high speed, you know, Irio, Avlo, etc., then just use the same color coding that they have." |
+| 18 | The trains are counted on one day, the first Tuesday inside both files; one train is counted once (a train the two files both list, R15 and "Regional", or one file twice: same station left and another reached within 2 minutes); a station is kept with 4 trains or more, a line or service is listed with 3 or more at the station, a station is high speed (`hs`) with 4 or more AVE, Avlo, Avant or Euromed trains. | The design, 16 Nov 2026 |
+| 19 | Journey times are direct trains only, to the main cities (`cities` in the file: Barcelona Sants, Madrid's main stations as one city, València, Sevilla, Zaragoza, Málaga, Bilbao, Alicante, Murcia, Valladolid, Córdoba, and the other provincial capitals with a station), with 3 trains or more that day; the time is the 4th fastest (a time several trains a day really make; the slowest with fewer than 4). No journey with a change, no first or last train, never how many trains a day: those change with each timetable, and a stale last train would send a guest wrong. | The design, 16 Nov 2026 |
+| 20 | Which stations a house gets (`pick.js` `pickStations`): the city is the main city nearest to the house in a straight line; among the stations within 60 km with 12 or more direct trains a day to it, the nearest ("Closest"), the one with the lowest door to city time when it beats the nearest by 10 minutes or more ("Faster"; minutes by car guessed as 1.6 times the straight km, plus the usual time), the nearest with high speed trains when it is neither ("High speed"). None: the nearest station within 30 km, alone. A single station has no verdict. The quicker station that also has high speed trains is given the words "High speed", not "Faster" (`tpTagOf`; the coordinator's review, 16 Nov 2026: a house inland got "Closest" and "Faster", the second being Camp de Tarragona); the rule itself is unchanged. On Ca La Kimberly's house: El Vendrell, Sant Vicenç de Calders, Camp de Tarragona, the three Yohann had chosen by hand. | The design, 16 Nov 2026. The city among the main cities only (not the provincial capitals, so that a house near Tarragona is judged by Barcelona): Claude, 16 Nov 2026, the reading that gives the three stations above; to confirm with Yohann |
+| 21 | A station found is written as the guide holds any station: "st" and Renfe's id, its name with the word "station" in each language, km by road (1.3 times the line) and minutes by car (`cmMin`, the maker's own guess, one formula), its badges, its journey times (the house's city first, then the cities with the most direct trains, at most 4), its timetable (Rodalies' site for a Rodalies line, else Renfe's), the verdict's two words, an empty "what" for the host, and `src: { from: 'renfe', at }` (the date of Renfe's data). No Google id, no Google position. | The design, 16 Nov 2026; at most 4 journey times and their order: Claude, 16 Nov 2026 (Camp de Tarragona has 10 cities), to confirm with Yohann |
+| 22 | The generator gives a new guide its stations even when the host typed no taxi; with a taxi, the taxi first and its card as before; with stations and no taxi, no card (`tile` null), so Home shows the section's entry tile, which the frame places like any tile. No house position: no stations. | The design, 16 Nov 2026; no card without a taxi: Claude, 16 Nov 2026, the simplest that keeps Home without a hole |
+| 23 | The maker's step goes mode by mode, each under its heading with one line on what goes there: Taxi, Trains, Bus stops. Trains: "Type a train station" offers the file's stations as the host types (accents and capitals aside, the nearest first, with their lines and distance, "Renfe" under them); a pick adds the station at once, opened, with no request and no wait. A station already in the guide is not offered again (by its id, or a train station of the guide within 0.5 km: one written by hand). Never an empty form: once the file is there and the house has a position, the rule's stations the guide lacks (`tpNear`) are offered without typing, each with its role's words, which a pick keeps as its verdict: under "Near your house" while the guide has no train station, else in the list when the field has the focus and is empty; the field's example is the station nearest to the house ("Its name, like Tordera"; `tpNearest`), "Its name" before. No position, no file or nothing found: nothing more is shown. A station's closed row shows its lines as their coloured badges. "Not in the list?" opens the old way (a name or a Google Maps link, then the worker's lookup) for a station Renfe does not run. A station from the file has no "Refresh the lines"; one added the old way keeps it. Bus stops: the old way, under their own heading. Nothing of an older guide is rewritten. | Yohann, 16 Nov 2026: "you would go like from mode to mode. So like taxi [...] Then you would move into trains, and then here you'd just be able to type a train station, and by default it would add it, and you could add a comment. But the lines would already be available. Then we could do the same thing with bus stops"; the 0.5 km: Claude, 16 Nov 2026; "Near your house", the field's example and the badges in the closed row: the coordinator's review, 16 Nov 2026 ("never an empty form") |
+| 24 | A guide with a station from the file credits Renfe on its Sources and credits page as Renfe's terms ask: "Origen de los datos: Renfe Operadora" in Spanish inside a sentence in each language, the date of the data, the licence (CC BY 4.0, linked), and that the times are usual journey times to check before travelling. | Renfe's conditions (data.renfe.com/legal, read 16 Nov 2026); `docs/CREDITS.md` |
+
 ## Its data
 
 One file per guide, `content/transport.json` (its `_doc` describes it): `lead`, `taxis` `[{ id, name, sub, phone, what,
@@ -39,8 +56,15 @@ linkKey, gmaps, gid, badges: [{ t, c, ink }], to: [{ dest, time, note }] }]` (te
 the other sections, which also builds the card once (`cardOf`, `plan.js`) and keeps `TRANSPORT_CARD` (the frame's
 `transportCard`) and `TRANSPORT` (the highlights' page reads it).
 
-Where it comes from: the builder (the taxi), the editor (stations, lines, journey times), the research (lines); Ca La
-Kimberly's was written by hand. What the maker cannot change yet (empty lines and stations, the taxi's website): the
+A station found in our file (rules 16 to 21) has `id` "st" and Renfe's id and `src: { from: 'renfe', at: 'YYYY-MM-DD' }`
+(the date of Renfe's data, for the credit). Where it comes from: the builder (the taxi), the generator (the stations near
+the house, from our file), the editor (a station typed from our file; stations and bus stops by name or link, with lines
+and journey times looked up by the worker), the research (lines); Ca La Kimberly's was written by hand.
+
+Our file of stations, `onboarding-site/stations-es.json` (its `_doc` says every field): `source` (Renfe Operadora, the
+licence, the date of the data, the Tuesday counted), `cities` `[{ id, ids, name, i18n, lat, lng, main }]`, `stations`
+`[{ id, name, lat, lng, lines: [{ t, c, ink }], hs, to: [{ id, n, min }] }]` (`n`, the direct trains that day, is for
+the picking rule only and never shown). The brands' colours: `brands.json` here. What the maker cannot change yet (empty lines and stations, the taxi's website): the
 plan's gaps E, F6 and D12.
 
 ## Its look
@@ -67,7 +91,19 @@ kind's colour, the name with its line badges `.lbadges`, the verdict and minutes
 | Its styles | `engine/src/styles/app.css` (`.transport`, `.lbadges`, `.lbadge`, `.dests`, `.pl-head`, `.pl-map`, `.gt[data-k="transport"]`) | Not yet: they move with the one tile system (plan, proposal 4) |
 | Its words | `engine/src/i18n/<lang>.json`: `gettingAround`, `taxiH`, `byTrain`, `byBus`, `minByCar`, `callNow`, `open24`, `directions`, `timetable` | Not yet |
 | From the host's answers to the file | `engine/scripts/generate-site.py` | Not yet |
-| The maker's step Getting around | `onboarding-site/src/editor.js` | No: the maker's |
+| The maker's step Getting around | `onboarding-site/src/editor.js` (`cmTransport`, `cStation`; the trains typed from our file: `trsLoad`, `trsType`, `trsPick`) | No: the maker's |
+| Which stations a house gets, a station as a guide holds it, the maker's matching as the host types | `pick.js` (`pickStations`, `stationEntry`, `stationsFor`, `tpFind`, `tpHave`, `cmMin`; tests: `engine/scripts/transport-pick.test.mjs`), pasted into the maker by `onboarding-site/src/build.py` | Yes |
+| The brands' colours of long distance trains | `brands.json` | Yes |
+| Our file of Spain's stations, and the script that makes it from Renfe's files | `onboarding-site/stations-es.json`, `onboarding-site/src/stations.py` (tests: `onboarding-site/test/stations_test.py`) | No: the maker serves the file |
+| The generator's stations | `engine/scripts/stations-of.mjs` (asked by `engine/scripts/generate-site.py`; tests: `worker/test/generate-stations.test.mjs`) | No: the generator's |
+| Renfe's credit | `engine/src/views/credits.js` (`crTrainsH`, `crRenfe` in `engine/src/i18n/<lang>.json`) | No: the credits page's |
+
+## Where it is available
+
+The stations found and their lines are Spain only: they come from Renfe's files (rules 16 to 21), and a house elsewhere gets
+none (a house near the border may get a Spanish station within 30 km). Where the main city is far (Galicia, Asturias, the
+islands), a house may get only its nearest station, alone. Taxis, stations added by name or link, and bus stops work
+anywhere. Nothing in the code reads this yet (`../README.md`, "Not built yet").
 
 ## Still Ca La Kimberly's own
 
