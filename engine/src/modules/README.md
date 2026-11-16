@@ -160,3 +160,7 @@ also `w-live`. The More page shows the same groups.
 - Every part of the guide is a module since 14 Nov 2026 (proposal 22, step 2). What each module has not moved yet (its
   styles, its words, the generator's part, the maker's steps) is listed in its own README, under "Where its code is".
 - Moving a tile from one group to the other ("At the house" to "Around the house"): not in the arranger's first version.
+- Where a module is available (Yohann, 16 Nov 2026, "a note for later": "For each module that we're building, we should
+  also say in which country it's available"): each module's README is to say the countries it works in, with the reason
+  (Getting around's stations and lines come from Spain's open timetable files, so that part is Spain only). Nothing in
+  the code reads it yet; the type and country model is `docs/reference-types-and-countries.md`.
