@@ -363,5 +363,5 @@
   "freq4": "Cada 15 min o menys",
   "moreLines": "i {n} línies més",
   "crTransitH": "Transport públic",
-  "crTransit": "Parades i línies: {by}. Dades del {date}."
+  "crTransit": "Parades i línies elaborades a partir dels horaris oberts de {by}. Dades del {date}."
 }

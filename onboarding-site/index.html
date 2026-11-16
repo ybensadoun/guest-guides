@@ -2233,12 +2233,14 @@ function txEntry(t, langs, { at = '' } = {}) {
 // Tested in engine/scripts/transport-stops.test.mjs.
 
 const SP = { cell: 0.25, near: 3, side: 0.2, walkMax: 25, metro: 1.2, tram: 1, bus: 0.6 };   // the design, 16 Nov 2026
-// The cells a house's stops are read from: its own and the 8 around it ("<floor(lat*4)>_<floor(lng*4)>").
+// The cells a house's stops are read from (16 Nov 2026: Madrid's cells are 2 MB each, so 4 files at most): the 2 by 2 block
+// around the house, its own cell, the neighbour on the side of each axis it is nearer to, and the diagonal between them.
+// Every stop within 10 km is in it (a cell is 0.25 degrees: the far edges are at least half a cell, 10.3 km or more in Spain).
 function spCells(house) {
   if (!tpPlaced(house)) return [];
-  const y = Math.floor(+house.lat * 4), x = Math.floor(+house.lng * 4), out = [];
-  for (const dy of [-1, 0, 1]) for (const dx of [-1, 0, 1]) out.push(`${y + dy}_${x + dx}`);
-  return out;
+  const fy = +house.lat * 4, fx = +house.lng * 4, y = Math.floor(fy), x = Math.floor(fx);
+  const dy = fy - y < 0.5 ? -1 : 1, dx = fx - x < 0.5 ? -1 : 1;
+  return [`${y}_${x}`, `${y + dy}_${x}`, `${y}_${x + dx}`, `${y + dy}_${x + dx}`];
 }
 // "metro stations always take over, then trams, then buses" (Yohann, 16 Nov 2026); rail counts as metro.
 const spRank = k => ({ metro: 0, rail: 0, tram: 1, bus: 2 })[k] ?? 3;
@@ -2304,10 +2306,10 @@ function spEntry(st, house, source, langs) {
   return { id: spId(st), mode: st.k === 'rail' ? 'train' : st.k, name: all(() => st.n), lat: st.lat, lng: st.lng, km,
     ...(km && walk <= SP.walkMax ? { walk } : { min: cmMin(Math.max(1, Math.round(km))) }), what: all(() => ''),
     link: src.link || '', linkKey: 'timetable', badges: lines.filter(l => l.t).map(l => ({ t: l.t, ...(l.c ? { c: l.c, ink: l.ink } : {}) })), lines,
-    src: { from: src.id || String(st.id).split(':')[0], by: src.credit || '', at: src.updated || '' } };
+    src: { from: src.id || String(st.id).split(':')[0], by: src.credit || '', at: src.updated || '', ...(src.via ? { via: src.via } : {}) } };   // via 'mitrams': the national access point, "Powered by MITRAMS" on Sources and credits
 }
 
-const STOPS_BASE = "stops-es/";
+const STOPS_BASE = () => SB.url + "/storage/v1/object/public/transit/stops-es/";
 // Which ride apps work near a house (README.md beside this file, "The ride apps"): one rule in one place, for the worker
 // (worker/ride-apps.mjs), the generator (engine/scripts/apps-of.mjs) and the maker (pasted by onboarding-site/src/build.py,
 // the import and export words taken out). Pure: no DOM. Every name starts with ax. apps: the list of apps.json.
@@ -4154,7 +4156,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 16 Nov 2026, 19:44 (Madrid time, after commit d8505c9)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 16 Nov 2026, 20:20 (Madrid time, after commit 33dd9b4)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -6252,7 +6254,7 @@ function axsToggle(id) {
   if (!T.apps.length) delete T.apps;
 }
 /* --- Public transport (16 Nov 2026, engine/src/modules/transport/README.md, "Public transport found"): metro, tram and bus
-   stops from our file of Spain's stops (at STOPS_BASE, build.py: index.json, then the 9 cells around the house it lists,
+   stops from our file of Spain's stops (at STOPS_BASE, build.py: our storage; index.json, then the 4 cells around the house it lists,
    loaded once when the step opens, no waiting state). "Near your house" (stops.js spNear: by distance, whatever the kind),
    "Type a stop or station" (spFind: metro, then tram, then bus; one the guide has is listed and said so); a pick is added
    at once, opened, as the generator writes one (spEntry). Nothing loaded: no "Near your house", and the field says so. */
@@ -6260,11 +6262,11 @@ const SPS = { asked: false, index: null, stops: [], failed: false, near: [], lis
 async function spsLoad() {
   const h = edF().house || {}; if (SPS.asked || !tpPlaced(h)) return; SPS.asked = true;
   try {
-    const ix = await fetch(STOPS_BASE + 'index.json').then(r => r.ok ? r.json() : null);   // STOPS_BASE: build.py, one setting
+    const ix = await fetch(STOPS_BASE() + 'index.json').then(r => r.ok ? r.json() : null);   // STOPS_BASE: build.py, one setting
     if (!ix || !ix.cells) throw new Error('no index');
     SPS.index = ix;
     const cells = spCells(h).filter(c => ix.cells[c]);
-    const got = await Promise.all(cells.map(c => fetch(STOPS_BASE + c + '.json').then(r => r.ok ? r.json() : { stops: [] }).catch(() => ({ stops: [] }))));
+    const got = await Promise.all(cells.map(c => fetch(STOPS_BASE() + c + '.json').then(r => r.ok ? r.json() : { stops: [] }).catch(() => ({ stops: [] }))));
     SPS.stops = got.flatMap(g => g.stops || []);
   } catch (e) { SPS.failed = true; const m = document.getElementById('c_spmsg'); if (m) m.textContent = 'The list of stations could not be loaded. Use “Not in the list?” below.'; return; }
   const b = document.getElementById('c_spnear'); if (b) b.innerHTML = spsNearHTML();

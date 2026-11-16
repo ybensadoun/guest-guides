@@ -181,10 +181,11 @@ _simp="import { tpLine, tpRoadKm, tpPlaced, tpFold, cmMin } from './pick.js';\n"
 assert _simp in _ssrc and len(_re.findall(r'(?m)^import ',_ssrc))==1,'engine/src/modules/transport/stops.js: its imports are not as expected'
 ENG_DATA+=_re.sub(r'(?m)^export ','',_ssrc.replace(_simp,''))+'\n'
 # Where the maker reads our file of Spain's stops from (index.json and its cells): one setting, a base address. Made by the
-# server's monthly job and served from our storage, never committed (Yohann, 16 Nov 2026); for now a relative path, which
-# the checks serve from fakes.
-STOPS_BASE='stops-es/'
-ENG_DATA+='const STOPS_BASE = '+__import__('json').dumps(STOPS_BASE)+';\n'
+# server's monthly job (worker/transit.mjs) and served from our storage, the public bucket transit (Yohann, 16 Nov 2026):
+# built from the page's own database address (SB.url, account.js), never the project's address written a second time. A
+# function, since SB is declared further down the page. The checks serve fakes at that address.
+STOPS_PATH='/storage/v1/object/public/transit/stops-es/'
+ENG_DATA+='const STOPS_BASE = () => SB.url + '+__import__('json').dumps(STOPS_PATH)+';\n'
 # The ride apps (engine/src/modules/transport/apps.js and apps.json): the builder's ticks and the editor's switches.
 _asrc=open(__import__('os').path.join(_MD,'transport','apps.js'),encoding='utf-8').read()
 _aimp="import { tpLine, tpPlaced } from './pick.js';\n"

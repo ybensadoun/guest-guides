@@ -71,27 +71,28 @@ Metro, tram and bus stops near the house, from the open timetable files we keep,
 |---|---|---|
 | 41 | Public transport is one part of the page and of the maker's step, after the trains: metro, tram and bus stops. | Yohann, 16 Nov 2026: "Then we could do the same thing with bus stops. [...] And then maybe something like public transport in the city"; "And metro stations I assume. Which can be a public transport session with buses and trams" |
 | 42 | The host's search ranks by kind, metro (and rail) first, then tram, then bus, then a name that starts with what was typed, then the distance; "Near your house" lists the nearest stops by distance only, whatever their kind. | Yohann, 16 Nov 2026: "metro stations always take over, then trams, then [buses] [...] It's just how we rank the search based on what they type. And we could also just find what's closest to me and rank it by distance" |
-| 43 | Spain only, feed by feed: everything takes any number of files (`onboarding-site/src/stops-feeds.json`); a file listed but not in the cache is skipped. Kept by us and remade by hand, never real time; badges keep the operators' colours. | Yohann, 16 Nov 2026: "This is meant to work for the whole of Spain. And then we will tackle it country by country. But for now, this module only works for Spain" |
+| 43 | Spain only, feed by feed: every network Spain's national access point publishes in the GTFS format, fetched by the server every month (`onboarding-site/src/nap.py`) and remade into our file (`onboarding-site/src/stops.py`), served from our storage, never real time and never made on a Mac; badges keep the operators' colours. Left out: obsolete datasets, air and sea, and the folders `onboarding-site/src/stops-feeds.json` marks skip (Renfe's, which the Trains part reads; the two bundles of all Catalonia). | Yohann, 16 Nov 2026: "This is meant to work for the whole of Spain. And then we will tackle it country by country. But for now, this module only works for Spain"; "these will go into the server, right? Like overall, my computer should not be involved into the process at all"; the job's shape: the design, 16 Nov 2026 |
 | 44 | Per feed, the trains of the first Tuesday on or after the file's date are counted. A line's kind from `route_type`; its public code from the bracket opening its long name, else its short name when 5 characters or fewer and the feed's short names are not internal codes (the feed's data decides); its colours only when the file gives them. How often a line calls at a stop is a class, never a number: 2 to 8 a day "a few a day", 9 to 24 "about every hour", 25 to 48 "about every half hour", more "every 15 min or more often"; fewer than 2: not listed. | The design, 16 Nov 2026 (a guest must know whether a bus is twice a day or all day long, and a number would lie after the next timetable) |
 | 45 | One stop: the stops sharing a parent station, or of the same name within 150 m in one feed (their middle, each line's highest class); its kind the highest of its lines' (metro, rail, tram, bus). | The design, 16 Nov 2026 |
 | 46 | "Near your house" (`spNear`): within 3 km by road, nearest first, at most 6; a stop within 200 m of a nearer one of the same kind that adds no line is left out (the other side of the street). What a new guide gets by itself (`spPick`, at most 4): the nearest metro or rail stop within 1.2 km by road and a second there adding a line, the nearest tram stop within 1 km, bus stops within 600 m adding a line (1 when a metro, rail or tram stop was picked, else 2); nothing: the nearest bus stop within 3 km, alone. | The design, 16 Nov 2026 |
 | 47 | A stop on the page: its kind's icon (a metro car from the front, a tram with its pantograph, in the line of the train's and the bus's), its name and badges, "n min on foot" (12 min a km by road) up to 25 minutes, else minutes by car; opened, its lines in the journey times' table (badge, name, how often in words), at most 6, then "and n more lines"; the host's note, Directions, Timetable. Metro and tram rows take the bus's colour. The Home card and tile do not change. | The design, 16 Nov 2026 |
-| 48 | Credits: one line per source of the guide's stops, "Stops and lines: <its credit>. Data of <date>." (the Generalitat's terms: the source, the date, no change of sense, no logo). | The design, 16 Nov 2026 (the terms read by the coordinator) |
+| 48 | Credits: one line per source of the guide's stops, "Stops and lines made from the open timetables of <its publisher>. Data of <date>." ("made from": the data is processed, as the access point's licence asks to say), followed for an access point source (`src.via` "mitrams") by "Powered by MITRAMS" linked to https://www.transportes.gob.es. The editor's quiet source line names the same publisher and date. | The access point's licence (read by the coordinator, 16 Nov 2026); the design, 16 Nov 2026 |
 
 Its fields: a stop is a station with `mode` metro, tram or bus (a rail stop of a feed is `train`), `walk` (minutes on foot) or `min`,
-`lines` `[{ t?, n, c?, ink?, f }]`, `badges` (the lines with a code), `src: { from: <feed id>, by: <credit>, at }`, no `to`,
+`lines` `[{ t?, n, c?, ink?, f }]`, `badges` (the lines with a code), `src: { from: <feed id>, by: <publisher>, at, via? }`, no `to`,
 no `tag`. Our file (`index.json`: `sources`, `cells`, `cell` 0.25; one file per cell of 0.25 degrees,
 `<floor(lat*4)>_<floor(lng*4)>.json`, `{ stops: [{ id, n, k, lat, lng, s, lines }] }`) is written by
 `onboarding-site/src/stops.py` from every folder of the timetable cache that holds a zip (a `meta.json` beside it: the national
 access point's credit, "Powered by MITRAMS", and no timetable link; `onboarding-site/src/stops-feeds.json`: a folder's own
-words, or skip); a feed whose calendar has ended counts its last Tuesday. It is made on the server every month and served from
-our storage, never committed nor made on the Mac (Yohann, 16 Nov 2026: "my computer should not be involved into the process
-at all"): the maker reads it at `STOPS_BASE` (build.py), the generator from `STOPS_DIR` (default `~/.cache/guest-guides/stops-es/`)
-or `STOPS_BASE`; none there, no stops. Where its code is: `stops.js` (`spCells`, `spNear`, `spFind`, `spPick`, `spEntry`; tests
+words, or skip); a feed whose calendar has ended counts its last Tuesday. It is made on the server every month
+(`worker/transit.mjs`, run by `worker/monthly.mjs`) and served from our storage (public bucket `transit`, `stops-es/`), never
+committed nor made on the Mac: the maker reads it at `STOPS_BASE` (build.py, built from the page's own database address), 4
+cells around the house (`spCells`: the house's cell and its three nearest neighbours, every stop within 10 km); the generator
+from `STOPS_DIR` when it holds an `index.json` (the server's cache, no network), else `STOPS_BASE`; none there, no stops. Where its code is: `stops.js` (`spCells`, `spNear`, `spFind`, `spPick`, `spEntry`; tests
 `engine/scripts/transport-stops.test.mjs`), the page in `page.js` (`linesOf`), `plan.js` (`MODES`), icons in
 `engine/src/ui.js` and `../highlights/icons.js`, the credit in `engine/src/views/credits.js`, the generator's
 `engine/scripts/stops-of.mjs`, the maker's `spsLoad`, `spsNearHTML`, `spsType`, `spsPick` (`onboarding-site/src/editor.js`).
-Not built yet: the server's monthly job that remakes the file and puts it in our storage (the next piece); real time, journey times from a stop, funiculars, cable cars and boats.
+Not built: real time, journey times from a stop, funiculars, cable cars and boats. The train stations' file (`onboarding-site/stations-es.json`) and the towns' file (`onboarding-site/towns-es.json`) are still made by hand on a Mac and committed: to move to this job later.
 
 ## Its data
 
@@ -170,8 +171,12 @@ none (a house near the border may get a Spanish station within 30 km). Where the
 islands), a house may get only its nearest station, alone. iryo and Ouigo are looked up only among our high speed stations: Spain only. The ride apps are looked up among Spain's cities only (the search asks for Spain's): Spain only. The taxis found work anywhere our open directory lists taxis (Overture covers the world; the rule is not Spain's), with their numbers written the Spanish way only for Spanish numbers. Their credit is the places' line of Sources and credits, which every guide shows. Taxis, stations added by name or link, and bus stops work
 anywhere. Nothing in the code reads this yet (`../README.md`, "Not built yet").
 
-Public transport (rules 41 to 48): Spain only, and today only where a feed of ours covers it: Catalonia's intercity buses
-(the Generalitat's file). City buses, metro and tram wait for the files of Spain's national access point.
+Public transport (rules 41 to 48): Spain only, every network Spain's national access point publishes (157 files on 16 Nov
+2026: 87,000 stops, almost all buses, city and intercity). Metros and trams in them, by city (from the files read on 16 Nov
+2026): Madrid (Metro de Madrid, Metro Ligero and tram), Barcelona (TMB's metro, FGC, the two TRAM networks), Bilbao (Metro
+Bilbao; Euskotren's tram), Valencia (Metrovalencia and its tram), Alicante (TRAM d'Alacant), Sevilla (Metro de Sevilla, the
+tram), Málaga (Metro de Málaga), Granada (Metro de Granada), Murcia (tram), Zaragoza (tram), Tenerife (Metrotenerife), Palma
+(the metro). Renfe's own files are the Trains part's.
 
 ## Still Ca La Kimberly's own
 

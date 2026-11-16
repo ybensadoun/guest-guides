@@ -40,7 +40,9 @@ export function renderCredits(V) {
   // Public transport (16 Nov 2026): one line per distinct source of the guide's stops (src.by), with the newest date of its
   // data, as each feed's terms ask (the Generalitat's: the source, the date, no change of sense, no logo).
   const day = d => new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(d + 'T12:00:00Z'));
-  const transit = [...((TRANSPORT && TRANSPORT.stations) || []).filter(s => s && s.src && s.src.by).reduce((m, s) => m.set(s.src.by, [m.get(s.src.by) || '', s.src.at || ''].sort().pop()), new Map())].sort((a, b) => a[0].localeCompare(b[0]));
+  // A source from Spain's national access point (src.via 'mitrams') is followed by "Powered by MITRAMS", linked, as its licence asks.
+  const transit = [...((TRANSPORT && TRANSPORT.stations) || []).filter(s => s && s.src && s.src.by).reduce((m, s) => { const k = s.src.by, o = m.get(k) || { at: '', via: '' };
+    return m.set(k, { at: [o.at, s.src.at || ''].sort().pop(), via: o.via || s.src.via || '' }); }, new Map())].sort((a, b) => a[0].localeCompare(b[0]));
   const sec = (h, body) => `<section class="hsec crs"><h3 class="cr-h">${esc(t(h))}</h3>${body}</section>`;
   const p = x => `<p>${x}</p>`;
   V.innerHTML = `<div class="wrap credits" style="gap:14px">
@@ -50,7 +52,7 @@ export function renderCredits(V) {
     ${sec('crPlacesH', p(say('crPlaces', { overture: ext('https://overturemaps.org', 'Overture Maps Foundation'), cdla: ext('https://cdla.dev/permissive-2-0/', 'Community Data License Agreement Permissive 2.0'), geonames: ext('https://www.geonames.org', 'GeoNames'), ccby: ext('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0') }))
       + p(say('crHours')) + `<p class="cr-q" lang="en">${esc(FOURSQUARE)}</p>`)}
     ${renfeAt ? sec('crTrainsH', p(say('crRenfe', { renfe: `<span class="pn" lang="es">${esc(RENFE)}</span>`, ccby: ext('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0') }, { date: renfeDate }))) : ''}
-    ${transit.length ? sec('crTransitH', transit.map(([by, at]) => p(say('crTransit', {}, { by, date: /^\d{4}-\d\d-\d\d$/.test(at) ? day(at) : '' }))).join('')) : ''}
+    ${transit.length ? sec('crTransitH', transit.map(([by, { at, via }]) => p(say('crTransit', {}, { by, date: /^\d{4}-\d\d-\d\d$/.test(at) ? day(at) : '' }) + (via === 'mitrams' ? ' ' + ext('https://www.transportes.gob.es', 'Powered by MITRAMS') : ''))).join('')) : ''}
     ${sec('crGoogleH', p(say('crGoogle')) + (hasKey() ? p(say('crGoogleCard')) : ''))}
     ${sec('crWordsH', (photos ? p(listing ? say('crPhotosFrom', {}, { src: listing }) : say('crPhotos')) : '') + p(say('crAi')) + (aiCover ? p(say('crAiCover')) : ''))}
     ${sec('crSoftH', `<ul class="glist cr-l">

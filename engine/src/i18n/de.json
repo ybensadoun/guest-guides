@@ -363,5 +363,5 @@
   "freq4": "Alle 15 Min. oder öfter",
   "moreLines": "und {n} weitere Linien",
   "crTransitH": "Öffentlicher Verkehr",
-  "crTransit": "Haltestellen und Linien: {by}. Stand {date}."
+  "crTransit": "Haltestellen und Linien, erstellt aus den offenen Fahrplänen von {by}. Stand {date}."
 }

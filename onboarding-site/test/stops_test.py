@@ -110,7 +110,7 @@ class Build(unittest.TestCase):
         idx = json.loads(slurp(os.path.join(out, 'index.json'), 'r'))
         self.assertEqual(idx['cell'], 0.25); self.assertEqual([x['id'] for x in idx['sources']], ['nap-1234', 't'])
         nap = idx['sources'][0]
-        self.assertEqual((nap['name'], nap['credit'], nap['url'], nap['link']), ('Metro Prova', 'Metro Prova (Powered by MITRAMS)', 'https://nap.example/1234', ''))
+        self.assertEqual((nap['name'], nap['credit'], nap['url'], nap['link'], nap['via']), ('Metro Prova', 'Metro Prova', 'https://nap.example/1234', '', 'mitrams'))
         self.assertEqual(idx['sources'][1]['day'], '2026-11-03'); self.assertEqual(idx['sources'][1]['link'], 'K')
         self.assertIn('164_4', idx['cells']); self.assertIn('162_-3', idx['cells'])
         first = {n: slurp(os.path.join(out, n)) for n in os.listdir(out)}

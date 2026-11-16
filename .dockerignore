@@ -11,6 +11,10 @@ archive
 onboarding-site/*
 # The generator reads our file of Spain's train stations (engine/scripts/stations-of.mjs, Getting around).
 !onboarding-site/stations-es.json
+# The monthly job of Spain's stops (worker/transit.mjs) runs these two scripts and reads their overrides.
+!onboarding-site/src/nap.py
+!onboarding-site/src/stops.py
+!onboarding-site/src/stops-feeds.json
 sites/*
 !sites/README.md
 docs

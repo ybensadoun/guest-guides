@@ -1,17 +1,33 @@
 {
- "_doc": "Overrides for onboarding-site/src/stops.py, by the name of a folder of the cache (GTFS_CACHE, default ~/.cache/guest-guides/gtfs-es/): every folder holding a zip is read; this gives a folder its own words {id (short and stable: a stop's id starts with it), name (the publisher as guests read it), credit (the line its terms ask), licence, url (where the file is published), link (where a guest finds timetables)} or leaves it out ({skip: true}). A folder with a meta.json (the national access point's files) and no entry here is credited from it, \"Powered by MITRAMS\".",
+ "_doc": "Overrides for onboarding-site/src/stops.py and onboarding-site/src/nap.py, by the name of a folder of the cache (GTFS_CACHE, default ~/.cache/guest-guides/gtfs-es/): every folder holding a zip is read; this gives a folder its own words {id, name, credit, licence, url, link (where a guest finds timetables)}, any of them, over what its meta.json says, or leaves it out ({skip: true}, with _why: nap.py does not fetch it, stops.py does not read it). A folder with a meta.json (the national access point's files) is credited to its organisation, \"Powered by MITRAMS\".",
  "folders": {
-  "cat-interurba": {
-   "id": "cat-interurba",
-   "name": "Generalitat de Catalunya",
-   "credit": "Generalitat de Catalunya. Departament de Territori, Habitatge i Transició Ecològica",
-   "licence": "Llicència oberta d'ús d'informació - Catalunya",
-   "url": "https://analisi.transparenciacatalunya.cat/d/bca2-b4i3",
-   "link": "https://mou-te.gencat.cat/"
+  "nap-1163": {
+   "link": "https://mou-te.gencat.cat/",
+   "_why": "Catalonia's intercity buses (the Generalitat): its timetables for guests"
   },
   "nap-1515": {
    "skip": true,
    "_why": "Ouigo's own high speed trains: they belong to the Trains part (a later piece)"
+  },
+  "nap-929": {
+   "skip": true,
+   "_why": "Renfe: the Trains part's own files (onboarding-site/src/stations.py)"
+  },
+  "nap-897": {
+   "skip": true,
+   "_why": "Renfe: the Trains part's own files (onboarding-site/src/stations.py)"
+  },
+  "nap-962": {
+   "skip": true,
+   "_why": "Cercanías Madrid: Renfe's again, the Trains part's"
+  },
+  "nap-1535": {
+   "skip": true,
+   "_why": "a bundle of all Catalonia that repeats the separate files"
+  },
+  "nap-1536": {
+   "skip": true,
+   "_why": "a bundle of all Catalonia that repeats the separate files"
   }
  }
 }

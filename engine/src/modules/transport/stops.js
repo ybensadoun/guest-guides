@@ -7,12 +7,14 @@
 import { tpLine, tpRoadKm, tpPlaced, tpFold, cmMin } from './pick.js';
 
 export const SP = { cell: 0.25, near: 3, side: 0.2, walkMax: 25, metro: 1.2, tram: 1, bus: 0.6 };   // the design, 16 Nov 2026
-// The cells a house's stops are read from: its own and the 8 around it ("<floor(lat*4)>_<floor(lng*4)>").
+// The cells a house's stops are read from (16 Nov 2026: Madrid's cells are 2 MB each, so 4 files at most): the 2 by 2 block
+// around the house, its own cell, the neighbour on the side of each axis it is nearer to, and the diagonal between them.
+// Every stop within 10 km is in it (a cell is 0.25 degrees: the far edges are at least half a cell, 10.3 km or more in Spain).
 export function spCells(house) {
   if (!tpPlaced(house)) return [];
-  const y = Math.floor(+house.lat * 4), x = Math.floor(+house.lng * 4), out = [];
-  for (const dy of [-1, 0, 1]) for (const dx of [-1, 0, 1]) out.push(`${y + dy}_${x + dx}`);
-  return out;
+  const fy = +house.lat * 4, fx = +house.lng * 4, y = Math.floor(fy), x = Math.floor(fx);
+  const dy = fy - y < 0.5 ? -1 : 1, dx = fx - x < 0.5 ? -1 : 1;
+  return [`${y}_${x}`, `${y + dy}_${x}`, `${y}_${x + dx}`, `${y + dy}_${x + dx}`];
 }
 // "metro stations always take over, then trams, then buses" (Yohann, 16 Nov 2026); rail counts as metro.
 export const spRank = k => ({ metro: 0, rail: 0, tram: 1, bus: 2 })[k] ?? 3;
@@ -78,5 +80,5 @@ export function spEntry(st, house, source, langs) {
   return { id: spId(st), mode: st.k === 'rail' ? 'train' : st.k, name: all(() => st.n), lat: st.lat, lng: st.lng, km,
     ...(km && walk <= SP.walkMax ? { walk } : { min: cmMin(Math.max(1, Math.round(km))) }), what: all(() => ''),
     link: src.link || '', linkKey: 'timetable', badges: lines.filter(l => l.t).map(l => ({ t: l.t, ...(l.c ? { c: l.c, ink: l.ink } : {}) })), lines,
-    src: { from: src.id || String(st.id).split(':')[0], by: src.credit || '', at: src.updated || '' } };
+    src: { from: src.id || String(st.id).split(':')[0], by: src.credit || '', at: src.updated || '', ...(src.via ? { via: src.via } : {}) } };   // via 'mitrams': the national access point, "Powered by MITRAMS" on Sources and credits
 }

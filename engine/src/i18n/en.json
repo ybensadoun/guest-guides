@@ -363,5 +363,5 @@
   "freq4": "Every 15 min or more often",
   "moreLines": "and {n} more lines",
   "crTransitH": "Public transport",
-  "crTransit": "Stops and lines: {by}. Data of {date}."
+  "crTransit": "Stops and lines made from the open timetables of {by}. Data of {date}."
 }

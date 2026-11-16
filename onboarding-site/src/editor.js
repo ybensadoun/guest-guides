@@ -1218,7 +1218,7 @@ function axsToggle(id) {
   if (!T.apps.length) delete T.apps;
 }
 /* --- Public transport (16 Nov 2026, engine/src/modules/transport/README.md, "Public transport found"): metro, tram and bus
-   stops from our file of Spain's stops (at STOPS_BASE, build.py: index.json, then the 9 cells around the house it lists,
+   stops from our file of Spain's stops (at STOPS_BASE, build.py: our storage; index.json, then the 4 cells around the house it lists,
    loaded once when the step opens, no waiting state). "Near your house" (stops.js spNear: by distance, whatever the kind),
    "Type a stop or station" (spFind: metro, then tram, then bus; one the guide has is listed and said so); a pick is added
    at once, opened, as the generator writes one (spEntry). Nothing loaded: no "Near your house", and the field says so. */
@@ -1226,11 +1226,11 @@ const SPS = { asked: false, index: null, stops: [], failed: false, near: [], lis
 async function spsLoad() {
   const h = edF().house || {}; if (SPS.asked || !tpPlaced(h)) return; SPS.asked = true;
   try {
-    const ix = await fetch(STOPS_BASE + 'index.json').then(r => r.ok ? r.json() : null);   // STOPS_BASE: build.py, one setting
+    const ix = await fetch(STOPS_BASE() + 'index.json').then(r => r.ok ? r.json() : null);   // STOPS_BASE: build.py, one setting
     if (!ix || !ix.cells) throw new Error('no index');
     SPS.index = ix;
     const cells = spCells(h).filter(c => ix.cells[c]);
-    const got = await Promise.all(cells.map(c => fetch(STOPS_BASE + c + '.json').then(r => r.ok ? r.json() : { stops: [] }).catch(() => ({ stops: [] }))));
+    const got = await Promise.all(cells.map(c => fetch(STOPS_BASE() + c + '.json').then(r => r.ok ? r.json() : { stops: [] }).catch(() => ({ stops: [] }))));
     SPS.stops = got.flatMap(g => g.stops || []);
   } catch (e) { SPS.failed = true; const m = document.getElementById('c_spmsg'); if (m) m.textContent = 'The list of stations could not be loaded. Use “Not in the list?” below.'; return; }
   const b = document.getElementById('c_spnear'); if (b) b.innerHTML = spsNearHTML();

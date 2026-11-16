@@ -363,5 +363,5 @@
   "freq4": "Elke 15 min of vaker",
   "moreLines": "en nog {n} lijnen",
   "crTransitH": "Openbaar vervoer",
-  "crTransit": "Haltes en lijnen: {by}. Gegevens van {date}."
+  "crTransit": "Haltes en lijnen gemaakt uit de open dienstregelingen van {by}. Gegevens van {date}."
 }

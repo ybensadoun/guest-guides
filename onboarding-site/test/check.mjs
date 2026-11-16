@@ -1663,7 +1663,8 @@ async function gStops() {
   const cells = {}; for (const st of STOPS) (cells[cellOf(st.lat, st.lng)] = cells[cellOf(st.lat, st.lng)] || []).push(st);
   const INDEX = { cell: 0.25, sources: [{ id: 'fake', name: 'Generalitat Prova', credit: 'Generalitat Prova. Departament', licence: 'L', url: 'https://example.org/', link: 'https://example.org/timetables', updated: '2026-10-30', day: '2026-11-03' }],
     cells: Object.fromEntries(Object.entries(cells).map(([c, l]) => [c, l.length])) };
-  const serve = (ctx, down = false) => ctx.route(u => u.host === 'editor.test' && u.pathname.startsWith('/stops-es/'), r => { ctx.cells = (ctx.cells || 0) + 1; if (down) return r.fulfill({ status: 503, body: '' });
+  // our storage's address (build.py STOPS_BASE), served from fakes
+  const serve = (ctx, down = false) => ctx.route(u => u.origin === SB && u.pathname.startsWith('/storage/v1/object/public/transit/stops-es/'), r => { ctx.cells = (ctx.cells || 0) + 1; if (down) return r.fulfill({ status: 503, body: '' });
     const name = new URL(r.request().url()).pathname.split('/').pop(); return name === 'index.json' ? json(r, INDEX) : json(r, { stops: cells[name.replace('.json', '')] || [] }); });
   const sugNow = (p, box) => p.evaluate(box => [...document.querySelectorAll(box + ' button')].map(b => ({ n: (b.querySelector('b') || {}).textContent, has: b.getAttribute('aria-disabled') === 'true', small: (b.querySelector('small') || {}).textContent || '' })), box);
   for (const [w, h, tag, lang] of [[1280, 860, '1280 px', 'en'], [360, 780, '360 px', 'en'], [1280, 860, '1280 px, French', 'fr'], [360, 780, '360 px, French', 'fr']]) {
@@ -1698,7 +1699,7 @@ async function gStops() {
   { const { ctx, p, errors } = await open(browser, E, 360, 780); await serve(ctx, true);
     await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 800);
     await p.click('#c_spq'); await p.locator('#c_spq').pressSequentially('prova', { delay: 15 }); await settle(p, 300);
-    ok('stops: nothing loaded, no "Near your house", the field says so, no error', !(await p.$('#c_spnear .cm-spnear')) && /could not be loaded/.test(await textNow(p, '#c_spmsg')) && !errors.length, await textNow(p, '#c_spmsg'));
+    ok('stops: nothing loaded, no "Near your house", the field says so, no error', !(await p.$('#c_spnear .cm-spnear')) && /could not be loaded/.test(await textNow(p, '#c_spmsg')) && !errors.length && ctx.cells >= 1, await textNow(p, '#c_spmsg') + ' ' + errors.join(' | '));
     await ctx.close(); }
 }
 

@@ -3,11 +3,12 @@
 // guide-worker-monthly (worker/systemd) on the 1st at 9:00: the check of every published guide with our own sources
 // (worker/check-guides.mjs: its website, our open directory; Google and Claude are not asked), its notes applied; automatic
 // events for every guide that has them on; Find more searches queued for Ca La Kimberly (the running worker does them, their
-// suggestions wait 14 days in the editor's Find more panels); then one report, saved in the database (events, kind
+// suggestions wait 14 days in the editor's Find more panels); Spain's public transport stops remade and published
+// (worker/transit.mjs, last, never holding up the rest); then one report, saved in the database (events, kind
 // monthly_report, for the cloud routine) and emailed to Yohann through Resend.
 //   node worker/monthly.mjs                       the whole run
 //   node worker/monthly.mjs --dry-run             the checks without writing, nothing queued, nothing saved; no email unless --email
-//   node worker/monthly.mjs --steps check,find    only some steps (check, events, find); --email sends the report even in a dry run
+//   node worker/monthly.mjs --steps check,find    only some steps (check, events, find, transit); --email sends the report even in a dry run
 //   node worker/monthly.mjs --dry-run --steps find --email   a test of the email that asks Google and Claude nothing
 // Settings (the worker's env file): RESEND_API_KEY and REPORT_EMAIL (no email without them), REPORT_FROM (default Resend's own
 // sender, which only delivers to the Resend account's address), MONTHLY_USD (the Claude day limit for this run's events
@@ -29,7 +30,7 @@ if (!KEY) { console.error('Missing SUPABASE_SERVICE_KEY.'); process.exit(1); }
 const H = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const DRY = process.argv.includes('--dry-run'), EMAIL = !DRY || process.argv.includes('--email');
-const STEPS = arg('--steps', 'check,events,find').split(',');
+const STEPS = arg('--steps', 'check,events,find,transit').split(',');
 const FIND_FOR = (env.MONTHLY_FIND || 'ca-la-kimberly').split(',').map(s => s.trim()).filter(Boolean);
 const today = new Date().toISOString().slice(0, 10), log = (...a) => console.log(new Date().toLocaleString('sv-SE'), ...a);
 
@@ -66,6 +67,18 @@ if (STEPS.includes('find')) {
     }
   }
   parts.push(`3. New places: Find more searches (things to do, markets). The worker runs them in the next minutes; their suggestions wait 14 days in the editor (Things to do > Find more, Markets > Find more), to keep or skip.\n${lines.join('\n')}`);
+}
+// 4. Spain's public transport stops (worker/transit.mjs): the access point's changed files, the stops remade, published to our
+// storage. Last, in its own try, with a ceiling of 40 minutes: it never fails or delays the rest of the run.
+if (STEPS.includes('transit')) {
+  let lines;
+  try {
+    const { refreshTransit, reportLines, makeStorage } = await import('./transit.mjs');
+    const deadline = Date.now() + 40 * 60e3;
+    const r = await Promise.race([refreshTransit({ log, env, dry: DRY, storage: DRY ? null : makeStorage({ url: URL_, key: KEY }), deadline }), new Promise(res => setTimeout(() => res(null), 41 * 60e3).unref())]);
+    lines = r ? reportLines(r) : ['Public transport stops: not finished within 40 minutes; what is served stays.'];
+  } catch (e) { lines = ['Public transport stops: did not run (' + e.message + '); what is served stays.']; }
+  parts.push(`4. Public transport stops (metro, tram, bus) for the guides: Spain's open timetables, remade and published to our storage${DRY ? ' (dry run: nothing published)' : ''}\n${lines.join('\n')}`);
 }
 const head = `Monthly check, ${today}${DRY ? ' (dry run)' : ''}\n${sum.humans} line(s) for a human, ${sum.added} automatic event(s) added, ${sum.sites} website(s) opened, no Google request in this run (Find more, queued, locates its suggestions on Google in the worker), Claude about ${sum.claudeUsd.toFixed(2)} USD for the events search.`;
 const text = `${head}\n\n${parts.join('\n\n')}\n`;

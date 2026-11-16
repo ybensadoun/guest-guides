@@ -8,7 +8,8 @@
 # stops a house gets and the maker's search are engine/src/modules/transport/stops.js, not this script.
 # Reads every folder of the cache (GTFS_CACHE, default ~/.cache/guest-guides/gtfs-es/) that holds a zip: straight from the zip,
 # nothing extracted, never shapes.txt. It never downloads. A folder may hold a meta.json (the national access point's files:
-# credited "Powered by MITRAMS"); onboarding-site/src/stops-feeds.json gives a folder its own words, or skips it. Writes to
+# credited to its organisation, via: 'mitrams', so that the guide adds "Powered by MITRAMS" as the access point's licence
+# asks); onboarding-site/src/stops-feeds.json gives a folder its own words, or skips it. Writes to
 # --out (default ~/.cache/guest-guides/stops-es/): made by the server's monthly job and served from our storage, never
 # committed (Yohann, 16 Nov 2026: "my computer should not be involved into the process at all"); by hand only for tests.
 # Python's standard library only. The same files give the same bytes.
@@ -245,7 +246,7 @@ def write(out_dir, sources, stops):
     index = {'_doc': 'Spain\'s public transport stops for Getting around, written by onboarding-site/src/stops.py from the open timetable files of '
                      'the cache\'s folders (GTFS_CACHE; onboarding-site/src/stops-feeds.json overrides), made by the server\'s monthly job. cell: the size of a cell in degrees; a cell '
                      'file is <floor(lat/cell)>_<floor(lng/cell)>.json; cells: every cell written, with its number of stops. sources: each feed read, '
-                     '{id, name, credit, licence, url, link (where guests find timetables), updated (the date of its data), day (the Tuesday counted)}. '
+                     '{id, name, credit, licence, url, link (where guests find timetables), via (\'mitrams\': the national access point), updated (the date of its data), day (the Tuesday counted)}. '
                      'A cell: {stops: [{id (feed:smallest stop id), n (name as the file writes it), k (metro, rail, tram or bus), lat, lng, s (index '
                      'in sources), lines: [{t (public code, absent when none), n (name), c, ink (the feed\'s colour, absent when none), f (how often '
                      'that day: 1 a few, 2 about hourly, 3 about every half hour, 4 every 15 min or more often)}]}]}. Rules: '
@@ -274,11 +275,11 @@ def feeds_in(cache, overrides):
                 with open(mp, encoding='utf-8') as f: m = json.load(f)
                 org = spaces(m.get('org')) or folder
                 tr = m.get('transport'); tr = tr if isinstance(tr, list) else [tr] if tr else []
-                fd = {'id': 'nap-%s' % m['id'] if m.get('id') is not None else folder, 'updated': m.get('updated') if re.match(r'^\d{4}-\d\d-\d\d$', str(m.get('updated') or '')) else '', 'name': org, 'credit': org + ' (Powered by MITRAMS)', 'licence': NAP_LICENCE, 'url': m.get('page') or '', 'link': '',
+                fd = {'id': 'nap-%s' % m['id'] if m.get('id') is not None else folder, 'updated': m.get('updated') if re.match(r'^\d{4}-\d\d-\d\d$', str(m.get('updated') or '')) else '', 'name': org, 'credit': org, 'via': 'mitrams', 'licence': NAP_LICENCE, 'url': m.get('page') or '', 'link': '',
                       'only_bus': bool(tr) and {re.sub(r'[^a-z]', '', unicodedata.normalize('NFKD', str(x)).encode('ascii', 'ignore').decode().lower()) for x in tr} == {'autobus'}}
             except (OSError, ValueError) as e: print('%s: its meta.json could not be read (%s)' % (folder, e))
         fd.update({k: v for k, v in o.items() if k in ('id', 'name', 'credit', 'licence', 'url', 'link')})
-        fd.setdefault('only_bus', False); fd['path'] = os.path.join(d, zips[0]); out.append(fd)
+        fd.setdefault('only_bus', False); fd.setdefault('via', ''); fd['path'] = os.path.join(d, zips[0]); out.append(fd)
     return out, skipped
 
 def main():
@@ -296,7 +297,7 @@ def main():
         if not F['day']: print('skipped %s: no usable calendar' % fd['id']); skipped.append(fd['id']); continue
         lst, info = build_feed(fd['id'], F, fd.get('only_bus'))
         si = len(sources)
-        sources.append({k: fd[k] for k in ('id', 'name', 'credit', 'licence', 'url', 'link')} | {'updated': fd.get('updated') or F['newest'].isoformat(), 'day': F['day'].isoformat()})   # the date of its data: the access point's own when it gives one, else the zip's
+        sources.append({k: fd[k] for k in ('id', 'name', 'credit', 'licence', 'url', 'link')} | ({'via': fd['via']} if fd.get('via') else {}) | {'updated': fd.get('updated') or F['newest'].isoformat(), 'day': F['day'].isoformat()})   # the date of its data: the access point's own when it gives one, else the zip's
         for s in lst: s['s'] = si
         stops += [{k: s[k] for k in ('id', 'n', 'k', 'lat', 'lng', 's', 'lines')} for s in lst]
         nlines += info['lines']; left.update(info['left_out']); read.append(fd['id'])

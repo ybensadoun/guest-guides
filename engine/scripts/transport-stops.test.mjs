@@ -11,8 +11,16 @@ const L = (t, n, f = 2, c) => ({ ...(t ? { t } : {}), n, ...(c ? { c, ink: false
 const stop = (id, n, k, km, lines) => ({ id: 'f:' + id, n, k, ...at(km), s: 0, lines });
 
 test('the small rules', () => {
-  assert.deepEqual(spCells({ lat: 41.2206, lng: 1.5343 }), ['163_5', '163_6', '163_7', '164_5', '164_6', '164_7', '165_5', '165_6', '165_7']);
-  assert.deepEqual(spCells({ lat: 40.4, lng: -3.7 }).slice(4, 5), ['161_-15']);
+  // El Vendrell's centre: lat*4 = 164.88 (nearer the north edge), lng*4 = 6.137 (nearer the west edge).
+  assert.deepEqual(spCells({ lat: 41.2206, lng: 1.5343 }), ['164_6', '165_6', '164_5', '165_5']);
+  assert.deepEqual(spCells({ lat: 40.4, lng: -3.7 }), ['161_-15', '162_-15', '161_-16', '162_-16']);
+  assert.deepEqual(spCells({ lat: 0, lng: 0 }), []);
+  // Every point within 10 km of a house falls in one of its 4 cells (houses across Spain's latitudes).
+  for (const h of [{ lat: 36.01, lng: -5.6 }, { lat: 41.2206, lng: 1.5343 }, { lat: 43.74, lng: -7.99 }, { lat: 40.12, lng: -3.87 }]) {
+    const cells = new Set(spCells(h));
+    for (let a = 0; a < 360; a += 15) { const r = 10 / 6371, b = a * Math.PI / 180, la = h.lat + r * Math.cos(b) * 180 / Math.PI, ln = h.lng + r * Math.sin(b) * 180 / Math.PI / Math.cos(h.lat * Math.PI / 180);
+      assert.ok(cells.has(`${Math.floor(la * 4)}_${Math.floor(ln * 4)}`), `${JSON.stringify(h)} at ${a} degrees`); }
+  }
   assert.deepEqual(['metro', 'rail', 'tram', 'bus', 'x'].map(spRank), [0, 0, 1, 2, 3]);
   assert.deepEqual([0.01, 0.5, 1, 2.1].map(spWalk), [1, 6, 12, 25]);
   assert.equal(tpRoadKm(0.1, 2), 0.13); assert.equal(tpRoadKm(0.1), 1, 'the whole km as before');
@@ -73,4 +81,21 @@ test('stops-of.mjs: the generator\'s stops from a folder on disk (STOPS_DIR); no
   const got = run({ STOPS_DIR: dir });
   assert.deepEqual(got.map(s => [s.id, s.mode, s.link, s.src.by]), [['spfk-b1', 'bus', '', 'Fake Transit']]);
   assert.deepEqual(run({ STOPS_DIR: join(dir, 'none') }), []);
+});
+
+test('stops-of.mjs: from our storage\'s address (STOPS_BASE) when the folder has no index.json; the folder wins when it has one', async () => {
+  const { mkdtempSync, writeFileSync, readFileSync } = await import('node:fs'), { tmpdir } = await import('node:os'), { join } = await import('node:path'), { execFile } = await import('node:child_process'), http = await import('node:http');
+  const dir = mkdtempSync(join(tmpdir(), 'stops-')), h = { lat: 41.2206, lng: 1.5343 }, asked = [];
+  writeFileSync(join(dir, 'index.json'), JSON.stringify({ cell: 0.25, sources: [{ id: 'nap-1163', name: 'Gen', credit: 'Gen', via: 'mitrams', link: 'https://mou-te.gencat.cat/', updated: '2026-10-30' }], cells: { '164_6': 1 } }));
+  writeFileSync(join(dir, '164_6.json'), JSON.stringify({ stops: [{ id: 'nap-1163:b1', n: 'Carrer Gran', k: 'bus', lat: 41.2210, lng: 1.5345, s: 0, lines: [{ n: 'A - B', f: 2 }] }] }));
+  const srv = http.createServer((q, r) => { asked.push(q.url); try { r.end(readFileSync(join(dir, q.url.split('/').pop()))); } catch (e) { r.statusCode = 404; r.end(); } });
+  await new Promise(r => srv.listen(0, '127.0.0.1', r));
+  const exe = (await import('node:url')).fileURLToPath(new URL('./stops-of.mjs', import.meta.url));
+  const run = env => new Promise(res => { const c = execFile(process.execPath, [exe], { env: { ...process.env, ...env } }, (e, out) => res(JSON.parse(out).stops)); c.stdin.end(JSON.stringify({ ...h, langs: ['en'] })); });
+  const base = `http://127.0.0.1:${srv.address().port}/storage/v1/object/public/transit/stops-es/`;
+  const got = await run({ STOPS_DIR: join(dir, 'none'), STOPS_BASE: base });
+  assert.deepEqual(got.map(s => [s.id, s.src.by, s.src.via]), [['spnap-1163-b1', 'Gen', 'mitrams']]);
+  assert.ok(asked.includes('/storage/v1/object/public/transit/stops-es/index.json'));
+  asked.length = 0; assert.equal((await run({ STOPS_DIR: dir, STOPS_BASE: base })).length, 1); assert.deepEqual(asked, [], 'the folder on disk, no network');
+  srv.close();
 });
