@@ -1,0 +1,1283 @@
+{
+ "A Sunday flea market in a nearby town. Come early.": {
+  "ca": "Un mercat de puces de diumenge en un poble proper. Vés-hi d'hora.",
+  "de": "Ein Flohmarkt am Sonntag in einer Nachbarstadt. Komm früh.",
+  "es": "Un mercadillo de domingo en un pueblo cercano. Ve temprano.",
+  "fr": "Un marché aux puces du dimanche dans une ville voisine. Venez tôt.",
+  "nl": "Een rommelmarkt op zondag in een naburig stadje. Ga vroeg."
+ },
+ "A bar with a sea view, open late at weekends.": {
+  "ca": "Un bar amb vistes al mar, obert fins tard els caps de setmana.",
+  "de": "Eine Bar mit Meerblick, am Wochenende lange geöffnet.",
+  "es": "Un bar con vistas al mar, abierto hasta tarde los fines de semana.",
+  "fr": "Un bar avec vue sur la mer, ouvert tard le week-end.",
+  "nl": "Een bar met zeezicht, in het weekend laat open."
+ },
+ "A beach party with music, food stalls and fireworks.": {
+  "ca": "Una festa a la platja amb música, parades de menjar i focs artificials.",
+  "de": "Ein Strandfest mit Musik, Essensständen und Feuerwerk.",
+  "es": "Una fiesta en la playa con música, puestos de comida y fuegos artificiales.",
+  "fr": "Une fête sur la plage avec musique, stands de nourriture et feux d'artifice.",
+  "nl": "Een strandfeest met muziek, eetkraampjes en vuurwerk."
+ },
+ "A big flea market on Sunday mornings. Go early.": {
+  "ca": "Un gran mercat de puces els diumenges al matí. Vés-hi d'hora.",
+  "de": "Ein großer Flohmarkt am Sonntagmorgen. Komm früh.",
+  "es": "Un gran mercadillo los domingos por la mañana. Ve temprano.",
+  "fr": "Un grand marché aux puces le dimanche matin. Venez tôt.",
+  "nl": "Een grote rommelmarkt op zondagochtend. Ga vroeg."
+ },
+ "A coast path with views of small bays. Wear good shoes.": {
+  "ca": "Un camí de ronda amb vistes a petites cales. Porta bon calçat.",
+  "de": "Ein Küstenweg mit Blick auf kleine Buchten. Trag gute Schuhe.",
+  "es": "Un camino de ronda con vistas a pequeñas calas. Lleva buen calzado.",
+  "fr": "Un chemin côtier avec vue sur de petites criques. Mettez de bonnes chaussures.",
+  "nl": "Een kustpad met uitzicht op kleine baaien. Draag goede schoenen."
+ },
+ "A covered market with fresh food every day but Sunday. Come in the morning.": {
+  "ca": "Un mercat cobert amb productes frescos cada dia excepte el diumenge. Vés-hi al matí.",
+  "de": "Eine Markthalle mit frischen Lebensmitteln, täglich außer sonntags. Komm am Vormittag.",
+  "es": "Un mercado cubierto con productos frescos todos los días menos el domingo. Ve por la mañana.",
+  "fr": "Un marché couvert avec des produits frais tous les jours sauf le dimanche. Venez le matin.",
+  "nl": "Een overdekte markt met verse producten, elke dag behalve zondag. Kom in de ochtend."
+ },
+ "A covered market with local fruit, vegetables and cheese.": {
+  "ca": "Un mercat cobert amb fruita, verdura i formatge de la zona.",
+  "de": "Eine Markthalle mit Obst, Gemüse und Käse aus der Region.",
+  "es": "Un mercado cubierto con fruta, verdura y queso de la zona.",
+  "fr": "Un marché couvert avec fruits, légumes et fromages locaux.",
+  "nl": "Een overdekte markt met lokaal fruit, groente en kaas."
+ },
+ "A fair of local products, with tastings and workshops.": {
+  "ca": "Una fira de productes locals, amb tastos i tallers.",
+  "de": "Eine Messe mit regionalen Produkten, mit Verkostungen und Workshops.",
+  "es": "Una feria de productos locales, con degustaciones y talleres.",
+  "fr": "Une foire de produits locaux, avec dégustations et ateliers.",
+  "nl": "Een beurs met lokale producten, met proeverijen en workshops."
+ },
+ "A family winery with a tasting among the vines. Book ahead.": {
+  "ca": "Un celler familiar amb tast entre les vinyes. Reserva amb antelació.",
+  "de": "Ein Familienweingut mit Verkostung zwischen den Reben. Reserviere vorab.",
+  "es": "Una bodega familiar con cata entre las viñas. Reserva con antelación.",
+  "fr": "Un domaine familial avec dégustation parmi les vignes. Réservez à l'avance.",
+  "nl": "Een familiewijndomein met een proeverij tussen de wijnstokken. Reserveer vooraf."
+ },
+ "A few farmers sell what they grow. Small, but fresh.": {
+  "ca": "Uns pocs pagesos venen el que cullen. Petit, però fresc.",
+  "de": "Ein paar Bauern verkaufen, was sie anbauen. Klein, aber frisch.",
+  "es": "Unos pocos agricultores venden lo que cultivan. Pequeño, pero fresco.",
+  "fr": "Quelques agriculteurs vendent leur production. Petit, mais frais.",
+  "nl": "Een paar boeren verkopen wat ze telen. Klein, maar vers."
+ },
+ "A flat walk along the sea, good with a pram.": {
+  "ca": "Un passeig pla vora el mar, bo per anar amb cotxet.",
+  "de": "Ein ebener Spaziergang am Meer, gut mit Kinderwagen.",
+  "es": "Un paseo llano junto al mar, bueno para ir con cochecito.",
+  "fr": "Une promenade plate le long de la mer, idéale avec une poussette.",
+  "nl": "Een vlakke wandeling langs de zee, goed met een kinderwagen."
+ },
+ "A free concert by the harbour, at sunset.": {
+  "ca": "Un concert gratuït vora el port, a la posta de sol.",
+  "de": "Ein kostenloses Konzert am Hafen, bei Sonnenuntergang.",
+  "es": "Un concierto gratuito junto al puerto, al atardecer.",
+  "fr": "Un concert gratuit près du port, au coucher du soleil.",
+  "nl": "Een gratis concert bij de haven, bij zonsondergang."
+ },
+ "A free evening concert on the square.": {
+  "ca": "Un concert gratuït al vespre a la plaça.",
+  "de": "Ein kostenloses Abendkonzert auf dem Platz.",
+  "es": "Un concierto gratuito por la noche en la plaza.",
+  "fr": "Un concert gratuit en soirée sur la place.",
+  "nl": "Een gratis avondconcert op het plein."
+ },
+ "A fun run through the old streets, for all ages.": {
+  "ca": "Una cursa popular pels carrers antics, per a totes les edats.",
+  "de": "Ein Volkslauf durch die Altstadtgassen, für jedes Alter.",
+  "es": "Una carrera popular por las calles antiguas, para todas las edades.",
+  "fr": "Une course conviviale dans les vieilles rues, pour tous les âges.",
+  "nl": "Een gezellige loop door de oude straten, voor alle leeftijden."
+ },
+ "A garden terrace for summer evenings.": {
+  "ca": "Una terrassa al jardí per a les nits d'estiu.",
+  "de": "Eine Gartenterrasse für Sommerabende.",
+  "es": "Una terraza en el jardín para las noches de verano.",
+  "fr": "Une terrasse dans un jardin pour les soirées d'été.",
+  "nl": "Een tuinterras voor zomeravonden."
+ },
+ "A group walk through the forest, for everyone. Bring water.": {
+  "ca": "Una caminada en grup pel bosc, per a tothom. Porta aigua.",
+  "de": "Eine Gruppenwanderung durch den Wald, für alle. Nimm Wasser mit.",
+  "es": "Una caminata en grupo por el bosque, para todos. Lleva agua.",
+  "fr": "Une marche en groupe dans la forêt, pour tous. Prenez de l'eau.",
+  "nl": "Een groepswandeling door het bos, voor iedereen. Neem water mee."
+ },
+ "A hilltop with a view over the whole city. Bring water.": {
+  "ca": "Un cim amb vistes a tota la ciutat. Porta aigua.",
+  "de": "Ein Hügel mit Blick über die ganze Stadt. Nimm Wasser mit.",
+  "es": "Una cima con vistas a toda la ciudad. Lleva agua.",
+  "fr": "Une colline avec vue sur toute la ville. Prenez de l'eau.",
+  "nl": "Een heuveltop met uitzicht over de hele stad. Neem water mee."
+ },
+ "A long sandy beach with calm water and a shower.": {
+  "ca": "Una llarga platja de sorra amb aigua tranquil·la i dutxa.",
+  "de": "Ein langer Sandstrand mit ruhigem Wasser und einer Dusche.",
+  "es": "Una larga playa de arena con agua tranquila y ducha.",
+  "fr": "Une longue plage de sable avec une eau calme et une douche.",
+  "nl": "Een lang zandstrand met rustig water en een douche."
+ },
+ "A made-up health centre. In a real guide this is the nearest one, with its opening hours.": {
+  "ca": "Un centre de salut inventat. En una guia real és el més proper, amb el seu horari.",
+  "de": "Ein erfundenes Gesundheitszentrum. In einem echten Guide ist es das nächstgelegene, mit seinen Öffnungszeiten.",
+  "es": "Un centro de salud inventado. En una guía real es el más cercano, con su horario.",
+  "fr": "Un centre de santé inventé. Dans un vrai guide, c'est le plus proche, avec ses horaires.",
+  "nl": "Een verzonnen gezondheidscentrum. In een echte gids is dit het dichtstbijzijnde, met openingstijden."
+ },
+ "A made-up home to try the guide.": {
+  "ca": "Una casa inventada per provar la guia.",
+  "de": "Ein erfundenes Zuhause zum Ausprobieren des Guides.",
+  "es": "Una casa inventada para probar la guía.",
+  "fr": "Une maison inventée pour essayer le guide.",
+  "nl": "Een verzonnen huis om de gids uit te proberen."
+ },
+ "A made-up pharmacy with long opening hours.": {
+  "ca": "Una farmàcia inventada amb horari ampli.",
+  "de": "Eine erfundene Apotheke mit langen Öffnungszeiten.",
+  "es": "Una farmacia inventada con horario amplio.",
+  "fr": "Une pharmacie inventée avec de longues heures d'ouverture.",
+  "nl": "Een verzonnen apotheek met ruime openingstijden."
+ },
+ "A made-up police station. For anything urgent, call 112 first.": {
+  "ca": "Una comissaria inventada. Per a qualsevol urgència, truca primer al 112.",
+  "de": "Eine erfundene Polizeiwache. Bei Dringendem ruf zuerst die 112 an.",
+  "es": "Una comisaría inventada. Para algo urgente, llama primero al 112.",
+  "fr": "Un commissariat inventé. Pour toute urgence, appelez d'abord le 112.",
+  "nl": "Een verzonnen politiebureau. Bij spoed bel je eerst 112."
+ },
+ "A play park for kids, with a shady picnic area.": {
+  "ca": "Un parc infantil, amb una zona de pícnic a l'ombra.",
+  "de": "Ein Spielplatz für Kinder, mit schattigem Picknickbereich.",
+  "es": "Un parque infantil, con una zona de pícnic a la sombra.",
+  "fr": "Une aire de jeux pour enfants, avec un coin pique-nique à l'ombre.",
+  "nl": "Een speeltuin voor kinderen, met een schaduwrijke picknickplek."
+ },
+ "A rooftop bar with a view over the roofs.": {
+  "ca": "Un bar a la terrassa amb vistes als terrats.",
+  "de": "Eine Dachbar mit Blick über die Dächer.",
+  "es": "Un bar en la azotea con vistas a los tejados.",
+  "fr": "Un bar sur le toit avec vue sur les toits.",
+  "nl": "Een dakbar met uitzicht over de daken."
+ },
+ "A sailing race you can watch from the beach.": {
+  "ca": "Una regata que pots veure des de la platja.",
+  "de": "Eine Segelregatta, die du vom Strand aus sehen kannst.",
+  "es": "Una regata que puedes ver desde la playa.",
+  "fr": "Une régate que l'on peut suivre depuis la plage.",
+  "nl": "Een zeilwedstrijd die je vanaf het strand kunt bekijken."
+ },
+ "A small chapel up the mountain, reached by an easy path.": {
+  "ca": "Una petita ermita a la muntanya, a la qual s'arriba per un camí fàcil.",
+  "de": "Eine kleine Kapelle am Berg, über einen leichten Weg erreichbar.",
+  "es": "Una pequeña ermita en la montaña, a la que se llega por un camino fácil.",
+  "fr": "Une petite chapelle en haut de la montagne, accessible par un chemin facile.",
+  "nl": "Een kleine kapel in de bergen, bereikbaar via een makkelijk pad."
+ },
+ "A small concert in the chapel on the mountain.": {
+  "ca": "Un petit concert a l'ermita de la muntanya.",
+  "de": "Ein kleines Konzert in der Kapelle am Berg.",
+  "es": "Un pequeño concierto en la ermita de la montaña.",
+  "fr": "Un petit concert dans la chapelle de la montagne.",
+  "nl": "Een klein concert in de kapel in de bergen."
+ },
+ "A small gallery with changing shows. Free on the first Sunday.": {
+  "ca": "Una petita galeria amb exposicions canviants. Gratuïta el primer diumenge.",
+  "de": "Eine kleine Galerie mit wechselnden Ausstellungen. Am ersten Sonntag kostenlos.",
+  "es": "Una pequeña galería con exposiciones cambiantes. Gratis el primer domingo.",
+  "fr": "Une petite galerie avec des expositions temporaires. Gratuit le premier dimanche.",
+  "nl": "Een kleine galerie met wisselende tentoonstellingen. Gratis op de eerste zondag."
+ },
+ "A small market of local farmers. Good for fruit, vegetables and cheese.": {
+  "ca": "Un petit mercat de pagesos locals. Bo per a fruita, verdura i formatge.",
+  "de": "Ein kleiner Markt mit Bauern aus der Gegend. Gut für Obst, Gemüse und Käse.",
+  "es": "Un pequeño mercado de agricultores locales. Bueno para fruta, verdura y queso.",
+  "fr": "Un petit marché de producteurs locaux. Idéal pour fruits, légumes et fromages.",
+  "nl": "Een kleine markt met lokale boeren. Goed voor fruit, groente en kaas."
+ },
+ "A small museum about boats, nets and the old fishing life.": {
+  "ca": "Un petit museu sobre barques, xarxes i la vida de pesca d'abans.",
+  "de": "Ein kleines Museum über Boote, Netze und das alte Fischerleben.",
+  "es": "Un pequeño museo sobre barcas, redes y la vida de pesca de antes.",
+  "fr": "Un petit musée sur les barques, les filets et l'ancienne vie des pêcheurs.",
+  "nl": "Een klein museum over boten, netten en het oude vissersleven."
+ },
+ "A small museum, good on a rainy day.": {
+  "ca": "Un petit museu, bo per a un dia de pluja.",
+  "de": "Ein kleines Museum, gut für einen Regentag.",
+  "es": "Un pequeño museo, bueno para un día de lluvia.",
+  "fr": "Un petit musée, idéal les jours de pluie.",
+  "nl": "Een klein museum, goed voor een regenachtige dag."
+ },
+ "A small place for lunch with a set menu.": {
+  "ca": "Un local petit per dinar amb menú del dia.",
+  "de": "Ein kleines Lokal fürs Mittagessen mit Tagesmenü.",
+  "es": "Un sitio pequeño para comer con menú del día.",
+  "fr": "Une petite adresse pour déjeuner avec un menu du jour.",
+  "nl": "Een klein adres voor de lunch met een dagmenu."
+ },
+ "A small, quiet beach between two rocks. Few people, even in summer.": {
+  "ca": "Una platja petita i tranquil·la entre dues roques. Poca gent, fins i tot a l'estiu.",
+  "de": "Ein kleiner, ruhiger Strand zwischen zwei Felsen. Wenig Leute, auch im Sommer.",
+  "es": "Una playa pequeña y tranquila entre dos rocas. Poca gente, incluso en verano.",
+  "fr": "Une petite plage calme entre deux rochers. Peu de monde, même en été.",
+  "nl": "Een klein, rustig strand tussen twee rotsen. Weinig mensen, zelfs in de zomer."
+ },
+ "A spring and a shady spot for a picnic.": {
+  "ca": "Una font i un lloc amb ombra per fer un pícnic.",
+  "de": "Eine Quelle und ein schattiger Platz für ein Picknick.",
+  "es": "Una fuente y un lugar con sombra para un pícnic.",
+  "fr": "Une source et un coin d'ombre pour pique-niquer.",
+  "nl": "Een bron en een schaduwrijk plekje voor een picknick."
+ },
+ "A tower you can see from far away. Good for a photo at sunset.": {
+  "ca": "Una torre que es veu de lluny. Bona per a una foto a la posta de sol.",
+  "de": "Ein Turm, den man schon von Weitem sieht. Gut für ein Foto bei Sonnenuntergang.",
+  "es": "Una torre que se ve desde lejos. Buena para una foto al atardecer.",
+  "fr": "Une tour visible de loin. Parfaite pour une photo au coucher du soleil.",
+  "nl": "Een toren die je van ver ziet. Mooi voor een foto bij zonsondergang."
+ },
+ "A town market with fruit, vegetables and plants.": {
+  "ca": "Un mercat del poble amb fruita, verdura i plantes.",
+  "de": "Ein Stadtmarkt mit Obst, Gemüse und Pflanzen.",
+  "es": "Un mercado del pueblo con fruta, verdura y plantas.",
+  "fr": "Un marché de la ville avec fruits, légumes et plantes.",
+  "nl": "Een stadsmarkt met fruit, groente en planten."
+ },
+ "A viewpoint over the village roofs and the mountains. Best at sunset.": {
+  "ca": "Un mirador sobre les teulades del poble i les muntanyes. Millor a la posta de sol.",
+  "de": "Ein Aussichtspunkt über die Dächer des Dorfes und die Berge. Am schönsten bei Sonnenuntergang.",
+  "es": "Un mirador sobre los tejados del pueblo y las montañas. Mejor al atardecer.",
+  "fr": "Un point de vue sur les toits du village et les montagnes. Idéal au coucher du soleil.",
+  "nl": "Een uitzichtpunt over de daken van het dorp en de bergen. Het mooist bij zonsondergang."
+ },
+ "A village winery with a tasting. Book ahead.": {
+  "ca": "Un celler del poble amb tast. Reserva amb antelació.",
+  "de": "Ein Dorfweingut mit Verkostung. Reserviere vorab.",
+  "es": "Una bodega del pueblo con cata. Reserva con antelación.",
+  "fr": "Un domaine viticole du village avec dégustation. Réservez à l'avance.",
+  "nl": "Een wijndomein in het dorp met proeverij. Reserveer vooraf."
+ },
+ "A walk of about three hours through pine forest. Bring water.": {
+  "ca": "Una caminada d'unes tres hores per un bosc de pins. Porta aigua.",
+  "de": "Eine Wanderung von etwa drei Stunden durch Kiefernwald. Nimm Wasser mit.",
+  "es": "Un paseo de unas tres horas por un bosque de pinos. Lleva agua.",
+  "fr": "Une promenade d'environ trois heures dans une forêt de pins. Prenez de l'eau.",
+  "nl": "Een wandeling van ongeveer drie uur door dennenbos. Neem water mee."
+ },
+ "A weekly market in the next town, with food, clothes and home goods.": {
+  "ca": "Un mercat setmanal al poble veí, amb menjar, roba i articles per a la llar.",
+  "de": "Ein Wochenmarkt im Nachbarort, mit Lebensmitteln, Kleidung und Haushaltswaren.",
+  "es": "Un mercado semanal en el pueblo vecino, con comida, ropa y artículos para el hogar.",
+  "fr": "Un marché hebdomadaire dans la ville voisine, avec alimentation, vêtements et articles pour la maison.",
+  "nl": "Een weekmarkt in het volgende dorp, met eten, kleding en huishoudartikelen."
+ },
+ "A weekly market with food, clothes and things for the home.": {
+  "ca": "Un mercat setmanal amb menjar, roba i coses per a la llar.",
+  "de": "Ein Wochenmarkt mit Lebensmitteln, Kleidung und Dingen für zu Hause.",
+  "es": "Un mercado semanal con comida, ropa y cosas para el hogar.",
+  "fr": "Un marché hebdomadaire avec alimentation, vêtements et objets pour la maison.",
+  "nl": "Een weekmarkt met eten, kleding en spullen voor in huis."
+ },
+ "A weekly street market with food and clothes.": {
+  "ca": "Un mercat ambulant setmanal amb menjar i roba.",
+  "de": "Ein Straßenmarkt jede Woche, mit Lebensmitteln und Kleidung.",
+  "es": "Un mercadillo semanal con comida y ropa.",
+  "fr": "Un marché de rue hebdomadaire avec alimentation et vêtements.",
+  "nl": "Een wekelijkse straatmarkt met eten en kleding."
+ },
+ "All photos": {
+  "ca": "Totes les fotos",
+  "de": "Alle Fotos",
+  "es": "Todas las fotos",
+  "fr": "Toutes les photos",
+  "nl": "Alle foto's"
+ },
+ "Ambulance, police or fire, for anything serious or dangerous. Free from any phone. They speak English, French and German.": {
+  "ca": "Ambulància, policia o bombers, per a qualsevol cosa greu o perillosa. Gratuït des de qualsevol telèfon. Parlen anglès, francès i alemany.",
+  "de": "Rettungsdienst, Polizei oder Feuerwehr bei allem, was ernst oder gefährlich ist. Kostenlos von jedem Telefon. Auch auf Englisch, Französisch und Deutsch.",
+  "es": "Ambulancia, policía o bomberos, para cualquier cosa grave o peligrosa. Gratis desde cualquier teléfono. Hablan inglés, francés y alemán.",
+  "fr": "Ambulance, police ou pompiers, pour tout ce qui est grave ou dangereux. Gratuit depuis n'importe quel téléphone. On y parle anglais, français et allemand.",
+  "nl": "Ambulance, politie of brandweer, voor alles wat ernstig of gevaarlijk is. Gratis vanaf elke telefoon. Ze spreken Engels, Frans en Duits."
+ },
+ "An evening of old stories by the fire, on the square.": {
+  "ca": "Un vespre de contes antics vora el foc, a la plaça.",
+  "de": "Ein Abend mit alten Geschichten am Feuer, auf dem Platz.",
+  "es": "Una noche de cuentos antiguos junto al fuego, en la plaza.",
+  "fr": "Une soirée de vieux contes au coin du feu, sur la place.",
+  "nl": "Een avond met oude verhalen bij het vuur, op het plein."
+ },
+ "An old lighthouse on the rocks. Good light for photos.": {
+  "ca": "Un far vell sobre les roques. Bona llum per fer fotos.",
+  "de": "Ein alter Leuchtturm auf den Felsen. Gutes Licht für Fotos.",
+  "es": "Un viejo faro sobre las rocas. Buena luz para fotos.",
+  "fr": "Un vieux phare sur les rochers. Belle lumière pour les photos.",
+  "nl": "Een oude vuurtoren op de rotsen. Mooi licht voor foto's."
+ },
+ "An open-air film. Bring a light jacket.": {
+  "ca": "Una pel·lícula a l'aire lliure. Porta una jaqueta lleugera.",
+  "de": "Ein Film unter freiem Himmel. Nimm eine leichte Jacke mit.",
+  "es": "Una película al aire libre. Lleva una chaqueta ligera.",
+  "fr": "Un film en plein air. Prenez une veste légère.",
+  "nl": "Een openluchtfilm. Neem een lichte jas mee."
+ },
+ "Arrive from 16:00. The key box is by the front door.": {
+  "ca": "Arriba a partir de les 16:00. La caixa de claus és al costat de la porta.",
+  "de": "Anreise ab 16:00. Der Schlüsselkasten befindet sich an der Haustür.",
+  "es": "Llega a partir de las 16:00. La caja de llaves está junto a la puerta.",
+  "fr": "Arrivée à partir de 16:00. La boîte à clés est près de la porte d'entrée.",
+  "nl": "Aankomst vanaf 16:00. De sleutelkluis zit bij de voordeur."
+ },
+ "Banys d'Aigua Prova (sample)": {
+  "ca": "Banys d'Aigua Prova (sample)",
+  "de": "Banys d'Aigua Prova (sample)",
+  "es": "Banys d'Aigua Prova (sample)",
+  "fr": "Banys d'Aigua Prova (sample)",
+  "nl": "Banys d'Aigua Prova (sample)"
+ },
+ "Bathrooms": {
+  "ca": "Banys",
+  "de": "Badezimmer",
+  "es": "Baños",
+  "fr": "Salles de bain",
+  "nl": "Badkamers"
+ },
+ "Beach": {
+  "ca": "Platja",
+  "de": "Strand",
+  "es": "Playa",
+  "fr": "Plage",
+  "nl": "Strand"
+ },
+ "Bedroom 1: Extra blankets are in the wardrobe.": {
+  "ca": "Habitació 1: hi ha mantes extra a l'armari.",
+  "de": "Schlafzimmer 1: Zusätzliche Decken liegen im Schrank.",
+  "es": "Dormitorio 1: hay mantas extra en el armario.",
+  "fr": "Chambre 1 : des couvertures supplémentaires sont dans l'armoire.",
+  "nl": "Slaapkamer 1: extra dekens liggen in de kast."
+ },
+ "Bedroom 1: one double bed.": {
+  "ca": "Habitació 1: un llit doble.",
+  "de": "Schlafzimmer 1: ein Doppelbett.",
+  "es": "Dormitorio 1: una cama doble.",
+  "fr": "Chambre 1 : un lit double.",
+  "nl": "Slaapkamer 1: één tweepersoonsbed."
+ },
+ "Bedroom 2: The window looks over the street.": {
+  "ca": "Habitació 2: la finestra dóna al carrer.",
+  "de": "Schlafzimmer 2: Das Fenster geht zur Straße.",
+  "es": "Dormitorio 2: la ventana da a la calle.",
+  "fr": "Chambre 2 : la fenêtre donne sur la rue.",
+  "nl": "Slaapkamer 2: het raam kijkt uit op de straat."
+ },
+ "Bedroom 2: two single beds.": {
+  "ca": "Habitació 2: dos llits individuals.",
+  "de": "Schlafzimmer 2: zwei Einzelbetten.",
+  "es": "Dormitorio 2: dos camas individuales.",
+  "fr": "Chambre 2 : deux lits simples.",
+  "nl": "Slaapkamer 2: twee eenpersoonsbedden."
+ },
+ "Bedrooms": {
+  "ca": "Habitacions",
+  "de": "Schlafzimmer",
+  "es": "Dormitorios",
+  "fr": "Chambres",
+  "nl": "Slaapkamers"
+ },
+ "Bowling": {
+  "ca": "Bolera",
+  "de": "Bowling",
+  "es": "Bolera",
+  "fr": "Bowling",
+  "nl": "Bowling"
+ },
+ "Bowling and arcade games. Good with kids on a wet day.": {
+  "ca": "Bolera i jocs recreatius. Bo amb nens un dia de pluja.",
+  "de": "Bowling und Spielautomaten. Gut mit Kindern an einem Regentag.",
+  "es": "Bolera y juegos recreativos. Bueno con niños en un día de lluvia.",
+  "fr": "Bowling et jeux d'arcade. Idéal avec des enfants un jour de pluie.",
+  "nl": "Bowling en spelletjes. Goed met kinderen op een regenachtige dag."
+ },
+ "Bread and pastries baked every morning.": {
+  "ca": "Pa i brioixeria fets cada matí.",
+  "de": "Brot und Gebäck, jeden Morgen frisch gebacken.",
+  "es": "Pan y bollería recién hechos cada mañana.",
+  "fr": "Pain et viennoiseries cuits chaque matin.",
+  "nl": "Brood en gebak, elke ochtend vers gebakken."
+ },
+ "Bread, pastries and sandwiches for the beach.": {
+  "ca": "Pa, brioixeria i entrepans per a la platja.",
+  "de": "Brot, Gebäck und belegte Brötchen für den Strand.",
+  "es": "Pan, bollería y bocadillos para la playa.",
+  "fr": "Pain, viennoiseries et sandwichs pour la plage.",
+  "nl": "Brood, gebak en broodjes voor het strand."
+ },
+ "Bring a jacket: the evenings are cool.": {
+  "ca": "Porta una jaqueta: els vespres són frescos.",
+  "de": "Nimm eine Jacke mit: Die Abende sind kühl.",
+  "es": "Lleva una chaqueta: las noches son frescas.",
+  "fr": "Prenez une veste : les soirées sont fraîches.",
+  "nl": "Neem een jas mee: de avonden zijn koel."
+ },
+ "Caminada Popular Exemple (sample)": {
+  "ca": "Caminada Popular Exemple (sample)",
+  "de": "Caminada Popular Exemple (sample)",
+  "es": "Caminada Popular Exemple (sample)",
+  "fr": "Caminada Popular Exemple (sample)",
+  "nl": "Caminada Popular Exemple (sample)"
+ },
+ "Camí de Ronda Exemple (sample)": {
+  "ca": "Camí de Ronda Exemple (sample)",
+  "de": "Camí de Ronda Exemple (sample)",
+  "es": "Camí de Ronda Exemple (sample)",
+  "fr": "Camí de Ronda Exemple (sample)",
+  "nl": "Camí de Ronda Exemple (sample)"
+ },
+ "Carnaval de Mostra (sample)": {
+  "ca": "Carnaval de Mostra (sample)",
+  "de": "Carnaval de Mostra (sample)",
+  "es": "Carnaval de Mostra (sample)",
+  "fr": "Carnaval de Mostra (sample)",
+  "nl": "Carnaval de Mostra (sample)"
+ },
+ "Castell Exemple (sample)": {
+  "ca": "Castell Exemple (sample)",
+  "de": "Castell Exemple (sample)",
+  "es": "Castell Exemple (sample)",
+  "fr": "Castell Exemple (sample)",
+  "nl": "Castell Exemple (sample)"
+ },
+ "Castle": {
+  "ca": "Castell",
+  "de": "Burg",
+  "es": "Castillo",
+  "fr": "Château",
+  "nl": "Kasteel"
+ },
+ "Celler Exemple (sample)": {
+  "ca": "Celler Exemple (sample)",
+  "de": "Celler Exemple (sample)",
+  "es": "Celler Exemple (sample)",
+  "fr": "Celler Exemple (sample)",
+  "nl": "Celler Exemple (sample)"
+ },
+ "Celler de Prova (sample)": {
+  "ca": "Celler de Prova (sample)",
+  "de": "Celler de Prova (sample)",
+  "es": "Celler de Prova (sample)",
+  "fr": "Celler de Prova (sample)",
+  "nl": "Celler de Prova (sample)"
+ },
+ "Check-in and check-out": {
+  "ca": "Entrada i sortida",
+  "de": "Check-in und Check-out",
+  "es": "Entrada y salida",
+  "fr": "Arrivée et départ",
+  "nl": "Inchecken en uitchecken"
+ },
+ "Check-in from 16:00.": {
+  "ca": "Entrada a partir de les 16:00.",
+  "de": "Check-in ab 16:00.",
+  "es": "Entrada a partir de las 16:00.",
+  "fr": "Arrivée à partir de 16:00.",
+  "nl": "Inchecken vanaf 16:00."
+ },
+ "Check-out by 11:00.": {
+  "ca": "Sortida abans de les 11:00.",
+  "de": "Check-out bis 11:00.",
+  "es": "Salida antes de las 11:00.",
+  "fr": "Départ avant 11:00.",
+  "nl": "Uitchecken vóór 11:00."
+ },
+ "Church or monastery": {
+  "ca": "Església o monestir",
+  "de": "Kirche oder Kloster",
+  "es": "Iglesia o monasterio",
+  "fr": "Église ou monastère",
+  "nl": "Kerk of klooster"
+ },
+ "Cinema a la Fresca Prova (sample)": {
+  "ca": "Cinema a la Fresca Prova (sample)",
+  "de": "Cinema a la Fresca Prova (sample)",
+  "es": "Cinema a la Fresca Prova (sample)",
+  "fr": "Cinema a la Fresca Prova (sample)",
+  "nl": "Cinema a la Fresca Prova (sample)"
+ },
+ "Cocktails and low lights. Open late.": {
+  "ca": "Còctels i llum tènue. Obert fins tard.",
+  "de": "Cocktails und gedämpftes Licht. Lange geöffnet.",
+  "es": "Cócteles y luz tenue. Abierto hasta tarde.",
+  "fr": "Cocktails et lumières tamisées. Ouvert tard.",
+  "nl": "Cocktails en gedempt licht. Laat open."
+ },
+ "Coffee on the promenade, good for an early start.": {
+  "ca": "Cafè al passeig marítim, ideal per començar d'hora.",
+  "de": "Kaffee an der Promenade, gut für einen frühen Start.",
+  "es": "Café en el paseo marítimo, ideal para empezar temprano.",
+  "fr": "Café sur la promenade, idéal pour bien commencer la journée.",
+  "nl": "Koffie aan de boulevard, goed voor een vroege start."
+ },
+ "Concert a l'Ermita (sample)": {
+  "ca": "Concert a l'Ermita (sample)",
+  "de": "Concert a l'Ermita (sample)",
+  "es": "Concert a l'Ermita (sample)",
+  "fr": "Concert a l'Ermita (sample)",
+  "nl": "Concert a l'Ermita (sample)"
+ },
+ "Concert a la Plaça (sample)": {
+  "ca": "Concert a la Plaça (sample)",
+  "de": "Concert a la Plaça (sample)",
+  "es": "Concert a la Plaça (sample)",
+  "fr": "Concert a la Plaça (sample)",
+  "nl": "Concert a la Plaça (sample)"
+ },
+ "Concert al Moll (sample)": {
+  "ca": "Concert al Moll (sample)",
+  "de": "Concert al Moll (sample)",
+  "es": "Concert al Moll (sample)",
+  "fr": "Concert al Moll (sample)",
+  "nl": "Concert al Moll (sample)"
+ },
+ "Containers": {
+  "ca": "Contenidors",
+  "de": "Container",
+  "es": "Contenedores",
+  "fr": "Conteneurs",
+  "nl": "Containers"
+ },
+ "Costumes, floats and a big parade through the streets.": {
+  "ca": "Disfresses, carrosses i una gran rua pels carrers.",
+  "de": "Kostüme, Festwagen und ein großer Umzug durch die Straßen.",
+  "es": "Disfraces, carrozas y un gran desfile por las calles.",
+  "fr": "Costumes, chars et un grand défilé dans les rues.",
+  "nl": "Kostuums, praalwagens en een grote optocht door de straten."
+ },
+ "Cursa Popular Exemple (sample)": {
+  "ca": "Cursa Popular Exemple (sample)",
+  "de": "Cursa Popular Exemple (sample)",
+  "es": "Cursa Popular Exemple (sample)",
+  "fr": "Cursa Popular Exemple (sample)",
+  "nl": "Cursa Popular Exemple (sample)"
+ },
+ "Dia dels Nens Mostra (sample)": {
+  "ca": "Dia dels Nens Mostra (sample)",
+  "de": "Dia dels Nens Mostra (sample)",
+  "es": "Dia dels Nens Mostra (sample)",
+  "fr": "Dia dels Nens Mostra (sample)",
+  "nl": "Dia dels Nens Mostra (sample)"
+ },
+ "Drinks and live music on Saturdays.": {
+  "ca": "Copes i música en directe els dissabtes.",
+  "de": "Getränke und Livemusik am Samstag.",
+  "es": "Copas y música en directo los sábados.",
+  "fr": "Boissons et musique live le samedi.",
+  "nl": "Drankjes en livemuziek op zaterdag."
+ },
+ "Emergencies": {
+  "ca": "Emergències",
+  "de": "Notruf",
+  "es": "Emergencias",
+  "fr": "Urgences",
+  "nl": "Noodnummer"
+ },
+ "Ermita de Mostra (sample)": {
+  "ca": "Ermita de Mostra (sample)",
+  "de": "Ermita de Mostra (sample)",
+  "es": "Ermita de Mostra (sample)",
+  "fr": "Ermita de Mostra (sample)",
+  "nl": "Ermita de Mostra (sample)"
+ },
+ "Far de Mostra (sample)": {
+  "ca": "Far de Mostra (sample)",
+  "de": "Far de Mostra (sample)",
+  "es": "Far de Mostra (sample)",
+  "fr": "Far de Mostra (sample)",
+  "nl": "Far de Mostra (sample)"
+ },
+ "Festa Major de la Vila (sample)": {
+  "ca": "Festa Major de la Vila (sample)",
+  "de": "Festa Major de la Vila (sample)",
+  "es": "Festa Major de la Vila (sample)",
+  "fr": "Festa Major de la Vila (sample)",
+  "nl": "Festa Major de la Vila (sample)"
+ },
+ "Festa de la Platja (sample)": {
+  "ca": "Festa de la Platja (sample)",
+  "de": "Festa de la Platja (sample)",
+  "es": "Festa de la Platja (sample)",
+  "fr": "Festa de la Platja (sample)",
+  "nl": "Festa de la Platja (sample)"
+ },
+ "Festa del Barri (sample)": {
+  "ca": "Festa del Barri (sample)",
+  "de": "Festa del Barri (sample)",
+  "es": "Festa del Barri (sample)",
+  "fr": "Festa del Barri (sample)",
+  "nl": "Festa del Barri (sample)"
+ },
+ "Fira de l'Avellana (sample)": {
+  "ca": "Fira de l'Avellana (sample)",
+  "de": "Fira de l'Avellana (sample)",
+  "es": "Fira de l'Avellana (sample)",
+  "fr": "Fira de l'Avellana (sample)",
+  "nl": "Fira de l'Avellana (sample)"
+ },
+ "Fira del Peix Exemple (sample)": {
+  "ca": "Fira del Peix Exemple (sample)",
+  "de": "Fira del Peix Exemple (sample)",
+  "es": "Fira del Peix Exemple (sample)",
+  "fr": "Fira del Peix Exemple (sample)",
+  "nl": "Fira del Peix Exemple (sample)"
+ },
+ "Fish of the day, grilled. A terrace by the sea.": {
+  "ca": "Peix del dia a la brasa. Una terrassa vora el mar.",
+  "de": "Fisch des Tages vom Grill. Eine Terrasse am Meer.",
+  "es": "Pescado del día a la brasa. Una terraza junto al mar.",
+  "fr": "Poisson du jour grillé. Une terrasse au bord de la mer.",
+  "nl": "Vis van de dag van de grill. Een terras aan zee."
+ },
+ "Fresh bread and pastries from early morning.": {
+  "ca": "Pa fresc i brioixeria des de primera hora.",
+  "de": "Frisches Brot und Gebäck ab dem frühen Morgen.",
+  "es": "Pan fresco y bollería desde primera hora.",
+  "fr": "Pain frais et viennoiseries dès le petit matin.",
+  "nl": "Vers brood en gebak vanaf de vroege ochtend."
+ },
+ "Fresh fish from the morning boats, sold by the harbour.": {
+  "ca": "Peix fresc de les barques del matí, a la venda vora el port.",
+  "de": "Frischer Fisch von den Morgenbooten, am Hafen verkauft.",
+  "es": "Pescado fresco de las barcas de la mañana, a la venta junto al puerto.",
+  "fr": "Poisson frais des barques du matin, vendu près du port.",
+  "nl": "Verse vis van de ochtendboten, verkocht bij de haven."
+ },
+ "Galeria d'Art Exemple (sample)": {
+  "ca": "Galeria d'Art Exemple (sample)",
+  "de": "Galeria d'Art Exemple (sample)",
+  "es": "Galeria d'Art Exemple (sample)",
+  "fr": "Galeria d'Art Exemple (sample)",
+  "nl": "Galeria d'Art Exemple (sample)"
+ },
+ "Games, workshops and a puppet show for children.": {
+  "ca": "Jocs, tallers i un espectacle de titelles per a nens.",
+  "de": "Spiele, Workshops und ein Puppentheater für Kinder.",
+  "es": "Juegos, talleres y un espectáculo de títeres para niños.",
+  "fr": "Jeux, ateliers et spectacle de marionnettes pour les enfants.",
+  "nl": "Spelletjes, workshops en een poppenkast voor kinderen."
+ },
+ "Getting here": {
+  "ca": "Com arribar",
+  "de": "Anreise",
+  "es": "Cómo llegar",
+  "fr": "Pour venir",
+  "nl": "Hier komen"
+ },
+ "Go to the beach early, before the sun is strong.": {
+  "ca": "Vés a la platja d'hora, abans que el sol piqui.",
+  "de": "Geh früh an den Strand, bevor die Sonne stark ist.",
+  "es": "Ve a la playa temprano, antes de que el sol apriete.",
+  "fr": "Allez à la plage tôt, avant que le soleil ne soit fort.",
+  "nl": "Ga vroeg naar het strand, voordat de zon sterk is."
+ },
+ "Handmade jewellery, bags and ceramics on the promenade, on weekend evenings.": {
+  "ca": "Joies, bosses i ceràmica fetes a mà al passeig, els vespres dels caps de setmana.",
+  "de": "Handgemachter Schmuck, Taschen und Keramik an der Promenade, an Wochenendabenden.",
+  "es": "Joyas, bolsos y cerámica hechos a mano en el paseo, por las tardes de los fines de semana.",
+  "fr": "Bijoux, sacs et céramiques faits main sur la promenade, les soirs de week-end.",
+  "nl": "Handgemaakte sieraden, tassen en keramiek op de boulevard, in de weekendavonden."
+ },
+ "Health centre (sample)": {
+  "ca": "Centre de salut (sample)",
+  "de": "Gesundheitszentrum (sample)",
+  "es": "Centro de salud (sample)",
+  "fr": "Centre de santé (sample)",
+  "nl": "Gezondheidscentrum (sample)"
+ },
+ "Home cooking: stews and grilled meat.": {
+  "ca": "Cuina casolana: guisats i carn a la brasa.",
+  "de": "Hausmannskost: Eintöpfe und Fleisch vom Grill.",
+  "es": "Cocina casera: guisos y carne a la brasa.",
+  "fr": "Cuisine maison : ragoûts et viandes grillées.",
+  "nl": "Huiselijke keuken: stoofgerechten en gegrild vlees."
+ },
+ "Hot water takes a minute to arrive.": {
+  "ca": "L'aigua calenta triga un minut a arribar.",
+  "de": "Das warme Wasser braucht eine Minute, bis es ankommt.",
+  "es": "El agua caliente tarda un minuto en llegar.",
+  "fr": "L'eau chaude met une minute à arriver.",
+  "nl": "Het warme water doet er een minuut over om te komen."
+ },
+ "House rules": {
+  "ca": "Normes de la casa",
+  "de": "Hausregeln",
+  "es": "Normas de la casa",
+  "fr": "Règles de la maison",
+  "nl": "Huisregels"
+ },
+ "Kitchen": {
+  "ca": "Cuina",
+  "de": "Küche",
+  "es": "Cocina",
+  "fr": "Cuisine",
+  "nl": "Keuken"
+ },
+ "Leave the key in the key box.": {
+  "ca": "Deixa la clau a la caixa de claus.",
+  "de": "Lass den Schlüssel im Schlüsselkasten.",
+  "es": "Deja la llave en la caja de llaves.",
+  "fr": "Laissez la clé dans la boîte à clés.",
+  "nl": "Laat de sleutel in de sleutelkluis achter."
+ },
+ "Living room": {
+  "ca": "Sala d'estar",
+  "de": "Wohnzimmer",
+  "es": "Salón",
+  "fr": "Salon",
+  "nl": "Woonkamer"
+ },
+ "Local police (sample)": {
+  "ca": "Policia local (sample)",
+  "de": "Örtliche Polizei (sample)",
+  "es": "Policía local (sample)",
+  "fr": "Police locale (sample)",
+  "nl": "Plaatselijke politie (sample)"
+ },
+ "Local tips": {
+  "ca": "Consells locals",
+  "de": "Lokale Tipps",
+  "es": "Consejos locales",
+  "fr": "Conseils locaux",
+  "nl": "Lokale tips"
+ },
+ "Meat on a wood grill, big portions. Book at weekends.": {
+  "ca": "Carn a la brasa de llenya, racions grans. Reserva els caps de setmana.",
+  "de": "Fleisch vom Holzgrill, große Portionen. Reserviere am Wochenende.",
+  "es": "Carne a la brasa de leña, raciones grandes. Reserva los fines de semana.",
+  "fr": "Viande au feu de bois, grosses portions. Réservez le week-end.",
+  "nl": "Vlees van de houtgrill, grote porties. Reserveer in het weekend."
+ },
+ "Mercat Coberto de la Plaça (sample)": {
+  "ca": "Mercat Coberto de la Plaça (sample)",
+  "de": "Mercat Coberto de la Plaça (sample)",
+  "es": "Mercat Coberto de la Plaça (sample)",
+  "fr": "Mercat Coberto de la Plaça (sample)",
+  "nl": "Mercat Coberto de la Plaça (sample)"
+ },
+ "Mercat Municipal Mostra (sample)": {
+  "ca": "Mercat Municipal Mostra (sample)",
+  "de": "Mercat Municipal Mostra (sample)",
+  "es": "Mercat Municipal Mostra (sample)",
+  "fr": "Mercat Municipal Mostra (sample)",
+  "nl": "Mercat Municipal Mostra (sample)"
+ },
+ "Mercat d'Antiguitats Prova (sample)": {
+  "ca": "Mercat d'Antiguitats Prova (sample)",
+  "de": "Mercat d'Antiguitats Prova (sample)",
+  "es": "Mercat d'Antiguitats Prova (sample)",
+  "fr": "Mercat d'Antiguitats Prova (sample)",
+  "nl": "Mercat d'Antiguitats Prova (sample)"
+ },
+ "Mercat d'Antiguitats del Dissabte (sample)": {
+  "ca": "Mercat d'Antiguitats del Dissabte (sample)",
+  "de": "Mercat d'Antiguitats del Dissabte (sample)",
+  "es": "Mercat d'Antiguitats del Dissabte (sample)",
+  "fr": "Mercat d'Antiguitats del Dissabte (sample)",
+  "nl": "Mercat d'Antiguitats del Dissabte (sample)"
+ },
+ "Mercat d'Artesania del Passeig (sample)": {
+  "ca": "Mercat d'Artesania del Passeig (sample)",
+  "de": "Mercat d'Artesania del Passeig (sample)",
+  "es": "Mercat d'Artesania del Passeig (sample)",
+  "fr": "Mercat d'Artesania del Passeig (sample)",
+  "nl": "Mercat d'Artesania del Passeig (sample)"
+ },
+ "Mercat de Pagès Exemple (sample)": {
+  "ca": "Mercat de Pagès Exemple (sample)",
+  "de": "Mercat de Pagès Exemple (sample)",
+  "es": "Mercat de Pagès Exemple (sample)",
+  "fr": "Mercat de Pagès Exemple (sample)",
+  "nl": "Mercat de Pagès Exemple (sample)"
+ },
+ "Mercat de Pagès del Divendres (sample)": {
+  "ca": "Mercat de Pagès del Divendres (sample)",
+  "de": "Mercat de Pagès del Divendres (sample)",
+  "es": "Mercat de Pagès del Divendres (sample)",
+  "fr": "Mercat de Pagès del Divendres (sample)",
+  "nl": "Mercat de Pagès del Divendres (sample)"
+ },
+ "Mercat de la Plaça Major (sample)": {
+  "ca": "Mercat de la Plaça Major (sample)",
+  "de": "Mercat de la Plaça Major (sample)",
+  "es": "Mercat de la Plaça Major (sample)",
+  "fr": "Mercat de la Plaça Major (sample)",
+  "nl": "Mercat de la Plaça Major (sample)"
+ },
+ "Mercat de les Puces Mostra (sample)": {
+  "ca": "Mercat de les Puces Mostra (sample)",
+  "de": "Mercat de les Puces Mostra (sample)",
+  "es": "Mercat de les Puces Mostra (sample)",
+  "fr": "Mercat de les Puces Mostra (sample)",
+  "nl": "Mercat de les Puces Mostra (sample)"
+ },
+ "Mercat de les Puces de la Costa (sample)": {
+  "ca": "Mercat de les Puces de la Costa (sample)",
+  "de": "Mercat de les Puces de la Costa (sample)",
+  "es": "Mercat de les Puces de la Costa (sample)",
+  "fr": "Mercat de les Puces de la Costa (sample)",
+  "nl": "Mercat de les Puces de la Costa (sample)"
+ },
+ "Mercat del Dijous (sample)": {
+  "ca": "Mercat del Dijous (sample)",
+  "de": "Mercat del Dijous (sample)",
+  "es": "Mercat del Dijous (sample)",
+  "fr": "Mercat del Dijous (sample)",
+  "nl": "Mercat del Dijous (sample)"
+ },
+ "Mercat del Dimecres (sample)": {
+  "ca": "Mercat del Dimecres (sample)",
+  "de": "Mercat del Dimecres (sample)",
+  "es": "Mercat del Dimecres (sample)",
+  "fr": "Mercat del Dimecres (sample)",
+  "nl": "Mercat del Dimecres (sample)"
+ },
+ "Mercat del Peix de la Llotja (sample)": {
+  "ca": "Mercat del Peix de la Llotja (sample)",
+  "de": "Mercat del Peix de la Llotja (sample)",
+  "es": "Mercat del Peix de la Llotja (sample)",
+  "fr": "Mercat del Peix de la Llotja (sample)",
+  "nl": "Mercat del Peix de la Llotja (sample)"
+ },
+ "Mirador dels Tres Pins (sample)": {
+  "ca": "Mirador dels Tres Pins (sample)",
+  "de": "Mirador dels Tres Pins (sample)",
+  "es": "Mirador dels Tres Pins (sample)",
+  "fr": "Mirador dels Tres Pins (sample)",
+  "nl": "Mirador dels Tres Pins (sample)"
+ },
+ "Monument": {
+  "ca": "Monument",
+  "de": "Denkmal",
+  "es": "Monumento",
+  "fr": "Monument",
+  "nl": "Monument"
+ },
+ "Mountain and views": {
+  "ca": "Muntanya i vistes",
+  "de": "Berge und Aussicht",
+  "es": "Montaña y vistas",
+  "fr": "Montagne et panoramas",
+  "nl": "Bergen en uitzicht"
+ },
+ "Museu del Mar Prova (sample)": {
+  "ca": "Museu del Mar Prova (sample)",
+  "de": "Museu del Mar Prova (sample)",
+  "es": "Museu del Mar Prova (sample)",
+  "fr": "Museu del Mar Prova (sample)",
+  "nl": "Museu del Mar Prova (sample)"
+ },
+ "Museum or art": {
+  "ca": "Museu o art",
+  "de": "Museum oder Kunst",
+  "es": "Museo o arte",
+  "fr": "Musée ou art",
+  "nl": "Museum of kunst"
+ },
+ "Music and shows": {
+  "ca": "Música i espectacles",
+  "de": "Musik und Shows",
+  "es": "Música y espectáculos",
+  "fr": "Musique et spectacles",
+  "nl": "Muziek en shows"
+ },
+ "Natural pools in a stream, cold and clear. Best in summer.": {
+  "ca": "Gorgues naturals en un rierol, fredes i clares. Millor a l'estiu.",
+  "de": "Natürliche Becken in einem Bach, kalt und klar. Am besten im Sommer.",
+  "es": "Pozas naturales en un arroyo, frías y claras. Mejor en verano.",
+  "fr": "Bassins naturels dans un ruisseau, froids et clairs. Idéal en été.",
+  "nl": "Natuurlijke poelen in een beek, koud en helder. Het best in de zomer."
+ },
+ "Nit de Contes Prova (sample)": {
+  "ca": "Nit de Contes Prova (sample)",
+  "de": "Nit de Contes Prova (sample)",
+  "es": "Nit de Contes Prova (sample)",
+  "fr": "Nit de Contes Prova (sample)",
+  "nl": "Nit de Contes Prova (sample)"
+ },
+ "No parties after 22:00.": {
+  "ca": "Sense festes a partir de les 22:00.",
+  "de": "Keine Partys nach 22:00.",
+  "es": "Sin fiestas a partir de las 22:00.",
+  "fr": "Pas de fêtes après 22:00.",
+  "nl": "Geen feestjes na 22:00."
+ },
+ "Not staying with us yet? See the listing.": {
+  "ca": "Encara no t'allotges amb nosaltres? Mira l'anunci.",
+  "de": "Noch nicht bei uns zu Gast? Sieh dir die Anzeige an.",
+  "es": "¿Aún no te alojas con nosotros? Mira el anuncio.",
+  "fr": "Vous ne séjournez pas encore chez nous ? Voyez l'annonce.",
+  "nl": "Nog niet bij ons te gast? Bekijk de advertentie."
+ },
+ "Old furniture, books and small treasures on a big square.": {
+  "ca": "Mobles vells, llibres i petits tresors en una gran plaça.",
+  "de": "Alte Möbel, Bücher und kleine Schätze auf einem großen Platz.",
+  "es": "Muebles viejos, libros y pequeños tesoros en una gran plaza.",
+  "fr": "Vieux meubles, livres et petits trésors sur une grande place.",
+  "nl": "Oude meubels, boeken en kleine schatten op een groot plein."
+ },
+ "Old tools, books and furniture, once a week.": {
+  "ca": "Eines velles, llibres i mobles, un cop per setmana.",
+  "de": "Alte Werkzeuge, Bücher und Möbel, einmal pro Woche.",
+  "es": "Herramientas viejas, libros y muebles, una vez por semana.",
+  "fr": "Vieux outils, livres et meubles, une fois par semaine.",
+  "nl": "Oud gereedschap, boeken en meubels, één keer per week."
+ },
+ "Outside": {
+  "ca": "Exterior",
+  "de": "Draußen",
+  "es": "Exterior",
+  "fr": "Extérieur",
+  "nl": "Buiten"
+ },
+ "Parc Aquàtic de la Costa (sample)": {
+  "ca": "Parc Aquàtic de la Costa (sample)",
+  "de": "Parc Aquàtic de la Costa (sample)",
+  "es": "Parc Aquàtic de la Costa (sample)",
+  "fr": "Parc Aquàtic de la Costa (sample)",
+  "nl": "Parc Aquàtic de la Costa (sample)"
+ },
+ "Parc d'Aventura Exemple (sample)": {
+  "ca": "Parc d'Aventura Exemple (sample)",
+  "de": "Parc d'Aventura Exemple (sample)",
+  "es": "Parc d'Aventura Exemple (sample)",
+  "fr": "Parc d'Aventura Exemple (sample)",
+  "nl": "Parc d'Aventura Exemple (sample)"
+ },
+ "Park in front of the house. The street is quiet.": {
+  "ca": "Aparca davant de la casa. El carrer és tranquil.",
+  "de": "Parke vor dem Haus. Die Straße ist ruhig.",
+  "es": "Aparca delante de la casa. La calle es tranquila.",
+  "fr": "Garez-vous devant la maison. La rue est calme.",
+  "nl": "Parkeer voor het huis. De straat is rustig."
+ },
+ "Park on the street or in the public car park by the beach.": {
+  "ca": "Aparca al carrer o a l'aparcament públic vora la platja.",
+  "de": "Parke auf der Straße oder auf dem öffentlichen Parkplatz am Strand.",
+  "es": "Aparca en la calle o en el aparcamiento público junto a la playa.",
+  "fr": "Garez-vous dans la rue ou sur le parking public près de la plage.",
+  "nl": "Parkeer op straat of op de openbare parkeerplaats bij het strand."
+ },
+ "Pharmacy (sample)": {
+  "ca": "Farmàcia (sample)",
+  "de": "Apotheke (sample)",
+  "es": "Farmacia (sample)",
+  "fr": "Pharmacie (sample)",
+  "nl": "Apotheek (sample)"
+ },
+ "Photos, rooms and description": {
+  "ca": "Fotos, habitacions i descripció",
+  "de": "Fotos, Zimmer und Beschreibung",
+  "es": "Fotos, habitaciones y descripción",
+  "fr": "Photos, chambres et description",
+  "nl": "Foto's, kamers en beschrijving"
+ },
+ "Pista de Bitlles Prova (sample)": {
+  "ca": "Pista de Bitlles Prova (sample)",
+  "de": "Pista de Bitlles Prova (sample)",
+  "es": "Pista de Bitlles Prova (sample)",
+  "fr": "Pista de Bitlles Prova (sample)",
+  "nl": "Pista de Bitlles Prova (sample)"
+ },
+ "Platja Petita Exemple (sample)": {
+  "ca": "Platja Petita Exemple (sample)",
+  "de": "Platja Petita Exemple (sample)",
+  "es": "Platja Petita Exemple (sample)",
+  "fr": "Platja Petita Exemple (sample)",
+  "nl": "Platja Petita Exemple (sample)"
+ },
+ "Play park": {
+  "ca": "Parc infantil",
+  "de": "Spielpark",
+  "es": "Parque infantil",
+  "fr": "Aire de jeux",
+  "nl": "Speeltuin"
+ },
+ "Please close the gate at night.": {
+  "ca": "Si us plau, tanca la reixa de nit.",
+  "de": "Bitte schließ nachts das Tor.",
+  "es": "Por favor, cierra la verja por la noche.",
+  "fr": "Merci de fermer le portail la nuit.",
+  "nl": "Doe 's nachts het hek dicht."
+ },
+ "Please do not smoke inside.": {
+  "ca": "Si us plau, no fumis a dins.",
+  "de": "Bitte rauche nicht drinnen.",
+  "es": "Por favor, no fumes dentro.",
+  "fr": "Merci de ne pas fumer à l'intérieur.",
+  "nl": "Rook alsjeblieft niet binnen."
+ },
+ "Please run the dishwasher before you leave.": {
+  "ca": "Si us plau, posa el rentaplats abans de marxar.",
+  "de": "Bitte starte vor der Abreise die Spülmaschine.",
+  "es": "Por favor, pon el lavavajillas antes de irte.",
+  "fr": "Merci de lancer le lave-vaisselle avant de partir.",
+  "nl": "Zet de vaatwasser aan voordat je vertrekt."
+ },
+ "Put the bins out the evening before.": {
+  "ca": "Treu els cubells la nit abans.",
+  "de": "Stell die Tonnen am Abend vorher raus.",
+  "es": "Saca los cubos la noche anterior.",
+  "fr": "Sortez les poubelles la veille au soir.",
+  "nl": "Zet de containers de avond ervoor buiten."
+ },
+ "Put used towels in the bath.": {
+  "ca": "Deixa les tovalloles usades a la banyera.",
+  "de": "Leg benutzte Handtücher in die Badewanne.",
+  "es": "Deja las toallas usadas en la bañera.",
+  "fr": "Mettez les serviettes utilisées dans la baignoire.",
+  "nl": "Leg gebruikte handdoeken in het bad."
+ },
+ "Quick coffee and a sandwich, a minute from the metro.": {
+  "ca": "Un cafè ràpid i un entrepà, a un minut del metro.",
+  "de": "Schneller Kaffee und ein Sandwich, eine Minute von der U-Bahn.",
+  "es": "Un café rápido y un bocadillo, a un minuto del metro.",
+  "fr": "Un café rapide et un sandwich, à une minute du métro.",
+  "nl": "Snel een koffie en een broodje, een minuut van de metro."
+ },
+ "Regata de Mostra (sample)": {
+  "ca": "Regata de Mostra (sample)",
+  "de": "Regata de Mostra (sample)",
+  "es": "Regata de Mostra (sample)",
+  "fr": "Regata de Mostra (sample)",
+  "nl": "Regata de Mostra (sample)"
+ },
+ "Rice dishes to share. Book for dinner.": {
+  "ca": "Arrossos per compartir. Reserva per sopar.",
+  "de": "Reisgerichte zum Teilen. Reserviere fürs Abendessen.",
+  "es": "Arroces para compartir. Reserva para cenar.",
+  "fr": "Plats de riz à partager. Réservez pour le dîner.",
+  "nl": "Rijstgerechten om te delen. Reserveer voor het diner."
+ },
+ "Rice dishes with seafood. Book at weekends.": {
+  "ca": "Arrossos amb marisc. Reserva els caps de setmana.",
+  "de": "Reisgerichte mit Meeresfrüchten. Reserviere am Wochenende.",
+  "es": "Arroces con marisco. Reserva los fines de semana.",
+  "fr": "Plats de riz aux fruits de mer. Réservez le week-end.",
+  "nl": "Rijstgerechten met zeevruchten. Reserveer in het weekend."
+ },
+ "Rope bridges and zip lines in the trees, for kids and adults.": {
+  "ca": "Ponts de corda i tirolines entre els arbres, per a nens i adults.",
+  "de": "Hängebrücken und Seilrutschen in den Bäumen, für Kinder und Erwachsene.",
+  "es": "Puentes de cuerda y tirolinas entre los árboles, para niños y adultos.",
+  "fr": "Ponts de singe et tyroliennes dans les arbres, pour enfants et adultes.",
+  "nl": "Touwbruggen en kabelbanen in de bomen, voor kinderen en volwassenen."
+ },
+ "Ruins": {
+  "ca": "Ruïnes",
+  "de": "Ruinen",
+  "es": "Ruinas",
+  "fr": "Ruines",
+  "nl": "Ruïnes"
+ },
+ "Ruta dels Tres Pics (sample)": {
+  "ca": "Ruta dels Tres Pics (sample)",
+  "de": "Ruta dels Tres Pics (sample)",
+  "es": "Ruta dels Tres Pics (sample)",
+  "fr": "Ruta dels Tres Pics (sample)",
+  "nl": "Ruta dels Tres Pics (sample)"
+ },
+ "Ruïnes de Mostra (sample)": {
+  "ca": "Ruïnes de Mostra (sample)",
+  "de": "Ruïnes de Mostra (sample)",
+  "es": "Ruïnes de Mostra (sample)",
+  "fr": "Ruïnes de Mostra (sample)",
+  "nl": "Ruïnes de Mostra (sample)"
+ },
+ "Sala de Música Prova (sample)": {
+  "ca": "Sala de Música Prova (sample)",
+  "de": "Sala de Música Prova (sample)",
+  "es": "Sala de Música Prova (sample)",
+  "fr": "Sala de Música Prova (sample)",
+  "nl": "Sala de Música Prova (sample)"
+ },
+ "See the listing": {
+  "ca": "Veure l'anunci",
+  "de": "Anzeige ansehen",
+  "es": "Ver el anuncio",
+  "fr": "Voir l'annonce",
+  "nl": "Bekijk de advertentie"
+ },
+ "Slides and pools for all ages. Open in summer only.": {
+  "ca": "Tobogans i piscines per a totes les edats. Obert només a l'estiu.",
+  "de": "Rutschen und Becken für jedes Alter. Nur im Sommer geöffnet.",
+  "es": "Toboganes y piscinas para todas las edades. Solo abierto en verano.",
+  "fr": "Toboggans et bassins pour tous les âges. Ouvert l'été seulement.",
+  "nl": "Glijbanen en zwembaden voor alle leeftijden. Alleen in de zomer open."
+ },
+ "Small concerts, mostly on weekends.": {
+  "ca": "Petits concerts, sobretot els caps de setmana.",
+  "de": "Kleine Konzerte, meist am Wochenende.",
+  "es": "Pequeños conciertos, sobre todo los fines de semana.",
+  "fr": "De petits concerts, surtout le week-end.",
+  "nl": "Kleine concerten, vooral in het weekend."
+ },
+ "Springs and spa": {
+  "ca": "Fonts i spa",
+  "de": "Quellen und Spa",
+  "es": "Fuentes y spa",
+  "fr": "Sources et spa",
+  "nl": "Bronnen en spa"
+ },
+ "Taste fish and seafood from the local boats.": {
+  "ca": "Tasta peix i marisc de les barques locals.",
+  "de": "Probiere Fisch und Meeresfrüchte von den Booten der Gegend.",
+  "es": "Prueba pescado y marisco de las barcas locales.",
+  "fr": "Dégustez poissons et fruits de mer des bateaux locaux.",
+  "nl": "Proef vis en zeevruchten van de lokale boten."
+ },
+ "The TV remote is on the sofa.": {
+  "ca": "El comandament de la tele és al sofà.",
+  "de": "Die Fernbedienung liegt auf dem Sofa.",
+  "es": "El mando de la tele está en el sofá.",
+  "fr": "La télécommande de la télé est sur le canapé.",
+  "nl": "De afstandsbediening ligt op de bank."
+ },
+ "The coffee machine is on the counter. Capsules are in the drawer below.": {
+  "ca": "La cafetera és a la taula de la cuina. Les càpsules són al calaix de sota.",
+  "de": "Die Kaffeemaschine steht auf der Arbeitsplatte. Die Kapseln liegen in der Schublade darunter.",
+  "es": "La cafetera está en la encimera. Las cápsulas están en el cajón de abajo.",
+  "fr": "La machine à café est sur le plan de travail. Les capsules sont dans le tiroir du dessous.",
+  "nl": "Het koffieapparaat staat op het aanrecht. De capsules liggen in de la eronder."
+ },
+ "The glass container is at the end of the street.": {
+  "ca": "El contenidor de vidre és al final del carrer.",
+  "de": "Der Glascontainer steht am Ende der Straße.",
+  "es": "El contenedor de vidrio está al final de la calle.",
+  "fr": "Le conteneur à verre est au bout de la rue.",
+  "nl": "De glascontainer staat aan het eind van de straat."
+ },
+ "The metro and the train are a few minutes away. You do not need a car.": {
+  "ca": "El metro i el tren són a pocs minuts. No necessites cotxe.",
+  "de": "U-Bahn und Zug sind nur ein paar Minuten entfernt. Du brauchst kein Auto.",
+  "es": "El metro y el tren están a pocos minutos. No necesitas coche.",
+  "fr": "Le métro et le train sont à quelques minutes. Pas besoin de voiture.",
+  "nl": "De metro en de trein zijn een paar minuten verderop. Je hebt geen auto nodig."
+ },
+ "The neighbourhood party: street music, food and dancing.": {
+  "ca": "La festa del barri: música al carrer, menjar i ball.",
+  "de": "Das Viertelfest: Straßenmusik, Essen und Tanz.",
+  "es": "La fiesta del barrio: música en la calle, comida y baile.",
+  "fr": "La fête du quartier : musique dans la rue, nourriture et danse.",
+  "nl": "Het buurtfeest: straatmuziek, eten en dans."
+ },
+ "The remains of an old wall, under a modern square.": {
+  "ca": "Les restes d'una antiga muralla, sota una plaça moderna.",
+  "de": "Die Reste einer alten Mauer, unter einem modernen Platz.",
+  "es": "Los restos de una antigua muralla, bajo una plaza moderna.",
+  "fr": "Les vestiges d'un ancien mur, sous une place moderne.",
+  "nl": "De resten van een oude muur, onder een modern plein."
+ },
+ "The ruins of an old castle on a hill. A short climb, a big view.": {
+  "ca": "Les ruïnes d'un castell vell dalt d'un turó. Una pujada curta, una gran vista.",
+  "de": "Die Ruinen einer alten Burg auf einem Hügel. Ein kurzer Aufstieg, eine große Aussicht.",
+  "es": "Las ruinas de un viejo castillo en una colina. Una subida corta, una gran vista.",
+  "fr": "Les ruines d'un vieux château sur une colline. Une courte montée, une vue immense.",
+  "nl": "De ruïnes van een oud kasteel op een heuvel. Een korte klim, een groot uitzicht."
+ },
+ "The sofa turns into a bed.": {
+  "ca": "El sofà es converteix en llit.",
+  "de": "Das Sofa lässt sich in ein Bett verwandeln.",
+  "es": "El sofá se convierte en cama.",
+  "fr": "Le canapé se transforme en lit.",
+  "nl": "De bank verandert in een bed."
+ },
+ "The table seats six.": {
+  "ca": "La taula té lloc per a sis.",
+  "de": "Am Tisch ist Platz für sechs.",
+  "es": "La mesa tiene sitio para seis.",
+  "fr": "La table accueille six personnes.",
+  "nl": "De tafel biedt plaats aan zes."
+ },
+ "The village bar, open late on weekends.": {
+  "ca": "El bar del poble, obert fins tard els caps de setmana.",
+  "de": "Die Dorfbar, am Wochenende lange geöffnet.",
+  "es": "El bar del pueblo, abierto hasta tarde los fines de semana.",
+  "fr": "Le bar du village, ouvert tard le week-end.",
+  "nl": "De dorpsbar, in het weekend laat open."
+ },
+ "The village café, on the square.": {
+  "ca": "El cafè del poble, a la plaça.",
+  "de": "Das Dorfcafé, am Platz.",
+  "es": "El café del pueblo, en la plaza.",
+  "fr": "Le café du village, sur la place.",
+  "nl": "Het dorpscafé, aan het plein."
+ },
+ "The village festival: a procession, music and a long dinner.": {
+  "ca": "La festa major del poble: una processó, música i un sopar llarg.",
+  "de": "Das Dorffest: eine Prozession, Musik und ein langes Abendessen.",
+  "es": "La fiesta mayor del pueblo: una procesión, música y una larga cena.",
+  "fr": "La fête du village : une procession, de la musique et un long dîner.",
+  "nl": "Het dorpsfeest: een processie, muziek en een lang diner."
+ },
+ "The village market on the main square: fruit, vegetables and local food.": {
+  "ca": "El mercat del poble a la plaça major: fruita, verdura i menjar local.",
+  "de": "Der Dorfmarkt auf dem Hauptplatz: Obst, Gemüse und lokale Spezialitäten.",
+  "es": "El mercado del pueblo en la plaza mayor: fruta, verdura y comida local.",
+  "fr": "Le marché du village sur la place principale : fruits, légumes et produits locaux.",
+  "nl": "De dorpsmarkt op het hoofdplein: fruit, groente en lokaal eten."
+ },
+ "Torre Mostra (sample)": {
+  "ca": "Torre Mostra (sample)",
+  "de": "Torre Mostra (sample)",
+  "es": "Torre Mostra (sample)",
+  "fr": "Torre Mostra (sample)",
+  "nl": "Torre Mostra (sample)"
+ },
+ "Towels are on the shelf.": {
+  "ca": "Les tovalloles són al prestatge.",
+  "de": "Die Handtücher liegen im Regal.",
+  "es": "Las toallas están en la estantería.",
+  "fr": "Les serviettes sont sur l'étagère.",
+  "nl": "De handdoeken liggen op de plank."
+ },
+ "Walk: most things are close.": {
+  "ca": "Ves a peu: gairebé tot és a prop.",
+  "de": "Geh zu Fuß: das Meiste ist nah.",
+  "es": "Ve a pie: casi todo está cerca.",
+  "fr": "Marchez : presque tout est proche.",
+  "nl": "Ga te voet: het meeste is dichtbij."
+ },
+ "Water park": {
+  "ca": "Parc aquàtic",
+  "de": "Wasserpark",
+  "es": "Parque acuático",
+  "fr": "Parc aquatique",
+  "nl": "Waterpark"
+ },
+ "Wi-Fi": {
+  "ca": "Wi-Fi",
+  "de": "Wi-Fi",
+  "es": "Wi-Fi",
+  "fr": "Wi-Fi",
+  "nl": "Wi-Fi"
+ },
+ "Winery": {
+  "ca": "Celler",
+  "de": "Weingut",
+  "es": "Bodega",
+  "fr": "Domaine viticole",
+  "nl": "Wijndomein"
+ },
+ "{n} reviews": {
+  "ca": "{n} ressenyes",
+  "de": "{n} Bewertungen",
+  "es": "{n} reseñas",
+  "fr": "{n} avis",
+  "nl": "{n} beoordelingen"
+ }
+}

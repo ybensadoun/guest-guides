@@ -1,0 +1,23 @@
+[
+ {
+  "slug": "sample-city",
+  "name": "Sample city flat",
+  "kind": "city",
+  "town": "Barcelona",
+  "base": "2026-11-16"
+ },
+ {
+  "slug": "sample-coast",
+  "name": "Sample beach house",
+  "kind": "coast",
+  "town": "Sitges",
+  "base": "2026-11-16"
+ },
+ {
+  "slug": "sample-village",
+  "name": "Sample village house",
+  "kind": "village",
+  "town": "Prades",
+  "base": "2026-11-16"
+ }
+]
