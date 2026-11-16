@@ -977,6 +977,9 @@ body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) +
 .ws-pwrow > span{display:flex;flex-direction:column;gap:2px;min-width:0}
 .ws-pwrow .ws-copy{flex:none;padding:9px 18px}
 .ws-qrs{border-top:0;padding-top:0}
+/* A network's name and the password are shown as they are: never hyphenated (a hyphen that is not in a password is a
+   wrong password), cut anywhere instead. */
+.ws-f b{-webkit-hyphens:none;hyphens:none;overflow-wrap:anywhere}
 /* Inner pages: the round back and language buttons float over the top of the page (like Home), so the title
    starts right under them instead of below a second empty row (18 Oct 2026). */
 body:not(.is-home) .hero{position:absolute!important;top:0;left:0;right:0;margin:0;pointer-events:none}
