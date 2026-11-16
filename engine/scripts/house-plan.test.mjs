@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { keyAmenities, shortSummary, longWords, latestQuotes, barK, wifiPayload, netLabel } from '../src/modules/house/plan.js';
+import { keyAmenities, shortSummary, longWords, latestQuotes, barK, wifiPayload, wifiShown, netLabel } from '../src/modules/house/plan.js';
 
 const tx = v => (v && typeof v === 'object' ? v.en : v || '');
 const item = en => ({ en, es: en + ' (es)' });
@@ -56,6 +56,12 @@ test('wifiPayload: WPA, with \\ ; , : and " escaped', () => {
   assert.equal(wifiPayload('Casa Test', 'pass word'), 'WIFI:T:WPA;S:Casa Test;P:pass word;;');
   assert.equal(wifiPayload('a;b,c:d', 'x"y\\z'), 'WIFI:T:WPA;S:a\\;b\\,c\\:d;P:x\\"y\\\\z;;');
   assert.equal(wifiPayload(undefined, ''), 'WIFI:T:WPA;S:;P:;;');
+});
+
+test('wifiShown: only with a password and a named network, and only the named networks', () => {
+  assert.equal(wifiShown(undefined), null); assert.equal(wifiShown({ password: '', networks: [] }), null);
+  assert.equal(wifiShown({ password: 'p', networks: [{ ssid: ' ' }] }), null); assert.equal(wifiShown({ password: ' ', networks: [{ ssid: 'Casa Test' }] }), null);
+  assert.deepEqual(wifiShown({ password: 'p', networks: [{ ssid: 'Casa Test' }, { ssid: '' }, null] }), { password: 'p', networks: [{ ssid: 'Casa Test' }] });
 });
 
 test('netLabel: none for one network labelled only Wi-Fi', () => {

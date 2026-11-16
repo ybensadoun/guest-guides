@@ -276,14 +276,10 @@ name = (A.get('guideName') or A.get('placeName') or args.slug).strip()
 place = (A.get('placeName') or name).strip()
 town = (A.get('town') or '').strip()
 
-# Wi-Fi with a QR code per network.
+# Wi-Fi: the name and the password; the guide draws the QR code itself (engine/src/modules/house/wifi.js).
 wifi = None
 if A.get('wifiName') and on('wifi'):
-    import segno
-    ssid, pw = A['wifiName'].strip(), (A.get('wifiPassword') or '').strip()
-    q = segno.make(f'WIFI:T:WPA;S:{ssid};P:{pw};;', error='m')
-    svg = q.svg_inline(scale=1, omitsize=True, border=2, dark='#000000')
-    wifi = {'password': pw, 'networks': [{'ssid': ssid, 'label': L('Wi-Fi'), 'qr': svg}]}
+    wifi = {'password': (A.get('wifiPassword') or '').strip(), 'networks': [{'ssid': A['wifiName'].strip(), 'label': L('Wi-Fi')}]}
 
 house = {'_doc': 'lat/lng: an approximate area point, never the address.', 'name': place, 'lat': args.lat, 'lng': args.lng,
          'photoPos': '50% 55%', 'checkout': (A.get('checkOut') or '')[:5]}   # no time given: none shown, never one we made up

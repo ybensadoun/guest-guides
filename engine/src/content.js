@@ -4,6 +4,7 @@ import { SITE, FILES as files, PRIVATE } from './site-data.js';
 import { readMarkets, noneFound } from './modules/markets/plan.js';
 import { readSpots, shownNow } from './modules/places/plan.js';
 import { cardOf } from './modules/transport/plan.js';
+import { wifiShown } from './modules/house/plan.js';
 const get = name => files[name];
 export { SITE };
 // Modules switched off in site.json ("modules": { "events": false }) disappear everywhere: tile, page, map pins.
@@ -34,8 +35,9 @@ const locate = d => (d && typeof d === 'object' && (Array.isArray(d.items) || Ar
 
 export const HOUSE = get('house');
 // Private values kept out of git (guest Wi-Fi): sites/<site>/private/wifi.json, written locally,
-// or at build time from the WIFI_JSON environment variable (see engine/scripts/run.js).
-const PRIV_WIFI = PRIVATE.wifi;
+// or at build time from the WIFI_JSON environment variable (see engine/scripts/run.js). Shown only when it has a
+// password and a named network (modules/house/plan.js).
+const PRIV_WIFI = wifiShown(PRIVATE.wifi);
 if (PRIV_WIFI) HOUSE.wifi = PRIV_WIFI;
 const mk = (MODULE_ON('markets') && get('markets')) || { categories: [], markets: [] };
 // The markets, read by their module's rules (modules/markets/plan.js readMarkets) and kept here because the map, its tabs

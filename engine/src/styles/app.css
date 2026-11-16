@@ -795,11 +795,11 @@ body:not(.is-home) .hero .back{position:fixed;top:calc(env(safe-area-inset-top,0
 .ws-f .ws-l:last-child{margin-bottom:0}
 .ws-qrs{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1.5px solid var(--line);padding-top:14px}
 .ws-qrs figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px}
-.ws-qrs svg{width:100%;max-width:150px;height:auto;background:#fff}
+.ws-qrs img{display:block;width:100%;max-width:150px;height:auto;background:#fff;image-rendering:pixelated}
 .ws-qrs figcaption{font-size:13px;font-weight:600;text-align:center}
 .ws-how.one{text-align:center}
 .ws-qrs.one{grid-template-columns:1fr;justify-items:center}
-.ws-qrs.one svg{max-width:200px}
+.ws-qrs.one img{max-width:200px}
 .qst small{font-size:inherit;font-weight:500;color:var(--muted)}
 
 /* Home header v6: shorter photo, and a slim fixed bar once it has scrolled away. */
@@ -977,6 +977,10 @@ body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) +
 .ws-pwrow > span{display:flex;flex-direction:column;gap:2px;min-width:0}
 .ws-pwrow .ws-copy{flex:none;padding:9px 18px}
 .ws-qrs{border-top:0;padding-top:0}
+/* A network's name and the password are shown exactly as they are typed: never hyphenated (a hyphen that is not in a
+   password is a wrong password), cut anywhere instead; the password in letters that tell l, I and 1, O and 0 apart. */
+.ws-f b{-webkit-hyphens:none;hyphens:none;overflow-wrap:anywhere}
+.ws-f .ws-pw{font-family:ui-monospace,SFMono-Regular,Menlo,"Roboto Mono",Consolas,monospace;font-size:16px;line-height:1.35;font-variant-ligatures:none}
 /* Inner pages: the round back and language buttons float over the top of the page (like Home), so the title
    starts right under them instead of below a second empty row (18 Oct 2026). */
 body:not(.is-home) .hero{position:absolute!important;top:0;left:0;right:0;margin:0;pointer-events:none}

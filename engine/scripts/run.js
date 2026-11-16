@@ -19,15 +19,10 @@ const run = (args, SITE) => {
 };
 const vite = (sub, SITE) => run(['npx', 'vite', ...(sub ? [sub] : []), '--config', resolve(ENGINE, 'vite.config.js')], SITE);
 // On a build server, private values come from environment variables (they are never in git).
-// WIFI_JSON is short: {"password":"...","networks":[{"ssid":"...","label":{"en":"..."}}]}; the QR codes are made here.
+// WIFI_JSON is short: {"password":"...","networks":[{"ssid":"...","label":{"en":"..."}}]}; the guide draws the QR codes itself.
 const writePrivate = async SITE => {
   if (!process.env.WIFI_JSON) return;
   const w = JSON.parse(process.env.WIFI_JSON);
-  const { default: QR } = await import('qrcode');
-  const esc = v => String(v).replace(/([\\;,:"])/g, '\\$1');
-  for (const n of w.networks || []) {
-    if (!n.qr) n.qr = await QR.toString(`WIFI:T:WPA;S:${esc(n.ssid)};P:${esc(w.password)};;`, { type: 'svg', margin: 2, errorCorrectionLevel: 'M' });
-  }
   const dir = resolve(ROOT, 'sites', SITE, 'private');
   mkdirSync(dir, { recursive: true });
   writeFileSync(resolve(dir, 'wifi.json'), JSON.stringify(w, null, 2));
