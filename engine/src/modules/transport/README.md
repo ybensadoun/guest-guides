@@ -61,6 +61,7 @@ made from Renfe's open timetables. The rules below are on top of those above; no
 | 37 | For guests: under the taxis, in the Taxi part, each app is a row in the taxis' look: a phone in the taxi's colour, its name, "Book and pay in the app", and opened one button "Open <name>" with the app's address. A page whose only row is an app shows it open (rule 14). The Home card and the entry tile are unchanged. | The design, 16 Nov 2026 |
 | 38 | Nothing waits: the builder shows "Ride apps that work near you" only when the research has an answer with at least one near the house, all ticked with "Suggested for you: please check", kept as `answers.apps` (ids) from the moment they are shown. The editor asks once (no waiting state); an app that works near the house and is off says "works near your house". | The design, 16 Nov 2026 |
 | 39 | No credit line: which city an app serves is a fact looked up on the companies' own pages, not a licensed file. | The design, 16 Nov 2026 |
+| 40 | "Ride there": a button on a place of the guide that opens a ride app with that place as the destination. Uber documents such links (a client id; its developer terms forbid showing Uber with competitors "in any aggregated view"); Bolt, Cabify and Freenow publish none for outsiders. Never the house as a destination: its pin is moved on purpose. | Not built: parked by Yohann, 16 Nov 2026, "for later when we make improvements"; terms read the same day |
 
 ## Its data
 
