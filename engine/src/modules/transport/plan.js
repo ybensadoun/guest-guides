@@ -4,7 +4,8 @@
 // page.js draws the rest, and engine/scripts/transport-plan.test.mjs tests them.
 
 // Stations and stops by kind, in this order: [mode, the heading's word, the row's colour, the pin's tone].
-export const MODES = [['train', 'byTrain', 'var(--tone-blue)', 'blue'], ['bus', 'byBus', 'var(--tone-green)', 'green']];
+// Metro and tram (16 Nov 2026, README "Public transport found"): between train and bus, in the bus's colour.
+export const MODES = [['train', 'byTrain', 'var(--tone-blue)', 'blue'], ['metro', 'byMetro', 'var(--tone-green)', 'green'], ['tram', 'byTram', 'var(--tone-green)', 'green'], ['bus', 'byBus', 'var(--tone-green)', 'green']];
 // A station's kind: its mode (train when it says none); a mode the guide does not know is drawn as a train.
 export const modeOf = s => MODES.find(m => m[0] === (s.mode || 'train')) || MODES[0];
 

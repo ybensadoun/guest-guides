@@ -1001,7 +1001,9 @@ function cmTrEnsure() {
   const site = edC().site = edC().site || {}; site.modules = { ...(site.modules || {}), transport: true };
   return f.transport;
 }
-const cmMode = s => s.mode === 'bus' ? 'bus stop' : 'station';
+const cmMode = s => s.mode === 'bus' ? 'bus stop' : ['metro', 'tram'].includes(s.mode) ? 'stop' : 'station';
+const SP_MODES = ['bus', 'metro', 'tram'];   // the Public transport part's stops (16 Nov 2026); a train stays in Trains
+const spWord = m => ({ bus: 'Bus', metro: 'Metro', tram: 'Tram' })[m] || 'Train';
 function cTaxi(p, x) {
   return cCard(p, edShown(x.name) || 'New taxi', [x.phone, x.always ? 'open 24 h' : ''].filter(Boolean).join(' · '), `${txsFrom(x)}<div class="grid">${cf('Name', p + '/name', x.name, { i18n: true, half: true })}${cf('Phone', p + '/phone', x.phone || '', { type: 'tel', half: true })}
     ${cf('Line under the name', p + '/sub', x.sub, { i18n: true, ph: 'Home pickup in about 30 min' })}${cf('What guests need to know', p + '/what', x.what, { i18n: true, long: true })}</div>
@@ -1015,7 +1017,13 @@ function cStation(p, s) {
   const badges = (s.badges || []).filter(b => b.t).map(b => `<span class="cm-badge" style="background:${esc(b.c || '#1D4FA0')};color:${b.ink ? '#121212' : '#fff'}">${esc(b.t)}</span>`).join('');
   const to = (s.to || []).filter(d => edShown(d.dest)).map(d => `<li><b>${esc(edShown(d.dest))}</b>${d.time ? ' ' + esc(d.time) : ''}${edShown(d.note) ? ' · ' + esc(edShown(d.note)) : ''}</li>`).join('');
   const ours = !!s.src && s.src.from === 'renfe';   // from our file of Renfe's timetables: nothing to look up, nothing to refresh
-  const found = ours ? `<div class="cm-found"><div class="cm-row cm-foundh"><b>Lines and where they go</b></div>
+  const stopOf = !!s.src && !!s.src.by;           // a stop from our file of Spain's stops (metro, tram, bus): its lines, how often, read-only
+  const FQ = ['A few a day', 'A few a day', 'About every hour', 'About every half hour', 'Every 15 min or more often'];
+  const found = stopOf ? `<div class="cm-found"><div class="cm-row cm-foundh"><b>Lines and how often</b></div>
+      <p class="hint cm-spsrc">${esc(`From ${spsSourceName(s)}'s open timetables, ${trsDate(s.src.at)}.`)}</p>
+      <ul class="cm-splines">${(s.lines || []).map(l => `<li>${l.t ? trsBadge({ t: l.t, c: l.c || 'var(--pine)', ink: l.ink }) + ' ' : ''}<span class="cm-spn" translate="no">${esc(l.n)}</span> <small>${esc(FQ[Math.min(4, Math.max(1, +l.f || 1))])}</small></li>`).join('')}</ul>
+      <p class="hint cm-trfacts">${s.km ? `<span>${esc(s.walk ? `${s.walk} min on foot from the house.` : `${Math.round(s.km)} km from the house, about ${s.min || cmMin(Math.round(s.km))} min by car.`)}</span> ` : ''}${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">Timetable</a>` : ''}</p></div>`
+    : ours ? `<div class="cm-found"><div class="cm-row cm-foundh"><b>Lines and where they go</b></div>
       <p class="hint">${esc(`From Renfe's timetables, data of ${trsDate(s.src.at)}. Usual times by direct train.`)}${s.brands && s.brands.at ? ` <span class="cm-brandsat">${esc(`iryo and Ouigo: checked on ${trsDate(s.brands.at)}.`)}</span>` : ''}</p>
       ${badges ? `<div class="cm-badges">${badges}</div>` : ''}${to ? `<ul class="cm-to">${to}</ul>` : ''}
       <p class="hint cm-trfacts">${s.km ? `<span>${esc(`${s.km} km from the house, about ${s.min || cmMin(s.km)} min by car.`)}</span> ` : ''}${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">Timetable</a>` : ''}</p></div>`
@@ -1023,11 +1031,11 @@ function cStation(p, s) {
       <p class="hint" id="cmLines-${esc(s.id)}" role="status">${esc(L.msg || (!placed ? 'Set its pin first (below), then we look up its lines.' : auto.checked ? `Found on the web${auto.operator ? ' (' + auto.operator + ')' : ''}, checked ${auto.checked}. Refresh any time.` : badges ? 'Refresh to look them up again.' : 'We look up the lines through it and where they go. Nothing to type.'))}</p>
       ${badges ? `<div class="cm-badges">${badges}</div>` : ''}${to ? `<ul class="cm-to">${to}</ul>` : ''}</div>`;
   const rowBadges = (s.badges || []).filter(b => String(b.t || '').trim()).map(trsBadge).join('');   // the lines in their colours in the closed row (the coordinator's review, 16 Nov 2026)
-  return cCard(p, edShown(s.name) || 'New ' + cmMode(s), [s.mode === 'bus' ? 'Bus' : 'Train', s.min ? s.min + ' min by car' : '', placed ? '' : 'no pin yet'].filter(Boolean).join(' · '), `${found}
+  return cCard(p, edShown(s.name) || 'New ' + cmMode(s), [spWord(s.mode), s.walk ? s.walk + ' min on foot' : s.min ? s.min + ' min by car' : '', placed ? '' : 'no pin yet'].filter(Boolean).join(' · '), `${found}
     <div class="grid">${cf('In a few words', p + '/tag', s.tag, { i18n: true, half: true, ph: 'Reliable, slow' })}${cf('Minutes by car from the house', p + '/min', s.min, { type: 'number', half: true })}
     ${cf('What guests need to know', p + '/what', s.what, { i18n: true, long: true, ph: 'What only you know: is it reliable, is there internet on the way, where to park, which ticket to buy' })}</div>
     <details class="cm-more" data-open="${esc(more)}"${CM.open.has(more) ? ' open' : ''}><summary>Change the name, the pin, the lines or the times by hand</summary><div class="grid">
-    <div class="f"><label for="${cmId(p + '/mode')}">Kind</label><select id="${cmId(p + '/mode')}" data-p="${p}/mode" data-t="str"><option value="train"${s.mode !== 'bus' ? ' selected' : ''}>Train station</option><option value="bus"${s.mode === 'bus' ? ' selected' : ''}>Bus stop</option></select></div>
+    <div class="f"><label for="${cmId(p + '/mode')}">Kind</label><select id="${cmId(p + '/mode')}" data-p="${p}/mode" data-t="str"><option value="train"${!SP_MODES.includes(s.mode) ? ' selected' : ''}>Train station</option><option value="metro"${s.mode === 'metro' ? ' selected' : ''}>Metro</option><option value="tram"${s.mode === 'tram' ? ' selected' : ''}>Tram</option><option value="bus"${s.mode === 'bus' ? ' selected' : ''}>Bus stop</option></select></div>
     ${cf('Name', p + '/name', s.name, { i18n: true, half: true })}${cf('Timetable link', p + '/link', s.link || '', { type: 'url', half: true })}${cf('Google Maps link', p + '/gmaps', s.gmaps || '', { type: 'url', half: true })}
     <div class="f full"><label for="${cmId(p + '/gm')}">Move the pin: paste a Google Maps link</label><p class="hint">${placed ? `Now at ${(+s.lat).toFixed(4)}, ${(+s.lng).toFixed(4)}${s.km ? `, ${s.km} km from the house` : ''}.` : 'It shows in the guide once its pin is set.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div></div>
     <div class="f full"><span class="lab">Lines</span><p class="hint">Short names in the line's colour, like R4.</p>${(s.badges || []).map((b, j) => `<div class="cm-dayrow"><input type="text" data-p="${p}/badges/${j}/t" data-t="str" value="${esc(b.t || '')}" aria-label="Line name" placeholder="R4"><input type="color" class="cm-lc" data-p="${p}/badges/${j}/c" data-t="str" value="${esc(/^#[0-9a-f]{6}$/i.test(b.c || '') ? b.c : '#1D4FA0')}" aria-label="Line colour"><button class="cm-x" type="button" data-cdel="${p}/badges/${j}" data-now="1" aria-label="Remove this line">×</button></div>`).join('')}
@@ -1112,10 +1120,11 @@ function cmStopBox(mode) {
 }
 function cmTransport(c) {
   const T = (c.files || {}).transport, P = 'files/transport', S = (T && T.stations) || [];
-  const rows = mode => S.map((x, i) => [x, i]).filter(([x]) => (x.mode === 'bus') === (mode === 'bus')).map(([x, i]) => cStation(`${P}/stations/${i}`, x)).join('');
+  const rows = mode => S.map((x, i) => [x, i]).filter(([x]) => SP_MODES.includes(x.mode) === (mode === 'bus')).map(([x, i]) => cStation(`${P}/stations/${i}`, x)).join('');
   trsLoad();   // our file of Spain's stations, once, in the background: there before the host types
   txsAsk();    // the taxis of our open directory near the house, once, in the background
   axsAsk();    // the ride apps that work near the house, once, in the background
+  spsLoad();   // our file of Spain's stops, the cells around the house, once, in the background
   const trains = rows('train'), buses = rows('bus');
   const top = T ? `${cSwitch('data-trtile', 'Show as a tile on the home page', !!T.tile, 'Getting around always has its own page. As a card it also sits on your home page, one tap away: move it in Home page.')}
     ${T.tile ? `<div class="grid">${cf('Tile title', P + '/tile/name', T.tile.name, { i18n: true, half: true, ph: 'Taxi & train' })}${cf('Line under it', P + '/tile/sub', T.tile.sub, { i18n: true, half: true, ph: 'Taxi in 30 min, 3 stations' })}</div>` : ''}
@@ -1134,9 +1143,15 @@ function cmTransport(c) {
       <p class="hint" id="c_trmsg" role="status">${TRS.failed ? esc('The list of stations could not be loaded. Use “Not in the list?” below.') : ''}</p>
       <button class="pl-link cm-trold" type="button" data-trold aria-expanded="${!!CM.trOld}">Not in the list?</button></div>
     ${CM.trOld ? cmStopBox('train') : ''}
-    <h3 class="cm-h">Bus stops</h3><p class="hint cm-hl">The bus stops guests can use near the house.</p>
-    <div class="cm-list">${buses || '<p class="hint">No bus stop yet.</p>'}</div>
-    ${cmStopBox('bus')}`;
+    <h3 class="cm-h">Public transport</h3><p class="hint cm-hl">Metro, tram and bus stops guests can use near the house.</p>
+    <div class="cm-list">${buses || '<p class="hint">No stop yet.</p>'}</div>
+    <div id="c_spnear">${spsNearHTML()}</div>
+    <div class="cm-trfind"><label for="c_spq">Type a stop or station</label>
+      <input id="c_spq" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="c_spsug" autocomplete="off" enterkeyhint="search" placeholder="Its name">
+      <div class="pl-sug" id="c_spsug" role="listbox" aria-label="Stops and stations" hidden></div>
+      <p class="hint" id="c_spmsg" role="status">${SPS.failed ? esc('The list of stations could not be loaded. Use “Not in the list?” below.') : ''}</p>
+      <button class="pl-link cm-trold" type="button" data-spold aria-expanded="${!!CM.spOld}">Not in the list?</button></div>
+    ${CM.spOld ? cmStopBox('bus') : ''}`;
 }
 /* --- Taxis near the house (16 Nov 2026, engine/src/modules/transport/README.md, "The taxis found"): when the step opens
    and the house has a position, the worker is asked once for the taxis of our open directory around it (job
@@ -1202,6 +1217,56 @@ function axsToggle(id) {
   else { const found = AXS.near.find(x => x.id === id); T.apps = AX_APPS.filter(x => x.id === id || cur.some(c => c.id === x.id)).map(x => cur.find(c => c.id === x.id) || axEntry(found || x, new Date().toISOString().slice(0, 10))); }
   if (!T.apps.length) delete T.apps;
 }
+/* --- Public transport (16 Nov 2026, engine/src/modules/transport/README.md, "Public transport found"): metro, tram and bus
+   stops from our file of Spain's stops (at STOPS_BASE, build.py: index.json, then the 9 cells around the house it lists,
+   loaded once when the step opens, no waiting state). "Near your house" (stops.js spNear: by distance, whatever the kind),
+   "Type a stop or station" (spFind: metro, then tram, then bus; one the guide has is listed and said so); a pick is added
+   at once, opened, as the generator writes one (spEntry). Nothing loaded: no "Near your house", and the field says so. */
+const SPS = { asked: false, index: null, stops: [], failed: false, near: [], list: [], on: -1 };
+async function spsLoad() {
+  const h = edF().house || {}; if (SPS.asked || !tpPlaced(h)) return; SPS.asked = true;
+  try {
+    const ix = await fetch(STOPS_BASE + 'index.json').then(r => r.ok ? r.json() : null);   // STOPS_BASE: build.py, one setting
+    if (!ix || !ix.cells) throw new Error('no index');
+    SPS.index = ix;
+    const cells = spCells(h).filter(c => ix.cells[c]);
+    const got = await Promise.all(cells.map(c => fetch(STOPS_BASE + c + '.json').then(r => r.ok ? r.json() : { stops: [] }).catch(() => ({ stops: [] }))));
+    SPS.stops = got.flatMap(g => g.stops || []);
+  } catch (e) { SPS.failed = true; const m = document.getElementById('c_spmsg'); if (m) m.textContent = 'The list of stations could not be loaded. Use “Not in the list?” below.'; return; }
+  const b = document.getElementById('c_spnear'); if (b) b.innerHTML = spsNearHTML();
+  const el = document.getElementById('c_spq'); if (el && el.value.trim()) spsType(el);
+}
+const spsHave = () => trsStations().map(x => x.id);
+const spsSourceName = s => (((SPS.index || {}).sources || []).find(x => x.id === s.src.from) || {}).name || s.src.by;
+const spsIcon = k => kTile(ENG_ICON[k === 'rail' ? 'train' : k] || ENG_ICON.bus, 'var(--pine)', true);
+const spsRow = (x, attrs, extra = '') => `<button type="button" class="pl-tw cm-trs" ${attrs}>${spsIcon(x.st.k)}<span><b translate="no">${esc(x.st.n)}</b><small translate="no">${(x.st.lines || []).filter(l => l.t).slice(0, 8).map(l => trsBadge({ t: l.t, c: l.c || 'var(--pine)', ink: l.ink })).join('')}${x.walk != null ? `<span class="cm-trkm">${x.walk <= 25 ? tr(`${x.walk} min on foot`) : x.km + '\u00a0km'}</span>` : ''}${extra}</small></span></button>`;
+function spsNearHTML() {
+  const h = edF().house || {}, L = SPS.near = SPS.stops.length ? spNear(h, SPS.stops, { have: spsHave() }) : [];
+  if (!L.length) return '';
+  return `<section class="cm-trnear cm-spnear" aria-label="Near your house"><b class="cm-trnh">Near your house</b><p class="hint">From open timetables. Tap one to add it.</p>
+    <div class="pl-sug cm-nearl">${L.map((x, i) => spsRow(x, `data-spnear="${i}"`)).join('')}</div></section>`;
+}
+function spsType(el) {
+  SPS.list = SPS.stops.length ? spFind(el.value, edF().house || {}, SPS.stops, { have: spsHave() }) : []; SPS.on = -1;
+  const box = document.getElementById('c_spsug'); if (!box) return;
+  box.innerHTML = SPS.list.map((x, i) => spsRow(x, `role="option" id="c_spsug_${i}" data-spi="${i}" aria-selected="${i === SPS.on}"${x.has ? ' aria-disabled="true"' : ''}`, x.has ? `<span class="cm-sphas">${esc(tr('Already in your guide.'))}</span>` : '')).join('');
+  box.hidden = !SPS.list.length; el.setAttribute('aria-expanded', String(!!SPS.list.length));
+  const m = document.getElementById('c_spmsg'); if (m && !SPS.failed) m.textContent = el.value.trim().length >= 2 && SPS.stops.length && !SPS.list.length ? 'No stop by that name near the house.' : '';
+}
+function spsPick(x) {
+  if (!x || x.has || !SPS.index) return;
+  const T = cmTrEnsure(), e = spEntry(x.st, edF().house || {}, (SPS.index.sources || [])[x.st.s], edLangs());
+  (T.stations = T.stations || []).push(e); CM.open.add('files/transport/stations/' + (T.stations.length - 1));
+  SPS.list = []; cmQueue(); render();
+}
+document.addEventListener('input', e => { if (CM.on && e.target && e.target.id === 'c_spq') spsType(e.target); });
+document.addEventListener('mousedown', e => { if (e.target.closest && e.target.closest('#c_spsug')) e.preventDefault(); });
+document.addEventListener('keydown', e => {
+  if (!CM.on || !e.target || e.target.id !== 'c_spq') return; const n = SPS.list.length;
+  if (e.key === 'Escape' && n) { e.preventDefault(); SPS.list = []; spsType({ value: '', setAttribute() {} }); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (n) spsPick(SPS.list[SPS.on >= 0 ? SPS.on : SPS.list.findIndex(x => !x.has)]); }
+  else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && n) { e.preventDefault(); SPS.on = (SPS.on + (e.key === 'ArrowDown' ? 1 : n)) % n; document.querySelectorAll('#c_spsug [data-spi]').forEach((b, i) => b.setAttribute('aria-selected', String(i === SPS.on))); }
+});
 // Where a taxi from our directory came from, in the place's quiet source line ("From an open directory, 16 Nov 2026.").
 function txsFrom(x) {
   if (!x || !x.src || x.src.from !== 'overture') return '';
@@ -1233,7 +1298,7 @@ function trsLoad() {
 const trsStations = () => (edF().transport || {}).stations || [];
 // A date of our data in the maker's language ("16 Nov 2026"), never split over two lines.
 const trsDate = d => /^\d{4}-\d\d-\d\d$/.test(d || '') ? new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(d + 'T00:00:00Z')).replace(/ /g, '\u00a0') : '?';
-const trsHasTrain = () => trsStations().some(x => x.mode !== 'bus');
+const trsHasTrain = () => trsStations().some(x => !SP_MODES.includes(x.mode));
 const trsNear = () => TRS.data ? tpNear(edF().house || {}, TRS.data, trsStations()) : [];
 const trsBadge = b => `<i class="cm-badge" style="background:${esc(b.c || '#1D4FA0')};color:${b.ink ? '#121212' : '#fff'}">${esc(b.t)}</i>`;
 const trsRole = x => { const r = x.role && tpTagOf(x.st, x.role); return r ? `<span class="cm-trrole" translate="no">${esc(TP_TAG[r][UIL] || TP_TAG[r].en)}</span>` : ''; };
@@ -2263,6 +2328,9 @@ document.addEventListener('click', e => {
   if (d.trlines) return cmLines(d.trlines);
   if (d.trtile !== undefined) { cmTrTile(); return done(); }
   if (d.axapp !== undefined) { axsToggle(d.axapp); return done(); }
+  if (d.spnear !== undefined) return spsPick(SPS.near[+d.spnear]);
+  if (d.spi !== undefined) return spsPick(SPS.list[+d.spi]);
+  if (d.spold !== undefined) { CM.spOld = !CM.spOld; render(); if (CM.spOld) { const q = document.getElementById('c_stopq_bus'); if (q) q.focus(); } return; }
   if (d.cbool) { const q = edPath(d.cbool), o = edGet(edC(), q.slice(0, -1)); if (o) { o[q[q.length - 1]] = !o[q[q.length - 1]]; done(); } return; }
   if (d.addalt) { arr(d.addalt).push({ name: L6(''), phone: '' }); return done(); }
   if (d.addbadge) { arr(d.addbadge).push({ t: '', c: '#1D4FA0' }); return done(); }
@@ -2411,6 +2479,12 @@ function cmInit() {
 .cm-axapps{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .cm-axapps .hint{margin:0}
 .cm-axh{font-size:16px}
+.cm-splines{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.cm-splines li{line-height:1.35}
+.cm-splines small{color:var(--muted);white-space:nowrap}
+.cm-splines .cm-badge{display:inline-block;font-style:normal;font-size:12px;padding:2px 6px;border-radius:5px}
+.cm-sphas{white-space:nowrap;color:var(--muted)}
+.cm-spsrc{margin:0}
 .cm-trs .cm-trrole::before{content:'· ';font-weight:400;color:var(--muted)}
 .cm-trnear{display:flex;flex-direction:column;gap:6px}
 .cm-trnh{font-size:16px}

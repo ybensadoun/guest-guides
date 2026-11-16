@@ -174,6 +174,17 @@ assert _ximp in _xsrc and len(_re.findall(r'(?m)^import ',_xsrc))==1,'engine/src
 for _need in ('export function txPick(','export function txEntry(','export const txKey','export function txName('):
     assert _need in _xsrc,'engine/src/modules/transport/taxis.js: '+_need+' not found'
 ENG_DATA+=_re.sub(r'(?m)^export ','',_xsrc.replace(_ximp,''))+'\n'
+# Public transport stops (engine/src/modules/transport/stops.js): the editor's "Near your house" and its search. Its one
+# import is pick.js, pasted above.
+_ssrc=open(__import__('os').path.join(_MD,'transport','stops.js'),encoding='utf-8').read()
+_simp="import { tpLine, tpRoadKm, tpPlaced, tpFold, cmMin } from './pick.js';\n"
+assert _simp in _ssrc and len(_re.findall(r'(?m)^import ',_ssrc))==1,'engine/src/modules/transport/stops.js: its imports are not as expected'
+ENG_DATA+=_re.sub(r'(?m)^export ','',_ssrc.replace(_simp,''))+'\n'
+# Where the maker reads our file of Spain's stops from (index.json and its cells): one setting, a base address. Made by the
+# server's monthly job and served from our storage, never committed (Yohann, 16 Nov 2026); for now a relative path, which
+# the checks serve from fakes.
+STOPS_BASE='stops-es/'
+ENG_DATA+='const STOPS_BASE = '+__import__('json').dumps(STOPS_BASE)+';\n'
 # The ride apps (engine/src/modules/transport/apps.js and apps.json): the builder's ticks and the editor's switches.
 _asrc=open(__import__('os').path.join(_MD,'transport','apps.js'),encoding='utf-8').read()
 _aimp="import { tpLine, tpPlaced } from './pick.js';\n"

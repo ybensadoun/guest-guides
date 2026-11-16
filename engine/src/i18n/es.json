@@ -353,5 +353,15 @@
   "crTrainsH": "Trenes",
   "crRenfe": "Las estaciones de tren, sus líneas y los tiempos de viaje vienen de los horarios abiertos de Renfe: «{renfe}», datos del {date}, licencia {ccby}. Son tiempos habituales en tren directo: compruébalos antes de viajar.",
   "rideAppSub": "Reserva y paga en la app",
-  "openApp": "Abrir {name}"
+  "openApp": "Abrir {name}",
+  "byMetro": "Metro",
+  "byTram": "Tranvía",
+  "minOnFoot": "{n} min a pie",
+  "freq1": "Pocos al día",
+  "freq2": "Cada hora aprox.",
+  "freq3": "Cada media hora aprox.",
+  "freq4": "Cada 15 min o menos",
+  "moreLines": "y {n} líneas más",
+  "crTransitH": "Transporte público",
+  "crTransit": "Paradas y líneas: {by}. Datos del {date}."
 }

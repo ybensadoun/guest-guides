@@ -31,15 +31,16 @@ test('no taxi, a house in Spain: Getting around with its stations, as the module
   const g = generate({}, VENDRELL);
   const want = stationsFor({ lat: +VENDRELL[0], lng: +VENDRELL[1] }, JSON.parse(readFileSync(join(ROOT, 'onboarding-site/stations-es.json'), 'utf8')), ['en', 'de', 'fr']);
   assert.ok(want.length >= 1);
-  assert.deepEqual(g.transport.stations, want);
+  assert.deepEqual(g.transport.stations.filter(s => s.src.from === 'renfe'), want);   // then the bus stops of our file (stops-of.mjs), after them
+  assert.ok(g.transport.stations.slice(want.length).every(s => s.src.from !== 'renfe' && s.src.by), 'the stops come after the train stations');
   assert.deepEqual(g.transport.taxis, []);
   assert.equal(g.transport.tile, null);
   assert.equal(g.transport.stations[0].id, 'st72201');
-  assert.ok(g.transport.stations.every(s => s.src.from === 'renfe' && !s.gid && !s.pos));
+  assert.ok(g.transport.stations.every(s => s.src && !s.gid && !s.pos));
   const sec = g.sections.find(s => s.id === 'transport');
   assert.ok(sec && sec.status === 'live' && sec.kind === 'transport', JSON.stringify(sec));
   assert.equal(g.site.modules.transport, true);
-  assert.equal(g.out.stations, want.length);
+  assert.equal(g.out.stations, g.transport.stations.length);
 });
 
 test('a taxi: the taxi first and its card, as before, with the stations after it', () => {

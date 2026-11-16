@@ -1,0 +1,17 @@
+{
+ "_doc": "Overrides for onboarding-site/src/stops.py, by the name of a folder of the cache (GTFS_CACHE, default ~/.cache/guest-guides/gtfs-es/): every folder holding a zip is read; this gives a folder its own words {id (short and stable: a stop's id starts with it), name (the publisher as guests read it), credit (the line its terms ask), licence, url (where the file is published), link (where a guest finds timetables)} or leaves it out ({skip: true}). A folder with a meta.json (the national access point's files) and no entry here is credited from it, \"Powered by MITRAMS\".",
+ "folders": {
+  "cat-interurba": {
+   "id": "cat-interurba",
+   "name": "Generalitat de Catalunya",
+   "credit": "Generalitat de Catalunya. Departament de Territori, Habitatge i Transició Ecològica",
+   "licence": "Llicència oberta d'ús d'informació - Catalunya",
+   "url": "https://analisi.transparenciacatalunya.cat/d/bca2-b4i3",
+   "link": "https://mou-te.gencat.cat/"
+  },
+  "nap-1515": {
+   "skip": true,
+   "_why": "Ouigo's own high speed trains: they belong to the Trains part (a later piece)"
+  }
+ }
+}

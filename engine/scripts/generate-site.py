@@ -455,6 +455,17 @@ def stations_of(lat, lng):   # the house's stations as transport.json holds them
     if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no train stations', file=sys.stderr); return []
     return json.loads(r.stdout).get('stations') or []
 stations = stations_of(args.lat, args.lng)
+# The public transport stops near the house (metro, tram, bus: engine/src/modules/transport/stops.js through
+# engine/scripts/stops-of.mjs, from STOPS_DIR or STOPS_BASE), after the train stations; none where no feed of ours reaches.
+def stops_of(lat, lng):
+    import shutil, subprocess
+    node, script = shutil.which('node'), ROOT / 'engine/scripts/stops-of.mjs'
+    if not node: return []
+    try: r = subprocess.run([node, str(script)], input=json.dumps({'lat': lat, 'lng': lng, 'langs': LANGS}), capture_output=True, text=True, timeout=60)
+    except Exception as e: print(f'generate-site: {script.relative_to(ROOT)} could not be run: {e}: no stops', file=sys.stderr); return []
+    if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no stops', file=sys.stderr); return []
+    return json.loads(r.stdout).get('stops') or []
+stations += stops_of(args.lat, args.lng)
 # The taxis of our open directory (engine/src/modules/transport/taxis.js, through engine/scripts/taxis-of.mjs; Python keeps
 # no copy of the rule): answers.taxis is what the host approved in the builder (a list, even empty, is their choice);
 # absent (the host never saw it), the nearest of answers._taxisFound (what the worker found), alone. After the typed one,

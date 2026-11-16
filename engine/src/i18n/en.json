@@ -353,5 +353,15 @@
   "crTrainsH": "Trains",
   "crRenfe": "The train stations, their lines and the journey times come from Renfe's open timetables: “{renfe}”, data of {date}, licence {ccby}. They are usual times by direct train: check them before you travel.",
   "rideAppSub": "Book and pay in the app",
-  "openApp": "Open {name}"
+  "openApp": "Open {name}",
+  "byMetro": "Metro",
+  "byTram": "Tram",
+  "minOnFoot": "{n} min on foot",
+  "freq1": "A few a day",
+  "freq2": "About every hour",
+  "freq3": "About every half hour",
+  "freq4": "Every 15 min or more often",
+  "moreLines": "and {n} more lines",
+  "crTransitH": "Public transport",
+  "crTransit": "Stops and lines: {by}. Data of {date}."
 }

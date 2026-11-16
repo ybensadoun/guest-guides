@@ -36,14 +36,21 @@ export function renderTransport(V, g, icons) {
     `<div class="actions"><a class="btn primary" href="${esc(a.link)}" target="_blank" rel="noopener">${esc(t('openApp', { name: a.name }))}</a></div>`)).join('');
   // Line badges in the line colours (Rodalies lines; long-distance trains in one colour), then journey times. A line
   // with no name is left out (the editor's "Add a line" starts one empty).
-  const badges = s => `<span class="lbadges">${(s.badges || []).filter(b => String(b.t ?? '').trim()).map(b => `<i class="lbadge${b.ink ? ' ink' : ''}" style="--lc:${b.c}">${esc(b.t)}</i>`).join('')}</span>`;
+  const badge = (b, cc) => `<i class="lbadge${b.ink ? ' ink' : ''}" style="--lc:${b.c || cc}">${esc(b.t)}</i>`;   // a line with no colour of its own (a stop's file gives none): the kind's
+  const badges = s => `<span class="lbadges">${(s.badges || []).filter(b => String(b.t ?? '').trim()).map(b => badge(b, modeOf(s)[2])).join('')}</span>`;
   // Two columns, so destinations keep their width on a phone: the note ("1 change") sits under its destination.
-  const dests = s => (s.to || []).length ? `<table class="dests"><tbody>${s.to.map(d => `<tr><th>${esc(tx(d.dest))}${tx(d.note) ? `<small>${esc(tx(d.note))}</small>` : ''}</th><td>${esc(d.time)}</td></tr>`).join('')}</tbody></table>` : '';
+  // A stop of our file (metro, tram, bus; README "Public transport found"): its lines where a station has its journey
+  // times, in the same table: the badge when the line has a code, its name, how often in words; at most 6, the most
+  // frequent first (the file's order), then "and n more lines".
+  const LINES = 6, linesOf = s => { const L = (s.lines || []).filter(l => l && l.n); if (!L.length) return '';
+    const cc = modeOf(s)[2], more = L.length - LINES;
+    return `<table class="dests lines"><tbody>${L.slice(0, LINES).map(l => `<tr><th>${l.t ? badge(l, cc) + ' ' : ''}${esc(l.n)}</th><td>${esc(t('freq' + Math.min(4, Math.max(1, +l.f || 1))))}</td></tr>`).join('')}${more > 0 ? `<tr><th colspan="2"><small>${esc(t('moreLines', { n: more }))}</small></th></tr>` : ''}</tbody></table>`; };
+  const dests = s => (s.lines || []).length && !(s.to || []).length ? linesOf(s) : (s.to || []).length ? `<table class="dests"><tbody>${s.to.map(d => `<tr><th>${esc(tx(d.dest))}${tx(d.note) ? `<small>${esc(tx(d.note))}</small>` : ''}</th><td>${esc(d.time)}</td></tr>`).join('')}</tbody></table>` : '';
   // A station never placed (0,0) is left out; one whose Google position ran out (nomap) stays in the list, off the map.
   const stops = stopsOf(g.stations);
   const pins = stops.filter(s => !s.nomap);
   const station = s => { const [mode, , cc] = modeOf(s);
-    return row(itemIcon({ icon: mode }), cc, tx(s.name), [[s.tag && tx(s.tag), s.min ? t('minByCar', { n: s.min }) : ''].filter(Boolean).join(' · ')].filter(Boolean), '',
+    return row(itemIcon({ icon: mode }), cc, tx(s.name), [[s.tag && tx(s.tag), s.walk ? t('minOnFoot', { n: s.walk }) : s.min ? t('minByCar', { n: s.min }) : ''].filter(Boolean).join(' · ')].filter(Boolean), '',
     `${dests(s)}${s.what ? `<div class="note">${esc(tx(s.what))}</div>` : ''}
      <div class="actions"><a class="btn primary" href="${esc(gDir(s))}" target="_blank" rel="noopener">${ICON.dir}${esc(t('directions'))}</a>
  ${s.gid || s.gmaps ? `<a class="btn" href="${esc(gSearch(s))}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}

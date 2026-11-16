@@ -107,6 +107,8 @@ const ITEM_ICON = {
   wine: P('<path d="M7.5 3h9l-.6 5.5a3.9 3.9 0 0 1-7.8 0z"/><path d="M8 7h8"/><path d="M12 12.5V20M8.5 20.5h7"/>'),
   bus: P('<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3M16 18v3"/><circle cx="8" cy="14.5" r=".9" fill="currentColor"/><circle cx="16" cy="14.5" r=".9" fill="currentColor"/>'),
   train: P('<rect x="5.5" y="3" width="13" height="13" rx="3"/><path d="M5.5 10h13"/><circle cx="9" cy="13" r=".9" fill="currentColor"/><circle cx="15" cy="13" r=".9" fill="currentColor"/><path d="M8.5 16l-2 4.5M15.5 16l2 4.5M7.5 19h9"/>'),
+  metro: P('<rect x="5" y="2.5" width="14" height="15" rx="2"/><path d="M8 5.5h8"/><rect x="7.5" y="8" width="9" height="4.5" rx="1"/><circle cx="8.5" cy="15" r=".8" fill="currentColor"/><circle cx="15.5" cy="15" r=".8" fill="currentColor"/><path d="M8 17.5l-2.5 4M16 17.5l2.5 4"/>'),   // a metro car from the front: the destination band, a wide windscreen (Getting around, 16 Nov 2026)
+  tram: P('<path d="M9 2.5l3 2.5 3-2.5M12 5v2"/><rect x="5.5" y="7" width="13" height="11" rx="2.5"/><path d="M5.5 12.5h13"/><circle cx="9" cy="15.3" r=".8" fill="currentColor"/><circle cx="15" cy="15.3" r=".8" fill="currentColor"/><path d="M8.5 18l-2 3.5M15.5 18l2 3.5"/>'),   // a tram with its pantograph (Getting around, 16 Nov 2026)
   music: P('<path d="M9 18V5.5l11-2.5v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
   themepark: P('<circle cx="12" cy="10" r="7"/><circle cx="12" cy="10" r="1.3"/><path d="M12 3v5.7M12 11.3V17M5 10h5.7M13.3 10H19"/><path d="M8 21l4-4 4 4M6.5 21h11"/>'),
   escape: P('<rect x="4" y="3" width="13" height="18" rx="1"/><path d="M17 5h3v14h-3"/><circle cx="14" cy="12.5" r="1" fill="currentColor"/><path d="M8 3v18"/>'),

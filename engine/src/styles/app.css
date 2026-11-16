@@ -546,6 +546,11 @@ gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;borde
 .dests td{text-align:right;vertical-align:top;padding-right:0}
 .dests th small{display:block;font-size:14px;font-weight:400;color:var(--muted)}
 .dests tr+tr{border-top:1.5px solid var(--line)}
+/* A stop's lines (Getting around, 16 Nov 2026): the name wraps, how often in words, never wider than its column */
+.dests.lines th{font-weight:500;overflow-wrap:break-word;-webkit-hyphens:manual;hyphens:manual}
+.dests.lines th .lbadge{margin-right:4px;vertical-align:1px}
+.dests.lines td{white-space:normal;font-weight:600;font-size:14px;width:38%;color:var(--muted)}
+.dests.lines th small{font-size:14px}
 /* Slim header that hides on scroll down; no bottom bar (Home is the menu) */
 body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .bnav{display:none!important}

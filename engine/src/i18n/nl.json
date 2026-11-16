@@ -353,5 +353,15 @@
   "crTrainsH": "Treinen",
   "crRenfe": "De treinstations, hun lijnen en de reistijden komen uit de open dienstregelingen van Renfe: ‘{renfe}’, gegevens van {date}, licentie {ccby}. Het zijn gebruikelijke tijden met een rechtstreekse trein: controleer ze voordat je vertrekt.",
   "rideAppSub": "Boek en betaal in de app",
-  "openApp": "Open {name}"
+  "openApp": "Open {name}",
+  "byMetro": "Metro",
+  "byTram": "Tram",
+  "minOnFoot": "{n} min lopen",
+  "freq1": "Een paar per dag",
+  "freq2": "Ongeveer elk uur",
+  "freq3": "Ongeveer elk half uur",
+  "freq4": "Elke 15 min of vaker",
+  "moreLines": "en nog {n} lijnen",
+  "crTransitH": "Openbaar vervoer",
+  "crTransit": "Haltes en lijnen: {by}. Gegevens van {date}."
 }

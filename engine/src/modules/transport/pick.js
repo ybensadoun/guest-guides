@@ -33,7 +33,8 @@ export function tpLine(a, b) {
   return 2 * R * Math.asin(Math.sqrt(x));
 }
 // km by road as the maker says it elsewhere (/api/places, towns.js): 1.3 times the line, at least 1 km.
-export const tpRoadKm = line => Math.max(1, Math.round(line * 1.3));
+// dp: decimals (0 by default: whole km, at least 1; a stop on foot keeps 2: 0.23 km, at least 0.01). One formula, any precision.
+export const tpRoadKm = (line, dp = 0) => { const f = 10 ** dp; return Math.max(1 / f, Math.round(line * 1.3 * f) / f); };
 // Minutes by car from the house, from the km by road: the maker's first guess, which the host can change (moved here from
 // onboarding-site/src/editor.js on 16 Nov 2026, so that the generator and the maker keep one formula).
 export const cmMin = km => km ? Math.max(2, Math.round(km * 1.1 + 1)) : 0;
@@ -161,7 +162,7 @@ export function tpBrandsStale(row, now = new Date()) {
 // guide within TP.same km of it (a station written by hand, as Ca La Kimberly's, is the same station under another id).
 export function tpHave(data, stations) {
   const ids = new Set((stations || []).map(s => s && s.id).filter(Boolean));
-  const placed = (stations || []).filter(s => s && s.mode !== 'bus' && tpPlaced(s));
+  const placed = (stations || []).filter(s => s && !['bus', 'metro', 'tram'].includes(s.mode) && tpPlaced(s));   // train stations only: a metro stop beside one is another thing
   if (data && Array.isArray(data.stations) && placed.length) for (const st of data.stations) if (placed.some(s => tpLine(s, st) <= TP.same)) ids.add('st' + st.id);
   return [...ids];
 }

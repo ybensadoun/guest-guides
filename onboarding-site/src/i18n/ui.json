@@ -8673,5 +8673,100 @@
 "ca": "funciona a prop de casa teva",
 "es": "funciona cerca de tu casa",
 "fr": "fonctionne près de chez vous"
+},
+"Public transport": {
+"ca": "Transport públic",
+"es": "Transporte público",
+"fr": "Transports publics"
+},
+"Metro, tram and bus stops guests can use near the house.": {
+"ca": "Parades de metro, tramvia i autobús que poden fer servir els hostes a prop de la casa.",
+"es": "Paradas de metro, tranvía y autobús que pueden usar los huéspedes cerca de la casa.",
+"fr": "Les arrêts de métro, de tramway et de bus que vos voyageurs peuvent prendre près de la maison."
+},
+"No stop yet.": {
+"ca": "Encara no hi ha cap parada.",
+"es": "Aún no hay ninguna parada.",
+"fr": "Pas encore d’arrêt."
+},
+"Type a stop or station": {
+"ca": "Escriu una parada o estació",
+"es": "Escribe una parada o estación",
+"fr": "Tapez un arrêt ou une station"
+},
+"Stops and stations": {
+"ca": "Parades i estacions",
+"es": "Paradas y estaciones",
+"fr": "Arrêts et stations"
+},
+"From open timetables. Tap one to add it.": {
+"ca": "Dels horaris oberts. Toca’n una per afegir-la.",
+"es": "De los horarios abiertos. Toca una para añadirla.",
+"fr": "D’après les horaires ouverts. Touchez-en un pour l’ajouter."
+},
+"No stop by that name near the house.": {
+"ca": "Cap parada amb aquest nom a prop de la casa.",
+"es": "Ninguna parada con ese nombre cerca de la casa.",
+"fr": "Aucun arrêt de ce nom près de la maison."
+},
+"Lines and how often": {
+"ca": "Línies i freqüència",
+"es": "Líneas y frecuencia",
+"fr": "Lignes et fréquence"
+},
+"From {x}'s open timetables, {y}.": {
+"ca": "Dels horaris oberts de {x}, {y}.",
+"es": "De los horarios abiertos de {x}, {y}.",
+"fr": "D’après les horaires ouverts de {x}, {y}."
+},
+"{n} min on foot": {
+"ca": "{n} min a peu",
+"es": "{n} min a pie",
+"fr": "{n} min à pied"
+},
+"{n} min on foot from the house.": {
+"ca": "A {n} min a peu de la casa.",
+"es": "A {n} min a pie de la casa.",
+"fr": "À {n} min à pied de la maison."
+},
+"A few a day": {
+"ca": "Pocs al dia",
+"es": "Pocos al día",
+"fr": "Quelques-uns par jour"
+},
+"About every hour": {
+"ca": "Cada hora aprox.",
+"es": "Cada hora aprox.",
+"fr": "Environ toutes les heures"
+},
+"About every half hour": {
+"ca": "Cada mitja hora aprox.",
+"es": "Cada media hora aprox.",
+"fr": "Environ toutes les 30 min"
+},
+"Every 15 min or more often": {
+"ca": "Cada 15 min o menys",
+"es": "Cada 15 min o menos",
+"fr": "Toutes les 15 min ou moins"
+},
+"Metro": {
+"ca": "Metro",
+"es": "Metro",
+"fr": "Métro"
+},
+"Tram": {
+"ca": "Tramvia",
+"es": "Tranvía",
+"fr": "Tramway"
+},
+"New stop": {
+"ca": "Parada nova",
+"es": "Parada nueva",
+"fr": "Nouvel arrêt"
+},
+"Delete this stop": {
+"ca": "Esborra aquesta parada",
+"es": "Eliminar esta parada",
+"fr": "Supprimer cet arrêt"
 }
 }

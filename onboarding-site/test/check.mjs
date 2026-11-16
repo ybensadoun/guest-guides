@@ -220,7 +220,7 @@ function groupList() {
   return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'research-deck': gResearchDeck, 'deck-steady': gDeckSteady, 'build-ready': gBuildReady, 'web-address': gWebAddress,
     'houses': gHouses, 'builder': gBuilder, 'rooms-offers': gRoomsOffers, 'nearby': gNearby, 'wow': gWow, 'editor': gEditor, 'editor-names': gEditorNames,
     'place-card': gPlaceCard, 'place-season': gPlaceSeason, 'still-open': gStillOpen, 'place-facts': gPlaceFacts, 'market-event': gMarketEvent,
-    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea, 'home-page': gHomePage, 'trains': gTrains, 'taxis': gTaxis };
+    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea, 'home-page': gHomePage, 'trains': gTrains, 'taxis': gTaxis, 'stops': gStops };
 }
 
   // Inside a navy start card (sel): nothing touches anything (the eyebrow, title and text by their words, the panel, the moon
@@ -1367,10 +1367,10 @@ async function gTrains() {
     p.on('request', r => { const u = r.url(); if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(u)) saved.push(r.postData()); if (/\/api\/places|guide_jobs/.test(u)) asked.push(u); });
     await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 400);
     const heads = await p.$$eval('h3.cm-h', e => e.map(x => x.textContent.trim()));
-    ok(`trains, ${tag}: the step goes mode by mode, each under its heading with a line on what goes there`, cmpSame(heads.slice(-3), fr ? ['Taxi', 'Trains', 'Arrêts de bus'] : ['Taxi', 'Trains', 'Bus stops']) && (await p.$$('.cm-hl')).length === 3, JSON.stringify(heads));
+    ok(`trains, ${tag}: the step goes mode by mode, each under its heading with a line on what goes there`, cmpSame(heads.slice(-3), fr ? ['Taxi', 'Trains', 'Transports publics'] : ['Taxi', 'Trains', 'Public transport']) && (await p.$$('.cm-hl')).length === 3, JSON.stringify(heads));
     ok(`trains, ${tag}: our file of stations is loaded once, when the step opens`, ctx.stations === 1, String(ctx.stations));
-    ok(`trains, ${tag}: the old way is hidden behind "Not in the list?"; bus stops have their own field and no select`, !(await p.$('#c_stopq_train')) && !!(await p.$('#c_stopq_bus')) && !(await p.$('#c_stopmode, select#c_stopmode')) && !!(await p.$('[data-trold]')));
-    if (!fr) { await p.locator('.cm-trfind').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, `trains-empty-${w}.png`) }); }
+    ok(`trains, ${tag}: the old way is hidden behind "Not in the list?"; public transport has its own field and no select`, !(await p.$('#c_stopq_train')) && !(await p.$('#c_stopq_bus')) && !!(await p.$('#c_spq')) && !(await p.$('#c_stopmode, select#c_stopmode')) && !!(await p.$('[data-trold]')));
+    if (!fr) { await p.locator('.cm-trfind:has(#c_trq)').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, `trains-empty-${w}.png`) }); }
     // Typing: accents and capitals aside, the nearest first, with its lines and distance, and nothing asked of anyone.
     asked.length = 0; await p.click('#c_trq');
     for (const [typed, first] of [['vendr', 'El Vendrell'], ['SANT VIC', 'Sant Vicenç de Calders'], ['camp de t', 'Camp de Tarragona'], ['sant vicenc de c', 'Sant Vicenç de Calders']]) {
@@ -1645,6 +1645,60 @@ async function gTaxis() {
     for (let i = 0; i < 30 && !polled; i++) await new Promise(r => setTimeout(r, 300));
     await settle(p, 600, { net: false });
     ok('taxis, editor: the job failing shows nothing and says nothing', polled >= 1 && !(await textNow(p, '#c_txnear')).trim() && !/does not know where/.test(await p.innerText('body')) && !errors.length, `${polled} ${errors.join(' | ')}`);
+    await ctx.close(); }
+}
+
+// Public transport (16 Nov 2026): metro, tram and bus stops from our file of Spain's stops, served here from small fakes
+// around the guide's house: "Near your house" by distance, the typed list ranked metro then tram then bus, a pick added and
+// opened with its lines, one already in the guide said so, nothing loaded.
+async function gStops() {
+  const SP_DIR = join(SHOTS, 'stops'); mkdirSync(SP_DIR, { recursive: true });
+  const H = E.content.files.house, cellOf = (la, ln) => `${Math.floor(la * 4)}_${Math.floor(ln * 4)}`;
+  const at = (km, id, n, k, lines, dLng = 0) => ({ id: 'fake:' + id, n, k, lat: +(H.lat + km / 1.3 * 0.008993).toFixed(5), lng: +(H.lng + dLng).toFixed(5), s: 0, lines });
+  const STOPS = [at(0.2, 'b1', 'Carrer de Prova (bus)', 'bus', [{ t: 'e1', n: 'Prova - Tarragona', f: 2 }, { n: 'Prova - Vilanova i la Geltrú per la costa', f: 4 }, { t: 'L3', n: 'Urbà', c: '#E2001A', ink: false, f: 1 }]),
+    at(0.25, 'b2', 'Carrer de Prova (bus)', 'bus', [{ t: 'e1', n: 'Prova - Tarragona', f: 2 }], 0.0005),
+    at(0.5, 'm1', 'Prova Metro', 'metro', [{ t: 'L1', n: 'Hospital - Fondo', c: '#E2001A', ink: false, f: 4 }]),
+    at(0.8, 't1', 'Plaça de Prova', 'tram', [{ t: 'T1', n: 'Francesc Macià - Bon Viatge', c: '#00A39A', ink: false, f: 3 }]),
+    at(6, 'far', 'Prova Llunyana', 'bus', [{ n: 'Far away', f: 1 }])];
+  const cells = {}; for (const st of STOPS) (cells[cellOf(st.lat, st.lng)] = cells[cellOf(st.lat, st.lng)] || []).push(st);
+  const INDEX = { cell: 0.25, sources: [{ id: 'fake', name: 'Generalitat Prova', credit: 'Generalitat Prova. Departament', licence: 'L', url: 'https://example.org/', link: 'https://example.org/timetables', updated: '2026-10-30', day: '2026-11-03' }],
+    cells: Object.fromEntries(Object.entries(cells).map(([c, l]) => [c, l.length])) };
+  const serve = (ctx, down = false) => ctx.route(u => u.host === 'editor.test' && u.pathname.startsWith('/stops-es/'), r => { ctx.cells = (ctx.cells || 0) + 1; if (down) return r.fulfill({ status: 503, body: '' });
+    const name = new URL(r.request().url()).pathname.split('/').pop(); return name === 'index.json' ? json(r, INDEX) : json(r, { stops: cells[name.replace('.json', '')] || [] }); });
+  const sugNow = (p, box) => p.evaluate(box => [...document.querySelectorAll(box + ' button')].map(b => ({ n: (b.querySelector('b') || {}).textContent, has: b.getAttribute('aria-disabled') === 'true', small: (b.querySelector('small') || {}).textContent || '' })), box);
+  for (const [w, h, tag, lang] of [[1280, 860, '1280 px', 'en'], [360, 780, '360 px', 'en'], [1280, 860, '1280 px, French', 'fr'], [360, 780, '360 px, French', 'fr']]) {
+    const fr = lang === 'fr', { ctx, p, errors } = await open(browser, E, w, h, fr ? { 'porta-lang-v1': 'fr' } : {}), saved = [];
+    await serve(ctx);
+    p.on('request', r => { if (r.method() === 'PATCH' && /\/rest\/v1\/guides/.test(r.url())) saved.push(r.postData()); });
+    await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 600);
+    const heads = await p.$$eval('h3.cm-h', e => e.map(x => x.textContent.trim()));
+    ok(`stops, ${tag}: the part "Public transport" comes after Trains`, heads.indexOf(fr ? 'Transports publics' : 'Public transport') === heads.indexOf('Trains') + 1, JSON.stringify(heads));
+    await p.waitForSelector('#c_spnear .cm-spnear', { timeout: 8000 }).catch(() => {}); await settle(p, 200, { net: false });
+    const near = await sugNow(p, '#c_spnear');
+    ok(`stops, ${tag}: "Near your house" by distance whatever the kind, the other side of the street and the far one left out`, cmpSame(near.map(x => x.n), ['Carrer de Prova (bus)', 'Prova Metro', 'Plaça de Prova']) && /\d+\s?min/.test(near[0].small), JSON.stringify(near));
+    ok(`stops, ${tag}: nothing in it overlaps, sticks out, is cut, or breaks a word`, !(await boxClear(p, '#c_spnear button', '.pl-ic, b, .cm-badge, .cm-trkm')).length, (await boxClear(p, '#c_spnear button', '.pl-ic, b, .cm-badge, .cm-trkm')).join('; '));
+    await p.locator('#c_spnear').scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(SP_DIR, `near-${lang}-${w}.png`) });
+    await p.click('#c_spq'); await p.locator('#c_spq').pressSequentially('PROVÁ', { delay: 15 }); await settle(p, 200, { net: false });
+    const typed = await sugNow(p, '#c_spsug');
+    ok(`stops, ${tag}: typed, accents and capitals aside: metro first, then tram, then bus (a bus stop whose name starts with it first)`, cmpSame(typed.map(x => x.n), ['Prova Metro', 'Plaça de Prova', 'Prova Llunyana', 'Carrer de Prova (bus)', 'Carrer de Prova (bus)']), JSON.stringify(typed.map(x => x.n)));
+    ok(`stops, ${tag}: the typed list overlaps nothing`, !(await boxClear(p, '#c_spsug button', '.pl-ic, b, .cm-badge, .cm-trkm')).length, (await boxClear(p, '#c_spsug button', '.pl-ic, b, .cm-badge, .cm-trkm')).join('; '));
+    await p.locator('#c_spq').scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(SP_DIR, `typed-${lang}-${w}.png`) });
+    if (w > 900) await p.keyboard.press('Enter'); else await p.click('#c_spsug button');
+    await settle(p, 1300);
+    const card = await p.evaluate(() => { const d = [...document.querySelectorAll('details.cmi[open]')].find(x => /Prova Metro/.test(x.querySelector('summary').textContent)); return d ? { head: d.querySelector('summary').textContent.replace(/\s+/g, ' '), lines: [...d.querySelectorAll('.cm-splines li')].map(l => l.textContent.replace(/\s+/g, ' ').trim()), src: (d.querySelector('.cm-spsrc') || {}).textContent || '', badges: d.querySelectorAll('summary .cm-badge').length } : null; });
+    let st = null; for (const b of saved) { try { st = JSON.parse(b).draft.content.files.transport.stations.find(x => x.id === 'spfake-m1') || st; } catch (e) { /* another save */ } }
+    ok(`stops, ${tag}: picked, the metro stop is added at once, opened, with its lines, how often and its source`, !!card && card.lines.length === 1 && (fr ? /Toutes les 15 min ou moins/ : /Every 15 min or more often/).test(card.lines[0]) && (fr ? /Generalitat Prova/ : /From Generalitat Prova's open timetables/).test(card.src) && card.badges === 1 && !!st && st.mode === 'metro' && st.walk > 0 && st.src.from === 'fake' && st.src.by === 'Generalitat Prova. Departament' && st.lines.length === 1, JSON.stringify({ card, st: st && { mode: st.mode, walk: st.walk, src: st.src } }));
+    ok(`stops, ${tag}: the opened stop overlaps nothing`, !(await boxClear(p, 'details.cmi[open] .cm-found', 'b, .hint, .cm-badge, .cm-splines li')).length, (await boxClear(p, 'details.cmi[open] .cm-found', 'b, .hint, .cm-badge, .cm-splines li')).join('; '));
+    await p.locator('details.cmi[open] .cm-found').last().scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(SP_DIR, `opened-${lang}-${w}.png`) });
+    await p.click('#c_spq'); await p.fill('#c_spq', ''); await p.locator('#c_spq').pressSequentially('prova metro', { delay: 15 }); await settle(p, 200, { net: false });
+    { const again = await sugNow(p, '#c_spsug'); ok(`stops, ${tag}: a stop already in the guide is listed and says so`, again.length === 1 && again[0].has && (fr ? /Déjà dans votre guide/ : /Already in your guide/).test(again[0].small), JSON.stringify(again)); }
+    ok(`stops, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  { const { ctx, p, errors } = await open(browser, E, 360, 780); await serve(ctx, true);
+    await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 800);
+    await p.click('#c_spq'); await p.locator('#c_spq').pressSequentially('prova', { delay: 15 }); await settle(p, 300);
+    ok('stops: nothing loaded, no "Near your house", the field says so, no error', !(await p.$('#c_spnear .cm-spnear')) && /could not be loaded/.test(await textNow(p, '#c_spmsg')) && !errors.length, await textNow(p, '#c_spmsg'));
     await ctx.close(); }
 }
 
