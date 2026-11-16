@@ -7,7 +7,9 @@
 // second (14 Nov 2026), then the host's lists of places (kind "spots", folder places/), the highlights and Local events,
 // then the text pages (kind "info"), Emergencies (kind "contacts"), Getting around, the house and the map (14 Nov 2026):
 // every part of the guide. What's on (whatson/) is not a section: Home calls it directly, as the frame's end; the house is
-// the frame's fixed top (it offers nothing to place).
+// the frame's fixed top (it offers nothing to place). A module that has something on a day also exports agenda(now, tools),
+// its feed for What's on (17 Nov 2026; whatson/README.md, "The feed"): What's on asks here and names no module. Their
+// order here is their order in the agenda.
 import * as house from './house/index.js';
 import * as garbage from './garbage/index.js';
 import * as info from './info/index.js';

@@ -14,7 +14,8 @@ arrangement of its own, a guide's Home is drawn exactly as before the frame, to 
 ## What Home is
 
 The welcome card (photo, name, Wi-Fi and checkout), then two groups, **house** ("At the house") and **area** ("Around the
-house"), then What's on (markets and events by day, `whatson/README.md`), then the link to Sources and credits. Only the two groups are made of
+house"), then What's on (one agenda by day, made of what the modules have on a day: a module feeds it with `agenda` in its
+`index.js`, `whatson/README.md`), then the link to Sources and credits. Only the two groups are made of
 placements; the welcome card and What's on stay where they are.
 
 ## A placement

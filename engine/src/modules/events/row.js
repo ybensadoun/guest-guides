@@ -16,7 +16,6 @@ export const when = x => (x.on ? t('onNow') : x.ended ? t('evEnded') : x.at || x
 // An event's status on the right of its row: green while it is on, quiet once it has ended, with its hour under "Ended"
 // when the event states its end (never an assumed one; plan.js evState).
 export const evStatus = x => `<span class="st ${x.on ? 'open' : x.ended ? 'done' : 'plain'}">${esc(when(x))}${typeof x.ended === 'string' ? `<small>${esc(x.ended)}</small>` : ''}</span>`;
-export const dayBadge = o => { const a = D(o.start); return { d: a.getDate(), m: fmt(a, { month: 'short' }).replace('.', '') }; };
 
 // One event as an expandable row (Local events page and Home "What's on"): what happens, then Maps and website.
 // opts.dot replaces the type icon (Home uses a date badge), opts.right replaces the status on the right. On its day, an

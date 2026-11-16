@@ -3,7 +3,7 @@
 The festivals, fairs and local traditions around the house: each event's next date, soonest first, under the name of its
 month; opened, what happens, then Google Maps and its website. On Home it is one widget, the entry tile with the next
 event ("Next: Santa Teresa Fair, 9 Oct"), which Home does not show by default; the events also feed What's on at the
-bottom of Home (`../whatson/README.md`), which takes the upcoming events and their row from here.
+bottom of Home (`../whatson/README.md`): `agenda.js` here gives it the upcoming events as this module's own row.
 
 Moved into this folder on 14 Nov 2026, after rubbish and markets, with the host's lists of places and the highlights.
 Read this page before changing how the events behave, and write a changed rule here with its date. Ca La Kimberly's
@@ -63,7 +63,8 @@ icon by the section's id (`ui.js` `SECTION_LOOK.events`).
 | What Home, the section view and What's on call | `index.js`, listed in `../index.js` | Yes |
 | The kinds' icons and colours | `kinds.js` (`EVENT_ICON`, `EVENT_TONE`, for `row.js`; moved from `views/section.js` on 14 Nov 2026) | Yes. Kept written as they are (one line per kind, the colours on one line): the maker's build (`onboarding-site/src/build.py`), its checks (`onboarding-site/test/check.mjs`) and `worker/test/event-kinds.test.mjs` read them as text in this file. |
 | A page's title, lead, opened rows kept | `engine/src/views/section.js` (`sectionFrame`) | No: shared with every section's page |
-| What's on | `../whatson/` | A module of its own, fed by this one |
+| What it gives What's on: the upcoming events, six weeks ahead, as its own row with What's on's date badge | `agenda.js` (17 Nov 2026; the feed: `../whatson/README.md`) | Yes |
+| What's on | `../whatson/` | A module of its own, fed by this one, which names no module |
 | Its styles | `engine/src/styles/app.css` (`.mlist.events`, `.evm`, `.mrow`, `.dbadge`, `.gt[data-k="events"]`, the tones `--tone-*`) | Not yet: they move with the one tile system (plan, proposal 4) |
 | Its words | `engine/src/i18n/<lang>.json`: `events`, `eventsLead`, `nextEvent`, `todayEvent`, `evEnded`, `evEndShort`, `evEndDay`, `expected`, `expectedNote`, `onNow`, `today`, `tomorrow`, `inDays`, `website` | Not yet |
 | From the host's answers to the file | `engine/scripts/generate-site.py` | Not yet |
