@@ -30,6 +30,7 @@
 "Nederlands",
 "Nunito",
 "Onest",
+"Ouigo",
 "Outfit",
 "Pizzeria del Sol",
 "Português",
@@ -41,7 +42,8 @@
 "Tropical",
 "Vrbo",
 "WhatsApp",
-"Wi-Fi"
+"Wi-Fi",
+"iryo"
 ],
 "Saved on this device": {
 "ca": "Desat en aquest dispositiu",
@@ -8617,5 +8619,10 @@
 "ca": "El nom, com {x}",
 "es": "Su nombre, como {x}",
 "fr": "Son nom, comme {x}"
+},
+"iryo and Ouigo: checked on {x}.": {
+"ca": "iryo i Ouigo: comprovat el {x}.",
+"es": "iryo y Ouigo: comprobado el {x}.",
+"fr": "iryo et Ouigo : vérifié le {x}."
 }
 }

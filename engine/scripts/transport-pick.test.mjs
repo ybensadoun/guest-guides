@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { TP, TP_TAG, tpLine, tpRoadKm, cmMin, tpDoor, tpTime, tpCity, pickStations, tpName, stationEntry, stationsFor, tpFold, tpFind, tpPlaced, tpHave, tpTagOf, tpNear, tpNearest } from '../src/modules/transport/pick.js';
+import { TP, TP_TAG, tpLine, tpRoadKm, cmMin, tpDoor, tpTime, tpCity, pickStations, tpName, stationEntry, stationsFor, tpFold, tpFind, tpPlaced, tpHave, tpTagOf, tpNear, tpNearest, tpBrandBadges, tpBrandsStale, TP_BRANDS } from '../src/modules/transport/pick.js';
 
 const ROOT = new URL('../../', import.meta.url);
 const read = p => JSON.parse(readFileSync(new URL(p, ROOT), 'utf8'));
@@ -117,6 +117,41 @@ test('tpNear and tpNearest: the rule\'s stations the guide lacks, the nearest st
   assert.deepEqual(tpNear({ lat: 0, lng: 0 }, data(S), []), []);
   assert.deepEqual(tpNear(H, data([st('far', 200)]), []), []);
   assert.equal(tpNearest(H, data(S)).id, 'd'); assert.equal(tpNearest(null, data(S)), null); assert.equal(tpNearest(H, data([st('far', 61)])), null);
+});
+
+test('tpBrandBadges: iryo and Ouigo on a station of our file, from the shared rows', () => {
+  const B = read('engine/src/modules/transport/brands.json').brands;
+  const camp = { id: 'st04104', src: { from: 'renfe', at: '2026-11-16' }, badges: [{ t: 'AVE', c: '#001F4C', ink: false }, { t: 'Euromed', c: '#5B2C83', ink: false }] };
+  const rows = [{ brand: 'ouigo', stations: ['04104'], checked_at: '2026-11-16T10:00:00Z' }, { brand: 'iryo', stations: ['04104', '71801'], checked_at: '2026-11-15T09:00:00Z' }];
+  const e = tpBrandBadges(camp, rows, B);
+  assert.deepEqual(e.badges.map(b => [b.t, b.c, b.by || '']), [['AVE', '#001F4C', ''], ['Euromed', '#5B2C83', ''], ['iryo', '#E20613', 'brand'], ['Ouigo', '#E50A70', 'brand']]);
+  assert.deepEqual(e.brands, { at: '2026-11-16' }); assert.equal(camp.badges.length, 2, 'the station given is not changed');
+  // Again: the same (the brand badges taken out first, never twice).
+  assert.deepEqual(tpBrandBadges(e, rows, B).badges, e.badges);
+  // A sure search that no longer lists it: its badge goes. A row not sure yet: that company's badge stays as it was.
+  const e2 = tpBrandBadges(e, [{ brand: 'iryo', stations: ['71801'], checked_at: '2026-12-20T00:00:00Z' }, { brand: 'ouigo', stations: [], checked_at: null, tried_at: '2026-12-20T00:00:00Z' }], B);
+  assert.deepEqual(e2.badges.map(b => b.t), ['AVE', 'Euromed', 'Ouigo']); assert.deepEqual(e2.brands, { at: '2026-12-20' });
+  // No row, or no sure row: untouched. Not from our file: untouched.
+  assert.equal(tpBrandBadges(camp, [], B), camp);
+  assert.equal(tpBrandBadges(camp, [{ brand: 'iryo', stations: ['04104'], checked_at: null }], B), camp);
+  const hand = { id: 'camptgn', badges: [{ t: 'iryo', c: '#5B2C83' }] };
+  assert.equal(tpBrandBadges(hand, rows, B), hand);
+  assert.deepEqual(TP_BRANDS, ['iryo', 'ouigo']);
+});
+
+test('tpBrandsStale: no row or older than 30 days, unless tried in the last 7', () => {
+  const now = new Date('2026-11-16T12:00:00Z'), d = n => new Date(+now - n * 864e5).toISOString();
+  assert.equal(tpBrandsStale(null, now), true);
+  assert.equal(tpBrandsStale({ checked_at: d(10), tried_at: d(10) }, now), false);
+  assert.equal(tpBrandsStale({ checked_at: d(31), tried_at: d(31) }, now), true);
+  assert.equal(tpBrandsStale({ checked_at: d(31), tried_at: d(2) }, now), false);   // an unsure search 2 days ago
+  assert.equal(tpBrandsStale({ checked_at: null, tried_at: d(8) }, now), true);
+  assert.equal(tpBrandsStale({ checked_at: null, tried_at: d(6) }, now), false);
+});
+
+test('brands.json: iryo\'s own colour, white text', () => {
+  const b = read('engine/src/modules/transport/brands.json').brands.find(x => x.t === 'iryo');
+  assert.equal(b.c, '#E20613'); assert.equal(b.ink, false); assert.ok(/iryo\.eu/.test(b.src));
 });
 
 test('the role words: six languages, two words or so', () => {

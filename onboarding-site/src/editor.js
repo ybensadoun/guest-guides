@@ -1015,7 +1015,7 @@ function cStation(p, s) {
   const to = (s.to || []).filter(d => edShown(d.dest)).map(d => `<li><b>${esc(edShown(d.dest))}</b>${d.time ? ' ' + esc(d.time) : ''}${edShown(d.note) ? ' · ' + esc(edShown(d.note)) : ''}</li>`).join('');
   const ours = !!s.src && s.src.from === 'renfe';   // from our file of Renfe's timetables: nothing to look up, nothing to refresh
   const found = ours ? `<div class="cm-found"><div class="cm-row cm-foundh"><b>Lines and where they go</b></div>
-      <p class="hint">${esc(`From Renfe's timetables, data of ${/^\d{4}-\d\d-\d\d$/.test(s.src.at || '') ? new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(s.src.at + 'T00:00:00Z')).replace(/ /g, '\u00a0') : '?'}. Usual times by direct train.`)}</p>
+      <p class="hint">${esc(`From Renfe's timetables, data of ${trsDate(s.src.at)}. Usual times by direct train.`)}${s.brands && s.brands.at ? ` <span class="cm-brandsat">${esc(`iryo and Ouigo: checked on ${trsDate(s.brands.at)}.`)}</span>` : ''}</p>
       ${badges ? `<div class="cm-badges">${badges}</div>` : ''}${to ? `<ul class="cm-to">${to}</ul>` : ''}
       <p class="hint cm-trfacts">${s.km ? `<span>${esc(`${s.km} km from the house, about ${s.min || cmMin(s.km)} min by car.`)}</span> ` : ''}${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">Timetable</a>` : ''}</p></div>`
     : `<div class="cm-found"><div class="cm-row cm-foundh"><b>Lines and where they go</b><button class="btn small" type="button" data-trlines="${esc(s.id)}"${L.busy || !placed ? ' disabled' : ''}>${L.busy ? 'Looking…' : badges ? 'Refresh the lines' : 'Find the lines'}</button></div>
@@ -1156,6 +1156,8 @@ function trsLoad() {
 // under "Near your house" in place of the empty line; with one, they are the list when the field has the focus and is
 // empty. No position, no file, nothing found: nothing shown. The field's example is the station nearest to the house.
 const trsStations = () => (edF().transport || {}).stations || [];
+// A date of our data in the maker's language ("16 Nov 2026"), never split over two lines.
+const trsDate = d => /^\d{4}-\d\d-\d\d$/.test(d || '') ? new Intl.DateTimeFormat(plLoc(), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(d + 'T00:00:00Z')).replace(/ /g, '\u00a0') : '?';
 const trsHasTrain = () => trsStations().some(x => x.mode !== 'bus');
 const trsNear = () => TRS.data ? tpNear(edF().house || {}, TRS.data, trsStations()) : [];
 const trsBadge = b => `<i class="cm-badge" style="background:${esc(b.c || '#1D4FA0')};color:${b.ink ? '#121212' : '#fff'}">${esc(b.t)}</i>`;
@@ -1187,6 +1189,40 @@ function trsPick(i, from) {   // from: the list (TRS.list) or "Near your house" 
   const T = cmTrEnsure(), e = stationEntry(x.st, edF().house || {}, x.role || null, TRS.data, edLangs());
   (T.stations = T.stations || []).push(e); CM.open.add('files/transport/stations/' + (T.stations.length - 1));
   TRS.list = []; TRS.on = -1; cmQueue(); render();
+  if (x.st.hs) trsBrands(e.id);
+}
+/* iryo and Ouigo (16 Nov 2026, engine/src/modules/transport/README.md rules 25 to 29): Renfe's files do not hold these two
+   companies. A station with high speed trains just added asks the worker, once, which of them stop there (job
+   find-transport, params { what: 'brands', id }; worker/rail-brands.mjs keeps one shared record for every guide). Nothing
+   waits and nothing is shown while it runs: no "Looking", no spinner, no disabled button. When it answers, the badges go
+   on the station in the open copy and its card is drawn again where it stands (opened stays opened, a field being typed
+   in keeps its text and focus); when it fails, nothing is said and nothing changes. */
+async function trsBrands(id) {
+  CM.brands = CM.brands || new Set(); if (CM.brands.has(id)) return; CM.brands.add(id);
+  try {
+    await cmSave();
+    const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'find-transport', langs: edLangs(), params: { what: 'brands', id } } });
+    const jid = j && j[0] && j[0].id; if (!jid) return;
+    for (let i = 0; i < 150; i++) {
+      await new Promise(r => setTimeout(r, 4000)); await ensureFresh();
+      const r = await sb('/rest/v1/guide_jobs?select=status,result&id=eq.' + jid), x = r && r[0]; if (!x) continue;
+      if (x.status === 'failed') return;
+      if (x.status === 'done') return trsBrandsApply((x.result || {}).stations || {});
+    }
+  } catch (e) { /* nothing said: the station keeps Renfe's lines */ }
+}
+function trsBrandsApply(got) {
+  const S = trsStations(); let n = 0;
+  for (const [id, v] of Object.entries(got)) {
+    const i = S.findIndex(x => x.id === id), s = S[i]; if (!s || !v || !Array.isArray(v.badges)) continue;
+    if (JSON.stringify(s.badges) === JSON.stringify(v.badges) && JSON.stringify(s.brands) === JSON.stringify(v.brands)) continue;
+    s.badges = v.badges; if (v.brands) s.brands = v.brands; n++;
+    const p = 'files/transport/stations/' + i, el = document.querySelector(`details.cmi[data-open="${p}"]`); if (!el) continue;
+    const ae = document.activeElement, fid = ae && el.contains(ae) ? ae.id : '', sel = fid ? ae.selectionStart : null;
+    el.outerHTML = cStation(p, s);
+    if (fid) { const f = document.getElementById(fid); if (f) { f.focus({ preventScroll: true }); try { if (sel != null) f.setSelectionRange(sel, sel); } catch (e) {} } }
+  }
+  if (n) cmQueue();
 }
 document.addEventListener('input', e => { if (CM.on && e.target && e.target.id === 'c_trq') trsType(e.target); });
 document.addEventListener('focusin', e => { if (CM.on && e.target && e.target.id === 'c_trq') { trsLoad(); if (!e.target.value.trim()) trsType(e.target); } });
@@ -2292,6 +2328,7 @@ function cmInit() {
 .cm-trs .cm-badge{display:inline-block;font-style:normal;font-size:12px;padding:2px 6px;border-radius:5px}
 .cm-trs .cm-trkm{margin-left:2px;white-space:nowrap}
 .cm-trs .cm-trrole{white-space:nowrap;font-weight:600;color:var(--ink)}
+.cm-brandsat{white-space:normal}
 .cm-trs .cm-trrole::before{content:'· ';font-weight:400;color:var(--muted)}
 .cm-trnear{display:flex;flex-direction:column;gap:6px}
 .cm-trnh{font-size:16px}

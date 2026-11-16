@@ -19,6 +19,7 @@ import { researchPrompt, HOURS_RULE, MARKETS_RULE, TODO_RULE, earlyRules, EV_REA
 import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
 import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
+import { brandsJob, refreshBrands, applyToFiles, brandsList, hsStations, brandsPrompt, readBrands } from './rail-brands.mjs';   // iryo and Ouigo on high speed stations (find-transport, what: brands)
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
 const env = { ...process.env };
@@ -289,6 +290,7 @@ async function build(g) {
     if (need.length) { say(id, 'Translating'); const map = await translate(need, [srcLang, ...langs], srcLang);
       if (Object.keys(map).length) { const tf = join(job, 'translations.json'); writeFileSync(tf, JSON.stringify(map, null, 1)); out = run('python3', [...gen, '--translations', tf]).stdout; } }
   }
+  await brandsOnSite(siteDir);
   const checked = run('node', ['engine/scripts/run.js', 'check', tmp], { allowFail: true });
   if (checked.status !== 0) throw new Error('The guide did not pass its checks: ' + ((checked.stdout || '') + (checked.stderr || '')).trim().split('\n').slice(-3).join(' | '));
   say(id, 'Saving the guide');
@@ -307,6 +309,23 @@ async function build(g) {
   rest('/rest/v1/events', { method: 'POST', body: { user_id: g.owner, guide_id: id, kind: 'guide_built', data: { slug: g.slug, images: n, status } }, headers: { Prefer: 'return=minimal' } }).catch(() => {});
   rmSync(siteDir, { recursive: true, force: true });
   log(`  built ${g.slug}: ${n} images, status ${status}`);
+}
+
+// iryo and Ouigo on the generated guide's high speed stations (worker/rail-brands.mjs): the shared record, renewed first
+// when it is old (only with research on), then the badges into content/transport.json. Never fails a build nor waits long:
+// after 90 seconds the build goes on with the stations as they are, and a search still running then only fills the record.
+async function brandsOnSite(siteDir) {
+  const f = join(siteDir, 'content/transport.json'); if (!existsSync(f)) return;
+  let late = false;
+  const work = (async () => {
+    const T = JSON.parse(readFileSync(f, 'utf8')), hs = hsStations(), ids = new Set(hs.map(s => s.id));
+    if (!(T.stations || []).some(s => s && s.src && s.src.from === 'renfe' && ids.has(String(s.id).slice(2)))) return;
+    const meter = { usd: 0 }, r = await refreshBrands({ rest, ask: RESEARCHING ? brandsAsk(meter) : null, hs, meter, log });
+    const a = applyToFiles({ transport: T }, r.rows, brandsList(), { hsIds: ids });
+    if (a.changed && !late) { writeFileSync(f, JSON.stringify(a.files.transport, null, 1)); log('  iryo and Ouigo: checked on the stations'); }
+  })().catch(e => log('  iryo and Ouigo not checked:', e.message));
+  await Promise.race([work, new Promise(r => setTimeout(r, 90000).unref())]);
+  late = true;
 }
 
 // The markets with a Google id are held back (Yohann, 13 Nov 2026): for an account billed in Europe, Google's "permanently
@@ -589,7 +608,11 @@ function applyLines(s, r, langs) {
   if (r.name && langs.every(l => (nm[l] || '') === first)) s.name = { ...nm, ...r.name };
   s.auto = { checked: r.checked, operator: r.operator, link: r.link, sources: r.sources };
 }
+// iryo and Ouigo (worker/rail-brands.mjs): the same kind of job with params.what === 'brands', queued by the editor when a
+// host adds one of our high speed stations; one search for both companies, kept in rail_brands, at most once in 30 days.
+const brandsAsk = meter => prompt => claudeJson(prompt, 'rail-brands', meter);
 async function transportJob(j, jp, { dry = false } = {}) {
+  if ((j.params || {}).what === 'brands') { const meter = { usd: 0 }; return brandsJob(j, jp, { rest, ask: brandsAsk(meter), meter, log }); }
   const P = j.params || {}, since = new Date(Date.now() - 864e5).toISOString();
   const recent = await rest(`/rest/v1/guide_jobs?select=id&guide_id=eq.${j.guide_id}&kind=eq.find-transport&id=neq.${j.id}&created_at=gt.${encodeURIComponent(since)}`);
   if ((recent || []).length >= 20) throw new Error('You have looked up a lot of lines today. Try again tomorrow.');
@@ -895,6 +918,23 @@ if (process.argv.includes('--area-research')) {
 // node worker/guide-worker.mjs --find find-todo|find-markets|find-events --slug <slug>: one "Find more" search for a guide,
 // as the editor's button runs it (web search, Google check, translation), printed here and written nowhere. To try a new
 // computer or server, or RESEARCH=api, without the queue (and alongside a running worker).
+// node worker/guide-worker.mjs --find find-rail-brands: the iryo and Ouigo search, asked once whatever the record's age,
+// printed (each company's stations, its sources, whether it was sure, the cost) and written nowhere.
+if (process.argv.includes('--find') && process.argv[process.argv.indexOf('--find') + 1] === 'find-rail-brands') {
+  const hs = hsStations(), meter = { usd: 0 };
+  log(`iryo and Ouigo, ${hs.length} high speed stations. Research: ${RESEARCH === 'api' ? 'Claude API' : 'claude command'}. Nothing is written.`);
+  let out = null;
+  try { out = await brandsAsk(meter)(brandsPrompt(hs)); } catch (e) { log('did not work:', e.message); process.exit(1); }
+  const r = readBrands(out, hs.map(s => s.id)), name = new Map(hs.map(s => [s.id, s.name]));
+  for (const k of ['iryo', 'ouigo']) {
+    const a = r[k], raw = (out && out[k]) || {};
+    console.log(`\n${k}: ${a.sure ? 'sure' : 'NOT sure (' + a.why + '), nothing would be kept'}`);
+    for (const s of (a.sure ? a.seen : (Array.isArray(raw.stations) ? raw.stations : []))) console.log(`  ${s.id}  ${name.get(String(s.id)) || '(not one of ours)'}  (the source: ${s.name || '?'})`);
+    console.log('  sources: ' + ((a.sure ? a.sources : raw.sources) || []).join(', '));
+  }
+  console.log(`\nabout ${meter.usd.toFixed(2)} USD${RESEARCH === 'api' ? '' : ' (the claude command does not say)'}`);
+  process.exit(0);
+}
 if (process.argv.includes('--find')) {
   const kind = process.argv[process.argv.indexOf('--find') + 1], slug = (process.argv[process.argv.indexOf('--slug') + 1] || '').replace(/^--.*/, '');
   if (!(FIND[kind] || kind === 'find-transport') || !slug) { console.error('Use: --find find-todo|find-markets|find-events --slug <slug>, or --find find-transport --slug <slug> --station <id>'); process.exit(1); }

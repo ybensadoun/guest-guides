@@ -125,6 +125,38 @@ export function tpNearest(house, data) {
   return best;
 }
 
+// iryo and Ouigo (Yohann, 16 Nov 2026; README.md rules 25 to 29): Renfe's files do not hold these two companies, so the
+// worker looks up each one's whole list of stations on request and keeps it in a shared record (worker/rail-brands.mjs,
+// table rail_brands: one row per company, { brand, stations: Renfe ids, checked_at, tried_at }). This rule puts their
+// badges on a guide's station from those rows. Pure, as the rest of this file.
+export const TP_BRANDS = ['iryo', 'ouigo'];   // in this order on a station
+const tpDay = x => { const d = x ? new Date(x) : null; return d && !isNaN(d) ? d.toISOString().slice(0, 10) : ''; };
+// A station of a guide from our file ("st" + Renfe's id, src.from 'renfe'): its badges without those marked by: 'brand',
+// then one badge per company whose row lists it (name and colour from brands.json), and brands: { at } (the newest
+// checked_at among the rows used). Not from our file, or no row at all: untouched. A row with no sure search yet
+// (checked_at null) adds nothing and removes nothing: that company's badge stays as it was. brands: brands.json's list.
+export function tpBrandBadges(st, rows, brands) {
+  if (!st || !st.src || st.src.from !== 'renfe' || !/^st./.test(String(st.id || ''))) return st;
+  const R = (rows || []).filter(r => r && TP_BRANDS.includes(r.brand)); if (!R.length) return st;
+  const id = String(st.id).slice(2), old = st.badges || [], byName = new Map((brands || []).map(b => [String(b.t).toLowerCase(), b]));
+  const out = old.filter(b => !(b && b.by === 'brand')); let at = '';
+  for (const k of TP_BRANDS) {
+    const r = R.find(x => x.brand === k), b = byName.get(k), was = old.find(x => x && x.by === 'brand' && String(x.t).toLowerCase() === k);
+    if (!r || !r.checked_at) { if (was) out.push(was); continue; }
+    const d = tpDay(r.checked_at); if (d > at) at = d;
+    if (b && (r.stations || []).map(String).includes(id)) out.push({ t: b.t, c: b.c, ink: !!b.ink, by: 'brand' });
+  }
+  if (!at) return st;
+  return { ...st, badges: out, brands: { at } };
+}
+// A company's row wants a new search: none yet, or its last sure one (checked_at) is older than 30 days; but not when a
+// search was tried in the last 7 days (tried_at), so that an unsure one is not repeated on every request.
+export function tpBrandsStale(row, now = new Date()) {
+  const n = +new Date(now), age = x => { const t = x ? Date.parse(x) : NaN; return Number.isFinite(t) ? n - t : Infinity; };
+  if (row && age(row.checked_at) <= 30 * 864e5) return false;
+  return !(row && age(row.tried_at) < 7 * 864e5);
+}
+
 // The stations of our file a guide already has, as tpFind's `have`: by their id ("st" + Renfe's), or a train station of the
 // guide within TP.same km of it (a station written by hand, as Ca La Kimberly's, is the same station under another id).
 export function tpHave(data, stations) {

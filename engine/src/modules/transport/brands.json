@@ -10,7 +10,7 @@
   { "t": "Intercity", "c": "#5B2C83", "ink": false, "src": "neutral" },
   { "t": "Regional", "c": "#5B2C83", "ink": false, "src": "neutral" },
   { "t": "MD", "c": "#5B2C83", "ink": false, "src": "neutral" },
-  { "t": "iryo", "c": "#5B2C83", "ink": false, "src": "neutral" },
+  { "t": "iryo", "c": "#E20613", "ink": false, "src": "https://iryo.eu/es/home (meta theme-color, read in a browser on 16 Nov 2026)" },
   { "t": "Ouigo", "c": "#E50A70", "ink": false, "src": "https://www.ouigo.com/es/themes/custom/ouigo/logo.svg (the logo's fill, on ouigo.com/es)" }
  ]
 }

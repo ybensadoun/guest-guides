@@ -1415,7 +1415,7 @@ async function gTrains() {
       for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) if (!ps[i][0].contains(ps[j][0]) && !ps[j][0].contains(ps[i][0]) && hit(ps[i][1], ps[j][1])) out.push(`${ps[i][0].textContent.slice(0, 20)} / ${ps[j][0].textContent.slice(0, 20)}`);
       for (const [e, r] of ps) { if (r.right > rr.right + 0.5 || r.left < rr.left - 0.5) out.push('outside: ' + e.textContent.slice(0, 24)); if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible') out.push('cut: ' + e.textContent.slice(0, 24));
         const t = e.firstChild && e.firstChild.nodeType === 3 ? e.firstChild : null;
-        if (t) for (const m of e.textContent.matchAll(/[\p{L}\p{N}'’·-]{3,}/gu)) { const g = document.createRange(); g.setStart(t, m.index); g.setEnd(t, m.index + m[0].length); if (g.getClientRects().length > 1) out.push('word broken: ' + m[0]); } } }
+        if (t) for (const m of t.data.matchAll(/[\p{L}\p{N}'’·-]{3,}/gu)) { const g = document.createRange(); g.setStart(t, m.index); g.setEnd(t, m.index + m[0].length); if (g.getClientRects().length > 1) out.push('word broken: ' + m[0]); } } }
     if (document.documentElement.scrollWidth > innerWidth) out.push('sideways scroll');
     return out; }, [rowSel, parts]);
   const ROLE = { en: ['Closest', 'Faster', 'High speed'], fr: ['La plus proche', 'Plus rapide', 'Grande vitesse'] };
@@ -1466,6 +1466,63 @@ async function gTrains() {
     ok(`near your house, ${what}: nothing offered, "No train station yet." stays, the example is "Its name"`, !(await p.$('.cm-trnear')) && /No train station yet/.test(await textNow(p, '#c_trnear')) && (await p.getAttribute('#c_trq', 'placeholder')) === 'Its name' && !(await sugNow(p)).length && !errors.length, (await p.getAttribute('#c_trq', 'placeholder')) + errors.join(' | '));
     await ctx.close();
   }
+  // iryo and Ouigo (16 Nov 2026): a high speed station added queues the worker's check once, silently; its answer puts the
+  // two companies' badges on the station where it stands; El Vendrell (no high speed) queues nothing; a failure says nothing.
+  const BR = join(SHOTS, 'brands'); mkdirSync(BR, { recursive: true });
+  const fakeJobs = (ctx, state) => ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), route => { const req = route.request();
+    if (req.method() === 'POST') { state.posted.push(JSON.parse(req.postData() || '{}')); return json(route, [{ id: 'job-br-' + state.posted.length }]); }
+    state.polled++;
+    if (state.mode === 'failed') return json(route, [{ status: 'failed', message: 'Something went wrong', result: null }]);
+    if (!state.release) return json(route, [{ status: 'running', message: 'Checking other train companies', result: null }]);
+    return json(route, [{ status: 'done', message: '2 companies checked', result: { stations: { st04104: { badges: [{ t: 'AVE', c: '#001F4C', ink: false }, { t: 'Euromed', c: '#5B2C83', ink: false }, { t: 'Avant', c: '#5B2C83', ink: false }, { t: 'Intercity', c: '#5B2C83', ink: false }, { t: 'iryo', c: '#E20613', ink: false, by: 'brand' }, { t: 'Ouigo', c: '#E50A70', ink: false, by: 'brand' }], brands: { at: '2026-11-16' } } } } }]); });
+  const campCard = p => p.evaluate(() => { const d = [...document.querySelectorAll('details.cmi')].find(x => /Camp de Tarragona/.test(x.querySelector('summary').textContent)); if (!d) return null;
+    const col = e => getComputedStyle(e).backgroundColor;
+    return { open: d.open, text: d.textContent.replace(/\s+/g, ' '), row: [...d.querySelectorAll('summary .cm-cbadges .cm-badge')].map(b => [b.textContent, col(b)]), inside: [...d.querySelectorAll('.cm-found .cm-badge')].map(b => [b.textContent, col(b)]),
+      busy: !!d.querySelector('button[disabled], .spin, .spinner, [aria-busy="true"]') || /Looking|Checking|Cherch|Comprov|Buscando|Recherche/i.test(d.textContent) }; });
+  const IRYO = ['iryo', 'rgb(226, 6, 19)'], OUIGO = ['Ouigo', 'rgb(229, 10, 112)'];
+  for (const [w, h, tag, lang] of [[1280, 860, '1280 px', 'en'], [360, 780, '360 px', 'en'], [1280, 860, '1280 px, French', 'fr'], [360, 780, '360 px, French', 'fr']]) {
+    const fr = lang === 'fr', { ctx, p, errors } = await open(browser, G0, w, h, fr ? { 'porta-lang-v1': 'fr' } : {}), state = { posted: [], polled: 0, release: false, mode: 'done' };
+    await fakeJobs(ctx, state);
+    await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 400);
+    await p.click('#c_trq'); await p.locator('#c_trq').pressSequentially('camp de t', { delay: 15 }); await settle(p, 150, { net: false });
+    if (w > 900) await p.keyboard.press('Enter'); else await p.click('#c_trsug button');
+    await settle(p, 1300);
+    const c0 = await campCard(p);
+    ok(`iryo and Ouigo, ${tag}: adding Camp de Tarragona queues the check once, with the right params`, state.posted.length === 1 && state.posted[0].kind === 'find-transport' && cmpSame(state.posted[0].params, { what: 'brands', id: 'st04104' }), JSON.stringify(state.posted));
+    ok(`iryo and Ouigo, ${tag}: no waiting state while it runs (no "Looking", no spinner, no disabled button)`, !!c0 && c0.open && !c0.busy && !c0.inside.some(b => /iryo|Ouigo/.test(b[0])) && !(await p.$('.cm-trs [disabled], #c_trq[disabled]')), JSON.stringify(c0 && { busy: c0.busy, inside: c0.inside }));
+    await p.locator('details.cmi[open]').last().scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(BR, `added-${lang}-${w}.png`) });
+    // The host types in the card while it runs: the answer must keep the text and the focus.
+    const what = 'details.cmi[open] textarea';
+    await p.locator(what).first().click(); await p.keyboard.type('Book ahead');
+    state.release = true;
+    await p.waitForFunction(() => [...document.querySelectorAll('details.cmi .cm-found .cm-badge')].some(b => b.textContent === 'Ouigo'), null, { timeout: 15000 }).catch(() => {});
+    await settle(p, 300, { net: false });
+    const c1 = await campCard(p), focus = await p.evaluate(() => { const a = document.activeElement; return a ? { tag: a.tagName, value: a.value, inCard: !!a.closest('details.cmi[open]') } : null; });
+    ok(`iryo and Ouigo, ${tag}: the answer puts iryo and Ouigo on the opened card in their colours, with the date of the check`, !!c1 && c1.open && cmpSame(c1.inside.slice(-2), [IRYO, OUIGO]) && (fr ? /iryo et Ouigo.:.vérifié le 16.nov\. 2026/ : /iryo and Ouigo: checked on 16.Nov 2026/).test(c1.text), JSON.stringify(c1 && { inside: c1.inside, text: c1.text.slice(0, 260) }));
+    ok(`iryo and Ouigo, ${tag}: a field being typed in keeps its text and its focus`, !!focus && focus.tag === 'TEXTAREA' && /Book ahead/.test(focus.value) && focus.inCard, JSON.stringify(focus));
+    ok(`iryo and Ouigo, ${tag}: nothing in the opened card overlaps or is cut`, !(await boxClear(p, 'details.cmi[open] .cm-found', 'b, .hint, .cm-badge, .cm-to li, .cm-trfacts span, .cm-trfacts a')).length, (await boxClear(p, 'details.cmi[open] .cm-found', 'b, .hint, .cm-badge, .cm-to li, .cm-trfacts span, .cm-trfacts a')).join('; '));
+    await p.evaluate(() => document.activeElement && document.activeElement.blur()); await p.locator('details.cmi[open] .cm-found').last().scrollIntoViewIfNeeded(); await settle(p, 150); await p.screenshot({ path: join(BR, `opened-${lang}-${w}.png`) });
+    // El Vendrell, no high speed: nothing queued.
+    await p.click('#c_trq'); await p.fill('#c_trq', ''); await p.locator('#c_trq').pressSequentially('vendr', { delay: 15 }); await settle(p, 150, { net: false }); await p.click('#c_trsug button'); await settle(p, 1300);
+    ok(`iryo and Ouigo, ${tag}: adding El Vendrell (no high speed) queues nothing`, state.posted.length === 1, JSON.stringify(state.posted.map(x => x.params)));
+    await p.evaluate(() => { document.querySelectorAll('details.cmi[open]').forEach(d => { d.open = false; }); if (document.activeElement) document.activeElement.blur(); }); await settle(p, 300);
+    const c2 = await campCard(p);
+    ok(`iryo and Ouigo, ${tag}: the closed row shows iryo and Ouigo in their colours, nothing overlapping or cut`, !!c2 && cmpSame(c2.row.slice(-2), [IRYO, OUIGO]) && !(await boxClear(p, 'details.cmi:not([open]) > summary', 'b, small, .cm-badge, .chev')).length, JSON.stringify(c2 && c2.row) + (await boxClear(p, 'details.cmi:not([open]) > summary', 'b, small, .cm-badge, .chev')).join('; '));
+    await p.evaluate(() => { const h = [...document.querySelectorAll('h3.cm-h')].find(x => x.textContent.trim() === 'Trains'); if (h) h.scrollIntoView({ block: 'start' }); scrollBy(0, -20); }); await settle(p, 200); await p.screenshot({ path: join(BR, `closed-${lang}-${w}.png`) });
+    ok(`iryo and Ouigo, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // The check failing: nothing said, nothing changed.
+  { const { ctx, p, errors } = await open(browser, G0, 360, 780), state = { posted: [], polled: 0, release: true, mode: 'failed' };
+    await fakeJobs(ctx, state);
+    await p.goto('http://editor.test/#transport'); await ready(p); await settle(p, 400);
+    await p.click('#c_trq'); await p.locator('#c_trq').pressSequentially('camp de t', { delay: 15 }); await settle(p, 150, { net: false }); await p.click('#c_trsug button'); await settle(p, 1300);
+    const before = await campCard(p);
+    for (let i = 0; i < 30 && !state.polled; i++) await new Promise(r => setTimeout(r, 300));
+    await settle(p, 600, { net: false });
+    const after = await campCard(p);
+    ok('iryo and Ouigo: a failed check changes nothing and says nothing', state.polled >= 1 && !!after && cmpSame(after.inside, before.inside) && !/iryo|Ouigo|wrong|failed|Did not work/i.test(after.text) && !errors.length, `${state.polled} ${JSON.stringify(after && after.inside)} ${errors.join(' | ')}`);
+    await ctx.close(); }
   // Ca La Kimberly as it is: its stations written by hand keep their "Refresh the lines", and El Vendrell, already there
   // under another id, is not offered again.
   { const { ctx, p, errors } = await open(browser, E, 360, 780);
