@@ -132,6 +132,7 @@ function countryLine(m, c) {
 function route() {
   const [, id, tab] = location.hash.split('/');
   const m = MODS.find(x => x.id === id);
+  document.body.classList.toggle('in-mod', !!m);
   if (!m) { stageDrop(); S.mod = null; fbClose(); return overview(); }
   const first = S.mod !== m.id;
   S.mod = m.id; S.tab = ['play', 'countries', 'feedback'].includes(tab) ? tab : 'play';
@@ -155,9 +156,8 @@ function moduleView() {
   document.title = a.name + ' · Modules';
   const tabs = [['play', 'Play'], ['countries', 'Countries'], ['feedback', 'Feedback' + (n ? ` (${n} new)` : '')]];
   stageDrop();
-  $('#main').innerHTML = `<nav class="crumb"><a href="#/">All modules</a>
-<label class="jump"><span class="sr">Module</span><select id="jump">${MODS.map((x, k) => `<option value="${x.id}"${x === m ? ' selected' : ''}>${k + 1}. ${esc(availOf(x.id).name)}</option>`).join('')}</select></label></nav>
-<header class="mh" style="--tc:var(--${m.c})"><span class="num" aria-hidden="true">${i + 1}</span><div><h1>${esc(a.name)}</h1><p>${esc(m.what)} <span class="conv">Conversation ${i + 1}</span></p></div></header>
+  $('#main').innerHTML = `<header class="mh" style="--tc:var(--${m.c})"><span class="num" aria-hidden="true">${i + 1}</span><div class="mt"><h1>${esc(a.name)}</h1><p>${esc(m.what)} <span class="conv">Conversation ${i + 1}</span></p></div>
+<label class="jump"><span class="sr">Module</span><select id="jump">${MODS.map((x, k) => `<option value="${x.id}"${x === m ? ' selected' : ''}>${k + 1}. ${esc(availOf(x.id).name)}</option>`).join('')}</select></label></header>
 <div class="tabs" role="tablist">${tabs.map(([id, t]) => `<a role="tab" href="#/${m.id}/${id}" aria-selected="${S.tab === id}">${esc(t)}</a>`).join('')}</div>
 <section id="tab"></section>`;
   $('#jump').onchange = e => { location.hash = `#/${e.target.value}/${S.tab}`; };
@@ -213,18 +213,23 @@ function play() {
     $('#tab').innerHTML = `<div class="card empty"><h2>The sample houses are not in the database yet</h2>
 <p>Playing needs houses of your own to try things on: made-up houses at public town centres, never shown to guests, put back with one Reset.</p>
 ${S.samples.length ? `<ul>${S.samples.map(x => `<li><b>${esc(KIND_NAMES[x.kind] || x.kind)}:</b> ${esc(x.name)}, ${esc(x.town)}</li>`).join('')}</ul>` : ''}</div>`; return; }
-  const seg = (name, items, val) => `<div class="seg" role="group" aria-label="${esc(name)}">${items.map(([v, t]) => `<button data-${name}="${esc(v)}" aria-pressed="${v === val}">${esc(t)}</button>`).join('')}</div>`;
+  const small = narrow();
+  const seg = (name, items, val) => small && (name === 'house' || name === 'step')
+    ? `<select data-pick="${name}">${items.map(([v, t]) => `<option value="${esc(v)}"${v === val ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>`
+    : `<div class="seg" role="group" aria-label="${esc(name)}">${items.map(([v, t]) => `<button data-${name}="${esc(v)}" aria-pressed="${v === val}">${esc(t)}</button>`).join('')}</div>`;
   $('#tab').innerHTML = `<div class="bar">
 <label class="ctl"><span>House</span>${seg('house', S.houses.map(x => [x.slug, houseLabel(x)]), S.house)}</label>
 ${m.steps.length > 1 ? `<label class="ctl"><span>Step</span>${seg('step', m.steps.map((s, i) => [String(i), s[1]]), String(S.step))}</label>` : ''}
 <label class="ctl"><span>Language</span><select id="lang">${GUEST_LANGS.map(l => `<option value="${l}"${l === S.lang ? ' selected' : ''}>${esc(LANG_NAMES[l])}</option>`).join('')}</select></label>
 <label class="ctl wide-only"><span>Width</span>${seg('width', [['desktop', 'Desktop'], ['phone', 'Phone']], S.width)}</label>
 <label class="ctl narrow-only"><span>Side</span>${seg('side', [['host', 'Host'], ['guest', 'Guest']], S.side)}</label>
-<span class="acts"><button class="btn ghost" id="reload">Reload</button><button class="btn ghost danger" id="reset">Reset the house</button><button class="btn" id="fbOpen">Feedback</button></span></div>
-<p class="quiet" id="playNote"></p>
+<span class="acts"><button class="btn ghost danger" id="reset">Reset the house</button><button class="btn" id="fbOpen">Feedback</button></span></div>
+<p class="quiet pn"><span id="playNote"></span><button class="link" id="reload">Reload</button></p>
 <div id="stage" data-mod="${m.id}"></div>`;
-  $$('[data-house]').forEach(b => { b.onclick = () => { S.house = b.dataset.house; mineSave(); stageDrop(); play(); }; });
-  $$('[data-step]').forEach(b => { b.onclick = () => { S.step = +b.dataset.step; press('step', String(S.step)); stepGo(); }; });
+  const houseTo = v => { S.house = v; mineSave(); stageDrop(); play(); }, stepTo = v => { S.step = +v; press('step', String(S.step)); stepGo(); };
+  $$('[data-house]').forEach(b => { b.onclick = () => houseTo(b.dataset.house); });
+  $$('[data-step]').forEach(b => { b.onclick = () => stepTo(b.dataset.step); });
+  $$('[data-pick]').forEach(sel => { sel.onchange = () => (sel.dataset.pick === 'house' ? houseTo : stepTo)(sel.value); });
   $$('[data-width]').forEach(b => { b.onclick = () => { S.width = b.dataset.width; mineSave(); stageDrop(); play(); }; });
   $$('[data-side]').forEach(b => { b.onclick = () => { S.side = b.dataset.side; press('side', S.side); $('#stage').dataset.side = S.side; }; });
   $('#lang').onchange = e => { S.lang = e.target.value; mineSave(); stageDrop(); play(); };
@@ -242,7 +247,7 @@ function stageMount() {
   stage.dataset.mode = mode; stage.dataset.side = S.side; stage.dataset.house = h.id;
   const filled = !!h.name;
   $('#playNote').textContent = !filled ? 'This house is empty. “Reset the house” fills it with its sample content.'
-    : (MAKER_LANGS.includes(S.lang) ? '' : `The maker has no ${LANG_NAMES[S.lang]}: it stays in English, the guide is in ${LANG_NAMES[S.lang]}. `) + 'Changes stay a draft on the sample house. Paid searches are switched off on sample houses.';
+    : (MAKER_LANGS.includes(S.lang) ? '' : `The maker has no ${LANG_NAMES[S.lang]}: it stays in English, the guide is in ${LANG_NAMES[S.lang]}. `) + 'Changes stay a draft on the sample house. Paid searches are off.';
   if (!filled) { stage.innerHTML = ''; return; }
   // The maker opens the house this device remembers (src/account.js, porta-house-v1): the sample house while playing,
   // the owner's own house again when the page is left (houseBack). The guide inside the maker's own phone reads its
@@ -255,7 +260,7 @@ function stageMount() {
   const maker = `<iframe id="frMaker" title="The maker, as a host sees it" src="/?step=${encodeURIComponent(st[0])}&lang=${makerLang()}"></iframe>`;
   const guest = `<iframe id="frGuest" title="The guide, as a guest sees it" src="${esc(guestUrl(h, st[2]))}"></iframe>`;
   stage.innerHTML = mode === 'desktop'
-    ? `<div class="desk" id="desk">${maker}</div><p class="quiet">The maker at 1280 px, with its own phone beside the step: the guide with your changes.</p>`
+    ? `<div class="desk" id="desk">${maker}</div>`
     : `<figure class="dev host"><figcaption>Host · the maker</figcaption><div class="scr">${maker}</div></figure>
 <figure class="dev guest"><figcaption>Guest · the guide <button class="link" id="guestReload">Reload</button></figcaption><div class="scr">${guest}</div></figure>`;
   const gr = $('#guestReload'); if (gr) gr.onclick = guestReload;
@@ -308,7 +313,8 @@ function seenNow() {
   return { ...o, house: h.slug, lang: S.lang, makerLang: makerLang(), width: narrow() ? 'phone (a small screen)' : S.width, side: narrow() ? S.side : 'both',
     step: (w && frameHash(w)) || st[0], guest: (g && frameHash(g.contentWindow)) || (inner && frameHash(inner.contentWindow)) || st[2] };
 }
-const seenWords = s => [s.step && 'step ' + s.step, s.guest && 'guest page ' + s.guest, s.house && (houseLabel({ slug: s.house }) || s.house), s.lang && (LANG_NAMES[s.lang] || s.lang), s.width, !s.step && s.tab && 'the ' + s.tab + ' tab'].filter(Boolean);
+const stepName = id => { for (const m of MODS) for (const st of m.steps) if (st[0] === id && st !== TILE) return st[1]; return id === 'tiles' ? 'Home page' : id; };
+const seenWords = s => [s.step && 'the step ' + stepName(s.step), s.guest && 'the guide on ' + s.guest, s.house && (houseLabel({ slug: s.house }) || s.house), s.lang && (LANG_NAMES[s.lang] || s.lang), s.width, !s.step && s.tab && 'the ' + s.tab + ' tab'].filter(Boolean);
 function fbBox(where) {
   const m = cur(), a = availOf(m.id), s = seenNow();
   return `<form class="fbf" data-where="${where}"><h2>Feedback on ${esc(a.name)}</h2>
