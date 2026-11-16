@@ -8,6 +8,10 @@ It might be the nightlife"): any module that has something on a day gives it a f
 Home names no module. Today two modules feed it: the markets (`../markets/agenda.js`) and Local events
 (`../events/agenda.js`).
 
+Yohann calls it the super module (17 Nov 2026: "this module should be called super module or something like this. Because
+what it does is that it takes in live events from modules that do have live events. So the market live, maybe the local
+events. It just puts everything together. It just gives you a single list as a widget."). Guests keep reading "What's on".
+
 It is not a section and has no page or tile of its own: it is the frame's fixed end (`../README.md`, rule 1).
 `widget(now)` gives its HTML; `views/home.js` puts it under the two groups. Read this page before changing what it shows,
 and write a changed rule here with its date.
@@ -70,6 +74,8 @@ and what is open are What's on's (`plan.js`, tested). A new source is one `agend
   Kimberly), while today is cut at three.
 - Other sources Yohann named: Nightlife ("it might be the nightlife"). What it has on a day (a place open tonight) is to
   design with the Nightlife conversation; then it is one `agenda.js` in `../places/`.
-- Where it sits on Home: Yohann, 17 Nov 2026, "it goes to the top", to confirm what "the top" is before anything moves
-  (it is the frame's fixed end today, `../README.md` rule 1).
+- "A single list as a widget", and "it goes to the top" (Yohann, 17 Nov 2026): today it is three parts at the frame's
+  fixed end (`../README.md` rule 1), which a host cannot place. As a widget of the frame it would be placed on the board
+  like a tile, the top included; what moves, and whether only "Today" goes up, is to confirm with him and to build with the
+  Home page conversation, in its turn of the ordered list.
 - "All events" goes to `#s/events`, the section's id in Ca La Kimberly, not the guide's (the events module's link).
