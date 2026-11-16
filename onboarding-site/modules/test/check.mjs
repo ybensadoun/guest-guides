@@ -107,6 +107,28 @@ try {
     await sound('feedback');
     await page.selectOption('[data-state-of]', 'handed_out'); await page.waitForFunction(() => document.querySelector('.fi').dataset.state === 'handed_out');
     ok(db.calls.some(c => c[0] === 'feedback-state' && c[1] === 'handed_out'), `${tag}: an item's state is saved`);
+    // The launch desk: the countries, preparing one, asking for a part, launching
+    await page.goto(ORIGIN + '/modules/#/countries'); await page.waitForSelector('.cty');
+    ok(/Spain\s*Open\s*33 of 33 parts on/.test((await page.textContent('.cty')).replace(/\s+/g, ' ')), `${tag}: Spain is open with every part (${(await page.textContent('.cty')).replace(/\s+/g, ' ').trim()})`);
+    await sound('countries-list');
+    await page.selectOption('#addc', 'FR'); await page.waitForSelector('#launch');
+    ok(db.calls.some(c => c[0] === 'country' && c[1] === 'FR' && c[2] === 'preparing'), `${tag}: a country is prepared, not open`);
+    ok(/Not open yet\s*23 of 33 parts on/.test((await page.textContent('.ch')).replace(/\s+/g, ' ')), `${tag}: it starts with the parts that work anywhere`);
+    ok((await page.$$('.cz .part')).length === 10 && (await page.$$('.wp')).length === 23, `${tag}: ten parts need work, twenty-three work already`);
+    ok(/To work in France: The country’s open train timetables|To work in France: The country's open train timetables/.test(await page.textContent('.cz')), `${tag}: a part says what it needs there`);
+    await page.click('[data-ask="transport/trains"]'); await page.fill('.af textarea', 'Add the SNCF stations.'); await sound('country-asking');
+    await page.click('.af .btn'); await page.waitForSelector('.rq');
+    const asked = (db.calls.filter(c => c[0] === 'feedback').pop() || [])[1] || {};
+    ok(asked.kind === 'request' && asked.country === 'FR' && asked.module === 'transport' && asked.part === 'trains' && asked.words === 'Add the SNCF stations.', `${tag}: what is asked is saved for its module and country`);
+    await page.click('[data-csw="transport/apps"]'); await page.waitForFunction(() => /24 of 33/.test(document.querySelector('.ch').textContent));
+    ok(db.switches.some(x => x.module === 'transport' && x.part === 'apps' && x.country === 'FR' && x.is_on === true), `${tag}: a part that needs work can be launched anyway`);
+    await page.click('#launch'); ok(/Sure/.test(await page.textContent('#launch')), `${tag}: Launch asks once`);
+    await page.click('#launch'); await page.waitForSelector('.ch .st-open');
+    ok(db.calls.some(c => c[0] === 'country' && c[1] === 'FR' && c[2] === 'open'), `${tag}: the country is launched`);
+    await sound('country');
+    await page.goto(ORIGIN + '/modules/#/transport/feedback'); await page.waitForSelector('.fi');
+    ok(/Asked for France/.test(await page.textContent('.fl')), `${tag}: the module's feedback shows what was asked for a country`);
+
     await page.goto(ORIGIN + '/modules/#/'); await page.waitForSelector('.grid');
     ok(await page.evaluate(() => { try { return !sessionStorage.getItem('porta-console-own-house') && !localStorage.getItem('porta-house-v1'); } catch (e) { return false; } }), `${tag}: leaving the stage gives the device its own house back`);
     ok(!db.calls.some(c => c[0] === 'job' && c[1] !== 'find-transport'), `${tag}: no paid search was asked (${db.calls.filter(c => c[0] === 'job').map(c => c[1]).join(', ')})`);

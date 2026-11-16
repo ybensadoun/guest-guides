@@ -29,6 +29,9 @@ button{cursor:pointer}
 .brand b{font-family:var(--display);font-weight:400;font-size:24px}
 .door{width:18px;height:24px;border-radius:9px 9px 3px 3px;background:var(--night);position:relative;flex:none}
 .door::after{content:"";position:absolute;left:5px;top:12px;width:4px;height:4px;border-radius:50%;background:var(--lamp)}
+.nav{display:flex;gap:4px}
+.nav a{padding:6px 12px;border-radius:999px;font-weight:600;font-size:15px;text-decoration:none;color:var(--muted)}
+.nav a[aria-current="true"]{background:var(--night);color:#fff}
 .who{margin-left:auto;color:var(--muted);font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tolink{font-weight:600;font-size:14.5px;white-space:nowrap}
 main{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:16px;min-width:0}
@@ -62,7 +65,6 @@ select{min-height:42px;border-radius:12px;border:1.5px solid var(--line);backgro
 .mc .new{grid-column:2;justify-self:start;margin-top:4px;padding:2px 10px;border-radius:999px;background:var(--lamp);font-size:13px;font-weight:700}
 
 /* A module */
-.in-mod .brand b::after{content:" · all";font-family:var(--body);font-size:14.5px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .mh{display:flex;gap:10px 14px;align-items:flex-start;flex-wrap:wrap}
 .mh .num{width:42px;height:42px;font-size:17px;margin-top:1px}
 .mh .mt{flex:1 1 300px;min-width:0}
@@ -99,6 +101,30 @@ select{min-height:42px;border-radius:12px;border:1.5px solid var(--line);backgro
 .addc{display:flex;gap:10px 18px;align-items:flex-end;flex-wrap:wrap}
 .addc label,.ctl{display:flex;flex-direction:column;gap:4px;font-size:13.5px;font-weight:600;min-width:0}
 .addc .quiet{flex:1 1 280px;padding-bottom:9px}
+
+/* The launch desk: countries */
+.st{display:inline-flex;align-items:center;min-height:24px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap;background:var(--sunk);border:1.5px solid var(--line)}
+.st-open{background:#E3F2E8;border-color:var(--ok);color:#0F5A34}
+.mc.cty{grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.mc.cty .where,.mc.cty .parts{grid-column:1 / -1}
+.ch{display:flex;gap:12px 18px;align-items:flex-end;flex-wrap:wrap}
+.ch .mt{flex:1 1 280px;min-width:0}
+.ch .mt p{margin-top:6px;font-weight:600}
+.ch .back{font-size:14.5px;margin:0 0 4px}
+.ch .back a::before{content:"← "}
+.cz{display:flex;flex-direction:column;gap:8px;min-width:0}
+.cnt{display:inline-grid;place-items:center;min-width:28px;height:28px;padding:0 8px;border-radius:999px;background:var(--night);color:#fff;font:700 14px var(--body);vertical-align:3px}
+.pm{display:block;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pt .needs{color:var(--ink)}
+.pt .rq{color:var(--ink);background:var(--sunk);border-radius:10px;padding:6px 10px;margin-top:8px;overflow-wrap:anywhere}
+.nf textarea{border-radius:12px;border:1.5px solid var(--line);background:var(--surface);padding:9px 12px;width:100%;font-weight:400;font-size:16px}
+.wk{padding:0}
+.wm{display:grid;grid-template-columns:190px minmax(0,1fr);gap:8px 18px;padding:14px 18px;border-top:1.5px solid var(--line)}
+.wm:first-child{border-top:0}
+.wps{display:flex;gap:8px;flex-wrap:wrap}
+.wp{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;flex:1 1 300px;max-width:440px;padding:8px 12px;border-radius:14px;background:var(--sunk)}
+.wp .wn{font-size:14.5px;font-weight:600}
+.wp .cs{font-size:14px;color:var(--muted);min-width:24px}
 
 /* Play */
 .bar{display:flex;gap:12px 18px;align-items:flex-end;flex-wrap:wrap}
@@ -149,6 +175,9 @@ body.fb-open{padding-right:calc(var(--fbw) + 16px)}
 @media (max-width:899px){
   .wide-only{display:none}
   .narrow-only{display:flex}
+  .wm{grid-template-columns:minmax(0,1fr)}
+  .wp{flex:1 1 100%;max-width:none}
+  .ch .btn{flex:1 1 100%}
   .mh .jump{flex:1 1 100%}
   .mh p{font-size:14.5px}
   .bar{gap:8px 10px}
@@ -172,8 +201,9 @@ body.fb-open{padding-right:calc(var(--fbw) + 16px)}
   #stage[data-side="host"] .dev.guest,#stage[data-side="guest"] .dev.host{visibility:hidden;pointer-events:none}
 }
 @media (max-width:420px){
-  .who{display:none}
-  .tolink{margin-left:auto}
+  .who,.tolink{display:none}
+  .nav{margin-left:auto}
+  .brand b{display:none}
   .seg button{padding:0 11px}
 }
 @media (prefers-reduced-motion:no-preference){.sw i{transition:left .12s}}

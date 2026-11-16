@@ -41,12 +41,13 @@ const narrow = () => matchMedia('(max-width:899px)').matches;
 
 const S = {
   user: null, avail: null, samples: [],                 // the session's user, the engine's list, the fixtures' list
-  sw: {}, swOk: false, houses: [], housesOk: false, fb: [], fbOk: false,   // from the database; Ok: the table answered
+  sw: {}, swOk: false, lc: {}, lcOk: false, houses: [], housesOk: false, fb: [], fbOk: false,   // from the database; Ok: the table answered
+  country: '', askFor: '',                              // the country being prepared, and the part asked for there
   mod: null, tab: 'play', step: 0, side: 'host', fbPart: '', noteFor: '',
-  house: '', lang: 'en', width: 'desktop', countries: []   // remembered on this device (MINE)
+  house: '', lang: 'en', width: 'desktop'               // remembered on this device (MINE)
 };
-function mineLoad() { try { const o = JSON.parse(localStorage.getItem(MINE) || '{}') || {}; for (const k of ['house', 'lang', 'width', 'countries']) if (o[k] !== undefined) S[k] = o[k]; } catch (e) { /* this device forgets */ } if (!GUEST_LANGS.includes(S.lang)) S.lang = 'en'; if (!['desktop', 'phone'].includes(S.width)) S.width = 'desktop'; if (!Array.isArray(S.countries)) S.countries = []; }
-function mineSave() { try { localStorage.setItem(MINE, JSON.stringify({ house: S.house, lang: S.lang, width: S.width, countries: S.countries })); } catch (e) { /* this device forgets */ } }
+function mineLoad() { try { const o = JSON.parse(localStorage.getItem(MINE) || '{}') || {}; for (const k of ['house', 'lang', 'width']) if (o[k] !== undefined) S[k] = o[k]; } catch (e) { /* this device forgets */ } if (!GUEST_LANGS.includes(S.lang)) S.lang = 'en'; if (!['desktop', 'phone'].includes(S.width)) S.width = 'desktop'; }
+function mineSave() { try { localStorage.setItem(MINE, JSON.stringify({ house: S.house, lang: S.lang, width: S.width })); } catch (e) { /* this device forgets */ } }
 let toastT = 0;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 4200); }
 
@@ -97,7 +98,7 @@ async function start() {
   const file = async f => { const r = await fetch(HERE + f, { cache: 'no-cache' }); if (!r.ok) throw new Error(f); return r.json(); };
   try { [S.avail, S.samples] = await Promise.all([file('available.json'), file('samples/index.json').catch(() => [])]); }
   catch (e) { return gate('A file is missing', 'The list of modules did not load. Reload the page.'); }
-  await Promise.all([loadSwitches(), loadHouses(), loadFeedback()]);
+  await Promise.all([loadSwitches(), loadCountries(), loadHouses(), loadFeedback()]);
   addEventListener('hashchange', route); route();
   setInterval(watch, 4000);
 }
@@ -105,34 +106,52 @@ async function loadSwitches() {
   try { const r = await sb('/rest/v1/module_switches?select=module,part,country,is_on,note,updated_at'); S.sw = {}; for (const x of r || []) S.sw[`${x.module}/${x.part}/${x.country}`] = x; S.swOk = true; }
   catch (e) { S.swOk = false; }
 }
+async function loadCountries() {
+  try { const r = await sb('/rest/v1/launch_countries?select=country,state,updated_at'); S.lc = {}; for (const x of r || []) S.lc[x.country] = x; S.lcOk = true; }
+  catch (e) { S.lcOk = false; }
+}
 async function loadHouses() {
   try { S.houses = (await sb('/rest/v1/guides?select=id,slug,status,name:content->site->>name,saved:draft->>savedAt&slug=like.sample-*&order=slug.asc')) || []; S.housesOk = true; }
   catch (e) { S.houses = []; S.housesOk = false; }
   if (!S.houses.some(h => h.slug === S.house)) S.house = (S.houses[0] || {}).slug || '';
 }
 async function loadFeedback() {
-  try { S.fb = (await sb('/rest/v1/module_feedback?select=id,created_at,module,part,words,across,seen,state&order=created_at.desc&limit=500')) || []; S.fbOk = true; }
+  try { S.fb = (await sb('/rest/v1/module_feedback?select=id,created_at,module,part,country,kind,words,across,seen,state&order=created_at.desc&limit=500')) || []; S.fbOk = true; }
   catch (e) { S.fb = []; S.fbOk = false; }
 }
 
 /* ---------- The list and the switches ---------- */
 const availOf = id => (S.avail.modules || []).find(m => m.id === id) || { id, name: id, parts: [] };
 const cur = () => MODS.find(m => m.id === S.mod);
-const countries = () => [...new Set([...(S.avail.countries || []), ...Object.values(S.sw).map(x => x.country), ...S.countries])];
+const countries = () => [...new Set([...(S.avail.countries || []), ...Object.keys(S.lc), ...Object.values(S.sw).map(x => x.country)])];
 const listSays = (p, c) => p.where === 'any' || (Array.isArray(p.where) && p.where.includes(c));
 const swRow = (m, p, c) => S.sw[`${m}/${p}/${c}`];
 const isOn = (m, p, c) => { const r = swRow(m, p.id, c); return r ? !!r.is_on : listSays(p, c); };
 const newCount = id => S.fb.filter(f => f.module === id && f.state === 'new').length;
+// A country is open when the owner opened it, or, with no word of his, when the code's list names it (Spain).
+const stateOf = c => (S.lc[c] && S.lc[c].state) || ((S.avail.countries || []).includes(c) ? 'open' : 'preparing');
+const STATE_NAMES = { open: 'Open', preparing: 'Not open yet' };
+const allParts = () => MODS.flatMap(m => availOf(m.id).parts.map(p => ({ m, p })));
+const asksFor = (mid, pid, c) => S.fb.filter(f => f.kind === 'request' && f.module === mid && f.part === pid && f.country === c);
+const countryCount = c => { const all = allParts(); return { on: all.filter(x => isOn(x.m.id, x.p, c)).length, all: all.length, asked: S.fb.filter(f => f.kind === 'request' && f.country === c && f.state !== 'done').length }; };
+async function countryPut(c, state) {
+  const was = S.lc[c], row = { country: c, state, updated_at: new Date().toISOString() };
+  S.lc[c] = row;
+  try { await sb('/rest/v1/launch_countries?on_conflict=country', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: row }); return true; }
+  catch (e) { if (was) S.lc[c] = was; else delete S.lc[c]; toast('Not saved: ' + e.message); return false; }
+}
 function countryLine(m, c) {
   const ps = availOf(m.id).parts, on = ps.filter(p => isOn(m.id, p, c)).length;
   return `${countryName(c)}: ${on === ps.length ? (ps.length > 1 ? 'all ' + ps.length + ' parts' : 'on') : on === 0 ? 'off' : on + ' of ' + ps.length + ' parts'}`;
 }
 
-/* ---------- Routes: #/ the fourteen, #/<module>/<play|countries|feedback> ---------- */
+/* ---------- Routes: #/ the fourteen, #/<module>/<play|countries|feedback>, #/countries, #/country/<code> ---------- */
 function route() {
   const [, id, tab] = location.hash.split('/');
-  const m = MODS.find(x => x.id === id);
-  document.body.classList.toggle('in-mod', !!m);
+  const m = MODS.find(x => x.id === id), inCountries = id === 'countries' || id === 'country';
+  $$('.nav a').forEach(a => a.setAttribute('aria-current', String((a.dataset.nav === 'countries') === inCountries)));
+  S.country = id === 'country' && /^[A-Z]{2}$/.test(tab || '') ? tab : '';
+  if (inCountries) { stageDrop(); S.mod = null; fbClose(); return S.country ? countryView() : countriesView(); }
   if (!m) { stageDrop(); S.mod = null; fbClose(); return overview(); }
   const first = S.mod !== m.id;
   S.mod = m.id; S.tab = ['play', 'countries', 'feedback'].includes(tab) ? tab : 'play';
@@ -186,21 +205,71 @@ ${mine ? `<button class="chip" data-back="${esc(p.id)}/${esc(c)}" title="Back to
   $$('[data-note]').forEach(b => { b.onclick = () => { S.noteFor = b.dataset.note; countriesTab(); const i = $('.nf input'); if (i) i.focus(); }; });
   $$('.nf').forEach(f => { f.onsubmit = e => { e.preventDefault(); const [p, c] = f.dataset.k.split('/'); S.noteFor = ''; swSet(p, c, { note: f.note.value.trim() }); }; });
   $$('[data-nocancel]').forEach(b => { b.onclick = () => { S.noteFor = ''; countriesTab(); }; });
-  $('#addc').onchange = e => { const c = e.target.value; if (!c) return; S.countries = [...new Set([...S.countries, c])]; mineSave(); countriesTab(); toast(`${countryName(c)} added on this device. It is kept for good with its first switch.`); };
+  $('#addc').onchange = async e => { const c = e.target.value; if (!c) return; if (await countryPut(c, 'preparing')) toast(`${countryName(c)} is being prepared: nothing is offered there until you launch it.`); countriesTab(); };
 }
-async function swSet(pid, c, change) {
-  const m = cur(), p = availOf(m.id).parts.find(x => x.id === pid), k = `${m.id}/${pid}/${c}`, was = S.sw[k];
+const swAgain = () => (S.country ? countryView() : countriesTab());
+async function swSet(pid, c, change, mid = S.mod) {
+  const m = MODS.find(x => x.id === mid), p = availOf(m.id).parts.find(x => x.id === pid), k = `${m.id}/${pid}/${c}`, was = S.sw[k];
   const row = { module: m.id, part: pid, country: c, is_on: isOn(m.id, p, c), note: was ? was.note : '', ...change, updated_at: new Date().toISOString() };
-  S.sw[k] = row; countriesTab();
+  S.sw[k] = row; swAgain();
   try { await sb('/rest/v1/module_switches?on_conflict=module,part,country', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: row }); }
-  catch (e) { if (was) S.sw[k] = was; else delete S.sw[k]; countriesTab(); toast('Not saved: ' + e.message); }
+  catch (e) { if (was) S.sw[k] = was; else delete S.sw[k]; swAgain(); toast('Not saved: ' + e.message); }
 }
-async function swBack(pid, c) {
-  const m = cur(), k = `${m.id}/${pid}/${c}`, was = S.sw[k]; if (!was) return;
-  if (was.note) return swSet(pid, c, { is_on: listSays(availOf(m.id).parts.find(x => x.id === pid), c) });   // the note stays, the switch goes back
-  delete S.sw[k]; countriesTab();
+async function swBack(pid, c, mid = S.mod) {
+  const m = MODS.find(x => x.id === mid), k = `${m.id}/${pid}/${c}`, was = S.sw[k]; if (!was) return;
+  if (was.note) return swSet(pid, c, { is_on: listSays(availOf(m.id).parts.find(x => x.id === pid), c) }, mid);   // the note stays, the switch goes back
+  delete S.sw[k]; swAgain();
   try { await sb(`/rest/v1/module_switches?module=eq.${m.id}&part=eq.${encodeURIComponent(pid)}&country=eq.${c}`, { method: 'DELETE' }); }
-  catch (e) { S.sw[k] = was; countriesTab(); toast('Not saved: ' + e.message); }
+  catch (e) { S.sw[k] = was; swAgain(); toast('Not saved: ' + e.message); }
+}
+
+/* ---------- The launch desk: the countries, and preparing one (Yohann, 17 Nov 2026) ---------- */
+function countriesView() {
+  document.title = 'Countries · Modules';
+  const cs = countries(), more = MORE_COUNTRIES.filter(c => !cs.includes(c));
+  $('#main').innerHTML = `<section class="intro"><h1>Countries</h1>
+<p>Where the maker works. Prepare a country to see, part by part, what works there already and what needs work, then launch it.</p></section>
+<ol class="grid">${cs.map(c => { const n = countryCount(c), st = stateOf(c); return `<li><a class="mc cty" href="#/country/${c}"><b>${esc(countryName(c))}</b>
+<span class="st st-${st}">${STATE_NAMES[st]}</span>
+<span class="where">${n.on} of ${n.all} parts on</span>
+${n.asked ? `<span class="parts">${n.asked} asked for</span>` : ''}</a></li>`; }).join('')}</ol>
+<div class="addc"><label><span>Prepare a country</span><select id="addc"${S.lcOk ? '' : ' disabled'}><option value="">Choose…</option>${more.map(c => `<option value="${c}">${esc(countryName(c))}</option>`).join('')}</select></label>
+<p class="quiet">${S.lcOk ? 'Preparing changes nothing for hosts: a country is offered only once you launch it.' : 'Countries cannot be saved yet: their table is not in the database.'}</p></div>`;
+  $('#addc').onchange = async e => { const c = e.target.value; if (c && await countryPut(c, 'preparing')) location.hash = '#/country/' + c; };
+}
+function countryView() {
+  const c = S.country, name = countryName(c), st = stateOf(c), n = countryCount(c);
+  document.title = name + ' · Countries';
+  const rows = allParts(), works = rows.filter(x => listSays(x.p, c)), needs = rows.filter(x => !listSays(x.p, c));
+  const sw = x => { const on = isOn(x.m.id, x.p, c); return `<button class="sw" role="switch" aria-checked="${on}" data-csw="${x.m.id}/${esc(x.p.id)}" aria-label="${esc(x.p.name)} in ${esc(name)}"${S.swOk ? '' : ' disabled'}><i></i></button><span class="cs">${on ? 'On' : 'Off'}</span>`; };
+  const need = x => { const k = `${x.m.id}/${x.p.id}`, asks = asksFor(x.m.id, x.p.id, c);
+    return `<div class="part"><div class="pt"><span class="pm">${esc(availOf(x.m.id).name)}</span><b>${esc(x.p.name)}</b><p>${esc(x.p.why)}</p>
+<p class="needs"><b>To work in ${esc(name)}:</b> ${esc(x.p.needs || 'not said yet.')}</p>
+${asks.map(f => `<p class="rq" data-state="${esc(f.state)}"><span class="chip${f.state === 'done' ? '' : ' on'}">${f.state === 'new' ? 'Asked' : f.state === 'handed_out' ? 'Being built' : 'Done'}</span> ${esc(f.words)}</p>`).join('')}
+${S.askFor === k ? `<form class="nf af" data-k="${esc(k)}"><label><span>What do you want there?</span><textarea name="words" rows="3" maxlength="4000" required placeholder="In your own words. It goes to this module’s conversation."></textarea></label><button class="btn small">Ask for it</button><button type="button" class="link" data-askno>Cancel</button></form>` : ''}</div>
+<div class="pcs"><div class="cc"><span class="cn">Launch with it?</span>${sw(x)}${S.askFor === k ? '' : `<button class="link" data-ask="${esc(k)}"${S.fbOk ? '' : ' disabled'}>${asks.length ? 'Ask again' : 'Ask for it'}</button>`}</div></div></div>`; };
+  const byMod = MODS.map(m => ({ m, ps: works.filter(x => x.m === m) })).filter(g => g.ps.length);
+  $('#main').innerHTML = `<header class="ch"><div class="mt"><p class="back"><a href="#/countries">All countries</a></p><h1>${esc(name)}</h1>
+<p><span class="st st-${st}">${STATE_NAMES[st]}</span> ${n.on} of ${n.all} parts on${n.asked ? ` · ${n.asked} asked for` : ''}</p></div>
+<button class="btn${st === 'open' ? ' ghost danger' : ''}" id="launch"${S.lcOk ? '' : ' disabled'}>${st === 'open' ? 'Close ' + esc(name) : 'Launch ' + esc(name)}</button></header>
+<p class="quiet">${st === 'open' ? 'Open: the maker takes houses there and offers the parts that are on.' : 'Not open yet: nothing is offered there. Choose what it launches with, then launch.'} The maker and the generator do not read this yet: that is the next step.</p>
+${needs.length ? `<section class="cz"><h2>Needs work there <span class="cnt">${needs.length}</span></h2>
+<p class="quiet">Each is off unless you say otherwise. Launch without it, or ask for it: your words go to its module’s conversation.</p>
+<div class="card ct">${needs.map(need).join('')}</div></section>` : ''}
+<section class="cz"><h2>Works there already <span class="cnt">${works.length}</span></h2>
+<p class="quiet">No tie to a country was found in the code. None has been tried outside Spain yet.</p>
+<div class="card wk">${byMod.map(g => `<div class="wm"><b>${esc(availOf(g.m.id).name)}</b><div class="wps">${g.ps.map(x => `<span class="wp"><span class="wn">${esc(x.p.name)}</span>${sw(x)}</span>`).join('')}</div></div>`).join('')}</div></section>`;
+  $$('[data-csw]').forEach(b => { b.onclick = () => { const [mid, pid] = b.dataset.csw.split('/'); swSet(pid, c, { is_on: b.getAttribute('aria-checked') !== 'true' }, mid); }; });
+  $$('[data-ask]').forEach(b => { b.onclick = () => { S.askFor = b.dataset.ask; countryView(); const t = $('.af textarea'); if (t) t.focus(); }; });
+  $$('[data-askno]').forEach(b => { b.onclick = () => { S.askFor = ''; countryView(); }; });
+  $$('.af').forEach(f => { f.onsubmit = async e => { e.preventDefault(); const [mid, pid] = f.dataset.k.split('/'), words = f.words.value.trim(); if (!words) return;
+    try { const r = await sb('/rest/v1/module_feedback', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { module: mid, part: pid, country: c, kind: 'request', words, across: false, seen: { tab: 'country', at: new Date().toISOString() } } });
+      if (r && r[0]) S.fb.unshift(r[0]); S.askFor = ''; toast('Asked. It waits for its module’s conversation.'); } catch (er) { toast('Not saved: ' + er.message); }
+    countryView(); }; });
+  $('#launch').onclick = async e => { const b = e.currentTarget, open = st === 'open';
+    if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Sure? Tap again'; setTimeout(() => { if (b.isConnected) countryView(); }, 4000); return; }
+    if (await countryPut(c, open ? 'preparing' : 'open')) toast(open ? `${name} is closed again.` : `${name} is launched with ${countryCount(c).on} parts.`);
+    countryView(); };
 }
 
 /* ---------- Play: the maker's real step beside the real guest page, on a sample house ---------- */
@@ -348,7 +417,7 @@ function feedbackTab() {
   const item = f => { const s = f.seen || {}, p = a.parts.find(x => x.id === f.part);
     return `<li class="fi" data-state="${esc(f.state)}"><p class="fw">${esc(f.words)}</p>
 <p class="fm">${[new Date(f.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }), p && p.name, ...seenWords(s)].filter(Boolean).map(esc).join(' · ')}</p>
-<div class="fa">${f.across ? '<span class="chip on">For the main conversation</span>' : `<span class="chip">For conversation ${MODS.indexOf(m) + 1}</span>`}
+<div class="fa">${f.kind === 'request' ? `<span class="chip on">Asked for ${esc(countryName(f.country || ''))}</span>` : ''}${f.across ? '<span class="chip on">For the main conversation</span>' : `<span class="chip">For conversation ${MODS.indexOf(m) + 1}</span>`}
 <label><span class="sr">State</span><select data-state-of="${f.id}">${STATES.map(([v, t]) => `<option value="${v}"${v === f.state ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
 <button class="link danger" data-del="${f.id}">Delete</button></div></li>`; };
   $('#tab').innerHTML = `<div class="fbt"><div class="card">${fbBox('tab')}</div>

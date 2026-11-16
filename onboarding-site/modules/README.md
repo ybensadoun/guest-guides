@@ -1,4 +1,4 @@
-# The modules page (the owner's own console)
+# The launch desk (the owner's own page; first called the modules page)
 
 Yohann, 16 Nov 2026: "a UI for me to be able to say that this module is available in this country or not [...] see
 examples of what it looks like from the builder side and also from the user side [...] play with it and see what actually
@@ -7,9 +7,18 @@ channel." Served at `/modules/` on porta-guides: a real folder, like `/privacy/`
 touch it. Not a module of the guide and not a step of the maker. First version, 16 Nov 2026: NOT live yet (below,
 "Where it stands").
 
+Yohann, 17 Nov 2026, on what it is for: "this entire chat is meant to be about me defining what is available or not, and
+being able to launch different services in different modules in different countries [...] if I need to improve the
+modules themselves, I'll do it in the conversations about it. But this is just an on-off switch"; and: "I can also launch
+a different country, and then have consequences in other modules. Because otherwise, I need to go conversation by
+conversation if I need to launch a new market. And I think there should be a flow, a guide. In this country, so what do
+you want to add here? [...] We don't have this information in transportation. Do you want to add it? What can you add?"
+So the launch desk comes first; the play area and the feedback box, which the first brief asked for, come second.
+
 ## What it does
 | Part | What | Where |
 |---|---|---|
+| Countries (the launch desk) | Every country with its state (open, not open yet) and how many parts are on. Preparing a country sorts every part of every module into "Needs work there" (why it is tied to other countries, what it needs there, a switch to launch with it anyway, "Ask for it" in his own words) and "Works there already" (a switch each); Launch opens it, Close takes it back | `countriesView`, `countryView`, `countryPut` |
 | The fourteen | The modules in the conversations' order, each with its parts, where they work and its new feedback | `console.js` `MODS`, `overview` |
 | Countries | Each part with why it works where it does (the code's list) and a switch per country; a switch that differs from the list says "Your change"; a short note per part and country | `countriesTab`; the list: `engine/src/modules/available.json` |
 | Play | The maker's real editor step beside the real guest page, on a sample house: house, step, language, width, Reload, Reset | `play`, `stageMount` |
@@ -26,6 +35,9 @@ touch it. Not a module of the guide and not a step of the maker. First version, 
 | 6 | Reset writes the house's fixture (`samples/<slug>.json`) into its row and empties its draft; event dates move with today. One confirmation. | The brief ("put back with one Reset") |
 | 7 | A sample house never starts a paid search and is never published: both are rules of the database (to be created), not of this page. | The brief; Claude's proposal, 16 Nov 2026 |
 | 8 | A page cannot wake a conversation: the main conversation reads the new feedback and hands it out, marking each item handed out. | The brief |
+| 10 | A country is open when the owner launched it; with no word of his, when the code's list names it (`countries` in `available.json`: Spain). Preparing a country changes nothing for hosts. | Yohann, 17 Nov 2026 (the flow); the default: Claude |
+| 11 | A part tied to countries says in the list what it needs elsewhere (`needs`), and the page shows it when a country is prepared. Such a part is off there unless the owner switches it on. What he asks for is saved as a request (module, part, country, his words) for that module's conversation, with a state: asked, being built, done. When the work lands, the module's conversation adds the country to the part's `where` in the list. | Yohann, 17 Nov 2026 ("Do you want to add it? What can you add?"); the states: Claude |
+| 12 | No live AI on the page yet: a web page cannot talk to the conversations, so requests are handed out by the main conversation, like feedback (rule 8). An AI helper that answers on the page would be a paid call per question: to decide with Yohann. | Claude, 17 Nov 2026, told to Yohann |
 | 9 | The builder's steps (before a guide exists) are not played here yet: the builder starts research by itself, which costs money. | Claude, 16 Nov 2026; to settle with Yohann |
 
 ## Its files
@@ -34,14 +46,19 @@ touch it. Not a module of the guide and not a step of the maker. First version, 
 | `index.html`, `console.css`, `console.js` | The page. No framework, no build of its own |
 | `build.mjs` | Copies the engine's list to `available.json` (checked) and writes `samples/index.json`. Run it after changing the list or a fixture: `node onboarding-site/modules/build.mjs` |
 | `samples/` | The sample houses: how they are made (`make.mjs`) and their fixtures. Its own README |
-| `test/check.mjs` | The page on a pretend database, at 1280 px and 360 px |
+| `test/check.mjs`, `test/pretend.mjs` | The page on a pretend database, at 1280 px and 360 px (130 checks) |
+| `test/pictures.mjs` | Every module pictured five ways on a sample house: the guide on a phone and a desktop screen, the maker's step on both, its Countries tab |
 | `../../engine/scripts/available.test.mjs` | The list is well made, the copies are in step |
 
 ## The database (to be created: needs Yohann's yes, statement in the hand-over note)
-`owners` (the owner's account id), `is_owner()`, `module_switches` (module, part, country, is_on, note), `module_feedback`
-(module, part, words, across, seen, state), and two guards on sample houses (never published, no paid job).
+In `database.sql`, proposed, not applied. For the launch desk: `owners` (the owner's account id), `is_owner()`,
+`launch_countries` (country, state), `module_switches` (module, part, country, is_on, note), `launch_public()` (what the
+maker will read without a login: states and switches, never the notes), `module_feedback` (kind request or feedback,
+module, part, country, words, across, seen, state). For the play area, later: two guards on sample houses (never
+published, no paid job) and their three rows.
 
-## Where it stands (16 Nov 2026)
+## Where it stands (17 Nov 2026)
 Built in code, on a branch, not pushed. The database part does not exist yet, so the live page would only say "Not set
-up yet". Not built: the switches acting on the maker and the generator; the builder's side; a module's Home tile in each
+up yet". Not built: the switches and the countries' states acting on the maker and the generator (the next step, and
+the point of the desk); the builder's side; a module's Home tile in each
 size by one tap (today: the step "Its tile on Home" opens the board, where a tap on the tile gives its sizes).
