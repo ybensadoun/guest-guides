@@ -1066,7 +1066,8 @@ function lookArtHTML(shown){
 }
 // Colours: one small phone per colour world, the host's cover on top and the tiles in its colours. "From your cover" and
 // "From your logo" come first when there is such a picture (and it can be read); until it is read (a moment, it starts
-// as the step is drawn) its phone shows Stone. None picked: Bauhaus.
+// as the step is drawn) its phone shows Stone. None picked: From your cover when there is a cover picture, else Bauhaus
+// (preview.js worldAsked).
 const lookWorldsHTML = () => `<div class="lk-row" id="lk_worlds"><div class="lk-hd"><b id="l_world">Colours</b></div><p class="hint">Each has its own colours and title font. Tap one to see your guide in it.</p>
     ${lookWorldsRow()}</div>`;
 function lookWorldsRow(){

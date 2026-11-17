@@ -102,6 +102,10 @@ test('any picture: a world that keeps the rule, with a red strong, a green fresh
     const t = worldTokens(p);
     for (const k of ['--blue', '--red', '--green']) assert.ok(contrast('#FFFFFF', t[k]) >= 4.5, `${k} ${say}`);
     for (const k of ['--yellow', '--orange']) assert.ok(contrast(t['--ink'], t[k]) >= 4.5, `${k} ${say}`);
+    // The one pair between two roles that pages draw: the small light icon on the deep rubbish tile (app.css .gt-tl svg),
+    // 3 to 1 as an icon. A picture cannot break it (light is never darker than its world's own, deep never lighter); a
+    // colour fine-tuned by hand can (found 21 Nov 2026 with engine/scripts/contrast-check.mjs: open in the look's README).
+    assert.ok(contrast(t['--yellow'], t['--blue']) >= 3, `the light icon on a deep tile ${t['--yellow']} ${t['--blue']} ${say}`);
     for (const [x, y] of [['light', 'warm'], ['deep', 'fresh'], ['deep', 'strong'], ['fresh', 'strong']]) {
       const mine = r => w[r] && w[r] !== WORLDS[w.base][r];
       if (mine(x) || mine(y)) assert.ok(apart(p[x], p[y]) >= 0.045, `${x} and ${y} are twins ${p[x]} ${p[y]} ${say}`);
@@ -110,6 +114,30 @@ test('any picture: a world that keeps the rule, with a red strong, a green fresh
     assert.ok(oklch(p.light)[0] <= 0.89 && oklch(p.warm)[0] <= 0.89, `light and warm stand out from the page ${say}`);
   }
   assert.equal(Object.keys(bases).length, 6, `every world is reached: ${JSON.stringify(bases)}`);
+});
+
+// Poor cover pictures a real listing may have first (21 Nov 2026, before real hosts' first guides): none gives a guide
+// that is hard to read, and one with no colour of its own gives a ready-made world as it is.
+test('a poor cover picture: a world that keeps the rule, or Stone as it is', () => {
+  const POOR = {
+    'a night shot': [['#06080F', 70], ['#101B33', 22], ['#E8B04A', 3], ['#2A2F3A', 5]],
+    'a very dark room': [['#0B0A09', 60], ['#1E1712', 30], ['#3A2A1C', 10]],
+    'overexposed': [['#F6F3EC', 55], ['#E9EEF3', 25], ['#EFE6D8', 20]],
+    'a floor plan': [['#111111', 10], ['#D9E6F2', 3], ['#C8102E', 1]],
+    'mostly sky': [['#7FB2E5', 78], ['#F4F6F8', 14], ['#5E6B3A', 8]],
+    'mostly pool': [['#1FB5C9', 72], ['#D9CDB8', 20]],
+    'a neon sign': [['#050505', 70], ['#FF2FD0', 15], ['#19E6FF', 15]],
+  };
+  for (const [name, parts] of Object.entries(POOR)) {
+    const w = worldFromPicture(swatches(picture(parts))), p = worldOf(w), t = worldTokens(p);
+    assert.ok(p, name);
+    for (const k of ['--blue', '--red', '--green']) assert.ok(contrast('#FFFFFF', t[k]) >= 4.5, `${name}: white on ${k} ${t[k]}`);
+    for (const k of ['--yellow', '--orange']) assert.ok(contrast(t['--ink'], t[k]) >= 4.5, `${name}: text on ${k} ${t[k]}`);
+    assert.ok(contrast(t['--yellow'], t['--blue']) >= 3, `${name}: the light icon on a deep tile`);
+    assert.ok(oklch(p.deep)[0] >= 0.32, `${name}: deep is not near black ${p.deep}`);
+  }
+  for (const grey of [[['#8C8F92', 40], ['#A39E97', 35], ['#6F7478', 15]], [['#222222', 30], ['#777777', 40], ['#DDDDDD', 30]]])
+    assert.deepEqual(worldFromPicture(swatches(picture(grey))), { base: 'stone' }, 'a grey room, a black and white photo: Stone as it is');
 });
 
 test('worldOf: a world with colours of its own, and nothing else gets in', () => {
