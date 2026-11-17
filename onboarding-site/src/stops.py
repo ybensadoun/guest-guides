@@ -14,16 +14,29 @@
 # committed (Yohann, 16 Nov 2026: "my computer should not be involved into the process at all"); by hand only for tests.
 # Python's standard library only. The same files give the same bytes.
 # The rules (the design, 16 Nov 2026), each applied below:
-#   - per feed, the day counted is the first Tuesday on or after --day (default: the newest zip's date) inside its calendar,
-#     its last Tuesday when the calendar has ended; no usable calendar: skipped;
+#   - per feed, the day counted is the first Tuesday on or after --day (default: the newest zip's date) on which the feed
+#     runs at least half the trips of its busiest Tuesday, else the last such Tuesday before it (17 Nov 2026: a calendar may
+#     span a date its services do not really cover); no usable calendar: skipped;
 #   - a line's kind from route_type (0, 900-906 tram; 1, 400-405 metro; 2, 100-117 rail; 3, 200-209, 700-716 bus; the rest
 #     left out and counted); its public code t (the bracket that opens its long name, else its short name when it is 5
 #     characters or fewer and the feed's short names are not internal codes: a feed whose bracketed lines mostly carry
 #     another short name keeps its short names to itself); its name n; its colours when the feed gives them;
+#   - names as a guest reads them (17 Nov 2026): a name the feed writes all in capitals is put in title case ("GRAN VIA":
+#     "Gran Via"; small words small, codes and Roman numerals kept), in a feed that writes most of its names so, or when
+#     the name has a word of 4 letters or more; a line's name loses its own code when it opens with it ("3 - Aeroport -
+#     Rafelbunyol" under the badge 3: "Aeroport - Rafelbunyol"); a stop's name loses its own code in brackets at its end
+#     ("Moyua Plaza 6 (4255)"). Nothing else of a name is touched: no accent is added, no word changed;
 #   - how often (f, 1 to 4) a line calls at a stop that day, per original stop: 2-8: 1, 9-24: 2, 25-48: 3, more: 4; fewer
-#     than 2 calls: not listed there;
+#     than 2 calls: not listed there; a trip the feed runs "every n minutes" (frequencies.txt: Madrid's metro and city
+#     buses, Sevilla's metro, Tenerife's tram, Palma's buses) counts once per run of its day, not once (17 Nov 2026: the
+#     metro at Puerta del Sol read "a few a day"); the routes of one line (the same kind and public code, or with no code
+#     the same name: a feed that writes each branch or pattern as a route) are one line at a stop, their calls added, named
+#     and coloured as the one that calls most there (17 Nov 2026: Valencia's metro showed the badge 3 twice);
 #   - a stop: stops sharing a parent station are one; else same name within 150 m in one feed are one (their middle, each
-#     line's highest f); its kind the highest of its lines' (metro, rail, tram, bus); no line left: dropped;
+#     line's highest f); its kind the highest of its lines' (metro, rail, tram, bus); no line left: dropped. The same name:
+#     capitals, accents and signs aside, and without the direction a feed adds to each side of one bus station ("sentit
+#     Tarragona", "(sentido Madrid)", "direcció Palamós"); stops merged across such names are named by what the names
+#     share. A stop with no parent joins the station of the same name within 150 m (Madrid's Gran Vía, 17 Nov 2026);
 #   - written in cells of 0.25 degrees, so that a browser loads only what is near a house.
 import csv, datetime, io, json, math, os, re, sys, unicodedata, zipfile
 from collections import Counter, defaultdict
@@ -70,6 +83,68 @@ def code_of(r, internal):
 def name_of(r):
     return spaces(BRACKET.sub('', r.get('route_long_name') or '', count=1))
 
+# Names as a guest reads them (the rules above, 17 Nov 2026).
+SMALL = {'de', 'del', 'dels', 'la', 'las', 'les', 'los', 'el', 'els', 'lo', 'y', 'i', 'e', 'a', 'al', 'als', 'en', 'con', 'amb', 'per', 'por', 'sin',
+         'da', 'do', 'das', 'dos', 'sa', 'ses'}   # "o" stays a capital: Galicia's "O Grove"
+ELIDED = {'d', 'l', 'n', 's', 'm', 't'}   # before an apostrophe: l'Hospitalet, d'en
+KEEP = {'UAB', 'UPC', 'UPV', 'UPF', 'UIB', 'URV', 'UCM', 'UAM', 'UPM', 'UJI', 'UNED', 'ITV', 'IES', 'CEIP', 'AVE', 'EMT', 'TMB', 'FGC', 'FGV', 'TIB', 'ALSA', 'UE'}
+APOS = "'’´`"
+VOWELS = set('aeiouàáâäèéêëìíîïòóôöùúûü')
+WORD = re.compile(r'[^\W_]+')
+def shouting(s):
+    """A name written all in capitals: two letters or more, none small (ª and º aside)."""
+    L = [c for c in s if c.isalpha() and c not in 'ªº']
+    return len(L) >= 2 and not any(c.islower() for c in L)
+def title(s):
+    out, pos, words = [], 0, list(WORD.finditer(s))
+    for i, m in enumerate(words):
+        w, low = m.group(), m.group().lower()
+        before, after = s[m.start() - 1:m.start()], s[m.end():m.end() + 1]
+        first = i == 0 or before in ('(', '/') or bool(re.search(r'\s[-–]\s*$', s[:m.start()]))   # the start of the name or of a part of it
+        if any(c.isdigit() for c in w) or w in KEEP or re.fullmatch(r'[IVX]{2,}', w) or (w == 'I' and i == len(words) - 1 and i > 0): t = w   # T4, UAB, XXIII, Juan Carlos I
+        elif after and after in APOS and low in ELIDED: t = low if not first else w.upper()   # l'Hospitalet; L'Hospitalet first
+        elif low in SMALL and not first: t = low
+        elif 2 <= len(w) <= 4 and after != '.' and not (set(low) & VOWELS): t = w   # FGC, not "Pl." or "Dr."
+        else: t = w.capitalize()
+        out.append(s[pos:m.start()]); out.append(t); pos = m.end()
+    return ''.join(out) + s[pos:]
+def tidy(s, mostly):
+    """A name all in capitals in title case: always in a feed that writes most names so, else only with a word of 4 letters."""
+    return title(s) if s and shouting(s) and (mostly or re.search(r'[^\W\d_]{4,}', s)) else s
+def mostly_caps(names):
+    names = [n for n in names if n]
+    return sum(1 for n in names if shouting(n)) * 2 > len(names)
+def without_code(name, code):
+    """A line's name without its own code in front ("3 - Aeroport - Rafelbunyol", "L.4 Chana - Zaidín"): only with a sign
+    after the code, or "L" or "Línea" before it, so that "1 de Mayo" keeps its 1; and only when a name is left."""
+    if not code or not name: return name
+    c = re.escape(code)
+    m = re.match(r'^(?:%s\s*[-–:.·]\s*|l(?:[íi]nea)?\.?\s*%s(?:\s*[-–:.·]\s*|\s+))(?=\S)' % (c, c), name, re.I)
+    rest = name[m.end():] if m else name
+    return rest if len(rest) >= 3 else name
+DIRECTION = re.compile(r'[\s\-–(,]*\b(?:sentit|sentido|direcci[óo]n?)\b\s*\S.*$', re.I)
+DANGLING = re.compile(r'[\s\-–(,]*(?:\b(?:sentit|sentido|direcci[óo]n?))?[\s\-–(,]*$', re.I)
+def fold(s):
+    """A name for comparing: no capitals, accents or signs."""
+    s = unicodedata.normalize('NFD', s.casefold())
+    return ' '.join(re.sub(r'[^a-z0-9]+', ' ', ''.join(c for c in s if unicodedata.category(c) != 'Mn')).split())
+def same_key(name):
+    """What two sides of one stop share: the name without the direction a feed adds ("sentit Tarragona"), folded."""
+    b = DIRECTION.sub('', name)
+    return fold(b if len(fold(b)) >= 3 else name)
+def shared(names):
+    """The name of stops merged across different names, as the best written of them writes it (the fewest words in
+    capitals): the words they all open with, without a direction word left hanging, or that name without its direction,
+    the longer of the two ("Roses Karting/Aquabrava sentit Roses" and "ROSES, Karting /Aquabrava sentit Palau": "Roses
+    Karting/Aquabrava"); nothing usable: that name."""
+    names = sorted(names, key=lambda n: (len(re.findall(r'\b[A-ZÀ-Ý]{2,}\b', n)), n)); W = [n.split(' ') for n in names]; k = 0
+    while all(len(w) > k for w in W) and len({fold(w[k]) for w in W}) == 1: k += 1
+    def whole(b):
+        b = DANGLING.sub('', b)
+        return b[:b.rindex('(')].rstrip(' -–,') if b.count('(') > b.count(')') else b
+    b = max((whole(' '.join(W[0][:k])), whole(DIRECTION.sub('', names[0]))), key=lambda x: len(fold(x)))
+    return b if len(fold(b)) >= 3 else names[0]
+
 def lum(hex6):
     c = [int(hex6[i:i + 2], 16) / 255 for i in (0, 2, 4)]
     c = [v / 12.92 if v <= .03928 else ((v + .055) / 1.055) ** 2.4 for v in c]
@@ -106,6 +181,28 @@ def ref_day(start, cal, dates):
     while d.weekday() != TUESDAY: d += datetime.timedelta(days=1)
     return d if d <= hi else None
 
+def busy_day(start, cal, dates, per_service):
+    """The Tuesday counted (17 Nov 2026): the first Tuesday on or after start on which the feed runs at least half the trips
+    of its busiest Tuesday; none: the last such Tuesday before start. A calendar may span a date its services do not
+    really cover: counted on 17 Nov 2026, Zaragoza's city buses (data of June) kept 33 stops of 930, Ourense's none.
+    Looked at: the Tuesdays of the calendar from two years before to one year after start (a calendar that ended earlier:
+    its last two years). per_service: service_id -> its number of trips. No usable calendar or no trip on any of them: None."""
+    days = lambda xs: [datetime.datetime.strptime(x, '%Y%m%d').date() for x in xs if re.match(r'^\d{8}$', x or '')]
+    lo = days([r.get('start_date') for r in cal] + [r.get('date') for r in dates]); hi = days([r.get('end_date') for r in cal] + [r.get('date') for r in dates])
+    if not lo or not hi or max(hi) < min(lo): return None
+    week = datetime.timedelta(days=7)
+    end = min(max(hi), max(start, min(lo)) + 52 * week); d = max(min(lo), end - 156 * week)
+    while d.weekday() != TUESDAY: d += datetime.timedelta(days=1)
+    by_date = defaultdict(list)
+    for r in dates: by_date[r.get('date')].append(r)
+    score = {}
+    while d <= end:
+        score[d] = sum(per_service.get(s, 0) for s in services_on(cal, by_date.get(d.strftime('%Y%m%d'), ()), d)); d += week
+    best = max(score.values(), default=0)
+    if best <= 0: return None
+    good = sorted(d for d, n in score.items() if n * 2 >= best)
+    return next((d for d in good if d >= start), None) or good[-1]
+
 def services_on(cal, dates, day):
     ymd, wd = day.strftime('%Y%m%d'), ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')[day.weekday()]
     on = {r.get('service_id') for r in cal if r.get(wd) == '1' and (r.get('start_date') or '') <= ymd <= (r.get('end_date') or '')}
@@ -125,10 +222,28 @@ def rows(z, name):
     if not m: return []
     with z.open(m) as f: return [clean(r) for r in csv.DictReader(text(f))]
 
+def secs(hms):
+    """A GTFS time ("6:30:00", "25:10:00" after midnight) in seconds, or None."""
+    m = re.match(r'^(\d{1,3}):(\d{2})(?::(\d{2}))?$', hms or '')
+    return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + int(m.group(3) or 0) if m else None
+
+def runs_of(freqs):
+    """trip_id -> how many times the trip runs in its day, for the trips a feed gives as "every n minutes"
+    (frequencies.txt: from start_time, each headway_secs, while before end_time; a trip's rows add up). A row that cannot
+    be read counts for nothing; a trip with no readable row is not here, so it counts once, as written in stop_times.txt."""
+    runs = Counter()
+    for r in freqs:
+        a, b = secs(r.get('start_time')), secs(r.get('end_time'))
+        try: h = int(float(r.get('headway_secs') or 0))
+        except ValueError: h = 0
+        if a is None or b is None or h <= 0 or b <= a or not r.get('trip_id'): continue
+        runs[r['trip_id']] += -(-(b - a) // h)   # rounded up: one at start_time, the last before end_time
+    return runs
+
 class MissingFile(Exception): pass
 def read_feed(path, start):
-    """One zip: { stops, routes, trips, cal, dates, calls: (stop, route) -> count on the day, ends: route -> (first, last) of
-    its longest trip, day, newest }. Never reads shapes.txt."""
+    """One zip: { stops, routes, trips, cal, dates, calls: (stop, route) -> count on the day (a trip run "every n minutes"
+    counted once per run, runs_of), ends: route -> (first, last) of its longest trip, day, newest }. Never reads shapes.txt."""
     z = zipfile.ZipFile(path)
     if not member(z, 'trips.txt') or not member(z, 'stop_times.txt') or not member(z, 'routes.txt') or not member(z, 'stops.txt'): raise MissingFile('no trips, stop times, routes or stops in it')
     def stamp(i):   # a zip entry's date; some zips carry an impossible one (month 0)
@@ -139,8 +254,9 @@ def read_feed(path, start):
     stops = {r['stop_id']: r for r in rows(z, 'stops.txt') if r.get('stop_id')}
     trips = {r['trip_id']: (r.get('route_id', ''), r.get('service_id', '')) for r in rows(z, 'trips.txt') if r.get('trip_id')}
     cal, dates = rows(z, 'calendar.txt'), rows(z, 'calendar_dates.txt')
-    day = ref_day(start or newest, cal, dates)   # an ended calendar: its last Tuesday
+    day = busy_day(start or newest, cal, dates, Counter(t[1] for t in trips.values()))   # a Tuesday on which the feed really runs
     on = services_on(cal, dates, day) if day else set()
+    runs = runs_of(rows(z, 'frequencies.txt'))
     calls, span = Counter(), {}
     with z.open(member(z, 'stop_times.txt')) as f:
         rd = csv.reader(text(f))
@@ -162,7 +278,7 @@ def read_feed(path, start):
                 if q < s[0]: s[0], s[1] = q, sid
                 if q > s[2]: s[2], s[3] = q, sid
             if t[1] in on and not (ipu is not None and ido is not None and r[ipu].strip() == '1' and r[ido].strip() == '1'):
-                calls[(sid, t[0])] += 1
+                calls[(sid, t[0])] += runs.get(tid, 1)
     ends = {}
     for tid, s in sorted(span.items()):
         rid = trips[tid][0]
@@ -174,52 +290,69 @@ def build_feed(fid, F, only_bus=False):
     meta.json says it carries only buses, so a line with no route_type is a bus."""
     routes, stops = F['routes'], F['stops']
     internal = internal_short(list(routes.values()))
+    caps_lines = mostly_caps([name_of(r) for r in routes.values()])
+    caps_stops = mostly_caps([spaces(x.get('stop_name')) for x in stops.values() if (x.get('location_type') or '0') in ('0', '1')])
+    def shown(x):   # a stop's name as a guest reads it: without its own code in brackets at the end, not all in capitals
+        n = spaces((x or {}).get('stop_name'))
+        for c in ((x or {}).get('stop_code'), (x or {}).get('stop_id')):
+            if c and n.endswith('(%s)' % c) and len(n) > len(c) + 4: n = n[:-len(c) - 2].rstrip(); break
+        return tidy(n, caps_stops)
     left_out = Counter()
     line = {}
     for rid, r in routes.items():
         k = kind_of(r.get('route_type')) or ('bus' if only_bus and not (r.get('route_type') or '').strip() else None)
         if not k: left_out[r.get('route_type')] += 1; continue
-        n = name_of(r)
+        t = code_of(r, internal); n = tidy(without_code(name_of(r), t), caps_lines)
         if not n and rid in F['ends']:
             _, a, b = F['ends'][rid]
-            n = ' - '.join(x for x in (spaces((stops.get(a) or {}).get('stop_name')), spaces((stops.get(b) or {}).get('stop_name'))) if x)
-        line[rid] = {'k': k, 't': code_of(r, internal), 'n': n, **colours(r)}
-    # Each original stop's lines that day (one direction), with their f.
-    at = defaultdict(dict)
+            n = ' - '.join(x for x in (shown(stops.get(a)), shown(stops.get(b))) if x)
+        line[rid] = {'k': k, 't': t, 'n': n, **colours(r)}
+    # Each original stop's lines that day (one direction), with their f: the routes of one line (the same kind and code;
+    # with no code, the same name) are one line there, their calls added, named and coloured as the one that calls most.
+    def lkey(rid): L = line[rid]; return (L['k'], L['t'], '' if L['t'] else L['n'])
+    tally = defaultdict(lambda: defaultdict(dict))
     for (sid, rid), cnt in F['calls'].items():
-        f = freq(cnt)
-        if f and rid in line: at[sid][rid] = max(f, at[sid].get(rid, 0))
+        if rid in line: tally[sid][lkey(rid)][rid] = cnt
+    at = {}
+    for sid, lines_here in tally.items():
+        here = {}
+        for k2, by in lines_here.items():
+            f = freq(sum(by.values()))
+            if f: here[k2] = (f, min(by, key=lambda r: (-by[r], line[r]['n'], r)))
+        if here: at[sid] = here
     # Groups: the parent station; else the same name within 150 m.
     def pos(s):   # no usable position (none, not a number, 0 0, off the globe): the stop is dropped
         try: la, ln = float(s['stop_lat']), float(s['stop_lon'])
         except (KeyError, ValueError): return None
         return (la, ln) if (la or ln) and -90 <= la <= 90 and -180 <= ln <= 180 and math.isfinite(la) and math.isfinite(ln) else None
+    parent_of = lambda s: (s.get('parent_station') or '').strip()
     groups, by_name = {}, defaultdict(list)
-    for sid in sorted(at):
+    for sid in sorted(at):   # first the stations: the stops sharing a parent
+        s = stops.get(sid); p = parent_of(s) if s else ''
+        if not p or p not in stops: continue
+        if ('p', p) not in groups: by_name[same_key(shown(stops[p]))].append(('p', p))
+        groups.setdefault(('p', p), []).append(sid)
+    near = lambda here, g: any(q and km(here[0], here[1], *q) <= SAME_KM for q in [pos(stops[m]) for m in groups[g]] + ([pos(stops[g[1]])] if g[0] == 'p' else []))
+    for sid in sorted(at):   # then the others: the station or the stop of the same name within 150 m, else a stop of their own
         s = stops.get(sid)
-        if not s: continue
-        p = (s.get('parent_station') or '').strip()
-        if p and p in stops: key = ('p', p)
-        else:
-            here = pos(s)
-            if not here: continue
-            nm = spaces(s.get('stop_name')); key = None
-            for g in by_name[nm]:
-                if any(km(here[0], here[1], *pos(stops[m])) <= SAME_KM for m in groups[g]): key = g; break
-            if key is None: key = ('n', nm, sid); by_name[nm].append(key)
+        if not s or (parent_of(s) and parent_of(s) in stops): continue
+        here = pos(s)
+        if not here: continue
+        nm = same_key(shown(s)); key = next((g for g in by_name[nm] if near(here, g)), None)
+        if key is None: key = ('n', nm, sid); by_name[nm].append(key)
         groups.setdefault(key, []).append(sid)
     out = []
     for key, members in groups.items():
         if key[0] == 'p':
-            ps = stops[key[1]]; here = pos(ps); name = spaces(ps.get('stop_name'))
+            ps = stops[key[1]]; here = pos(ps); name = shown(ps)
             if not here: continue
         else:
-            pts = [pos(stops[m]) for m in members]; here = (sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts)); name = key[1]
+            pts = [pos(stops[m]) for m in members]; here = (sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts))
+            names = {shown(stops[m]) for m in members}; name = names.pop() if len(names) == 1 else shared(names)
         merged = {}
         for m in members:
-            for rid, f in at[m].items():
-                L = line[rid]; k2 = (L['t'], L.get('c', ''), '' if L['t'] else L['n'])   # one line per public code and colour; with no code, per name
-                cur = merged.get(k2)   # the highest f, and with it its name (the first in order when two are as frequent)
+            for k2, (f, rid) in at[m].items():
+                L = line[rid]; cur = merged.get(k2)   # the highest f, and with it its name (the first in order when two are as frequent)
                 if cur is None or (-f, L['n'], rid) < (-cur['f'], cur['n'], cur['_rid']): merged[k2] = {**L, 'f': f, '_rid': rid}
         lines = [{k: v for k, v in L.items() if k not in ('_rid', 'k') and not (k == 't' and not v)} for L in sorted(merged.values(), key=lambda L: (-L['f'], L['t'], L['n']))]
         if not lines: continue

@@ -118,6 +118,115 @@ class Build(unittest.TestCase):
         lines = slurp(os.path.join(out, '164_4.json'), 'r').splitlines()
         self.assertEqual(lines[0], '{"stops":['); self.assertTrue(lines[1].startswith('{"id":"nap-1234:a1"'))
 
+class EveryNMinutes(unittest.TestCase):
+    """A feed that gives a trip once and says how often it runs (frequencies.txt), as Madrid's metro does: at Puerta del
+    Sol its lines read "a few a day" and one was not listed (17 Nov 2026)."""
+    def test_runs(self):
+        self.assertEqual([S.secs(x) for x in ('6:30:00', '06:30:00', '25:10:00', '07:05', '', 'soon')], [23400, 23400, 90600, 25500, None, None])
+        R = S.runs_of([{'trip_id': 'a', 'start_time': '06:00:00', 'end_time': '07:00:00', 'headway_secs': '600'},     # 6: 6:00 to 6:50
+                       {'trip_id': 'a', 'start_time': '07:00:00', 'end_time': '25:00:00', 'headway_secs': '300'},     # 216, after midnight too
+                       {'trip_id': 'b', 'start_time': '6:30:00', 'end_time': '6:49:59', 'headway_secs': '780'},       # 2: 6:30 and 6:43
+                       {'trip_id': 'c', 'start_time': '08:00:00', 'end_time': '09:00:00', 'headway_secs': '0'},       # cannot be read
+                       {'trip_id': 'c', 'start_time': '10:00:00', 'end_time': '09:00:00', 'headway_secs': '600'},
+                       {'trip_id': '', 'start_time': '08:00:00', 'end_time': '09:00:00', 'headway_secs': '600'}])
+        self.assertEqual(dict(R), {'a': 222, 'b': 2})
+
+    def test_feed(self):
+        d = tempfile.mkdtemp(); zp = os.path.join(d, 'feed.zip')
+        T1, X1 = trips_of('m1', 1, ['s1', 's2'])                 # written once, run every 5 minutes: f 4
+        T2, X2 = trips_of('m2', 1, ['s1', 's3'])                 # written once, run twice: f 1
+        T3, X3 = trips_of('m3', 1, ['s1', 's4'])                 # its row cannot be read: once, not listed
+        T4, X4 = trips_of('m4', 1, ['s1', 's5'], service='we')   # every 5 minutes at weekends: nothing on a Tuesday
+        T5, X5 = trips_of('b1', 10, ['s1', 's6'])                # a line written trip by trip in the same feed: as before, f 2
+        make_zip(zp, routes=[['m1', '1', 'North - South', 1, '', ''], ['m2', '2', 'East - West', 1, '', ''], ['m3', '3', 'Up - Down', 1, '', ''],
+                             ['m4', '4', 'Weekend', 1, '', ''], ['b1', '50', 'Bus', 3, '', '']],
+                 stops=[['s%d' % i, 'Stop %d' % i, '40.4%d' % i, '-3.7', 0, ''] for i in range(1, 7)],
+                 trips=T1 + T2 + T3 + T4 + T5, times=X1 + X2 + X3 + X4 + X5,
+                 cal=[['wk', 1, 1, 1, 1, 1, 0, 0, '20261101', '20261231'], ['we', 0, 0, 0, 0, 0, 1, 1, '20261101', '20261231']], dates=[])
+        with zipfile.ZipFile(zp, 'a') as z:
+            z.writestr('frequencies.txt', csv_text([['trip_id', 'start_time', 'end_time', 'headway_secs', 'exact_times'], ['m1-0', '06:00:00', '25:00:00', 300, ''],
+                                                    ['m2-0', '08:00:00', '10:00:00', 3600, ''], ['m3-0', '08:00:00', '10:00:00', 'often', ''], ['m4-0', '06:00:00', '25:00:00', 300, ''],
+                                                    ['gone', '06:00:00', '25:00:00', 300, '']]))
+        F = S.read_feed(zp, datetime.date(2026, 11, 2))
+        self.assertEqual(F['calls'][('s1', 'm1')], 228); self.assertEqual(F['calls'][('s1', 'm2')], 2); self.assertEqual(F['calls'][('s1', 'm3')], 1)
+        self.assertEqual(F['calls'][('s1', 'm4')], 0); self.assertEqual(F['calls'][('s1', 'b1')], 10)
+        st, _ = S.build_feed('t', F)
+        by = {s['id']: s for s in st}
+        self.assertEqual([(L['t'], L['f']) for L in by['t:s1']['lines']], [('1', 4), ('50', 2), ('2', 1)])
+        self.assertEqual(by['t:s1']['k'], 'metro')
+        self.assertNotIn('t:s4', by); self.assertNotIn('t:s5', by)
+
+
+class Names(unittest.TestCase):
+    """Names as a guest reads them, and one stop for the two sides of a station (17 Nov 2026)."""
+    def test_title(self):
+        for a, b in (('GRAN VIA', 'Gran Via'), ('PLAZA DE CASTILLA', 'Plaza de Castilla'), ("L'HOSPITALET DE LLOBREGAT - AV. CARRILET", "L'Hospitalet de Llobregat - Av. Carrilet"),
+                     ("FONT D'EN FARGAS", "Font d'en Fargas"), ('JUAN CARLOS I', 'Juan Carlos I'), ('PIO XII', 'Pio XII'), ('AEROPUERTO T4', 'Aeropuerto T4'),
+                     ('LA PATACONA/LA MALVA-ROSA - EST. J. SOROLLA', 'La Patacona/La Malva-Rosa - Est. J. Sorolla'), ('O GROVE - A TOXA', 'O Grove - A Toxa'),
+                     ('CTRA. A LOECHES', 'Ctra. a Loeches'), ('ESTACIÓN FGC', 'Estación FGC'), ('AVDA. DE LA CONSTITUCIÓN S/N', 'Avda. de la Constitución S/N'),
+                     ('1º DE MAYO', '1º de Mayo'), ('SOL', 'Sol'), ('UAB', 'UAB')):
+            self.assertEqual(S.tidy(a, True), b)
+        # A feed that writes its names normally: only a name with a word of 4 letters or more; a name not all in capitals: never.
+        self.assertEqual([S.tidy(x, False) for x in ('SOL', 'GRAN VIA', 'Gran Vía', 'BILBAO-MUNGIA Autopista', '')], ['SOL', 'Gran Via', 'Gran Vía', 'BILBAO-MUNGIA Autopista', ''])
+        self.assertTrue(S.mostly_caps(['A B', 'CD', 'Ef'])); self.assertFalse(S.mostly_caps(['AB', 'Cd', 'Ef', '']))
+
+    def test_code_in_front(self):
+        for n, c, want in (('3 - Aeroport - Rafelbunyol', '3', 'Aeroport - Rafelbunyol'), ('L.4 CHANA - ZAIDÍN', '4', 'CHANA - ZAIDÍN'), ('Línea 2: Centro - Playa', '2', 'Centro - Playa'),
+                           ('1 de Mayo - Centro', '1', '1 de Mayo - Centro'), ('3', '3', '3'), ('Centro', '', 'Centro'), ('30 - 31', '30', '30 - 31')):
+            self.assertEqual(S.without_code(n, c), want)
+
+    def test_same_stop(self):
+        self.assertEqual(S.same_key("El Vendrell (estació d'autobusos) sentit Tarragona"), S.same_key("EL VENDRELL (Estació d'Autobusos) sentit Barcelona"))
+        self.assertEqual(S.same_key('Riumors(Direcció L`Escala)'), 'riumors'); self.assertEqual(S.same_key('Gran Vía'), S.same_key('GRAN VIA'))
+        self.assertEqual(S.same_key('9 sentit Gandia'), '9 sentit gandia')   # nothing left without it: kept whole
+        self.assertEqual(S.shared({"El Vendrell (estació d'autobusos) sentit Tarragona", "El Vendrell (estació d'autobusos) sentit Barcelona"}), "El Vendrell (estació d'autobusos)")
+        self.assertEqual(S.shared({'Aeroport T1 (sentit Gavà)', 'Aeroport T1 (sentit Sitges)'}), 'Aeroport T1')
+        self.assertEqual(S.shared({'Cruce Dirección la Nave', 'Cruce Dirección la Nave (front)'}), 'Cruce Dirección la Nave')
+        self.assertEqual(S.shared({'MAIN SQUARE', 'Main Square'}), 'Main Square')
+        self.assertEqual(S.shared({'Roses Karting/Aquabrava sentit Roses', 'ROSES, Karting /Aquabrava sentit Palau'}), 'Roses Karting/Aquabrava')
+
+    def test_busy_day(self):
+        D = datetime.date
+        cal = [['all', 0, 1, 0, 0, 0, 0, 0, '20260101', '20261231'], ['summer', 0, 1, 0, 0, 0, 0, 0, '20260601', '20260630']]
+        cal = [dict(zip(('service_id', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'start_date', 'end_date'), map(str, r))) for r in cal]
+        per = {'all': 3, 'summer': 100}   # the calendar spans the year, the timetable is June's
+        self.assertEqual(S.busy_day(D(2026, 6, 10), cal, [], per), D(2026, 6, 16))    # the first busy Tuesday on or after the day asked
+        self.assertEqual(S.busy_day(D(2026, 11, 16), cal, [], per), D(2026, 6, 30))   # none after it: the last busy one before
+        self.assertEqual(S.busy_day(D(2026, 11, 16), cal, [], {'all': 3}), D(2026, 11, 17))   # an even calendar: as before
+        dates = [{'service_id': 'x', 'date': '20261117', 'exception_type': '1'}, {'service_id': 'x', 'date': '20261124', 'exception_type': '1'}, {'service_id': 'all', 'date': '20261117', 'exception_type': '2'}]
+        self.assertEqual(S.busy_day(D(2026, 11, 1), [], dates, {'x': 5}), D(2026, 11, 17))   # a feed of dates only
+        self.assertIsNone(S.busy_day(D(2026, 11, 1), cal, [], {}))                           # no trip on any Tuesday
+        old = [dict(cal[0], start_date='20100101', end_date='20271231')]                     # a calendar open for many years: the day asked is still found
+        self.assertEqual(S.busy_day(D(2026, 11, 16), old, [], {'all': 3}), D(2026, 11, 17))
+        self.assertEqual(S.busy_day(D(2026, 11, 16), [dict(cal[0], start_date='20200101', end_date='20201231')], [], {'all': 3}), D(2020, 12, 29))   # ended long ago: its last Tuesday
+        self.assertIsNone(S.busy_day(D(2026, 11, 1), [], [], {'x': 5}))
+
+    def test_feed(self):
+        d = tempfile.mkdtemp(); zp = os.path.join(d, 'feed.zip')
+        T, X = [], []
+        def add(route, n, stops, first=0):
+            t, x = trips_of(route, n, stops, first=first); T.extend(t); X.extend(x)
+        add('a1', 20, ['bs1', 'far']); add('a2', 20, ['far', 'bs2'])   # the two sides of a bus station, 20 m apart
+        add('v1', 20, ['x1', 'far']); add('v2', 20, ['x1', 'far'], first=100); add('v3', 4, ['x1', 'far'], first=200)   # one line written as three routes, two colours
+        add('m1', 30, ['g1', 'far']); add('m5', 30, ['g5', 'far'])     # a station whose first platform has lost its parent
+        add('c1', 5, ['k1', 'far'])
+        make_zip(zp, routes=[['a1', 'L0', 'TARRAGONA - BARCELONA', 3, '', ''], ['a2', 'L0', 'BARCELONA - TARRAGONA', 3, '', ''],
+                             ['v1', '3', '3 - Aeroport - Rafelbunyol', 1, 'FF0000', 'FFFFFF'], ['v2', '3', '3 - Aeroport - Alboraia', 1, 'FF0000', 'FFFFFF'], ['v3', '3', '3 - Depot', 1, '00FF00', 'FFFFFF'],
+                             ['m1', '1', 'PINAR - VALDECARROS', 1, '', ''], ['m5', '5', 'ALAMEDA - CASA DE CAMPO', 1, '', ''], ['c1', '9', 'Circular', 3, '', '']],
+                 stops=[['bs1', "El Vendrell (estació d'autobusos) sentit Tarragona", '41.21857', '1.53622', 0, ''], ['bs2', "El Vendrell (estació d'autobusos) sentit Barcelona", '41.21844', '1.53642', 0, ''],
+                        ['far', 'FAR AWAY', '42.0', '2.0', 0, ''], ['x1', 'XATIVA', '39.467', '-0.377', 0, ''],
+                        ['G', 'GRAN VIA', '40.42001', '-3.7018', 1, ''], ['g1', 'GRAN VIA', '40.42001', '-3.7018', 0, ''], ['g5', 'GRAN VIA', '40.41999', '-3.7018', 0, 'G'],
+                        ['k1', 'MOYUA PLAZA 6 (k1)', '43.26', '-2.93', 0, '']],
+                 trips=T, times=X)
+        st, _ = S.build_feed('t', S.read_feed(zp, datetime.date(2026, 11, 2)))
+        by = {s['n']: s for s in st}
+        self.assertEqual(sorted(by), ['El Vendrell (estació d\'autobusos)', 'Far Away', 'Gran Via', 'Moyua Plaza 6', 'Xativa'])
+        self.assertEqual(by["El Vendrell (estació d'autobusos)"]['lines'], [{'t': 'L0', 'n': 'Barcelona - Tarragona', 'f': 2}])
+        self.assertEqual(by['Xativa']['lines'], [{'t': '3', 'n': 'Aeroport - Alboraia', 'c': '#FF0000', 'ink': False, 'f': 3}])   # 44 calls, once; the name of the route that calls most, the first of two
+        self.assertEqual([(L['t'], L['n']) for L in by['Gran Via']['lines']], [('1', 'Pinar - Valdecarros'), ('5', 'Alameda - Casa de Campo')])
+        self.assertEqual(by['Gran Via']['id'], 't:g1')
+
+
 class Shapes(unittest.TestCase):
     """What the national access point's files showed (16 Nov 2026): files in a folder of the zip, no calendar.txt, no trips,
     an empty route_type in a bus-only feed, careless colours, a bad byte."""
