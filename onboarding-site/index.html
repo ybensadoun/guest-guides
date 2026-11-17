@@ -2675,7 +2675,9 @@ const PV = { screen: 'home' };
 /* ---------- The guide's colours: a colour world (engine/src/worlds.js, pasted by build.py as WK) ----------
    The host picks one in The look (A.world): one of the six worlds, or 'cover' / 'logo', a world made from that picture by the
    engine's own rule (engine/src/picture-world.js), kept in A.worldOwn with the picture it came from (A.worldSrc), so it is
-   read again only when that picture changes. Every guide has Ca La Kimberly's tiles (Yohann, 10 Nov 2026): no layouts. */
+   read again only when that picture changes. Every guide has Ca La Kimberly's tiles (Yohann, 10 Nov 2026): no layouts.
+   A new guide starts in its own cover picture's colours (Yohann, 17 Nov 2026: "Colours from my photo"; before, every
+   guide started in Bauhaus, Ca La Kimberly's colours): worldAsked() below. */
 const WORLD_IDS = ['bauhaus', 'sea', 'country', 'tropical', 'night', 'stone'];
 const WORLD_NAME = { bauhaus: 'Bauhaus', sea: 'Sea', country: 'Country', tropical: 'Tropical', night: 'City night', stone: 'Stone', cover: 'From your cover', logo: 'From your logo' };
 const isWorldId = id => typeof id === 'string' && WORLD_IDS.includes(id);
@@ -2720,23 +2722,35 @@ function worldMigrate(){
   const c = String(A.colorsFrom).toLowerCase(), w = /logo/.test(c) ? 'logo' : /cover|photo|picture/.test(c) ? 'cover' : '';
   if (w) A.world = w;
 }
-// The phone selected: the host's choice, Bauhaus when none, or when its picture is gone or cannot be read.
-function worldSel(){
+// A guide the host is still making: in the builder, never sent, no guide built from it. Only such a guide gets a start
+// of its own below: one that exists keeps the colours its guests know, whatever its answers say or leave out.
+function worldFresh(){
+  const g = window.__acctGuide && window.__acctGuide();
+  return !CM.on && !A._sentAt && !(g && g.status && g.status !== 'draft');
+}
+// What the host asked for: their choice (A.world), else, in a guide still being made that has a cover picture, that
+// picture's colours ("already chosen for you": the guide is theirs from the first screen), else nothing (Bauhaus).
+function worldAsked(){
   worldMigrate();
-  const w = A.world;
+  return A.world || (worldFresh() && picOf('cover') ? 'cover' : '');
+}
+// The phone selected: what the host asked for, Bauhaus when nothing, or when its picture is gone or cannot be read.
+function worldSel(){
+  const w = worldAsked();
   if (w === 'cover' || w === 'logo') return picOf(w) && picWorldNow(w) !== null ? w : 'bauhaus';
   return isWorldId(w) ? w : 'bauhaus';
 }
-// What the stored answer says once a picture is read: its world and the picture (A.worldOwn, A.worldSrc), or Bauhaus
-// when the picture is gone or cannot be read (silently, as the build does).
+// What the stored answer says once a picture is read: its world and the picture (A.world, A.worldOwn, A.worldSrc), or
+// Bauhaus when the picture is gone or cannot be read (silently, as the build does). The start nobody picked is stored
+// like a pick once its picture is read, so the build makes the guide the phone showed; when that picture cannot be
+// read nothing is stored, so another cover picture can still give its colours.
 function worldStore(){
-  worldMigrate();
-  const k = A.world; if (k !== 'cover' && k !== 'logo') return false;
+  const k = worldAsked(); if (k !== 'cover' && k !== 'logo') return false;
   const pic = picOf(k), w = pic ? picWorldNow(k) : null;
   if (w === undefined) return false;
-  if (w === null) { A.world = 'bauhaus'; delete A.worldOwn; delete A.worldSrc; queueSave(); return true; }
-  if (A.worldSrc === pic.key && JSON.stringify(A.worldOwn) === JSON.stringify(w)) return false;
-  A.worldOwn = w; A.worldSrc = pic.key; queueSave(); return true;
+  if (w === null) { if (!A.world) return false; A.world = 'bauhaus'; delete A.worldOwn; delete A.worldSrc; queueSave(); return true; }
+  if (A.world === k && A.worldSrc === pic.key && JSON.stringify(A.worldOwn) === JSON.stringify(w)) return false;
+  A.world = k; A.worldOwn = w; A.worldSrc = pic.key; queueSave(); return true;
 }
 // A picture's colours just arrived: the answer, then The look (builder or editor) and the phone show them.
 let worldArrivedT = null;
@@ -2749,17 +2763,20 @@ function worldArrived(){
     if (document.getElementById('phoneFrame')) { PHONE.build = false; phoneRender(); }
   }, 30);
 }
-// The world to draw (an id or { base, ...roles }): the picture's once read; Bauhaus when it cannot be.
-async function worldResolved(){
-  const s = worldSel();
-  if (s === 'cover' || s === 'logo') return (await picWorld(s)) || 'bauhaus';
-  return s;
-}
-// The same at once, for what cannot wait (the drawn cover's colours, a researched card's kind): Stone while a picture is read.
+// The world to draw now (an id or { base, ...roles }). Never waits for a picture: the phone shows at once (the wow, a
+// cover just picked) in the colours drawn last, Bauhaus at first, and worldArrived draws it again when the picture is
+// read, a moment later. Before 17 Nov 2026 the phone waited for the picture, which only a host who had picked "From your
+// cover" met; now that a new guide starts there, every first screen would have waited for a second download of the photo.
+// In the builder the answer is brought in step with what is drawn: a picture read earlier on this page (the host going
+// back to a cover they had before) arrives nowhere again, and the build would keep the colours of the cover in between.
+let WORLD_LAST = 'bauhaus';
 function worldNow(){
   const s = worldSel();
-  if (s === 'cover' || s === 'logo') { const w = picWorldNow(s); return w === undefined ? 'stone' : w || 'bauhaus'; }
-  return s;
+  if (s !== 'cover' && s !== 'logo') return WORLD_LAST = s;
+  const w = picWorldNow(s);
+  if (w === undefined) return WORLD_LAST;
+  if (!CM.on) worldStore();
+  return WORLD_LAST = w || 'bauhaus';
 }
 // A world's tokens after the contrast rule, and the title font of its base.
 const worldTok = w => WK.worldTokens(WK.worldOf(w) || WK.WORLDS.bauhaus);
@@ -2769,7 +2786,7 @@ function worldPal(w){
   const t = worldTok(w), b = WK.WORLDS[worldBase(w)];
   return { paper: t['--paper'], ink: t['--ink'], acc: [t['--blue'], t['--red'], t['--yellow'], t['--green']], display: b.display, plain: !!b.plain, base: worldBase(w) };
 }
-const phonePalette = async () => worldPal(await worldResolved());
+const phonePalette = async () => worldPal(worldNow());
 // The fonts of a world from Google Fonts: Jost for the text, the world's title family in the weights the engine bundles.
 function worldGF(id){
   const w = WK.WORLDS[isWorldId(id) ? id : 'bauhaus'], fam = (w.display.match(/"([^"]+)"/) || [])[1] || 'Jost', slug = fam.toLowerCase().replace(/ /g, '-');
@@ -4156,7 +4173,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 16 Nov 2026, 20:20 (Madrid time, after commit 33dd9b4)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 17 Nov 2026, 12:01 (Madrid time, after commit 8a311de)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */
@@ -4249,7 +4266,8 @@ function lookArtHTML(shown){
 }
 // Colours: one small phone per colour world, the host's cover on top and the tiles in its colours. "From your cover" and
 // "From your logo" come first when there is such a picture (and it can be read); until it is read (a moment, it starts
-// as the step is drawn) its phone shows Stone. None picked: Bauhaus.
+// as the step is drawn) its phone shows Stone. None picked: From your cover when there is a cover picture, else Bauhaus
+// (preview.js worldAsked).
 const lookWorldsHTML = () => `<div class="lk-row" id="lk_worlds"><div class="lk-hd"><b id="l_world">Colours</b></div><p class="hint">Each has its own colours and title font. Tap one to see your guide in it.</p>
     ${lookWorldsRow()}</div>`;
 function lookWorldsRow(){

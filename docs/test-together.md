@@ -55,5 +55,23 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 | 2.6 | "Back to the arrangement we suggest" | One confirmation, then the default |
 | 2.7 | Preview | The phone shows the same arrangement |
 
+## 14. The look (the picker of 14 Nov 2026; a new guide starts in its cover's colours since 17 Nov 2026)
+
+### In the builder, with a new link (the test house)
+| # | Do | Expect |
+|---|---|---|
+| 14.1 | Paste a listing link and look at the phone on "This is your guide" | The tiles are in colours taken from the listing's first photo, not Ca La Kimberly's blue, red and yellow |
+| 14.2 | Open The look | "From your cover" is the first small phone and is the one picked, without a tap |
+| 14.3 | Pick another photo in "Cover picture" | The colours follow the new photo, on the small phone and the big one |
+| 14.4 | Go back to the first photo | Its colours come back |
+| 14.5 | Tap Sea, then Bauhaus | The big phone follows at once; the page does not jump |
+| 14.6 | Build the guide | The guide has the colours the phone showed |
+| 14.7 | Open the built guide's The look in the editor | "From your cover" is picked, and its small phone shows the guide's colours |
+| 14.8 | The same on a phone (360 px wide) | The row of small phones slides sideways, the next one peeking in; nothing overlaps |
+
+### Known, not to report
+- An existing guide keeps its colours: nothing changes for the pool house or Ca La Kimberly.
+- A listing whose photo the browser may not read gives Bauhaus.
+
 ## Later modules
 Added here as each one is built or changed: public transport (bus, metro, tram), then the rest of the plan.
