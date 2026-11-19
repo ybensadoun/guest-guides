@@ -71,11 +71,30 @@ test('generator: an unmatched place has no town; a picked row with no name is na
   } finally { rmSync(site, { recursive: true, force: true }); rmSync(src, { recursive: true, force: true }); }
 });
 
-// "By the time shown" is only said in a guide that shows a time: with no collection hour from the host, the step ends before it.
-test('generator: the step about putting bins out names a time only when the host gave one', () => {
-  for (const [time, said] of [['', false], ['07:00', true]]) {
+// Rubbish's default texts (engine/scripts/garbage-defaults.json; engine/src/modules/garbage/README.md, rule 9): each in the
+// six languages, and true for any house: no colour of a bin, no place that is another house's, du in German.
+const SIX = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
+test('rubbish defaults: every text is in the six languages, with no colour, no "Sie" and no em-dash', () => {
+  const GD = JSON.parse(readFileSync(resolve(ROOT, 'engine/scripts/garbage-defaults.json'), 'utf8')), texts = [];
+  for (const k of ['names', 'examples', 'examples_street']) for (const [id, o] of Object.entries(GD[k])) texts.push([`${k}.${id}`, o]);
+  for (const k of ['steps_home', 'steps_containers']) GD[k].forEach((o, i) => texts.push([`${k}[${i}]`, o]));
+  for (const k of ['missed_home', 'missed_containers']) texts.push([k, GD[k]]);
+  for (const [where, o] of texts) {
+    assert.deepEqual(Object.keys(o).sort(), [...SIX].sort(), where);
+    for (const l of SIX) { assert.ok(String(o[l]).trim(), `${where}.${l}`); assert.ok(!o[l].includes('—'), `${where}.${l}`); }
+    for (const l of SIX.filter(x => x !== 'en')) assert.notEqual(o[l], o.en, `${where}.${l} is the English text`);
+    assert.ok(!/\bSie\b|\bIhre?[mnrs]?\b/.test(o.de), `${where}.de`);
+  }
+  for (const [id, o] of Object.entries(GD.names)) for (const l of SIX) assert.ok(!/[()]/.test(o[l]), `names.${id}.${l}`);
+  assert.ok(!/next to the house|al costat de la casa|naast het huis|neben dem Haus|junto a la casa|à côté de la maison|village|pueblo|poble|Dorf|dorp/i.test(JSON.stringify({ ...GD, _doc: '' })));
+});
+
+// A house collected at the door: its texts in each of its languages, the same steps with or without a collection hour
+// (the hour is said by the page's week, never by a step), and a kind with no day takes its street wording.
+test('generator: rubbish at the door reads in every language of the guide, and fits how each kind is collected', () => {
+  for (const time of ['', '07:00']) {
     const src = mkdtempSync(join(tmpdir(), 'gen-bins-')), slug = 'zz-test-bins-' + process.pid, site = resolve(ROOT, 'sites', slug);
-    writeFileSync(join(src, 'host.json'), JSON.stringify({ answers: { placeName: 'Test house', town: 'Calafell', languages: ['en', 'es', 'fr', 'de'],
+    writeFileSync(join(src, 'host.json'), JSON.stringify({ answers: { placeName: 'Test house', town: 'Calafell', languages: SIX,
       rubbishMode: 'Collected at the house', rubbishPlan: { organic: ['mon', 'thu'], packaging: ['tue'] }, rubbishTime: time } }));
     writeFileSync(join(src, 'geocode.json'), '{}');
     try {
@@ -83,8 +102,27 @@ test('generator: the step about putting bins out names a time only when the host
       assert.equal(r.status, 0, (r.stderr || '').slice(-400));
       const g = JSON.parse(readFileSync(join(site, 'content/garbage.json'), 'utf8')), all = JSON.stringify(g.steps);
       assert.equal(g.collectionTime, time);
-      for (const [l, w] of [['en', 'time shown'], ['es', 'hora indicada'], ['fr', 'heure indiquée'], ['de', 'angegebenen Uhrzeit']]) assert.equal(g.steps[1][l].includes(w), said, `${l}, time "${time}"`);
-      assert.match(g.steps[1].en, /^Put each bin out the evening before its collection day/); assert.ok(!all.includes('noTime'));
+      assert.equal(g.steps[1].en, 'Put each bin out the evening before its collection day.'); assert.ok(!/time shown|noTime/.test(all));
+      for (const o of [...g.steps, g.missed, ...g.fractions.map(f => f.examples), ...g.fractions.map(f => f.name)])
+        for (const l of ['ca', 'nl', 'de', 'fr', 'es']) assert.ok(o[l] && o[l] !== o.en, `${l}: ${o.en}`);
+      const by = id => g.fractions.find(f => f.id === id);
+      assert.ok(!/container|general waste/.test(by('organic').examples.en), 'organic, collected at the door, says nothing of a container');
+      assert.equal(by('packaging').name.en, 'Packaging');
     } finally { rmSync(site, { recursive: true, force: true }); rmSync(src, { recursive: true, force: true }); }
   }
+});
+// Street containers only: organic has no day, so it says where it goes when there is no container for it.
+test('generator: with street containers only, organic says what to do without a container for it', () => {
+  const src = mkdtempSync(join(tmpdir(), 'gen-cont-')), slug = 'zz-test-cont-' + process.pid, site = resolve(ROOT, 'sites', slug);
+  writeFileSync(join(src, 'host.json'), JSON.stringify({ answers: { placeName: 'Test house', town: 'Calafell', languages: ['en', 'ca', 'nl'],
+    rubbishMode: 'Shared containers in the street', rubbishSpots: [{ w: 'At the end of the lane', m: '', t: ['glass'] }] } }));
+  writeFileSync(join(src, 'geocode.json'), '{}');
+  try {
+    const r = spawnSync('python3', ['engine/scripts/generate-site.py', src, '--slug', slug, '--lat', '41.2', '--lng', '1.5'], { cwd: ROOT, encoding: 'utf8', timeout: 60000 });
+    assert.equal(r.status, 0, (r.stderr || '').slice(-400));
+    const g = JSON.parse(readFileSync(join(site, 'content/garbage.json'), 'utf8')), organic = g.fractions.find(f => f.id === 'organic');
+    assert.match(organic.examples.en, /Where there is no container for it, it goes in general waste\.$/);
+    assert.match(organic.examples.ca, /va al de rebuig\.$/); assert.match(organic.examples.nl, /restafval\.$/);
+    assert.match(g.steps[1].ca, /^Porta les bosses tancades/); assert.match(g.missed.nl, /^Er is geen ophaaldag/);
+  } finally { rmSync(site, { recursive: true, force: true }); rmSync(src, { recursive: true, force: true }); }
 });

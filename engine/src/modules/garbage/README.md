@@ -22,6 +22,7 @@ this module is checked against them pixel for pixel, before and after.
 | 6 | Until 20:00 the page names the bins collected that morning, to bring back in. | First version |
 | 7 | A house with street containers only (no collection days) has no evening and no week: the page says where the containers are, the widget is one line. | Maker, Oct 2026 |
 | 8 | Real or nothing: a bin the guide gives no name shows only what goes in it, never "in the" with nothing after; a sentence that needs the collection hour is left out when the guide has none; "red bin only" is only said in a guide that has that bin. | Yohann, 13 Nov 2026 ("we need to show the end user real information, or we just don't show anything") |
+| 9 | The texts the maker gives a house (`engine/scripts/garbage-defaults.json`: the kinds' names, what goes in each, the steps, a missed day) are in the six languages and true for any house: no colour of a bin or a container (it is not known), no place, no village, du in German and je in Dutch. A step never names the collection hour: the week on the page says it. A kind with no collection day says what to do when the street has no container for it (organic). | The ordered list of fixes, `08.1`, Yohann's "Go" of 17 Nov 2026. Before: steps and the missed day in four languages (Catalan and Dutch guests read English), Catalan and Dutch examples copied from Ca La Kimberly ("the green container next to the house"), "Packaging (yellow)", "Sie" |
 
 ## Its data
 
@@ -79,4 +80,3 @@ decision to take, one at a time:
 - Named bins and their colours, the "used oil and batteries" card in the kitchen, the recycling centre with its hours:
   only in Ca La Kimberly's file, written by hand.
 - The big header of the page runs over the yellow corner shape when the sentence is long (German).
-- The maker's default sentences in German say "Sie" where the guides say "du".

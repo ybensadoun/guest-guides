@@ -1,157 +1,181 @@
 {
- "_doc": "Generic rubbish texts used by generate-site.py when the host says how rubbish works at the house.",
+ "_doc": "Generic rubbish texts used by generate-site.py when the host says how rubbish works at the house. Every text is in the six languages and true for any house: no colour of a bin or a container, no place, no village (engine/src/modules/garbage/README.md, rule 9). du in German, je in Dutch. examples_street: what a kind says instead of its examples when it has no collection day, so it goes to a container in the street.",
  "names": {
   "organic": {
-   "es": "Orgánico",
    "en": "Organic",
+   "es": "Orgánico",
    "fr": "Organique",
-   "de": "Bioabfall",
    "ca": "Orgànica",
+   "de": "Bioabfall",
    "nl": "Gft-afval"
   },
   "packaging": {
-   "es": "Envases (amarillo)",
-   "en": "Packaging (yellow)",
-   "fr": "Emballages (jaune)",
-   "de": "Verpackungen (gelb)",
+   "en": "Packaging",
+   "es": "Envases",
+   "fr": "Emballages",
    "ca": "Envasos",
+   "de": "Verpackungen",
    "nl": "Verpakkingen"
   },
   "paper": {
-   "es": "Papel y cartón (azul)",
-   "en": "Paper and cardboard (blue)",
-   "fr": "Papier et carton (bleu)",
-   "de": "Papier und Karton (blau)",
+   "en": "Paper and cardboard",
+   "es": "Papel y cartón",
+   "fr": "Papier et carton",
    "ca": "Paper i cartró",
+   "de": "Papier und Karton",
    "nl": "Papier en karton"
   },
   "glass": {
-   "es": "Vidrio (verde)",
-   "en": "Glass (green)",
-   "fr": "Verre (vert)",
-   "de": "Glas (grün)",
+   "en": "Glass",
+   "es": "Vidrio",
+   "fr": "Verre",
    "ca": "Vidre",
+   "de": "Glas",
    "nl": "Glas"
   },
   "rest": {
-   "es": "Resto (contenedor general)",
    "en": "General waste",
-   "fr": "Ordures générales",
-   "de": "Restmüll",
+   "es": "Resto",
+   "fr": "Ordures ménagères",
    "ca": "Rebuig",
+   "de": "Restmüll",
    "nl": "Restafval"
   }
  },
  "examples": {
   "organic": {
-   "es": "Restos de comida y de jardín, si el pueblo tiene contenedor marrón. Si no lo ves, va al contenedor de resto.",
-   "en": "Food and garden scraps, if the village has a brown bin. If you do not see one, it goes in the general waste bin.",
-   "fr": "Restes alimentaires et de jardin, si le village a un bac marron. Sinon, direction le bac des ordures générales.",
-   "de": "Essens- und Gartenreste, falls das Dorf eine braune Tonne hat. Gibt es keine, kommen sie in den Restmüll.",
-   "ca": "Restes de menjar, pells de fruita i verdura, marro de cafè, bossetes de te, closques d'ou, tovallons de paper, capses de pizza amb greix.",
-   "nl": "Etensresten, groente- en fruitschillen, koffiedik, theezakjes, eierschalen, papieren servetten, vette pizzadozen."
+   "en": "Food scraps, fruit and vegetable peelings, coffee grounds, tea bags, eggshells.",
+   "es": "Restos de comida, pieles de fruta y verdura, posos de café, bolsitas de té, cáscaras de huevo.",
+   "fr": "Restes de repas, épluchures, marc de café, sachets de thé, coquilles d'œufs.",
+   "ca": "Restes de menjar, pells de fruita i verdura, marro de cafè, bossetes de te, closques d'ou.",
+   "de": "Essensreste, Obst- und Gemüseschalen, Kaffeesatz, Teebeutel, Eierschalen.",
+   "nl": "Etensresten, groente- en fruitschillen, koffiedik, theezakjes, eierschalen."
   },
   "packaging": {
-   "es": "Botes, latas, bandejas y briks, bolsas de plástico.",
-   "en": "Plastic bottles, cans, trays and cartons, plastic bags.",
-   "fr": "Bouteilles en plastique, boîtes de conserve, barquettes et briques, sacs plastiques.",
-   "de": "Plastikflaschen, Dosen, Schalen und Getränkekartons, Plastiktüten.",
+   "en": "Plastic bottles and packaging, cans, drink cartons, yoghurt pots, aluminium foil, plastic bags.",
+   "es": "Botellas y envases de plástico, latas, briks, envases de yogur, papel de aluminio, bolsas de plástico.",
+   "fr": "Bouteilles et emballages en plastique, canettes, briques, pots de yaourt, papier aluminium, sacs plastiques.",
    "ca": "Ampolles i envasos de plàstic, llaunes, brics, envasos de iogurt, paper d'alumini, bosses de plàstic.",
+   "de": "Plastikflaschen und -verpackungen, Dosen, Getränkekartons, Joghurtbecher, Alufolie, Plastiktüten.",
    "nl": "Plastic flessen en verpakkingen, blikjes, drankkartons, yoghurtbekers, aluminiumfolie, plastic zakken."
   },
   "paper": {
-   "es": "Cajas aplastadas, periódicos, revistas, bolsas de papel.",
-   "en": "Flattened boxes, newspapers, magazines, paper bags.",
-   "fr": "Cartons aplatis, journaux, magazines, sacs en papier.",
-   "de": "Flachgedrückte Kartons, Zeitungen, Zeitschriften, Papiertüten.",
-   "ca": "Capses (plegades), diaris, revistes, bosses de paper, oueres de cartró. Les capses de pizza amb greix van a l'orgànica.",
-   "nl": "Dozen (plat gevouwen), kranten, tijdschriften, papieren zakken, eierdozen. Vette pizzadozen gaan bij het gft-afval."
+   "en": "Flattened boxes, newspapers, magazines, paper bags, egg boxes.",
+   "es": "Cajas plegadas, periódicos, revistas, bolsas de papel, hueveras de cartón.",
+   "fr": "Cartons aplatis, journaux, magazines, sacs en papier, boîtes à œufs.",
+   "ca": "Capses plegades, diaris, revistes, bosses de paper, oueres de cartró.",
+   "de": "Flach gefaltete Kartons, Zeitungen, Zeitschriften, Papiertüten, Eierkartons.",
+   "nl": "Platgevouwen dozen, kranten, tijdschriften, papieren zakken, eierdozen."
   },
   "glass": {
-   "es": "Botellas y tarros sin tapón. Sin cristal de ventana, espejos ni cerámica.",
-   "en": "Bottles and jars without lids. No window glass, mirrors or ceramics.",
-   "fr": "Bouteilles et bocaux sans bouchon. Ni vitres, ni miroirs, ni céramique.",
-   "de": "Flaschen und Gläser ohne Deckel. Kein Fensterglas, keine Spiegel, keine Keramik.",
-   "ca": "Ampolles i pots de vidre, sense taps ni tapes. A qualsevol hora, al contenidor verd al costat de la casa.",
-   "nl": "Glazen flessen en potten, zonder doppen of deksels. Altijd, in de groene container naast het huis."
+   "en": "Glass bottles and jars, without caps or lids. No window glass, mirrors or ceramics.",
+   "es": "Botellas y tarros de vidrio, sin tapones ni tapas. Ni cristal de ventana, ni espejos, ni cerámica.",
+   "fr": "Bouteilles et bocaux en verre, sans bouchons ni couvercles. Ni vitres, ni miroirs, ni céramique.",
+   "ca": "Ampolles i pots de vidre, sense taps ni tapes. Ni vidre de finestra, ni miralls, ni ceràmica.",
+   "de": "Glasflaschen und Konservengläser, ohne Deckel und Verschlüsse. Kein Fensterglas, keine Spiegel, keine Keramik.",
+   "nl": "Glazen flessen en potten, zonder doppen of deksels. Geen vensterglas, spiegels of keramiek."
   },
   "rest": {
-   "es": "Todo lo que no encaja en lo anterior: compresas, colillas apagadas, cerámica rota, polvo de barrer.",
-   "en": "Everything that fits nowhere else: nappies, cold cigarette ends, broken ceramics, sweepings.",
-   "fr": "Tout ce qui n'entre dans aucune autre catégorie: couches, mégots éteints, céramique cassée, balayures.",
-   "de": "Alles, was sonst nirgends passt: Windeln, erkaltete Zigarettenstummel, Keramikscherben, Kehricht.",
-   "ca": "Tot el que no va enlloc més: objectes trencats, ceràmica, pols, burilles, paper de cuina usat, excrements d'animals.",
-   "nl": "Alles wat nergens anders thuishoort: kapotte voorwerpen, keramiek, stof, sigarettenpeuken, gebruikt keukenpapier, uitwerpselen van huisdieren."
+   "en": "Everything that fits nowhere else: broken objects, ceramics, sweepings, cold cigarette ends.",
+   "es": "Todo lo que no va en otro sitio: objetos rotos, cerámica, polvo de barrer, colillas apagadas.",
+   "fr": "Tout ce qui ne va nulle part ailleurs : objets cassés, céramique, balayures, mégots éteints.",
+   "ca": "Tot el que no va enlloc més: objectes trencats, ceràmica, pols d'escombrar, burilles apagades.",
+   "de": "Alles, was nirgendwo sonst hingehört: kaputte Gegenstände, Keramik, Kehricht, kalte Zigarettenstummel.",
+   "nl": "Alles wat nergens anders thuishoort: kapotte voorwerpen, keramiek, veegvuil, gedoofde sigarettenpeuken."
+  }
+ },
+ "examples_street": {
+  "organic": {
+   "en": "Food scraps, fruit and vegetable peelings, coffee grounds, tea bags, eggshells. Where there is no container for it, it goes in general waste.",
+   "es": "Restos de comida, pieles de fruta y verdura, posos de café, bolsitas de té, cáscaras de huevo. Si no hay contenedor para orgánico, va al de resto.",
+   "fr": "Restes de repas, épluchures, marc de café, sachets de thé, coquilles d'œufs. S'il n'y a pas de conteneur pour l'organique, cela va aux ordures ménagères.",
+   "ca": "Restes de menjar, pells de fruita i verdura, marro de cafè, bossetes de te, closques d'ou. Si no hi ha contenidor d'orgànica, va al de rebuig.",
+   "de": "Essensreste, Obst- und Gemüseschalen, Kaffeesatz, Teebeutel, Eierschalen. Gibt es dafür keinen Container, kommt es in den Restmüll.",
+   "nl": "Etensresten, groente- en fruitschillen, koffiedik, theezakjes, eierschalen. Is er geen container voor, dan gaat het bij het restafval."
   }
  },
  "steps_containers": [
   {
-   "es": "Separa en casa: envases, papel y cartón, vidrio y resto.",
    "en": "Sort at home: packaging, paper and cardboard, glass and general waste.",
-   "fr": "Triez à la maison: emballages, papier et carton, verre et ordures générales.",
-   "de": "Trennen Sie im Haus: Verpackungen, Papier und Karton, Glas und Restmüll."
+   "es": "Separa en casa: envases, papel y cartón, vidrio y resto.",
+   "fr": "Triez à la maison : emballages, papier et carton, verre et ordures ménagères.",
+   "ca": "Separa a casa: envasos, paper i cartró, vidre i rebuig.",
+   "de": "Trenne im Haus: Verpackungen, Papier und Karton, Glas und Restmüll.",
+   "nl": "Sorteer in huis: verpakkingen, papier en karton, glas en restafval."
   },
   {
-   "es": "Lleva las bolsas cerradas al grupo de contenedores más cercano del pueblo; no las dejes en el campo ni junto a la casa.",
-   "en": "Take closed bags to the nearest group of containers in the village; do not leave them in the countryside or by the house.",
-   "fr": "Portez les sacs fermés au groupe de conteneurs le plus proche dans le village; ne les laissez ni dans la campagne ni près de la maison.",
-   "de": "Bringen Sie verschlossene Beutel zur nächsten Containergruppe im Dorf; lassen Sie sie nicht auf dem Land oder am Haus stehen."
+   "en": "Take closed bags to the nearest street containers. Never leave bags beside them or outside the house.",
+   "es": "Lleva las bolsas cerradas a los contenedores de la calle más cercanos. No las dejes nunca al lado ni fuera de la casa.",
+   "fr": "Portez les sacs fermés aux conteneurs de rue les plus proches. Ne les laissez jamais à côté ni devant la maison.",
+   "ca": "Porta les bosses tancades als contenidors del carrer més propers. No les deixis mai al costat ni fora de la casa.",
+   "de": "Bring verschlossene Beutel zu den nächsten Containern an der Straße. Stell sie nie daneben und nie vor das Haus.",
+   "nl": "Breng gesloten zakken naar de dichtstbijzijnde containers op straat. Zet ze er nooit naast en nooit buiten bij het huis."
   },
   {
-   "es": "Aplasta cajas y botellas de plástico para que quepan, y quita las tapas de los botes de vidrio.",
    "en": "Flatten boxes and plastic bottles so they fit, and take the lids off glass jars.",
+   "es": "Aplasta cajas y botellas de plástico para que quepan, y quita las tapas de los tarros de vidrio.",
    "fr": "Aplatissez cartons et bouteilles en plastique pour qu'ils tiennent, et retirez les couvercles des bocaux en verre.",
-   "de": "Drücken Sie Kartons und Plastikflaschen flach und nehmen Sie die Deckel von Glasbehältern ab."
+   "ca": "Aixafa capses i ampolles de plàstic perquè hi càpiguen, i treu les tapes dels pots de vidre.",
+   "de": "Drücke Kartons und Plastikflaschen flach, damit sie hineinpassen, und nimm die Deckel von den Gläsern ab.",
+   "nl": "Druk dozen en plastic flessen plat zodat ze erin passen, en haal de deksels van glazen potten."
   },
   {
-   "es": "Mira la etiqueta de cada contenedor: el color puede variar de un pueblo a otro.",
-   "en": "Check the label on each container: colours can vary from one village to another.",
-   "fr": "Regardez l'étiquette de chaque conteneur: les couleurs peuvent varier d'un village à l'autre.",
-   "de": "Lesen Sie die Beschriftung jedes Containers: Die Farben können von Dorf zu Dorf abweichen."
+   "en": "Check the label on each container: colours vary from one town to another.",
+   "es": "Mira la etiqueta de cada contenedor: los colores cambian de un municipio a otro.",
+   "fr": "Regardez l'étiquette de chaque conteneur : les couleurs changent d'une commune à l'autre.",
+   "ca": "Mira l'etiqueta de cada contenidor: els colors canvien d'un municipi a un altre.",
+   "de": "Lies die Beschriftung jedes Containers: Die Farben sind von Ort zu Ort verschieden.",
+   "nl": "Kijk op het etiket van elke container: de kleuren verschillen per gemeente."
   }
  ],
  "missed_containers": {
-  "es": "No hay un día de recogida que perder: los contenedores de la calle los vacía el servicio municipal o comarcal con su propio calendario. Si uno está lleno, usa el siguiente grupo de contenedores del pueblo y no dejes bolsas en el suelo.",
-  "en": "There is no collection day to miss: the street containers are emptied by the municipal or comarca service on its own schedule. If one is full, use the next group of containers in the village and do not leave bags on the ground.",
-  "fr": "Il n'y a pas de jour de collecte à manquer: les conteneurs de rue sont vidés par le service municipal ou de la comarca selon son propre calendrier. S'il est plein, utilisez le groupe de conteneurs suivant dans le village et ne laissez pas de sacs par terre.",
-  "de": "Es gibt keinen Abholtag zu verpassen: Die Straßencontainer werden vom Gemeinde- oder Comarca-Dienst nach eigenem Plan geleert. Ist einer voll, nutzen Sie die nächste Containergruppe im Dorf und lassen Sie keine Beutel auf dem Boden stehen."
+  "en": "There is no collection day to miss: the street containers can be used any day. If one is full, use the next one and do not leave bags on the ground.",
+  "es": "No hay día de recogida que perder: los contenedores de la calle se pueden usar cualquier día. Si uno está lleno, usa el siguiente y no dejes bolsas en el suelo.",
+  "fr": "Il n'y a pas de jour de collecte à manquer : les conteneurs de rue s'utilisent tous les jours. Si l'un est plein, allez au suivant et ne laissez pas de sacs par terre.",
+  "ca": "No hi ha cap dia de recollida per perdre: els contenidors del carrer es poden fer servir cada dia. Si n'hi ha un de ple, ves al següent i no deixis bosses a terra.",
+  "de": "Es gibt keinen Abholtag, den du verpassen kannst: Die Container an der Straße kannst du jeden Tag nutzen. Ist einer voll, nimm den nächsten und stell keine Beutel auf den Boden.",
+  "nl": "Er is geen ophaaldag om te missen: de containers op straat kun je elke dag gebruiken. Is er één vol, neem dan de volgende en zet geen zakken op de grond."
  },
  "steps_home": [
   {
    "en": "Sort as you go: packaging, paper and cardboard, glass, food scraps and general waste.",
    "es": "Separa a medida que generes residuos: envases, papel y cartón, vidrio, orgánico y resto.",
-   "fr": "Triez au fur et à mesure : emballages, papier et carton, verre, déchets alimentaires et ordures générales.",
-   "de": "Trennen Sie gleich: Verpackungen, Papier und Karton, Glas, Bioabfall und Restmüll."
+   "fr": "Triez au fur et à mesure : emballages, papier et carton, verre, déchets alimentaires et ordures ménagères.",
+   "ca": "Separa a mesura que generes residus: envasos, paper i cartró, vidre, orgànica i rebuig.",
+   "de": "Trenne gleich beim Wegwerfen: Verpackungen, Papier und Karton, Glas, Bioabfall und Restmüll.",
+   "nl": "Sorteer meteen bij het weggooien: verpakkingen, papier en karton, glas, gft-afval en restafval."
   },
   {
-   "en": "Put each bin out the evening before its collection day, by the time shown.",
-   "es": "Saca cada cubo la tarde anterior a su día de recogida, a la hora indicada.",
-   "fr": "Sortez chaque bac la veille de son jour de collecte, à l'heure indiquée.",
-   "de": "Stellen Sie jede Tonne am Vorabend des Abholtags bereit, zur angegebenen Uhrzeit.",
-   "noTime": {
-    "en": "Put each bin out the evening before its collection day.",
-    "es": "Saca cada cubo la tarde anterior a su día de recogida.",
-    "fr": "Sortez chaque bac la veille de son jour de collecte.",
-    "de": "Stellen Sie jede Tonne am Vorabend des Abholtags bereit."
-   }
+   "en": "Put each bin out the evening before its collection day.",
+   "es": "Saca cada cubo la noche anterior a su día de recogida.",
+   "fr": "Sortez chaque bac la veille au soir de son jour de collecte.",
+   "ca": "Treu cada cubell el vespre abans del seu dia de recollida.",
+   "de": "Stelle jede Tonne am Abend vor dem Abholtag raus.",
+   "nl": "Zet elke bak de avond voor de ophaaldag buiten."
   },
   {
    "en": "Close the bags well and flatten boxes and bottles so everything fits.",
    "es": "Cierra bien las bolsas y aplasta cajas y botellas para que quepa todo.",
    "fr": "Fermez bien les sacs et aplatissez cartons et bouteilles pour que tout tienne.",
-   "de": "Verschließen Sie die Beutel gut und drücken Sie Kartons und Flaschen flach."
+   "ca": "Tanca bé les bosses i aixafa capses i ampolles perquè hi càpiga tot.",
+   "de": "Verschließe die Beutel gut und drücke Kartons und Flaschen flach, damit alles hineinpasst.",
+   "nl": "Sluit de zakken goed en druk dozen en flessen plat, zodat alles erin past."
   },
   {
    "en": "Bring the empty bins back in after the collection.",
-   "es": "Vuelve a guardar los cubos vacíos después de la recogida.",
+   "es": "Vuelve a entrar los cubos vacíos después de la recogida.",
    "fr": "Rentrez les bacs vides après la collecte.",
-   "de": "Holen Sie die leeren Tonnen nach der Abholung wieder herein."
+   "ca": "Torna a entrar els cubells buits després de la recollida.",
+   "de": "Hole die leeren Tonnen nach der Abholung wieder herein.",
+   "nl": "Zet de lege bakken na de ophaling weer binnen."
   }
  ],
  "missed_home": {
   "en": "If you miss a collection, keep the bags inside and put them out for the next one. Do not leave bags on the street.",
   "es": "Si se te pasa una recogida, guarda las bolsas dentro y sácalas para la siguiente. No las dejes en la calle.",
   "fr": "Si vous manquez une collecte, gardez les sacs à l'intérieur et sortez-les pour la suivante. Ne les laissez pas dans la rue.",
-  "de": "Verpassen Sie eine Abholung, behalten Sie die Beutel drinnen und stellen Sie sie zur nächsten heraus. Nicht auf der Straße stehen lassen."
+  "ca": "Si se't passa una recollida, guarda les bosses a dins i treu-les per a la següent. No les deixis al carrer.",
+  "de": "Hast du eine Abholung verpasst, behalte die Beutel drinnen und stell sie zur nächsten raus. Lass sie nicht auf der Straße stehen.",
+  "nl": "Heb je een ophaling gemist, bewaar de zakken dan binnen en zet ze bij de volgende buiten. Laat ze niet op straat staan."
  }
 }
