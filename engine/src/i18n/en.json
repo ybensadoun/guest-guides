@@ -97,7 +97,7 @@
   "theme_dark": "Dark",
   "fromHouseShort": "from the house",
   "fromYouShort": "from you",
-  "gTonight": "Tonight, put out",
+  "gTonight": "Tonight, put\u00a0out",
   "gNow": "Put out now, collected from {time}",
   "gForMorning": "For collection on {day} morning",
   "gInEvery": "in the {bin}, every evening",

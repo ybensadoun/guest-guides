@@ -20,3 +20,10 @@ export function hourText(time, lang) {
   const m = String(time || '').match(/^(\d{1,2}):(\d{2})$/); if (!m) return '';
   return lang === 'fr' ? `${+m[1]} h${m[2] === '00' ? '' : ' ' + m[2]}` : `${+m[1]}:${m[2]}`;
 }
+// A kind with no collection day: does the guide say where it goes, so that "Any time" is true? Yes in a house with street
+// containers only (the page's lead says so), when a container the host listed takes it (one with nothing ticked takes
+// everything), or when the guide's map has its spot (a glass container). Else the guide says nothing of when: "Any time"
+// with nowhere to take it is not real information (README.md, rule 10).
+export function anyTime(id, { containersOnly = false, containers = [], spot = false } = {}) {
+  return !!(containersOnly || spot || containers.some(c => !(c.takes || []).length || c.takes.includes(id)));
+}

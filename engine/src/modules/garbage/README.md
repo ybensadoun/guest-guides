@@ -23,6 +23,8 @@ this module is checked against them pixel for pixel, before and after.
 | 7 | A house with street containers only (no collection days) has no evening and no week: the page says where the containers are, the widget is one line. | Maker, Oct 2026 |
 | 8 | Real or nothing: a bin the guide gives no name shows only what goes in it, never "in the" with nothing after; a sentence that needs the collection hour is left out when the guide has none; "red bin only" is only said in a guide that has that bin. | Yohann, 13 Nov 2026 ("we need to show the end user real information, or we just don't show anything") |
 | 9 | The texts the maker gives a house (`engine/scripts/garbage-defaults.json`: the kinds' names, what goes in each, the steps, a missed day) are in the six languages and true for any house: no colour of a bin or a container (it is not known), no place, no village, du in German and je in Dutch. A step never names the collection hour: the week on the page says it. A kind with no collection day says what to do when the street has no container for it (organic). | The ordered list of fixes, `08.1`, Yohann's "Go" of 17 Nov 2026. Before: steps and the missed day in four languages (Catalan and Dutch guests read English), Catalan and Dutch examples copied from Ca La Kimberly ("the green container next to the house"), "Packaging (yellow)", "Sie" |
+| 10 | A kind with no collection day says "Any time" only when the guide says where it goes: a house with street containers only, a container the host listed that takes it (one with nothing ticked takes everything), or its point on the guide's map. Else the card names the kind and what goes in it, and no more (`anyTime` in `plan.js`). | `08.3`, 17 Nov 2026. Before: "General waste, Any time" in a house collected at the door, with nowhere to take it |
+| 11 | The header's words never touch the yellow corner, in any state, language or width: they wrap beside it, in lines of even length. The UX check measures it (`#s/garbage`, the circle itself). | `08.4`, decided by recommendation in the ordered list, Yohann's "Go" of 17 Nov 2026 (he may still say no). It moves Ca La Kimberly's page: a title of two lines where one ran under the shape. Before, only the empty evening was kept clear (13 Nov) |
 
 ## Its data
 
@@ -79,4 +81,3 @@ decision to take, one at a time:
   (sanitary textiles)". The maker has no such bin to offer.
 - Named bins and their colours, the "used oil and batteries" card in the kitchen, the recycling centre with its hours:
   only in Ca La Kimberly's file, written by hand.
-- The big header of the page runs over the yellow corner shape when the sentence is long (German).

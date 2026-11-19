@@ -33,6 +33,16 @@ export function measure() {
       for (const [c, r] of content) if (hit(R, r)) out.push(`${g.dataset.k}${ps} touches ${c}`);
     }
   }
+  // The rubbish page's header: its words never touch the corner circle (the circle itself, not its square).
+  for (const h of document.querySelectorAll('.ghero')) {
+    const H = h.getBoundingClientRect(), s = getComputedStyle(h, '::before'), n = v => parseFloat(v) || 0, R = n(s.width) / 2;
+    if (s.content === 'none' || !R) continue;
+    const cx = H.right - n(s.right) - R, cy = H.top + n(s.top) + R;
+    for (const e of h.querySelectorAll('.ghero-hd b, .ghero-hd .sub2')) {
+      const rg = document.createRange(); rg.selectNodeContents(e);
+      if ([...rg.getClientRects()].some(x => Math.hypot(Math.max(x.left - cx, 0, cx - x.right), Math.max(x.top - cy, 0, cy - x.bottom)) < R)) out.push(`the rubbish header's "${e.textContent.trim().slice(0, 24)}" touches its corner shape`);
+    }
+  }
   // List rows: the name and its lines (type, distance, price) never run under the status on the right ("Rouvre à 20:00").
   for (const r of document.querySelectorAll('.mrow > summary')) {
     const st = r.querySelector('.rt .st'), nm = r.querySelector('.nm'); if (!st || !nm || !st.offsetParent) continue;

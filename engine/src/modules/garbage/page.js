@@ -3,6 +3,7 @@
 import { t, tx } from '../../i18n.js';
 import { GARBAGE, MAP_ITEMS } from '../../content.js';
 import { FRACTIONS, plan, collectedOn, binName, isRed, mainOf, CONTAINERS_ONLY, collectHour } from './data.js';
+import { anyTime } from './plan.js';
 import { dayName, cap } from '../../schedule.js';
 import { esc, ICON, row } from '../../ui.js';
 
@@ -14,9 +15,10 @@ const redLine = key => `<p class="gred" style="--wc:var(--w-sanitary)"><span cla
 const putItem = f => `<li style="--wc:var(--w-${f.id})"><span class="gbin"></span>
   <span><b>${esc(tx(f.name))}</b>${binName(f) ? `<small>${esc(t(isRed(f) ? 'gInEvery' : 'gIn', { bin: binName(f) }))}</small>` : ''}</span></li>`;
 
-function header(f) {
+// The line under a kind's name: its days, or "Any time" for a kind with no day when the guide says where it goes (there).
+function header(f, there) {
   if (f.bin === 'kitchen') return t('gKitchen');
-  if (!f.d.length) return t('gAnyTime');
+  if (!f.d.length) return there ? t('gAnyTime') : '';
   if (f.d.length === 7) return t('gEveryDay');
   return f.d.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(x => cap(dayName(x, 'short'))).join(', ');
 }
@@ -66,12 +68,13 @@ export function page(V) {
     }).join('')}</div></section>`;
 
   const what = `<section class="gsec"><h3 class="section-h">${esc(t('gWhat'))}</h3>
-    <div class="list">${FRACTIONS.map(f => `<article class="card" style="--cc:var(--w-${f.id})">
-      <div class="hd">${f.bin !== 'kitchen' ? `<span class="gbin" style="--wc:var(--w-${f.id})"></span>` : ''}<div class="hdt"><h3>${esc(tx(f.name))}</h3><span class="sub2">${esc(header(f))}</span></div></div>
+    <div class="list">${FRACTIONS.map(f => { const when = header(f, anyTime(f.id, { containersOnly: CONTAINERS_ONLY, containers: cont, spot: !!spot(f.id) }));
+      return `<article class="card" style="--cc:var(--w-${f.id})">
+      <div class="hd">${f.bin !== 'kitchen' ? `<span class="gbin" style="--wc:var(--w-${f.id})"></span>` : ''}<div class="hdt"><h3>${esc(tx(f.name))}</h3>${when ? `<span class="sub2">${esc(when)}</span>` : ''}</div></div>
       ${f.bin !== 'kitchen' && binName(f) ? `<div class="where">${esc(cap(binName(f)))}</div>` : ''}
       <div class="note">${esc(tx(f.examples))}</div>
       ${f.id === 'glass' && glass ? `<div class="actions"><a class="btn" href="#map/m/${encodeURIComponent(glass.id)}">${ICON.pin}${esc(t('onMap'))}</a></div>` : ''}
-    </article>`).join('')}</div></section>`;
+    </article>`; }).join('')}</div></section>`;
 
   const missed = `<section class="gsec"><h3 class="section-h">${esc(t('gMissed'))}</h3>
     <p class="note" style="margin:0">${esc(tx(GARBAGE.missed))}</p>

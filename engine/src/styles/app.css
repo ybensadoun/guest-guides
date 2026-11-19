@@ -292,11 +292,12 @@ gmp-place-details-compact{display:block;width:100%;max-width:100%;border:0;borde
 .gbin.sm{width:14px;height:18px}
 .ghero{background:var(--blue);color:#fff;border-radius:var(--r);padding:20px 18px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;isolation:isolate}
 .ghero::before{content:"";position:absolute;z-index:-1;width:150px;height:150px;border-radius:50%;background:var(--yellow);right:-50px;top:-60px}
-.ghero-hd{display:flex;flex-direction:column;gap:2px}
+/* The header's words stay clear of the corner shape in every state, language and width (19 Nov 2026; the empty evening
+   since 13 Nov). The title breaks where it reads, at its comma (the browser's balancing gave "Ce / soir, sortez"); the
+   small line under it is balanced. */
+.ghero-hd{display:flex;flex-direction:column;gap:2px;padding-right:92px}
 .ghero-hd b{font-family:var(--display);font-weight:700;font-size:30px;line-height:1.05}
-.ghero .sub2{color:var(--deep-soft);font-size:16px}
-/* Nothing to take out tonight: the header alone, kept clear of the corner shape (13 Nov 2026). */
-.ghero.none .ghero-hd{padding-right:92px}
+.ghero .sub2{color:var(--deep-soft);font-size:16px;text-wrap:balance}
 .gput{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .gput li{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:var(--white);color:var(--ink)}
 .gput li .gbin{width:30px;height:38px}

@@ -2,7 +2,7 @@
 //   node --test 'engine/scripts/*.test.mjs'
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { planOf, hourText } from '../src/modules/garbage/plan.js';
+import { planOf, hourText, anyTime } from '../src/modules/garbage/plan.js';
 
 // A guide the maker built: organic collected on Monday and Thursday, packaging on Tuesday, paper on Wednesday, no daily bin.
 const DAYS = { 1: ['organic'], 2: ['packaging'], 3: ['paper'], 4: ['organic'] }, on = d => DAYS[d] || [];
@@ -34,4 +34,15 @@ test('planOf: a guide with a daily bin never has an empty evening or morning', (
 test('hourText: the guide\'s own hour, in French as French writes it, nothing when the guide has none', () => {
   assert.equal(hourText('06:00', 'en'), '6:00'); assert.equal(hourText('06:00', 'fr'), '6 h'); assert.equal(hourText('07:30', 'fr'), '7 h 30');
   assert.equal(hourText('7:30', 'de'), '7:30'); assert.equal(hourText('', 'en'), ''); assert.equal(hourText(undefined, 'fr'), ''); assert.equal(hourText('soon', 'en'), '');
+});
+
+test('anyTime: a kind with no day says "Any time" only when the guide says where it goes', () => {
+  const glassOnly = [{ takes: ['glass'] }];
+  assert.equal(anyTime('rest', { containers: glassOnly }), false);                 // collected at the door, no day ticked, no container for it: nothing to say
+  assert.equal(anyTime('glass', { containers: glassOnly }), true);                 // the host's container takes it
+  assert.equal(anyTime('rest', { containers: [{ takes: [] }] }), true);            // a container with nothing ticked takes everything
+  assert.equal(anyTime('rest', { containers: [{}] }), true);
+  assert.equal(anyTime('glass', { spot: true }), true);                            // its point on the guide's map (Ca La Kimberly's glass container)
+  assert.equal(anyTime('paper', { containersOnly: true }), true);                  // street containers only: the page's lead says where
+  assert.equal(anyTime('rest'), false);
 });
