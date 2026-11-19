@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { refreshTransit, makeStorage, reportLines, plan } from '../transit.mjs';
 
 globalThis.fetch = async () => { throw new Error('no network in tests'); };
+process.env.TRANSIT_RETRY_MS = '1';   // a refused file is tried again at once here
 // stops.py's stand-in: the cells given ({ name: stops }), an index naming them.
 const writeCells = (out, cells) => { rmSync(out, { recursive: true, force: true }); mkdirSync(out, { recursive: true });
   for (const [n, k] of Object.entries(cells)) writeFileSync(join(out, n + '.json'), JSON.stringify({ stops: Array.from({ length: k }, (_, i) => ({ id: n + ':' + i })) }));
@@ -24,7 +25,7 @@ function fakeRun(out, script) { const calls = [];
 function fakeStorage(o = {}) { const puts = [], removed = [];
   return { puts, removed, put: async (n, b) => { if (o.fail && n === o.fail) throw new Error('503'); puts.push(n); }, remove: async names => { removed.push(...names); } }; }
 
-test('the whole job: download, remake, cells published 6 at a time with the index last, published.json kept', async () => {
+test('the whole job: download, remake, cells published a few at a time with the index last, published.json kept', async () => {
   const out = mkdtempSync(join(tmpdir(), 'transit-')), f = fakeRun(out, { cells: { '164_6': 40, '164_7': 30, '161_-15': 30 } }), st = fakeStorage();
   const r = await refreshTransit({ run: f.run, storage: st, out, today: '2026-12-01' });
   assert.deepEqual(f.calls.map(c => c[0]), ['onboarding-site/src/nap.py', 'onboarding-site/src/stops.py']);
@@ -72,4 +73,23 @@ test('makeStorage: our storage\'s calls, upsert, the cache line, the bucket tran
   assert.equal(seen[0][2]['x-upsert'], 'true'); assert.equal(seen[0][2]['cache-control'], 'max-age=3600'); assert.equal(seen[0][2]['content-type'], 'application/json');
   assert.deepEqual([seen[1][0], seen[1][1], JSON.parse(seen[1][3])], ['https://example.supabase.co/storage/v1/object/transit', 'DELETE', { prefixes: ['stops-es/161_-15.json'] }]);
   assert.equal(plan(mkdtempSync(join(tmpdir(), 'none-'))), null);
+});
+
+test('publishing: a file our storage refuses for a moment (429, 5xx) is tried again; a run cut short is carried on by the next', async () => {
+  const out = mkdtempSync(join(tmpdir(), 'transit-')), f = fakeRun(out, { cells: { '164_6': 40, '164_7': 30, '161_-15': 30 } });
+  // Refused twice, then taken: nothing is lost and the index is still last.
+  const puts = [], tries = {}; const slow = { put: async n => { tries[n] = (tries[n] || 0) + 1; if (n === '164_7.json' && tries[n] < 3) throw new Error(n + ': 429 {"error":"too_many_connections"}'); puts.push(n); }, remove: async () => {} };
+  const r = await refreshTransit({ run: f.run, storage: slow, out, today: '2026-12-01' });
+  assert.equal(tries['164_7.json'], 3); assert.equal(puts.at(-1), 'index.json'); assert.equal(r.published, 4); assert.doesNotMatch(r.note, /publishing failed/);
+  // A file refused for good (not a 429 or a 5xx): the run says so, the index is not put, and what went in is written down.
+  const f2 = fakeRun(out, { cells: { '164_6': 41, '164_7': 31, '161_-15': 31 } }), puts2 = [];
+  const cut = { put: async n => { if (n === '164_7.json') throw new Error(n + ': 403 no'); puts2.push(n); }, remove: async () => {} };
+  const r2 = await refreshTransit({ run: f2.run, storage: cut, out, fetchFeeds: false });
+  assert.match(r2.note, /publishing failed part way/); assert.equal(puts2.includes('index.json'), false);
+  const kept = JSON.parse(readFileSync(join(out, 'published.json'), 'utf8')); assert.equal(kept.stops, 100);
+  // The next run puts only what is missing, then the index.
+  const puts3 = []; const ok = { put: async n => { puts3.push(n); }, remove: async () => {} };
+  const r3 = await refreshTransit({ run: f2.run, storage: ok, out, fetchFeeds: false });
+  assert.deepEqual(puts3, [...['164_6.json', '164_7.json', '161_-15.json'].filter(n => !puts2.includes(n)), 'index.json']); assert.equal(r3.published, puts3.length);
+  assert.equal(JSON.parse(readFileSync(join(out, 'published.json'), 'utf8')).stops, 103);
 });

@@ -6,7 +6,7 @@
 //   1. onboarding-site/src/nap.py: the national access point's changed files into the cache (NAP_API_KEY; none: skipped);
 //   2. onboarding-site/src/stops.py: the stops remade from the cache, the day counted today, into ~/.cache/guest-guides/stops-es/;
 //   3. published to our storage (Supabase Storage, public bucket transit, stops-es/): only the cells whose bytes changed
-//      (published.json beside them keeps each file's sha1), 6 at a time, index.json last (a reader never sees an index naming a
+//      (published.json beside them keeps each file's sha1, written as the run goes), 3 at a time, a refused file tried again, index.json last (a reader never sees an index naming a
 //      cell not there yet), then the cells that left the index removed. A guard: fewer than half the stops last published,
 //      nothing is published (a bad download must not empty the maker).
 // Each step's failure is caught: a failed download still remakes from the cache; a failed remake publishes nothing and keeps
@@ -28,6 +28,7 @@ export const OUT = join(homedir(), '.cache', 'guest-guides', 'stops-es');
 export const BUCKET = 'transit', PREFIX = 'stops-es/';
 const sha1 = b => createHash('sha1').update(b).digest('hex');
 const CELL = /^-?\d+_-?\d+\.json$/;
+const retryMs = () => +process.env.TRANSIT_RETRY_MS || 1500, wait = ms => new Promise(r => setTimeout(r, ms));
 
 // A script run (python3 by default), its output kept: { status, stdout, stderr }.
 export const runScript = (file, args = [], env = process.env, o = {}) => {
@@ -71,10 +72,15 @@ export function plan(out) {
 export async function publish(out, storage, { log = () => {} } = {}) {
   const p = plan(out); if (!p) return { published: 0, removed: 0, note: 'nothing to publish: no index.json' };
   if (p.last.stops && p.stops < p.last.stops / 2) return { published: 0, removed: 0, note: `NOT published: ${p.stops} stops against ${p.last.stops} last time (fewer than half: a bad download?); what is served stays` };
-  const queue = [...p.changed]; let done = 0;
-  const worker = async () => { for (let n; (n = queue.shift());) { await storage.put(n, p.files[n]); done++; } };
-  await Promise.all(Array.from({ length: 6 }, worker));
-  if (p.indexChanged || done) { await storage.put('index.json', p.files['index.json']); done++; }   // last: every cell it names is there
+  // Our storage refuses a burst now and then (429 "too many connections", a 5xx): each file is tried again, slower each
+  // time, 3 at a time; and what is in is written down as it goes, so that a run cut short (19 Nov 2026: two runs refused
+  // part way, each starting again from nothing) is carried on by the next one. The old index stays until every cell is in.
+  const queue = [...p.changed], sums = { ...(p.last.files || {}) }; let done = 0, since = 0;
+  const keep = files => writeFileSync(join(out, 'published.json'), JSON.stringify({ ...p.last, files }, null, 1));
+  const put = async (n, body) => { for (let i = 0; ; i++) { try { return await storage.put(n, body); } catch (e) { if (i >= 5 || !/: (429|5\d\d)\b/.test(String(e && e.message))) throw e; await wait(retryMs() * 2 ** i); } } };
+  const worker = async () => { for (let n; (n = queue.shift());) { await put(n, p.files[n]); sums[n] = p.sums[n]; done++; if (++since >= 50) { since = 0; keep(sums); } } };
+  try { await Promise.all(Array.from({ length: 3 }, worker)); } finally { if (done) keep(sums); }
+  if (p.indexChanged || done) { await put('index.json', p.files['index.json']); done++; }   // last: every cell it names is there
   await storage.remove(p.removed);
   writeFileSync(join(out, 'published.json'), JSON.stringify({ at: new Date().toISOString(), stops: p.stops, sources: (p.index.sources || []).map(s => ({ id: s.id, updated: s.updated })), files: p.sums }, null, 1));
   log(`transit: published ${done} file(s), removed ${p.removed.length}`);
