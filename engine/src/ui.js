@@ -4,7 +4,7 @@ import { hoursText, statusLabel, nextOpenText, runsOn, closedStatus, seasonStatu
 // Status on the right of a row. Times never break ("14:00" stays whole), so a long label like
 // "Ouvert jusqu'à 14:00" wraps onto two lines instead of squeezing the place name.
 const nwT = x => esc(x).replace(/(\d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?)/g, '<span class="nw">$1</span>');
-export const stHTML = s => s ? `<span class="st ${s.cls}">${nwT(s.text)}${s.sub ? `<small>${nwT(s.sub)}</small>` : ''}</span>` : '';
+export const stHTML = s => s ? `<span class="st ${s.cls}${s.over ? ' over' : ''}">${nwT(s.text)}${s.sub ? `<small>${nwT(s.sub)}</small>` : ''}</span>` : '';
 import { kmMe, gDir, gSearch } from './geo.js';
 import { wantsCard, slotHTML, cardGone } from './gcard.js';
 import FLAGS_FILE from './flags.json';
@@ -198,7 +198,8 @@ const wikiUrl = q => `https://${lang}.wikipedia.org/w/index.php?search=${encodeU
 // cannot show (no key, offline, no door, a card already dropped this visit): nothing there, as before.
 export function row(m, opts = {}) {
   const gc = !!opts.gcard && wantsCard(m);
-  const live = opts.date && opts.live ? statusLabel(m, opts.date) : null;
+  // opts.status: the row's status as its own module words it (the markets' "Finished", modules/markets/data.js statusNow).
+  const live = opts.status || (opts.date && opts.live ? statusLabel(m, opts.date) : null);
   const hrs = !live && opts.date ? runsOn(m, opts.date).map(x => (x.m ? t('morning') : `${x.o.replace(/^0/, '')}-${x.c.replace(/^0/, '')}`)).join(', ') : '';
   const me = kmMe(m);
   // A number stays with its unit (.nw); the rest of the line wraps between words.

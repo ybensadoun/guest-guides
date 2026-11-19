@@ -1,8 +1,8 @@
 // The Markets page (README.md, "Its look"): by day (a strip of the next 14 days) or all of them, the filters folded away,
 // a small map of the markets listed, then the list. Route #markets (main.js), also #s/<id> as every module's page.
 import { t, locale } from '../../i18n.js';
-import { MARKETS, CATS } from './data.js';
-import { WEEKLY, marketsOn } from './plan.js';
+import { MARKETS, CATS, statusNow } from './data.js';
+import { WEEKLY, STRIP_DAYS, marketsOn, nextMarketDay } from './plan.js';
 import { st, DEFAULT_CATS } from '../../state.js';
 import { cap } from '../../schedule.js';
 import { esc, row, chips, ICON } from '../../ui.js';
@@ -11,9 +11,24 @@ import { overviewMap } from '../map/index.js';
 
 const FILTER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>';
 
-// Empty result: a visible box, with a one-tap way back to all market types when some are filtered out.
+// A list the guest's filters emptied: a visible box, with a one-tap way back to all market types when some are filtered out.
 const emptyBox = () => `<div class="emptybox" role="status"><b>${esc(t('noneMatch'))}</b>${st.cats.size < CATS.length ? `<button class="btn" data-resetcats>${esc(t('showAllTypes'))}</button>` : ''}</div>`;
-const list = (l, rowOpts) => (l.length ? `<div class="mlist">${l.map(m => row(m, rowOpts(m))).join('')}</div>` : emptyBox());
+const list = (l, rowOpts, empty = emptyBox) => (l.length ? `<div class="mlist">${l.map(m => row(m, rowOpts(m))).join('')}</div>` : empty());
+
+// A day with no market (README rule 4): the box says so and leads to the next day of the strip that has one, counted with
+// the kinds shown ("Tomorrow · 3 markets"). When the only markets held that day are of kinds switched off: with the page's
+// own start (the halls left out) it says that only the halls are open and offers them; after the guest's own filters, the
+// filters' box above. With no later day to offer and kinds switched off, the way back to every kind.
+function emptyDay(now, off, sel, vis) {
+  const own = st.cats.size === DEFAULT_CATS.length && DEFAULT_CATS.every(c => st.cats.has(c));
+  const hidden = marketsOn(MARKETS, sel, m => !vis(m)).length;
+  if (hidden && !own) return emptyBox();
+  const nx = nextMarketDay(MARKETS, now, vis, off + 1);
+  const day = nx && (nx.off === 1 ? t('tomorrow') : cap(new Intl.DateTimeFormat(locale(), { weekday: 'long', day: 'numeric' }).format(nx.date)));
+  const next = nx ? `<button class="btn${hidden ? '' : ' primary'}" data-day="${nx.off}">${esc(day)} · ${esc(t(nx.n === 1 ? 'nMarket1' : 'nMarkets', { n: nx.n }))}</button>` : '';
+  const all = hidden || (!nx && st.cats.size < CATS.length) ? `<button class="btn${hidden ? ' primary' : ''}" data-resetcats>${esc(t('showAllTypes'))}</button>` : '';
+  return `<div class="emptybox" role="status"><b>${esc(t(hidden ? 'mkOnlyHalls' : off === 0 ? 'mkNoneToday' : 'mkNoneDay'))}</b>${all}${next}</div>`;
+}
 
 // A compact map of the markets in the list; tapping it opens the full map on Markets.
 const mapBox = l => (l.length ? `<a class="pl-map secmap mkmapbox" href="#map" data-mapcat="${esc(l[0].cat)}" aria-label="${esc(t('openMap'))}"><div id="mkmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openMap'))}</span></a>` : '');
@@ -26,7 +41,7 @@ export function page(V) {
   let body = '', shown = [], mkey = '';
   if (st.mk === 'days') {
     // Next 14 days as real dates, so monthly markets (2nd Saturday...) only show on their date.
-    const DAYS = 14;
+    const DAYS = STRIP_DAYS;
     const dates = Array.from({ length: DAYS }, (_, i) => { const d = new Date(now); d.setDate(d.getDate() + i); return d; });
     const off = Math.min(Math.max(st.dayOff || 0, 0), DAYS - 1);
     const sel = dates[off];
@@ -38,7 +53,8 @@ export function page(V) {
     const head = (rel(off) ? rel(off) + ' · ' : '') + cap(new Intl.DateTimeFormat(locale(), { weekday: 'long', day: 'numeric', month: 'long' }).format(sel));
     shown = marketsOn(MARKETS, sel, vis); mkey = 'd' + off;
     body = bar + mapBox(shown) + `<h3 class="section-h">${esc(head)}</h3>` +
-      list(sorted(shown), m => ({ date: off === 0 ? now : sel, live: off === 0, gcard: WEEKLY.has(m.cat) }));
+      // Today's rows say each market's status now ("Finished" once it is over, data.js statusNow); another day's, its hours.
+      list(sorted(shown), m => ({ date: off === 0 ? now : sel, live: off === 0, status: off === 0 ? statusNow(m, now) : null, gcard: WEEKLY.has(m.cat) }), () => emptyDay(now, off, sel, vis));
   } else {
     shown = MARKETS.filter(vis); mkey = 'all';
     // gcard: a weekly market we hold no hours for, with a Google id, gets Google's own live line when its row opens

@@ -21,7 +21,7 @@ const fromLists = ctx => /\/engine\/src\/lists\.js$/.test(ctx.parentURL || '');
 registerHooks({ resolve: (spec, ctx, next) => (fromSchedule(ctx) && spec === './i18n.js' ? { url: 'data:text/javascript,' + encodeURIComponent(I18N), shortCircuit: true }
   : fromSchedule(ctx) && spec === './kinds.json' ? { url: 'data:text/javascript,' + encodeURIComponent('export default ' + KINDS), shortCircuit: true }
   : fromLists(ctx) && LISTS[spec] ? { url: 'data:text/javascript,' + encodeURIComponent(LISTS[spec]), shortCircuit: true } : next(spec, ctx)) });
-const { readMarkets, noneFound, defaultKinds, WEEKLY, marketsOn } = await import('../src/modules/markets/plan.js');
+const { readMarkets, noneFound, defaultKinds, WEEKLY, marketsOn, overToday, nextMarketDay, STRIP_DAYS } = await import('../src/modules/markets/plan.js');
 const { byDistance } = await import('../src/lists.js');
 
 const D = (y, m, d, h = 12, mi = 0) => new Date(y, m - 1, d, h, mi);
@@ -96,4 +96,33 @@ test('the page\'s filters do not change Home', () => {
 test('WEEKLY: only a street market or a market hall asks for Google\'s line', () => {
   assert.deepEqual([...WEEKLY].sort(), ['covered', 'street']);
   for (const c of ['flea', 'antiques', 'events', 'fair']) assert.equal(WEEKLY.has(c), false, c);
+});
+
+test('overToday: a market held today is over once none of its hours is on or still to come', () => {
+  const sat = LIST[0], night = LIST[7];                                    // 8:00 to 14:00 on Saturdays; 19:00 to 23:59 on summer Fridays
+  assert.equal(overToday(sat, D(2026, 11, 14, 7)), false);                 // before it opens
+  assert.equal(overToday(sat, D(2026, 11, 14, 13, 59)), false);            // still on
+  assert.equal(overToday(sat, D(2026, 11, 14, 14)), true);                 // at its closing time
+  assert.equal(overToday(sat, D(2026, 11, 14, 21, 15)), true);
+  assert.equal(overToday(sat, D(2026, 11, 16, 21, 15)), false);            // a Monday: not held, so not "over"
+  assert.equal(overToday(night, D(2026, 7, 17, 15)), false);               // an evening market in the afternoon
+  const split = M('split', 'street', 5, 'Valls', [row([6]), row([6], 0, { o: '17:00', c: '20:00' })]);
+  assert.equal(overToday(split, D(2026, 11, 14, 15)), false);              // between its two parts
+  assert.equal(overToday(split, D(2026, 11, 14, 20)), true);
+});
+
+test('nextMarketDay: today while a market is on or to come, else the next day of the strip that has one', () => {
+  const def = m => defaultKinds(CATS).includes(m.cat), next = (now, keep = def, from = 0) => { const x = nextMarketDay(LIST, now, keep, from); return x && [x.off, x.n]; };
+  assert.deepEqual(next(D(2026, 11, 14, 9)), [0, 3]);                      // Saturday morning: today, its three markets
+  assert.deepEqual(next(D(2026, 11, 14, 13, 59)), [0, 3]);
+  assert.deepEqual(next(D(2026, 11, 14, 21, 15)), [4, 1]);                 // Saturday evening: Sunday has none (the 3rd), Wednesday has one
+  assert.deepEqual(next(D(2026, 11, 16, 10)), [2, 1]);                     // Monday, only the hall, which Home leaves out: Wednesday
+  assert.deepEqual(next(D(2026, 11, 16, 10), () => true), [0, 1]);         // with every kind: the hall, today
+  assert.deepEqual(next(D(2026, 11, 16, 21, 15), () => true), [1, 1]);     // the hall closed: tomorrow's
+  assert.deepEqual(next(D(2026, 11, 7, 21, 15)), [1, 1]);                  // the evening before the 2nd Sunday: the flea market, tomorrow
+  assert.deepEqual(next(D(2026, 11, 18, 9), def, 1), [3, 3]);              // from tomorrow on (the page's empty day): Saturday
+  assert.equal(nextMarketDay(LIST, D(2026, 11, 14, 21, 15), def).date.getDate(), 18);
+  assert.equal(next(D(2026, 11, 14, 9), m => m.id === 'night'), null);     // nothing in the strip: the night market is out of season
+  assert.equal(next(D(2026, 11, 14, 9), def, STRIP_DAYS), null);           // past the strip
+  assert.equal(STRIP_DAYS, 14);
 });

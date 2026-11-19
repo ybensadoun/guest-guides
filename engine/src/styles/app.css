@@ -609,6 +609,8 @@ body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .st.open,.status.open,.chours .st.open,.pl-hours .st.open{color:var(--green)!important}
 .st.later,.status.later,.chours .st.later,.pl-hours .st.later{color:var(--blue)!important}
 .st.closed,.status.closed,.chours .st.closed,.pl-hours .st.closed{color:var(--red)!important}
+/* A market held earlier today (modules/markets): "Finished", quiet, where a place out of its hours is "Closed" in red. */
+.st.closed.over{color:var(--muted)!important}
 .st small{display:block;font-size:13px;font-weight:500;color:var(--muted)}
 /* An event of today that has ended stays for the day, quiet (modules/events): its name and its icon greyed, "Ended" on the right. */
 .mrow.ev-over .nm{color:var(--muted)}

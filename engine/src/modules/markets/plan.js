@@ -2,8 +2,8 @@
 // once read, which kinds Home and the page start from, which markets are held on a day, which ask for Google's own live
 // line. Their order, shared with the host's lists of places: engine/src/lists.js byDistance. Pure: content.js reads the
 // guide's file with readMarkets, data.js binds the rest to the guide, and engine/scripts/markets-data.test.mjs tests them.
-// Only schedule.js's runsOn is used (the week of the month: weeks.js).
-import { runsOn } from '../../schedule.js';
+// Only schedule.js's runsOn and status are used (the week of the month: weeks.js).
+import { runsOn, status } from '../../schedule.js';
 
 // A guide's content/markets.json read as places, with the guide's shared readers (content.js: located for a position that
 // ran out, slots for the schedule rows, slug for the map's groups). The kinds offered are the file's categories that have
@@ -36,3 +36,21 @@ export const WEEKLY = new Set(['street', 'covered']);
 
 // The markets held on a day (a Date: its weekday, its week of the month, its season), among those keep() lets through.
 export const marketsOn = (markets, day, keep) => markets.filter(m => keep(m) && runsOn(m, day).length);
+
+// Over for today (README rule 6): held today, and none of its hours is on now or still to come.
+export const overToday = (m, now) => status(m, now) === 'done';
+
+// The days the page's strip shows, today first.
+export const STRIP_DAYS = 14;
+
+// The next day with a market to go to, from day `from` of the strip (0 = today): today while one of its markets is on or
+// still to come, else the first later day that has one (README rule 2). { off, date, n }: the days from today, the day, how
+// many markets are held on it; null when the rest of the strip has none.
+export function nextMarketDay(markets, now, keep, from = 0) {
+  for (let i = Math.max(0, from); i < STRIP_DAYS; i++) {
+    const d = new Date(now); d.setDate(d.getDate() + i);
+    const l = marketsOn(markets, d, keep);
+    if (i === 0 ? l.some(m => !overToday(m, now)) : l.length) return { off: i, date: d, n: l.length };
+  }
+  return null;
+}
