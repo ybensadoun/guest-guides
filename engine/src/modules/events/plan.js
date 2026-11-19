@@ -39,6 +39,12 @@ export function upcoming(items, now = new Date()) {
   }).filter(Boolean).sort((a, b) => rank(a) - rank(b) || a.o.start.localeCompare(b.o.start) || (mins(a.o.time) ?? 0) - (mins(b.o.time) ?? 0));
 }
 
+// The month an event is listed under on the Local events page, as "YYYY-MM": the month its date starts in, or this month
+// for a date that has already started (today's, and those still running). On 1 Dec a nativity play from 28 Nov to 10 Jan is
+// under December with today's events, not first on the page under "November", a month that is over (found 16 Nov 2026).
+// x: an event of upcoming(), with its days from today.
+export const listedMonth = (x, now = new Date()) => (x.days <= 0 ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}` : x.o.start.slice(0, 7));
+
 // The event Home's tile names: today's, as long as it is not known to be over, "Today: Santa Teresa Fair"
 // ({ e, o, now: true }): one that starts today first, else a short one that is on (a fair of up to three days is today's
 // on each of its days; a Christmas market on for a month only on the day it starts, or the tile would name it for weeks).

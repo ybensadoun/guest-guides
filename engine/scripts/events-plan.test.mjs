@@ -5,7 +5,7 @@
 // node --test engine/scripts/events-plan.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { evState, upcoming, nextEvent, MOMENT_KINDS, MOMENT_MIN } from '../src/modules/events/plan.js';
+import { evState, upcoming, nextEvent, listedMonth, MOMENT_KINDS, MOMENT_MIN } from '../src/modules/events/plan.js';
 
 const D = (y, m, d, h = 12, mi = 0) => new Date(y, m - 1, d, h, mi);
 const SAT = D(2026, 11, 14, 11, 30);
@@ -103,4 +103,25 @@ test('nextEvent: today\'s event as long as it is not known to be over, else the 
   assert.equal(nextEvent([{ id: 'y', dates: [day('2026-12-24'), day('2026-11-20')] }], SAT).o.start, '2026-11-20');
   assert.equal(nextEvent([{ id: 'x', dates: [day('2026-01-01')] }], SAT), undefined);
   assert.equal(nextEvent(undefined, SAT), undefined);
+});
+
+test('listedMonth: an event that has already started is under this month, never under a past one (19 Nov 2026)', () => {
+  const ev = (id, start, end = start, more = {}) => ({ id, type: 'tradition', dates: [day(start, end, more)] });
+  const items = [ev('nativity', '2026-11-28', '2027-01-10'), ev('fair', '2026-11-28', '2026-12-23'), ev('towers', '2026-12-13', '2026-12-13', { time: '13:00' }), ev('kings', '2027-01-05'), ev('oil', '2026-11-27', '2026-11-28')];
+  const months = now => upcoming(items, now).map(x => `${x.e.id} ${listedMonth(x, now)}`);
+  // Before they start: each under the month it starts in.
+  assert.deepEqual(months(D(2026, 11, 19)), ['oil 2026-11', 'nativity 2026-11', 'fair 2026-11', 'towers 2026-12', 'kings 2027-01']);
+  // Running, the same month: still November.
+  assert.deepEqual(months(D(2026, 11, 30)), ['nativity 2026-11', 'fair 2026-11', 'towers 2026-12', 'kings 2027-01']);
+  // 1 Dec: the two that began in November are first on the page, under December, with December's own.
+  assert.deepEqual(months(D(2026, 12, 1)), ['nativity 2026-12', 'fair 2026-12', 'towers 2026-12', 'kings 2027-01']);
+  // January: the nativity still runs, under January 2027, before the Three Kings of the same month.
+  assert.deepEqual(months(D(2027, 1, 3)), ['nativity 2027-01', 'kings 2027-01']);
+  // Today's event, also once it has ended, is under this month.
+  assert.deepEqual(months(D(2026, 12, 13, 16)), ['nativity 2026-12', 'fair 2026-12', 'towers 2026-12', 'kings 2027-01']);
+  // The months never go backwards down the page.
+  for (const now of [D(2026, 11, 19), D(2026, 11, 30), D(2026, 12, 1), D(2026, 12, 31, 23, 59), D(2027, 1, 3)]) {
+    const m = upcoming(items, now).map(x => listedMonth(x, now));
+    assert.deepEqual(m, [...m].sort(), 'months in order on ' + now.toDateString());
+  }
 });

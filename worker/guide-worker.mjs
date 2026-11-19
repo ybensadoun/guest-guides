@@ -18,6 +18,7 @@ import { townPoint, municipalityAt, overtureTaxis, gazetteer, featureFor } from 
 import { researchPrompt, HOURS_RULE, MARKETS_RULE, TODO_RULE, earlyRules, EV_REACH, EV_MAIN, EV_EARLY, evFits, inReach, eventsInReach, holdMarkets } from './research-brief.mjs';   // the research's brief, how far it reaches
 import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
+import { argOf } from './args.mjs';   // an option's value on the command line, '' when it is not given
 import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
 import { txPick } from '../engine/src/modules/transport/taxis.js';   // the taxis a house is offered, from our open directory (Getting around)
 import { appsJob, refreshApps, appsNear, appsPrompt, readApps, APPS } from './ride-apps.mjs';   // Uber, Cabify, Bolt, Freenow (find-transport, what: apps)
@@ -947,13 +948,17 @@ async function tick() {
 // npm run refresh-events [-- --slug <slug>] [--apply]: the monthly run of automatic events (scheduled task). Without --apply it
 // searches and reports what it would change, writing nothing.
 if (process.argv.includes('--refresh-events')) {
-  const slug = (process.argv[process.argv.indexOf('--slug') + 1] || '').replace(/^--.*/, ''), apply = process.argv.includes('--apply');
+  const slug = argOf(process.argv, '--slug'), apply = process.argv.includes('--apply');
   const rows = await rest(`/rest/v1/guides?select=id,slug,content,answers&${slug ? 'slug=eq.' + encodeURIComponent(slug) : 'status=eq.published'}`);
+  let on = 0;
   for (const g of rows || []) {
     if (!(g.content && g.content.files && g.content.files.events && (g.content.files.events.auto || {}).on)) { if (slug) console.log(`${g.slug}: automatic events are off.`); continue; }
+    on++;
     try { const r = await refreshEvents(g, { apply }); console.log(`${g.slug}: ${r.found} found in the next three months; ${evLine(r)}${apply ? '' : ' (dry run: nothing written, add --apply)'}`); for (const l of r.details || []) console.log('  + ' + l); }
     catch (e) { console.log(`${g.slug}: did not work: ${e.message}`); }
   }
+  // Always a line, so that a run that refreshed nothing cannot look like one that worked (the monthly report of 1 Nov 2026).
+  if (!slug) console.log(`${(rows || []).length} published guide(s), ${on} with automatic events on.`); else if (!(rows || []).length) console.log(`No guide ${slug}.`);
   process.exit(0);
 }
 // node worker/guide-worker.mjs --area-research <id>: that one area research (still queued) now, as the worker does it,
@@ -990,7 +995,7 @@ if (process.argv.includes('--find') && process.argv[process.argv.indexOf('--find
   process.exit(0);
 }
 if (process.argv.includes('--find') && process.argv[process.argv.indexOf('--find') + 1] === 'find-taxis') {
-  const slug = (process.argv[process.argv.indexOf('--slug') + 1] || '').replace(/^--.*/, '');
+  const slug = argOf(process.argv, '--slug');
   if (!slug) { console.error('Use: --find find-taxis --slug <slug>'); process.exit(1); }
   const g = ((await rest(`/rest/v1/guides?select=id,content,draft&slug=eq.${encodeURIComponent(slug)}`)) || [])[0];
   if (!g) { console.error(`No guide ${slug}.`); process.exit(1); }
@@ -1018,7 +1023,7 @@ if (process.argv.includes('--find') && process.argv[process.argv.indexOf('--find
   process.exit(0);
 }
 if (process.argv.includes('--find')) {
-  const kind = process.argv[process.argv.indexOf('--find') + 1], slug = (process.argv[process.argv.indexOf('--slug') + 1] || '').replace(/^--.*/, '');
+  const kind = process.argv[process.argv.indexOf('--find') + 1], slug = argOf(process.argv, '--slug');
   if (!(FIND[kind] || kind === 'find-transport') || !slug) { console.error('Use: --find find-todo|find-markets|find-events --slug <slug>, or --find find-transport --slug <slug> --station <id>'); process.exit(1); }
   const g = (await rest(`/rest/v1/guides?select=id&slug=eq.${encodeURIComponent(slug)}`))[0];
   if (!g) { console.error(`No guide ${slug}.`); process.exit(1); }
