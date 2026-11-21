@@ -1023,6 +1023,9 @@ p,li,small,b,h2,h3,h4,.nm,.note,.ws-how,.mbody,.hsec,.tags,.lead{overflow-wrap:b
 /* Not on Home's tiles and cards: there no word is cut in two ("si-tios", "Opens to-morrow"), lines wrap between words
    or at a soft hyphen of the content (the frame, modules/README.md rule 14; a card too narrow for a word is drawn wide). */
 .gt *,.qcall *{-webkit-hyphens:manual;hyphens:manual}
+/* Nor on the rubbish page (modules/garbage/README.md, rule 12): its steps and "what goes where" lists were cut the most
+   ("Papierserviet-ten"). A word wider than its line still wraps, as a last resort, so nothing runs off the page. */
+.gpage *{-webkit-hyphens:manual;hyphens:manual}
 .hsticky .hs-t small{white-space:normal;line-height:1.25}
 /* The name and its stars stay on one line: a long guide name ends in "…" and the stars keep their place. */
 #hsticky .hs-t b{display:flex;align-items:baseline;white-space:nowrap}

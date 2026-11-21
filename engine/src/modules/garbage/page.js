@@ -81,7 +81,7 @@ export function page(V) {
     ${GARBAGE.deixalleria ? `<p class="note" style="margin:0">${esc(tx(GARBAGE.deixalleria))}</p>` : ''}
     ${deix ? `<div class="mlist">${row(deix, { date: now, live: true })}</div>` : ''}</section>`;
 
-  V.innerHTML = `<div class="wrap" style="gap:22px">
+  V.innerHTML = `<div class="wrap gpage" style="gap:22px">
     <div><h2 class="title">${esc(t('garbage'))}</h2><p class="lead">${esc(t(CONTAINERS_ONLY ? 'gLeadContainers' : 'gLead'))}</p></div>
     ${CONTAINERS_ONLY ? '' : hero}${steps}${containers}${CONTAINERS_ONLY ? '' : week}${what}${missed}</div>`;
 }
