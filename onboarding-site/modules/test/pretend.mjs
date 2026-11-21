@@ -49,7 +49,7 @@ export function world({ owner = true, empty = true } = {}) {
       if (m === 'PATCH') { const b = body(); for (const g of db.guides.filter(pick)) { Object.assign(g, b); db.calls.push(['guide', g.slug, Object.keys(b).sort().join(',')]); } return json(null, 204); }
       db.calls.push(['guide-' + m]); return json({ message: 'not here' }, 403);
     }
-    if (p === '/rest/v1/guide_jobs') { if (m === 'POST') { db.calls.push(['job', (body() || {}).kind]); return json({ message: 'A sample house starts no paid search.' }, 400); } return json([]); }
+    if (p === '/rest/v1/guide_jobs') { if (m === 'POST') { const b = body() || {}; db.calls.push(['job', b.kind, (b.params || {}).what || '']); return json({ message: 'A sample house starts no paid search.' }, 400); } return json([]); }
     if (p.startsWith('/rest/v1/rpc/')) { db.calls.push(['rpc', p.split('/').pop()]); return json(null); }
     if (p.startsWith('/rest/v1/')) return json(m === 'GET' ? [] : null, m === 'GET' ? 200 : 201);
     return json({ message: 'not found' }, 404);   // storage and the rest

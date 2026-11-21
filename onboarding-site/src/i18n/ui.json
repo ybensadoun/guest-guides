@@ -8594,6 +8594,11 @@
 "es": "Trenes",
 "fr": "Trains"
 },
+"The train stations guests can use.": {
+"ca": "Les estacions de tren que poden fer servir els hostes.",
+"es": "Las estaciones de tren que pueden usar los huéspedes.",
+"fr": "Les gares que vos voyageurs peuvent prendre."
+},
 "The train stations guests can use. Type one: its lines and journey times come with it.": {
 "ca": "Les estacions de tren que poden fer servir els hostes. Escriu-ne una: les línies i els temps de viatge hi arriben sols.",
 "es": "Las estaciones de tren que pueden usar los huéspedes. Escribe una: sus líneas y tiempos de viaje llegan solos.",

@@ -1,7 +1,7 @@
 // The country a house is in (engine/src/country.js), on a small made-up world.  node --test engine/scripts/country.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { countriesPrep, countryAt } from '../src/country.js';
+import { countriesPrep, countryAt, countrySpot } from '../src/country.js';
 
 // AA: a square of 10 degrees; CC: a small country inside it; BB: an island 0.1 degree off AA's east shore.
 const sq = (w, s, e, n) => [w * 100, s * 100, (e - w) * 100, 0, 0, (n - s) * 100, -(e - w) * 100, 0];
@@ -30,4 +30,8 @@ test('the open sea, and no position, are no country', () => {
   assert.equal(countryAt(P, '', ''), '');
   assert.equal(countryAt(P, 'x', 2), '');
   assert.equal(countryAt(null, 45, 2), '');
+});
+test('a position as the words a country is kept with', () => {
+  assert.equal(countrySpot(41.2353, 1.8113), '41.235,1.811'); assert.equal(countrySpot('41.2186', '1.535'), '41.219,1.535');
+  assert.equal(countrySpot(null, 2), ''); assert.equal(countrySpot('', ''), ''); assert.equal(countrySpot(undefined, 2), ''); assert.equal(countrySpot('x', 2), '');
 });

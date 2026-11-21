@@ -234,7 +234,7 @@ _avsrc=open(__import__('os').path.join(_MD,'available.js'),encoding='utf-8').rea
 _cysrc=open(__import__('os').path.join(_ES,'country.js'),encoding='utf-8').read()
 assert not _re.search(r'(?m)^import ',_avsrc+_cysrc),'engine/src/modules/available.js, engine/src/country.js: an import is not expected'
 _avn=_re.findall(r'(?m)^export const (\w+)',_avsrc); _cyn=_re.findall(r'(?m)^export function (\w+)',_cysrc)
-assert 'avPartOn' in _avn and 'avParts' in _avn and _cyn==['countriesPrep','countryAt'],'engine/src/modules/available.js, engine/src/country.js: their exports are not as expected'
+assert 'avPartOn' in _avn and 'avParts' in _avn and set(_cyn)=={'countriesPrep','countryAt','countrySpot'},'engine/src/modules/available.js, engine/src/country.js: their exports are not as expected'
 _avl=__import__('json').load(open(__import__('os').path.join(_MD,'available.json'),encoding='utf-8'))
 _avl={'countries':_avl['countries'],'modules':[{'id':m['id'],'parts':[{'id':q['id'],'where':q['where']} for q in m['parts']]} for m in _avl['modules']]}
 ENG_DATA+=('const AV = (() => {\n'+_re.sub(r'(?m)^export ','',_avsrc)+'\nreturn { '+', '.join(_avn)+' };\n})();\n'

@@ -5,6 +5,7 @@
 //   countriesPrep(data)        the file made ready, once: [{ cc, box: [w, s, e, n], ring: [lng, lat, lng, lat...] }], one
 //                              per outline, in hundredths of a degree as the file keeps them.
 //   countryAt(prep, lat, lng)  two capital letters, or '' when the position is no country's (the open sea, no position).
+//   countrySpot(lat, lng)      the position as the words a country is kept with, '' with no position.
 // The outline that holds the position names the country; when several do (a country inside another: holes are not
 // kept), the smallest wins. A house on the shore may sit just off a simplified coast: then the nearest outline within
 // 25 km. The outlines are drawn for a map of the world, and were found up to about 3 km off the true border (measured on
@@ -15,6 +16,9 @@
 // own and reads as Spain, the Vatican as Italy. Natural Earth's 1:10m file would narrow all of this: for the day a small country is launched.
 // An outline smaller than about 10 km by 10 km (the Vatican, Monaco) casts no doubt on what is around it: Rome is Italy.
 const NEAR_KM = 25, BORDER_KM = 6, TINY = 100;
+// A position as the words a country is kept with ("41.235,1.811", about 100 m): a country read once stays the house's
+// while its position says the same (the maker's answers `country` and `_countryAt`, the worker, the generator).
+export function countrySpot(lat, lng) { return (lat === null || lng === null || lat === '' || lng === '' || lat === undefined || lng === undefined || !Number.isFinite(+lat) || !Number.isFinite(+lng)) ? '' : (+lat).toFixed(3) + ',' + (+lng).toFixed(3); }
 export function countriesPrep(data) {
   const out = [];
   for (const [cc, rings] of (data && data.rows) || []) for (const d of rings) {

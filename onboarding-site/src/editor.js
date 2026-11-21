@@ -1162,23 +1162,23 @@ function cmTransport(c) {
     <div id="c_txnear">${txsNearHTML()}</div>
     <div class="cm-row"><button class="btn small" type="button" data-tradd="taxi">+ Add a taxi</button></div>
     <div id="c_axapps">${axsHTML()}</div>
-    <h3 class="cm-h">Trains</h3><p class="hint cm-hl">The train stations guests can use. Type one: its lines and journey times come with it.</p>
+    <h3 class="cm-h">Trains</h3><p class="hint cm-hl">${partOn('transport/trains') ? 'The train stations guests can use. Type one: its lines and journey times come with it.' : 'The train stations guests can use.'}</p>
     <div class="cm-list">${trains || `<div id="c_trnear">${trsNearHTML()}</div>`}</div>
-    <div class="cm-trfind"><label for="c_trq">Type a train station</label>
+    ${!partOn('transport/trains') ? cmStopBox('train') : `<div class="cm-trfind"><label for="c_trq">Type a train station</label>
       <input id="c_trq" type="text" data-trq role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="c_trsug" autocomplete="off" enterkeyhint="search" placeholder="${esc(trsExample())}">
       <div class="pl-sug" id="c_trsug" role="listbox" aria-label="Train stations" hidden></div>
       <p class="hint" id="c_trmsg" role="status">${TRS.failed ? esc('The list of stations could not be loaded. Use “Not in the list?” below.') : ''}</p>
       <button class="pl-link cm-trold" type="button" data-trold aria-expanded="${!!CM.trOld}">Not in the list?</button></div>
-    ${CM.trOld ? cmStopBox('train') : ''}
+    ${CM.trOld ? cmStopBox('train') : ''}`}
     <h3 class="cm-h">Public transport</h3><p class="hint cm-hl">Metro, tram and bus stops guests can use near the house.</p>
     <div class="cm-list">${buses || '<p class="hint">No stop yet.</p>'}</div>
-    <div id="c_spnear">${spsNearHTML()}</div>
+    ${!partOn('transport/stops') ? cmStopBox('bus') : `<div id="c_spnear">${spsNearHTML()}</div>
     <div class="cm-trfind"><label for="c_spq">Type a stop or station</label>
       <input id="c_spq" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="c_spsug" autocomplete="off" enterkeyhint="search" placeholder="Its name">
       <div class="pl-sug" id="c_spsug" role="listbox" aria-label="Stops and stations" hidden></div>
       <p class="hint" id="c_spmsg" role="status">${SPS.failed ? esc('The list of stations could not be loaded. Use “Not in the list?” below.') : ''}</p>
       <button class="pl-link cm-trold" type="button" data-spold aria-expanded="${!!CM.spOld}">Not in the list?</button></div>
-    ${CM.spOld ? cmStopBox('bus') : ''}`;
+    ${CM.spOld ? cmStopBox('bus') : ''}`}`;
 }
 /* --- Taxis near the house (16 Nov 2026, engine/src/modules/transport/README.md, "The taxis found"): when the step opens
    and the house has a position, the worker is asked once for the taxis of our open directory around it (job
@@ -1220,11 +1220,12 @@ function txsPick(i) {
 const AXS = { asked: false, near: [] };
 function axsHTML() {
   const T = edF().transport || {}, on = new Set((T.apps || []).map(a => a.id)), near = new Set(AXS.near.map(a => a.id));
+  const shown = partOn('transport/apps') ? AX_APPS : AX_APPS.filter(a => on.has(a.id)); if (!shown.length) return '';   // where the part is off: only the apps the guide already has, to take out (launch.js)
   return `<div class="cm-axapps"><b class="cm-axh">Ride apps</b><p class="hint">Apps guests can book a ride with: they get a button that opens the app.</p>
-    ${AX_APPS.map(a => cSwitch(`data-axapp="${esc(a.id)}"`, a.name, on.has(a.id), near.has(a.id) && !on.has(a.id) ? 'works near your house' : '')).join('')}</div>`;
+    ${shown.map(a => cSwitch(`data-axapp="${esc(a.id)}"`, a.name, on.has(a.id), near.has(a.id) && !on.has(a.id) ? 'works near your house' : '')).join('')}</div>`;
 }
 async function axsAsk() {
-  const h = edF().house || {}; if (AXS.asked || !CM.g || !tpPlaced(h)) return; AXS.asked = true;
+  const h = edF().house || {}; if (AXS.asked || !CM.g || !tpPlaced(h) || !partOn('transport/apps')) return; AXS.asked = true;
   try {
     await ensureFresh();
     const j = await sb('/rest/v1/guide_jobs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { guide_id: CM.g.id, kind: 'find-transport', langs: edLangs(), params: { what: 'apps' } } });
@@ -1251,7 +1252,7 @@ function axsToggle(id) {
    at once, opened, as the generator writes one (spEntry). Nothing loaded: no "Near your house", and the field says so. */
 const SPS = { asked: false, index: null, stops: [], failed: false, near: [], list: [], on: -1 };
 async function spsLoad() {
-  const h = edF().house || {}; if (SPS.asked || !tpPlaced(h)) return; SPS.asked = true;
+  const h = edF().house || {}; if (SPS.asked || !tpPlaced(h) || !partOn('transport/stops')) return; SPS.asked = true;   // our stops are for the countries this part is on in (launch.js)
   try {
     const ix = await fetch(STOPS_BASE() + 'index.json').then(r => r.ok ? r.json() : null);   // STOPS_BASE: build.py, one setting
     if (!ix || !ix.cells) throw new Error('no index');
@@ -1309,7 +1310,7 @@ function txsFrom(x) {
    offered again (tpHave). If the file does not load, "Not in the list?" is the way, as before. */
 const TRS = { data: null, asked: null, failed: false, list: [], on: -1, near: [] };
 function trsLoad() {
-  if (TRS.asked) return;
+  if (TRS.asked || !partOn('transport/trains')) return;   // our stations file is for the countries this part is on in (launch.js)
   TRS.asked = fetch('/stations-es.json').then(r => r.ok ? r.json() : null).then(d => {
     TRS.data = d && Array.isArray(d.stations) && Array.isArray(d.cities) ? d : null;
     if (!TRS.data) { TRS.failed = true; const m = document.getElementById('c_trmsg'); if (m) m.textContent = 'The list of stations could not be loaded. Use “Not in the list?” below.'; return; }
@@ -1365,6 +1366,7 @@ function trsPick(i, from) {   // from: the list (TRS.list) or "Near your house" 
    on the station in the open copy and its card is drawn again where it stands (opened stays opened, a field being typed
    in keeps its text and focus); when it fails, nothing is said and nothing changes. */
 async function trsBrands(id) {
+  if (!partOn('transport/brands')) return;   // launch.js
   CM.brands = CM.brands || new Set(); if (CM.brands.has(id)) return; CM.brands.add(id);
   try {
     await cmSave();

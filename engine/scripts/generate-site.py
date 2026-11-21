@@ -311,6 +311,26 @@ def country_of(lat, lng):
     return cc if re.match(r'^[A-Z]{2}\Z', cc) else ''
 _cc = str(A.get('country') or '') if A.get('_countryAt') == '%.3f,%.3f' % (args.lat, args.lng) else ''
 if not re.match(r'^[A-Z]{2}\Z', _cc): _cc = country_of(args.lat, args.lng)
+# What is on for that country (the launch desk: engine/src/modules/available.js through engine/scripts/available-of.mjs).
+# The worker hands the owner's word and the country it worked with in launch.json, beside host.json; with no such file
+# the code's list alone decides. part_on() is True whenever anything is not known: nothing is cut unless we are sure.
+_launch = None
+if (S / 'launch.json').exists():
+    try:
+        _lj = json.loads((S / 'launch.json').read_text()); _launch = _lj.get('launch')
+        if not _cc and re.match(r'^[A-Z]{2}\Z', str(_lj.get('country') or '')): _cc = _lj['country']
+    except Exception as e: print('launch.json: not read:', e, file=sys.stderr)
+def parts_of(cc, launch):
+    import shutil, subprocess
+    node, script = shutil.which('node'), ROOT / 'engine/scripts/available-of.mjs'
+    if not node or not cc: return {}
+    try: r = subprocess.run([node, str(script)], input=json.dumps({'country': cc, 'launch': launch}), capture_output=True, text=True, timeout=60)
+    except Exception as e: print('available-of: not run:', e, file=sys.stderr); return {}
+    try: p = json.loads(r.stdout or '{}').get('parts')
+    except Exception: p = None
+    return p if isinstance(p, dict) else {}
+PARTS = parts_of(_cc, _launch)
+part_on = lambda k: PARTS.get(k, True) is not False
 if _cc: house['country'] = _cc
 (SITE / 'content/house.json').write_text(json.dumps(house, ensure_ascii=False, indent=1))
 
@@ -487,7 +507,7 @@ def stations_of(lat, lng):   # the house's stations as transport.json holds them
     except Exception as e: print(f'generate-site: {script.relative_to(ROOT)} could not be run: {e}: no train stations', file=sys.stderr); return []
     if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no train stations', file=sys.stderr); return []
     return json.loads(r.stdout).get('stations') or []
-stations = stations_of(args.lat, args.lng)
+stations = stations_of(args.lat, args.lng) if part_on('transport/trains') else []
 # The public transport stops near the house (metro, tram, bus: engine/src/modules/transport/stops.js through
 # engine/scripts/stops-of.mjs, from STOPS_DIR or STOPS_BASE), after the train stations; none where no feed of ours reaches.
 def stops_of(lat, lng):
@@ -498,7 +518,7 @@ def stops_of(lat, lng):
     except Exception as e: print(f'generate-site: {script.relative_to(ROOT)} could not be run: {e}: no stops', file=sys.stderr); return []
     if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no stops', file=sys.stderr); return []
     return json.loads(r.stdout).get('stops') or []
-stations += stops_of(args.lat, args.lng)
+if part_on('transport/stops'): stations += stops_of(args.lat, args.lng)
 # The taxis of our open directory (engine/src/modules/transport/taxis.js, through engine/scripts/taxis-of.mjs; Python keeps
 # no copy of the rule): answers.taxis is what the host approved in the builder (a list, even empty, is their choice);
 # absent (the host never saw it), the nearest of answers._taxisFound (what the worker found), alone. After the typed one,
@@ -528,7 +548,7 @@ def found_apps():
     except Exception as e: print(f'generate-site: {script.relative_to(ROOT)} could not be run: {e}: no ride apps', file=sys.stderr); return []
     if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no ride apps', file=sys.stderr); return []
     return json.loads(r.stdout).get('apps') or []
-apps = found_apps()
+apps = found_apps() if part_on('transport/apps') else []
 (SITE / 'content/quick.json').write_text(json.dumps({'items': quick}, ensure_ascii=False, indent=1))
 if taxis or stations or apps:
     (SITE / 'content/transport.json').write_text(json.dumps({'_doc': 'Getting around: taxis and stations or stops, on their own page; tile = a one-tap tile on Home (null: the section\'s own tile). Written by generate-site.py: the taxi the host typed, the taxis of our open directory they approved or the nearest (src: {from: overture, id, at}), apps: [{id, name, link, src}] the ride apps approved or found near the house, the train stations from onboarding-site/stations-es.json (Renfe, src: {from, at}) by engine/src/modules/transport/pick.js.',

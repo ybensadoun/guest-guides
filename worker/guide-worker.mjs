@@ -19,6 +19,7 @@ import { researchPrompt, HOURS_RULE, MARKETS_RULE, TODO_RULE, earlyRules, EV_REA
 import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
 import { cardWords, applyWords } from './card-words.mjs';   // a found place's description and kind in the maker's languages (the deck's cards)
+import { countryOf, readLaunch, launchFor } from './launch.mjs';   // what is on for a house's country (the launch desk)
 import { argOf } from './args.mjs';   // an option's value on the command line, '' when it is not given
 import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
 import { txPick } from '../engine/src/modules/transport/taxis.js';   // the taxis a house is offered, from our open directory (Getting around)
@@ -253,7 +254,10 @@ async function build(g) {
   // The taxis of our open directory around the house (free): the generator writes the host's approved ones, or the nearest
   // when the host never saw them (engine/scripts/taxis-of.mjs). No list on any error: a build never fails for it.
   A._taxisFound = await within(taxisAt({ lat: A.lat, lng: A.lng }), 120000, []);
-  A._appsFound = await appsAt(A, RESEARCHING ? appsAsk({ usd: 0 }) : null);   // the ride apps near the house: the host's approved ones win (engine/scripts/apps-of.mjs)
+  // What is on for the house's country (worker/launch.mjs): the generator is handed the same word in launch.json.
+  const LA = launchFor(await readLaunch(rest), countryOf(A));
+  writeFileSync(join(job, 'src/launch.json'), LA.file());
+  A._appsFound = LA.on('transport/apps') ? await appsAt(A, RESEARCHING ? appsAsk({ usd: 0 }) : null) : [];   // the ride apps near the house: the host's approved ones win (engine/scripts/apps-of.mjs)
   const remote = (A._remote || []).filter(u => u && u.src && String(u.src).startsWith('https://a0.muscache.com/'));
   const clean = { ...A }; delete clean._remote; delete clean._uploads;
   writeFileSync(join(job, 'src/host.json'), JSON.stringify({ answers: clean }));
@@ -298,7 +302,7 @@ async function build(g) {
     if (need.length) { say(id, 'Translating'); const map = await translate(need, [srcLang, ...langs], srcLang);
       if (Object.keys(map).length) { const tf = join(job, 'translations.json'); writeFileSync(tf, JSON.stringify(map, null, 1)); out = run('python3', [...gen, '--translations', tf]).stdout; } }
   }
-  await brandsOnSite(siteDir);
+  if (LA.on('transport/brands')) await brandsOnSite(siteDir);
   const checked = run('node', ['engine/scripts/run.js', 'check', tmp], { allowFail: true });
   if (checked.status !== 0) throw new Error('The guide did not pass its checks: ' + ((checked.stdout || '') + (checked.stderr || '')).trim().split('\n').slice(-3).join(' | '));
   say(id, 'Saving the guide');

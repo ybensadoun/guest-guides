@@ -7,7 +7,8 @@
    - the house's country: the guide's own (content/house.json `country`, written by the generator) or the answers'
      (`country`, kept with the position it was read from), else read once from the position with our own outlines file
      (/countries.json, CTRY: engine/src/country.js). Not known, or not known yet: nothing is cut.
-   Plan and the list of gates: docs/plan-launch-desk-gates.md. No step reads partOn yet (21 Nov 2026). */
+   Plan and the list of gates: docs/plan-launch-desk-gates.md. First gates, 21 Nov 2026: Getting around's train stations,
+   train companies, stops and ride apps (editor.js, start.js). */
 const LD = { launch: null, prep: null, asked: null, failed: 0, mem: {} };
 function ldStart() {
   try {
@@ -17,7 +18,7 @@ function ldStart() {
 }
 // The house in hand: its position, and the country it already knows.
 const ldHouse = () => { const h = (typeof CM !== 'undefined' && CM.on) ? (edF().house || {}) : A; return { lat: h.lat, lng: h.lng, cc: typeof h.country === 'string' ? h.country : null, ed: typeof CM !== 'undefined' && CM.on }; };
-const ldSpot = h => (Number.isFinite(+h.lat) && Number.isFinite(+h.lng) && h.lat !== '' && h.lat !== null && h.lng !== '' && h.lng !== null) ? (+h.lat).toFixed(3) + ',' + (+h.lng).toFixed(3) : '';
+const ldSpot = h => CTRY.countrySpot(h.lat, h.lng);
 function ldCountry() {
   const h = ldHouse(), at = ldSpot(h);
   if (h.ed) { if (h.cc !== null) return h.cc; }

@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import * as AV from '../../engine/src/modules/available.js';
 import * as CTRY from '../../engine/src/country.js';
+import { countryOf, readLaunch, launchFor } from '../launch.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SRC = readFileSync(join(ROOT, 'onboarding-site/src/launch.js'), 'utf8');
@@ -91,16 +92,19 @@ test('launch.js: a house with no position has no country, and nothing is asked f
 
 // The generator
 let n = 0;
-function house(answers, [lat, lng]) {
+function generate(answers, [lat, lng], launch) {
   const src = mkdtempSync(join(tmpdir(), 'gen-cc-')), slug = `zz-test-country-${process.pid}-${++n}`, site = resolve(ROOT, 'sites', slug);
   try {
     mkdirSync(join(src, 'uploads'));
     writeFileSync(join(src, 'host.json'), JSON.stringify({ answers: { placeName: 'Test house', town: 'Test town', languages: ['en'], ...answers } }));
+    if (launch !== undefined) writeFileSync(join(src, 'launch.json'), JSON.stringify(launch));
     const r = spawnSync('python3', ['engine/scripts/generate-site.py', src, '--slug', slug, '--lat', lat, '--lng', lng], { cwd: ROOT, encoding: 'utf8', timeout: 60000, env: { ...process.env, STOPS_DIR: join(src, 'no-stops') } });
     assert.equal(r.status, 0, (r.stderr || '').slice(-600));
-    return JSON.parse(readFileSync(join(site, 'content/house.json'), 'utf8'));
+    const read = f => existsSync(join(site, f)) ? JSON.parse(readFileSync(join(site, f), 'utf8')) : null;
+    return { house: read('content/house.json'), transport: read('content/transport.json') };
   } finally { rmSync(site, { recursive: true, force: true }); rmSync(src, { recursive: true, force: true }); }
 }
+const house = (answers, at) => generate(answers, at).house;
 test('the generator writes the house\'s country, read from its position with our outlines file', () => {
   assert.equal(house({}, ['41.2186', '1.535']).country, 'ES');          // El Vendrell's centre
   assert.equal(house({}, ['48.8566', '2.3522']).country, 'FR');         // Paris
@@ -120,4 +124,63 @@ test('the worker\'s image holds the files the generator\'s scripts read from onb
   const read = [...scripts.matchAll(/onboarding-site\/([\w.-]+\.json)/g)].map(m => m[1]);
   assert.ok(read.includes('countries.json') && read.includes('stations-es.json'));
   for (const f of new Set(read)) { assert.ok(ignore.includes('!onboarding-site/' + f), `.dockerignore must let in onboarding-site/${f}`); assert.ok(existsSync(join(ROOT, 'onboarding-site', f)), f + ' is committed'); }
+});
+
+// The worker's own helper (worker/launch.mjs)
+test('worker: the house\'s country is the builder\'s answer for the same position, else read from the position', () => {
+  assert.equal(countryOf({ lat: 41.2186, lng: 1.535 }), 'ES');                                              // El Vendrell's centre, from our file
+  assert.equal(countryOf({ lat: '48.8566', lng: '2.3522' }), 'FR');                                         // as the answers hold them, in words
+  assert.equal(countryOf({ lat: 41.2186, lng: 1.535, country: 'PT', _countryAt: '41.219,1.535' }), 'PT');   // read by the builder there: kept
+  assert.equal(countryOf({ lat: 41.2186, lng: 1.535, country: 'PT', _countryAt: '38.722,-9.139' }), 'ES');  // read elsewhere: read again
+  assert.equal(countryOf({ lat: 42.4316, lng: 1.9283, country: '', _countryAt: '42.432,1.928' }), '');      // the builder found a border: not known
+  assert.equal(countryOf({ lat: 42.4316, lng: 1.9283 }), ''); assert.equal(countryOf({}), ''); assert.equal(countryOf(null), '');
+  assert.equal(countryOf({ lat: 41.2186, lng: 1.535 }, join(ROOT, 'no-such-file.json')), '');               // the file missing: not known, never an error
+});
+test('worker: the owner\'s word is read from the two tables; no answer, the list alone decides', async () => {
+  const asked = [], rest = async p => { asked.push(p.split('?')[0]); return p.includes('launch_countries') ? [{ country: 'FR', state: 'open' }] : [{ module: 'transport', part: 'trains', country: 'FR', is_on: true }]; };
+  const launch = await readLaunch(rest);
+  assert.deepEqual(asked.sort(), ['/rest/v1/launch_countries', '/rest/v1/module_switches']);
+  assert.equal(launchFor(launch, 'FR').on('transport/trains'), true);
+  assert.equal(launchFor(launch, 'PT').on('transport/trains'), false);
+  assert.equal(launchFor(launch, 'ES').on('transport/trains'), true);
+  assert.equal(launchFor(launch, '').on('transport/trains'), true);           // country not known: nothing is cut
+  assert.equal(await readLaunch(async () => { throw new Error('down'); }), null);
+  assert.equal(await readLaunch(async () => ({ message: 'no' })), null);
+  const none = launchFor(null, 'FR');
+  assert.equal(none.on('transport/trains'), false); assert.equal(none.on('transport/taxis'), true);
+  assert.deepEqual(JSON.parse(none.file()), { country: 'FR', launch: null });
+});
+
+// The first gates: Getting around's train stations, stops and ride apps at the build
+const VENDRELL = ['41.2186', '1.535'], SJDL = ['43.388', '-1.663'];   // El Vendrell's centre; Saint-Jean-de-Luz's, in France, 9 km from the border
+const renfe = t => ((t && t.stations) || []).filter(s => s.src && s.src.from === 'renfe');
+test('gates: a house in Spain gets its stations as before, with no word of the owner and with an empty one', () => {
+  const a = generate({}, VENDRELL), b = generate({}, VENDRELL, { country: 'ES', launch: { countries: [], switches: [] } }), c = generate({}, VENDRELL, { country: 'ES', launch: null });
+  assert.ok(renfe(a.transport).length >= 1);
+  assert.deepEqual(b.transport, a.transport); assert.deepEqual(c.transport, a.transport);
+});
+test('gates: a house in France is not given Spain\'s stations, though one is within reach', () => {
+  const near = JSON.parse(spawnSync('node', ['engine/scripts/stations-of.mjs'], { cwd: ROOT, input: JSON.stringify({ lat: +SJDL[0], lng: +SJDL[1], langs: ['en'] }), encoding: 'utf8' }).stdout).stations;
+  assert.ok(near.length >= 1, 'the rule alone would give this French house a Spanish station');
+  const g = generate({ taxi: 'Taxi Test 600 000 000' }, SJDL);
+  assert.equal(g.house.country, 'FR'); assert.deepEqual(renfe(g.transport), []);
+  assert.equal(g.transport.taxis.length, 1);   // what the host typed stays
+});
+test('gates: the owner switches Spain\'s trains off: no station at the build; his word for a country not launched waits', () => {
+  const off = { countries: [], switches: [{ module: 'transport', part: 'trains', country: 'ES', is_on: false }] };
+  assert.deepEqual(renfe(generate({ taxi: 'Taxi Test 600 000 000' }, VENDRELL, { country: 'ES', launch: off }).transport), []);
+  const fr = { countries: [{ country: 'FR', state: 'preparing' }], switches: [{ module: 'transport', part: 'trains', country: 'FR', is_on: true }] };
+  assert.deepEqual(renfe(generate({ taxi: 'Taxi Test 600 000 000' }, SJDL, { country: 'FR', launch: fr }).transport), []);
+  const launched = { countries: [{ country: 'FR', state: 'open' }], switches: fr.switches };
+  assert.ok(renfe(generate({}, SJDL, { country: 'FR', launch: launched }).transport).length >= 1);   // launched with trains on: his word counts
+});
+test('gates: ride apps the host approved go in where the part is on, and not where it is off', () => {
+  const found = [{ id: 'uber', name: 'Uber' }];
+  const es = generate({ apps: ['uber'], _appsFound: found }, VENDRELL), fr = generate({ apps: ['uber'], _appsFound: found, taxi: 'Taxi Test 600 000 000' }, SJDL);
+  assert.deepEqual((es.transport.apps || []).map(a => a.id), ['uber']);
+  assert.deepEqual(fr.transport.apps || [], []);
+});
+test('gates: a launch file that is not JSON changes nothing', () => {
+  const src = generate({}, VENDRELL, 'not an object');
+  assert.ok(renfe(src.transport).length >= 1);
 });

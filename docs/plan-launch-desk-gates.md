@@ -69,6 +69,19 @@ The parts "the host adds" and the parts with no country tie (Home, the house pag
 map, the look) get a gate only when the owner can usefully switch them off: `house/listing` (S 88, the listing read) and
 the sections themselves (Guide sections) are to decide with Yohann; none is built in the first pass.
 
+## Done
+- 21 Nov 2026, the plumbing (live): the rule, a house's country, `launch.js` and `partOn`, the generator's `country`.
+- 21 Nov 2026, Getting around's four parts tied to Spain: `transport/trains`, `transport/brands`, `transport/stops`,
+  `transport/apps`. Editor: `trsLoad`, the Trains field, `spsLoad`, the stops field, `axsHTML`, `axsAsk`, `trsBrands`;
+  where a part is off the name or link box shows at once. Builder: `axListHTML`. Generator: `part_on()` before
+  `stations_of`, `stops_of`, `found_apps`. Worker: `worker/launch.mjs` (the owner's word from the two tables, handed to
+  the generator as `launch.json`), the apps found and `brandsOnSite` only where their part is on. Found while testing:
+  today a house in Perpignan, Saint-Jean-de-Luz, Biarritz or Elvas is given a Spanish station; with the gate it is not.
+  Checks: `worker/test/launch.test.mjs`, `onboarding-site/modules/test/gates-check.mjs` (a sample house in Spain, at a
+  border, with no country field, in France, in France launched with its trains on; 1280 and 360 px).
+- Still to gate: the research (markets, events, things to do, contacts), a place's facts, the towns, the taxis found,
+  the deck; the worker's jobs from the editor (`transportJob`, Find more) are stopped at the editor only.
+
 ## Order of the gates
 First the four of Getting around that are tied to Spain's files (trains, brands, stops, apps): they are the clearest
 case, a house in France gets Spain's nearest station today. Then the research (markets, events, things to do, contacts),

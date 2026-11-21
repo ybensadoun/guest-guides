@@ -759,7 +759,7 @@ document.addEventListener('change', e => {
    2026: "we suggest apps: uber, cabify etc.. and they approve". */
 const axRecords = () => ((AREA.result && Array.isArray(AREA.result.apps) ? AREA.result.apps : null) || AREA.apps || []).filter(a => a && AX_APPS.some(x => x.id === a.id));
 function axListHTML(){
-  const L = axRecords(); if (!L.length) return '';
+  const L = partOn('transport/apps') ? axRecords() : []; if (!L.length) return '';   // ride apps where this part is on for the house's country (launch.js)
   if (!Array.isArray(A.apps)) { A.apps = L.map(a => a.id); queueSave(); log('apps', 'suggested'); }
   return `<div class="f full ax-found" id="axf"><span class="lab" id="l_axf">Ride apps that work near you${A._appsTouched ? '' : ' <span class="frm sug">Suggested for you: please check</span>'}</span>
     <div class="tx-list" role="group" aria-labelledby="l_axf">${L.map(a => `<label class="tx-row"><input type="checkbox" data-axb="${esc(a.id)}"${A.apps.includes(a.id) ? ' checked' : ''}><span><b translate="no">${esc(a.name)}</b><small>Book and pay in the app</small></span></label>`).join('')}</div></div>`;
