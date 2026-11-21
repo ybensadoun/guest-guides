@@ -1,6 +1,6 @@
 // A list of the host's places (Eat and drink, Things to do, Nightlife; README.md, "Its look"): the highlight the section
-// shows on top, a small map of the list, the quick-filter groups, the time filters, the feature filters, the choice of
-// distance, then the rows. Route #s/<id>, as every section's page (views/section.js asks the module, modules/index.js).
+// shows on top, a small map of the list, the quick-filter groups, the time and feature filters in one group, the small
+// switch of distance, then the rows. Route #s/<id>, as every section's page (views/section.js asks the module, modules/index.js).
 // Same pattern as Markets: an overview map, then rows ranked by distance (from the house or from you). A place with no
 // hours of ours shows Google's card when its row opens (gcard: true, engine/src/gcard.js).
 import { t } from '../../i18n.js';
@@ -24,9 +24,11 @@ export function page(V, sec) {
   const now0 = new Date();
   const P = listPlan(all, { id, labelled: GROUPS, sgroup: st.sgroup[id], openf: st.openf[id], featf: st.featf[id] }, sorted, now0);
   const { groups, gsel, timed, ofsel, byGroup, feats, fsel, byFeat, nNow, nLater, list: l, k3 } = P;
-  // No time filters when there is nothing to choose: "Any time" never stands alone (README rule 8).
-  const ochips = timed && (nNow || nLater) ? `<div class="gchips ochips" role="group">${[['any', 'f_anyTime', byFeat.length], ['now', 'f_openNow', nNow], ['later', 'f_openLater', nLater]].filter(([k, , n]) => k === 'any' || n).map(([k, key, n]) => `<button class="gchip" data-openf="${k}" data-sec="${id}" aria-pressed="${k === ofsel}"${k === 'now' ? ' style="--cc:var(--green)"' : k === 'later' ? ' style="--cc:var(--blue)"' : ''}>${esc(t(key))}<span class="n">${n}</span></button>`).join('')}</div>` : '';
-  const fchips = feats.length ? `<div class="gchips fchips" role="group">${feats.map(k => `<button class="gchip" data-featf="${k}" data-sec="${id}" aria-pressed="${fsel.includes(k)}">${esc(t('ff_' + k))}<span class="n">${byGroup.filter(FEATS[k]).length}</span></button>`).join('')}</div>` : '';
+  // The time and feature filters, one quiet group (README rules 8 and 12): "Open now" and "Opens later today" only when
+  // they hold a place, then the features. A chosen filter is tapped again to clear it, so there is no "Any time".
+  const tchips = timed ? [['now', 'f_openNow', nNow, 'green'], ['later', 'f_openLater', nLater, 'blue']].filter(([, , n]) => n).map(([k, key, n, c]) => `<button class="gchip" data-openf="${k}" data-sec="${id}" aria-pressed="${k === ofsel}" style="--cc:var(--${c})">${esc(t(key))}<span class="n">${n}</span></button>`) : [];
+  const fchips = feats.map(k => `<button class="gchip" data-featf="${k}" data-sec="${id}" aria-pressed="${fsel.includes(k)}">${esc(t('ff_' + k))}<span class="n">${byGroup.filter(FEATS[k]).length}</span></button>`);
+  const filters = tchips.length || fchips.length ? `<div class="gchips fchips" role="group">${tchips.join('')}${fchips.join('')}</div>` : '';
   const toneOf = g => GROUPS[g] || all.find(s => s.group === g)?.tone;
   const gchips = groups.length > 1 ? `<div class="gchips" role="group">${['all', ...groups].map(g => `<button class="gchip" data-sgroup="${g}" data-sec="${id}" aria-pressed="${g === gsel}"${g !== 'all' && toneOf(g) ? ` style="--cc:var(--tone-${toneOf(g)})"` : ''}>${esc(t('g_' + g))}<span class="n">${g === 'all' ? all.length : all.filter(s => s.group === g).length}</span></button>`).join('')}</div>` : '';
   V.dataset.secf = gsel + '|' + ofsel;
@@ -34,7 +36,7 @@ export function page(V, sec) {
   // A Home highlight shown on top of the page ("highlight" in sections.json), e.g. the bar next door (modules/highlights).
   const hl = pageCard(sec.highlight);
   const body = all.length ? `${hl}<a class="pl-map secmap" href="#map" data-mapcat="${esc(all[0].cat)}" aria-label="${esc(t('openMap'))}"><div id="secmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openMap'))}</span></a>
-      ${gchips}${ochips}${fchips}${sortRow()}
+      ${gchips}${filters}${sortRow({ small: true })}
       ${l.length ? `<div class="mlist">${l.map((m, i) => (i === k3 ? `<h3 class="mgh">${esc(t('f_noHours'))}</h3>` : '') + row(m, { date: now, live: true, gcard: true })).join('')}</div>` : `<p class="empty">${esc(t('f_noneOpen'))}</p>`}` : `<div class="empty">${esc(t('soon'))}</div>`;
   // The list's map: kept as is when only the status refreshes (the same list, the same filters), redrawn otherwise.
   const oldMap = V.dataset.sec === id ? V.querySelector('#secmap') : null;

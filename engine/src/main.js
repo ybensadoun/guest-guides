@@ -174,7 +174,7 @@ document.addEventListener('click', e => {
   else if (d.cat) { st.cats = toggleIn(st.cats, CATS, d.cat); render(); }
   else if (d.sgroup) { st.sgroup[d.sec] = d.sgroup; render(); }
   else if (d.featf) { const a = st.featf[d.sec] || []; st.featf[d.sec] = a.includes(d.featf) ? a.filter(x => x !== d.featf) : [...a, d.featf]; render(); }
-  else if (d.openf) { st.openf[d.sec] = d.openf; render(); }
+  else if (d.openf) { st.openf[d.sec] = st.openf[d.sec] === d.openf ? 'any' : d.openf; render(); }   // a chosen time filter tapped again: cleared
   else if (d.sort) {
     if (d.sort === 'me') { st.sort = 'me'; if (!st.me) locate(() => render()); else render(); }
     else { st.sort = 'house'; render(); }

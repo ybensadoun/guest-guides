@@ -17,8 +17,8 @@ export function byDistance(list, distOf) {
 export const sorted = list => byDistance(list, st.sort === 'me' && st.me ? kmMe : m => m.km);
 
 // The choice of distance, from the house or from the guest (sorted): in the Markets page's filters, and on the lists of
-// the host's places.
-export const sortRow = () => `<div class="row"><div class="pills" role="group">
+// the host's places, where it is a small switch (small: true; places/README.md rule 22), the same two buttons.
+export const sortRow = ({ small } = {}) => `<div class="row"><div class="pills${small ? ' sm' : ''}" role="group">
     <button data-sort="house" aria-pressed="${st.sort === 'house'}">${esc(t('fromHouse'))}</button>
     <button data-sort="me" aria-pressed="${st.sort === 'me'}">${esc(t('fromMe'))}</button></div>
     ${st.locState ? `<span class="sortnote" role="status">${esc(st.locState)}</span>` : ''}</div>`;

@@ -920,10 +920,18 @@ body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) +
 #mapview .maplist-empty{margin:4px 0 0;font-size:16px;color:var(--muted)}
 .dk.price{color:var(--ink);font-weight:600}
 .tstrip i.setm{background:var(--ink)!important;color:var(--white);font-weight:600}
-.ochips{margin-top:-4px}
-.ochips{gap:6px}.ochips .gchip{white-space:nowrap;padding-inline:12px}
 /* Chip rows never make the page wider than the phone: they wrap, and a chip longer than the screen wraps its text. */
 .gchips{max-width:100%}.gchip{max-width:100%;white-space:normal;text-align:left}
+/* Quiet filter chips on the lists of places (Yohann, 10 Nov 2026: "yes, go this way"; built 21 Nov 2026, places/README.md
+   rule 22): no outline, a soft patch of the page colour, and only the chosen chip takes colour ("Open now" stays green, as
+   "Open until" in the rows). The distance is a small switch of the same patch (.pills.sm: lists.js sortRow, small), with
+   the chosen side in white; the Markets page keeps its own pills. */
+.gchip{border:0;background:var(--ink-soft);min-height:44px;padding:8px 14px;font-size:15px;gap:7px}
+.gchip .n{font-size:13px;opacity:.6}
+.gchip[aria-pressed="true"] .n{opacity:.85}
+.pills.sm{display:inline-flex;width:auto;border:0;padding:0;gap:0;background:var(--ink-soft)}
+.pills.sm button{flex:none;min-height:44px;padding:0 16px;font-size:15px;color:var(--muted)}
+.pills.sm button[aria-pressed="true"]{background:var(--white);color:var(--ink);box-shadow:inset 0 0 0 4px var(--ink-soft)}
 .tstrip i.top{background:var(--yellow)!important;color:var(--ink);font-weight:700;letter-spacing:.01em}
 .tstrip i.note{background:none!important;border:1.5px solid var(--ink);color:var(--ink);font-weight:600}
 
