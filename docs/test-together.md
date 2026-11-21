@@ -137,6 +137,42 @@ On a phone, as a guest: Ca La Kimberly (ca-la-kimberly.netlify.app) and the pool
 - The first monthly search of events by the server is 1 Dec 2026: until then only "Search now" and the switch bring new events.
 - An event's time has no end unless a source gave one: a village festa then stays "On now" until midnight, human towers for two hours.
 
+## 6. Things to do (the deck and the found places in the host's language, 21 Nov 2026)
+Do it once in Catalan or Spanish (the language picker at the top, or `?lang=ca` in the address): Wednesday's hosts
+work in those. The guest's list page (the chips, a place's row) has its steps after Restaurants' change to what the
+three lists share is live: they are not here yet.
+
+### In the builder, with a new link (the test house)
+| # | Do | Expect |
+|---|---|---|
+| 6.1 | Go to Attractions | The card's place is there at once; the words "Looking for places near you…" only if it takes more than a moment; nothing says "best-rated" |
+| 6.2 | Look at a card the research found (it has a line of description) | Its kind is in your language ("Castell · 9,4 km"), the distance with a comma in Catalan, Spanish and French |
+| 6.3 | Read that card's description | In English until the guide is built: known, see below |
+| 6.4 | Look at a card from Google (a photo, a rating) | Its kind in your language, "★ 4,6 (1.204 ressenyes)", "Google Maps" beside it |
+| 6.5 | Click "Recommend", then "Not for us", several times, quickly | The two buttons never move; the count says "3 of 25" |
+| 6.6 | While the deck is open, wait for the research (about 4 minutes after the account) | The count grows in place ("3 of 33 · 8 more places found"); the card in hand stays |
+| 6.7 | Under "Your picks", write a line on one | It stays while cards come; the phone beside shows the pick, its kind and "9,4 km" |
+| 6.8 | In "Add your own", type "sitg" | "Sitges · Poble o vila · Barcelona · 31 km" first, "GeoNames" beside the towns; Google's rows below |
+| 6.9 | Pick it, build the guide | Things to do holds Sitges with a pin on the town, the town's icon and no hours |
+| 6.10 | The same deck on a phone (360 px wide): drag a card right, then left | It follows the finger; "Recommend" and "Not for us" stamps; nothing overlaps |
+
+### When the guide is ready, and in the editor
+| # | Do | Expect |
+|---|---|---|
+| 6.20 | The screen "Your guide is ready", when the build found places you have not seen | "Found near you · 1 of 4": the place's kind and description in your language, "a 10,6 km de la casa" |
+| 6.21 | Keep one, skip one | Only the kept one goes into the guide; "Open my guide" becomes the main button |
+| 6.22 | Open a guide written in English with the maker in Catalan, Attractions, "Find more" (paid, about 0.70 USD), wait | Each suggestion reads in Catalan when the guide has Catalan among its languages; else its kind in Catalan and its description in the guide's language |
+| 6.23 | Attractions in the editor, the rows | Each row's distance with a comma ("14,2 km") |
+| 6.24 | Open a place, "Change" its kind | The grid of kinds; the row takes the new icon and, for guests, its quick filter |
+
+### Known, not to report
+- Before the build, a found place's description is in English in every language of the maker: the research writes in
+  English and the build translates. Its kind and its distance are in the host's language. Translating at the research
+  would be one more paid call a house (well under 0.01 USD); not decided.
+- A found place's own kind in words ("Seaside village") becomes the kind's plain name ("Poble o vila") before the build.
+- A place's coordinates under "move the pin" keep their points (41.2345): they are not distances.
+- The deck is one card at a time on a desktop too (a grid to tick is a proposal, not built).
+
 ## 8. Rubbish (the default texts, the "no day" card and the header: 19 Nov 2026; the editor's and builder's step: 21 Nov 2026)
 
 ### In the editor, on the pool house (collected at the house, one glass container)

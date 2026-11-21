@@ -172,6 +172,10 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 /* Loading and the end of the deck take the place of the card and its buttons, at their height: when the last card goes
    (or the first comes) nothing under the deck moves, and Undo brings the card back where it was */
 .sw-slot{box-sizing:border-box;width:100%;max-width:420px;margin:12px auto 0;height:calc(var(--sw-h) + 14px + 52px);flex-direction:column;flex-wrap:nowrap;justify-content:center;text-align:center;text-wrap:balance;border-radius:22px;padding:24px 18px;gap:8px}
+/* The wait for the first cards: the card's place is held at once, its words come only when the wait lasts (0.7 s), so a
+   quick answer shows no thinking state at all (Yohann, 12 Nov 2026: thinking states hidden as much as we can) */
+.sw-wait{display:flex;flex-direction:column;align-items:center;gap:8px;animation:swWait .25s .7s both}
+@keyframes swWait{from{opacity:0}to{opacity:1}}
 .sw-end b{font:400 26px/1.15 var(--display);color:var(--ink)}
 .sw-endic{width:64px;height:64px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--ok);margin-bottom:6px}
 .sw-endic svg{width:30px;height:30px;stroke-width:2.6}

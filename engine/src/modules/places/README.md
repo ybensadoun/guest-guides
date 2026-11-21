@@ -72,6 +72,16 @@ On Home, the entry tile in any of the three sizes (half, wide, tall; `../README.
 section's id (`ui.js` `SECTION_LOOK`: `restaurants`, `todo`, `nightlife`, and the generator's ids); a list with another id
 takes Things to do's.
 
+## In the maker: the found places of Things to do
+
+Rules of the host's side that are this module's own (the deck, "Found near you", Find more); numbered after the
+list's rules above.
+
+| # | Rule | Decided |
+|---|---|---|
+| 25 | A found place is read by the host in the language they use the maker in (the deck before the build, "Found near you" on the ready screen, Find more in the editor): its own words when we hold them in that language, else its kind's name from `engine/src/kinds.json` by its icon, else as the guide shows it. Its description before the build stays in English (the research writes in English, the build translates): no paid call is made for a card. A distance, a rating and a count are written as that language writes numbers ("10,6 km"; `numUI`, `onboarding-site/src/start.js`). Google's cards are asked in the maker's language. | Yohann, 21 Nov 2026 (through the main conversation: a suggestion in English and "a 10.6 km" on a Catalan screen) |
+| 26 | The deck's wait shows the card's place at once and its words ("Looking for places near you…") only after 0.7 s; nothing says "best-rated". | Things to do's report, fix 8 (16 Nov 2026); built 21 Nov 2026 on "nothing waits for the host" (Yohann, 12 Nov 2026) |
+
 ## Where its code is
 
 | Part | Where | In the module? |

@@ -16,6 +16,9 @@ const edPath = s => s.split('/').map(k => /^\d+$/.test(k) ? +k : k);
 const edGet = (o, p) => p.reduce((a, k) => a == null ? a : a[k], o);
 function edSet(o, p, val) { let a = o; for (let i = 0; i < p.length - 1; i++) { if (a[p[i]] == null) a[p[i]] = typeof p[i + 1] === 'number' ? [] : {}; a = a[p[i]]; } a[p[p.length - 1]] = val; }
 const edShown = o => { const x = o && (o[CM.lang] != null ? o[CM.lang] : o.en); return x == null ? '' : x; };
+// A suggestion not in the guide yet is read by the host, not by guests: in the maker's language where the suggestion holds
+// it (a guide written in English and looked at in Catalan, Yohann, 21 Nov 2026), else as the guide's own texts are shown.
+const edShownUI = o => o && typeof o === 'object' && typeof o[UIL] === 'string' && o[UIL].trim() ? o[UIL] : edShown(o);
 const edC = () => CM.g.content;
 const edF = () => edC().files = edC().files || {};
 const edLangs = () => ((edC().site || {}).languages || ['en']).filter(l => l in ED_LANGS);
@@ -152,7 +155,7 @@ function cItem(base, it, i, what) {
     ${'schedule' in it || base.includes('markets') ? cSchedule(`${p}/schedule`, it.schedule) : ''}${'dates' in it || base.includes('events') ? cDates(`${p}/dates`, it.dates) : ''}</div>
     ${what === 'contact' ? '' : check}${base === 'files/restaurants/items' ? cPin(p, it) : ''}<div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${esc(what)}</button></div>`, null, ev ? evTile(it.type) : '');
 }
-const cKm = it => it.km_from_house != null && it.km_from_house !== '' ? it.km_from_house + ' km' : '';
+const cKm = it => it.km_from_house != null && it.km_from_house !== '' ? numUI(it.km_from_house) + ' km' : '';   // the decimal sign of the maker's language (numUI, start.js)
 const cOpt = (it, k) => ({ long: C_LONG.includes(k) || String(edIs18(it[k]) ? edShown(it[k]) : it[k]).length > 32, type: ['url', 'web', 'gmaps', 'map'].includes(k) ? 'url' : k === 'phone' ? 'tel' : 'text' });
 // "Find it on Google" and "Or move the pin"; first: a place with no pin yet starts with the search.
 function cWhere(p, it) {
@@ -1592,12 +1595,15 @@ function cmFindCard(it, i, n, o) {
   const today = new Date().toISOString().slice(0, 10), b = o ? 'rd' : 'cf';
   if (it.gid) openAsk(it.gid);
   const closed = it.gid ? openOf(it.gid) : null, gone = closed === 'permanent';
-  const sub = [edIs18(it.type) ? edShown(it.type) : '', it.town, it.km_from_house != null ? it.km_from_house + ' km from the house' : ''].filter(Boolean).join(' · ');
+  // Its kind in the maker's language: the suggestion's own words when it holds them in it, else the kind's name from the
+  // guide's list (kinds.json, by its icon), else its words in the guide's language.
+  const kind = edIs18(it.type) ? (String(it.type[UIL] || '').trim() || (UIL !== CM.lang && plKindName('todo', it.icon, UIL)) || edShown(it.type)) : '';
+  const sub = [kind, typeof it.town === 'string' && it.town && !kind.toLowerCase().includes(it.town.toLowerCase()) ? it.town : '', it.km_from_house != null && it.km_from_house !== '' ? numUI(it.km_from_house) + ' km from the house' : ''].filter(Boolean).join(' · ');
   const when = (it.dates || []).filter(d => (d.end || d.start) >= today).map(d => `${d.start}${d.end && d.end !== d.start ? ' to ' + d.end : ''}, ${d.status === 'confirmed' ? 'confirmed' : 'expected'}`).join('; ');
   const hours = it.always ? 'Open any time' : cmDays(it.schedule);
   const why = o ? [['kidsfun', 't_kidsfun'], ['free', 't_free'], ['dogs', 't_dogs']].filter(([x]) => [...(it.tags || []), ...(it.flags || [])].includes(x) || (x === 'kidsfun' && it.kids)).map(([, w]) => engT(w)) : [];
-  return `<article class="cm-fcard"${it.gid ? ` data-gid="${esc(it.gid)}"` : ''}><small>${o ? `Found near you · ${i} of ${n}` : `Suggestion ${i} of ${n}`}</small><h3>${esc(edShown(it.name))}</h3>${sub ? `<p class="cm-fsub">${esc(sub)}</p>` : ''}
-    <p>${esc(edShown(it.description))}</p>${why.length ? `<p class="cm-fwhy" translate="no">${why.map(w => `<span>${esc(w)}</span>`).join('')}</p>` : ''}
+  return `<article class="cm-fcard"${it.gid ? ` data-gid="${esc(it.gid)}"` : ''}><small>${o ? `Found near you · ${i} of ${n}` : `Suggestion ${i} of ${n}`}</small><h3>${esc(edShownUI(it.name))}</h3>${sub ? `<p class="cm-fsub">${esc(sub)}</p>` : ''}
+    <p>${esc(edShownUI(it.description))}</p>${why.length ? `<p class="cm-fwhy" translate="no">${why.map(w => `<span>${esc(w)}</span>`).join('')}</p>` : ''}
     ${when ? `<p class="hint"><b>Dates:</b> ${esc(when)}</p>` : ''}${hours ? `<p class="hint"><b>Hours:</b> ${esc(hours)}</p>` : ''}${!it.gid && /^Not found on Google/.test(it._google || '') ? `<p class="hint">${esc(it._google)}</p>` : ''}
     <p class="cm-flinks">${it.gmaps ? `<a href="${esc(it.gmaps)}" target="_blank" rel="noopener">See it on Google Maps</a>` : ''}${it.url ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">Official page</a>` : ''}</p>
     ${openLine(it, closed)}

@@ -168,6 +168,13 @@ async function areaWatch(){
 // shows, as the build cuts the guide's markets and events (the 4 nearest markets always stay).
 const RADIUS_KM = { '15 min': 15, '30 min': 30, '45 min': 45, '1 hour': 60 }, reachNow = () => RADIUS_KM[v('radius')] || 30;
 const kmNum = x => x != null && x !== '' && Number.isFinite(+x) ? +x : null;
+// A number as the maker's language writes it (Yohann, 21 Nov 2026: "10,6 km" in Catalan, Spanish and French, never
+// "10.6"): at most d decimals, at least min. For the distances, ratings and counts the maker writes itself; the sentences
+// around them still find their translation, whose gaps take a comma or a point (i18n.js UI_GAP). Not for coordinates.
+function numUI(x, d = 1, min = 0){
+  const n = +x; if (x == null || x === '' || !Number.isFinite(n)) return x == null ? '' : String(x);
+  try { return new Intl.NumberFormat(UIL === 'en' ? 'en-GB' : UIL, { maximumFractionDigits: d, minimumFractionDigits: min }).format(n); } catch (e) { return String(x); }
+}
 // A market's distance by road, as the build writes it: about 1.3 times the line from the house; no position, its own km.
 const roadKm = m => { if (typeof m.lat === 'number' && typeof m.lng === 'number' && A.lat && A.lng) { const R = 6371, r = x => x * Math.PI / 180, a = +A.lat, b = +A.lng,
   x = Math.sin(r(m.lat - a) / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(m.lat)) * Math.sin(r(m.lng - b) / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)) * 1.3; } return kmNum(m.km_from_house); };
@@ -336,10 +343,17 @@ function researchCards(){
   const S = swipes(), chosen = [...Object.values(S).filter(x => !String(x.id).startsWith('r:')).map(x => (SW.mem.get(x.id) || {}).name).filter(Boolean), ...addedPlaces()], max = reachNow();
   const near = it => { const k = kmNum(it.km_from_house); return k == null || k <= max || !!S['r:' + plainName(shownText(it.name))]; };
   return (((AREA.full || {}).todo || {}).items || []).filter(it => shownText(it.name) && !MARKET.test(shownText(it.name) + ' ' + shownText(it.type)) && !chosen.some(n => samePlace(n, shownText(it.name))) && near(it)).map(it => { const name = shownText(it.name);
-    return { id: 'r:' + plainName(name), name, type: shownText(it.type), km: it.km_from_house, lat: it.lat, lng: it.lng, summary: shownText(it.description),
+    return { id: 'r:' + plainName(name), name, type: swType(it), km: it.km_from_house, lat: it.lat, lng: it.lng, summary: shownText(it.description),
       maps: it.gmaps || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([name, it.town].filter(Boolean).join(' ')),
       ...(it.gid ? { gid: it.gid } : {}), ...(it.icon ? { icon: it.icon } : {}) }; });
 }
+// A researched card's kind as the host reads it. The research writes its texts in English only (worker/research-brief.mjs)
+// and the build translates them later, so before the build a host working in Catalan, Spanish or French gets the kind's
+// own name from the guide's list (engine/src/kinds.json, six languages) by the card's icon; the research's own words when
+// it holds them in that language, and its English when the card has no kind we know (Yohann, 21 Nov 2026). The research's
+// words name the town with the kind ("Castle ruins, Querol"): the kind's name keeps it ("Castell, Querol").
+const swType = it => { const own = it.type && typeof it.type === 'object' ? String(it.type[UIL] || '').trim() : '', kind = UIL !== 'en' && twKindName(it.icon);
+  return own || (kind ? [kind, typeof it.town === 'string' ? it.town.trim() : ''].filter(Boolean).join(', ') : shownText(it.type)); };
 const moreLeft = () => researchCards().filter(p => !swipes()[p.id]).length;
 // A researched card is ours (name, kind, distance, words), but its picture and rating are Google's, shown live (Yohann,
 // 10 Nov 2026): asked once per id per session (/api/places?card=) when the card is on top or next, kept in SW.live with
@@ -448,7 +462,7 @@ async function loadPlaces(cat){
   if (SW.lists[cat] || SW.loading) return;
   SW.loading = true; SW.err = ''; refreshSwipe();
   try {
-    const q = new URLSearchParams({ cat, lang: (A.languages || ['en'])[0] || 'en', radius: String(({ '15 min': 6000, '30 min': 15000, '45 min': 25000, '1 hour': 30000 })[v('radius')] || 10000), want: swWant().join('|') });
+    const q = new URLSearchParams({ cat, lang: UIL, radius: String(({ '15 min': 6000, '30 min': 15000, '45 min': 25000, '1 hour': 30000 })[v('radius')] || 10000), want: swWant().join('|') });
     if (A.lat && A.lng) { q.set('lat', A.lat); q.set('lng', A.lng); } else q.set('town', [v('town'), v('region')].filter(Boolean).join(', '));
     const r = await fetch('/api/places?' + q); const d = await r.json();
     // No position from the listing: the town was searched on Google, whose position may be kept 30 days only. It is dated
@@ -464,12 +478,15 @@ function swipeHTML(){
 }
 // The deck (docs/plan-fast-builder.md, step 5): one big card at a time, the next ones showing behind it. Drag it right to
 // recommend, left to skip (it follows the finger), or use the buttons or the arrow keys. Each yes lands in the phone.
+// "(1,204 reviews)" in the maker's language, the count grouped as that language groups it (the sentence is found with the
+// plain number, which the translation's gap takes; the grouped one goes in after).
+const swReviews = n => tr(`(${+n} reviews)`).replace(String(+n), numUI(n, 0));
 const swWant = () => [...(Array.isArray(A.interests) ? A.interests : []), ...(Array.isArray(A.guests) ? A.guests : [])];
 function swipeInner(){
   const key = [v('radius'), ...swWant()].join('|'); if (SW.key !== key) { SW.key = key; SW.lists = {}; SW.seq = null; SW.openAt = 0; }   // Your area changed: the deck follows, what the host decided stays
   const list = swList(), S = swipes(), yes = Object.values(S).filter(x => x.d === 'yes').length;
   const tabs = SW_CATS.length > 1 ? `<div class="sw-tabs" role="tablist">${SW_CATS.map(([k, l]) => `<button type="button" role="tab" data-swcat="${k}" aria-selected="${k === SW.cat}">${l}</button>`).join('')}</div>` : '';
-  if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<p class="sw-count" aria-hidden="true"></p><div class="sw-empty sw-slot">${SW.err ? `<span>${esc(SW.err)}</span>` : '<span class="spin dark"></span><span>Finding the best-rated places near you…</span>'}</div>`; }
+  if (!list) { if (!SW.loading && !SW.err) setTimeout(() => loadPlaces(SW.cat), 0); return tabs + `<p class="sw-count" aria-hidden="true"></p><div class="sw-empty sw-slot">${SW.err ? `<span>${esc(SW.err)}</span>` : '<span class="sw-wait"><span class="spin dark"></span><span>Looking for places near you…</span></span>'}</div>`; }
   const left = list.filter(p => !S[p.id]), seen = list.length - left.length;
   left.slice(0, 2).forEach(swLiveAsk);   // the card on top and the next one
   const p = left[0] && swLive(left[0]), kind = p && isOurs(p.id) && !p.photo;   // a researched card with no picture (yet): its kind's icon
@@ -483,8 +500,8 @@ function swipeInner(){
       <article class="sw-card" data-pid="${esc(p.id)}" tabindex="0" aria-label="${esc(p.name)}: arrow right to recommend, arrow left to skip">
         <div class="sw-ph${kind ? ' sw-kind' : ''}" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : kind ? `--kc:${esc(swKindColour())}` : ''}">${p.photo ? '' : kind ? `<div class="sw-icw"><span class="sw-ic" data-kind="${esc(p.icon && ENG_ICON[p.icon] ? p.icon : 'todo')}" aria-hidden="true">${(p.icon && ENG_ICON[p.icon]) || ENG_TODO}</span></div>` : `<span>${esc((p.type || '').slice(0, 1))}</span>`}
           <span class="sw-stamp yes" aria-hidden="true">Recommend</span><span class="sw-stamp no" aria-hidden="true">Not for us</span>
-          <div class="sw-on"><small>${esc([p.type, p.km != null ? (+p.km).toFixed(1) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
-            <p>${closed ? `<b class="sw-closed ${closed}">${closed === 'permanent' ? 'Permanently closed' : 'Temporarily closed'}</b> · ` : ''}${p.rating ? `<span class="sw-rt"><b>★ ${p.rating.toFixed(1)}</b> ${p.reviews ? `(${p.reviews.toLocaleString()} reviews)` : ''}</span> · ` : ''}<a href="${esc(swMaps(p) || gmLink(p.name, p.id))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>${swBy(p)}</div></div>
+          <div class="sw-on"><small>${esc([p.type, p.km != null ? numUI(p.km) + ' km' : ''].filter(Boolean).join(' · '))}</small><h3>${esc(p.name)}</h3>
+            <p>${closed ? `<b class="sw-closed ${closed}">${closed === 'permanent' ? 'Permanently closed' : 'Temporarily closed'}</b> · ` : ''}${p.rating ? `<span class="sw-rt" translate="no"><b>★ ${numUI(p.rating, 1, 1)}</b> ${p.reviews ? esc(swReviews(p.reviews)) : ''}</span> · ` : ''}<a href="${esc(swMaps(p) || gmLink(p.name, p.id))}" target="_blank" rel="noopener" translate="no">Google Maps</a></p>${swBy(p)}</div></div>
         ${p.summary || gone ? `<div class="sw-tx">${gone ? '<p class="sw-gone">It cannot be added. If you know it is open, add it yourself by its name.</p>' : ''}${p.summary ? `<p class="sw-sum" translate="no">${esc(p.summary)}</p>` : ''}</div>` : ''}
       </article></div>
     <div class="sw-btns${gone ? ' gone' : ''}"><button type="button" class="sw-no" data-sw="no">${svg('<path d="M6 6l12 12M18 6L6 18"/>').replace('stroke-width="2.2"', 'stroke-width="2.4" width="16" height="16"')}Not for us</button><button type="button" class="sw-yes" data-sw="yes"${gone ? ' aria-disabled="true"' : ''}>${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>`
@@ -619,7 +636,7 @@ function psDraw(){
   const T = PS.towns, n = T.length + PS.list.length;
   box.innerHTML = T.map((t, i) => `<button type="button" role="option" class="pl-tw" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}">${twTile(t.kind)}<span><b translate="no">${esc(t.n)}</b><small translate="no">${esc(twLine(t))}</small></span></button>`).join('')
     + (T.length ? '<span class="pl-gm pl-gn" aria-hidden="true" translate="no">GeoNames</span>' : '')
-    + PS.list.map((s, j) => { const i = T.length + j; return `<button type="button" role="option" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}"><b>${esc(s.name)}</b><small>${esc([s.where, s.km ? s.km + ' km' : ''].filter(Boolean).join(' · '))}</small></button>`; }).join('')
+    + PS.list.map((s, j) => { const i = T.length + j; return `<button type="button" role="option" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}"><b>${esc(s.name)}</b><small>${esc([s.where, s.km ? numUI(s.km) + ' km' : ''].filter(Boolean).join(' · '))}</small></button>`; }).join('')
     + (PS.list.length ? '<span class="pl-gm" aria-hidden="true" translate="no">Google Maps</span>' : '');
   if (PS.list.length) box.dataset.g = '1'; else delete box.dataset.g;   // Google's content on screen (gLiveNow)
   box.hidden = !n; el.setAttribute('aria-expanded', String(!!n));
@@ -679,7 +696,7 @@ function plAt(r){
   const none = !String(r.p || '').trim() || psIsLink(r.p) || window.__placesOff;
   // No name yet (asked for, or left empty): said under the line once the host has moved on (theme2.css); the build looks it up.
   if (r.gid) { const s = PS.seen.get(r.gid), link = `<a href="${esc(gmLink(r.p, r.gid))}" target="_blank" rel="noopener" translate="no">Google Maps</a>`;
-    return `<p class="pl-at ok"${s ? ' data-glive' : ''}><span aria-hidden="true">✓</span> ${s ? `<span translate="no">${esc([s.name, s.where, s.km ? s.km + ' km' : ''].filter(Boolean).join(' · '))}</span>` : 'Matched on'} ${link}${String(r.p || '').trim() ? '' : '<span class="pl-nn">No name yet: type it, or we look it up in an open directory.</span>'}</p>`; }
+    return `<p class="pl-at ok"${s ? ' data-glive' : ''}><span aria-hidden="true">✓</span> ${s ? `<span translate="no">${esc([s.name, s.where, s.km ? numUI(s.km) + ' km' : ''].filter(Boolean).join(' · '))}</span>` : 'Matched on'} ${link}${String(r.p || '').trim() ? '' : '<span class="pl-nn">No name yet: type it, or we look it up in an open directory.</span>'}</p>`; }
   return `<p class="pl-at${none ? '' : ' miss'}">${none ? '' : 'Not matched on Google. Pick it from the list, or keep it as typed: it may have no map pin.'}</p>`;
 }
 function plShow(el, r){ el.parentElement.querySelector('.pl-at').outerHTML = plAt(r); }
@@ -775,7 +792,7 @@ const twRow = r => !!r && !!r.pos && r.pos.from === 'geonames' && typeof r.lat =
 const twDrop = r => { for (const k of ['lat', 'lng', 'kind', 'town', 'province', 'pos']) delete r[k]; };
 // Its kind in the guide's own words (engine/src/kinds.json, "Town or village", "City"), its province, its distance by road.
 const twKindName = k => { const x = ((ENG_KINDS || {}).todo || {})[k]; return x ? x.name[UIL] || x.name.en : ''; };
-const twLine = t => [twKindName(t.kind), t.prov ? tr(`${t.prov} province`) : '', t.km != null ? t.km + '\u00a0km' : ''].filter(Boolean).join(' · ');
+const twLine = t => [twKindName(t.kind), t.prov ? tr(`${t.prov} province`) : '', t.km != null ? numUI(t.km, 0) + '\u00a0km' : ''].filter(Boolean).join(' · ');
 const twTile = k => kTile(ENG_ICON[k], plColour('todo', { icon: k }), true);
 const twMaps = t => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([t.n, t.prov].filter(Boolean).join(', '));   // a link, no request
 // Under the name of a row that is a town: what it is, from the list we credit.

@@ -531,6 +531,32 @@ async function gResearchDeck() {
     await p.locator('.sw-card').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'cards-icon-fr-360.png') });
     ok('researched cards in French: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // A host working in Catalan (21 Nov 2026): the research writes in English only, so a researched card says its kind by the
+  // guide's own list (kinds.json) with its town, its distance with a comma; Google's cards are asked in Catalan, their
+  // rating and count written as Catalan writes numbers; the wait's words come late and say nothing of "best-rated".
+  { const items = TODO_G.items.map((it, i) => ({ ...it, name: { en: it.name.en }, type: { en: it.type.en }, description: { en: (it.description || {}).en || '' }, ...(i === 0 ? { km_from_house: 7.4, town: 'Querol' } : {}) }));
+    const G = { ...B, answers: { ...B.answers, radius: '1 hour', _researchJob: JOB_ID, swipes: {}, favDo: [] } };
+    const { ctx, p, errors } = await open(browser, G, 360, 780), asked = [], langs = []; let hold = true;
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ status: 'done', result: { todo: { ...TODO_G, items } } }]));
+    await ctx.route('**/api/places**', async r => { const q = new URL(r.request().url()).searchParams; if (q.get('card')) return cardAnswer(r, asked, 0); if (q.get('probe')) return json(r, { ok: true, enabled: true });
+      langs.push(q.get('lang')); while (hold) await new Promise(x => setTimeout(x, 100));
+      return json(r, { ok: true, lat: A0.lat, lng: A0.lng, places: [{ id: 'g-ca', name: 'Lloc de Prova', rating: 4.6, reviews: 1204, type: 'Parc', maps: 'https://maps.google.com/?q=3', lat: A0.lat, lng: A0.lng, km: 3.25, photo: null }] }); });
+    await p.goto('http://editor.test/?lang=ca#nearby'); await ready(p); await p.waitForSelector('.sw-wait', { timeout: 8000 }).catch(() => {});
+    const wait = await p.evaluate(() => { const e = document.querySelector('.sw-wait'); return e ? { words: e.textContent.trim(), delay: getComputedStyle(e).animationDelay } : null; });
+    ok('deck in Catalan: the wait says "Buscant llocs a prop teu…", shown only after 0.7 s, nothing of "best-rated"', !!wait && wait.words === 'Buscant llocs a prop teu…' && wait.delay === '0.7s' && !/best-rated|valorats/.test(HTML), JSON.stringify(wait));
+    hold = false; await p.waitForSelector('.sw-card', { timeout: 8000 }).catch(() => {}); await settle(p, 300);
+    const line = () => p.textContent('.sw-card .sw-on small').catch(() => '');
+    ok('deck in Catalan: a researched card says its kind in Catalan with its town, the distance with a comma', (await line()) === 'Castell, Querol · 7,4 km', await line());
+    ok('deck in Catalan: Google\'s cards are asked in the maker\'s language', langs.join() === 'ca', langs.join());
+    await p.locator('.sw-card').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'cards-ca-360.png') });
+    for (let i = 0; i < items.length; i++) { await p.click('[data-sw="' + (i ? 'no' : 'yes') + '"]'); await settle(p, 450); }
+    const g = (await p.textContent('.sw-card .sw-on').catch(() => '')).replace(/\s+/g, ' ');
+    ok('deck in Catalan: Google\'s card, "★ 4,6 (1.204 ressenyes)" and "3,3 km"', (await p.textContent('.sw-card h3').catch(() => '')) === 'Lloc de Prova' && /★ 4,6 \(1\.204 ressenyes\)/.test(g) && /Parc · 3,3 km/.test(g), g.slice(0, 140));
+    await inPhone(p, d => { const b = d.querySelector('[data-pv="todo"]'); b && b.click(); return 1; }); await settle(p, 500);
+    const phone = ((await inPhone(p, d => d.body.textContent)) || '').replace(/\s+/g, ' ');
+    ok('deck in Catalan: the phone shows the pick with its kind in Catalan and "7,4 km"', /Castell, Querol · 7,4 km/.test(phone), phone.slice(0, 200));
+    ok('deck in Catalan: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // The research needs nothing from the host (12 Nov 2026): it searched a reach of its own, and Your area's distance acts on
   // what it found at once, with no new search. A researched card beyond the host's distance is not in the deck; widened in
   // Your area, it comes in. A card with no distance stays.
@@ -835,6 +861,20 @@ async function gBuildReady() {
       if (/select=id(%2C|,)answers/.test(q)) return json(r, [watched && !polled ? G : built]);
       return r.fallback(); });
     return o; };
+  // The maker in Catalan on a guide written in English (21 Nov 2026): a found place reads in Catalan where it holds
+  // Catalan, its distance with a comma; one that holds none says its kind by the guide's own list, its words as the guide's.
+  { const CA = [{ ...FOUND[0], name: { en: 'Ready Test Castle', ca: 'Castell de Prova' }, type: { en: 'Castle, Testville', ca: 'Castell, Testville' }, km_from_house: 10.6, description: { en: FOUND[0].description.en, ca: 'Un castell dalt d’un turó, amb vistes a les vinyes.' } },
+      { ...FOUND[1], icon: 'wine', km_from_house: 9 }];
+    const { ctx, p, errors } = await readyCtx(360, 780, CA, false);
+    await p.goto('http://editor.test/?lang=ca#building'); await p.waitForSelector('#bcards .cm-fcard', { timeout: 20000 }).catch(() => {}); await settle(p, 500);
+    const c1 = (await p.textContent('#bcards .cm-fcard').catch(() => '')).replace(/\s+/g, ' ');
+    ok('ready screen in Catalan, a guide written in English: the found place reads in Catalan, the town once, "a 10,6 km de la casa"', /Castell de Prova/.test(c1) && /Castell, Testville · a 10,6 km de la casa/.test(c1) && /Un castell dalt/.test(c1) && !/A castle on a hill|Testville · Testville|10\.6/.test(c1), c1.slice(0, 220));
+    await p.screenshot({ path: join(SHOTS, 'ready-found-ca-360.png'), fullPage: true });
+    await p.click('[data-rdskip]'); await settle(p, 800);
+    const c2 = (await p.textContent('#bcards .cm-fcard').catch(() => '')).replace(/\s+/g, ' ');
+    ok('ready screen in Catalan: a place that holds no Catalan says its kind in Catalan (the guide\'s list), its description as the guide holds it', /Celler · Othertown · a 9 km de la casa/.test(c2) && /A family wine cellar/.test(c2), c2.slice(0, 220));
+    ok('ready screen in Catalan: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
   for (const [w, h] of [[360, 780], [1280, 860]]) {
     { const { ctx, p, errors } = await readyCtx(w, h, [], false);
       await p.goto('http://editor.test/#building'); await p.waitForSelector('#bstate .go-next', { timeout: 15000 }).catch(() => {}); await settle(p, 600);

@@ -2444,10 +2444,10 @@
 "es": "Buscando eventos",
 "fr": "Recherche d’événements"
 },
-"Finding the best-rated places near you…": {
-"ca": "Buscant els llocs més ben valorats a prop teu…",
-"es": "Buscando los sitios mejor valorados cerca de ti…",
-"fr": "Recherche des lieux les mieux notés près de chez vous…"
+"Looking for places near you…": {
+"ca": "Buscant llocs a prop teu…",
+"es": "Buscando sitios cerca de ti…",
+"fr": "Recherche de lieux près de chez vous…"
 },
 "Finding the place and parking": {
 "ca": "Com trobar l’allotjament i aparcar",
