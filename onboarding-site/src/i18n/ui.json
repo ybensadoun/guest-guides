@@ -1759,11 +1759,6 @@
 "es": "Un sitio nuevo aún no tiene chincheta: búscalo en Google o pega su enlace de Google Maps. La distancia desde la casa sigue la chincheta.",
 "fr": "Un nouveau lieu n’a pas encore de repère : trouvez-le sur Google ou collez son lien Google Maps. La distance depuis la maison suit le repère."
 },
-"A photo of the leaflet is enough.": {
-"ca": "N’hi ha prou amb una foto del fulletó.",
-"es": "Basta con una foto del folleto.",
-"fr": "Une photo du dépliant suffit."
-},
 "A section you switch off disappears from the guide, its page and the map. Its step here goes too, until you switch it back on.": {
 "ca": "Una secció que desactives desapareix de la guia, de la seva pàgina i del mapa. El seu pas d’aquí també, fins que la tornis a activar.",
 "es": "Una sección que desactivas desaparece de la guía, de su página y del mapa. Su paso aquí también, hasta que la vuelvas a activar.",
@@ -4373,11 +4368,6 @@
 "ca": "Poble i serveis",
 "es": "Pueblo y servicios",
 "fr": "Ville et services"
-},
-"Town collection calendar": {
-"ca": "Calendari de recollida del poble",
-"es": "Calendario de recogida del municipio",
-"fr": "Calendrier de collecte de la commune"
 },
 "Train · {n} min by car": {
 "ca": "Tren · {n} min en cotxe",

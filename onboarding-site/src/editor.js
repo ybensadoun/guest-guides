@@ -928,10 +928,13 @@ function cmWifi(c) {
 const ED_BINS = [['organic', 'Organic'], ['packaging', 'Packaging'], ['paper', 'Paper'], ['glass', 'Glass'], ['rest', 'General waste']];
 function cmRubbish(c) {
   const g = c.files.garbage, G = 'files/garbage', bins = ['street', ...Object.keys(g.bins || {}).filter(b => b !== 'street')];
+  // "Goes in" only where the guide names its bins: a guide the maker built names none, and the list then offered a
+  // bin collected at the house nothing but "A container in the street" (engine/src/modules/garbage/README.md).
+  const named = Object.values(g.bins || {}).some(b => edShown(b));
   return `<div class="grid">${cf('Bins out by (time on collection morning)', G + '/collectionTime', g.collectionTime || '', { type: 'time', half: true, hint: 'Guests are told to put each bin out the evening before.' })}</div>
     ${(g.fractions || []).length ? `<h3 class="cm-h">What goes where</h3><div class="cm-list">${g.fractions.map((f, i) => { const P = `${G}/fractions/${i}`;
-      return cCard(P, edShown(f.name) || f.id, (f.days || []).length ? (f.days || []).map(d => (ED_DAYS.find(x => x[0] === d) || [0, d])[1]).join(' ') : 'No collection day', `<div class="grid">${cf('Name', P + '/name', f.name, { i18n: true, half: true })}
-        <div class="f"><label for="${cmId(P + '/bin')}">Goes in</label><select id="${cmId(P + '/bin')}" data-p="${P}/bin" data-t="str">${bins.map(b => `<option value="${esc(b)}"${f.bin === b ? ' selected' : ''}>${esc(b === 'street' ? 'A container in the street' : edShown((g.bins || {})[b]) || b)}</option>`).join('')}</select></div>
+      return cCard(P, edShown(f.name) || f.id, (f.days || []).length ? (f.days || []).map(d => (ED_DAYS.find(x => x[0] === d) || [0, d])[1]).join(' ') : 'No collection day', `<div class="grid">${cf('Name', P + '/name', f.name, { i18n: true, half: named })}
+        ${named ? `<div class="f"><label for="${cmId(P + '/bin')}">Goes in</label><select id="${cmId(P + '/bin')}" data-p="${P}/bin" data-t="str">${bins.map(b => `<option value="${esc(b)}"${f.bin === b ? ' selected' : ''}>${esc(b === 'street' ? 'A container in the street' : edShown((g.bins || {})[b]) || b)}</option>`).join('')}</select></div>` : ''}
         <div class="f full"><span class="lab">Collection days</span><div class="chips">${cDays(P, f.days)}</div></div>${cf('What goes in it', P + '/examples', f.examples, { i18n: true, long: true, rows: 2 })}</div>`); }).join('')}</div>` : ''}
     <h3 class="cm-h">Containers guests can use</h3><div class="cm-list">${(g.containers || []).map((ct, j) => { const P = `${G}/containers/${j}`;
       return cCard(P, edShown(ct.where) || 'Containers ' + (j + 1), (ct.takes || []).map(id => (ED_BINS.find(b => b[0] === id) || [0, id])[1]).join(', '), `<div class="grid">${cf('Where they are', P + '/where', ct.where, { i18n: true, long: true, rows: 2 })}${cf('Google Maps link', P + '/map', ct.map || '', { type: 'url' })}

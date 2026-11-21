@@ -282,11 +282,11 @@ const MODULES = [
   {id:'arrival',group:'practical',title:'Arrival and parking',sub:'For a night arrival',icon:'car',tc:'var(--sun)',ti:'#1b1407',sh:'var(--sky)',shape:'square',sec:'houseguide',part:'known',
    lead:'Written for guests who arrive in the dark. No door codes here: send those privately.',need:['arrival'],fields:['arrival','up:arrivalPhoto']},
   {id:'rubbish',group:'practical',title:'Rubbish',sub:'Bins and days',icon:'bin',tc:'var(--sky)',ti:'#fff',sh:'var(--sun)',shape:'circle',sec:'rubbish',part:'known',
-   lead:'Only you know how this works at the house, so we do not look it up. Tell us how it is collected and, if bins go out at the house, which day each one is emptied.',need:[],fields:['rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto']},
+   lead:'Only you know how this works at the house, so we do not look it up. Tell us how it is collected and, if bins go out at the house, which day each one is emptied.',need:[],fields:['rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes']},
   {id:'contacts',group:'practical',title:'Getting around',sub:'A taxi you trust',icon:'car',tc:'var(--tomato)',ti:'#fff',sh:'var(--ink)',shape:'tri',sec:'quick',part:'known',
    lead:'Optional. The taxi you would call yourself: guests see it in the guide.',need:[],fields:['taxi']},
   {id:'known',group:'practical',title:'Only you know',sub:'Wi-Fi, arrival, rubbish, taxi',icon:'key',tc:'var(--pine)',ti:'#fff',sh:'var(--sun)',shape:'half',
-   lead:'A few things we cannot find for you. Answer what you can: each one can wait.',need:[],fields:['wifiName','wifiPassword','arrival','up:arrivalPhoto','rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','up:rubbishPhoto','taxi']},
+   lead:'A few things we cannot find for you. Answer what you can: each one can wait.',need:[],fields:['wifiName','wifiPassword','arrival','up:arrivalPhoto','rubbishMode','rubbishSpots','rubbishPlan','rubbishTime','rubbishNotes','taxi']},
   {id:'taste',group:'area',title:'Your style',sub:'Outings and tone',icon:'heart',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',off:true,
    lead:'All optional. It tells us which things to do to look for and how to write to your guests.',need:[],fields:['doStyle','avoidTypes','tone','voiceNotes']},
   {id:'favourites',group:'area',title:'Eat and drink',sub:'Restaurants, cafés, bars',icon:'compass',tc:'var(--tomato)',ti:'#fff',sh:'var(--sun)',shape:'half',sec:'eat',
@@ -363,7 +363,6 @@ const UP = {
   photo:{label:'Photos of the place',max:16},
   manual:{label:'Manuals or labels',opt:true,max:6,doc:true,hint:'Photos of labels or instructions are fine.'},
   arrivalPhoto:{label:'Photos to help find the place or the key',opt:true,max:4,hint:'The gate, the turning, where to park, where the key is.'},
-  rubbishPhoto:{label:'Town collection calendar',opt:true,max:2,hint:'A photo of the leaflet is enough.'},
   feedback:{label:'Screenshots',opt:true,max:6,hint:'Circle the problem on a screenshot if that is easier.'}
 };
 

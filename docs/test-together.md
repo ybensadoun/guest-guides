@@ -55,6 +55,43 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 | 2.6 | "Back to the arrangement we suggest" | One confirmation, then the default |
 | 2.7 | Preview | The phone shows the same arrangement |
 
+## 8. Rubbish (the default texts, the "no day" card and the header: 19 Nov 2026; the editor's and builder's step: 21 Nov 2026)
+
+### In the editor, on the pool house (collected at the house, one glass container)
+| # | Do | Expect |
+|---|---|---|
+| 8.1 | Open Rubbish | "Bins out by" with a time field, then "What goes where" (five cards, each closed row saying its days or "No collection day"), "Containers guests can use", "How to sort", "If a collection is missed" |
+| 8.2 | Open a card of "What goes where" | Name over the full width, Collection days, What goes in it. No "Goes in" list (this guide names no bins) |
+| 8.3 | Tick or untick a day | The step says "Changed"; the closed row follows |
+| 8.4 | Set "Bins out by" to 7:00, then Preview, Rubbish | "The week" says "Collection starts at 7:00"; before 7:00 on a collection morning the tile says "Before 7:00" |
+| 8.5 | "+ Add containers", say where, tick what they take | A new card, open; in the preview "Where the containers are" shows it with its kinds |
+| 8.6 | The same on a phone (360 px wide) | Nothing overlaps; the day chips wrap cleanly |
+
+### In the builder, with a new link (the test house)
+| # | Do | Expect |
+|---|---|---|
+| 8.10 | "Only you know", Rubbish | One question first: how rubbish is collected |
+| 8.11 | Choose "Bins collected at the house" | The containers, the days of each bin, "Bins must be out by" and "Anything guests must know" open; no photo is asked |
+| 8.12 | Tick days for two bins, leave general waste empty | The phone preview lists the bins with their days |
+| 8.13 | Choose "Shared containers in the street" instead | The days and the hour go; the containers stay |
+| 8.14 | Build the guide in six languages | Rubbish reads in each language (steps, what goes where, a missed day), with no colour in a name ("Packaging") and "du" in German |
+
+### As a guest, in the built guide (phone)
+| # | Do | Expect |
+|---|---|---|
+| 8.20 | Home, on an evening before a collection | The Rubbish tile says "Tonight" and names the bins |
+| 8.21 | Home, on an evening with no collection the next morning | The short tile, "Nothing tonight" |
+| 8.22 | Open Rubbish | The header's title and the line under it stay beside the yellow corner, never under it, in every language |
+| 8.23 | "What goes where" | A kind with days shows them; glass says "Any time" (a container takes it); a kind with no day and no container says nothing under its name |
+| 8.24 | A house with street containers only | No "Tonight" and no week; the tile says "Street containers, any time" |
+
+### Known, not to report
+- The pool house keeps the texts it was built with (English steps in Catalan and Dutch, "Packaging (yellow)", "Sie") until they are brought up to date: its own step, with Yohann's yes.
+- A host cannot add a kind of rubbish, name a bin or give a bin that goes out every evening (as Ca La Kimberly's red bin): the "one shape" work, after the test.
+- The host's own notes come after the four general steps, and may repeat one.
+- A container whose Google Maps link is a short one gets no point on the guide's map; its "Open map" button works.
+- Before the collection hour the header's title takes three or four lines on a narrow phone.
+
 ## 9. Contacts: the page Emergencies (the status line changed 21 Nov 2026)
 
 ### In the guide, on a phone (the pool house, then the test house)
