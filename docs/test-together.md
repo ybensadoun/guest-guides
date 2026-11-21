@@ -55,6 +55,26 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 | 2.6 | "Back to the arrangement we suggest" | One confirmation, then the default |
 | 2.7 | Preview | The phone shows the same arrangement |
 
+## 3. Markets (the empty day and the evening, built 19 Nov 2026)
+On a phone, as a guest: Ca La Kimberly (ca-la-kimberly.netlify.app) and the pool house
+(porta-guides.netlify.app/g/ca-la-kimberly-pool-house), which has few markets and so has days with none.
+| # | Do | Expect |
+|---|---|---|
+| 3.1 | Ca La Kimberly's Home in the morning, before the markets close | The Markets tile says "7 today" (the day's number) |
+| 3.2 | The same Home after the day's last market has closed (most days after 14:00) | The tile says "9 tomorrow"; when tomorrow has none, the next day by its name ("3 on Wednesday") |
+| 3.3 | Tap the tile in the evening | The list of that next day, its heading "Tomorrow · Tuesday 17 November", the markets with their hours |
+| 3.4 | On that page, tap today in the strip of days | Today's markets, each "Finished" in grey with when it is next held ("Opens 23 Nov"); never "Closed" in red |
+| 3.5 | Home in the evening, What's on, open "Today" | The same "Finished" under each market's name; "All markets" at the end opens the next day, as the tile does |
+| 3.6 | The pool house's Markets page on a day with no market (tap such a day in the strip: its number is 0) | "No markets today." (another day: "No markets on this day.") and one button, "Tomorrow · 3 markets" or "Saturday 21 · 2 markets" |
+| 3.7 | Tap that button | The list of that day |
+| 3.8 | Ca La Kimberly's Markets page: Filters, keep one kind only (Flea market), then tap a day that has none of it | "No markets match these filters." with "Show all types": this box only after your own filters |
+| 3.9 | 3.2, 3.4 and 3.6 in German and in French | Nothing cut, nothing over anything else |
+
+### Known, not to report
+- A yearly fair whose date is only written in words is in "All" and on no day (to decide with Local events).
+- The market halls are not in the tile's number and not in the day's list until "Show all types" (they open every weekday).
+- On a day when only the halls are open the box says "Only covered markets are open." No house of ours has such a day; it was checked on a test copy.
+
 ## 4. Local events (the step never used by a real host)
 
 ### In the editor, on the pool house (8 events from its build, "Keep events up to date" off)
