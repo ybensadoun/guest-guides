@@ -926,7 +926,7 @@ body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) +
    rule 22): no outline, a soft patch of the page colour, and only the chosen chip takes colour ("Open now" stays green, as
    "Open until" in the rows). The distance is a small switch of the same patch (.pills.sm: lists.js sortRow, small), with
    the chosen side in white; the Markets page keeps its own pills. */
-.gchip{border:0;background:var(--ink-soft);min-height:44px;padding:8px 14px;font-size:15px;gap:7px}
+.gchip{border:0;background:var(--ink-soft);min-height:44px;padding:8px 12px;font-size:15px;gap:6px}   /* 12 px at the sides: two chips to a row at 360 px in the six languages (rule 22) */
 .gchip .n{font-size:13px;opacity:.7}
 .gchip[aria-pressed="true"] .n{opacity:.85}
 .pills.sm{display:inline-flex;width:auto;border:0;padding:0;gap:0;background:var(--ink-soft)}
