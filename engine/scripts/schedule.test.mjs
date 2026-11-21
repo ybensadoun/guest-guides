@@ -16,7 +16,7 @@ const KINDS = readFileSync(new URL('../src/kinds.json', import.meta.url), 'utf8'
 registerHooks({ resolve: (spec, ctx, next) => (/\/engine\/src\/schedule\.js$/.test(ctx.parentURL || '') && spec === './i18n.js' ? { url: 'data:text/javascript,' + encodeURIComponent(I18N), shortCircuit: true }
   : /\/engine\/src\/schedule\.js$/.test(ctx.parentURL || '') && spec === './kinds.json' ? { url: 'data:text/javascript,' + encodeURIComponent('export default ' + KINDS), shortCircuit: true } : next(spec, ctx)) });
 const { weekOfMonth, lastOfMonth, onWeek, nthKey } = await import('../src/weeks.js');
-const { runsOn, nextOpen, nextDate, hoursText, offSeason, seasonOnly, seasonStatus, seasonText, closedStatus, statusLabel } = await import('../src/schedule.js');
+const { runsOn, lateFrom, nextOpen, nextDate, hoursText, offSeason, seasonOnly, seasonStatus, seasonText, closedStatus, statusLabel } = await import('../src/schedule.js');
 const { seasonOf, seasonKinds, hiddenOn, backOn, ASSUMED_SEASON, SHOW_BEFORE_DAYS } = await import('../src/season.js');
 const { hiddenNow } = await import('../src/schedule.js');
 
@@ -61,6 +61,34 @@ test('the words: nth1 to nth4 and nthLast in every language, read the guide way'
   }
   assert.equal(hoursText(mk(-1))[0].days, 'Last Sunday of the month');
   assert.equal(hoursText(mk(4))[0].days, '4th Sunday of the month');
+});
+
+// A night that runs past midnight belongs to the evening it started (places README rule 21, 16 Nov 2026): 14 Nov 2026 is a
+// Saturday, the 15th a Sunday.
+const night = (d, o, c, more) => ({ d, o, c, nth: 0, m: false, ...more });
+test('a close after midnight: still open the next morning, until its closing time', () => {
+  const club = { s: [night([5, 6], '23:30', '05:00')] }, bar = { s: [night([0, 1, 2, 3, 4, 5, 6], '19:00', '02:30')] };
+  assert.deepEqual(statusLabel(club, D(2026, 11, 14, 23, 45)), { cls: 'open', text: 'Open until 5:00', sub: '' });
+  assert.deepEqual(statusLabel(club, D(2026, 11, 15, 1, 30)), { cls: 'open', text: 'Open until 5:00', sub: '' });   // Sunday, no row of its own
+  assert.deepEqual(statusLabel(club, D(2026, 11, 15, 4, 59)), { cls: 'open', text: 'Open until 5:00', sub: '' });
+  assert.equal(statusLabel(club, D(2026, 11, 15, 5, 0)), null);                                                     // closed at its closing time
+  assert.equal(closedStatus(club, D(2026, 11, 15, 5, 0)).sub, 'Opens Fri 23:30');
+  assert.equal(statusLabel(club, D(2026, 11, 14, 1, 30)).cls, 'open');                                              // Saturday 1:30: Friday's night
+  assert.deepEqual(statusLabel(club, D(2026, 11, 13, 1, 30)), { cls: 'closed', text: 'Closed', sub: 'Opens at 23:30' });   // Friday 1:30: Thursday had none
+  // Open every night: at 1:30 it is open, and says when it opens again today; after closing, "Opens at 19:00".
+  assert.deepEqual(statusLabel(bar, D(2026, 11, 15, 1, 30)), { cls: 'open', text: 'Open until 2:30', sub: 'Reopens at 19:00' });
+  assert.deepEqual(statusLabel(bar, D(2026, 11, 15, 2, 30)), { cls: 'closed', text: 'Closed', sub: 'Opens at 19:00' });
+  assert.equal(lateFrom(bar, D(2026, 11, 15, 2, 29)).length, 1);
+  assert.equal(lateFrom(bar, D(2026, 11, 15, 12)).length, 0);
+});
+test('a close after midnight: the day before decides (its season, its week of the month), a morning never runs on', () => {
+  const summer = { s: [night([0, 1, 2, 3, 4, 5, 6], '22:00', '04:00', { from: '06-01', to: '09-30' })] };
+  assert.equal(statusLabel(summer, D(2026, 10, 1, 1, 0)).cls, 'open');     // 1 Oct, 1:00: the night of 30 Sep, its last
+  assert.equal(statusLabel(summer, D(2026, 6, 1, 1, 0)).cls, 'closed');    // 1 Jun, 1:00: 31 May was out of season
+  assert.equal(statusLabel(summer, D(2026, 6, 1, 1, 0)).sub, 'Opens at 22:00');
+  assert.equal(lateFrom({ s: [{ d: [6], o: '09:00', c: '14:00', nth: 0, m: true }] }, D(2026, 11, 15, 1, 0)).length, 0);
+  assert.equal(lateFrom({ s: [night([6], '10:00', '00:00')] }, D(2026, 11, 15, 0, 30)).length, 0);   // closes at midnight: not after it
+  assert.equal(runsOn({ s: [night([6], '23:30', '05:00')] }, D(2026, 11, 15, 1, 30)).length, 0);     // the day's own rows are unchanged
 });
 
 // A season of our own and no hours (content: season { from, to }, MM-DD): closed out of season with the day it opens again,

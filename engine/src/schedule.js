@@ -37,6 +37,14 @@ export const seasonText = m => {
 };
 
 export const runsOn = (m, dt) => m.s.filter(x => slotOn(x, dt));
+// The rows of the day before that close after midnight and are still running (Sat 23:30-05:00, asked on Sunday at 1:30):
+// a night belongs to the evening it started (modules/places/README.md rule 21, 16 Nov 2026). runsOn stays the day's own
+// rows: which markets are held today, which hours a day has.
+export const lateFrom = (m, dt) => {
+  const y = new Date(dt); y.setDate(y.getDate() - 1);
+  const n = dt.getHours() * 60 + dt.getMinutes() + 1440;
+  return (m.s || []).filter(x => !x.m && cl(x) > 1440 && n < cl(x) && slotOn(x, y));
+};
 
 export function nextDate(x, from = new Date()) {
   const d = new Date(from); d.setHours(0, 0, 0, 0);
@@ -48,6 +56,7 @@ export function nextDate(x, from = new Date()) {
 export function status(m, dt) {
   const now = dt || new Date();
   const sl = runsOn(m, now);
+  if (lateFrom(m, now).length) return 'open';
   if (!sl.length) return null;
   const n = now.getHours() * 60 + now.getMinutes();
   if (sl.some(x => n >= min(x.o) && n < cl(x))) return 'open';
@@ -61,8 +70,14 @@ export const statusKey = s => (s === 'open' ? 'openNow' : s === 'later' ? 'later
 export function statusLabel(m, dt) {
   const now = dt || new Date();
   const sl = runsOn(m, now);
-  if (!sl.length) return null;
   const n = now.getHours() * 60 + now.getMinutes();
+  // Still open from last night: "Open until 5:00", and when it opens again today if it does.
+  const late = lateFrom(m, now).sort((a, b) => cl(b) - cl(a))[0];
+  if (late) {
+    const end = cl(late) - 1440, re = sl.filter(x => !x.m && min(x.o) >= end).sort((a, b) => min(a.o) - min(b.o))[0];
+    return { cls: 'open', text: t('openUntil', { time: fmtT(late.c) }), sub: re ? t('reopensAt', { time: fmtT(re.o) }) : '' };
+  }
+  if (!sl.length) return null;
   if (sl.every(x => x.m)) return n < Math.max(...sl.map(x => cl(x))) ? { cls: 'open', text: t('thisMorning') } : closedStatus(m, now);
   const cur = sl.find(x => n >= min(x.o) && n < cl(x));
   if (cur) {

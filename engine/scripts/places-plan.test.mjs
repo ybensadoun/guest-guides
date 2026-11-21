@@ -77,6 +77,10 @@ test('stateOf: open now, later today, closed or not today, not known', () => {
   assert.equal(stateOf(SP.later, D(2026, 11, 14, 16, 0)), 2);
   assert.equal(stateOf(SP.monday, MON), 0);
   assert.equal(stateOf({ id: 'night', s: [row([6], '22:00', '03:00')] }, SAT), 1);   // a close after midnight
+  // After midnight the night goes on (rule 21): open now on Sunday at 1:30, closed once it has closed.
+  assert.equal(stateOf({ id: 'night', s: [row([6], '22:00', '03:00')] }, D(2026, 11, 15, 1, 30)), 0);
+  assert.equal(stateOf({ id: 'night', s: [row([6], '22:00', '03:00')] }, D(2026, 11, 15, 3, 0)), 2);
+  assert.equal(stateOf({ id: 'night', s: [row([0, 1, 2, 3, 4, 5, 6], '19:00', '02:30')] }, D(2026, 11, 15, 1, 30)), 0);   // not "opens later today"
 });
 
 test('FEATS: the feature filters, and which list offers which', () => {
