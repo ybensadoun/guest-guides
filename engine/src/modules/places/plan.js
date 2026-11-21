@@ -45,7 +45,7 @@ export function stateOf(s, now) {
 }
 
 // Feature filters, only the ones some place of the list has; several can be on at once. Which list offers which: by the
-// section's id (README.md, "Still Ca La Kimberly's own").
+// list's kind (listOf, FEAT_LISTS below; README rule 12).
 export const FEATS = {
   menuDia: s => (s.setMenus || []).some(x => x.kind === 'menuDia'),
   tasting: s => (s.setMenus || []).some(x => /^tasting/.test(x.kind)),
@@ -53,23 +53,27 @@ export const FEATS = {
   veggie: s => (s.tags || []).includes('veggie'),
   kidsfun: s => (s.tags || []).includes('kidsfun')
 };
-export const FEAT_SECS = { restaurants: ['menuDia', 'tasting', 'dogs', 'veggie'], todo: ['kidsfun', 'dogs'] };
+// The kind of a list of places, as kinds.json names its lists: "eat" (Eat and drink), "todo" (Things to do and any other
+// list of places: the generator's essentials, kids, day trips), "night" (Nightlife). A section may say its own ("list" in
+// sections.json); else the two sections the design names by their id, and every other list is a list of things to do.
+export const FEAT_LISTS = { eat: ['menuDia', 'tasting', 'dogs', 'veggie'], todo: ['kidsfun', 'dogs'], night: [] };
+export const listOf = sec => (sec && sec.list in FEAT_LISTS ? sec.list : sec && sec.id === 'restaurants' ? 'eat' : sec && sec.id === 'nightlife' ? 'night' : 'todo');
 
-// A list as the page draws it. all: the list's places shown today; id: its section's id; labelled: the quick-filter groups
+// A list as the page draws it. all: the list's places shown today; kind: the list's kind (listOf); labelled: the quick-filter groups
 // that have a label (engine/src/groups.json); sgroup, openf, featf: what the guest chose (state.js, by section id); sort:
 // the order by distance (lists.js sorted); now: a Date.
 // Returns groups (the quick-filter groups its places have, in order), gsel (the group chosen, else 'all'), timed (some
 // place has hours, so the time filters show), ofsel ('any', 'now' or 'later'; a time filter with nothing in it falls back
 // to 'any'), byGroup, feats (the feature filters offered), fsel (those on), byFeat, nNow and nLater (what we know only),
 // list (in its order) and k3 (where the places whose hours are not known start under a time filter, else -1).
-export function listPlan(all, { id, labelled, sgroup, openf, featf }, sort, now) {
+export function listPlan(all, { kind, labelled, sgroup, openf, featf }, sort, now) {
   const groups = [...new Set(all.map(s => s.group).filter(g => g in labelled))];   // only groups with a label
   const gsel = groups.includes(sgroup) ? sgroup : 'all';
   const st = s => stateOf(s, now);
   const timed = all.some(s => s.s && s.s.length);
   let ofsel = timed && ['now', 'later'].includes(openf) ? openf : 'any';
   const byGroup = gsel === 'all' ? all : all.filter(s => s.group === gsel);
-  const feats = (FEAT_SECS[id] || []).filter(k => all.some(FEATS[k]));
+  const feats = (FEAT_LISTS[kind] || []).filter(k => all.some(FEATS[k]));
   const fsel = (featf || []).filter(k => feats.includes(k));
   const byFeat = byGroup.filter(s => fsel.every(k => FEATS[k](s)));
   const nNow = byFeat.filter(s => st(s) === 0).length, nLater = byFeat.filter(s => st(s) === 1).length;   // what we know only

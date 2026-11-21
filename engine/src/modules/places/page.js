@@ -11,7 +11,7 @@ import { overviewMap } from '../map/index.js';
 import { sectionFrame } from '../../views/section.js';
 import { pageCard, mapPin } from '../highlights/index.js';
 import { GROUPS, placesOf, pinsOf } from './data.js';
-import { FEATS, listPlan } from './plan.js';
+import { FEATS, listOf, listPlan } from './plan.js';
 
 export function page(V, sec) {
   const prevF = V.dataset.secf;
@@ -20,9 +20,9 @@ export function page(V, sec) {
   // chips, the filters and the overview map follow, since they all start from this list.
   const all = placesOf(id);
   // Quick filters when items have a "group" (What to do: Kids & fun, Beach, Sights & towns); time filters when some place
-  // has hours; feature filters (restaurants, things to do) when some place has one (plan.js listPlan).
+  // has hours; feature filters, by the list's kind, when some place has one (plan.js listOf, listPlan).
   const now0 = new Date();
-  const P = listPlan(all, { id, labelled: GROUPS, sgroup: st.sgroup[id], openf: st.openf[id], featf: st.featf[id] }, sorted, now0);
+  const P = listPlan(all, { kind: listOf(sec), labelled: GROUPS, sgroup: st.sgroup[id], openf: st.openf[id], featf: st.featf[id] }, sorted, now0);
   const { groups, gsel, timed, ofsel, byGroup, feats, fsel, byFeat, nNow, nLater, list: l, k3 } = P;
   // The time and feature filters, one quiet group (README rules 8 and 12): "Open now" and "Opens later today" only when
   // they hold a place, then the features. A chosen filter is tapped again to clear it, so there is no "Any time".

@@ -16,7 +16,7 @@ const KINDS = readFileSync(new URL('../src/kinds.json', import.meta.url), 'utf8'
 const fromSchedule = ctx => /\/engine\/src\/schedule\.js$/.test(ctx.parentURL || '');
 registerHooks({ resolve: (spec, ctx, next) => (fromSchedule(ctx) && spec === './i18n.js' ? { url: 'data:text/javascript,' + encodeURIComponent(I18N), shortCircuit: true }
   : fromSchedule(ctx) && spec === './kinds.json' ? { url: 'data:text/javascript,' + encodeURIComponent('export default ' + KINDS), shortCircuit: true } : next(spec, ctx)) });
-const { readSpots, shownNow, stateOf, FEATS, FEAT_SECS, listPlan } = await import('../src/modules/places/plan.js');
+const { readSpots, shownNow, stateOf, FEATS, FEAT_LISTS, listOf, listPlan } = await import('../src/modules/places/plan.js');
 
 const D = (y, m, d, h = 12, mi = 0) => new Date(y, m - 1, d, h, mi);
 const SAT = D(2026, 11, 14, 11, 30), MON = D(2026, 11, 16, 15, 30);
@@ -38,7 +38,7 @@ const SP = {
 };
 const LIST = Object.values(SP);
 const labelled = { fun: 'red', beach: 'blue', sights: 'purple' };
-const plan = (all, choice = {}, now = SAT) => listPlan(all, { id: 'todo', labelled, ...choice }, byKm, now);
+const plan = (all, choice = {}, now = SAT) => listPlan(all, { kind: 'todo', labelled, ...choice }, byKm, now);
 
 test('readSpots: every list of items gives its places; the host\'s lists are not utilities', () => {
   const sections = [
@@ -84,7 +84,12 @@ test('stateOf: open now, later today, closed or not today, not known', () => {
 });
 
 test('FEATS: the feature filters, and which list offers which', () => {
-  assert.deepEqual(FEAT_SECS, { restaurants: ['menuDia', 'tasting', 'dogs', 'veggie'], todo: ['kidsfun', 'dogs'] });
+  assert.deepEqual(FEAT_LISTS, { eat: ['menuDia', 'tasting', 'dogs', 'veggie'], todo: ['kidsfun', 'dogs'], night: [] });
+  // By the list's kind, not its name: the two sections the design names, a section that says its own, and any other
+  // list of places (the generator's day trips) is a list of things to do.
+  assert.equal(listOf({ id: 'restaurants' }), 'eat'); assert.equal(listOf({ id: 'todo' }), 'todo'); assert.equal(listOf({ id: 'nightlife' }), 'night');
+  assert.equal(listOf({ id: 'daytrips' }), 'todo'); assert.equal(listOf({ id: 'tapas', list: 'eat' }), 'eat'); assert.equal(listOf({ id: 'bars', list: 'night' }), 'night');
+  assert.equal(listOf({ id: 'x', list: 'nonsense' }), 'todo'); assert.equal(listOf(undefined), 'todo');
   assert.deepEqual(LIST.filter(FEATS.menuDia).map(x => x.id), ['later']);
   assert.deepEqual(LIST.filter(FEATS.tasting).map(x => x.id), ['unknown']);   // any tasting menu ("tasting7")
   assert.deepEqual(LIST.filter(FEATS.dogs).map(x => x.id), ['open', 'monday', 'always']);
@@ -132,10 +137,10 @@ test('listPlan: a quick-filter group, the feature filters (all of them at once),
   const two = plan(LIST, { featf: ['dogs', 'kidsfun'] });
   assert.deepEqual(ids(two.list), []);                             // both at once: none has both
   assert.deepEqual(plan(LIST, { featf: ['veggie'] }).fsel, []);    // not one of todo's filters: ignored
-  const r = listPlan(LIST, { id: 'restaurants', labelled, featf: ['veggie'] }, byKm, SAT);
+  const r = listPlan(LIST, { kind: 'eat', labelled, featf: ['veggie'] }, byKm, SAT);
   assert.deepEqual(r.feats, ['menuDia', 'tasting', 'dogs', 'veggie']);
   assert.deepEqual(ids(r.list), ['monday']);
-  assert.deepEqual(listPlan(LIST, { id: 'nightlife', labelled }, byKm, SAT).feats, []);   // a list with none
+  assert.deepEqual(listPlan(LIST, { kind: 'night', labelled }, byKm, SAT).feats, []);   // a list with none
   const gNow = plan(LIST, { sgroup: 'fun', openf: 'now' });         // the counts follow the group and the features
   assert.equal(gNow.nNow, 1); assert.equal(gNow.nLater, 0);
   assert.deepEqual(ids(gNow.list), ['open']);
