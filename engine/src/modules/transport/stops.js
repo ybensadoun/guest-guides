@@ -4,7 +4,7 @@
 // onboarding-site/src/build.py, the import and export words taken out). Pure: no DOM. Every name starts with sp.
 // A stop: { id, n, k (metro, rail, tram, bus), lat, lng, s (its source's index), lines: [{ t?, n, c?, ink?, f }] }.
 // Tested in engine/scripts/transport-stops.test.mjs.
-import { tpLine, tpRoadKm, tpPlaced, tpFold, cmMin } from './pick.js';
+import { tpLine, tpRoadKm, tpPlaced, tpFold, cmMin, tpWalk } from './pick.js';
 
 export const SP = { cell: 0.25, near: 3, side: 0.2, walkMax: 25, metro: 1.2, tram: 1, bus: 0.6 };   // the design, 16 Nov 2026
 // The cells a house's stops are read from (16 Nov 2026: Madrid's cells are 2 MB each, so 4 files at most): the 2 by 2 block
@@ -19,7 +19,7 @@ export function spCells(house) {
 // "metro stations always take over, then trams, then buses" (Yohann, 16 Nov 2026); rail counts as metro.
 export const spRank = k => ({ metro: 0, rail: 0, tram: 1, bus: 2 })[k] ?? 3;
 // Minutes on foot from km by road: 12 a km, at least 1.
-export const spWalk = km => Math.max(1, Math.round(km * 12));
+export const spWalk = tpWalk;   // one formula with the train stations (pick.js)
 const spKey = l => (l.t ? 't:' + l.t : 'n:' + l.n);
 export const spId = st => 'sp' + String(st.id).replace(/:/g, '-');
 const spRoad = (house, st) => tpRoadKm(tpLine(house, st), 2);

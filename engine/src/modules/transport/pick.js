@@ -12,6 +12,8 @@ export const TP = {
   alone: 30,     // km: with no station of the rule, the nearest station this close, alone
   dests: 4,      // journey times written for a station: its city first, then the cities with the most direct trains
   same: 0.5,     // km: a station of the guide this close to one of our file is that station (tpHave)
+  city: 4,       // km: a house this close to one of its city's own stations is in the city (pickStations, stationEntry)
+  walk: 25,      // minutes: a station this near is said on foot, as a stop is (stops.js)
 };
 export const TP_LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
 // The two words of each role (the verdict, `tag`), which the host may change. The design, 16 Nov 2026.
@@ -19,6 +21,7 @@ export const TP_TAG = {
   near: { en: 'Closest', es: 'La más cercana', fr: 'La plus proche', ca: 'La més propera', de: 'Am nächsten', nl: 'Dichtstbij' },
   quick: { en: 'Faster', es: 'Más rápida', fr: 'Plus rapide', ca: 'Més ràpida', de: 'Schneller', nl: 'Sneller' },
   fast: { en: 'High speed', es: 'Alta velocidad', fr: 'Grande vitesse', ca: 'Alta velocitat', de: 'Hochgeschwindigkeit', nl: 'Hogesnelheid' },
+  main: { en: 'Main station', es: 'Estación principal', fr: 'Gare principale', ca: 'Estació principal', de: 'Hauptbahnhof', nl: 'Hoofdstation' },
 };
 // The words a station's role is given: a quicker station that also has high speed trains is said "High speed" (the
 // coordinator's review, 16 Nov 2026: inland, Camp de Tarragona came out "Faster"); the rule itself is unchanged.
@@ -38,6 +41,11 @@ export const tpRoadKm = (line, dp = 0) => { const f = 10 ** dp; return Math.max(
 // Minutes by car from the house, from the km by road: the maker's first guess, which the host can change (moved here from
 // onboarding-site/src/editor.js on 16 Nov 2026, so that the generator and the maker keep one formula).
 export const cmMin = km => km ? Math.max(2, Math.round(km * 1.1 + 1)) : 0;
+// Minutes on foot from the km by road, 12 minutes a km (the stops' formula, stops.js spWalk), and a place's minutes on foot
+// from the straight line when it is TP.walk or less, else null: said on foot, not by car (21 Nov 2026: a station 300 m
+// from a house in a city read "2 min by car").
+export const tpWalk = km => Math.max(1, Math.round(km * 12));
+export const tpFoot = line => { const w = tpWalk(tpRoadKm(line, 2)); return w <= TP.walk ? w : null; };
 // Minutes by car guessed from the straight line, for the door to city time of the rule only (as Ca La Kimberly's three read).
 export const tpDoor = line => Math.round(line * 1.6);
 // A journey time as the guides write it: "50 min", "1 h 25", "2 h".
@@ -51,16 +59,32 @@ export function tpCity(house, data) {
   return best;
 }
 const tpToCity = (st, city) => (st.to || []).find(x => x.id === city.id);
+// A house in its city (21 Nov 2026): within TP.city km, in a straight line, of one of the city's own stations (`ids`: Sants;
+// Madrid's three; València's two). Its trains are a city guest's, not a commuter's: see pickStations and stationEntry.
+const tpOwn = (st, city) => (city.ids || []).map(String).includes(String(st.id));
+export function tpInCity(house, data) {
+  const city = tpCity(house, data); if (!city || !Array.isArray(data.stations)) return false;
+  return data.stations.some(st => tpOwn(st, city) && Number.isFinite(st.lat) && Number.isFinite(st.lng) && tpLine(house, st) <= TP.city);
+}
 
 // Up to three stations for a house, each with its role: [{ st, role, km }] (km: the straight line), in this order:
 //   near: the nearest station within TP.near km with TP.trains or more direct trains a day to the city;
 //   quick: among those, the lowest door to city time (tpDoor + the station's usual time), when it beats near's by TP.beat;
 //   fast: the nearest of those with high speed trains, when it is neither of the two.
 // None of those: the nearest station within TP.alone km, alone, as near. No position, no file: nothing.
+// A house in its city (tpInCity) is not judged by the trains to that city, which it is already in: it gets the station
+// nearest to it (near) and the city's main station (main: the nearest of the city's own stations with high speed trains,
+// else the nearest of them), one station when they are the same. Before 21 Nov 2026 the rule above gave the centre of
+// València a station with one line, since the city's own stations have no train "to the city".
 export function pickStations(house, data) {
   const city = tpCity(house, data); if (!city || !Array.isArray(data.stations)) return [];
   const all = data.stations.filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lng)).map(st => ({ st, km: tpLine(house, st) }))
     .sort((a, b) => a.km - b.km || String(a.st.id).localeCompare(String(b.st.id)));
+  const own = all.filter(x => tpOwn(x.st, city));
+  if (own.length && own[0].km <= TP.city) {
+    const near = all[0], main = own.find(x => x.st.hs) || own[0];
+    return near.st === main.st ? [{ st: near.st, role: 'near', km: near.km }] : [{ st: near.st, role: 'near', km: near.km }, { st: main.st, role: 'main', km: main.km }];
+  }
   const cand = all.filter(x => x.km <= TP.near && (tpToCity(x.st, city) || {}).n >= TP.trains);
   if (!cand.length) { const n = all[0]; return n && n.km <= TP.alone ? [{ st: n.st, role: 'near', km: n.km }] : []; }
   const door = x => tpDoor(x.km) + tpToCity(x.st, city).min;
@@ -89,16 +113,19 @@ const tpL = (langs, f) => Object.fromEntries(langs.map(l => [l, f(l)]));
 const tpIsRodalies = b => /^R[GLT]?\d/.test(b.t || '');
 
 // The station as content/transport.json holds it (its _doc), from our file: no Google id, no Google position. role:
-// 'near', 'quick', 'fast', or null (a station the host added: no verdict yet). langs: the guide's languages.
+// 'near', 'quick', 'fast', 'main', or null (a station the host added: no verdict yet). langs: the guide's languages.
+// On foot (`walk`, no `min`) when TP.walk minutes or less, else by car (`min`). A house in its city gets no journey time
+// to that city ("Barcelona Sants 4 min" from Passeig de Gràcia tells a guest nothing).
 export function stationEntry(st, house, role, data, langs) {
   const ls = (langs && langs.length ? langs : ['en']).filter(l => TP_LANGS.includes(l));
-  const km = tpPlaced(house) ? tpRoadKm(tpLine(house, st)) : 0, city = tpCity(house, data);
+  const placed = tpPlaced(house), km = placed ? tpRoadKm(tpLine(house, st)) : 0, city = tpCity(house, data);
+  const walk = placed ? tpFoot(tpLine(house, st)) : null, inCity = !!city && tpInCity(house, data);
   const cities = new Map(((data && data.cities) || []).map(c => [c.id, c]));
-  const to = (st.to || []).filter(x => cities.has(x.id))
+  const to = (st.to || []).filter(x => cities.has(x.id) && !(inCity && x.id === city.id))
     .sort((a, b) => (city && b.id === city.id) - (city && a.id === city.id) || b.n - a.n || a.min - b.min || a.id.localeCompare(b.id)).slice(0, TP.dests)
     .map(x => { const c = cities.get(x.id); return { dest: tpL(ls, l => (c.i18n || {})[l] || c.name), time: tpTime(x.min), note: tpL(ls, () => '') }; });
   const badges = (st.lines || []).map(b => ({ t: b.t, c: b.c, ink: !!b.ink }));
-  return { id: 'st' + st.id, mode: 'train', name: tpL(ls, l => tpName(st.name, l)), lat: st.lat, lng: st.lng, km, min: cmMin(km),
+  return { id: 'st' + st.id, mode: 'train', name: tpL(ls, l => tpName(st.name, l)), lat: st.lat, lng: st.lng, km, ...(walk ? { walk } : { min: cmMin(km) }),
     tag: tpL(ls, l => { const r = tpTagOf(st, role); return r && TP_TAG[r] ? TP_TAG[r][l] : ''; }), what: tpL(ls, () => ''),
     link: badges.some(tpIsRodalies) ? TP_RODALIES : TP_RENFE, linkKey: 'timetable', badges, to,
     src: { from: 'renfe', at: (data && data.source && data.source.updated) || '' } };
@@ -110,12 +137,13 @@ export function stationsFor(house, data, langs) {
   return p.map(x => stationEntry(x.st, house, p.length > 1 ? x.role : null, data, langs));
 }
 
-// The rule's stations a guide does not have yet, for the maker's "Near your house": [{ st, km (by road), role }], role
-// null when the rule gives one station alone (stationsFor gives it no verdict either).
+// The rule's stations a guide does not have yet, for the maker's "Near your house": [{ st, km (by road), walk, role }],
+// walk the minutes on foot when near enough (else null), role null when the rule gives one station alone (stationsFor
+// gives it no verdict either).
 export function tpNear(house, data, stations) {
   const p = pickStations(house, data); if (!p.length) return [];
   const have = new Set(tpHave(data, stations));
-  return p.filter(x => !have.has('st' + x.st.id)).map(x => ({ st: x.st, km: tpRoadKm(x.km), role: p.length > 1 ? x.role : null }));
+  return p.filter(x => !have.has('st' + x.st.id)).map(x => ({ st: x.st, km: tpRoadKm(x.km), walk: tpFoot(x.km), role: p.length > 1 ? x.role : null }));
 }
 // The station of our file nearest to the house, within TP.near km (the maker's example in its field), or null: a house
 // outside Spain gets no example from across the border.
@@ -168,7 +196,7 @@ export function tpHave(data, stations) {
 }
 
 // The maker's "Type a train station": the stations whose name matches what was typed, best first, at most max:
-// [{ st, km }] (km by road, null with no house position). Accents, capitals and punctuation aside, from 2 letters; the
+// [{ st, km, walk }] (km by road, null with no house position; walk: minutes on foot when near enough). Accents, capitals and punctuation aside, from 2 letters; the
 // whole name, then a name that starts with it, then a word that starts with it; in each, the nearest to the house first.
 // have: the ids already in the guide ("st" + Renfe's id), never offered again.
 export const tpFold = s => String(s || '').replace(/[·‧]/g, '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -183,5 +211,5 @@ export function tpFind(data, typed, house, have = [], max = 5) {
     hits.push({ st, tier, line: placed ? tpLine(house, st) : null });
   }
   hits.sort((a, b) => a.tier - b.tier || (a.line != null && b.line != null ? a.line - b.line : 0) || a.st.name.localeCompare(b.st.name));
-  return hits.slice(0, max).map(h => ({ st: h.st, km: h.line == null ? null : tpRoadKm(h.line) }));
+  return hits.slice(0, max).map(h => ({ st: h.st, km: h.line == null ? null : tpRoadKm(h.line), walk: h.line == null ? null : tpFoot(h.line) }));
 }

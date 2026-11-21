@@ -998,7 +998,7 @@ const nearbyHTML = m => slimStep(m, 'Museums, parks, karting, sights. Swipe righ
    once the host says how it is collected. ---------- */
 const KN = { screen: '' };
 const KNOWN_HINT = { wifi: 'Guests see it in the guide and join with one tap, from a QR code. Your guest network is best, if you have one.', arrival: 'For guests who arrive in the dark. No door codes here: send those privately.',
-  rubbish: 'How it is collected and, for bins at the house, which day each one is emptied.', contacts: 'Numbers guests can call. We add 112, the nearest hospital and pharmacy.' };
+  rubbish: 'How it is collected and, for bins at the house, which day each one is emptied.', contacts: 'Taxis guests can call. We look for the ones near your house: check them, or type the one you trust.' };   // the part "Getting around" (its id is still contacts): until 21 Nov 2026 it carried Emergencies' sentence about 112
 const knownParts = () => MODULES.filter(p => p.part === 'known' && (!p.sec || secOn(p.sec))).map(p => ({ id: p.id, title: p.title, icon: p.icon, hint: KNOWN_HINT[p.id] || p.lead, screen: STEP_SCREEN[p.id] || 'home',
   fields: p.fields.filter(k => k !== 'wifiNote' && (p.id !== 'rubbish' || k === 'rubbishMode' || filled('rubbishMode'))), done: ANSWERED[p.id] || (() => false) }));
 const knTick = p => p.done() ? `<span class="kn-ok">${CHECK}Done</span>` : '';

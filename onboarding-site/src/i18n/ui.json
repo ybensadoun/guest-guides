@@ -2054,6 +2054,11 @@
 "es": "Cambia a mano el nombre, la chincheta, las líneas o los horarios",
 "fr": "Modifier à la main le nom, le repère, les lignes ou les horaires"
 },
+"Change the name or the timetable link": {
+"ca": "Canvia el nom o l’enllaç dels horaris",
+"es": "Cambia el nombre o el enlace de los horarios",
+"fr": "Modifier le nom ou le lien des horaires"
+},
 "Changes save as you type, as a draft only you see until you publish.": {
 "ca": "Els canvis es desen mentre escrius, com un esborrany que només veus tu fins que publiquis.",
 "es": "Los cambios se guardan mientras escribes, como un borrador que solo ves tú hasta que publiques.",
@@ -2939,6 +2944,11 @@
 "es": "Minutos en coche desde la casa",
 "fr": "Minutes en voiture depuis la maison"
 },
+"Minutes on foot from the house": {
+"ca": "Minuts a peu des de la casa",
+"es": "Minutos a pie desde la casa",
+"fr": "Minutes à pied depuis la maison"
+},
 "Mo": {
 "ca": "Dl",
 "es": "Lu",
@@ -3263,11 +3273,6 @@
 "ca": "Números i llocs que poden necessitar els hostes: emergències, salut, policia, serveis del poble.",
 "es": "Números y sitios que pueden necesitar los huéspedes: emergencias, salud, policía, servicios municipales.",
 "fr": "Numéros et lieux dont les voyageurs peuvent avoir besoin : urgences, santé, police, services de la commune."
-},
-"Numbers guests can call. We add 112, the nearest hospital and pharmacy.": {
-"ca": "Números on poden trucar els hostes. Hi afegim el 112, l’hospital i la farmàcia més propers.",
-"es": "Números a los que pueden llamar los huéspedes. Añadimos el 112, el hospital y la farmacia más cercanos.",
-"fr": "Numéros que les voyageurs peuvent appeler. Nous ajoutons le 112, l’hôpital et la pharmacie les plus proches."
 },
 "Off": {
 "ca": "No",
@@ -8653,6 +8658,11 @@
 "ca": "Taxis a prop de casa teva",
 "es": "Taxis cerca de tu casa",
 "fr": "Taxis près de chez vous"
+},
+"Taxis guests can call. We look for the ones near your house: check them, or type the one you trust.": {
+"ca": "Taxis on poden trucar els hostes. Busquem els més propers a casa teva: revisa’ls o escriu el de la teva confiança.",
+"es": "Taxis a los que pueden llamar los huéspedes. Buscamos los más cercanos a tu casa: revísalos o escribe el de tu confianza.",
+"fr": "Taxis que les voyageurs peuvent appeler. Nous cherchons ceux près de chez vous : vérifiez-les ou indiquez le vôtre."
 },
 "From an open directory. Tick the ones you would call: guests see them in the guide.": {
 "ca": "D’un directori obert. Marca els que trucaries: els hostes els veuen a la guia.",

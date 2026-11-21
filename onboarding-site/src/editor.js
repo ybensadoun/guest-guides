@@ -1041,15 +1041,17 @@ function cStation(p, s) {
     : ours ? `<div class="cm-found"><div class="cm-row cm-foundh"><b>Lines and where they go</b></div>
       <p class="hint">${esc(`From Renfe's timetables, data of ${trsDate(s.src.at)}. Usual times by direct train.`)}${s.brands && s.brands.at ? ` <span class="cm-brandsat">${esc(`iryo and Ouigo: checked on ${trsDate(s.brands.at)}.`)}</span>` : ''}</p>
       ${badges ? `<div class="cm-badges">${badges}</div>` : ''}${to ? `<ul class="cm-to">${to}</ul>` : ''}
-      <p class="hint cm-trfacts">${s.km ? `<span>${esc(`${s.km} km from the house, about ${s.min || cmMin(s.km)} min by car.`)}</span> ` : ''}${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">Timetable</a>` : ''}</p></div>`
+      <p class="hint cm-trfacts">${s.km ? `<span>${esc(s.walk ? `${s.walk} min on foot from the house.` : `${s.km} km from the house, about ${s.min || cmMin(s.km)} min by car.`)}</span> ` : ''}${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">Timetable</a>` : ''}</p></div>`
     : `<div class="cm-found"><div class="cm-row cm-foundh"><b>Lines and where they go</b><button class="btn small" type="button" data-trlines="${esc(s.id)}"${L.busy || !placed ? ' disabled' : ''}>${L.busy ? 'Looking…' : badges ? 'Refresh the lines' : 'Find the lines'}</button></div>
       <p class="hint" id="cmLines-${esc(s.id)}" role="status">${esc(L.msg || (!placed ? 'Set its pin first (below), then we look up its lines.' : auto.checked ? `Found on the web${auto.operator ? ' (' + auto.operator + ')' : ''}, checked ${auto.checked}. Refresh any time.` : badges ? 'Refresh to look them up again.' : 'We look up the lines through it and where they go. Nothing to type.'))}</p>
       ${badges ? `<div class="cm-badges">${badges}</div>` : ''}${to ? `<ul class="cm-to">${to}</ul>` : ''}</div>`;
   const rowBadges = (s.badges || []).filter(b => String(b.t || '').trim()).map(trsBadge).join('');   // the lines in their colours in the closed row (the coordinator's review, 16 Nov 2026)
   return cCard(p, edShown(s.name) || 'New ' + cmMode(s), [spWord(s.mode), s.walk ? s.walk + ' min on foot' : s.min ? s.min + ' min by car' : '', placed ? '' : 'no pin yet'].filter(Boolean).join(' · '), `${found}
-    <div class="grid">${cf('In a few words', p + '/tag', s.tag, { i18n: true, half: true, ph: 'Reliable, slow' })}${cf('Minutes by car from the house', p + '/min', s.min, { type: 'number', half: true })}
+    <div class="grid">${cf('In a few words', p + '/tag', s.tag, { i18n: true, half: true, ph: 'Reliable, slow' })}${s.walk ? cf('Minutes on foot from the house', p + '/walk', s.walk, { type: 'number', half: true }) : cf('Minutes by car from the house', p + '/min', s.min, { type: 'number', half: true })}
     ${cf('What guests need to know', p + '/what', s.what, { i18n: true, long: true, ph: 'What only you know: is it reliable, is there internet on the way, where to park, which ticket to buy' })}</div>
-    <details class="cm-more" data-open="${esc(more)}"${CM.open.has(more) ? ' open' : ''}><summary>Change the name, the pin, the lines or the times by hand</summary><div class="grid">
+    ${stopOf ? `<details class="cm-more" data-open="${esc(more)}"${CM.open.has(more) ? ' open' : ''}><summary>Change the name or the timetable link</summary><div class="grid">
+    ${cf('Name', p + '/name', s.name, { i18n: true, half: true })}${cf('Timetable link', p + '/link', s.link || '', { type: 'url', half: true })}</div></details>`
+    : `<details class="cm-more" data-open="${esc(more)}"${CM.open.has(more) ? ' open' : ''}><summary>Change the name, the pin, the lines or the times by hand</summary><div class="grid">
     <div class="f"><label for="${cmId(p + '/mode')}">Kind</label><select id="${cmId(p + '/mode')}" data-p="${p}/mode" data-t="str"><option value="train"${!SP_MODES.includes(s.mode) ? ' selected' : ''}>Train station</option><option value="metro"${s.mode === 'metro' ? ' selected' : ''}>Metro</option><option value="tram"${s.mode === 'tram' ? ' selected' : ''}>Tram</option><option value="bus"${s.mode === 'bus' ? ' selected' : ''}>Bus stop</option></select></div>
     ${cf('Name', p + '/name', s.name, { i18n: true, half: true })}${cf('Timetable link', p + '/link', s.link || '', { type: 'url', half: true })}${cf('Google Maps link', p + '/gmaps', s.gmaps || '', { type: 'url', half: true })}
     <div class="f full"><label for="${cmId(p + '/gm')}">Move the pin: paste a Google Maps link</label><p class="hint">${placed ? `Now at ${(+s.lat).toFixed(4)}, ${(+s.lng).toFixed(4)}${s.km ? `, ${s.km} km from the house` : ''}.` : 'It shows in the guide once its pin is set.'} Use the long link from the browser bar: it holds the position.</p><input id="${cmId(p + '/gm')}" type="text" inputmode="url" data-gm="${p}" placeholder="https://www.google.com/maps/…"></div></div>
@@ -1057,7 +1059,7 @@ function cStation(p, s) {
       <button class="btn small cm-add" type="button" data-addbadge="${p}/badges">+ Add a line</button></div>
     <div class="f full"><span class="lab">Journey times</span>${(s.to || []).map((d, j) => `<div class="cm-sub"><div class="grid">${cf('To', `${p}/to/${j}/dest`, d.dest, { i18n: true, half: true, ph: 'Barcelona' })}${cf('Time', `${p}/to/${j}/time`, d.time || '', { half: true, ph: '1 h 30' })}${cf('Note', `${p}/to/${j}/note`, d.note, { i18n: true, ph: '1 change' })}</div><div><button class="btn small danger" type="button" data-cdel="${p}/to/${j}" data-now="1">Remove this destination</button></div></div>`).join('')}
       <button class="btn small cm-add" type="button" data-addto="${p}/to">+ Add a destination</button></div>
-    </details>
+    </details>`}
     <div><button class="btn small danger" type="button" data-cdel="${p}">Delete this ${cmMode(s)}</button></div>`, null, '', '', rowBadges ? `<span class="cm-cbadges" translate="no">${rowBadges}</span>` : '');
 }
 // Stations and stops (29 Oct 2026, Yohann: "the host only adds added-value data"): the host gives a name or a Google Maps
@@ -1317,7 +1319,7 @@ const trsHasTrain = () => trsStations().some(x => !SP_MODES.includes(x.mode));
 const trsNear = () => TRS.data ? tpNear(edF().house || {}, TRS.data, trsStations()) : [];
 const trsBadge = b => `<i class="cm-badge" style="background:${esc(b.c || '#1D4FA0')};color:${b.ink ? '#121212' : '#fff'}">${esc(b.t)}</i>`;
 const trsRole = x => { const r = x.role && tpTagOf(x.st, x.role); return r ? `<span class="cm-trrole" translate="no">${esc(TP_TAG[r][UIL] || TP_TAG[r].en)}</span>` : ''; };
-const trsRow = (x, attrs) => `<button type="button" class="pl-tw cm-trs" ${attrs}>${kTile(ENG_ICON.train, 'var(--pine)', true)}<span><b translate="no">${esc(x.st.name)}</b><small translate="no">${(x.st.lines || []).map(trsBadge).join('')}${x.km != null ? `<span class="cm-trkm">${x.km}\u00a0km</span>` : ''}${trsRole(x)}</small></span></button>`;
+const trsRow = (x, attrs) => `<button type="button" class="pl-tw cm-trs" ${attrs}>${kTile(ENG_ICON.train, 'var(--pine)', true)}<span><b translate="no">${esc(x.st.name)}</b><small translate="no">${(x.st.lines || []).map(trsBadge).join('')}${x.walk ? `<span class="cm-trkm">${tr(`${x.walk} min on foot`)}</span>` : x.km != null ? `<span class="cm-trkm">${x.km}\u00a0km</span>` : ''}${trsRole(x)}</small></span></button>`;
 function trsExample() { const n = TRS.data && tpNearest(edF().house || {}, TRS.data); return n ? `Its name, like ${n.name}` : 'Its name'; }
 function trsNearHTML() {
   const L = TRS.near = trsNear();

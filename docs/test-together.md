@@ -13,7 +13,7 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 ### In the editor, on the pool house (it has one taxi and no station)
 | # | Do | Expect |
 |---|---|---|
-| 1.1 | Open Getting around | Three parts in order: Taxi, Trains, Bus stops |
+| 1.1 | Open Getting around | Three parts in order: Taxi, Trains, Public transport |
 | 1.2 | Look under the taxi | "Near your house": taxis from our directory, each with town, distance and number; the guide's own taxi is not among them |
 | 1.3 | Pick one of them | It is added at once, opened, with "From an open directory" and the date; it leaves the list |
 | 1.4 | Look at "Ride apps" | Four switches (Uber, Cabify, Bolt, Freenow), none marked "works near your house" (no served city within 12 km). The first time, this makes the one search for the four apps (paid, about 0.70 USD) |
@@ -31,13 +31,34 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 ### In the builder, with a new link (the test house)
 | # | Do | Expect |
 |---|---|---|
-| 1.20 | Paste a listing link, go to "Only you know" | After the research answers: "Taxis near your house", the nearest ticked, "Suggested for you: please check" |
+| 1.20 | Paste a listing link, go to "Only you know" | Under Getting around, a sentence about taxis (not about 112). After the research answers: "Taxis near your house", the nearest ticked, "Suggested for you: please check" |
 | 1.21 | Untick it, tick another, type one in "Another taxi" | The phone preview follows |
 | 1.22 | In a served city only: "Ride apps that work near you" | The apps ticked for you |
-| 1.23 | Build the guide | Getting around has the taxis you approved, its stations by themselves, and iryo and Ouigo on a high-speed station |
+| 1.23 | Build the guide | Getting around has the taxis you approved, its stations and its nearest stops by themselves, and iryo and Ouigo on a high-speed station |
 | 1.24 | Build one without opening the step | The guide has the nearest taxi by itself |
 
+### Public transport, in the editor (built 16 and 17 Nov 2026; the pool house is in the country, so its stops are buses)
+| # | Do | Expect |
+|---|---|---|
+| 1.30 | Open Getting around, look at Public transport | "Near your house": the nearest stops by distance, each with its lines as badges and "n min on foot" or the km |
+| 1.31 | Pick one | Added at once, opened: "Lines and how often" with its source and the date of its data, each line with how often in words, never a number of buses |
+| 1.32 | Look at the opened stop's fields | "In a few words", "Minutes on foot from the house" (or "by car" for a far one, never both), "What guests need to know"; under them only "Change the name or the timetable link" |
+| 1.33 | Type "vendrell" in "Type a stop or station" | El Vendrell's bus station once, as "El Vendrell (estació d'autobusos)", with the lines of both directions |
+| 1.34 | Type a stop already added | It is listed with "Already in your guide." |
+| 1.35 | Preview, then Getting around in the phone | After Train, a part Bus with the stop: its badges, minutes on foot; opened, its lines with how often, Directions and Timetable |
+| 1.36 | In the preview, Sources and credits | One line for the stop's publisher with the date of its data, and "Powered by MITRAMS" |
+
+### A house in a city (the test house if it is in one; else type the stations and stops by name)
+| # | Do | Expect |
+|---|---|---|
+| 1.40 | Getting around, Trains, in a guide whose house is in Barcelona, Madrid or València | The station nearest to the house, "Closest", with minutes on foot, and the city's main station, "Main station" (Sants, Atocha); in València's centre, València Nord alone |
+| 1.41 | Open the nearest station | Journey times to other cities only, never to the city the house is in |
+| 1.42 | Public transport there | Metro stops first by distance, each line "Every 15 min or more often" (Madrid's read "A few a day" until the fix of 17 Nov) |
+| 1.43 | Names of the stops | In ordinary letters ("Gran Via"), not in capitals; no badge twice |
+
 ### Known, not to report
+- Madrid's metro file has no trip of line 3: Puerta del Sol shows lines 1 and 2. Metro Bilbao has no L1 or L2. A name written in capitals by its operator keeps the accents it lacked ("Gran Via").
+- The same bus stop published by two operators is listed twice (Madrid's city buses).
 - A found taxi is not checked again after it is added.
 - Minutes by car are a guess from the distance.
 - Madrid from Camp de Tarragona reads 3 h 10: a time several trains a day really make (one train makes 2 h 37).
@@ -224,4 +245,4 @@ In a guide on a phone (or the maker's phone preview), no sign-in needed. Each st
 - Tapping a small map of a list opens the big map, wherever the tap lands.
 
 ## Later modules
-Added here as each one is built or changed: public transport (bus, metro, tram), then the rest of the plan.
+Added here as each one is built or changed.

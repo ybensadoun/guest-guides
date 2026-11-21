@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { TP, TP_TAG, tpLine, tpRoadKm, cmMin, tpDoor, tpTime, tpCity, pickStations, tpName, stationEntry, stationsFor, tpFold, tpFind, tpPlaced, tpHave, tpTagOf, tpNear, tpNearest, tpBrandBadges, tpBrandsStale, TP_BRANDS } from '../src/modules/transport/pick.js';
+import { tpWalk, tpFoot, tpInCity, TP, TP_TAG, tpLine, tpRoadKm, cmMin, tpDoor, tpTime, tpCity, pickStations, tpName, stationEntry, stationsFor, tpFold, tpFind, tpPlaced, tpHave, tpTagOf, tpNear, tpNearest, tpBrandBadges, tpBrandsStale, TP_BRANDS } from '../src/modules/transport/pick.js';
 
 const ROOT = new URL('../../', import.meta.url);
 const read = p => JSON.parse(readFileSync(new URL(p, ROOT), 'utf8'));
@@ -167,4 +167,45 @@ test('Renfe\'s file on Ca La Kimberly\'s house: El Vendrell, Sant Vicenç de Cal
   assert.equal(E[0].to[0].dest.en, 'Barcelona Sants');
   assert.ok(E[2].badges.some(b => b.t === 'AVE'));
   for (const e of E) assert.ok(/^\d{4}-\d\d-\d\d$/.test(e.src.at));
+});
+
+// A house in a city and a station on foot (21 Nov 2026; README rules 20 and 21). The made-up city's own stations are C
+// (high speed) and C2; the house is 1 km from C2.
+test('on foot when 25 minutes or less, else by car', () => {
+  assert.deepEqual([0.01, 0.23, 1, 2.08].map(tpWalk), [1, 3, 12, 25]);
+  assert.deepEqual([0.1, 1.6, 1.7, 7].map(tpFoot), [2, 25, null, null]);   // the straight line; 1.3 times by road
+  const e = stationEntry(st('w', 0.4, { n: 21, min: 85 }), H, null, data([]), ['en']);
+  assert.deepEqual(Object.keys(e), ['id', 'mode', 'name', 'lat', 'lng', 'km', 'walk', 'tag', 'what', 'link', 'linkKey', 'badges', 'to', 'src']);
+  assert.equal(e.walk, 6); assert.equal(e.km, 1); assert.equal('min' in e, false);
+  assert.equal('walk' in stationEntry(st('w', 0.4), { lat: 0, lng: 0 }, null, data([]), ['en']), false);   // no house position: neither said on foot
+});
+const cityData = stations => ({ source: { updated: '2026-11-16' }, cities: [{ id: 'big', ids: ['C', 'C2'], name: 'Big City', main: true, ...at(3) }, { id: 'small', ids: ['S'], name: 'Small Town', ...at(50) }], stations });
+test('a house in its city: the nearest station and the city\'s main station, never judged by trains to the city', () => {
+  const C = st('C', 3, null, { hs: true, to: [{ id: 'small', n: 30, min: 40 }] }), C2 = st('C2', 1, null, { to: [] });
+  const sub = st('sub', 0.5, { n: 60, min: 4 }, { to: [{ id: 'big', n: 60, min: 4 }, { id: 'small', n: 9, min: 55 }] }), far = st('far', 9, { n: 40, min: 15 });
+  const D = cityData([C, C2, sub, far]);
+  assert.equal(tpInCity(H, D), true); assert.equal(tpInCity(at(-4), D), false);   // 4 km from C2 or less
+  assert.deepEqual(pickStations(H, D).map(x => [x.st.id, x.role]), [['sub', 'near'], ['C', 'main']]);
+  const [a, b] = stationsFor(H, D, ['en', 'de']);
+  assert.deepEqual([a.tag, b.tag], [{ en: 'Closest', de: 'Am nächsten' }, { en: 'Main station', de: 'Hauptbahnhof' }]);
+  assert.equal(a.walk, 8); assert.deepEqual(a.to.map(d => [d.dest.en, d.time]), [['Small Town', '55 min']]);   // not "Big City 4 min"
+  assert.equal(b.min, cmMin(4)); assert.deepEqual(b.to.map(d => d.dest.en), ['Small Town']);
+  // The nearest is the main station itself: one station, no verdict. No high speed in the city: the nearest of its own.
+  assert.deepEqual(stationsFor(at(3), D, ['en']).map(e => [e.id, e.tag.en]), [['stC', '']]);
+  assert.deepEqual(pickStations(H, cityData([{ ...C, hs: false }, C2, sub])).map(x => [x.st.id, x.role]), [['sub', 'near'], ['C2', 'main']]);
+  // Out of the city the rule is the old one, and the city stays a destination.
+  const out = stationsFor(at(-6), D, ['en']);
+  assert.deepEqual(out.map(e => e.id), ['stsub']); assert.equal(out[0].to[0].dest.en, 'Big City');
+  assert.deepEqual(Object.keys(TP_TAG.main).sort(), Object.keys(TP_TAG.near).sort());
+  assert.deepEqual(tpNear(H, D, []).map(x => [x.st.id, x.walk, x.role]), [['sub', 8, 'near'], ['C', null, 'main']]);
+  assert.deepEqual(tpFind(D, 'station', H, [], 2).map(x => [x.st.id, x.walk]), [['sub', 8], ['C2', 16]]);
+});
+test('Renfe\'s real file: the centres of five cities', () => {
+  const real = read('onboarding-site/stations-es.json');
+  const got = (lat, lng) => stationsFor({ lat, lng }, real, ['en']).map(e => [e.name.en.replace(/ station$/, ''), e.tag.en, e.walk ? e.walk + ' on foot' : e.min + ' by car', e.to.map(d => d.dest.en).join(', ')]);
+  const all = { barcelona: got(41.3917, 2.1649), madrid: got(40.4168, -3.7038), valencia: got(39.4699, -0.3763), malaga: got(36.7213, -4.4214), bilbao: got(43.2630, -2.9350) };
+  for (const [k, L] of Object.entries(all)) { assert.ok(L.length >= 1 && L.length <= 2, k); assert.ok(L[0][2].endsWith('on foot'), k + ': its nearest station is said on foot'); }
+  assert.deepEqual(all.barcelona.map(x => x[0]), ['Barcelona-Passeig de Gràcia', 'Barcelona-Sants']);
+  assert.ok(!all.barcelona[0][3].includes('Barcelona') && !all.madrid[0][3].includes('Madrid'));
+  assert.equal(all.valencia[0][0], 'València-Estació del Nord');
 });
