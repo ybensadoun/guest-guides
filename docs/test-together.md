@@ -281,6 +281,56 @@ three lists share is live: they are not here yet.
 - The page's title, its first group and its first row all say "Emergencies" (fix 09.5).
 - Contacts are not on the map (fix 09.6).
 
+## 10. Nightlife (off unless the host switches it on; never used by a real host)
+Nightlife is drawn by the page Eat and drink has: its filters and its rows are section 5's. Here only what is
+Nightlife's own: switching it on, and what a guest reads in the night.
+
+### In the builder, with a new link (the test house)
+| # | Do | Expect |
+|---|---|---|
+| 10.1 | The look, "What goes in your guide" | Nightlife is in the list ("Late bars, clubs and live music you recommend."), not ticked |
+| 10.2 | Tick it | The step Nightlife joins the path right after Eat and drink; the phone gets a dark Nightlife tile |
+| 10.3 | Open the step, "Add a place": type a late bar's or a club's name and pick it from the list | The row keeps the place's own name; the phone's Nightlife page lists it |
+| 10.4 | Add your comment (what it is like, when to go) | The phone shows it with the place |
+| 10.5 | Build the guide | Home has Nightlife after Things to do: a dark bar across the page, with a moon; its page lists your places, nearest first |
+| 10.6 | Build one with Nightlife ticked and no place | The guide has no Nightlife: no tile, no empty page |
+
+### In the editor, on the pool house (Nightlife is off there)
+| # | Do | Expect |
+|---|---|---|
+| 10.10 | Guide sections | Nightlife is there after Attractions, not ticked; no Nightlife among the steps |
+| 10.11 | Tick it | The step Nightlife appears right after Eat and drink |
+| 10.12 | Open it, "+ Add a place", "Find it on Google": a late bar or a club | The card says "Looking for its website and hours…", then "Filled in for you" (kind, hours, phone, website) |
+| 10.13 | Preview, Home in the phone | Nightlife after Things to do, a dark bar across the page; a tap opens its page: the title, "Our favourite places for the evening and the night: bars, clubs and live music.", the small map, the places |
+| 10.14 | In the preview, the map | A tab "Night" ("Nachts", "Nuit") after "To do", with the places of the list |
+| 10.15 | Home page (the board) | Nightlife's tile can be moved, and set to half, wide (a bar, as the Map's) or tall; "Add to your home page" offers a place of Nightlife as a card with a moon |
+| 10.16 | The preview in German and in French, on a phone (360 px wide) | "Nachtleben", "Vie nocturne"; no word cut in two, nothing over anything |
+
+### As a guest, in the night (a place whose hours end after midnight, say Fri and Sat 23:30 to 5:00)
+To try without staying up: set the computer's or the phone's clock, then reload the guide. Seen on 21 Nov 2026 on a
+made-up list, in German and French at 360 px, at 18:00, 23:45, 0:30, 1:30, 2:30 and 5:00.
+| # | Do | Expect |
+|---|---|---|
+| 10.20 | Saturday at 18:00, the Nightlife page | The place says "Closed · Opens at 23:30"; one chip, "Opens later today", counts it |
+| 10.21 | Saturday at 23:45 | "Open until 5:00" in green; one chip, "Open now", counts it |
+| 10.22 | Sunday at 0:30 and at 1:30 (the night goes on) | Still "Open until 5:00", under "Open now" (before 21 Nov: "Closed, Opens Fri 23:30") |
+| 10.23 | Sunday at 5:00 | "Closed · Opens Fri 23:30"; it goes to the end of the list |
+| 10.24 | A place open every day 19:00 to 2:30, at 1:30 | "Open until 2:30 · Reopens at 19:00"; under "Open now", not under "Opens later today" |
+| 10.25 | The same place at 2:30 | "Closed · Opens at 19:00", counted by "Opens later today" |
+| 10.27 | Tap "Open now" in the night | It turns green; the open places first, then "Hours not known, check before going" over the places with no hours of ours |
+| 10.26 | A place with no hours of ours, opened | Google's own line says whether it is open now ("Google Maps" beside it) |
+
+### Known, not to report
+- A bar or a club is filed under the kinds of Eat and drink: "Café or bar" with a coffee cup, sometimes "Restaurant".
+  The host can pick another kind or write their own line under the name; kinds for the night (cocktail bar, club,
+  live music) come after the test (fix 10.2).
+- Nothing is suggested for Nightlife: the host types each place (fix 10.4, "Near your house", after the test).
+- Before the evening every place of the list says "Closed" in red (fix 10.3, waiting for a decision).
+- Switched off again in Guide sections after places were added, the step stays in the editor with its places; guests
+  see no Nightlife.
+- In the pictures made by the checks the small map is empty; on a real phone it draws.
+- Google's line (10.26) was never seen on a place of Nightlife: the made-up list was built without Google's key.
+
 ## 11. House guide (changed 21 Nov 2026)
 
 ### In the editor, on the pool house (ten parts, two with words)
