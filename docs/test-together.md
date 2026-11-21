@@ -176,10 +176,10 @@ lists too (their own steps: sections 6 and 10, when written).
 - A long host comment ends with "…" after two lines, sometimes inside a word: the full text is one tap away.
 - A place with four marks has four lines of marks: unchanged, to look at with the one tile system.
 
-## 6. Things to do (the deck and the found places in the host's language, 21 Nov 2026)
+## 6. Things to do (the deck and the found places in the host's language, the guest's list: 21 Nov 2026)
 Do it once in Catalan or Spanish (the language picker at the top, or `?lang=ca` in the address): Wednesday's hosts
-work in those. The guest's list page (the chips, a place's row) has its steps after Restaurants' change to what the
-three lists share is live: they are not here yet.
+work in those. The page guests see is the one Eat and drink has (section 5: the chips, the switch, a row): only what
+is Things to do's own is said here.
 
 ### In the builder, with a new link (the test house)
 | # | Do | Expect |
@@ -204,12 +204,34 @@ three lists share is live: they are not here yet.
 | 6.23 | Attractions in the editor, the rows | Each row's distance with a comma ("14,2 km") |
 | 6.24 | Open a place, "Change" its kind | The grid of kinds; the row takes the new icon and, for guests, its quick filter |
 
+### In the guide, on a phone (Ca La Kimberly: 28 places in four groups)
+| # | Do | Expect |
+|---|---|---|
+| 6.30 | Open Things to do | The small map with the list's pins, then the groups ("All 28", Activities, Beaches, Wine & cava, Sights & towns), then the time and feature chips, the switch, the places, nearest first |
+| 6.31 | Tap "Beaches" | It takes the group's colour; the list and the small map keep the beaches; the counts on the other chips follow |
+| 6.32 | Tap "All" | Every place is back (a group is not cleared by a second tap: "All" does it) |
+| 6.33 | Tap "Great for kids", then "Dog friendly" too | The places that have both (maybe none: "Nothing here right now."); a second tap clears each |
+| 6.34 | Tap "Sights & towns", then "Open now" | The museums and monasteries open now, each "Open until 14:00"; then, under "Hours not known, check before going", the towns and the places whose hours we do not hold (known for the towns, see below) |
+| 6.35 | Read a town's row (Sitges, Tarragona), then a beach's | The town: its icon, its distance, two lines of why to go, no status and no "See hours". The beach: "Open 24 h" |
+| 6.36 | Open a place with no hours of ours (a winery) | Google's own line comes by itself in the opened row, "Google Maps" beside it; our "Google Maps" button last |
+| 6.37 | In winter, look for the water park and the beach bars | Not in the list, its counts, its map or the big map until 30 days before they open; then "Closed, Expected from June" |
+| 6.38 | The same page in French and in Dutch, at 360 px | Nothing over anything. Known for now: in French no place shows on the first screen (see below) |
+| 6.39 | The pool house's Things to do (few places, no group named twice) | No group chips when the list has fewer than two groups; the feature chips only for marks a place has |
+
 ### Known, not to report
 - A found place's name is not translated ("Querol Castle" on a Catalan screen): the name is how the maker knows the place.
 - When the day's research budget is spent or the translation fails, a found place's description stays in English and its
   kind is the plain one ("Castell, Querol").
 - A place's coordinates under "move the pin" keep their points (41.2345): they are not distances.
 - The deck is one card at a time on a desktop too (a grid to tick is a proposal, not built).
+- In French the time and feature chips take four rows at 360 px (each is too wide to sit beside the next), so the first
+  place starts at 749 px on a 760 px screen; in Dutch three rows (697 px); in English, German, Spanish and Catalan two
+  (645 px). Told to Restaurants on 21 Nov (shorter words, its code and the three lists').
+- Under "Open now" a town (Sitges, Barcelona) sits under "Hours not known, check before going": a town has no hours.
+  Told to Restaurants on 21 Nov (a kind with no hours could count as open, with no line).
+- A closed row is about 190 px high with its two lines of words: four places to a screen and a half, 28 places are a
+  long scroll. As decided for the three lists (rule 23); the groups are the way to shorten it.
+
 
 ## 8. Rubbish (the default texts, the "no day" card and the header: 19 Nov 2026; the editor's and builder's step: 21 Nov 2026)
 
