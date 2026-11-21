@@ -48,6 +48,7 @@ So the launch desk comes first; the play area and the feedback box, which the fi
 | `build.mjs` | Copies the engine's list to `available.json` (checked) and writes `samples/index.json`. Run it after changing the list or a fixture: `node onboarding-site/modules/build.mjs` |
 | `samples/` | The sample houses: how they are made (`make.mjs`) and their fixtures. Its own README |
 | `test/check.mjs`, `test/pretend.mjs` | The page on a pretend database, at 1280 px and 360 px (130 checks) |
+| `test/start-check.mjs` | The maker's start with the desk's call hanging, refused, unreachable, absent, not JSON or with rows: the maker opens the same, as fast, and shows the host nothing (164 checks, a visitor and the editor, 1280 and 360 px) |
 | `test/pictures.mjs` | Every module pictured five ways on a sample house: the guide on a phone and a desktop screen, the maker's step on both, its Countries tab |
 | `../../engine/scripts/available.test.mjs` | The list is well made, the copies are in step |
 
