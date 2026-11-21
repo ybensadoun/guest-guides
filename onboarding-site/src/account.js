@@ -39,18 +39,23 @@ function niceError(e){
 #acct *{box-sizing:border-box}
 #acct:not(.only)::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;background-image:var(--noise)}   /* the page's grain, as behind the app */
 #acct :focus-visible:not(input){outline:3px solid var(--ink);outline-offset:2px}   /* the app's yellow ring is too faint on paper and white */
-/* The page: the app's single-card screens, same width, margins and gaps (src.html body and .wrap) */
-#acct .ac2{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:14px 16px 48px;display:flex;flex-direction:column;gap:18px}
-/* The header, as the app's (header.top): the logo, the language, Log in. On a phone there is no Log in up here: it would
-   take a row of its own, and the panel has "Already have an account? Log in" in the first screen. On the Log in page it
-   is gone and the language takes the right edge. The row's height is fixed, so switching modes moves nothing under it. */
-#acct .ac-top{display:grid;grid-template-columns:minmax(0,auto) minmax(8px,1fr) auto;column-gap:12px;row-gap:10px;align-items:center;min-height:48px}
-#acct .ac-top>.brand{grid-area:1/1}#acct .ac-top>.lpick{grid-area:1/3}
-#acct .ac-top>.ac-login{display:none}
-@media (min-width:600px){#acct .ac-top{grid-template-columns:minmax(0,auto) minmax(8px,1fr) auto auto}#acct .ac-top>.ac-login{display:block;grid-area:1/4}#acct .ac-top>.ac-login.off{display:none}#acct .ac-top:has(>.ac-login.off)>.lpick{grid-area:1/3/2/5;justify-self:end}}
+/* The page: the app's screens, the same content width, margins and gaps (src.html body padding and .wrap, 920 px), so the
+   header and the phone stay where they are when the link is sent and the app's own screens take over */
+#acct .ac2{position:relative;z-index:1;max-width:952px;margin:0 auto;padding:14px 16px 40px;display:flex;flex-direction:column;gap:18px}
+/* The header, as the app's (header.top): the logo, the language, Log in, at every width (21 Nov 2026: Log in left the
+   panel). On the Log in page it is gone and the language takes the right edge (on a phone its room is kept, so the
+   logo wraps as before). On a phone the logo wraps first; the row's
+   height is fixed, so switching modes moves nothing under it. */
+#acct .ac-top{display:grid;grid-template-columns:minmax(0,auto) minmax(8px,1fr) auto auto;column-gap:12px;row-gap:10px;align-items:center;min-height:48px}
+#acct .ac-top>.brand{grid-area:1/1}#acct .ac-top>.lpick{grid-area:1/3}#acct .ac-top>.ac-login{grid-area:1/4;min-height:40px}
+#acct .ac-top>.ac-login.off{display:none}#acct .ac-top:has(>.ac-login.off)>.lpick{grid-area:1/3/2/5;justify-self:end}
+@media (max-width:599px){#acct .ac-top>.ac-login.off{display:block;visibility:hidden}#acct .ac-top:has(>.ac-login.off)>.lpick{grid-area:1/3;justify-self:auto}}   /* its room kept: the logo wraps as before */
+@media (max-width:599px){#acct .ac-top{column-gap:8px}#acct .ac-top>.ac-login,#acct .ac-top>.lpick{min-height:44px}}
 /* The form panel: white on the navy card (.st-form, always white) or the sheet (the app's surface): one set of rules, its colours from these */
 #acct .ac-card{--ac-ink:#16202E;--ac-muted:#5c636e;--ac-line:#D9DCE2;--ac-bad:#A8402A;--ac-ok:#1E7A4A}
 #acct .ac-card.st-form{display:block;padding-bottom:12px}
+#acct .ac-card.st-form:has(#acUrl){padding-bottom:18px}   /* the first page's box: the field, the button, one line, no room left under it */
+@media (min-width:600px){#acct .ac-card.st-form:has(#acUrl){padding-bottom:20px}}
 #acct .st-form :focus-visible:not(input){outline-color:#16202E}
 #acct .ac-card h2{margin:0}
 #acct .gbtn{width:100%;gap:10px;min-height:52px;font-size:16px}
@@ -80,20 +85,47 @@ function niceError(e){
 #acct .ac-sheet .ac-card h2{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.05;margin:0 0 8px;padding:6px 52px 0 0}   /* the step headers' serif (.mhead h1) */
 #acct .ac-sheet p.lead{margin:0 0 18px;color:var(--muted);font-size:16px;line-height:1.45}
 #acct .ac-x{position:absolute;top:14px;right:14px;z-index:1;width:44px;height:44px;background:var(--sunk)}   /* .sheet-x, the app's close button, on white */
-/* What your guests get: Ca La Kimberly's home for an example house, same pieces, shapes and sizes (acToday, acExample).
-   Its heading and line are the maker's; the example itself (.ex-cols) is the guide's, in two columns from 900 px. */
-#acct .ac-ex{display:flex;flex-direction:column;gap:14px;min-width:0;margin-top:10px}
-#acct .ex-head h2{margin:0 0 4px;font-size:30px;line-height:1.08}
-#acct .ex-head p{margin:0;font-size:15px;line-height:1.45;color:var(--muted)}
-#acct .ex-head p b{color:var(--ink);font-weight:600;white-space:nowrap}
-#acct .ex-cols{display:flex;flex-direction:column;gap:14px;min-width:0;font-family:"Jost",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--k-ink)}
-#acct .ex-col{display:flex;flex-direction:column;gap:14px;min-width:0}
-#acct .ex-cols h3{font-family:inherit;font-weight:700;letter-spacing:0}   /* the guides' own font for every title, as in Ca La Kimberly */
+/* The first screen (Yohann, 21 Nov 2026: "one screen, one job"): in the navy card the words, the box with the link alone
+   and one quiet link, beside a phone with a real guide in it. No arch, no moon. From 900 px two columns, the phone at the
+   right, as on the screens that follow (theme2.css .yours); narrower, one column, the phone last, its top in the first
+   screen so that it invites the scroll. Log in and the data note left the box (the header, the page's foot). */
+#acct .ac-start{padding:26px 18px 24px;gap:22px;grid-template-columns:minmax(0,1fr)}
+#acct .ac-main{display:flex;flex-direction:column;min-width:0}
+#acct .ac-main>.st-form{margin-top:22px}
+#acct .ac-start .st-tx small{min-height:0;padding-right:0}
+#acct .ac-steps{margin:12px 0 0}
+#acct .ac-steps button{min-height:44px;padding:0;border:0;background:none;font:inherit;font-size:15px;line-height:1.35;color:rgba(244,241,234,.82);text-decoration:underline;text-underline-offset:3px;text-align:left;cursor:pointer}
+#acct .ac-steps button:hover{color:#F4F1EA}
+#acct .ac-start>.ac-main>.ac-steps :focus-visible{outline-color:#F4F1EA}
+#acct .ac-phone{margin:0;justify-self:center;display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0}
+#acct .ac-phone .phone{width:min(300px,76vw);box-shadow:0 30px 60px -22px rgba(0,0,0,.6),inset 0 0 0 2px #2b2f35,0 0 0 1px rgba(255,255,255,.12)}
+#acct .ac-phone .phone-scr{background:#F3EEE3}
+#acct .ac-phone figcaption{max-width:300px;font-size:14px;line-height:1.4;color:rgba(244,241,234,.75);text-align:center;text-wrap:balance}
+#acct .ac-phone iframe{opacity:0;pointer-events:none}   /* loading behind the drawn example; shown once the guide is there */
+#acct .ac-phone.on iframe{opacity:1;pointer-events:auto}
+#acct .ac-phone.on .ac-stand{display:none}
+@media (min-width:600px){#acct .ac-start{padding:32px 32px 28px}}
 @media (min-width:900px){
-  #acct .ex-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start}
-  #acct .ex-col>.ex-sg:first-child{margin-top:0}
-  #acct .ex-col+.ex-col{position:sticky;top:16px}   /* What's on, shorter than the house's column, stays in view beside it while it scrolls */
+  #acct .ac-start{grid-template-columns:minmax(0,1fr) auto;column-gap:56px;align-items:center;padding:32px 40px 28px}
+  #acct .ac-main>.st-form{max-width:34rem}
 }
+/* The phone's stand-in, until the real guide has loaded and for good if it cannot: Ca La Kimberly's home drawn for an
+   example house, same pieces, shapes and sizes (acToday, acStandIn), at a phone's width (PHONE_W) scaled to the frame. */
+#acct .ac-stand{position:absolute;left:0;top:0;width:390px;padding:46px 14px 24px;transform-origin:0 0;background:#F3EEE3;font-family:"Jost",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--k-ink);cursor:pointer}
+#acct .ex-col{display:flex;flex-direction:column;gap:14px;min-width:0}
+#acct .ac-stand .ex-tile b{font-size:21px}
+/* Guides made with the maker (his "references at the bottom"): one card per showcase guide, words and a button (no
+   pictures: a real guide's photos are never committed). One card or three, centred. */
+#acct .ac-refs{margin-top:22px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+#acct .ac-refs h2{font-size:clamp(28px,6vw,36px);line-height:1.08}
+#acct .ac-refs>p{margin:0;font-size:16px;line-height:1.45;color:var(--muted)}
+#acct .ac-reflist{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;width:100%;margin-top:14px}
+#acct .ac-ref{flex:1 1 260px;max-width:340px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:22px 22px 20px;border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow);text-align:left}
+#acct .ac-ref h3{font-size:26px;line-height:1.1}
+#acct .ac-ref p{margin:0 0 16px;font-size:15px;color:var(--muted)}
+#acct .ac-ref .btn{margin-top:auto;min-height:44px}
+#acct .ac-foot{margin:8px 0 0;font-size:13px;line-height:1.5;color:var(--muted);text-align:center;text-wrap:balance}
+#acct .ac-foot a{color:var(--ink);font-weight:600}
 #acct [data-ex]{cursor:pointer}
 #acct .ex-welcome{background:#fff;border:2px solid var(--k-ink);border-radius:20px;overflow:hidden}
 #acct .ac-facts{display:grid;grid-template-columns:1fr 1fr;border-top:1.5px solid var(--k-line)}
@@ -157,26 +189,6 @@ function niceError(e){
 #acct .ex-map .ex-ic svg{width:30px;height:30px}
 #acct .ex-map .ex-tx{flex:1;min-width:0}#acct .ex-map b{font-size:21px}#acct .ex-map .ex-tx>span{font-weight:700;color:var(--k-ink)}
 #acct .ex-map .ex-go{color:#fff}
-#acct .ex-on{background:#fff;border-radius:20px;padding:2px 18px;color:var(--k-ink)}
-#acct .ex-onh{display:flex;align-items:baseline;gap:8px;padding:16px 0 4px}
-#acct .ex-onh b{font-size:21px;font-weight:700}#acct .ex-onh>span{font-size:14.5px;color:#3a3a3a;flex:1}
-#acct .ex-onh svg,#acct .ex-sec h3 svg{width:22px;height:22px;flex:none;align-self:center}
-#acct .ex-it{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0}
-#acct .ex-it+.ex-it{border-top:1.5px solid var(--k-line)}
-#acct .ex-it .ex-sq{width:44px;height:44px}#acct .ex-it .ex-sq svg{width:24px;height:24px}
-#acct .ex-it b{display:block;font-size:17.5px;line-height:1.2;font-weight:600}
-#acct .ex-it .ex-tx>span{display:block;font-size:14px;line-height:1.35;color:#3a3a3a}
-#acct .ex-when{text-align:right;font-size:13px;font-weight:600;line-height:1.3;color:#3a3a3a}
-#acct .ex-when em{display:block;font-size:14.5px}
-#acct .ex-more{display:block;padding:8px 0 14px;color:var(--k-blue);font-size:15px;font-weight:600}
-#acct .ex-sec{border-top:1.5px solid var(--k-line);padding:14px 0}
-#acct .ex-sec h3{margin:0;font-size:19px;line-height:1.2;font-weight:700;display:flex;align-items:center;gap:8px;justify-content:space-between}
-#acct .ex-sec p{margin:4px 0 0;font-size:14px;font-weight:600;color:#3a3a3a}
-#acct .ex-date{width:44px;height:44px;border-radius:10px;background:var(--k-ink);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
-#acct .ex-date b{font-size:18px;color:#fff;font-weight:700}#acct .ex-date small{font-size:10px;letter-spacing:.08em;margin-top:3px;text-transform:uppercase}
-#acct .ex-links{display:flex;gap:18px;padding:14px 0 16px;border-top:1.5px solid var(--k-line);color:var(--k-blue);font-size:15px;font-weight:600}
-#acct .ac-cta{align-self:stretch;min-height:52px;margin-top:8px;font-size:16px}   /* .btn.primary, the app's main button */
-@media (min-width:900px){#acct .ac-cta{align-self:center;padding-inline:32px}}
 /* Account row: inside the page header (acctBar), in the page flow, so it never sits on the step bar. On a phone it is the
    header's second line (the houses menu left, Log out right); from 900 px it joins the header's one row: the logo, the
    houses menu beside it, then at the right the save state, the language and Log out (or Log in). */
@@ -184,6 +196,9 @@ function niceError(e){
 header.top{display:grid;grid-template-columns:minmax(0,auto) minmax(8px,1fr) auto;column-gap:12px;row-gap:10px}   /* the logo as wide as it can be, the save state's words go first (i18n.js fitTop) */
 header.top>.brand{grid-area:1/1}header.top>.save{grid-area:1/2}header.top>.lpick{grid-area:1/3}
 header.top>#acctbar{grid-area:2/1/3/4}
+/* Signed out (Log in alone in the row): on the first line beside the language, where the first page has it (21 Nov 2026) */
+@media (max-width:899px){header.top:has(>#acctbar>.loginTop:only-child){grid-template-columns:minmax(0,auto) minmax(8px,1fr) auto auto;column-gap:8px}
+  header.top>#acctbar:has(>.loginTop:only-child){grid-area:1/4}}
 @media (min-width:900px){
   header.top{grid-template-columns:auto auto minmax(8px,1fr) auto auto}
   header.top>.save{grid-area:1/3}header.top>.lpick{grid-area:1/4}
@@ -193,7 +208,7 @@ header.top>#acctbar{grid-area:2/1/3/4}
   header.top>#acctbar>button{grid-area:1/5}
 }
 #acctbar:empty{display:none}
-#acctbar button,#acct .ac-login{font:600 13px/1 inherit;font-family:inherit;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}
+#acctbar button,#acct .ac-login{font:600 13px/1 inherit;font-family:inherit;min-height:40px;padding:9px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);color:inherit;cursor:pointer}
 /* Houses: one account, several houses; the one being edited, and a menu to pick another or add one */
 #acctbar .houses{position:relative;margin-right:auto;min-width:0}
 #acctbar .houses>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;font:600 13px/1.2 inherit;font-family:inherit;padding:8px 14px;border-radius:999px;border:1px solid var(--line,#ccc);background:var(--paper,#fff);max-width:calc(100vw - 150px)}
@@ -236,14 +251,13 @@ async function googleOn(){
   return window.__googleOn;
 }
 (function(){ if (document.getElementById('jostFont')) return; const l = document.createElement('link'); l.id = 'jostFont'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap'; document.head.appendChild(l); })();
-// "What your guests get" (Yohann, 29 Oct 2026: "keep it like Ca La Kimberly, with the fake live info, the Ca La look"):
-// Ca La Kimberly's home for an example house, Casa Sol, with only what the guides really show, worked out on the visitor's
-// clock: tonight's bin, open or closed with the next opening, how many markets today, today's markets one by one, the next
-// two days, the events coming up. Every name is made up and nothing is looked up.
+// The phone's stand-in (Yohann, 29 Oct 2026: "keep it like Ca La Kimberly, with the fake live info, the Ca La look"; since
+// 21 Nov 2026 only in the phone, until the real guide is there): Ca La Kimberly's home for an example house, Casa Sol, with
+// only what the guides really show, worked out on the visitor's clock: tonight's bin, open or closed with the next
+// opening, how many markets today. Every name is made up and nothing is looked up.
 function acToday(){
   const d = new Date(), wd = d.getDay(), mins = d.getHours() * 60 + d.getMinutes();
   const tm = x => { const [h, m] = x.split(':').map(Number); return h * 60 + m; };
-  const fmt = (x, o) => x.toLocaleDateString(UIL === 'en' ? 'en-GB' : UIL, o), plus = n => { const x = new Date(d); x.setDate(d.getDate() + n); return x; };
   // Open or closed, the way the guides say it: "Open until 15:00 · Reopens at 18:00", "Closed · Opens at 19:00".
   const hours = (spans, after) => {
     for (let i = 0; i < spans.length; i++) {
@@ -253,18 +267,11 @@ function acToday(){
     }
     return { open: false, head: 'Closed', rest: after };
   };
-  const MK = [3, 4, 5, 4, 7, 5, 6], W = fmt(d, { weekday: 'long' }), nextWeek = fmt(plus(7), { weekday: 'short', day: 'numeric', month: 'short' });
-  const markets = [['Old town', 'Street market', 4, '8:30', '13:30'], ['Harbour', 'Street market', 9, '8:00', '14:00'], ['Hill village', 'Farmers\' market', 16, '9:00', '13:00']].map(([p, kind, km, a, b]) =>
-    ({ name: `${p} ${W} market`, kind, km, ...(mins < tm(a) ? { open: false, head: 'Closed', rest: 'Opens at ' + a } : mins < tm(b) ? { open: true, head: 'Open', rest: 'Until ' + b } : { open: false, head: 'Closed', rest: 'Opens ' + nextWeek }) }));
-  const toSat = (6 - wd + 7) % 7 || 7, when = n => n === 1 ? 'Tomorrow' : `In ${n} days`;
-  const ev = (n, name, where, time) => { const x = plus(n); return { d: x.getDate(), mon: fmt(x, { month: 'short' }), name, where: where + (time ? ` · ${fmt(x, { weekday: 'short', day: 'numeric', month: 'short' })}, ${time}` : ''), in: when(n) }; };
   return {
-    date: fmt(d, { weekday: 'long', day: 'numeric', month: 'long' }),
     bin: ['Organic waste', 'Organic waste', 'Paper and cardboard', 'Plastic and cans', 'Glass', 'Organic waste', 'General waste'][wd],
     shop: hours([['8:00', '15:00'], ['18:00', '22:00']], 'Opens tomorrow 8:00'),
     pizza: hours([['19:00', '23:30']], 'Opens tomorrow 19:00'),
-    today: MK[wd], more: MK[wd] - 3, next2: MK[(wd + 1) % 7] + MK[(wd + 2) % 7], markets,
-    events: [ev(toSat, 'Food and wine fair', 'Old town', '11:00'), ev(toSat + 1, 'Crafts and antiques market', 'Antiques and crafts · Harbour'), ev(toSat + 14, 'Open-air concert', 'Beach promenade', '21:00')]
+    today: [3, 4, 5, 4, 7, 5, 6][wd]
   };
 }
 const acSvg = (d, w = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -283,21 +290,19 @@ const EXI = {
   map: acSvg('<path d="M9 4 3 6.5V20l6-2.5 6 2.5 6-2.5V4l-6 2.5zM9 4v13.5M15 6.5V20"/>')
 };
 const AC_SCENE = '<svg viewBox="0 0 400 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="400" height="150" fill="#1D4FA0"/><circle cx="318" cy="44" r="26" fill="#F5C400"/><path d="M0 104C80 90 160 92 240 102S360 96 400 98V150H0z" fill="#0E7C46"/><path d="M150 74h76v46h-76z" fill="#fff"/><path d="M142 76l46-30 46 30z" fill="#D52B1E"/><path d="M160 88h13v13h-13zM199 96h13v24h-13z" fill="#121212"/><path d="M0 128C100 118 220 120 400 124V150H0z" fill="#F3EEE3"/></svg>';
-function acExample(){
+function acStandIn(){
   const L = acToday(), ar = `<span class="ex-ar" aria-hidden="true">${EXI.arrow}</span>`;
   const st = h => `<span class="ex-st"><em class="${h.open ? 'ex-open' : 'ex-closed'}">${esc(h.head)}</em>${h.rest ? ' · ' + esc(h.rest) : ''}</span>`;
-  const card = (cls, sq, title, lines, extra = '') => `<div class="ex-card${cls}" data-ex>${sq}<span class="ex-tx"><b>${title}</b>${lines.map(x => `<span>${x}</span>`).join('')}${extra}</span></div>`;
-  return `<section class="ac-ex" aria-label="What your guests get">
-          <div class="ex-head"><h2>What your guests get</h2><p>An example guide, as it looks today, <b>${esc(L.date)}</b></p></div>
-          <div class="ex-cols"><div class="ex-col">
-          <div class="ex-welcome" data-ex><div class="ex-scene">${AC_SCENE}</div>
-            <div class="ex-wrow"><span class="ex-logo" aria-hidden="true"></span><span class="ex-wt"><small>Welcome to</small><b>Casa Sol</b><span>See the house</span></span><span class="ex-go" aria-hidden="true">${EXI.arrow}</span></div>
+  const card = (cls, sq, title, lines, extra = '') => `<div class="ex-card${cls}">${sq}<span class="ex-tx"><b>${title}</b>${lines.map(x => `<span>${x}</span>`).join('')}${extra}</span></div>`;
+  return `<div class="ac-stand" data-ex aria-hidden="true"><div class="ex-col">
+          <div class="ex-welcome"><div class="ex-scene">${AC_SCENE}</div>
+            <div class="ex-wrow"><span class="ex-logo"></span><span class="ex-wt"><small>Welcome to</small><b>Casa Sol</b><span>See the house</span></span><span class="ex-go">${EXI.arrow}</span></div>
             <div class="ac-facts"><div><small>Wi-Fi</small><b>Tap to connect</b></div><div><small>Check-out</small><b>Before 11:00</b></div></div></div>
           <p class="ex-sg">At the house</p>
           <div class="ex-grid">
-            <div class="ex-tile ex-bins" data-ex><div class="ex-top"><b>Rubbish and recycling</b>${ar}</div><span class="ex-tag">${EXI.moon}Tonight</span><span class="ex-pill"><i>${EXI.bin}</i>${esc(L.bin)}</span></div>
-            <div class="ex-tile ex-y" data-ex><span class="ex-ic">${EXI.house}</span><b>House guide</b>${ar}</div>
-            <div class="ex-tile ex-r" data-ex><span class="ex-ic">${EXI.phone}</span><b>Emergencies</b>${ar}</div>
+            <div class="ex-tile ex-bins"><div class="ex-top"><b>Rubbish and recycling</b>${ar}</div><span class="ex-tag">${EXI.moon}Tonight</span><span class="ex-pill"><i>${EXI.bin}</i>${esc(L.bin)}</span></div>
+            <div class="ex-tile ex-y"><span class="ex-ic">${EXI.house}</span><b>House guide</b>${ar}</div>
+            <div class="ex-tile ex-r"><span class="ex-ic">${EXI.phone}</span><b>Emergencies</b>${ar}</div>
           </div>
           <p class="ex-sg">Around the house</p>
           ${card(' ex-line', `<span class="ex-sq g">${EXI.cup}</span>`, 'Local bar &amp; shop', ['Bar, snacks &amp; convenience shop', '2 min walk from the house'], st(L.shop))}
@@ -306,24 +311,72 @@ function acExample(){
             ${card('', `<span class="ex-sq y">${EXI.taxi}</span>`, 'Taxi &amp; train', ['Taxi in 20 min, 24/7', '2 train stations'])}
           </div>
           <div class="ex-grid ex-mosaic">
-            <div class="ex-tile ex-k ex-tall" data-ex><span class="ex-ic">${EXI.store}</span><b>Markets</b><small>${L.today} today</small>${ar}</div>
-            <div class="ex-tile ex-o" data-ex><span class="ex-ic">${EXI.fork}</span><b>Our favourite places to eat</b>${ar}</div>
-            <div class="ex-tile ex-g" data-ex><span class="ex-ic">${EXI.star}</span><b>What to do</b>${ar}</div>
+            <div class="ex-tile ex-k ex-tall"><span class="ex-ic">${EXI.store}</span><b>Markets</b><small>${L.today} today</small>${ar}</div>
+            <div class="ex-tile ex-o"><span class="ex-ic">${EXI.fork}</span><b>Our favourite places to eat</b>${ar}</div>
+            <div class="ex-tile ex-g"><span class="ex-ic">${EXI.star}</span><b>What to do</b>${ar}</div>
           </div>
-          <div class="ex-card ex-map" data-ex><span class="ex-ic">${EXI.map}</span><span class="ex-tx"><b>Map of all spots</b><span>64 places</span></span><span class="ex-go" aria-hidden="true">${EXI.arrow}</span></div>
-          </div><div class="ex-col">
-          <p class="ex-sg">What's on</p>
-          <div class="ex-on" data-ex>
-            <div class="ex-onh"><b>Today</b><span>${esc(L.date)}</span>${EXI.up}</div>
-            ${L.markets.map(m => `<div class="ex-it"><span class="ex-sq">${EXI.store}</span><span class="ex-tx"><b>${esc(m.name)}</b><span>${esc(m.kind)}</span><span>${m.km} km from the house</span></span><span class="ex-when"><em class="${m.open ? 'ex-open' : 'ex-closed'}">${esc(m.head)}</em>${esc(m.rest)}</span></div>`).join('')}
-            ${L.more > 0 ? `<span class="ex-more">+ ${L.more} more ${L.more === 1 ? 'market' : 'markets'} today</span>` : ''}
-            <div class="ex-sec"><h3>Next 2 days${EXI.down}</h3><p>${L.next2} markets</p></div>
-            <div class="ex-sec"><h3>Coming up</h3>${L.events.map(e => `<div class="ex-it"><span class="ex-date"><b>${e.d}</b><small>${esc(e.mon)}</small></span><span class="ex-tx"><b>${esc(e.name)}</b><span>${esc(e.where)}</span></span><span class="ex-when">${esc(e.in)}</span></div>`).join('')}</div>
-            <div class="ex-links"><span>All markets</span><span>All events</span></div>
-          </div>
-          </div></div>
-          <button class="btn primary ac-cta" type="button">Make this guide for your house →</button>
-        </section>`;
+          <div class="ex-card ex-map"><span class="ex-ic">${EXI.map}</span><span class="ex-tx"><b>Map of all spots</b><span>64 places</span></span><span class="ex-go">${EXI.arrow}</span></div>
+        </div></div>`;
+}
+// Guides made with the maker, shown on the first page: the phone holds the first one, live, and the page's foot lists
+// them all (Yohann, 21 Nov 2026: "references at the bottom [...] Ca La Kimberly is the one"). Data only: no guide is a
+// special case anywhere else in the code. where: in the maker's four languages; url: the guide's own address.
+const SHOWCASE = [
+  { slug: 'ca-la-kimberly', name: 'Ca La Kimberly', where: { en: 'Catalonia, Spain', es: 'Cataluña, España', fr: 'Catalogne, Espagne', ca: 'Catalunya, Espanya' }, url: 'https://ca-la-kimberly.netlify.app/' }
+];
+const showWhere = g => g.where[UIL] || g.where.en;
+const OUT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+// The phone: the drawn example at once, the first showcase guide over it once it has loaded (acPhoneLoad).
+const acPhoneHTML = () => `<figure class="ac-phone"><div class="phone"><div class="phone-scr">${acStandIn()}</div></div><figcaption>An example guide.</figcaption></figure>`;
+function acRefsHTML(){
+  if (!SHOWCASE.length) return '';
+  return `<section class="ac-refs" aria-labelledby="acRefs"><h2 id="acRefs">Guides made with Guest Guide Maker</h2><p>Open one and look around as a guest would.</p>
+    <div class="ac-reflist">${SHOWCASE.map(g => `<article class="ac-ref"><h3 translate="no">${esc(g.name)}</h3><p translate="no">${esc(showWhere(g))}</p>
+      <a class="btn primary" href="${esc(g.url)}" target="_blank" rel="noopener">Open the guide ${OUT_ICON}</a></article>`).join('')}</div></section>`;
+}
+// The phone on the first page: the drawn example at once; once the page has painted (on a phone, once the phone comes near
+// the screen) the first showcase guide is loaded behind it from the shared viewer on this same site, in a frame at a
+// phone's width scaled to the phone (/g/<slug>?embed: looked at only, it keeps nothing and leaves this page's history
+// alone, engine/src/viewer.js). It is shown when the viewer says the guide is there; if it says no (not published, an
+// error, offline) or nothing within 8 s, the frame goes and the example stays for good, so the phone is never empty.
+function acPhoneLoad(el){
+  const g = SHOWCASE[0], fig = () => el.querySelector('.ac-phone');
+  let f = null, timer = 0, state = '';   // '', 'loading', 'on', 'off'
+  const fit = () => { const s = fig() && fig().querySelector('.phone-scr'), st = s && s.querySelector('.ac-stand'); if (st && s.clientWidth) st.style.transform = `scale(${s.clientWidth / PHONE_W})`; };
+  const scr = fig() && fig().querySelector('.phone-scr');
+  if (scr && typeof ResizeObserver === 'function') new ResizeObserver(fit).observe(scr);
+  fit();
+  if (!g || !scr) return { fit, relang(){} };
+  const src = () => `/g/${encodeURIComponent(g.slug)}?embed&lang=${encodeURIComponent(UIL)}`;
+  const caption = t => { const c = fig() && fig().querySelector('figcaption'); if (c) c.textContent = t; };
+  const fail = () => { state = 'off'; clearTimeout(timer); if (f) { f.remove(); f = null; } const x = fig(); if (x) x.classList.remove('on'); caption('An example guide.'); };
+  const onMsg = e => {
+    if (!el.isConnected) { clearTimeout(timer); return removeEventListener('message', onMsg); }
+    if (!f || e.source !== f.contentWindow || e.origin !== location.origin || !e.data || !e.data.guideEmbed) return;
+    clearTimeout(timer);
+    if (e.data.guideEmbed !== 'shown') return fail();
+    state = 'on'; fig().classList.add('on'); caption(`A real guide: ${g.name}. Tap around.`);
+  };
+  addEventListener('message', onMsg);
+  const wait = () => { clearTimeout(timer); timer = setTimeout(() => { if (state === 'loading') fail(); }, 8000); };
+  const load = () => {
+    if (state || !el.isConnected || !fig()) return;
+    state = 'loading';
+    f = document.createElement('iframe'); f.title = `A real guide: ${g.name}. Tap around.`; f.addEventListener('error', fail);
+    fig().querySelector('.phone-scr').appendChild(f); if (typeof phoneWatch === 'function') phoneWatch(f);
+    f.src = src(); wait();
+  };
+  const near = () => {
+    if (!el.isConnected) return;
+    if (typeof IntersectionObserver !== 'function') return load();
+    const io = new IntersectionObserver(es => { if (es.some(x => x.isIntersecting)) { io.disconnect(); load(); } }, { root: el, rootMargin: '120px 0px' });
+    io.observe(fig());
+  };
+  const after = () => requestAnimationFrame(() => setTimeout(near, 60));   // never before the field and the button are on screen
+  if (document.readyState === 'complete') after(); else addEventListener('load', after, { once: true });
+  // Another language: the guide in it (the viewer keeps the language the address names).
+  const relang = () => { if (f && (state === 'on' || state === 'loading')) { if (state === 'loading') wait(); f.src = src(); } };
+  return { fit, relang };
 }
 // The account card. On the first page (signed out, nothing on this device yet) it asks for the listing link, not an
 // account: the account comes at the end, after the wow (docs/plan-fast-builder.md, step 7; Yohann, 29 Oct 2026).
@@ -351,30 +404,40 @@ async function gate(mode0, notice, noticeOk, sheet){
           ${sheet ? `<h2 id="acHead">${head}</h2><p class="lead">${lead}</p>` : start ? `<h2 class="sr" id="acHead">${head}</h2>` : ''}
           ${google ? `<button class="btn gbtn" type="button" id="acGoogle">${GOOGLE_G}Continue with Google</button><div class="or">or with your email</div>` : ''}
           <form id="acForm" novalidate aria-labelledby="${named}">
-          ${start ? `<label for="acUrl">Your listing link</label><input id="acUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://www.airbnb.com/rooms/…" data-ph-short="airbnb.com/rooms/…" value="${esc(v('listingUrl'))}">` : ''}
+          ${start ? `<label for="acUrl"${sheet ? '' : ' class="sr"'}>Your listing link</label><input id="acUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://www.airbnb.com/rooms/…" data-ph-short="airbnb.com/rooms/…" value="${esc(v('listingUrl'))}">` : ''}
           ${start || reset ? '' : '<label for="acEmail">Email</label><input id="acEmail" type="email" autocomplete="email" inputmode="email" required>'}
           ${start || rec ? '' : `<label for="acPw">${reset ? 'New password' : 'Password'}</label><input id="acPw" type="password" autocomplete="${up || reset ? 'new-password' : 'current-password'}" ${up || reset ? 'minlength="8" placeholder="At least 8 characters"' : ''} required>`}
           <button class="btn ${sheet ? 'primary' : 'st-go'} go" type="submit">${start ? 'Show me my guide' : reset ? 'Save password' : rec ? 'Send me the link' : up ? 'Create my account' : 'Log in'}${sheet ? '' : ' ' + ARROW}</button>
           <div class="acmsg${ok ? ' ok' : ''}" id="acMsg" role="status">${esc(msg || '')}</div>
         </form>
-          ${start && !sheet ? `<p class="ac-note">${lead}</p>` : ''}
-          <div class="alt">${start ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : `New here? <button type="button" data-m="${sheet ? 'signup' : 'start'}">${sheet ? 'Create an account' : 'Start with your listing'}</button></div><div class="alt"><button type="button" data-m="recover">Forgot password?</button>`}</div>
-          ${start ? '<div class="alt"><button type="button" id="acSteps">No listing link? Fill it in step by step</button></div>' : ''}
-        ${start ? '<p class="small">Your answers stay on this device until you create your account. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>'
-          : up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>' : ''}</section>`;
+          ${start && !sheet ? '<p class="ac-note">Free to try. No account needed.</p>' : ''}
+          ${start ? '' : `<div class="alt">${rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : `New here? <button type="button" data-m="${sheet ? 'signup' : 'start'}">${sheet ? 'Create an account' : 'Start with your listing'}</button></div><div class="alt"><button type="button" data-m="recover">Forgot password?</button>`}</div>`}
+        ${up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>' : ''}</section>`;
       el.className = sheet ? 'only' : '';
-      // The page: the app's header (Log in beside the language, its room kept while the page is Log in), then the start
-      // page's navy card with this mode's words and the panel, then the example guide.
-      el.innerHTML = sheet ? `<div class="ac-sheet" role="dialog" aria-modal="true" aria-label="Your account"><button type="button" class="sheet-x ac-x" aria-label="Close">×</button>${card}</div>`
+      // The page: the app's header (Log in beside the language, its room kept while the page is Log in), then the navy card
+      // with this mode's words and the panel beside the phone, then the guides made with the maker. The phone is drawn
+      // once: a new mode changes everything around it and never moves it (a frame moved in the page loads again).
+      const ph = !sheet && el.querySelector('.ac-phone');
+      const html = sheet ? `<div class="ac-sheet" role="dialog" aria-modal="true" aria-label="Your account"><button type="button" class="sheet-x ac-x" aria-label="Close">×</button>${card}</div>`
         : `<div class="ac2">
         <header class="ac-top"><span class="brand"><span class="door" aria-hidden="true"></span><b translate="no">Guest Guide Maker</b></span>${langPick()}<button type="button" class="ac-login${mode === 'login' ? ' off' : ''}" data-m="login">Log in</button></header>
         <section class="start ac-start" aria-labelledby="acTitle">
-          <div class="st-art" aria-hidden="true"><span class="st-door"><i></i></span><span class="st-moon"></span></div>
-          <div class="st-tx"><small>Guest guides for holiday homes</small><h1 id="acTitle">${start ? 'Your guest guide, written for you.' : head}</h1>
-            <p>${start ? 'Paste your Airbnb link: in about a minute you see your whole guide, with the house, the rules, the Wi-\u2060Fi and the best of the area, in your guests\' languages. Then you make it yours.' : lead}</p></div>
+          <div class="ac-main"><div class="st-tx"><small>Guest guides for holiday homes</small><h1 id="acTitle">${start ? 'Your guest guide, written for you.' : head}</h1>
+            <p>${start ? 'Paste your listing link. See your whole guide in a minute.' : lead}</p></div>
           ${card}
+          ${start ? '<p class="ac-steps"><button type="button" id="acSteps">No listing link? Fill it in step by step</button></p>' : ''}</div>
+          ${ph ? '' : acPhoneHTML()}
         </section>
-        ${acExample()}</div>`;
+        ${acRefsHTML()}
+        ${start ? '<p class="ac-foot">Your answers stay on this device until you create your account. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>' : ''}</div>`;
+      if (!ph) el.innerHTML = html;
+      else {
+        const t = document.createElement('div'); t.innerHTML = html;
+        const old = el.querySelector('.ac2'), nu = t.querySelector('.ac2'), card0 = old.querySelector('.ac-start');
+        for (const sel of ['.ac-top', '.ac-main']) old.querySelector(sel).replaceWith(nu.querySelector(sel));
+        while (card0.nextElementSibling) card0.nextElementSibling.remove();
+        old.append(...[...nu.children].slice([...nu.children].indexOf(nu.querySelector('.ac-start')) + 1));
+      }
       const gb = el.querySelector('#acGoogle'); if (gb) gb.onclick = () => { gb.disabled = true; flush(); try { sessionStorage.setItem('porta-return', location.hash); if (sheet) sessionStorage.setItem('porta-saved', '1'); } catch (e) {} location.href = `${SB.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + '/')}`; };
       el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; draw(); });
       const x = el.querySelector('.ac-x'); if (x) x.onclick = () => done(false);
@@ -410,12 +473,16 @@ async function gate(mode0, notice, noticeOk, sheet){
     };
     draw(notice, noticeOk);
     if (sheet) return;
-    el.addEventListener('click', e => { if (!e.target.closest('.ac-ex [data-ex], .ac-ex .ac-cta')) return; const c = el.querySelector('.ac-card'); c.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => { const i = c.querySelector('input'); if (i) i.focus({ preventScroll: true }); }, 450); });
-    let shown = '';
-    // Another language: the example's dates and day names are written again in it.
-    const relang = () => { if (!el.isConnected) return removeEventListener('porta-lang', relang); const x = el.querySelector('.ac-ex'); if (x) { shown = acExample(); x.outerHTML = shown; } };
+    // A tap on the drawn example: to the box, its field ready (the real guide, once there, is the guide's own to tap).
+    el.addEventListener('click', e => { if (!e.target.closest('.ac-stand')) return; const c = el.querySelector('.ac-card'); c.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => { const i = c.querySelector('input'); if (i) i.focus({ preventScroll: true }); }, 450); });
+    const phone = acPhoneLoad(el);
+    // The stand-in follows the visitor's clock (tonight's bin, open or closed); another language: the guides' places in it,
+    // and the real guide loaded again in it.
+    let shown = acStandIn();
+    const stand = () => { const x = el.querySelector('.ac-stand'), h = acStandIn(); if (x && h !== shown) { shown = h; x.outerHTML = h; phone.fit(); } };
+    const relang = () => { if (!el.isConnected) return removeEventListener('porta-lang', relang); stand(); const r = el.querySelector('.ac-refs'); if (r) r.outerHTML = acRefsHTML(); phone.relang(); };
     addEventListener('porta-lang', relang);
-    const live = setInterval(() => { if (!el.isConnected) return clearInterval(live); const x = el.querySelector('.ac-ex'), h = acExample(); if (x && h !== shown) { shown = h; x.outerHTML = h; } }, 30000);
+    const live = setInterval(() => { if (!el.isConnected) return clearInterval(live); stand(); }, 30000);
   });
 }
 // The account, asked when it is needed (Review and send, an artistic cover, Log in). Once signed in, the page starts

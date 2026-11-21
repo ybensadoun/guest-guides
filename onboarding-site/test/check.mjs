@@ -87,6 +87,9 @@ const pngOf = C => { const W = 4, rows = [];
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(Buffer.from(rows))), chunk('IEND', Buffer.alloc(0))]); };
 const PNG4 = pngOf([[29, 79, 160], [213, 43, 30], [245, 196, 0], [14, 124, 70]]);
 const json = (route, body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+// The shared viewer in the first page's phone (account.js acPhoneLoad, /g/<slug>?embed): a fake guide page, never the live
+// site. answer: 'shown' (the viewer says the guide is there), 'none' (it is not: not published, offline), 'silent' (nothing).
+const fakeGuide = (route, answer = 'shown') => route.fulfill({ status: 200, contentType: 'text/html', body: `<!doctype html><meta charset="utf-8"><body style="margin:0;font:18px sans-serif;background:#dfe8f0"><div id="view" style="padding:60px 24px">The guide itself</div><div style="height:3000px"></div>${answer === 'silent' ? '' : `<script>parent.postMessage({ guideEmbed: '${answer}' }, location.origin)</script>`}` });
 // The database on a web address: what slug_check answers (the real function is checked against real rows, not here).
 const slugAnswer = (route, b, taken) => { const free = !taken.has(b.p_wanted); return json(route, { free, options: free ? [] : [b.p_town ? `${b.p_wanted}-${b.p_town}` : `${b.p_wanted}-2`, `${b.p_wanted}-3`, `${b.p_wanted}-4`] }); };
 const plainKey = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');   // start.js plainName: a researched card's id is 'r:' + this
@@ -246,18 +249,19 @@ function groupList() {
     const moon = card.querySelector('.st-moon'), mr = moon && moon.getBoundingClientRect();
     const moonBox = mr ? [new DOMRect(mr.left - 11, mr.top, mr.width + 11, mr.height + 7)] : [];   // its crescent is a shadow 10 px left, 6 px down
     const parts = [['eyebrow', words(card.querySelector('.st-tx small'))], ['title', words(card.querySelector('.st-tx h1'))], ['text', words(card.querySelector('.st-tx p'))],
-      ['panel', box(card.querySelector('.st-form'))], ['moon', moonBox], ['door', [...box(card.querySelector('.st-door')), ...box(card.querySelector('.st-door i'))]]];
+      ['panel', box(card.querySelector('.st-form'))], ['moon', moonBox], ['door', [...box(card.querySelector('.st-door')), ...box(card.querySelector('.st-door i'))]],
+      ['link', words(card.querySelector('.ac-steps button'))], ['phone', box(card.querySelector('.ac-phone .phone'))], ['caption', words(card.querySelector('.ac-phone figcaption'))]];
     const hit = (a, b, m = 0) => a.right + m > b.left && b.right + m > a.left && a.bottom + m > b.top && b.bottom + m > a.top;
     const out = [];
     for (const [i, [n, rs]] of parts.entries()) for (const [m, qs] of parts.slice(i + 1)) if (rs.some(r => qs.some(q => hit(r, q, (n === 'title' || m === 'title') && (n === 'moon' || m === 'moon') ? 4 : -1)))) out.push(`${n} touches ${m}`);
     const cb = card.getBoundingClientRect();
-    for (const [n, rs] of parts) if (n !== 'door' && rs.some(r => r.right > cb.right + 1 || r.left < cb.left - 1)) out.push(`${n} out of the card`);
+    for (const [n, rs] of parts) if (n !== 'door' && rs.some(r => r.right > cb.right + 1 || r.left < cb.left - 1 || (n !== 'phone' && r.bottom > cb.bottom + 1))) out.push(`${n} out of the card`);
     const cv = document.createElement('canvas').getContext('2d');
     for (const i of card.querySelectorAll('input[placeholder]')) { const s = getComputedStyle(i); cv.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
       const room = i.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight), need = cv.measureText(i.placeholder).width;
       if (need > room + 0.5) out.push(`placeholder "${i.placeholder}" ${Math.round(need)} px in ${Math.round(room)} px`);
       if (parseFloat(s.fontSize) < 16) out.push(`field font ${s.fontSize}`); }
-    for (const e of card.querySelectorAll('h1, p, small, label, button, a')) if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible') out.push('cut: ' + e.textContent.trim().slice(0, 30));
+    for (const e of card.querySelectorAll('h1, p, small, label:not(.sr), button, a')) if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible') out.push('cut: ' + e.textContent.trim().slice(0, 30));
     if (document.documentElement.scrollWidth > innerWidth || (document.getElementById('acct') || { scrollWidth: 0 }).scrollWidth > innerWidth) out.push('sideways scroll');
     return out;
   }, sel);
@@ -266,14 +270,14 @@ function groupList() {
   const makerLook = (p, phone) => p.evaluate(phone => {
     const out = [], root = document.getElementById('acct'); if (!root) return ['no #acct'];
     for (const e of root.querySelectorAll('*')) {
-      if (e.closest('.ex-cols, svg') || !e.getClientRects().length) continue;
+      if (e.closest('.ac-stand, svg, iframe') || !e.getClientRects().length) continue;
       const s = getComputedStyle(e), tag = e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className ? '.' + e.className.split(' ')[0] : '');
       if (/jost/i.test(s.fontFamily) && e.childNodes.length && [...e.childNodes].some(n => n.nodeType === 3 && n.data.trim())) out.push('Jost: ' + tag);
       for (const side of ['Top', 'Right', 'Bottom', 'Left']) if (parseFloat(s['border' + side + 'Width']) >= 2 && /^rgb\((0, 0, 0|18, 18, 18)\)$/.test(s['border' + side + 'Color'])) { out.push('black outline: ' + tag); break; }
       if (phone && e.matches('button, input, select, .lpick') && !e.closest('.lpick') && e.getBoundingClientRect().height < 44 && getComputedStyle(e).visibility !== 'hidden') out.push(`under 44 px: ${tag} ${Math.round(e.getBoundingClientRect().height)}`);
     }
-    for (const h of root.querySelectorAll('.st-tx h1, .ex-head h2, .ac-sheet h2')) { const s = getComputedStyle(h); if (!/Gloock/.test(s.fontFamily) || s.fontWeight !== '400') out.push('title not in the serif: ' + h.textContent.slice(0, 20)); }
-    for (const e of root.querySelectorAll('.st-tx p, .ac-card label, .ac-card input, .ex-head p, .ac-cta')) if (!/Onest/.test(getComputedStyle(e).fontFamily)) out.push('text not in the app font: ' + e.tagName);
+    for (const h of root.querySelectorAll('.st-tx h1, .ac-refs h2, .ac-ref h3, .ac-sheet h2')) { const s = getComputedStyle(h); if (!/Gloock/.test(s.fontFamily) || s.fontWeight !== '400') out.push('title not in the serif: ' + h.textContent.slice(0, 20)); }
+    for (const e of root.querySelectorAll('.st-tx p, .ac-card label, .ac-card input, .ac-refs p, .ac-foot, .ac-steps button')) if (!/Onest/.test(getComputedStyle(e).fontFamily)) out.push('text not in the app font: ' + e.tagName);
     return [...new Set(out)];
   }, phone);
   const PN_LOC = { id: 'g-loc', name: 'Restaurant La Locanda dei Sapori', where: 'Carrer de Mar, El Vendrell, Spain', km: 9 }, PN_SOC = { id: 'g-soc', name: 'Restaurant la Societat', where: 'Carrer Major, La Múnia, Spain', km: 18 };
@@ -293,67 +297,94 @@ function groupList() {
   const phFits = (p, sel) => p.$eval(sel, e => { const c = document.createElement('canvas').getContext('2d'), s = getComputedStyle(e); c.font = s.font; return c.measureText(e.placeholder).width <= e.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight); }).catch(() => false);
 
 async function gFirstPage() {
-  // ---- Signed out: the first page, in the guides' look, with Google when it is switched on ----
-  const signedOut = async (w, h, googleOn, lang) => {
-    const ctx = await browser.newContext({ viewport: { width: w, height: h } }), seen = [];
+  // ---- Signed out: the first page (Yohann, 21 Nov 2026: one screen, one job): in the navy card the words, the box with the
+  // link alone and one quiet link, beside a phone with a real guide (the fake viewer here); Log in in the header; the guides
+  // made with the maker and the data note at the foot. frame: what the fake viewer answers ('shown', 'none', 'silent'). ----
+  const signedOut = async (w, h, googleOn, lang, frame = 'shown') => {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } }), seen = []; ctx.frames = [];
     if (lang) await ctx.addInitScript(l => { try { localStorage.setItem('porta-lang-v1', l); } catch (e) {} }, lang);
+    // the phone at the moment the field first appears (not after the waits below, when the guide may be there already)
+    await ctx.addInitScript(() => { if (window.top !== window) return; new MutationObserver((_, o) => { if (!document.getElementById('acUrl')) return; o.disconnect();
+      window.__first = { stand: !!document.querySelector('#acct .ac-phone .ac-stand'), on: !!document.querySelector('#acct .ac-phone.on'), field: true }; }).observe(document, { childList: true, subtree: true }); });
     await ctx.route('**/*', route => { const u = new URL(route.request().url());
+      if (u.host === 'editor.test' && u.pathname.startsWith('/g/')) { ctx.frames.push(u.pathname + u.search); return fakeGuide(route, frame); }
+      if (u.host === 'editor.test' && u.pathname === '/api/listing') return;   // the listing being read: it never answers here
       if (u.host === 'editor.test') return route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
       if (u.origin === SB && u.pathname === '/auth/v1/settings') return json(route, { external: { google: googleOn, email: true } });
       if (u.origin === SB && u.pathname === '/auth/v1/authorize') { seen.push(u.toString()); return route.fulfill({ status: 200, contentType: 'text/html', body: '<p>Google</p>' }); }
       if (u.origin === SB) return json(route, []);
       return route.continue(); });
     const p = await ctx.newPage(), errors = []; p.on('pageerror', e => errors.push(e.message));
-    await p.goto('http://editor.test/'); await p.waitForSelector('#acct .ac-card', { timeout: 15000 }).catch(() => {}); await settle(p, 400);
-    return { ctx, p, errors, seen };
+    await p.goto('http://editor.test/'); await p.waitForSelector('#acct .ac-card', { timeout: 15000 }).catch(() => {});
+    const first = await p.evaluate(() => ({ ...(window.__first || {}), hist: history.length }));   // the phone at once: the drawn example, with the field
+    await settle(p, 400);
+    return { ctx, p, errors, seen, first };
   };
-  const tileClash = p => p.$$eval('#acct .ex-tile', els => els.flatMap(el => { const s = getComputedStyle(el, '::before'), b = el.getBoundingClientRect();
+  // The drawn example is scaled to the phone, and hidden once the guide is there: measured at its own size, shown, for the
+  // time of the measure.
+  const unscaled = (p, fn) => p.evaluate(async fn => { const st = document.querySelector('#acct .ac-stand'); if (!st) return ['no stand-in']; const t = st.style.transform; st.style.transform = 'none'; st.style.display = 'block';   // hidden once the guide is shown
+    try { return new Function('st', 'return (' + fn + ')(st)')(st); } finally { st.style.transform = t; st.style.display = ''; } }, fn.toString());
+  const tileClash = p => unscaled(p, st => [...st.querySelectorAll('.ex-tile')].flatMap(el => { const s = getComputedStyle(el, '::before'), b = el.getBoundingClientRect();
     const w = parseFloat(s.width) + parseFloat(s.borderLeftWidth) + parseFloat(s.borderRightWidth), h = parseFloat(s.height) + parseFloat(s.borderTopWidth) + parseFloat(s.borderBottomWidth);
     const x2 = b.right - parseFloat(s.right), x1 = x2 - w, y1 = b.top + parseFloat(s.top), y2 = y1 + h;
     const boxes = t => { if (t.matches('svg, .ex-ar, .ex-pill')) return [t.getBoundingClientRect()]; const g = document.createRange(); g.selectNodeContents(t); return [...g.getClientRects()]; };   // text: the words, not the line
     return [...el.querySelectorAll('b, small, .ex-ic svg, .ex-ar, .ex-tag, .ex-pill')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent + ': ' + t.tagName); }));
+  const R = (p, s) => p.evaluate(s => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom, w: b.width, h: b.height }; }, s);
+  const near = (a, b) => !!a && !!b && ['l', 't', 'w', 'h'].every(k => Math.abs(a[k] - b[k]) < 1.5);
   for (const [w, h, tag] of [[360, 780, '360 px'], [1280, 860, 'desktop']]) {
-    const { ctx, p, errors } = await signedOut(w, h, false);
-    ok(`signed out, ${tag}: the page in the maker's look (the start page's navy card), asking for the listing link, not an account`, !!(await p.$('#acct .ac2 > .start #acUrl')) && !(await p.$('#acct #acEmail')) && !!(await p.$('#acct [data-m="login"]')) && !(await p.$('#acct .ac-hero, #acct .ac-art')));
+    const { ctx, p, errors, first } = await signedOut(w, h, false);
+    ok(`signed out, ${tag}: the page in the maker's look (the navy card), asking for the listing link, not an account; Log in in the header`, !!(await p.$('#acct .ac2 > .start #acUrl')) && !(await p.$('#acct #acEmail')) && !!(await p.$('#acct .ac-top [data-m="login"]')) && !(await p.$('#acct .ac-hero, #acct .ac-art, #acct .st-door, #acct .st-moon')));
     ok(`signed out, ${tag}: no Google button while Google is off`, !(await p.$('#acGoogle')));
     ok(`signed out, ${tag}: no sideways scroll`, (await p.evaluate(() => document.getElementById('acct').scrollWidth - window.innerWidth)) <= 0);
-    const clash = await tileClash(p); ok(`signed out, ${tag}: no tile text under its corner shape`, !clash.length, clash.join('; '));
-    const ex = await p.evaluate(() => { const x = document.querySelector('#acct .ac-ex'); return { tiles: x.querySelectorAll('.ex-tile').length, cards: x.querySelectorAll('.ex-card').length, items: x.querySelectorAll('.ex-on .ex-it').length, text: x.innerText.replace(/\s+/g, ' '),
-      wide: [...x.querySelectorAll('b, small, .ex-tx > span, .ex-when, .ex-pill')].filter(e => e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).display !== 'inline').length }; });
-    ok(`signed out, ${tag}: the example is Ca La Kimberly's home (tiles, cards, what's on) with today's lines`, ex.tiles === 6 && ex.cards === 4 && ex.items === 6 && /\d+ today/.test(ex.text) && /Tonight/i.test(ex.text) && /(Open|Closed)/.test(ex.text) && !/next train/i.test(ex.text), `${ex.tiles} tiles, ${ex.cards} cards, ${ex.items} items`);
+    ok(`signed out, ${tag}: the phone shows the drawn example at once, with the field, before the guide`, first.stand && first.field && !first.on, JSON.stringify(first));
+    const clash = await tileClash(p); ok(`signed out, ${tag}: no tile text under its corner shape in the phone's example`, !clash.length, clash.join('; '));
+    const ex = await unscaled(p, st => ({ tiles: st.querySelectorAll('.ex-tile').length, cards: st.querySelectorAll('.ex-card').length, text: st.innerText.replace(/\s+/g, ' '),
+      wide: [...st.querySelectorAll('b, small, .ex-tx > span, .ex-pill')].filter(e => e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).display !== 'inline').length }));
+    ok(`signed out, ${tag}: the phone's example is Ca La Kimberly's home (tiles, cards) with today's lines`, ex.tiles === 6 && ex.cards === 4 && /\d+ today/.test(ex.text) && /Tonight/i.test(ex.text) && /(Open|Closed)/.test(ex.text), `${ex.tiles} tiles, ${ex.cards} cards`);
     ok(`signed out, ${tag}: no word wider than its box in the example`, !ex.wide, ex.wide + ' too wide');
+    const fr = await p.evaluate(() => { const f = document.querySelector('#acct .ac-phone iframe'); return { on: !!document.querySelector('#acct .ac-phone.on'), src: f && f.getAttribute('src'), cap: document.querySelector('#acct .ac-phone figcaption').textContent, w: f && f.getBoundingClientRect().width, scr: document.querySelector('#acct .phone-scr').clientWidth, stand: !!document.querySelector('#acct .ac-stand') && getComputedStyle(document.querySelector('#acct .ac-stand')).display !== 'none' }; });
+    ok(`signed out, ${tag}: the real guide replaces the example once the viewer says it is there (in a frame at the phone's width, its caption)`, fr.on && !fr.stand && fr.src === '/g/ca-la-kimberly?embed&lang=en' && Math.abs(fr.w - fr.scr) < 1.5 && fr.cap === 'A real guide: Ca La Kimberly. Tap around.', JSON.stringify(fr));
+    const focus = await p.evaluate(() => (document.activeElement || {}).id || '');
+    ok(`signed out, ${tag}: ${w >= 900 ? 'the field has the focus' : 'no keyboard opened (the field not focused)'}`, w >= 900 ? focus === 'acUrl' : focus !== 'acUrl', focus);
     ok(`signed out, ${tag}: no page errors`, !errors.length, errors.join(' | '));
     await p.screenshot({ path: join(SHOTS, `signed-out-${tag.replace(' ', '')}.png`), fullPage: false });
     await ctx.close();
   }
-  // ---- The first page and Log in in the maker's look (12 Nov 2026): the start page's navy card, the app's header, type,
-  // fields and buttons; the example guide alone keeps the guides' look. At 360 and 1280, in English and French. ----
-  for (const lang of ['en', 'fr']) for (const [w, h] of [[360, 780], [1280, 860]]) {
+  // ---- The first page and Log in at 360 and 1280 px, in English, French and Catalan ----
+  for (const lang of ['en', 'fr', 'ca']) for (const [w, h] of [[360, 780], [1280, 860]]) {
     const tag = `${lang}, ${w} px`, { ctx, p, errors } = await signedOut(w, h, true, lang);
     await p.evaluate(() => document.fonts.ready); await settle(p, 300);
     let c = await startClear(p, '#acct .start');
-    ok(`first page, ${tag}: in the navy card nothing overlaps (words, panel, moon, door), the moon clear of the title, every placeholder fits`, !c.length, c.join('; '));
+    ok(`first page, ${tag}: in the navy card nothing overlaps or is cut (words, box, quiet link, phone, caption), every placeholder fits`, !c.length, c.join('; '));
     let l = await makerLook(p, w < 600);
-    ok(`first page, ${tag}: the maker's look outside the example (no Jost, no black outline, the serif and Onest${w < 600 ? ', 44 px targets' : ''})`, !l.length, l.join('; '));
-    const head = await p.evaluate(() => { const b = document.querySelector('#acct .ac-top .ac-login'), t = document.querySelector('#acct .ac-top'), d = document.querySelector('#acct .ac-top .door');
-      const own = document.querySelector('#acct .start .alt [data-m="login"]'), or = own && own.getBoundingClientRect();
-      return { login: innerWidth < 600 ? !!b && getComputedStyle(b).display === 'none' && !!or && or.height >= 44 && or.bottom <= innerHeight : !!b && getComputedStyle(b).display !== 'none' && b.getBoundingClientRect().right <= t.getBoundingClientRect().right + 1, door: !!d && getComputedStyle(d).backgroundColor === 'rgb(20, 35, 58)' }; });
-    ok(`first page, ${tag}: the app's header (navy door, ${w < 600 ? 'no Log in up there on a phone: the panel\'s own is in the first screen' : 'Log in at the right'})`, head.login && head.door, JSON.stringify(head));
-    // the main button: in the first screen, or reached by scrolling with nothing over it
+    ok(`first page, ${tag}: the maker's look outside the phone (no Jost, no black outline, the serif and Onest${w < 600 ? ', 44 px targets' : ''})`, !l.length, l.join('; '));
+    const box = await p.evaluate(() => { const card = document.querySelector('#acct .st-form'), vis = e => e.getBoundingClientRect().height > 1 && !e.classList.contains('sr');
+      const shown = [...card.children].filter(vis).flatMap(e => e.tagName === 'FORM' ? [...e.children].filter(vis) : [e]).map(e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (e.classList.contains('go') ? '.go' : e.classList.contains('ac-note') ? '.note' : ''));
+      const last = card.querySelector('.ac-note').getBoundingClientRect(), cb = card.getBoundingClientRect();
+      return { shown: shown.join(' '), room: Math.round(cb.bottom - last.bottom), label: !!card.querySelector('label.sr[for="acUrl"]') }; });
+    ok(`first page, ${tag}: the box holds only the field, the button and one line (the label kept for screen readers), no room left under it`, box.shown === 'input#acUrl button.go p.note' && box.room <= 22 && box.label, JSON.stringify(box));
+    const head = await p.evaluate(() => { const b = document.querySelector('#acct .ac-top .ac-login'), t = document.querySelector('#acct .ac-top').getBoundingClientRect(), d = document.querySelector('#acct .ac-top .door');
+      const r = b.getBoundingClientRect(), lp = document.querySelector('#acct .ac-top .lpick').getBoundingClientRect(), br = document.querySelector('#acct .ac-top .brand').getBoundingClientRect();
+      return { login: getComputedStyle(b).display !== 'none' && r.right <= t.right + 1 && r.left >= lp.right && r.top >= t.top - 1 && r.bottom <= t.bottom + 1 && r.height >= (innerWidth < 600 ? 44 : 40), apart: lp.left >= br.right, door: !!d && getComputedStyle(d).backgroundColor === 'rgb(20, 35, 58)' }; });
+    ok(`first page, ${tag}: the app's header (navy door), Log in at its right beside the language, nothing touching`, head.login && head.apart && head.door, JSON.stringify(head));
     const go = await p.evaluate(() => { const b = document.querySelector('#acct .go'), r = b.getBoundingClientRect(); const first = r.top >= 0 && r.bottom <= innerHeight;
-      b.scrollIntoView({ block: 'center' }); const q = b.getBoundingClientRect(), at = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2);
-      return { first, free: !!at && b.contains(at), bottom: Math.round(r.bottom), orange: getComputedStyle(b).backgroundColor }; });
-    ok(`first page, ${tag}: the main button ${w < 600 ? 'in the first screen' : 'in view'}, nothing over it, orange as the start page's`, go.first && go.free && go.orange === 'rgb(243, 181, 91)', JSON.stringify(go));
-    const cols = await p.evaluate(() => { const c = [...document.querySelectorAll('#acct .ex-col')].map(e => e.getBoundingClientRect()), cta = document.querySelector('#acct .ac-cta').getBoundingClientRect(), ex = document.querySelector('#acct .ex-cols').getBoundingClientRect();
-      return { n: c.length, side: c.length === 2 && Math.abs(c[0].top - c[1].top) < 2 && c[1].left >= c[0].right && Math.abs(c[0].width - c[1].width) < 2, stacked: c.length === 2 && c[1].top >= c[0].bottom,
-        ctaUnder: cta.top >= ex.bottom && Math.abs((cta.left + cta.right) / 2 - (ex.left + ex.right) / 2) < 2, ctaBg: getComputedStyle(document.querySelector('#acct .ac-cta')).backgroundColor }; });
-    ok(`first page, ${tag}: the example in ${w < 900 ? 'one column' : 'two equal columns'}, the button under it, centred, the app's navy`, cols.n === 2 && (w < 900 ? cols.stacked : cols.side) && cols.ctaUnder && cols.ctaBg === 'rgb(20, 35, 58)', JSON.stringify(cols));
-    // Log in: only what is inside the navy card changes, the card stays where it was; the header's Log in gone, the language at the right edge
-    const top0 = await p.evaluate(() => document.querySelector('#acct .start').getBoundingClientRect().top + document.getElementById('acct').scrollTop);
-    await p.click(w < 600 ? '#acct .start .alt [data-m="login"]' : '#acct .ac-top [data-m="login"]'); await settle(p, 250);
-    const top1 = await p.evaluate(() => document.querySelector('#acct .start').getBoundingClientRect().top + document.getElementById('acct').scrollTop);
-    const hidden = await p.evaluate(() => { const t = document.querySelector('#acct .ac-top').getBoundingClientRect(), l = document.querySelector('#acct .ac-top .lpick').getBoundingClientRect(); return getComputedStyle(document.querySelector('#acct .ac-login')).display === 'none' && Math.abs(t.right - l.right) < 2 && t.height < 60; });
-    ok(`log in, ${tag}: the same frame, the navy card where it was, no Log in in the header, the language at its right edge, one row`, !!(await p.$('#acct .start #acEmail')) && !!(await p.$('#acct .start #acGoogle')) && Math.abs(top0 - top1) < 1 && hidden, `card top ${top0} then ${top1}`);
+      const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return { first, free: !!at && b.contains(at), orange: getComputedStyle(b).backgroundColor }; });
+    ok(`first page, ${tag}: the main button in the first screen, nothing over it, orange as the start page's`, go.first && go.free && go.orange === 'rgb(243, 181, 91)', JSON.stringify(go));
+    const place = await p.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(), ph = r('#acct .ac-phone .phone'), main = r('#acct .ac-main'), card = r('#acct .ac-start'), link = r('#acct .ac-steps');
+      return { beside: ph.left >= main.right + 24 && ph.top >= card.top + 16 && ph.bottom <= card.bottom - 16 && ph.right <= card.right - 16, under: ph.top >= link.bottom && ph.top < innerHeight - 40 && ph.left >= card.left + 16 && ph.right <= card.right - 16, w: Math.round(ph.width), top: Math.round(ph.top) }; });
+    ok(`first page, ${tag}: the phone ${w >= 900 ? 'beside the box, inside the card' : 'under the quiet link, its top in the first screen'}`, w >= 900 ? place.beside : place.under, JSON.stringify(place));
+    ok(`first page, ${tag}: the phone's guide in the maker's language`, ctx.frames.length === 1 && ctx.frames[0] === `/g/ca-la-kimberly?embed&lang=${lang}`, ctx.frames.join(', '));
+    if (lang !== 'en') await p.screenshot({ path: join(SHOTS, `first-${lang}-${w}.png`) });
+    // Log in: only the card's left side changes; the card, the phone (the same frame, not loaded again) stay where they were
+    const top0 = await p.evaluate(() => { document.querySelector('#acct .ac-phone').dataset.kept = '1'; return document.querySelector('#acct .start').getBoundingClientRect().top + document.getElementById('acct').scrollTop; }), ph0 = await R(p, '#acct .ac-phone .phone');
+    await p.click('#acct .ac-top [data-m="login"]'); await settle(p, 250);
+    const top1 = await p.evaluate(() => document.querySelector('#acct .start').getBoundingClientRect().top + document.getElementById('acct').scrollTop), ph1 = await R(p, '#acct .ac-phone .phone');
+    // wide, the language takes Log in's place at the right edge; on a phone Log in's room is kept, so the logo wraps as before
+    const hidden = await p.evaluate(() => { const t = document.querySelector('#acct .ac-top').getBoundingClientRect(), l = document.querySelector('#acct .ac-top .lpick').getBoundingClientRect(), b = document.querySelector('#acct .ac-login'), s = getComputedStyle(b);
+      return innerWidth < 600 ? s.visibility === 'hidden' : s.display === 'none' && Math.abs(t.right - l.right) < 2 && t.height < 60; });
+    const kept = await p.evaluate(() => !!document.querySelector('#acct .ac-phone[data-kept="1"].on iframe'));
+    ok(`log in, ${tag}: the same frame, the card where it was, the phone kept as it was (not loaded again), no Log in in the header${w < 600 ? ' (its room kept)' : ', the language at its right edge'}`, !!(await p.$('#acct .start #acEmail')) && !!(await p.$('#acct .start #acGoogle')) && Math.abs(top0 - top1) < 1 && hidden && kept && (w < 900 || near(ph0, ph1)) && ctx.frames.length === 1, `card top ${top0} then ${top1}, phone kept ${kept}, frames ${ctx.frames.length}`);
     c = await startClear(p, '#acct .start');
     ok(`log in, ${tag}: in the navy card nothing overlaps, every placeholder fits`, !c.length, c.join('; '));
     l = await makerLook(p, w < 600);
@@ -380,6 +411,97 @@ async function gFirstPage() {
     ok('signed out: Google button goes to Supabase Google sign-in and back to this site', !!to && to.searchParams.get('provider') === 'google' && to.searchParams.get('redirect_to') === 'http://editor.test/', seen[0] || 'no call');
     ok('signed out with Google: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // ---- The phone's guide: loaded only near the screen, the example kept when the guide is not there or says nothing ----
+  { const { ctx, p, errors } = await signedOut(360, 440, false);
+    const before = ctx.frames.length;
+    await p.evaluate(() => document.querySelector('#acct .ac-phone').scrollIntoView({ block: 'center' }));
+    const on = await p.waitForSelector('#acct .ac-phone.on iframe', { timeout: 6000 }).then(() => true, () => false);
+    ok('phone, 360 x 440: the guide is loaded only once the phone comes near the screen', before === 0 && ctx.frames.length === 1 && on, `frames ${before} then ${ctx.frames.length}`);
+    ok('phone, 360 x 440: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  for (const [answer, wait] of [['none', 0], ['silent', 8600]]) {
+    const { ctx, p, errors } = await signedOut(1280, 860, false, 'en', answer);
+    if (wait) await p.waitForTimeout(wait);
+    const st = await p.evaluate(() => ({ on: !!document.querySelector('#acct .ac-phone.on'), frame: !!document.querySelector('#acct .ac-phone iframe'), stand: getComputedStyle(document.querySelector('#acct .ac-stand')).display !== 'none', cap: document.querySelector('#acct .ac-phone figcaption').textContent }));
+    ok(`phone: when the viewer ${answer === 'none' ? 'says the guide is not there' : 'says nothing for 8 s'}, the frame goes and the example stays`, ctx.frames.length === 1 && !st.on && !st.frame && st.stand && st.cap === 'An example guide.', JSON.stringify(st));
+    ok(`phone, viewer ${answer}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // ---- The quiet link, and the button with a link: on as before, the phone where the example was ----
+  { const { ctx, p } = await signedOut(1280, 860, false);
+    await p.click('#acSteps'); await settle(p, 400);
+    ok('"No listing link? Fill it in step by step": the first page goes, the builder opens on Load your listing', !(await p.$('#acct')) && (await p.evaluate(() => location.hash)) === '#listing');
+    await ctx.close(); }
+  for (const [w, h] of [[1280, 860], [360, 780]]) {
+    const { ctx, p, errors, first } = await signedOut(w, h, false), h0 = await p.evaluate(() => history.length), ph0 = await R(p, '#acct .ac-phone .phone');
+    ok(`${w} px: the phone's guide adds nothing to the page's history`, h0 === first.hist && !!(await p.$('#acct .ac-phone.on iframe')), `${first.hist} then ${h0}`);
+    await p.fill('#acUrl', 'https://www.airbnb.com/rooms/12345678'); await p.click('#acct .go'); await settle(p, 600, { net: false });
+    const after = await p.evaluate(() => ({ hash: location.hash, acct: !!document.getElementById('acct'), url: (JSON.parse(localStorage.getItem('porta-onboarding-v1') || '{}').A || {}).listingUrl, reading: /Opening your listing/.test((document.getElementById('yoursTx') || {}).textContent || '') }));
+    const ph1 = await R(p, '.yours .phone');
+    ok(`${w} px: the button with a link goes on as before (the first page gone, the listing being read, the link kept)`, after.hash === '#yours' && !after.acct && after.url === 'https://www.airbnb.com/rooms/12345678' && after.reading, JSON.stringify(after));
+    if (w >= 900) ok(`${w} px: the host's guide builds in the phone where the example was, the same size (nothing jumps)`, near(ph0, ph1), JSON.stringify({ ph0, ph1 }));
+    ok(`${w} px, after the button: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // ---- Guides made with the maker, and the data note, at the page's foot: one card today, three must fit as well ----
+  for (const [w, h] of [[360, 780], [1280, 860]]) {
+    const { ctx, p, errors } = await signedOut(w, h, false);
+    const one = await p.evaluate(() => { const s = document.querySelector('#acct .ac-refs'), a = s && s.querySelector('.ac-ref a'), foot = document.querySelector('#acct .ac-foot'), box = document.querySelector('#acct .st-form');
+      return { h2: s && s.querySelector('h2').textContent, n: s ? s.querySelectorAll('.ac-ref').length : 0, name: s && s.querySelector('.ac-ref h3').textContent, href: a && a.getAttribute('href'), blank: a && a.target === '_blank' && /noopener/.test(a.rel),
+        foot: !!foot && !box.contains(foot) && !!foot.querySelector('a[href="/privacy/"]') && foot.getBoundingClientRect().top > s.getBoundingClientRect().bottom }; });
+    ok(`foot, ${w} px: "Guides made with Guest Guide Maker", one card (Ca La Kimberly, Open the guide in a new tab), the data note under it`, one.h2 === 'Guides made with Guest Guide Maker' && one.n === 1 && one.name === 'Ca La Kimberly' && one.href === 'https://ca-la-kimberly.netlify.app/' && one.blank && one.foot, JSON.stringify(one));
+    const fit = () => p.evaluate(() => { const cards = [...document.querySelectorAll('#acct .ac-ref')].map(e => e.getBoundingClientRect()), list = document.querySelector('#acct .ac-reflist').getBoundingClientRect(), bad = [];
+      cards.forEach((a, i) => { if (a.left < list.left - 0.5 || a.right > list.right + 0.5) bad.push('card ' + i + ' outside'); cards.slice(i + 1).forEach((b, j) => { if (a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1) bad.push(`cards ${i} and ${i + j + 1} overlap`); }); });
+      for (const e of document.querySelectorAll('#acct .ac-ref *')) if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).display !== 'inline' && e.tagName !== 'svg' && !e.closest('svg')) bad.push('cut: ' + e.textContent.trim().slice(0, 20));
+      if (document.getElementById('acct').scrollWidth > innerWidth) bad.push('sideways scroll');
+      return bad; });
+    const b1 = await fit();
+    await p.evaluate(() => { const a = document.querySelector('#acct .ac-ref'); for (const n of ['A house with a longer name than most', 'Mas de la Costa']) { const c = a.cloneNode(true); c.querySelector('h3').textContent = n; a.parentNode.appendChild(c); } });
+    await settle(p, 200); const b3 = await fit();
+    ok(`foot, ${w} px: the cards fit with one guide and with three (nothing overlaps, nothing cut, no sideways scroll)`, !b1.length && !b3.length, [...b1, ...b3].join('; '));
+    await p.evaluate(() => document.querySelector('#acct .ac-refs').scrollIntoView({ block: 'center' })); await settle(p, 200);
+    await p.screenshot({ path: join(SHOTS, `first-refs-3-${w}.png`) });
+    ok(`foot, ${w} px: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // ---- The shared viewer itself in the phone (engine/src/viewer.js ?embed, the built g-app/ with a fake Google key in its
+  // page): it calls nothing a guest's visit would (no Google script, no open-now line), Home and every list page opened. The
+  // same guide opened as a guest, without ?embed, is the control: there Google's script is asked for. Every outside call is
+  // answered here (the guide from the kept copy, a blank picture, an empty font sheet), nothing reaches the network. ----
+  const GAPP = join(ROOT, 'onboarding-site/g-app'), MIME = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.txt': 'text/plain' };
+  const viewerRun = async embed => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } }), hosts = new Set(), google = [];
+    await ctx.route('**/*', route => { const u = new URL(route.request().url());
+      let inGuide = false; try { inGuide = route.request().frame().url().includes('/g/'); } catch (e) { /* a worker's request */ }
+      if (inGuide) hosts.add(u.host);   // what the guide asks for, not the maker's own page
+      if (/maps\.googleapis|maps\.gstatic|maps\.google|places\.googleapis/.test(u.host)) { google.push(u.host + u.pathname); return route.abort(); }
+      if (u.host === 'editor.test' && u.pathname.startsWith('/g/')) return route.fulfill({ status: 200, contentType: 'text/html', body: readFileSync(join(GAPP, 'viewer.html'), 'utf8').replace('__GOOGLE_MAPS_BROWSER_KEY__', 'AIzaFAKEfakeFAKEfakeFAKEfakeFAKEfake123') });
+      if (u.host === 'editor.test' && u.pathname.startsWith('/g-app/')) { const f = join(ROOT, 'onboarding-site', u.pathname); return existsSync(f) ? route.fulfill({ status: 200, contentType: MIME[(f.match(/\.\w+$/) || [''])[0]] || 'application/octet-stream', body: readFileSync(f) }) : route.fulfill({ status: 404, body: '' }); }
+      if (u.host === 'editor.test') return route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
+      if (u.origin === SB && u.pathname === '/rest/v1/rpc/get_published_guide') return json(route, { content: E.content, theme: E.theme });
+      if (u.origin === SB && u.pathname === '/auth/v1/settings') return json(route, { external: { google: false } });
+      if (u.origin === SB && u.pathname.startsWith('/storage/')) return route.fulfill({ status: 200, contentType: 'image/png', body: PNG4 });
+      if (u.origin === SB) return json(route, []);
+      if (u.host === 'cdn.jsdelivr.net') return route.fulfill({ status: 200, contentType: 'text/css', body: '' });
+      return route.abort(); });
+    const p = await ctx.newPage(), errors = []; p.on('pageerror', e => errors.push(e.message));
+    let fr = null;
+    if (embed) { await p.goto('http://editor.test/'); await p.waitForSelector('#acct .ac-phone.on iframe', { timeout: 15000 }).catch(() => {}); fr = p.frames().find(f => f.url().includes('/g/')); }
+    else { await p.goto('http://editor.test/g/ca-la-kimberly'); await p.waitForSelector('#view a[href^="#s/"]', { timeout: 15000 }).catch(() => {}); fr = p.mainFrame(); }
+    const links = fr ? await fr.evaluate(() => [...new Set([...document.querySelectorAll('a[href^="#s/"]')].map(a => a.getAttribute('href')))]).catch(() => []) : [];
+    let slots = 0;   // Google's card asks for its script when a row with a slot opens (gcard.js watchRows): every such row opened
+    for (const h of links) { await fr.evaluate(h => { location.hash = h; }, h).catch(() => {}); await p.waitForTimeout(250);
+      slots += await fr.evaluate(() => { const s = document.querySelectorAll('#view [data-gcard]'); document.querySelectorAll('#view details.mrow').forEach(d => { if (d.querySelector('[data-gcard]')) d.open = true; }); return s.length; }).catch(() => 0); await p.waitForTimeout(150); }
+    await p.waitForTimeout(800);
+    const meta = fr ? await fr.evaluate(() => !!document.querySelector('meta[name="gmaps-key"]')).catch(() => null) : null;
+    await ctx.close();
+    return { shown: !!fr, links: links.length, slots, google, hosts: [...hosts].sort(), meta, errors };
+  };
+  { const on = await viewerRun(true), off = await viewerRun(false);
+    ok('the viewer in the phone (?embed): Home and every list page opened, no Google script and no Google call, the key taken out of its page', on.shown && on.links > 3 && !on.slots && !on.google.length && on.meta === false, JSON.stringify({ links: on.links, slots: on.slots, google: on.google }));
+    ok('the same guide opened as a guest (no ?embed), the control: its rows hold Google\'s card, and opening them asks for Google\'s script', off.links > 3 && off.slots > 0 && off.google.length > 0 && off.meta === true, JSON.stringify({ links: off.links, slots: off.slots, google: off.google.slice(0, 3) }));
+    ok('the viewer in the phone: it calls out only to our database and storage, the fonts\' CDN and the map\'s tiles (OpenFreeMap)', on.hosts.length > 1 && on.hosts.every(h => ['editor.test', new URL(SB).host, 'cdn.jsdelivr.net', 'tiles.openfreemap.org'].includes(h)), on.hosts.join(', '));
+    ok('the viewer in the phone: no page errors', !on.errors.length, on.errors.join(' | ')); }
 }
   // ---- No account until the end (docs/plan-fast-builder.md, step 7): the link, the wow and the steps on this device, then the account ----
   const JOB_ID = '00000000-0000-0000-0000-00000000f011', AREA_ID = '00000000-0000-0000-0000-0000000a4ea1', AREA_MARKETS = JSON.parse(readFileSync(join(ROOT, 'worker/examples/markets.json'), 'utf8')), AREA_TODO = JSON.parse(readFileSync(join(ROOT, 'worker/examples/todo.json'), 'utf8'));
@@ -390,6 +512,7 @@ async function gFirstPage() {
     if (existing) rows[existing.id] = { ...existing, owner: uid };
     await ctx.route('**/*', route => { const req = route.request(), u = new URL(req.url());
       if (u.host === 'editor.test' && u.pathname === '/api/listing') return listing(route, JSON.parse(req.postData() || '{}'));
+      if (u.host === 'editor.test' && u.pathname.startsWith('/g/')) return fakeGuide(route);
       if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
       if (u.origin !== SB) return route.continue();
       if (u.pathname === '/auth/v1/settings') return json(route, { external: { google: true, email: true } });
@@ -4012,7 +4135,7 @@ async function gHomePage() {
 // ======== Running ========
 // WALK=1: no checks, only a picture of every screen a host meets, for a design review (walk.mjs, into shots/walk/), in this process.
 // WALK_FILE=<path>: another module run with the same harness instead (a design draft pictured in the real page, before it is built).
-if (env.WALK) { await launch(); try { await (await import(env.WALK_FILE || './walk.mjs')).default({ browser, open, ready, go, json, inPhone, E, B, N, A0, photos, PAGE, WRITE, HTML, SB, HERE }); } finally { await browser.close(); } process.exit(0); }
+if (env.WALK) { await launch(); try { await (await import(env.WALK_FILE || './walk.mjs')).default({ browser, open, ready, go, json, fakeGuide, inPhone, E, B, N, A0, photos, PAGE, WRITE, HTML, SB, HERE }); } finally { await browser.close(); } process.exit(0); }
 if (CHILD) {
   // One group, in a process of its own: its results go to the runner as they come; an error in it is a FAIL, never a silent end.
   const fn = groupList()[CHILD], t0 = Date.now();

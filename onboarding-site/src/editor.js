@@ -1989,7 +1989,7 @@ function cmMarks() {
 }
 
 /* --- Saving the draft, publishing, undoing --- */
-const cmSaveText = () => cmDirty() ? 'Draft saved, not live yet' : cmLive() ? 'Everything is live' : 'Saved, not published';
+const cmSaveText = () => cmDirty() ? (cmLive() ? 'Live, latest changes not published yet' : 'Draft saved, not live yet') : cmLive() ? 'Everything is live' : 'Saved, not published';
 function cmQueue() { hbTidy(); setSave('busy', 'Saving…'); clearTimeout(CM.timer); CM.timer = setTimeout(cmSave, 900); cmMarks(); }
 async function cmSave() {
   clearTimeout(CM.timer); CM.timer = null;

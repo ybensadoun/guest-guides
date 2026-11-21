@@ -10,11 +10,37 @@ const FIXED = import.meta.env.VITE_GUIDE_SLUG || '';
 const DB = { url: 'https://dmoxszfwulolqkgxtxcp.supabase.co', key: 'sb_publishable_4esKE09oxNusDwlEPNdeWg_sUroV5Kr' };   // public values
 const V = () => document.getElementById('view');
 
+// ?embed: the guide inside another page of this same site (the maker's first page shows a real guide in a phone, 21 Nov
+// 2026). It is only looked at: it reads no session (the published guide only), shows no Wi-Fi, asks Google nothing (a public
+// marketing page: every visitor would cost calls, and Google's content is not ours to show there), keeps nothing (a storage in
+// memory stands in for the browser's, no copy for offline use, no service worker, no install manifest), and moves between
+// its screens without adding to the page's history (its own back arrow goes back inside it; the browser's back button stays
+// the page's). It tells the page holding it whether the guide is shown ({ guideEmbed: 'shown' | 'none' }).
+const EMBED = new URLSearchParams(location.search).has('embed') && window.parent !== window;
+const tell = shown => { if (EMBED) try { window.parent.postMessage({ guideEmbed: shown ? 'shown' : 'none' }, location.origin); } catch (e) { /* nothing listens */ } };
+if (EMBED) {
+  // No paid or third-party call a guest's visit would make: no Google key, so no Google script and no open-now line (gcard.js).
+  document.querySelector('meta[name="gmaps-key"]')?.remove();
+  const memory = () => { const m = new Map(); return { getItem: k => m.has(String(k)) ? m.get(String(k)) : null, setItem: (k, v) => { m.set(String(k), String(v)); }, removeItem: k => { m.delete(String(k)); }, clear: () => m.clear(), key: i => [...m.keys()][i] ?? null, get length() { return m.size; } }; };
+  for (const n of ['localStorage', 'sessionStorage']) { try { Object.defineProperty(window, n, { value: memory(), configurable: true }); } catch (e) { /* the browser's own then: only the guide's language would be kept */ } }
+  // A screen opened inside: the address replaced, not pushed (Navigation API; without it the browser adds the entries).
+  const back = [];
+  if (window.navigation) window.navigation.addEventListener('navigate', e => {
+    if (e.navigationType !== 'push' || !e.hashChange || !e.cancelable) return;
+    e.preventDefault(); back.push(location.hash || '#home'); location.replace(e.destination.url);
+  });
+  addEventListener('click', e => {
+    if (!e.target.closest || !e.target.closest('#backBtn')) return;
+    e.preventDefault(); e.stopImmediatePropagation(); location.replace(back.pop() || '#home');
+  }, true);
+}
+
 function say(title, text) {
   document.title = title;
   const v = V();
   if (v) v.innerHTML = `<div style="padding:40px 20px;max-width:520px;margin:0 auto;text-align:center"><h2 style="margin:0 0 10px">${title}</h2><p style="margin:0;opacity:.75;line-height:1.5">${text}</p></div>`;
 }
+const notShown = (title, text) => { say(title, text); tell(false); };
 
 // ?preview: the host's unpublished changes (guides.draft, saved by the editor), only for the host logged in on this site.
 const PREVIEW = new URLSearchParams(location.search).has('preview');
@@ -25,7 +51,7 @@ const PREVIEW = new URLSearchParams(location.search).has('preview');
 const ASKED = new URLSearchParams(location.search).get('world');
 async function fetchGuide(slug) {
   let tok = null;
-  try { tok = (JSON.parse(localStorage.getItem('porta-auth-v1') || 'null') || {}).access_token; } catch (e) { /* storage blocked */ }
+  if (!EMBED) try { tok = (JSON.parse(localStorage.getItem('porta-auth-v1') || 'null') || {}).access_token; } catch (e) { /* storage blocked */ }
   if (tok) {   // the host looking at their own guide: a guide not published yet, or with ?preview the changes not published yet
     try {
       const r = await fetch(`${DB.url}/rest/v1/guides?slug=eq.${encodeURIComponent(slug)}&select=content,theme,status${PREVIEW ? ',draft' : ''}`, { headers: { apikey: DB.key, Authorization: 'Bearer ' + tok } });
@@ -86,13 +112,13 @@ function goOffline(site, files, base, slug, paper, icons = {}) {
 
 (async () => {
   const m = FIXED ? [null, FIXED] : location.pathname.match(/^\/g\/([^/]+)/);
-  if (!m) return say('Guide not found', 'This address is not a guide.');
+  if (!m) return notShown('Guide not found', 'This address is not a guide.');
   const slug = decodeURIComponent(m[1]).toLowerCase();
   say('Loading your guide…', 'One moment.');
   let row;
   try { row = await fetchGuide(slug); if (row && row.preview) { /* a preview is never the copy kept for offline use */ } else if (row) saveCopy(slug, row); else dropCopy(slug); }
-  catch (e) { row = loadCopy(slug); if (!row) return say('No connection', 'We could not reach the guide. Check your internet and reload the page.'); }
-  if (!row) return say('This guide is being prepared', 'Its host is still setting it up. Please check back soon.');
+  catch (e) { row = loadCopy(slug); if (!row) return notShown('No connection', 'We could not reach the guide. Check your internet and reload the page.'); }
+  if (!row) return notShown('This guide is being prepared', 'Its host is still setting it up. Please check back soon.');
 
   const c = row.content, th = row.theme || {};
   const base = c.assetBase || '';
@@ -104,7 +130,7 @@ function goOffline(site, files, base, slug, paper, icons = {}) {
   // The fonts this guide shows: the world's (else the base look's, Bauhaus's), then the guide's own (loaded from the CDN
   // below, named on the credits page).
   const fonts = [...new Set([...(world || WORLDS.bauhaus).fonts, ...(th.fonts || (site.theme || {}).fonts || [])])];
-  window.__GUIDE__ = { site, files, private: c.private || {}, i18n: c.i18n || {}, fonts };
+  window.__GUIDE__ = { site, files, private: EMBED ? {} : c.private || {}, i18n: c.i18n || {}, fonts };
   window.__VENDOR_BASE = import.meta.env.BASE_URL + 'vendor/maplibre/';
 
   document.title = site.name;
@@ -127,7 +153,8 @@ function goOffline(site, files, base, slug, paper, icons = {}) {
   if (th.css) { const s = document.createElement('style'); s.id = 'guideTheme'; s.textContent = th.css; document.head.appendChild(s); }
 
   V().innerHTML = '';
-  await import('./main.js');
+  try { await import('./main.js'); } catch (e) { tell(false); throw e; }
+  tell(true);
   // Only the host sees this: a small label floating at the bottom (the top edge holds the back and language buttons).
   // The page gets room at its end, so nothing stays under the label.
   if (row.preview || (row.status && row.status !== 'published')) {
@@ -136,5 +163,5 @@ function goOffline(site, files, base, slug, paper, icons = {}) {
     b.style.cssText = `position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:45;max-width:calc(100% - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 13px/1 system-ui,sans-serif;padding:9px 14px;border-radius:999px;background:#F2B33D;color:#1b1407;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none`;
     document.body.appendChild(b); document.body.style.paddingBottom = `calc(${getComputedStyle(document.body).paddingBottom} + 48px)`;
   }
-  goOffline(site, files, base, slug, (site.theme && site.theme.paper) || '#ffffff', c.site.icons || {});
+  if (!EMBED) goOffline(site, files, base, slug, (site.theme && site.theme.paper) || '#ffffff', c.site.icons || {});
 })();

@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync, renameSync, readdirSync, unlinkSync, rmSync }
 import { join } from 'node:path';
 
 export default async function walk(H) {
-  const { browser, open, ready, go, json, E, B, N, A0, photos, HTML, SB, HERE } = H;
+  const { browser, open, ready, go, json, fakeGuide, E, B, N, A0, photos, HTML, SB, HERE } = H;
   const DIR = join(HERE, 'shots', 'walk'), TMP = join(DIR, '.tmp');
   mkdirSync(TMP, { recursive: true });
   for (const f of readdirSync(DIR)) if (/\.(png|txt)$/.test(f)) unlinkSync(join(DIR, f));
@@ -61,6 +61,7 @@ export default async function walk(H) {
     await ctx.route('**/*', route => { const req = route.request(), u = new URL(req.url());
       // the listing, read slowly so each stage can be pictured: the page in 6 s, the writing 6 s later
       if (u.host === 'editor.test' && u.pathname === '/api/listing') { const b = JSON.parse(req.postData() || '{}'); return setTimeout(() => json(route, b.stage === 'page' ? H.PAGE : H.WRITE).catch(() => {}), 6000); }
+      if (u.host === 'editor.test' && u.pathname.startsWith('/g/')) return fakeGuide(route);   // the first page's phone: a fake guide
       if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
       if (u.origin !== SB) return route.continue();
       if (u.pathname === '/auth/v1/settings') return json(route, { external: { google: true, email: true } });
@@ -75,7 +76,7 @@ export default async function walk(H) {
   for (const [w, h] of SIZES) {
     const { ctx, p } = await visitorCtx(w, h);
     await p.goto('http://editor.test/'); await p.waitForSelector('#acUrl', { timeout: 15000 }).catch(() => {});
-    await shot(p, w, [1, 0], 'visitor', 'first-page', 'The first page for a new visitor, signed out: the example guide and the box for the listing link');
+    await shot(p, w, [1, 0], 'visitor', 'first-page', 'The first page for a new visitor, signed out: the box for the listing link beside a real guide in a phone (a fake guide here)');
     await p.fill('#acUrl', 'https://www.airbnb.com/rooms/12345678'); await p.click('#acct .go'); await p.waitForTimeout(900);
     await shot(p, w, [1, 1], 'visitor', 'reading-listing', 'Just after the link is pasted: the listing is being read (nothing back yet)');
     await p.waitForFunction(() => /Writing/.test((document.getElementById('yoursTx') || {}).textContent || ''), null, { timeout: 12000 }).catch(() => {});
@@ -119,6 +120,7 @@ export default async function walk(H) {
   for (const [w, h] of SIZES) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } });
     await ctx.route('**/*', route => { const u = new URL(route.request().url());
+      if (u.host === 'editor.test' && u.pathname.startsWith('/g/')) return fakeGuide(route);   // the first page's phone: a fake guide
       if (u.host === 'editor.test') return route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
       if (u.origin === SB && u.pathname === '/auth/v1/settings') return json(route, { external: { google: true, email: true } });
       if (u.origin === SB) return json(route, []);
@@ -139,8 +141,8 @@ export default async function walk(H) {
   const building = msg => ({ ...B, status: 'generating', message: msg, slug: 'test-build', answers: { ...B.answers, slug: 'test-build', languages: SIX, sourceLang: 'en', _sentAt: now } });
   const FOUND = [{ id: 'rd-castle', name: { en: 'Ready Test Castle' }, type: { en: 'Castle' }, town: 'Testville', lat: A0.lat + 0.05, lng: A0.lng, km_from_house: 6, description: { en: 'A castle on a hill, with a short walk up and a view of the vineyards.' }, tags: ['kidsfun'] },
     { id: 'rd-cave', name: { en: 'Ready Test Cellar' }, type: { en: 'Winery' }, town: 'Othertown', lat: A0.lat - 0.05, lng: A0.lng, km_from_house: 9, description: { en: 'A family wine cellar with visits and tastings.' } }];
-  const readyCtx = async (w, h, found) => {
-    const built = { ...E, status: 'published', finished_at: now, draft: null, answers: { ...E.answers, slug: E.slug, _sentAt: now } };
+  const readyCtx = async (w, h, found, draft = null) => {
+    const built = { ...E, status: 'published', finished_at: now, draft, answers: { ...E.answers, slug: E.slug, _sentAt: now } };
     const G = found.length ? { ...built, status: 'generating', message: 'Saving the guide', content: null } : built, o = await open(browser, G, w, h); let polled = false;
     await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, /kind=eq.find-todo/.test(new URL(r.request().url()).search) && found.length ? [{ id: 'job-walk-ready', status: 'done', message: found.length + ' things to do found', created_at: now, result: { items: found } }] : []));
     await o.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), r => { const req = r.request(), q = new URL(req.url()).search;
@@ -162,6 +164,11 @@ export default async function walk(H) {
     { const { ctx, p } = await readyCtx(w, h, []); watch(p, `ready none ${w}`);
       await p.goto('http://editor.test/#building'); await p.waitForSelector('#bstate .go-next', { timeout: 15000 }).catch(() => {}); await p.waitForTimeout(600);
       await shot(p, w, [4, 3], 'build', 'ready-none', 'The ready screen with nothing found: Open my guide');
+      await ctx.close(); }
+    { const changed = { content: { ...E.content, site: { ...E.content.site, tagline: (E.content.site.tagline || '') + ' (changed)' } }, theme: E.theme, savedAt: now };
+      const { ctx, p } = await readyCtx(w, h, [], changed); watch(p, `ready changes ${w}`);
+      await p.goto('http://editor.test/#building'); await p.waitForSelector('#bstate .go-next', { timeout: 15000 }).catch(() => {}); await p.waitForTimeout(900);
+      await shot(p, w, [4, 4], 'build', 'ready-changes', 'The ready screen of a live guide with changes not published yet: the top bar and the card say the same');
       await ctx.close(); }
   }
 
@@ -250,6 +257,7 @@ export default async function walk(H) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } });
     if (lang) await ctx.addInitScript(l => { try { localStorage.setItem('porta-lang-v1', l); } catch (e) {} }, lang);
     await ctx.route('**/*', route => { const u = new URL(route.request().url());
+      if (u.host === 'editor.test' && u.pathname.startsWith('/g/')) return fakeGuide(route);   // the first page's phone: a fake guide
       if (u.host === 'editor.test') return route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
       if (u.origin === SB && u.pathname === '/auth/v1/settings') return json(route, { external: { google: true, email: true } });
       if (u.origin === SB) return json(route, []);

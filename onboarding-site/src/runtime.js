@@ -399,7 +399,8 @@ function readyCard(){
 }
 function readyHTML(g){
   const slug = (g && g.slug) || v('slug'), live = (g && g.status) === 'published', link = `/g/${esc(slug)}`;
-  const say = live ? 'It is live. Share this link with your guests.' : 'Have a look. Only you can see it until it is published.';
+  // Live with changes not published yet (the editor's draft): the same words as the top bar's (editor.js cmSaveText).
+  const say = live ? (CM.on && typeof cmDirty === 'function' && cmDirty() ? 'It is live. Your latest changes are not published yet.' : 'It is live. Share this link with your guests.') : 'Have a look. Only you can see it until it is published.';
   const url = `<div class="burlrow"><p class="burl" translate="no">${esc(location.host)}/g/<wbr>${esc(slug)}</p>${copyBtn(location.origin + '/g/' + slug, 'bcopy')}</div>`;
   const open = `<a class="go-next" href="${link}" target="_blank" rel="noopener"><span>Open my guide</span><span class="ar">${ARROW}</span></a>
     ${url}`, quiet = `<a class="btn small bopen" href="${link}" target="_blank" rel="noopener">Open my guide now</a>`;

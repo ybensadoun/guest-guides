@@ -99,6 +99,11 @@
 "es": "Borrador guardado, aún no publicado",
 "fr": "Brouillon enregistré, pas encore en ligne"
 },
+"Live, latest changes not published yet": {
+"ca": "En línia, els últims canvis encara sense publicar",
+"es": "En línea, últimos cambios aún sin publicar",
+"fr": "En ligne, derniers changements pas encore publiés"
+},
 "Everything is live": {
 "ca": "Tot està publicat",
 "es": "Todo está publicado",
@@ -138,6 +143,41 @@
 "ca": "La teva guia per als hostes, escrita per a tu.",
 "es": "Tu guía para huéspedes, escrita para ti.",
 "fr": "Votre guide des voyageurs, écrit pour vous."
+},
+"Paste your listing link. See your whole guide in a minute.": {
+"ca": "Enganxa l’enllaç del teu anunci. Veuràs tota la guia en un minut.",
+"es": "Pega el enlace de tu anuncio. Verás toda tu guía en un minuto.",
+"fr": "Collez le lien de votre annonce. Voyez tout votre guide en une minute."
+},
+"Free to try. No account needed.": {
+"ca": "Prova-ho gratis. No cal cap compte.",
+"es": "Pruébalo gratis. No necesitas cuenta.",
+"fr": "Essai gratuit. Pas besoin de compte."
+},
+"An example guide.": {
+"ca": "Una guia d’exemple.",
+"es": "Una guía de ejemplo.",
+"fr": "Un exemple de guide."
+},
+"A real guide: {x}. Tap around.": {
+"ca": "Una guia real: {x}. Explora-la.",
+"es": "Una guía real: {x}. Explórala.",
+"fr": "Un vrai guide : {x}. Explorez-le."
+},
+"Guides made with Guest Guide Maker": {
+"ca": "Guies fetes amb Guest Guide Maker",
+"es": "Guías hechas con Guest Guide Maker",
+"fr": "Des guides créés avec Guest Guide Maker"
+},
+"Open one and look around as a guest would.": {
+"ca": "Obre’n una i mira-la com ho faria un hoste.",
+"es": "Abre una y mírala como lo haría un huésped.",
+"fr": "Ouvrez-en un et parcourez-le comme un voyageur."
+},
+"Open the guide": {
+"ca": "Obre la guia",
+"es": "Abrir la guía",
+"fr": "Ouvrir le guide"
 },
 "Paste your Airbnb link: in about a minute you see your whole guide, with the house, the rules, the Wi-\u2060Fi and the best of the area, in your guests' languages. Then you make it yours.": {
 "ca": "Enganxa l’enllaç d’Airbnb: en un minut veuràs tota la guia, amb la casa, les normes, el wifi i el millor de la zona, en els idiomes dels teus hostes. Després la fas teva.",
@@ -2693,6 +2733,11 @@
 "ca": "Està publicada. Comparteix aquest enllaç amb els teus hostes.",
 "es": "Está publicada. Comparte este enlace con tus huéspedes.",
 "fr": "Il est en ligne. Partagez ce lien avec vos voyageurs."
+},
+"It is live. Your latest changes are not published yet.": {
+"ca": "Ja és en línia. Els teus últims canvis encara no s’han publicat.",
+"es": "Ya está en línea. Tus últimos cambios aún no se han publicado.",
+"fr": "Il est en ligne. Vos derniers changements ne sont pas encore publiés."
 },
 "It is published: from now on, guests who open its link see \"not found\".": {
 "ca": "Està publicada: a partir d’ara, els hostes que n’obrin l’enllaç veuran «no trobada».",

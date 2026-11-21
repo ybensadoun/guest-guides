@@ -338,7 +338,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 @media (max-width:899px){.yours-ph{order:-1}.yours{padding-bottom:96px}   /* on a phone the wow comes first: the guide, then the words; */
   .yours-tx .row{position:fixed;left:0;right:0;bottom:0;z-index:30;justify-content:center;background:var(--surface);border-top:1.5px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}}   /* Make it yours stays at hand */
 .btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
-@media (min-width:900px){.yours{grid-template-columns:minmax(0,1fr) auto;justify-items:start;gap:64px}.yours-tx{text-align:left;align-items:flex-start}}
+@media (min-width:900px){.yours{grid-template-columns:minmax(0,1fr) auto;justify-items:start;gap:64px;padding:32px 40px 48px}.yours-tx{text-align:left;align-items:flex-start}}   /* the words and the phone where the first page's navy card had them (account.js .ac-start): the example in the phone becomes the host's guide, nothing moves */
 #slugNote{display:flex;flex-direction:column;gap:8px}
 .slugopts{display:flex;flex-wrap:wrap;gap:8px}
 .slugopt{font:inherit;font-size:14.5px;font-weight:600;color:inherit;text-align:left;max-width:100%;min-height:40px;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--sunk);cursor:pointer;overflow-wrap:anywhere}
