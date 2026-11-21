@@ -3409,6 +3409,31 @@
 "es": "Partes de la guía de la casa",
 "fr": "Parties du guide de la maison"
 },
+"Guests see a part once it has a line of text.": {
+"ca": "Els hostes veuen una part quan té una línia de text.",
+"es": "Los huéspedes ven una parte cuando tiene una línea de texto.",
+"fr": "Les voyageurs voient une partie dès qu’elle a une ligne de texte."
+},
+"Guests do not see this part yet: add a line.": {
+"ca": "Els hostes encara no veuen aquesta part: afegeix una línia.",
+"es": "Los huéspedes aún no ven esta parte: añade una línea.",
+"fr": "Les voyageurs ne voient pas encore cette partie : ajoutez une ligne."
+},
+"+ Add a Check-out part": {
+"ca": "+ Afegeix una part Sortida",
+"es": "+ Añadir una parte Salida",
+"fr": "+ Ajouter une partie Départ"
+},
+"What guests do before they leave. The check-out time on the home page opens it.": {
+"ca": "El que fan els hostes abans de marxar. L’hora de sortida de la pàgina d’inici l’obre.",
+"es": "Lo que hacen los huéspedes antes de irse. La hora de salida de la página de inicio la abre.",
+"fr": "Ce que font les voyageurs avant de partir. L’heure de départ de la page d’accueil l’ouvre."
+},
+"TV, games, heating": {
+"ca": "Tele, jocs, calefacció",
+"es": "Tele, juegos, calefacción",
+"fr": "Télé, jeux, chauffage"
+},
 "Phone": {
 "ca": "Telèfon",
 "es": "Teléfono",

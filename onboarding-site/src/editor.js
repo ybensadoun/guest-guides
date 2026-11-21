@@ -897,13 +897,25 @@ function cmAmPut(id) {
   list[gi].items.push(L(x)); CM.open.add(`files/house-page/amenities/${gi}`);
 }
 document.addEventListener('input', e => { if (e.target.id === 'cmAmQ') cmAmSearch(); });
+// The house guide (engine/src/modules/info/README.md): the check-out time Home shows, then its parts. Guests see a part
+// only once it has words (rule 11; INFO.partShown is the guide's own rule, pasted by build.py): a part they do not see says
+// so on its row. Every part can have a line under its title. A guide with no Check-out part can add one: Home's check-out
+// time opens the part of that id.
+const HG_CHECKOUT = { en: 'Check-out', es: 'Salida', fr: 'Départ', ca: 'Sortida', de: 'Abreise', nl: 'Vertrek' };
 function cmHouseGuide(c) {
   const h = (c.files || {}).house || {}, blocks = ((c.files || {}).message || {}).blocks || [];
   return `<div class="grid">${cf('Check-out time', 'files/house/checkout', h.checkout || '', { type: 'time', half: true })}</div>
-    <h3 class="cm-h">Parts of the house guide</h3><div class="cm-list">${blocks.map((b, i) => { const P = `files/message/blocks/${i}`;
+    ${blocks.some(b => b.id === 'checkout') ? '' : `<div class="cm-row"><button class="btn small" type="button" data-hgcheckout>+ Add a Check-out part</button><span class="hint">What guests do before they leave. The check-out time on the home page opens it.</span></div>`}
+    <h3 class="cm-h">Parts of the house guide</h3><p class="hint">Guests see a part once it has a line of text.</p><div class="cm-list">${blocks.map((b, i) => { const P = `files/message/blocks/${i}`;
       return cCard(P, edShown(b.title) || b.id, `${cmCount((b.items || []).length, 'line', 'lines')} · ${cmCount((b.photos || []).length, 'photo', 'photos')}`,
-        `<div class="grid">${cf('Title', P + '/title', b.title, { i18n: true })}${b.sub ? cf('Line under the title', P + '/sub', b.sub) : ''}</div>
-        <div class="f full"><span class="lab">Photos</span>${cPhotos(P + '/photos', b.photos)}</div><div class="f full"><span class="lab">What guests need to know</span>${cLines(P + '/items', b.items, 'Add a line')}</div>`, [i, blocks.length]); }).join('')}</div>`;
+        `<div class="grid">${cf('Title', P + '/title', b.title, { i18n: true })}${cf('Line under the title', P + '/sub', b.sub, { i18n: true, ph: 'TV, games, heating' })}</div>
+        <div class="f full"><span class="lab">Photos</span>${cPhotos(P + '/photos', b.photos)}</div><div class="f full"><span class="lab">What guests need to know</span>${cLines(P + '/items', b.items, 'Add a line')}</div>`, [i, blocks.length],
+        '', { t: 'Guests do not see this part yet: add a line.', c: INFO.partShown(b) ? 'hg-ok' : '' }); }).join('')}</div>`;
+}
+// The note leaves a part's row, or comes back, as the host types: the step is not drawn again while typing.
+function hgMark(path) {
+  const m = path.match(/^files\/message\/blocks\/\d+/), n = m && document.querySelector(`details.cmi[data-open="${m[0]}"] summary .pl-hid`);
+  if (n) n.classList.toggle('hg-ok', INFO.partShown(edGet(edC(), edPath(m[0]))));
 }
 function cmWifi(c) {
   const w = (c.private || {}).wifi;
@@ -2176,6 +2188,7 @@ function edEdit(t) {
   else edSet(c, p, val);
   const own = t.dataset.p.match(/^files\/(?:restaurants|nightlife|todo)\/items\/\d+\/(phone|url|schedule)(\/|$)/); if (own) plMine(t.dataset.p, own[1]);   // typed by the host: theirs
   if (p[0] === 'private' && p[1] === 'wifi') cmWifiQr();
+  if (p[1] === 'message') hgMark(t.dataset.p);
   if (p[p.length - 1] === 'c' && p[p.length - 3] === 'badges' && /^#[0-9a-f]{6}$/i.test(val)) { const n = parseInt(val.slice(1), 16), lum = (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; edGet(c, p.slice(0, -1)).ink = lum > 0.62; }
   cmQueue();
 }
@@ -2344,6 +2357,9 @@ document.addEventListener('click', e => {
   if (d.amput) { cmAmPut(d.amput); return done(); }
   if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); const a = arr(d.addit); a.push(edNewItem(a, d.addit)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
   if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }] }; return done(); }
+  if (d.hgcheckout !== undefined) { const a = arr('files/message/blocks');   // the house guide's Check-out part, open, its first line ready to type
+    if (!a.some(b => b.id === 'checkout')) { a.push({ id: 'checkout', icon: 'key', tone: 'ink', title: L6(HG_CHECKOUT), items: [L6('')] }); CM.open.add('files/message/blocks/' + (a.length - 1)); }
+    done(); setTimeout(() => { const x = document.getElementById(cmId(`files/message/blocks/${a.length - 1}/items/0`)); if (x) x.focus(); }, 0); return; }
   if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }); return done(); }
   if (d.add) { const o = {}; for (const l of edLangs()) o[l] = ''; arr(d.add).push(o); done(); setTimeout(() => { const x = document.getElementById(cmId(d.add + '/' + (arr(d.add).length - 1))); if (x) x.focus(); }, 0); return; }
   if (d.cdel) {
@@ -2666,7 +2682,7 @@ function cmInit() {
 .pl-kindrow:has([data-ckinds^="files/markets/"]) .pl-kn{flex:1 1 0;min-width:0}   /* "Antiques and crafts" wraps, Change stays on the row */
 .cmi textarea[data-p^="files/markets/"]{field-sizing:content;min-height:0}   /* a market's name and description: as tall as their words */
 /* A place out of season (season.js): the row's quiet note while guests do not see it; "Open all year" under the season line */
-.cmi>summary small.pl-hid{color:var(--muted);font-style:italic}
+.cmi>summary small.pl-hid{color:var(--muted);font-style:italic}.pl-hid.hg-ok{display:none}
 /* "Is it still open?" (lkHTML): a calm question at the top of the card, the panel's own surface, no warning colour */
 .pl-look{gap:6px;padding:12px 14px 14px}
 .pl-lks{margin:0;font-size:14.5px;line-height:1.45}

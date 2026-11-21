@@ -87,5 +87,32 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 - The page's title, its first group and its first row all say "Emergencies" (fix 09.5).
 - Contacts are not on the map (fix 09.6).
 
+## 11. House guide (changed 21 Nov 2026)
+
+### In the editor, on the pool house (ten parts, two with words)
+| # | Do | Expect |
+|---|---|---|
+| 11.1 | Open House guide | The check-out time, "+ Add a Check-out part" (this guide has none), then the parts. Eight rows say "Guests do not see this part yet: add a line." |
+| 11.2 | Open Kitchen, "+ Add a line", type a line | The note leaves Kitchen's row; the step says "Changed" |
+| 11.3 | In Kitchen, type a "Line under the title" | Every part has that field, also those that had none |
+| 11.4 | "+ Add a Check-out part" | A part "Check-out" at the end, open, the cursor in its first line; the button is gone |
+| 11.5 | Set a check-out time, type a line in Check-out | Nothing else to do |
+| 11.6 | Preview, then House guide in the phone | Only the parts with words: Getting here, Kitchen, House rules, Check-out. Kitchen opens on its photos, your line under the title and your line |
+| 11.7 | In the preview, Home, tap the check-out time | The house guide opens with Check-out open, in the middle of the screen |
+| 11.8 | The same on a phone (360 px wide) | Nothing overlaps; the note under a row's name wraps cleanly |
+
+### In the builder, with a new link (the test house)
+| # | Do | Expect |
+|---|---|---|
+| 11.20 | In Rooms and photos, write a note in one room only | The phone's House guide shows that part, not the rooms that only have photos |
+| 11.21 | Build the guide, open its House guide | Parts with words only. A line under a title reads like "Washing machine, tumble dryer", never "Free washer – In unit" |
+| 11.22 | The same guide in German and French | The lines under the titles are in that language |
+
+### Known, not to report
+- A guide built before 21 Nov keeps its old lines under the titles ("Free washer – In unit") until they are changed in the editor.
+- A new guide has a Check-out part only when the listing gave a check-out time or the host wrote check-out tasks; else it is added in the editor (11.4).
+- A part cannot be added (other than Check-out) or removed, and a line cannot be moved to another part yet.
+- A house whose host wrote nothing about its rooms has a short house guide: the way in, the rules, check-in and check-out.
+
 ## Later modules
 Added here as each one is built or changed: public transport (bus, metro, tram), then the rest of the plan.

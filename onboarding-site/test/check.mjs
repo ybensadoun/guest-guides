@@ -2149,6 +2149,9 @@ async function gWow() {
     await ctx.close(); }
 }
 async function gEditor() {
+  // The editor's step House guide as it stands: its parts, their fields "Line under the title", the rows that say guests do not see them, the offer of a Check-out part.
+  const hg = q => q.evaluate(() => ({ cards: document.querySelectorAll('details.cmi[data-open^="files/message/blocks/"]').length, subs: document.querySelectorAll('[data-p^="files/message/blocks/"][data-p$="/sub"]').length,
+    hidden: [...document.querySelectorAll('details.cmi[data-open^="files/message/blocks/"] summary .pl-hid:not(.hg-ok)')].map(e => e.textContent), add: !!document.querySelector('[data-hgcheckout]') }));
   // ---- The editor ----
   { const { ctx, p, errors } = await open(browser, E, 360, 780);
     await p.goto('http://editor.test/'); await ready(p);
@@ -2173,7 +2176,30 @@ async function gEditor() {
     await p.click(up(1)); await settle(p, 200);
     await go(p, '#howto'); await settle(p, 200);
     ok('editor: the parts of the house guide can be put in order too', !!(await p.$('[data-cardmove="files/message/blocks/1"][data-dir="-1"]')));
+    // The house guide's parts (engine/src/modules/info/README.md, rules 11 and 12): every part can have a line under its
+    // title; on the reference guide no part is hidden from guests and there is a Check-out part, so none is offered.
+    const h0 = await hg(p);
+    ok('editor: House guide: every part can have a line under its title; the reference guide hides no part and has its Check-out part', h0.cards > 2 && h0.subs === h0.cards && !h0.hidden.length && !h0.add, JSON.stringify(h0));
     ok('editor: no page errors (phone)', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // A guide as the maker builds one: a part with photos and no words, and no Check-out part (rules 11 and 12), at both widths.
+  for (const [w, h] of [[360, 780], [1280, 860]]) { const c1 = JSON.parse(JSON.stringify(E.content)), bl = c1.files.message.blocks;
+    Object.assign(bl[0], { items: [] }); delete bl[0].body; delete bl[0].links; bl.splice(bl.findIndex(x => x.id === 'checkout'), 1);
+    const { ctx, p, errors } = await open(browser, { ...E, content: c1, draft: null }, w, h, { 'porta-editor-step-v1': JSON.stringify({ [E.id]: 'howto' }) });
+    await p.goto('http://editor.test/'); await p.waitForSelector('.edz .cm-h', { timeout: 15000 }).catch(() => {});
+    const h1 = await hg(p);
+    ok(`editor ${w}: House guide: a part with photos and no words says guests do not see it; with no Check-out part, one is offered`, h1.hidden.length === 1 && /Guests do not see this part yet/.test(h1.hidden[0]) && h1.add, JSON.stringify(h1));
+    await p.screenshot({ path: join(SHOTS, `editor-houseguide-${w}.png`) });
+    await p.click('[data-hgcheckout]'); await settle(p, 250);
+    const h2 = await p.evaluate(() => { const c = [...document.querySelectorAll('details.cmi[data-open^="files/message/blocks/"]')].pop(), a = document.activeElement;
+      return { title: c.querySelector('summary b').textContent, open: c.open, note: (c.querySelector('summary .pl-hid:not(.hg-ok)') || {}).textContent || '', focus: a && a.dataset ? a.dataset.p || '' : '', add: !!document.querySelector('[data-hgcheckout]') }; });
+    ok(`editor ${w}: House guide: "Add a Check-out part" adds it once, at the end, open, its first line ready to type`, h2.title === 'Check-out' && h2.open && /Guests do not see/.test(h2.note) && /\/items\/0$/.test(h2.focus) && !h2.add && (await hg(p)).cards === h1.cards + 1, JSON.stringify(h2));
+    await p.keyboard.type('Leave the keys on the table.'); await settle(p, 300);
+    const h3 = await hg(p);
+    ok(`editor ${w}: House guide: once the part has a line, its row no longer says guests do not see it`, h3.hidden.length === 1, JSON.stringify(h3.hidden));
+    ok(`editor ${w}: House guide: nothing overlaps, the page is not wider than the screen`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    await p.screenshot({ path: join(SHOTS, `editor-houseguide-added-${w}.png`) });
+    ok(`editor ${w}: House guide: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const { ctx, p } = await open(browser, E, 360, 780, { 'porta-editor-step-v1': JSON.stringify({ [E.id]: 'look' }) });
     await p.goto('http://editor.test/'); await ready(p);

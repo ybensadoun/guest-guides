@@ -157,13 +157,15 @@ function wpsSwap(html){
 const lines = k => (v(k) || '').split('\n').map(x => x.replace(/^\s*[-*•]\s*/, '').trim()).filter(Boolean);
 const PV_ROOM = { 'Living room': 'Living room', Kitchen: 'Kitchen', Bedroom: 'Bedrooms', Bathroom: 'Bathrooms', Pool: 'Pool', Garden: 'Outside', Terrace: 'Outside', Outside: 'Outside', View: 'Outside', Office: 'Office', Laundry: 'Laundry' };
 // The parts of the house guide, as the build makes them: in the order of the host's rooms, each kind of room one part.
+// Only a part with a line is shown, as guests will see it (engine/src/modules/info/README.md, rule 11): its photos alone
+// are the house page's.
 function houseParts(){
   const out = new Map(), rooms = roomsNow(), part = c => PV_ROOM[c] || 'Good to know', at = t => out.get(t) || out.set(t, { r: t, items: [], photos: [] }).get(t);
   rooms.forEach(r => { if (part(r.c) !== 'Good to know') at(part(r.c)); });
   lines('howTos').forEach(l => at(part(Object.keys(ROOMKW).find(k => ROOMKW[k].test(l)))).items.push(l));
   rooms.forEach(r => String(r.t || '').split('\n').map(x => x.trim()).filter(Boolean).forEach(l => at(part(r.c)).items.push(rooms.filter(x => part(x.c) === part(r.c)).length > 1 ? `${r.n}: ${l}` : l)));
   uploads.filter(u => u.kind === 'photo').forEach(u => at(part(u.room)).photos.push(u.url));
-  const parts = [...out.values()].filter(p => p.items.length || p.photos.length);
+  const parts = [...out.values()].filter(p => p.items.length);
   return [...parts.filter(p => p.r !== 'Good to know'), ...parts.filter(p => p.r === 'Good to know')];
 }
 const ROOMKW = { Kitchen: /coffee|oven|hob|stove|dishwasher|fridge|kettle|microwave|kitchen|nespresso|toaster/i, 'Living room': /\btv\b|television|sofa|living|netflix|speaker|fireplace|heating/i,

@@ -24,6 +24,9 @@ Ca La Kimberly's house guide is the reference: the move was checked pixel for pi
 | 8 | Never tell guests to contact the hosts, never the hosts' phone numbers, in any row. | `../CLAUDE.md` ("Privacy and safety") |
 | 9 | Its tile on Home is an entry tile, half, wide or tall, with no live line. | Yohann, 14 Nov 2026 (proposal 22, `../README.md`); the sizes: what the frame gave every section with no module of its own |
 | 10 | A section of a kind no module knows is drawn as a text page, and its tile as a text page's. | As built (the section view's last branch, `views/section.js`; the tile's, `views/home.js`) |
+| 11 | Guests see a part only when it has words of its own: a text, a line or a button, in any language. Photos alone, or only the line under the title, do not make a part: the house page shows the photos, and a part must never open on nothing. The part stays in the guide's data, so the host finds it in the editor, where its row says "Guests do not see this part yet: add a line." The builder's phone shows the same parts as guests will see. | Claude's recommendation, built 21 Nov 2026 in round 2 of the ordered fixes (Yohann's "Go" to the list, 17 Nov 2026; his rule "real information or nothing for guests"). Seen on the maker-built pool house on 16 Nov: eight of ten parts opened on photos or on nothing |
+| 12 | In the editor every part can have a line under its title (an empty one is not drawn), and a guide with no Check-out part can add one: id `checkout`, the key, ink, named "Check-out" in the guide's languages, so that Home's Check-out fact has a part to open. | Claude's recommendation, built 21 Nov 2026 (the plan's gap C, in part) |
+| 13 | In a new guide the line under a part's title and its "Also in the kitchen: ..." say the things of that room in our own names (`engine/src/amenities.json`), in every language of the guide and in the listing's order, never in the listing's raw words ("Free washer – In unit"). Left out: a thing our list does not know, a view, Wi-Fi, parking, the room's own name ("Pool" under Pool). What is outdoors goes outside (the outdoor shower, the outdoor kitchen), the pool stays the pool's. A guide built before keeps its lines until its host changes them. | Claude's recommendation, built 21 Nov 2026 (the plan's gap K, in part) |
 
 ## Its data
 
@@ -33,9 +36,12 @@ languages, `photos` the paths of the row's photos, `links` `[{ labelKey, href }]
 directions to the house). Read by `content.js` with the other sections. The section in `content/sections.json`:
 `{ "id": "message", "kind": "info", "labelKey": "houseGuide" }`.
 
-Where it comes from: the host's answers in the maker (rooms, notes, listing equipment, rules, check-out), written by the
-generator (`engine/scripts/generate-site.py`); Ca La Kimberly's was written by hand. What the maker cannot change yet
-(add or remove a part, its icon and colour, move a line): the plan's gaps C and K, proposal 9.
+Where it comes from: the host's answers in the maker (the note in each room's card of Rooms and photos, the listing's
+equipment, the rules, the way in, the check-in and check-out times and tasks), written by the generator
+(`engine/scripts/generate-site.py`); Ca La Kimberly's was written by hand. The builder no longer asks "how things work" as
+one text (`answers.howTos` is still read for old answers). What the maker cannot change yet (add or remove a part other
+than Check-out, its icon and colour, move a line, the paragraph under the lines, a part's button): the plan's gaps C and K,
+proposal 9.
 
 ## Its look
 
@@ -48,7 +54,7 @@ paragraphs, `.glist` items, `.actions` buttons). On Home, the entry tile, its co
 
 | Part | Where | In the module? |
 |---|---|---|
-| The rules, pure and tested: a row's colour, its paragraphs, the directions link | `plan.js` (tests: `engine/scripts/info-plan.test.mjs`) | Yes |
+| The rules, pure and tested: a row's colour, its paragraphs, the directions link, which parts guests see (`partShown`, pasted into the maker by `onboarding-site/src/build.py` as `INFO`) | `plan.js` (tests: `engine/scripts/info-plan.test.mjs`) | Yes |
 | The icons of the rows (three are also the house page's) | `icons.js` (`GUIDE_ICON`) | Yes |
 | The page | `page.js` | Yes |
 | The Home widget | `widget.js` | Yes |
@@ -60,8 +66,8 @@ paragraphs, `.glist` items, `.actions` buttons). On Home, the entry tile, its co
 | The Check-out shortcut on Home, and the click that remembers which row to open | `../house/welcome.js`; `engine/src/main.js` (`window.__openRow`) | No: the house's; the router's |
 | Its styles | `engine/src/styles/app.css` (`.mlist.guide`, `.mrow`, `.mbody`, `.gphotos`, `.glist`, `.allphotos`, `.gt[data-k="message"]`, `.lbox`) | Not yet: they move with the one tile system (plan, proposal 4) |
 | Its words | `engine/src/i18n/<lang>.json`: `houseGuide`, `houseGuideLead`, `housePhotos`, `housePhotosSub`, a link's `labelKey` | Not yet |
-| From the host's answers to the file | `engine/scripts/generate-site.py` | Not yet |
-| The maker's steps (rooms, How things work, Check-in and rules, Check-out) | `onboarding-site/src/` | No: the maker's |
+| From the host's answers to the file | `engine/scripts/generate-site.py` (tests: `worker/test/generate-house-guide.test.mjs`) | Not yet |
+| The maker's step House guide (`cmHouseGuide` in `editor.js`), the builder's phone preview of it (`houseParts` in `preview.js`) | `onboarding-site/src/` (checks: the group `editor` of `onboarding-site/test/check.mjs`) | No: the maker's files |
 
 ## Still Ca La Kimberly's own
 

@@ -333,10 +333,12 @@ for r in rooms:
         items[room_kind(r)].append(f"{r['n'].strip()}: {ln}" if sum(room_kind(x) == room_kind(r) for x in rooms) > 1 else ln)
 if not HOUSE_PAGE: items['bedrooms'] = lines('sleeping') + items['bedrooms']   # sleeping arrangements as the listing states them; the house page has them otherwise
 # The listing's own equipment list (answers.listingAmenities, as the page states it), sorted into the rooms: each room
-# gets a short line under its title and "Also in the kitchen: ...", like Ca La Kimberly's house guide. Safety items go
-# to "Good to know"; Wi-Fi, parking and generic lines are left out (they have their own places).
-AM_KW = {'kitchen': KW['kitchen'] + r'|refrigerator|cooking basics|dishes|cutlery|silverware|wine glass|baking|dining table|blender|rice cooker|spices|bread maker',
-         'living': KW['living'] + r'|sound system|books|board games|game console|piano|record player|ethernet',
+# gets a short line under its title and "Also in the kitchen: ...", like Ca La Kimberly's house guide. Said in our own
+# names (engine/src/amenities.json, six languages), never in the listing's raw words ("Free washer – In unit"): a thing
+# our list does not know is left out (engine/src/modules/info/README.md, rule 13). Safety items go to "Good to know";
+# Wi-Fi, parking and generic lines are left out (they have their own places); what is outdoors goes outside.
+AM_KW = {'kitchen': KW['kitchen'] + r'|refrigerator|fridge|cooking basics|pots and pans|dishes|plates|cutlery|silverware|wine glass|baking|dining table|blender|rice cooker|spices|bread maker',
+         'living': KW['living'] + r'|sound system|books|board games|game console|games console|piano|record player|ethernet',
          'bedrooms': KW['bedrooms'] + r'|hangers|clothing storage|room-darkening|blackout|crib|travel cot',
          'bathrooms': KW['bathrooms'] + r'|hair dryer|shampoo|conditioner|body soap|shower gel|bidet|bathtub',
          'pool': KW['pool'] + r'|hot tub',
@@ -347,13 +349,32 @@ SAFE = r'first aid|fire extinguisher|smoke alarm|carbon monoxide'
 JUST_ROOM = r'(kitchen|cocina|cuina|cuisine|pool|piscina|piscine)'   # the listing's "Kitchen" says nothing inside the Kitchen
 am_room = {k: [] for k in ROOM}
 for x in [str(v).strip() for v in (A.get('listingAmenities') or []) if str(v).strip()]:
-    if re.search(r'^(wifi|wi-fi|essentials|tv)$|parking|wifi', x, re.I) and not re.search(r'smart tv', x, re.I): continue
-    if re.fullmatch(JUST_ROOM, x, re.I): continue
-    k = next((r for r, rx in AM_KW.items() if re.search(rx, x, re.I)), 'other' if re.search(SAFE, x, re.I) else None)
-    if k and x not in am_room[k]: am_room[k].append(x)
+    it = AM_BY.get(x) or AM_BY.get(am_match(x))
+    if not it: continue
+    ours = it['t']['en']
+    if it.get('g') == 'views': continue   # a view is not a thing in a room
+    if (re.search(r'^(wifi|wi-fi|essentials|tv)$', x, re.I) or re.search(r'parking|wifi', x + ' | ' + ours, re.I)) and not re.search(r'smart tv', x, re.I): continue
+    if re.fullmatch(JUST_ROOM, x, re.I) or re.fullmatch(JUST_ROOM, ours, re.I): continue
+    both = x + ' | ' + ours
+    k = ('outside' if re.search(r'outdoor|outside', both, re.I) and not re.search(AM_KW['pool'], both, re.I)
+         else next((r for r, rx in AM_KW.items() if re.search(rx, both, re.I)), 'other' if re.search(SAFE, both, re.I) else None))
+    if k and it not in am_room[k]: am_room[k].append(it)
 low = lambda x: x[:1].lower() + x[1:] if x[1:2].islower() else x
-ALSO = {'living': 'Also in the living room', 'kitchen': 'Also in the kitchen', 'bedrooms': 'Also in the bedrooms', 'bathrooms': 'Also in the bathrooms',
-        'pool': 'Also by the pool', 'outside': 'Also outside', 'laundry': 'Also in the laundry', 'office': 'Also in the office', 'other': 'Also in the house'}
+# Several things said in one line, in each language of the guide: the first as it is named, the next ones in small
+# letters, except in German, whose nouns keep their capital.
+am_say = lambda its, l: ', '.join((n if i == 0 or l == 'de' else low(n)) for i, n in enumerate(x['t'].get(l) or x['t']['en'] for x in its))
+ALSO = {'living': {'en': 'Also in the living room', 'es': 'En el salón también hay', 'fr': 'Dans le salon, il y a aussi', 'ca': 'A la sala també hi ha', 'de': 'Außerdem im Wohnzimmer', 'nl': 'Verder in de woonkamer'},
+        'kitchen': {'en': 'Also in the kitchen', 'es': 'En la cocina también hay', 'fr': 'Dans la cuisine, il y a aussi', 'ca': 'A la cuina també hi ha', 'de': 'Außerdem in der Küche', 'nl': 'Verder in de keuken'},
+        'bedrooms': {'en': 'Also in the bedrooms', 'es': 'En los dormitorios también hay', 'fr': 'Dans les chambres, il y a aussi', 'ca': 'A les habitacions també hi ha', 'de': 'Außerdem in den Schlafzimmern', 'nl': 'Verder in de slaapkamers'},
+        'bathrooms': {'en': 'Also in the bathrooms', 'es': 'En los baños también hay', 'fr': 'Dans les salles de bain, il y a aussi', 'ca': 'Als banys també hi ha', 'de': 'Außerdem in den Bädern', 'nl': 'Verder in de badkamers'},
+        'pool': {'en': 'Also by the pool', 'es': 'En la piscina también hay', 'fr': 'À la piscine, il y a aussi', 'ca': 'A la piscina també hi ha', 'de': 'Außerdem am Pool', 'nl': 'Verder bij het zwembad'},
+        'outside': {'en': 'Also outside', 'es': 'Fuera también hay', 'fr': 'Dehors, il y a aussi', 'ca': 'A fora també hi ha', 'de': 'Außerdem draußen', 'nl': 'Verder buiten'},
+        'laundry': {'en': 'Also in the laundry', 'es': 'En la lavandería también hay', 'fr': 'Dans la buanderie, il y a aussi', 'ca': 'A la bugaderia també hi ha', 'de': 'Außerdem in der Waschküche', 'nl': 'Verder in de wasruimte'},
+        'office': {'en': 'Also in the office', 'es': 'En el despacho también hay', 'fr': 'Dans le bureau, il y a aussi', 'ca': 'Al despatx també hi ha', 'de': 'Außerdem im Büro', 'nl': 'Verder in het kantoor'},
+        'other': {'en': 'Also in the house', 'es': 'En la casa también hay', 'fr': 'Dans la maison, il y a aussi', 'ca': 'A la casa també hi ha', 'de': 'Außerdem im Haus', 'nl': 'Verder in huis'}}
+def am_also(k, l):   # "Also in the kitchen: fridge, microwave, kettle, toaster."
+    said = am_say(am_room[k], l)
+    return f"{ALSO[k].get(l) or ALSO[k]['en']}{chr(160) if l == 'fr' else ''}: {said if l == 'de' else low(said)}."
 blocks = []
 first = [k for k in dict.fromkeys(room_kind(r) for r in rooms) if k != 'other']   # "Good to know" stays last
 for k in first + [k for k in ROOM if k not in first]:
@@ -361,8 +382,8 @@ for k in first + [k for k in ROOM if k not in first]:
     if not items[k] and not room_photos.get(k) and not am_room[k]: continue
     b = {'id': k, 'icon': icon, 'tone': tone, 'title': L(title)}
     if am_room[k]:
-        b['sub'] = L(', '.join([am_room[k][0]] + [low(x) for x in am_room[k][1:3]]))
-        if len(am_room[k]) > 3: b['body'] = L(f"{ALSO[k]}: {', '.join(low(x) for x in am_room[k])}.")   # up to three are all in the line under the title
+        b['sub'] = {l: am_say(am_room[k][:3], l) for l in LANGS}
+        if len(am_room[k]) > 3: b['body'] = {l: am_also(k, l) for l in LANGS}   # up to three are all in the line under the title
     if room_photos.get(k): b['photos'] = room_photos[k]
     if items[k]: b['items'] = [L(x) for x in items[k]]
     blocks.append(b)
