@@ -27,7 +27,7 @@ Earth, public domain; the file waits for Yohann's yes to the download), their te
 ## Steps, in order
 | # | Step | Files | Needs |
 |---|---|---|---|
-| 1 | The outlines file | `onboarding-site/countries.json` (made once, committed) | Yohann's yes to the download |
+| 1 | The outlines file: done 21 Nov 2026 | `onboarding-site/countries.json` (made once, committed) | done |
 | 2 | The house's country, kept: the builder writes `answers.country` when the position is first known (`start.js` 231, 305, 456); the generator writes it into `content/house.json` (`generate-site.py` 288 to 303, asking `country-of.mjs`); the editor reads `edF().house.country`, else works it out from the position once. No field for the host | `start.js`, `generate-site.py`, `editor.js`, `build.py` | a turn |
 | 3 | What the owner decided, read once: `launch_public()` with the public key, when the maker starts (`runtime.js` 635, before `accountBoot`), kept in memory; no answer within 4 s or a failure: the list alone. One helper in the maker, `partOn(id)`, for the house in hand | `runtime.js`, `build.py` | a turn |
 | 4 | The worker reads the same for a build and for a job: the house's country (`country-of.mjs`), the tables with its own access, `available-of.mjs`; one helper `partOn(id)` per build or job | `worker/guide-worker.mjs` (237, 915) | a turn; the unit tests after the last edit |
@@ -58,6 +58,15 @@ the sections themselves (Guide sections) are to decide with Yohann; none is buil
 First the four of Getting around that are tied to Spain's files (trains, brands, stops, apps): they are the clearest
 case, a house in France gets Spain's nearest station today. Then the research (markets, events, things to do, contacts),
 which is where money is spent for a country we do not serve. Then facts, towns, taxis and the deck.
+
+## The outlines file (made 21 Nov 2026)
+`onboarding-site/countries.json`: 237 countries, 1,617 outlines, 534 KB (179 KB as the browser gets it), from Natural
+Earth's 1:50m file (public domain; downloaded on Yohann's yes into `~/.cache/guest-guides/naturalearth/`). Measured on 26
+border towns of Spain, France, Portugal and Andorra: the outlines are up to about 3 km off the true border. So within
+6 km of another country's outline the answer is "not known", and the rule cuts nothing there: a house in Puigcerdà,
+Irun, Portbou or Tui keeps everything, as today. Known limits, in `engine/src/country.js`: Llívia, Gibraltar, the
+Vatican, and the smallest countries, which are all border. Natural Earth's 1:10m file (13 MB) would narrow the band:
+for the day a small country is launched.
 
 ## Known, to settle
 - The worker's own Spain defaults (`gazetteer('ES')`, `country = 'ES'`, "Spain" in `place-facts.mjs`, `host-places.mjs`,

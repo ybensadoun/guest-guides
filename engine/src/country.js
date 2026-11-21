@@ -12,7 +12,7 @@
 // outline is no country's, '' (not known), never a guess. The launch desk's rule cuts nothing for a house whose country
 // is not known. What this cannot tell: a town that is an island of its country inside another (Llívia), which the file
 // does not draw, and the smallest countries, which are all border (Monaco, San Marino); Gibraltar has no outline of its
-// own and reads as Spain. Natural Earth's 1:10m file would narrow all of this: for the day a small country is launched.
+// own and reads as Spain, the Vatican as Italy. Natural Earth's 1:10m file would narrow all of this: for the day a small country is launched.
 // An outline smaller than about 10 km by 10 km (the Vatican, Monaco) casts no doubt on what is around it: Rome is Italy.
 const NEAR_KM = 25, BORDER_KM = 6, TINY = 100;
 export function countriesPrep(data) {
