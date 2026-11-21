@@ -50,6 +50,7 @@ So the launch desk comes first; the play area and the feedback box, which the fi
 | `test/check.mjs`, `test/pretend.mjs` | The page on a pretend database, at 1280 px and 360 px (130 checks) |
 | `test/start-check.mjs` | The maker's start with the desk's call hanging, refused (500), too many connections (429), unreachable, absent, not JSON or with rows: the maker opens the same, as fast, the link field takes a link at once, and the host is shown nothing (206 checks, a visitor and the editor, 1280 and 360 px) |
 | `test/gates-check.mjs` | The gates in the editor: Getting around on a sample house in Spain, at a border, in France (130 checks, 1280 and 360 px) |
+| `test/same-guide.mjs` | The generator of this checkout against another commit's (default origin/main), byte for byte, on the sample houses in Spain and at a border: for a change that must take nothing from such a house |
 | `test/pictures.mjs` | Every module pictured five ways on a sample house: the guide on a phone and a desktop screen, the maker's step on both, its Countries tab |
 | `../../engine/scripts/available.test.mjs` | The list is well made, the copies are in step |
 
