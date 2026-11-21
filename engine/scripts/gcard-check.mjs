@@ -257,7 +257,7 @@ try {
       // Out of season: Closed and the day it opens, no quiet word; opened, the season above Google's card, which still comes.
       await pg.evaluate(() => { location.hash = '#s/restaurants'; }); await pg.waitForTimeout(400);
       { const id = 'restaurants-quijote', q = await rowState(pg, id);
-        if (!q || q.quiet || !/ \/ \S/.test(q.status)) fail(at(id), `out of season it does not say Closed and when it opens: ${q && q.status}`);
+        if (!q || q.quiet || !/\s[\/·] \S/.test(q.status)) fail(at(id), `out of season it does not say Closed and when it opens: ${q && q.status}`);
         await click(pg, id);
         await pg.waitForSelector(`${sel(id)} .gcard.on`, { timeout: 4000 }).catch(() => fail(at(id), 'out of season the card was not shown'));
         const o = await rowState(pg, id);

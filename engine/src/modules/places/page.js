@@ -37,7 +37,7 @@ export function page(V, sec) {
   const hl = pageCard(sec.highlight);
   const body = all.length ? `${hl}<a class="pl-map secmap" href="#map" data-mapcat="${esc(all[0].cat)}" aria-label="${esc(t('openMap'))}"><div id="secmap"></div><span class="pl-map-cta">${ICON.pin}${esc(t('openMap'))}</span></a>
       ${gchips}${filters}${sortRow({ small: true })}
-      ${l.length ? `<div class="mlist">${l.map((m, i) => (i === k3 ? `<h3 class="mgh">${esc(t('f_noHours'))}</h3>` : '') + row(m, { date: now, live: true, gcard: true })).join('')}</div>` : `<p class="empty">${esc(t('f_noneOpen'))}</p>`}` : `<div class="empty">${esc(t('soon'))}</div>`;
+      ${l.length ? `<div class="mlist">${l.map((m, i) => (i === k3 ? `<h3 class="mgh">${esc(t('f_noHours'))}</h3>` : '') + row(m, { date: now, live: true, gcard: true, words: true })).join('')}</div>` : `<p class="empty">${esc(t('f_noneOpen'))}</p>`}` : `<div class="empty">${esc(t('soon'))}</div>`;
   // The list's map: kept as is when only the status refreshes (the same list, the same filters), redrawn otherwise.
   const oldMap = V.dataset.sec === id ? V.querySelector('#secmap') : null;
   sectionFrame(V, sec, body);

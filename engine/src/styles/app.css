@@ -1141,3 +1141,21 @@ body:not(.is-home) .pl-head .pl-dist{grid-column:2;grid-row:3;align-self:start}
 /* In an opened row Google's line says it under the address: the word goes out of sight, keeping its room so the name does
    not move when the row opens. */
 .mrow[open] > summary .st.quiet{visibility:hidden}
+
+/* A place's row on the host's lists (ui.js row, words: true; places/README.md rules 23 and 24): the name has the row's
+   whole width beside the arrow; under it one line of kind, town, distance and price, a dot after each piece (.mp), a
+   town, a distance and a price kept whole; then the status on a line of its own, its text and its time side by side ("Closed · Opens at 20:00");
+   then two lines of the host's words, which the opened row says in full below. Nothing stands at the right of the words
+   any more, so no status squeezes them (German at 360 px: "Rund um die Uhr" took a third of the row). */
+.mrow.wr > summary{grid-template-columns:40px minmax(0,1fr) auto;align-items:start}
+.mrow.wr .dot{grid-row:1;align-self:start}
+.mrow.wr .nm{grid-column:2;grid-row:1}
+.mrow.wr .nm small .mp.k{white-space:nowrap}
+.mrow.wr .nm small .mp.price{color:var(--ink);font-weight:600}
+.mrow.wr .rt{display:contents}
+.mrow.wr .rt .chev{grid-column:3;grid-row:1;align-self:start;margin-top:5px}
+.mrow.wr .rt .st{grid-column:2/-1;grid-row:2;display:block;text-align:left;max-width:none;margin-top:4px}
+.mrow.wr .rt .st small{display:inline;font-size:15px;font-weight:400}
+.mrow.wr .wds{grid-column:2/-1;grid-row:3;margin-top:6px;font-size:15px;line-height:1.35;color:var(--ink);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+.mrow.wr[open] > summary .wds{display:none}
+.mrow.wr .tstrip{grid-row:4}

@@ -196,7 +196,15 @@ const wikiUrl = q => `https://${lang}.wikipedia.org/w/index.php?search=${encodeU
 // place with hours, and its season where our hours go, above Google's line. With no status of ours and Google's line to
 // come, a quiet "See hours" stands where a status would (.st.quiet): the hours are one tap away. Never when the line
 // cannot show (no key, offline, no door, a card already dropped this visit): nothing there, as before.
+// opts.words (the host's lists of places only: modules/places, README rules 23 and 24): the closed row also says the town
+// beside the kind (unless the kind or the name already holds it) and two lines of the host's own words, and its status
+// stands on a line of its own under the place's line, text and time side by side, so nothing squeezes the name (.mrow.wr).
+// Without it (Markets, Rubbish, the map's list) a row is drawn exactly as before.
+const plain = x => String(x || '').normalize('NFD').replace(/[^\p{L}\p{N}]/gu, '').toLowerCase();
+const stLine = s => s ? `<span class="st ${s.cls}">${nwT(s.text)}${s.sub ? `<small>\u00a0· ${nwT(s.sub)}</small>` : ''}</span>` : '';
 export function row(m, opts = {}) {
+  const wr = !!opts.words, stH = wr ? stLine : stHTML;
+  const town = wr && m.town && !plain(catLabel(m)).includes(plain(m.town)) && !plain(title(m)).includes(plain(m.town)) ? m.town : '';
   const gc = !!opts.gcard && wantsCard(m);
   // opts.status: the row's status as its own module words it (the markets' "Finished", modules/markets/data.js statusNow).
   const live = opts.status || (opts.date && opts.live ? statusLabel(m, opts.date) : null);
@@ -206,18 +214,22 @@ export function row(m, opts = {}) {
   const dist = [m.km != null ? `<span class="nw">${m.km} km</span> ${esc(t('fromHouseShort'))}` : null, me != null ? `<span class="nw">${me} km</span> ${esc(t('fromYouShort'))}` : null].filter(Boolean).map(x => `<span class="dk">${x}</span>`).join('');
   const price = m.price ? `<span class="dk price">${esc(t('perPerson', { p: m.price }))}</span>` : '';
   const warn = false; // notes like "Book ahead" are shown as plain tags, not a warning sign
+  // With words: the kind, the town, the distances and the price as one line of pieces, a dot after each but the last, tied
+  // to it. The line wraps between pieces (and inside the kind, which may be long); a town, a distance and a price stay whole.
+  const pieces = wr ? [[esc(catLabel(m)), ''], town && [esc(town), ' k'], m.km != null && [`${m.km} km ${esc(t('fromHouseShort'))}`, ' k'], me != null && [`${me} km ${esc(t('fromYouShort'))}`, ' k'], m.price && [esc(t('perPerson', { p: m.price })), ' k price']].filter(Boolean) : [];
+  const metaLine = pieces.map(([x, c], i) => `<span class="mp${c}">${x}${i < pieces.length - 1 ? '\u00a0·' : ''}</span>`).join(' ');
   const ht = hoursText(m);
   const nextLine = m.s.length && !(live && live.cls !== 'closed') ? `<span class="t next">${esc(nextOpenText(m))}</span>` : '';
   const when = typeof ht === 'string'
     ? `<div class="when"><span>${esc(t('occasional'))}</span><span class="t">${esc(ht)}</span></div>`
     : `<div class="when">${ht.map(h => `<span>${esc(h.days)} <span class="t">${esc(h.time)}</span></span>`).join('')}${nextLine}</div>`;
   const where = [m.place, [m.town, m.comarca].filter(Boolean).join(' · ')].filter(Boolean);
-  return `<details class="mrow" style="${itemStyle(m)}" data-id="${esc(m.id)}">
+  return `<details class="mrow${wr ? ' wr' : ''}" style="${itemStyle(m)}" data-id="${esc(m.id)}">
    <summary>
      <span class="dot">${itemIcon(m)}</span>
-     <span class="nm">${nameWithWarn(title(m), warn)}<small>${esc(catLabel(m))}<span class="dl">${dist}${price}</span></small></span>
-     <span class="rt">${live ? stHTML(live) : hrs ? `<span class="st plain">${esc(hrs)}</span>` : m.kind === 'spot' && opts.live && m.always ? `<span class="st open">${esc(t('open24'))}</span>` : m.kind === 'spot' && opts.live && m.s.length ? stHTML(closedStatus(m, opts.date)) : m.kind === 'spot' && opts.live && seasonStatus(m, opts.date) ? stHTML(seasonStatus(m, opts.date)) : gc && opts.live && !cardGone(m.gid) ? `<span class="st quiet">${esc(t('seeHours'))}</span>` : ''}<span class="chev" aria-hidden="true"></span></span>
-     ${tagStrip(m)}
+     <span class="nm">${nameWithWarn(title(m), warn)}<small>${wr ? metaLine : `${esc(catLabel(m))}<span class="dl">${dist}${price}</span>`}</small></span>
+     <span class="rt">${live ? stH(live) : hrs ? `<span class="st plain">${esc(hrs)}</span>` : m.kind === 'spot' && opts.live && m.always ? `<span class="st open">${esc(t('open24'))}</span>` : m.kind === 'spot' && opts.live && m.s.length ? stH(closedStatus(m, opts.date)) : m.kind === 'spot' && opts.live && seasonStatus(m, opts.date) ? stH(seasonStatus(m, opts.date)) : gc && opts.live && !cardGone(m.gid) ? `<span class="st quiet">${esc(t('seeHours'))}</span>` : ''}<span class="chev" aria-hidden="true"></span></span>
+     ${wr && m.description ? `<span class="wds">${esc(tx(m.description))}</span>` : ''}${tagStrip(m)}
    </summary>
    <div class="mbody">
      <div class="where">${where.map(esc).join('<br>')}</div>${seasonText(m) ? `<div class="when season"><span>${esc(seasonText(m))}</span></div>` : ''}${gc ? slotHTML(m) : ''}
