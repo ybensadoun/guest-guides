@@ -243,7 +243,7 @@ three lists share is live: they are not here yet.
 | 8.24 | A house with street containers only | No "Tonight" and no week; the tile says "Street containers, any time" |
 
 ### Known, not to report
-- The pool house keeps the texts it was built with (English steps in Catalan and Dutch, "Packaging (yellow)", "Sie") until they are brought up to date: its own step, with Yohann's yes.
+- A guide built before 19 Nov 2026 keeps the texts it was built with (the pool house: English steps in Catalan and Dutch, "Packaging (yellow)", "Sie"). No guide is patched by hand (Yohann, 21 Nov 2026); a guide built again through the maker has the new texts, and the product's own answer for guides already built comes after the test.
 - A host cannot add a kind of rubbish, name a bin or give a bin that goes out every evening (as Ca La Kimberly's red bin): the "one shape" work, after the test.
 - The host's own notes come after the four general steps, and may repeat one.
 - A container whose Google Maps link is a short one gets no point on the guide's map; its "Open map" button works.
