@@ -150,9 +150,9 @@ lists too (their own steps: sections 6 and 10, when written).
 | 5.4 | Tap "Open now" again | It is cleared and every place is back |
 | 5.5 | Tap "Dog friendly", then "Vegetarian" too | Each turns dark; the list keeps the places that have both; a second tap clears one |
 | 5.6 | Tap "From me" (allow the position) | The switch's white side moves; rows say both distances, nearest to you first |
-| 5.7 | Read a closed row | The name on the row's whole width; under it one line: kind, town, distance, price; then the status on its own line ("Open until 16:00 · Reopens at 20:00", "Closed · Opens tomorrow 13:00"); then two lines of the host's words; then the marks |
+| 5.7 | Read a closed row | The name on the row's whole width; under it two lines: kind and town, then distance and price, a dot between two pieces and never alone at a line's end; then the status on its own line ("Open until 16:00 · Reopens at 20:00", "Closed · Opens tomorrow 13:00"); then two lines of the host's words; then the marks |
 | 5.8 | Look at the pool house's rows | The town is there beside the kind ("Pizza · El Vendrell"). On Ca La Kimberly the kind already holds the town and it is not said twice |
-| 5.9 | Open a row | The two lines of words leave the row and the full text is in the opened part, with the address, the hours and the buttons |
+| 5.9 | Open a row | The two lines of words leave the row and the full text is in the opened part, with the address, the hours and the buttons. In German no word of that text is cut with a hyphen |
 | 5.10 | The same in German and in French | No word cut in two, nothing over anything; a long line wraps between its pieces, a distance or a price is never split |
 | 5.11 | Open Markets, Rubbish's glass container, and the map's list | They look as before (their rows did not change) |
 

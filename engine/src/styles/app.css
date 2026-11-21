@@ -1168,3 +1168,8 @@ body:not(.is-home) .pl-head .pl-dist{grid-column:2;grid-row:3;align-self:start}
 .mrow.wr .wds{grid-column:2/-1;grid-row:3;margin-top:6px;font-size:15px;line-height:1.35;color:var(--ink);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .mrow.wr[open] > summary .wds{display:none}
 .mrow.wr .tstrip{grid-row:4}
+/* The words of an opened row (a place's, a market's, an event's, a stop's: .note, and the notes under the hours and the
+   price, .hnote) are never hyphenated by the browser (../CLAUDE.md, UX: no word breaks mid-word; Home since 21 Nov 2026):
+   a line wraps between words or at a soft hyphen of the content. A word wider than its line still wraps as a last resort
+   (.mbody .note: overflow-wrap anywhere, above), so nothing runs out of the row. */
+.mbody .note,.mbody .hnote{-webkit-hyphens:manual;hyphens:manual}
