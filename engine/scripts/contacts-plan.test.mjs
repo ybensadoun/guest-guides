@@ -1,10 +1,10 @@
 // The Emergencies module's rules (engine/src/modules/contacts/plan.js, README.md beside it): a group's word, an address's
-// map link, the tile's short label. Written from the guide's behaviour on 14 Nov 2026 (views/section.js and views/home.js
-// before the module). Pure.   node --test engine/scripts/contacts-plan.test.mjs
+// map link, the tile's short label, a number as the page writes it. Written from the guide's behaviour on 14 Nov 2026
+// (views/section.js and views/home.js before the module). Pure.   node --test engine/scripts/contacts-plan.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { groupKey, mapsSearch, tileLabelKey } from '../src/modules/contacts/plan.js';
+import { groupKey, mapsSearch, tileLabelKey, phoneShown } from '../src/modules/contacts/plan.js';
 
 test('groupKey: c_<id>, health for a hospital, a pharmacy, a clinic or a medical centre', () => {
   assert.equal(groupKey('urgent'), 'c_urgent');
@@ -31,4 +31,21 @@ test('mapsSearch: a Google Maps search for the address', () => {
 test('tileLabelKey: the short label by the section\'s id, else the section\'s own', () => {
   assert.equal(tileLabelKey({ id: 'emergency', labelKey: 'emergency' }), 'emergencyTile');
   assert.equal(tileLabelKey({ id: 'help', labelKey: 'help' }), 'help');
+});
+
+test('phoneShown: a number in one piece is grouped, one written with spaces and a short one stay', () => {
+  assert.equal(phoneShown('977257914'), '977 25 79 14');
+  assert.equal(phoneShown('+34977257914'), '977 25 79 14');
+  assert.equal(phoneShown('608835327'), '608 83 53 27');
+  assert.equal(phoneShown('977-688-550'), '977 68 85 50');
+  for (const n of ['112', '061', '900 878 212', '91 562 04 20', '977 25 79 14', '+33100000004']) assert.equal(phoneShown(n), n);
+  assert.equal(phoneShown(' 977688724 '), '977 68 87 24');
+  assert.equal(phoneShown(undefined), '');
+});
+
+test('phoneShown: every number Ca La Kimberly holds is shown as it is written', () => {
+  const f = JSON.parse(readFileSync(new URL('../../sites/ca-la-kimberly/content/emergency.json', import.meta.url), 'utf8'));
+  const all = f.groups.flatMap(g => g.items).map(it => it.phone).filter(Boolean);
+  assert.ok(all.length >= 8);
+  for (const n of all) assert.equal(phoneShown(n), n);
 });

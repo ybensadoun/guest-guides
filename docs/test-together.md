@@ -166,13 +166,13 @@ On a phone, as a guest: Ca La Kimberly (ca-la-kimberly.netlify.app) and the pool
 - A container whose Google Maps link is a short one gets no point on the guide's map; its "Open map" button works.
 - Before the collection hour the header's title takes three or four lines on a narrow phone.
 
-## 9. Contacts: the page Emergencies (the status line changed 21 Nov 2026)
+## 9. Contacts: the page Emergencies (the status line and the numbers changed 21 Nov 2026)
 
 ### In the guide, on a phone (the pool house, then the test house)
 | # | Do | Expect |
 |---|---|---|
 | 9.1 | On Home, tap the red tile "Emergencies" | The page: groups, most urgent first; the emergency number first, with the largest red button |
-| 9.2 | Tap a number | The phone's own dialler opens with the number in it; nothing is called by itself |
+| 9.2 | Read the numbers on the buttons, then tap one | Each number in groups ("977 25 79 14"), never one long run of digits; 112 and 061 as they are. The phone's own dialler opens with the number in it; nothing is called by itself |
 | 9.3 | Look at a contact with hours while it is closed (the pharmacy in the evening) | One line: "Closed" in red, a dot, "Opens tomorrow 9:30" (or the day), all in one size; under it, its week |
 | 9.4 | The same contact while it is open (a weekday at 10:00) | "Open until 13:30" in green, the time green too; with an afternoon opening, a dot and "Reopens at 17:00" |
 | 9.5 | The same in Spanish, Catalan or German on a narrow phone, while it is open | When the two parts do not fit one line, the second is whole under the first; no line starts with a dot, no time is cut |

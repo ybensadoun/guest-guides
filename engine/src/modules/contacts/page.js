@@ -6,7 +6,7 @@ import { slots } from '../../content.js';
 import { hoursText, statusLabel, closedStatus } from '../../schedule.js';
 import { esc, ICON, stHTML, PHONE, tel } from '../../ui.js';
 import { sectionFrame } from '../../views/section.js';
-import { groupKey, mapsSearch } from './plan.js';
+import { groupKey, mapsSearch, phoneShown } from './plan.js';
 
 export function page(V, sec) {
   // Emergency contacts: most urgent first. Each row says what it is, when it is open (same format
@@ -26,7 +26,7 @@ export function page(V, sec) {
       <div class="clist">${g.items.map(it => `<div class="crow">
         <div class="ctx"><b>${esc(tx(it.name))}</b>${it.what ? `<span>${esc(tx(it.what))}</span>` : ''}${hours(it)}
           ${it.address || it.map || it.link || it.web ? `<span class="clinks">${it.address || it.map ? `<a class="cmap" href="${it.map || mapsSearch(it.address)}" target="_blank" rel="noopener">${ICON.pin}${esc(t('openMap'))}</a>` : ''}${it.web ? `<a class="cmap" href="${esc(it.web)}" target="_blank" rel="noopener">${esc(t('website'))}</a>` : ''}${it.link ? `<a class="cmap" href="${esc(it.link.url)}" target="_blank" rel="noopener">${esc(t(it.link.label))}</a>` : ''}</span>` : ''}</div>
-        ${it.phone ? `<a class="ccall" href="${tel(it.phone)}" aria-label="${esc(tx(it.name))}: ${esc(it.phone)}">${PHONE}<span>${esc(it.phone)}</span></a>` : ''}
+        ${it.phone ? `<a class="ccall" href="${tel(it.phone)}" aria-label="${esc(tx(it.name))}: ${esc(it.phone)}">${PHONE}<span>${esc(phoneShown(it.phone))}</span></a>` : ''}
       </div>`).join('')}</div></section>`).join('');
   sectionFrame(V, sec, body);
 }
