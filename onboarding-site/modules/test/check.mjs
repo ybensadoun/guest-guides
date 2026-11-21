@@ -109,11 +109,11 @@ try {
     ok(db.calls.some(c => c[0] === 'feedback-state' && c[1] === 'handed_out'), `${tag}: an item's state is saved`);
     // The launch desk: the countries, preparing one, asking for a part, launching
     await page.goto(ORIGIN + '/modules/#/countries'); await page.waitForSelector('.cty');
-    ok(/Spain\s*Open\s*33 of 33 parts on/.test((await page.textContent('.cty')).replace(/\s+/g, ' ')), `${tag}: Spain is open with every part (${(await page.textContent('.cty')).replace(/\s+/g, ' ').trim()})`);
+    ok(/Spain\s*Launched\s*33 of 33 parts on/.test((await page.textContent('.cty')).replace(/\s+/g, ' ')), `${tag}: Spain is launched with every part (${(await page.textContent('.cty')).replace(/\s+/g, ' ').trim()})`);
     await sound('countries-list');
     await page.selectOption('#addc', 'FR'); await page.waitForSelector('#launch');
-    ok(db.calls.some(c => c[0] === 'country' && c[1] === 'FR' && c[2] === 'preparing'), `${tag}: a country is prepared, not open`);
-    ok(/Not open yet\s*23 of 33 parts on/.test((await page.textContent('.ch')).replace(/\s+/g, ' ')), `${tag}: it starts with the parts that work anywhere`);
+    ok(db.calls.some(c => c[0] === 'country' && c[1] === 'FR' && c[2] === 'preparing'), `${tag}: a country is prepared, not launched`);
+    ok(/Not launched yet\s*23 of 33 parts on/.test((await page.textContent('.ch')).replace(/\s+/g, ' ')), `${tag}: it starts with the parts that work anywhere`);
     ok((await page.$$('.cz .part')).length === 10 && (await page.$$('.wp')).length === 23, `${tag}: ten parts need work, twenty-three work already`);
     ok(/To work in France: The country’s open train timetables|To work in France: The country's open train timetables/.test(await page.textContent('.cz')), `${tag}: a part says what it needs there`);
     await page.click('[data-ask="transport/trains"]'); await page.fill('.af textarea', 'Add the SNCF stations.'); await sound('country-asking');

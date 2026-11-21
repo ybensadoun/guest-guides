@@ -2,7 +2,9 @@
 // What is on for a house's country, for the generator and the worker (the launch desk's rule, engine/src/modules/available.js;
 // Python keeps no copy):   echo '{"country":"ES","launch":{...}}' | node engine/scripts/available-of.mjs
 // stdin: { country: two capital letters or nothing, launch: the database's launch_public() answer or nothing }.
-// stdout: { country, open, parts: { "<module>/<part>": true or false } }. Nothing is read from the network or written.
+// stdout: { country, open, parts: { "<module>/<part>": true or false } }: open says whether the owner has launched the
+// country (his switches count only then); a house gets a guide either way, from the parts that are on. Nothing is read
+// from the network or written.
 import { readFileSync } from 'node:fs';
 import { avParts, avCountryOpen } from '../src/modules/available.js';
 const list = JSON.parse(readFileSync(new URL('../src/modules/available.json', import.meta.url), 'utf8'));

@@ -5,6 +5,21 @@ launches a country. 21 Nov 2026, asked when its switches should start to act: "S
 list of every place a gate goes. The desk's conversation builds it; each shared file is touched only in a turn the main
 conversation gives (`MODULE-CONVERSATIONS.md`, the queue).
 
+## Decided by Yohann, 21 Nov 2026: no door is closed
+Asked what the builder does with a house in a country that is not open (say so and stop, or build it anyway): "What I
+want is that when you put your Airbnb listing link, it [tells] where you are, and then it will show you the modules that
+actually work for that country, because I still haven't worked on every module in every country. For instance, I'm not
+able to do market in China. [...] we're going to focus on Catalonia for now, but bake it into the logic."
+So: a house in any country gets a guide, made of the parts that are on there, and the builder says which parts that
+country does not have yet. What follows, Claude's, told to Yohann the same day:
+- Launch keeps a meaning: in a country he is still preparing, his switches wait and the list alone decides (the parts
+  that work anywhere); from the launch his switches count (`avPartOn`; `avPartSet` is what his page shows).
+- The rule is by country. Catalonia is inside Spain: a level below the country (a region) is not built; the research's
+  own tuning by region is each module's.
+- In a country where every part is on (Spain), the builder says nothing more than today. Where parts are missing, one
+  quiet line after the listing is read names the country and what the guide will not have there yet; a missing part's
+  step and section are not offered.
+
 ## What must stay true
 1. Spain is exactly as before: every part is on there (`engine/src/modules/available.json`), so a gate takes nothing from
    a house in Spain.
@@ -32,7 +47,7 @@ Earth, public domain; the file waits for Yohann's yes to the download), their te
 | 3 | What the owner decided, read once: `launch_public()` with the public key, when the maker starts (`runtime.js` 635, before `accountBoot`), kept in memory; no answer within 4 s or a failure: the list alone. One helper in the maker, `partOn(id)`, for the house in hand | `runtime.js`, `build.py` | a turn |
 | 4 | The worker reads the same for a build and for a job: the house's country (`country-of.mjs`), the tables with its own access, `available-of.mjs`; one helper `partOn(id)` per build or job | `worker/guide-worker.mjs` (237, 915) | a turn; the unit tests after the last edit |
 | 5 | The gates, part by part (below), each with a check on a made-up house outside Spain | per part | turns, by file |
-| 6 | A house in a country that is not open: what the builder says | `start.js`, the first visit | Yohann's decision, then the main conversation |
+| 6 | The builder says where the house is and what its country does not have yet (decided 21 Nov 2026, above): one quiet line after the listing is read, only where parts are missing | `start.js`, the first visit | the main conversation (the first visit is its part), a turn |
 
 ## The gates (file:line as of 9b8361f; E `onboarding-site/src/editor.js`, S `start.js`, R `runtime.js`, P `preview.js`, W `worker/guide-worker.mjs`, G `engine/scripts/generate-site.py`)
 | Part | Offered in the maker | Background work started | Added by the build |

@@ -125,14 +125,15 @@ const availOf = id => (S.avail.modules || []).find(m => m.id === id) || { id, na
 const cur = () => MODS.find(m => m.id === S.mod);
 const countries = () => [...new Set([...(S.avail.countries || []), ...Object.keys(S.lc), ...Object.values(S.sw).map(x => x.country)])];
 // On or off, open or not: the engine's own rule (available.js, the copy build.mjs makes), given what this page holds.
+// The page shows what the owner has set (avPartSet); a house gets it once its country is launched (avPartOn).
 const launchNow = () => ({ countries: Object.values(S.lc), switches: Object.values(S.sw) });
 const listSays = (p, c) => avListSays(p, c);
 const swRow = (m, p, c) => S.sw[`${m}/${p}/${c}`];
-const isOn = (m, p, c) => avPartOn(S.avail, launchNow(), `${m}/${p.id}`, c);
+const isOn = (m, p, c) => avPartSet(S.avail, launchNow(), `${m}/${p.id}`, c);
 const newCount = id => S.fb.filter(f => f.module === id && f.state === 'new').length;
 // A country is open when the owner opened it, or, with no word of his, when the code's list names it (Spain).
 const stateOf = c => avCountryState(S.avail, launchNow(), c);
-const STATE_NAMES = { open: 'Open', preparing: 'Not open yet' };
+const STATE_NAMES = { open: 'Launched', preparing: 'Not launched yet' };
 const allParts = () => MODS.flatMap(m => availOf(m.id).parts.map(p => ({ m, p })));
 const asksFor = (mid, pid, c) => S.fb.filter(f => f.kind === 'request' && f.module === mid && f.part === pid && f.country === c);
 const countryCount = c => { const all = allParts(); return { on: all.filter(x => isOn(x.m.id, x.p, c)).length, all: all.length, asked: S.fb.filter(f => f.kind === 'request' && f.country === c && f.state !== 'done').length }; };
@@ -236,7 +237,7 @@ function countriesView() {
 <span class="where">${n.on} of ${n.all} parts on</span>
 ${n.asked ? `<span class="parts">${n.asked} asked for</span>` : ''}</a></li>`; }).join('')}</ol>
 <div class="addc"><label><span>Prepare a country</span><select id="addc"${S.lcOk ? '' : ' disabled'}><option value="">Choose…</option>${more.map(c => `<option value="${c}">${esc(countryName(c))}</option>`).join('')}</select></label>
-<p class="quiet">${S.lcOk ? 'Preparing changes nothing for hosts: a country is offered only once you launch it.' : 'Countries cannot be saved yet: their table is not in the database.'}</p></div>`;
+<p class="quiet">${S.lcOk ? 'Preparing changes nothing for hosts: your switches for a country count once you launch it.' : 'Countries cannot be saved yet: their table is not in the database.'}</p></div>`;
   $('#addc').onchange = async e => { const c = e.target.value; if (c && await countryPut(c, 'preparing')) location.hash = '#/country/' + c; };
 }
 function countryView() {
@@ -254,7 +255,7 @@ ${S.askFor === k ? `<form class="nf af" data-k="${esc(k)}"><label><span>What do 
   $('#main').innerHTML = `<header class="ch"><div class="mt"><p class="back"><a href="#/countries">All countries</a></p><h1>${esc(name)}</h1>
 <p><span class="st st-${st}">${STATE_NAMES[st]}</span> ${n.on} of ${n.all} parts on${n.asked ? ` · ${n.asked} asked for` : ''}</p></div>
 <button class="btn${st === 'open' ? ' ghost danger' : ''}" id="launch"${S.lcOk ? '' : ' disabled'}>${st === 'open' ? 'Close ' + esc(name) : 'Launch ' + esc(name)}</button></header>
-<p class="quiet">${st === 'open' ? 'Open: the maker takes houses there and offers the parts that are on.' : 'Not open yet: nothing is offered there. Choose what it launches with, then launch.'} The maker and the generator do not read this yet: that is the next step.</p>
+<p class="quiet">${st === 'open' ? 'Launched: a house there gets the parts that are on below.' : 'Not launched yet: a house there gets only the parts that work everywhere. Choose what it launches with, then launch: your switches count from then.'} The maker and the generator do not read this yet: that is being built.</p>
 ${needs.length ? `<section class="cz"><h2>Needs work there <span class="cnt">${needs.length}</span></h2>
 <p class="quiet">Each is off unless you say otherwise. Launch without it, or ask for it: your words go to its module’s conversation.</p>
 <div class="card ct">${needs.map(need).join('')}</div></section>` : ''}
