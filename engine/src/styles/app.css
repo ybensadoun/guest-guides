@@ -625,6 +625,15 @@ body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .mini > a:has(> .st.closed) > .st small::before{content:" · "}
 .st.plain{color:var(--muted)}
 .chours .st,.pl-hours .st,.status{align-items:flex-start;text-align:left}
+/* Emergencies (modules/contacts, rule 3): a contact's status is one line under its words, "Closed · Opens tomorrow 9:30",
+   "Open until 13:30 · Reopens at 17:00". Stacked and 8 em wide, as at the right of a list's row, it took three lines, the
+   time alone on the last, larger and grey (.ctx span). When the two do not fit one line (Spanish and Catalan at 360 px,
+   "Abierto hasta las 13:30 · Vuelve a abrir a las 17:00") the second goes under the first, whole, and its dot, which sits
+   in the space before it, falls outside the row's left edge and is clipped: no line starts with a dot. */
+.crow .chours .st{display:block;max-width:none;line-height:1.3;margin-left:-1.1em;text-indent:1.1em;clip-path:inset(0 0 0 1.1em)}
+.crow .chours .st small{display:inline-block;position:relative;margin-left:1.1em;text-indent:0;font-size:15px;font-weight:400;color:var(--muted-card)}
+.crow .chours .st small::before{content:"·";position:absolute;left:-.7em;font-weight:600}
+.crow .chours .st .nw{font-size:inherit;color:inherit;line-height:inherit}
 /* Header v3: no logo or site name. Round language button with just the code; greeting on Home. */
 .langsel{width:44px;height:44px;padding:0!important;justify-content:center;border-radius:50%}
 .langsel svg,.langsel::after{display:none}

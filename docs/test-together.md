@@ -55,5 +55,37 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 | 2.6 | "Back to the arrangement we suggest" | One confirmation, then the default |
 | 2.7 | Preview | The phone shows the same arrangement |
 
+## 9. Contacts: the page Emergencies (the status line changed 21 Nov 2026)
+
+### In the guide, on a phone (the pool house, then the test house)
+| # | Do | Expect |
+|---|---|---|
+| 9.1 | On Home, tap the red tile "Emergencies" | The page: groups, most urgent first; the emergency number first, with the largest red button |
+| 9.2 | Tap a number | The phone's own dialler opens with the number in it; nothing is called by itself |
+| 9.3 | Look at a contact with hours while it is closed (the pharmacy in the evening) | One line: "Closed" in red, a dot, "Opens tomorrow 9:30" (or the day), all in one size; under it, its week |
+| 9.4 | The same contact while it is open (a weekday at 10:00) | "Open until 13:30" in green, the time green too; with an afternoon opening, a dot and "Reopens at 17:00" |
+| 9.5 | The same in Spanish, Catalan or German on a narrow phone, while it is open | When the two parts do not fit one line, the second is whole under the first; no line starts with a dot, no time is cut |
+| 9.6 | A contact that never closes (112, the hospital) | "Open 24 h" in green, no week |
+| 9.7 | Tap "Map" on a contact, then "Website" | Google Maps on that place; the contact's own site, in a new tab |
+| 9.8 | Change the language (the round button, top right) | Names, explanations and group titles in that language; the numbers the same |
+| 9.9 | Read the whole page | No host's name or number anywhere, nothing telling the guest to call the hosts |
+
+### In the editor
+| # | Do | Expect |
+|---|---|---|
+| 9.10 | Open Contacts | The guide's groups, each contact a closed card with its name |
+| 9.11 | Open a card, change its phone or its explanation | The step says "Changed"; Preview shows it; guests see it after "Publish changes" |
+| 9.12 | "+ Add a contact" under a group | A new empty card, opened, in that group |
+| 9.13 | "Delete this contact" | It leaves the list and the preview |
+| 9.14 | The same on a phone (360 px wide) | Nothing overlaps; the fields are full width |
+
+### Known, not to report
+- A guide the maker builds has two groups only (emergencies, health): no police, town hall, power cut, vet or poison
+  line yet. The four groups need one paid research, after the test (fix 09.1).
+- The editor cannot add a group, switch "open 24 h" on, or give hours to a contact that has none (fix 09.3).
+- Nothing tells the host which numbers came from a search and should be checked (fix 09.2).
+- The page's title, its first group and its first row all say "Emergencies" (fix 09.5).
+- Contacts are not on the map (fix 09.6).
+
 ## Later modules
 Added here as each one is built or changed: public transport (bus, metro, tram), then the rest of the plan.
