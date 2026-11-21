@@ -296,6 +296,22 @@ if A.get('listingUrl'): house['listing'] = A['listingUrl']
 # dated like a place's, so the weekly renewal (worker/renew-positions.mjs) keeps it within Google's 30 days.
 _pos = A.get('pos') if isinstance(A.get('pos'), dict) else {}
 if _pos.get('from') == 'google' and re.match(r'^\d{4}-\d{2}-\d{2}$', str(_pos.get('at') or '')): house['pos'] = {'from': 'google', 'at': _pos['at']}
+# The house's country, for the launch desk's rule (engine/src/modules/available.js: what is on in which country): the
+# builder's own answer when it was read from this same position, else read here from the position with our outlines file
+# (engine/scripts/country-of.mjs; Python keeps no copy of the rule). Not known (a border, the open sea, node missing): no
+# field, and nothing is cut for the house.
+def country_of(lat, lng):
+    import shutil, subprocess
+    node, script = shutil.which('node'), ROOT / 'engine/scripts/country-of.mjs'
+    if not node: return ''
+    try: r = subprocess.run([node, str(script)], input=json.dumps({'lat': lat, 'lng': lng}), capture_output=True, text=True, timeout=60)
+    except Exception as e: print('country: not read:', e, file=sys.stderr); return ''
+    try: cc = str(json.loads(r.stdout or '{}').get('country') or '')
+    except Exception: cc = ''
+    return cc if re.match(r'^[A-Z]{2}\Z', cc) else ''
+_cc = str(A.get('country') or '') if A.get('_countryAt') == '%.3f,%.3f' % (args.lat, args.lng) else ''
+if not re.match(r'^[A-Z]{2}\Z', _cc): _cc = country_of(args.lat, args.lng)
+if _cc: house['country'] = _cc
 (SITE / 'content/house.json').write_text(json.dumps(house, ensure_ascii=False, indent=1))
 
 # The rooms as the host ordered them (answers.rooms: [{n: name, c: kind of room, t: what guests should know there}]), then

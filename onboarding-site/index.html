@@ -2453,6 +2453,134 @@ const SECTION_LOOK = {
 return SECTION_LOOK;
 })();
 const ENG_TILE = {"k":{"--k-blue":"--blue","--k-red":"--red","--k-yellow":"--yellow","--k-black":"--ink","--k-orange":"--orange","--k-green":"--green","--k-sky":"--blue","--k-pink":"--orange","--k-purple":"--blue","--k-amber":"--yellow"},"shape":{"garbage":"--yellow","message":"--ink","emergency":"--ink","markets":"--red","restaurants":"--yellow","todo":"--yellow","map":"--blue","transport":"--yellow","nightlife":"--yellow","events":"--red"},"card":{"_":["--strong-card",""],"taxi":["--light-card","--ink-card"],"transport":["--light-card","--ink-card"],"shop":["--fresh-card",""]}};
+const AV = (() => {
+// Where a part of the guide is on: the launch desk's one rule (Yohann, 17 Nov 2026: "this is just an on-off switch, like
+// easy to moderate what we are allowing the guests to do in different countries"). Pure: it is given the code's list
+// (available.json beside this file) and what the owner decided (the database's launch_public(): { countries: [{ country,
+// state }], switches: [{ module, part, country, is_on }] }, or nothing when it could not be read). Used as it is by the
+// owner's page (onboarding-site/modules/, a copy made by its build.mjs), the maker (pasted by onboarding-site/src/build.py)
+// and the generator (engine/scripts/available-of.mjs). Never write a second copy of these rules.
+//   A part's id is "<module>/<part>", as in the list: "transport/trains".
+//   No door is closed (Yohann, 21 Nov 2026: "when you put your Airbnb listing link, it [tells] where you are, and then it
+//   will show you the modules that actually work for that country"): a house in any country gets a guide, made of the
+//   parts that are on there.
+//   What is on in a country: the list says (a part's `where`: "any", or the countries it works in). In a country the
+//   owner has launched, his switches win over the list; in a country he is still preparing, his switches wait for the
+//   launch and the list alone decides (avPartOn). avPartSet is what he has set, launched or not: what his page shows.
+//   A country is launched ("open") when the owner opened it; with no word of his, when the list names it (`countries`).
+//   A house whose country is not known, and a part the list does not name, are never cut: the rule only takes away what
+//   it is sure of.
+const avPart = (list, id) => { const [m, p] = String(id).split('/'), mod = ((list && list.modules) || []).find(x => x.id === m); return (mod && (mod.parts || []).find(x => x.id === p)) || null; };
+const avListSays = (part, country) => !!part && (part.where === 'any' || (Array.isArray(part.where) && part.where.includes(country)));
+const avSwitch = (launch, id, country) => { const [m, p] = String(id).split('/'); return ((launch && launch.switches) || []).find(s => s.module === m && s.part === p && s.country === country) || null; };
+const avPartSet = (list, launch, id, country) => { const part = avPart(list, id); if (!country || !part) return true; const s = avSwitch(launch, id, country); return s ? !!s.is_on : avListSays(part, country); };
+const avCountryState = (list, launch, country) => { const r = ((launch && launch.countries) || []).find(c => c.country === country); return r ? r.state : ((list && list.countries) || []).includes(country) ? 'open' : 'preparing'; };
+const avCountryOpen = (list, launch, country) => !country || avCountryState(list, launch, country) === 'open';
+const avPartOn = (list, launch, id, country) => { const part = avPart(list, id); if (!country || !part) return true; return avCountryOpen(list, launch, country) ? avPartSet(list, launch, id, country) : avListSays(part, country); };
+// Every part of the list for a country, as { "<module>/<part>": true or false }.
+const avParts = (list, launch, country) => Object.fromEntries(((list && list.modules) || []).flatMap(m => (m.parts || []).map(p => [`${m.id}/${p.id}`, avPartOn(list, launch, `${m.id}/${p.id}`, country)])));
+
+return { avPart, avListSays, avSwitch, avPartSet, avCountryState, avCountryOpen, avPartOn, avParts };
+})();
+const AV_LIST = {"countries":["ES"],"modules":[{"id":"transport","parts":[{"id":"taxis","where":"any"},{"id":"apps","where":["ES"]},{"id":"trains","where":["ES"]},{"id":"brands","where":["ES"]},{"id":"stops","where":["ES"]}]},{"id":"home","parts":[{"id":"frame","where":"any"},{"id":"cards","where":"any"},{"id":"board","where":"any"},{"id":"sections","where":"any"}]},{"id":"markets","parts":[{"id":"found","where":["ES"]},{"id":"own","where":"any"},{"id":"whatson","where":"any"}]},{"id":"events","parts":[{"id":"found","where":["ES"]},{"id":"own","where":"any"}]},{"id":"restaurants","parts":[{"id":"own","where":"any"},{"id":"facts","where":["ES"]},{"id":"open-now","where":"any"}]},{"id":"todo","parts":[{"id":"own","where":"any"},{"id":"deck","where":"any"},{"id":"towns","where":["ES"]},{"id":"found","where":["ES"]}]},{"id":"house","parts":[{"id":"page","where":"any"},{"id":"amenities","where":"any"},{"id":"listing","where":"any"}]},{"id":"rubbish","parts":[{"id":"bins","where":"any"}]},{"id":"contacts","parts":[{"id":"found","where":["ES"]},{"id":"own","where":"any"}]},{"id":"nightlife","parts":[{"id":"own","where":"any"}]},{"id":"houseguide","parts":[{"id":"pages","where":"any"}]},{"id":"wifi","parts":[{"id":"sheet","where":"any"}]},{"id":"map","parts":[{"id":"map","where":"any"},{"id":"search","where":"any"}]},{"id":"look","parts":[{"id":"look","where":"any"}]}]};
+const CTRY = (() => {
+// The country a house is in, from its position: for the launch desk's rule (engine/src/modules/available.js: what is on
+// in which country). Pure: it is given our file of the countries' outlines (onboarding-site/countries.json, made by
+// onboarding-site/src/countries.py from Natural Earth, public domain, ours to keep) and asks no one. Used as it is by the
+// maker (pasted by onboarding-site/src/build.py) and the generator (engine/scripts/country-of.mjs).
+//   countriesPrep(data)        the file made ready, once: [{ cc, box: [w, s, e, n], ring: [lng, lat, lng, lat...] }], one
+//                              per outline, in hundredths of a degree as the file keeps them.
+//   countryAt(prep, lat, lng)  two capital letters, or '' when the position is no country's (the open sea, no position).
+// The outline that holds the position names the country; when several do (a country inside another: holes are not
+// kept), the smallest wins. A house on the shore may sit just off a simplified coast: then the nearest outline within
+// 25 km. The outlines are drawn for a map of the world, and were found up to about 3 km off the true border (measured on
+// 26 border towns of Spain, France, Portugal and Andorra, 21 Nov 2026): so a position within 6 km of another country's
+// outline is no country's, '' (not known), never a guess. The launch desk's rule cuts nothing for a house whose country
+// is not known. What this cannot tell: a town that is an island of its country inside another (Llívia), which the file
+// does not draw, and the smallest countries, which are all border (Monaco, San Marino); Gibraltar has no outline of its
+// own and reads as Spain, the Vatican as Italy. Natural Earth's 1:10m file would narrow all of this: for the day a small country is launched.
+// An outline smaller than about 10 km by 10 km (the Vatican, Monaco) casts no doubt on what is around it: Rome is Italy.
+const NEAR_KM = 25, BORDER_KM = 6, TINY = 100;
+function countriesPrep(data) {
+  const out = [];
+  for (const [cc, rings] of (data && data.rows) || []) for (const d of rings) {
+    const ring = new Array(d.length); let x = 0, y = 0, w = Infinity, s = Infinity, e = -Infinity, n = -Infinity;
+    for (let i = 0; i < d.length; i += 2) { x += d[i]; y += d[i + 1]; ring[i] = x; ring[i + 1] = y; if (x < w) w = x; if (x > e) e = x; if (y < s) s = y; if (y > n) n = y; }
+    out.push({ cc, box: [w, s, e, n], ring });
+  }
+  return out;
+}
+const inside = (ring, x, y) => { let c = false;
+  for (let i = 0, j = ring.length - 2; i < ring.length; j = i, i += 2) { const xi = ring[i], yi = ring[i + 1], xj = ring[j], yj = ring[j + 1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; }
+  return c; };
+// How far a position is from an outline, in km (flat earth around the position: fine for a few tens of km).
+const awayKm = (ring, x, y) => { const k = Math.cos(y / 100 * Math.PI / 180), px = x * k; let best = Infinity;
+  for (let i = 0, j = ring.length - 2; i < ring.length; j = i, i += 2) { const ax = ring[j] * k, ay = ring[j + 1], bx = ring[i] * k, by = ring[i + 1], dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy;
+    const t = l ? Math.max(0, Math.min(1, ((px - ax) * dx + (y - ay) * dy) / l)) : 0, d = Math.hypot(px - ax - t * dx, y - ay - t * dy); if (d < best) best = d; }
+  return best * 1.1119; };   // a hundredth of a degree of latitude is 1.1119 km
+function countryAt(prep, lat, lng) {
+  if (!Array.isArray(prep) || !Number.isFinite(+lat) || !Number.isFinite(+lng) || lat === null || lng === null || lat === '' || lng === '') return '';
+  const x = +lng * 100, y = +lat * 100, wide = km => km / 1.1119 / Math.max(0.2, Math.cos(+lat * Math.PI / 180));
+  const around = (p, pad) => { const [w, s, e, n] = p.box; return !(x < w - pad || x > e + pad || y < s - pad || y > n + pad); };
+  let hit = null, size = Infinity, held = 0;
+  for (const p of prep) { if (!around(p, 0) || !inside(p.ring, x, y)) continue; const [w, s, e, n] = p.box, a = (e - w) * (n - s); if (!hit || p.cc !== hit.cc) held++; if (a < size) { hit = p; size = a; } }
+  let cc = hit ? hit.cc : '', own = 0;
+  if (!hit) { const pad = wide(NEAR_KM); let best = NEAR_KM;
+    for (const p of prep) { if (!around(p, pad)) continue; const d = awayKm(p.ring, x, y); if (d < best) { best = d; cc = p.cc; } }
+    if (!cc) return ''; own = best; }
+  // Too near another country to be sure: its outline within 6 km (from the shore: within 6 km more than our own), or,
+  // for a country inside another, its own outline within 6 km.
+  if (held > 1 && awayKm(hit.ring, x, y) < BORDER_KM) return '';
+  const reach = own + BORDER_KM, pad = wide(reach);
+  for (const p of prep) { if (p.cc === cc || !around(p, pad)) continue; const [w, s, e, n] = p.box; if ((e - w) * (n - s) < TINY) continue; if (awayKm(p.ring, x, y) < reach) return ''; }
+  return cc;
+}
+
+return { countriesPrep, countryAt };
+})();
+/* ---------- The launch desk in the maker: what is on for this house's country ----------
+   Yohann, 21 Nov 2026: "when you put your Airbnb listing link, it [tells] where you are, and then it will show you the
+   modules that actually work for that country". One helper for every step: partOn('<module>/<part>'), the engine's own
+   rule (AV: engine/src/modules/available.js, with AV_LIST, the engine's list; pasted by build.py), given
+   - what the owner decided: the database's launch_public(), asked once when the maker starts with the public key, never
+     waited for (4 s at most); no answer: the list alone decides;
+   - the house's country: the guide's own (content/house.json `country`, written by the generator) or the answers'
+     (`country`, kept with the position it was read from), else read once from the position with our own outlines file
+     (/countries.json, CTRY: engine/src/country.js). Not known, or not known yet: nothing is cut.
+   Plan and the list of gates: docs/plan-launch-desk-gates.md. No step reads partOn yet (21 Nov 2026). */
+const LD = { launch: null, prep: null, asked: null, failed: 0, mem: {} };
+function ldStart() {
+  try {
+    fetch(SB.url + '/rest/v1/rpc/launch_public', { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + SB.key, 'Content-Type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(4000) })
+      .then(r => (r.ok ? r.json() : null)).then(j => { if (j && Array.isArray(j.switches) && Array.isArray(j.countries)) { LD.launch = j; if (j.switches.length || j.countries.length) ldAgain(); } }).catch(() => { /* the list alone decides */ });
+  } catch (e) { /* the list alone decides */ }
+}
+// The house in hand: its position, and the country it already knows.
+const ldHouse = () => { const h = (typeof CM !== 'undefined' && CM.on) ? (edF().house || {}) : A; return { lat: h.lat, lng: h.lng, cc: typeof h.country === 'string' ? h.country : null, ed: typeof CM !== 'undefined' && CM.on }; };
+const ldSpot = h => (Number.isFinite(+h.lat) && Number.isFinite(+h.lng) && h.lat !== '' && h.lat !== null && h.lng !== '' && h.lng !== null) ? (+h.lat).toFixed(3) + ',' + (+h.lng).toFixed(3) : '';
+function ldCountry() {
+  const h = ldHouse(), at = ldSpot(h);
+  if (h.ed) { if (h.cc !== null) return h.cc; }
+  else if (h.cc !== null && A._countryAt === at) return h.cc;     // the answers' own, read from this same position
+  if (!at) return '';
+  if (at in LD.mem) return LD.mem[at];
+  if (Date.now() - LD.failed > 60000) ldRead(at, h);               // the file did not load: not asked again for a minute
+  return '';                                                       // not known yet: nothing is cut meanwhile
+}
+function ldRead(at, h) {
+  if (!LD.asked) LD.asked = fetch('/countries.json').then(r => (r.ok ? r.json() : null)).then(d => { LD.prep = d ? CTRY.countriesPrep(d) : null; }).catch(() => { LD.prep = null; });
+  LD.mem[at] = '';
+  LD.asked.then(() => { if (!LD.prep) { delete LD.mem[at]; LD.asked = null; LD.failed = Date.now(); return; }
+    const cc = CTRY.countryAt(LD.prep, +h.lat, +h.lng); LD.mem[at] = cc;
+    if (!h.ed && ldSpot(A) === at) { A.country = cc; A._countryAt = at; try { flush(); } catch (e) { /* kept in memory */ } }
+    ldAgain(); });
+}
+// What changed may switch a part off for this house: the screen is drawn again, only then.
+function ldAgain() { const cc = ldCountry(); if (cc && Object.values(AV.avParts(AV_LIST, LD.launch, cc)).some(on => !on)) { try { render(); } catch (e) { /* the next draw shows it */ } } }
+const partOn = id => AV.avPartOn(AV_LIST, LD.launch, id, ldCountry());
+setTimeout(ldStart, 0);
+
 const AMENS = {
  "_doc": "Amenities a guide can list, for the builder (search, groups), the listing read (Airbnb codes: pdp_v3_<group>_<n> gives n, sv<n> for scenic views) and the House page. id: kept in answers.amenities. g: group. ab: Airbnb codes. top: rank among the first ones on the House page (1 first, 0 not). t: the name in six languages. k: other words, as phrases separated by commas, for search and for matching a listing in any language (Airbnb's own titles too); \"-\" marks an old builder choice that is not offered any more.",
  "groups": [
@@ -4253,7 +4381,7 @@ async function resetAll(){
 (function(){
   const st = document.createElement('style'); st.textContent = '#ver{text-align:center;font-size:10px;opacity:.45;padding:18px 0 96px;letter-spacing:.02em}'; document.head.appendChild(st);
   // "Start over" is at the end of Review and send (#resetAll): a floating copy sat on top of the step bar.
-  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 21 Nov 2026, 08:41 (Madrid time, after commit f086676)'; document.body.appendChild(d);
+  const d = document.createElement('div'); d.id = 'ver'; d.textContent = 'Last updated 21 Nov 2026, 08:46 (Madrid time, after commit ff3f967)'; document.body.appendChild(d);
 })();
 
 /* ---------- The "Places nearby" search needs a Google key on our side. Without it the step keeps only the fields to add places by hand. ---------- */

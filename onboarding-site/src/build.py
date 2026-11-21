@@ -226,6 +226,21 @@ for _sel,_body in _re.findall(r'\n((?:\.qcall\[data-q="\w+"\] \.qi,?)+)\{([^}]*)
     _bg=_re.search(r'background:var\((--[\w-]+)\)',_body); _fg=_re.search(r'(?:^|;)color:var\((--[\w-]+)\)',_body)
     for _q in _re.findall(r'data-q="(\w+)"',_sel): _qt[_q]=[_bg.group(1) if _bg else _qi.group(1), _fg.group(1) if _fg else '']
 ENG_DATA+=('const ENG_TILE = '+_jsn.dumps({'k':_kmap,'shape':_shape,'card':_qt},separators=(',',':'))+';\n')
+# The launch desk's rule (engine/src/modules/available.js: what is on in a country), the engine's list it reads
+# (available.json, only what the rule needs: each part's id and where it works) and the rule that tells a house's country
+# from its position (engine/src/country.js), each in a scope of its own, then the maker's own helper, partOn (launch.js).
+# One rule, never a second copy (docs/plan-launch-desk-gates.md).
+_avsrc=open(__import__('os').path.join(_MD,'available.js'),encoding='utf-8').read()
+_cysrc=open(__import__('os').path.join(_ES,'country.js'),encoding='utf-8').read()
+assert not _re.search(r'(?m)^import ',_avsrc+_cysrc),'engine/src/modules/available.js, engine/src/country.js: an import is not expected'
+_avn=_re.findall(r'(?m)^export const (\w+)',_avsrc); _cyn=_re.findall(r'(?m)^export function (\w+)',_cysrc)
+assert 'avPartOn' in _avn and 'avParts' in _avn and _cyn==['countriesPrep','countryAt'],'engine/src/modules/available.js, engine/src/country.js: their exports are not as expected'
+_avl=__import__('json').load(open(__import__('os').path.join(_MD,'available.json'),encoding='utf-8'))
+_avl={'countries':_avl['countries'],'modules':[{'id':m['id'],'parts':[{'id':q['id'],'where':q['where']} for q in m['parts']]} for m in _avl['modules']]}
+ENG_DATA+=('const AV = (() => {\n'+_re.sub(r'(?m)^export ','',_avsrc)+'\nreturn { '+', '.join(_avn)+' };\n})();\n'
+  +'const AV_LIST = '+__import__('json').dumps(_avl,separators=(',',':'))+';\n'
+  +'const CTRY = (() => {\n'+_re.sub(r'(?m)^export ','',_cysrc)+'\nreturn { '+', '.join(_cyn)+' };\n})();\n'
+  +open(__import__('os').path.join(__import__('os').path.dirname(__file__),'launch.js'),encoding='utf-8').read()+'\n')
 views=views[:a]+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'nav.js')).read()+'\n'+ENG_ICONS+ENG_DATA+'const AMENS = '+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'..','..','engine','src','amenities.json')).read().strip()+';\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'amen.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'prefill.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'preview.js')).read()+'\n'+_re.sub(r'(?m)^export ','',open(__import__('os').path.join(__import__('os').path.dirname(__file__),'placename.js')).read())+'\n'+_re.sub(r'(?m)^export ','',open(__import__('os').path.join(__import__('os').path.dirname(__file__),'towns.js')).read())+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'start.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'account.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'editor.js')).read()+'\n'+open(__import__('os').path.join(__import__('os').path.dirname(__file__),'board.js')).read()+'\n'+views[b:]
 views=rep(views,"function badge(k){ const q = k.startsWith('up:') ? UP[k.slice(3)] : Q[k]; if (!q || q.opt) return '<span class=\"opt\">optional</span>'; const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k;",
  "const NEEDED = new Set(MODULES.flatMap(m => m.need));\nfunction badge(k){ const key = k.startsWith('up:') ? 'upload:' + k.slice(3) : k; if (!NEEDED.has(key)) return '<span class=\"opt\">optional</span>';")
