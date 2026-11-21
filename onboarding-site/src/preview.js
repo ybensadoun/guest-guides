@@ -200,14 +200,14 @@ function guideSections(){
   // What the research from the link found (start.js areaWatch), shown as it arrives; the full guide has the details.
   const found = (k, list) => (k === 'markets' ? marketsInReach : x => x)(((AREA.result || {})[k] || {})[list] || []).slice(0, 10), nm = x => typeof x === 'string' ? x : (x && (x[A.sourceLang || UIL] || x.en || Object.values(x)[0])) || '';
   const help = found('emergency', 'groups').flatMap(g => g.items || []).map(x => nm(x.name)).filter(n => n && !/^emergenc/i.test(n));
-  if (on('emergency')) S.push({ id: 'emergency', title: 'Emergency and contacts', sub: '112, hospital, pharmacy', icon: 'phone', kind: 'contacts', research: help.length ? `Found near you: ${help.slice(0, 3).join(', ')}. Hours and directions are in your full guide.` : 'We add the nearest hospital, pharmacy and on-call doctor, with hours.' });
+  if (on('emergency')) S.push({ id: 'emergency', title: 'Emergency and contacts', sub: '112, hospital, pharmacy', icon: 'phone', kind: 'contacts', research: help.length ? `Found near you: ${help.slice(0, 3).join(', ')}. When you save, we add their hours and directions.` : 'When you save, we add the nearest hospital, pharmacy and on-call doctor, with hours.' });
   if (on('essentials')) S.push({ id: 'essentials', title: 'Shops and essentials', sub: 'Supermarket, bakery, pharmacy', icon: 'bag', kind: 'places', items: lines('essentials'), research: 'We add opening hours, distances and the ones you did not list.' });
   const picks = cats => Object.values(A.swipes || {}).filter(x => x.d === 'yes' && cats.includes(x.cat)).map(swShown);   // the live card by its id (start.js)
   if (on('eat')) S.push({ picks: picks(['eat', 'coffee', 'drinks']), id: 'eat', title: 'Eat and drink', sub: 'Our favourite places', icon: 'heart', kind: 'places', items: placeRows('favEat').filter(r => String(r.p || '').trim()).map(r => r.p + (r.c ? ': ' + r.c : '')), research: !placeRows('favEat').length && 'Add the places you recommend, with a link or a name and a comment. We do not add restaurants of our own.' });
   if (on('todo')) S.push({ picks: picks(['todo']), id: 'todo', title: 'Things to do', sub: (A.interests || []).slice(0, 3).join(', ') || 'Around you', icon: 'compass', kind: 'places', items: addedPlaces(), research: !picks(['todo']).length && !addedPlaces().length && 'Keep the places you like in Attractions: only those go in your guide.' });
   if (on('nightlife')) S.push({ id: 'nightlife', title: 'Nightlife', sub: 'Bars, clubs, live music', icon: 'moon', kind: 'places', items: placeRows('favNight').filter(r => String(r.p || '').trim()).map(r => r.p + (r.c ? ': ' + r.c : '')), research: !placeRows('favNight').length && 'Add the late bars, clubs and live music you recommend. We add none of our own.' });
-  if (on('markets')) S.push({ id: 'markets', title: 'Local markets', sub: 'What is on today', icon: 'bag', kind: 'places', items: found('markets', 'markets').map(m => `${nm(m.name)}${m.town ? ': ' + m.town : ''}`), research: found('markets', 'markets').length ? 'Found near you. Days and hours are in your full guide.' : 'We list every weekly market nearby, with what runs today.' });
-  if (on('events')) S.push({ id: 'events', title: 'Local events', sub: 'During your stay', icon: 'kite', kind: 'places', items: [], research: 'We list festivals and fairs, with dates.' });
+  if (on('markets')) S.push({ id: 'markets', title: 'Local markets', sub: 'What is on today', icon: 'bag', kind: 'places', items: found('markets', 'markets').map(m => `${nm(m.name)}${m.town ? ': ' + m.town : ''}`), research: found('markets', 'markets').length ? 'Found near you. When you save, we add their days and hours.' : 'When you save, we list every weekly market nearby, with what runs today.' });
+  if (on('events')) S.push({ id: 'events', title: 'Local events', sub: 'During your stay', icon: 'kite', kind: 'places', items: [], research: 'When you save, we list festivals and fairs, with dates.' });
   if (on('kids')) S.push({ id: 'kids', title: 'Kids corner', sub: (A.kidsAges || []).join(', ') || 'Families', icon: 'kite', kind: 'text', items: [...(A.kidsGear || []).map(g => `${g} at the house`), ...lines('kidsNotes')], research: 'We add playgrounds and family days out.' });
   if (on('daytrips')) S.push({ id: 'daytrips', title: 'Day trips', sub: 'Worth the drive', icon: 'car', kind: 'places', items: [], research: 'We pick the best trips within two hours.' });
   if (on('extras') && v('extras')) S.push({ id: 'extras', title: 'Extras', sub: 'Ask us', icon: 'gift', kind: 'text', items: lines('extras') });
@@ -337,14 +337,14 @@ async function renderPreview(){
   if (q) q.addEventListener('input', () => { const t = q.value.toLowerCase().trim(); document.querySelectorAll('.pv-sec').forEach(b => { b.hidden = t && !b.dataset.q.includes(t); }); });
 }
 
-/* ---------- The phone: the guide, live, inside the builder (docs/plan-fast-builder.md, step 3) ----------
+/* ---------- The phone: a first draft of the guide, inside the builder (docs/plan-fast-builder.md, step 3) ----------
    Drawn in its own frame, so the guide's styles never touch the builder's. Tapping a tile opens that screen in the phone.
    PHONE.build: the parts arrive one after another (the wow, right after the link). */
 const PHONE = { screen: 'home', build: false, timer: null };
 const WOW = { stage: '', name: '' };   // the wow page: reading (the listing page), writing (Claude), done
 // The guide screen each step changes, shown next to it.
 const STEP_SCREEN = { place: 'house', nightlife: 'nightlife', known: 'wifi', wifi: 'wifi', stay: 'stay', howto: 'houseguide', photos: 'house', offers: 'house', arrival: 'arrival', rubbish: 'rubbish', contacts: 'emergency', nearby: 'todo', favourites: 'eat', taste: 'todo' };
-const phoneHTML = () => `<div class="phone"><div class="phone-scr"><iframe id="phoneFrame" title="Your guide, as guests will see it"></iframe></div></div>`;
+const phoneHTML = () => `<div class="phone"><div class="phone-scr"><iframe id="phoneFrame" title="A first draft of your guide"></iframe></div></div>`;
 // Both phones (this one, and the editor's, which shows the guide itself) draw the guide at a real phone's width, then
 // scale it down to the frame: text and tiles keep their true sizes and wrap as they do on a phone.
 const PHONE_W = 390;
@@ -376,7 +376,7 @@ async function phoneRender(){
 const phoneSoon = () => { if (!document.getElementById('phoneFrame')) return; clearTimeout(PHONE.timer); PHONE.timer = setTimeout(() => { PHONE.build = false; phoneRender(); }, 350); };
 document.addEventListener('input', phoneSoon); document.addEventListener('change', phoneSoon);
 function pageHTML(x){
-  const research = x.research ? `<div class="pv-research"><b>In your full guide</b>${esc(x.research)}</div>` : '';
+  const research = x.research ? `<div class="pv-research"><b>In your finished guide</b>${esc(x.research)}</div>` : '';
   const list = items => items.length ? `<div class="pv-list">${items.map(t => { const [a, ...b] = t.split(/:\s|,\s| - /); return `<div class="pv-row"><b>${esc(a)}</b>${b.length ? esc(b.join(', ')) : ''}</div>`; }).join('')}</div>` : '';
   let body = '';
   if (x.kind === 'house') {
@@ -389,7 +389,7 @@ function pageHTML(x){
   }
   else if (x.kind === 'rooms') body = x.rooms.length ? x.rooms.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3>${r.photos.length ? `<div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${list(r.items)}</section>`).join('') : `<div class="pv-research"><b>Nothing here yet</b>Add how things work and photos by room in your answers.</div>`;
   else if (x.kind === 'wifi' && !v('wifiName')) body = `<div class="pv-research"><b>Your Wi-Fi goes here</b>Add it in Only you know: guests join with one tap.</div>`;
-  else if (x.kind === 'wifi') body = `<section class="pv-card"><p style="margin:0 0 6px;opacity:.7">Network</p><h3 style="font-size:24px">${esc(v('wifiName'))}</h3><p style="margin:12px 0 6px;opacity:.7">Password</p><h3 style="font-size:24px">${esc(v('wifiPassword'))}</h3></section><div class="pv-research"><b>In your full guide</b>A QR code to join with one tap, and a copy button.</div>`;
+  else if (x.kind === 'wifi') body = `<section class="pv-card"><p style="margin:0 0 6px;opacity:.7">Network</p><h3 style="font-size:24px">${esc(v('wifiName'))}</h3><p style="margin:12px 0 6px;opacity:.7">Password</p><h3 style="font-size:24px">${esc(v('wifiPassword'))}</h3></section><div class="pv-research"><b>In your finished guide</b>A QR code to join with one tap, and a copy button.</div>`;
   else if (x.kind === 'contacts') body = `<section class="pv-card"><div class="pv-list"><div class="pv-row"><b>Emergencies: 112</b>Police, ambulance, fire</div>${(Array.isArray(A.taxis) ? A.taxis : []).map(t => `<div class="pv-row"><b>Taxi</b><span translate="no">${esc(txName(t.name))}</span></div>`).join('')}${v('taxi') ? `<div class="pv-row"><b>Taxi</b>${esc(v('taxi'))}</div>` : ''}</div></section>${research}`;
   // A kept card: its name live, with Google Maps; no rating or kind of Google's, which the guide does not show either.
   else if (x.kind === 'places') body = `${(x.picks || []).length ? `<section class="pv-card"><div class="pv-list">${x.picks.map(p => `<div class="pv-row"><b>${esc(p.gone ? 'A place you kept' : p.name)}</b>${esc([isOurs(p.id) ? p.type : '', p.km != null ? numUI(p.km) + ' km' : ''].filter(Boolean).join(' · '))}${p.c ? `<br><i>“${esc(p.c)}”</i>` : ''}<br><a href="${esc(swMaps(p) || '#')}" target="_blank" rel="noopener" translate="no">Google Maps</a></div>`).join('')}</div></section>` : ''}${x.items.length ? `<section class="pv-card"><div class="pv-list">${x.items.map(t => { const r = x.id === 'todo' && placeRows('favDo').find(y => twRow(y) && String(y.p).trim() === t);

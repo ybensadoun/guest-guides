@@ -199,7 +199,7 @@ function buildState(g){
     <p class="sr" id="bsay" role="status" aria-live="polite" data-w="${esc(p.words)}">${esc(p.words)}</p>
     <p class="btick" aria-hidden="true"><span class="on">${esc(BL.line)}</span><span></span></p>
     <p class="bclose">You can close this page: your guide will be here when you come back.</p></div>
-    <div class="bside"><small>What goes in</small><ol class="bsteps">${blSteps(p.k)}</ol></div></div>`;
+    <div class="bside"><small>What we add now</small><ol class="bsteps">${blSteps(p.k)}</ol></div></div>`;
 }
 // Under the progress: nothing while it is queued or being built (sending again would do nothing, and an answer changed now is
 // not in this build), nor while found places wait on the ready screen; the answers once it is ready; the answers and a second
@@ -316,8 +316,8 @@ function blNext(){
 // The build's steps beside the bar (wide screens): rows of PROG_STEPS.build by their first step, ticked as it moves on.
 function blRows(){
   const n = buildPlaces(), L = buildLangs().length + 1;
-  return [[0, 'Your answers and photos'], ...(n ? [[1, n === 1 ? 'The place you recommend' : `The ${n} places you recommend`]] : []), [2, 'What is around the house'],
-    [6, 'The pages of your guide'], ...(L > 1 ? [[7, `Your ${L} languages`]] : []), [8, 'Saving it']];
+  return [[0, 'Your answers and photos'], ...(n ? [[1, n === 1 ? 'The place you recommend' : `The ${n} places you recommend`]] : []), [2, 'Local events, markets with their hours'],
+    [6, 'Trains and stops, the map, every page'], ...(L > 1 ? [[7, `Your guests’ ${L} languages`]] : []), [8, 'Saving it']];
 }
 function blSteps(k){
   const R = blRows(), cur = k < 0 ? -1 : R.reduce((c, r, i) => r[0] <= k ? i : c, 0);
@@ -412,7 +412,7 @@ function readyHTML(g){
   if (RD.st === 'err') return `<h1>Your guide is ready.</h1>${held}<p class="berr" role="alert">${esc(RD.err)}</p>
     <div class="row"><button class="go-next" type="button" data-rdretry><span>Add them to my guide</span><span class="ar">${ARROW}</span></button>${RD.step ? `<a class="btn small bopen" href="#${esc(RD.step)}">Fix it in the editor</a>` : ''}</div>${quiet}`;
   const added = RD.st === 'done' && RD.added.length ? `<p>${RD.added.length === 1 ? `${esc(RD.added[0])} is in your guide now.` : `${RD.added.length} places you kept are in your guide now.`}</p>` : '';
-  return `<h1>Your guide is ready.</h1>${held}${added}<p>${say}</p>${open}`;
+  return `<h1>Your guide is ready.</h1>${held}${added}<p>This is your finished guide, as your guests will see it.</p><p>${say}</p>${open}`;
 }
 // Keep: Google asked first when its answer is not known (openGate: a permanently closed place stays on its card, with a
 // toast); nothing kept twice, nor after a Skip made while it was asked.

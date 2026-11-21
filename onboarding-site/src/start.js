@@ -270,7 +270,7 @@ function nameListingRooms(d){
 }
 // The wow page.
 function yoursHTML(){
-  return `<section class="yours"><div class="yours-tx" id="yoursTx">${yoursText()}</div><div class="yours-ph">${phoneHTML()}</div></section>`;
+  return `<section class="yours"><div class="yours-tx" id="yoursTx">${yoursText()}</div><div class="yours-ph">${phoneHTML()}<p class="yours-cap"><b>A first draft of your guide</b><span>When you save, we finish it for you: local events, markets with their hours, trains and stops, the map, your guests’ languages.</span></p></div></section>`;
 }
 const WHAT_LEFT = { look: 'choose the look', nearby: 'pick the things to do', favourites: 'add your favourite places to eat', nightlife: 'add your nightlife spots', known: 'add what only you know' };
 function yoursText(){
@@ -280,7 +280,7 @@ function yoursText(){
   if (!st) return `<small>Your guest guide</small><h1>Not started yet</h1><p>Paste your listing link first.</p><div class="row"><a class="btn primary" href="#start">Paste my link ${ARROW}</a></div>`;
   return `<small>Your guest guide</small><h1>${esc(name || 'Your guide')}</h1>
     <p class="yours-st" role="status" aria-live="polite">${st === 'done' ? CHECK : '<span class="spin dark" aria-hidden="true"></span>'}<span>${st === 'done' ? 'Your guide is written.' : esc(say[st])}</span></p>
-    <p>${st === 'done' ? `We’ve prefilled your guide from your listing! ${todo ? `You now just need to ${todo} to make it yours.` : 'Tap around in the phone: this is what your guests get.'}` : 'Your photos and the details of your listing are going into it right now.'}</p>
+    <p>${st === 'done' ? `We’ve prefilled your guide from your listing! ${todo ? `You now just need to ${todo} to make it yours.` : 'Tap around in the phone: this is your first draft.'}` : 'Your photos and the details of your listing are going into it right now.'}</p>
     <div class="row">${st === 'done' ? `<a class="btn primary" href="#guide">Make it yours ${ARROW}</a>` : `<span class="btn primary" aria-disabled="true">Make it yours ${ARROW}</span>`}</div>`;
 }
 const yoursRefresh = () => { const el = document.getElementById('yoursTx'); if (el) el.innerHTML = yoursText(); };
@@ -1008,7 +1008,7 @@ function slimStep(m, lead, card, cls){
   return `<div class="split has-phone slim-step ${cls}">${railHTML(m.id)}<div class="col">
     <section class="mhead slim" style="${tileVars(m)}"><div class="row1"><h1>${esc(m.title)}</h1><span class="pill ${s.k}">${s.k === 'done' ? CHECK : ''}${esc(s.label)}</span></div>
       <p>${esc(lead)}</p></section>
-    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>Your guide, live, as guests see it</p></aside>
+    <aside class="side-phone" aria-label="A first draft of your guide">${phoneHTML()}<p>A first draft of your guide</p></aside>
     ${card}
 </div></div>`;
 }

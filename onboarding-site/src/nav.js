@@ -63,14 +63,14 @@ function moduleHTML(m){
           : s.k === 'done' ? 'Done. You can still change anything.' : 'Only you know this. Answer it now or later: your guide works without it.'}</p>
         ${(A._done || {})[m.id] && needsYou(m) ? `<div class="row"><button class="btn small" type="button" data-undone="${m.id}">Mark as not done</button></div>` : ''}
       </div></section></div>
-    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>${A._draftAt || v('placeName') || v('guideName') ? 'Your guide, live, as guests see it' : 'An example for now: load your listing and it becomes your guide'}</p></aside></div>`;
+    <aside class="side-phone" aria-label="A first draft of your guide">${phoneHTML()}<p>${A._draftAt || v('placeName') || v('guideName') ? 'A first draft of your guide' : 'An example for now: load your listing and it becomes your guide'}</p></aside></div>`;
 }
 function sendHTML(){
   const miss = sendMissing(), open = visible().filter(m => ['pre', 'new', 'chk'].includes(statusOf(m).k) && statusOf(m).label !== 'Optional');
   // Places picked on Google with no name (psPick in start.js): never published under the words typed to find them.
   const nameless = [['favEat', 'favourites'], ['favNight', 'nightlife'], ['favDo', 'nearby']].filter(([k]) => (Array.isArray(A[k]) ? A[k] : []).some(r => r && r.gid && !String(r.p || '').trim()))
     .map(([, id]) => visible().find(m => m.id === id)).filter(Boolean);
-  // The same three columns as every step, the phone included: a host about to send sees the guide they send.
+  // The same three columns as every step, the phone included: a host about to send sees the first draft of what they send.
   return `<div class="split has-phone">${railHTML('send')}<div class="col">
     <section class="mhead" style="--tc:var(--ink);--ti:var(--paper);--sh:var(--sun)">
       <h1>Review and send</h1><p>We build your guide from your answers. You can change anything afterwards.</p></section>
@@ -86,7 +86,7 @@ function sendHTML(){
         <div class="row"><button class="btn" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Preview my guide</button>${AUTH ? `<button class="btn primary" type="button" id="send"${miss.length ? ' disabled' : ''}>${I.send.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Send to build my guide</button>`
           : '<button class="btn primary" type="button" data-acctnow="signup">Save my guide</button>'}</div></div>
     </section><div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div></div>
-    <aside class="side-phone" aria-label="Your guide, as guests will see it">${phoneHTML()}<p>${A._draftAt || v('placeName') || v('guideName') ? 'Your guide, live, as guests see it' : 'An example for now: load your listing and it becomes your guide'}</p></aside></div>`;
+    <aside class="side-phone" aria-label="A first draft of your guide">${phoneHTML()}<p>${A._draftAt || v('placeName') || v('guideName') ? 'A first draft of your guide' : 'An example for now: load your listing and it becomes your guide'}</p></aside></div>`;
 }
 
 // Keep the current step visible in the left list, whatever re-drew it.

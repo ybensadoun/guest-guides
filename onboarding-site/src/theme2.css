@@ -335,6 +335,14 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .yours-st{display:flex;align-items:center;gap:10px;font-weight:600}
 .yours-st svg{width:20px;height:20px;flex:none;color:var(--ok)}
 .yours-ph .phone{width:min(300px,76vw)}
+.yours-cap{display:flex;flex-direction:column;gap:2px;width:min(300px,76vw);margin:12px auto 0;font-size:13.5px;line-height:1.4;color:var(--muted);text-align:center}   /* under the phone: it is a first draft, and what saving adds */
+.yours-cap b{color:var(--ink);font-size:14px}
+@media (max-width:899px){   /* on a phone the bold line goes above the phone, read at once; the sentence stays under it */
+  .yours-ph{display:flex;flex-direction:column;align-items:center;min-height:calc(100svh - 108px)}   /* at rest the words below start under the fold, never under the fixed bar */
+  .yours-ph .phone{width:max(180px,min(300px,76vw,calc((100svh - 340px) / 2.03)))}   /* phone, its sentence and the fixed bar fit the first screen */
+  .yours-cap{display:contents}
+  .yours-cap b{order:-1;margin:0 0 10px;font-size:13.5px;text-align:center}
+  .yours-cap span{display:block;width:min(300px,76vw);margin-top:12px;font-size:13.5px;line-height:1.4;color:var(--muted);text-align:center}}
 @media (max-width:899px){.yours-ph{order:-1}.yours{padding-bottom:96px}   /* on a phone the wow comes first: the guide, then the words; */
   .yours-tx .row{position:fixed;left:0;right:0;bottom:0;z-index:30;justify-content:center;background:var(--surface);border-top:1.5px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}}   /* Make it yours stays at hand */
 .btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
@@ -444,6 +452,7 @@ h1,h2,h3,.sg,.lab,.cm-h,.wp b{text-wrap-style:balance}   /* a colour world's two
    shorter than it, a little above the middle, not stuck to the top */
 body:has(#main > :is(.start,.yours,.bwrap)){padding-bottom:14px}
 body:has(#main > :is(.start,.yours,.bwrap)) #ver{padding-bottom:18px}
+@media (max-width:899px){body:has(#main > .yours) #ver{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}}   /* the wow's fixed Make it yours bar covers no text at the end */
 @media (min-width:901px){
   #main:has(> :is(.start,.yours,.bwrap)){min-height:calc(100dvh - 142px);justify-content:center}
   #main:has(> :is(.start,.yours,.bwrap))::after{content:"";flex:0 0 8vh}
