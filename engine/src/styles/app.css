@@ -1146,13 +1146,19 @@ body:not(.is-home) .pl-head .pl-dist{grid-column:2;grid-row:3;align-self:start}
 .mrow[open] > summary .st.quiet{visibility:hidden}
 
 /* A place's row on the host's lists (ui.js row, words: true; places/README.md rules 23 and 24): the name has the row's
-   whole width beside the arrow; under it one line of kind, town, distance and price, a dot after each piece (.mp), a
-   town, a distance and a price kept whole; then the status on a line of its own, its text and its time side by side ("Closed · Opens at 20:00");
+   whole width beside the arrow; under it two lines, the kind and the town, then the distance and the price, a
+   dot between two pieces of one line and never at a line's start or end (below), a distance and a price kept whole; then the status on a line of its own, its text and its time side by side ("Closed · Opens at 20:00");
    then two lines of the host's words, which the opened row says in full below. Nothing stands at the right of the words
    any more, so no status squeezes them (German at 360 px: "Rund um die Uhr" took a third of the row). */
 .mrow.wr > summary{grid-template-columns:40px minmax(0,1fr) auto;align-items:start}
 .mrow.wr .dot{grid-row:1;align-self:start}
 .mrow.wr .nm{grid-column:2;grid-row:1}
+/* The dot stands in each piece's own left padding, and a line is pulled left by that padding under the hidden edge of the
+   block: a piece that starts a line (the first, or one that wrapped) has its dot out of sight, so no dot ever hangs. */
+.mrow.wr .nm small{overflow:hidden}
+.mrow.wr .nm small .ml{display:flex;flex-wrap:wrap;margin-left:-1em}
+.mrow.wr .nm small .mp{position:relative;padding-left:1em;min-width:0}
+.mrow.wr .nm small .mp::before{content:"\00b7";position:absolute;left:0;width:1em;text-align:center;color:var(--muted);font-weight:400}
 .mrow.wr .nm small .mp.k{white-space:nowrap}
 .mrow.wr .nm small .mp.price{color:var(--ink);font-weight:600}
 .mrow.wr .rt{display:contents}

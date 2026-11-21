@@ -214,10 +214,11 @@ export function row(m, opts = {}) {
   const dist = [m.km != null ? `<span class="nw">${m.km} km</span> ${esc(t('fromHouseShort'))}` : null, me != null ? `<span class="nw">${me} km</span> ${esc(t('fromYouShort'))}` : null].filter(Boolean).map(x => `<span class="dk">${x}</span>`).join('');
   const price = m.price ? `<span class="dk price">${esc(t('perPerson', { p: m.price }))}</span>` : '';
   const warn = false; // notes like "Book ahead" are shown as plain tags, not a warning sign
-  // With words: the kind, the town, the distances and the price as one line of pieces, a dot after each but the last, tied
-  // to it. The line wraps between pieces (and inside the kind, which may be long); a town, a distance and a price stay whole.
-  const pieces = wr ? [[esc(catLabel(m)), ''], town && [esc(town), ' k'], m.km != null && [`${m.km} km ${esc(t('fromHouseShort'))}`, ' k'], me != null && [`${me} km ${esc(t('fromYouShort'))}`, ' k'], m.price && [esc(t('perPerson', { p: m.price })), ' k price']].filter(Boolean) : [];
-  const metaLine = pieces.map(([x, c], i) => `<span class="mp${c}">${x}${i < pieces.length - 1 ? '\u00a0·' : ''}</span>`).join(' ');
+  // With words: two lines of pieces under the name, the kind and the town, then the distances and the price, a dot between
+  // two pieces of one line (drawn by the styles, .mp, and never at a line's start or end when a line wraps). A distance and
+  // a price stay whole (.k); the kind and a town may wrap between their words.
+  const line = ps => { const l = ps.filter(Boolean); return l.length ? `<span class="ml">${l.map(([x, c]) => `<span class="mp${c}">${x}</span>`).join(' ')}</span>` : ''; };
+  const metaLine = wr ? line([[esc(catLabel(m)), ''], town && [esc(town), '']]) + line([m.km != null && [`${m.km} km ${esc(t('fromHouseShort'))}`, ' k'], me != null && [`${me} km ${esc(t('fromYouShort'))}`, ' k'], m.price && [esc(t('perPerson', { p: m.price })), ' k price']]) : '';
   const ht = hoursText(m);
   const nextLine = m.s.length && !(live && live.cls !== 'closed') ? `<span class="t next">${esc(nextOpenText(m))}</span>` : '';
   const when = typeof ht === 'string'
