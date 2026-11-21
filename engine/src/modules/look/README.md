@@ -15,6 +15,7 @@ page.
 | 1 | One tile system: every guide uses Ca La Kimberly's structure (filled colour tiles with a corner shape). The host picks colours, not a layout, and it must stay easy for someone who is not technical. | Yohann, 10 Nov 2026 (`docs/plan-ca-la-kimberly-through-the-maker.md`, "Step 3: the look") |
 | 2 | Five roles, the same in every world: deep, strong and fresh carry white text; light and warm carry dark text. Strong stays in the red family, so Emergencies always reads as urgent; fresh is the green of "Open". | The mockups of 10 Nov 2026, liked by Yohann the same day |
 | 3 | Contrast is enforced, not hoped for: text on a tile and coloured words reach 4.5 to 1, by darkening or lightening the colour until they do. One rule for a ready-made world, a picture's colours and a colour fine-tuned by hand. | Yohann, 10 Nov 2026 ("contrast is respected") |
+| 3b | The light colour is also the one role drawn on another: the small icon of the rubbish tile, on deep. It is lightened until it reaches 3 to 1 there (an icon, not text). The six worlds and every world a picture makes already did; a "Light tiles" fine-tuned by hand to a dark mustard did not (1.6 to 1), found by measuring real pages in the six tightest worlds the rule can make. | Claude, 21 Nov 2026, asked by the main conversation before real hosts' first guides |
 | 4 | One copy of the rule: `engine/src/worlds.js` and `engine/src/picture-world.js`. The maker pastes both files into its page (`build.py`, as `WK`); the generator asks `engine/scripts/world-of.mjs`. Never a second copy, in any language. | This repo's `CLAUDE.md`, "Colours" (14 Nov 2026) |
 | 5 | Six worlds: Bauhaus summer (Ca La Kimberly's own look, to the pixel), Sea, Country, Tropical, City night, Stone. Each has its colours and its title font; the text font is Jost in every world, because the guide's lines are measured for it and every other family is wider. | Built 13 and 14 Nov 2026 (`worlds.js`, the comment above `WORLDS`) |
 | 6 | A host can bring a picture and use its colours under the same contrast rule: "From your cover", "From your logo", the artistic cover included. The picture's colours take the roles they are nearest to; the rest comes from the nearest world, quietened when the picture is quiet; Emergencies only takes a real red, "Open" only a green; two tiles never end up one colour; a picture with no colour gives Stone. The same picture always gives the same world. | Yohann, 10 Nov 2026 ("a host can still bring a picture, or the artistic rendering of one"); built 14 Nov 2026 (`picture-world.js`) |
@@ -73,13 +74,10 @@ page.
   browser cannot read: Bauhaus. Nothing is refused for contrast: a colour is moved until it passes, so a dull picture
   gives a quiet guide, never one that is hard to read.
 - The six ready-made worlds are beside "From your cover" in the same row: one tap.
+- The same measure in the six tightest worlds a hand can make (deep, strong and fresh given pale, light and warm
+  given dark) found one failing case, now rule 3b.
 
 ## Open, none decided
-
-- A colour fine-tuned by hand can break one pair no picture can: the small light icon on the deep rubbish tile
-  (`app.css` `.gt-tl svg`, `--yellow` on `--blue`). With "Light tiles" set to a dark mustard in the editor it is 1.6
-  to 1 where an icon needs 3 (found 21 Nov 2026 with the six tightest worlds the rule can make; the lowest a picture
-  reached in 20,000 random ones is 3.76). To fix in `worlds.js`: light also reaches 3 to 1 on deep.
 
 - The cover photo is always cropped at the same point (`photoPos` 50% 55%): a host cannot place it (plan, gap D5).
 - A guide with no photo gets the same small drawn house as every other (plan, proposal 7).

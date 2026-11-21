@@ -76,6 +76,8 @@ for (const [id, p] of Object.entries(WORLDS)) {
   test(`world ${id}: every text and coloured word reaches 4.5`, () => {
     const t = worldTokens(p);
     for (const [what, a, b] of rules(t)) assert.ok(contrast(a, b) >= 4.5, `${id}, ${what || 'the same'}: ${a} on ${b} is ${contrast(a, b).toFixed(2)}`);
+    assert.ok(contrast(t['--yellow'], t['--blue']) >= 3, `${id}, the light icon on the deep rubbish tile: ${contrast(t['--yellow'], t['--blue']).toFixed(2)}`);
+    assert.equal(t['--yellow'], fit(p.light, t['--ink'], 4.5, W), `${id}: its own light already reaches 3 on deep, so that rule does not move it`);
     for (const [k, v] of Object.entries(t)) if (!['--display', '--font'].includes(k)) assert.match(v, /^(#[0-9A-F]{6}|rgba\(\d+,\d+,\d+,\.\d+\))$/, `${id} ${k}: ${v}`);
   });
   // Strong stays in the red family, so Emergencies reads as urgent: its hue within 25 degrees of pure red (335 to 25,
@@ -92,6 +94,18 @@ for (const [id, p] of Object.entries(WORLDS)) {
     for (const f of fams) assert.ok(p.fonts.some(x => x.startsWith(f + '/')), `${id}: ${f} is in a stack but no file of it is loaded`);
   });
 }
+
+// A colour fine-tuned by hand (the editor's "Fine-tune each colour") goes through the same rule. The tightest a world can
+// be: deep, strong and fresh given pale, light and warm given dark, so each is moved to its limit. On 21 Nov 2026 these
+// six, measured on real pages, had one failing case: the small light icon on the deep rubbish tile, 1.6 to 1.
+test('a colour fine-tuned by hand: every rule holds, and the light icon on the deep tile reaches 3 to 1', () => {
+  for (const base of Object.keys(WORLDS)) {
+    const t = worldTokens(worldOf({ base, deep: '#9FC2F0', strong: '#F29A93', fresh: '#8FD6A8', light: '#8A6D00', warm: '#8A4A12' }));
+    for (const [what, a, b] of rules(t)) assert.ok(contrast(a, b) >= 4.5, `${base}, ${what || 'the same'}: ${a} on ${b} is ${contrast(a, b).toFixed(2)}`);
+    assert.ok(contrast(t['--yellow'], t['--blue']) >= 3, `${base}: the light icon on the deep tile is ${contrast(t['--yellow'], t['--blue']).toFixed(2)}`);
+    assert.ok(contrast(fit('#8A6D00', t['--ink'], 4.5, W), t['--blue']) < 3, `${base}: without the rule this case fails, so the test means something`);
+  }
+});
 
 test('worldCss is the same tokens as one :root rule', () => {
   const css = worldCss({ ...BAUHAUS, display: '"Jost",system-ui,sans-serif' });

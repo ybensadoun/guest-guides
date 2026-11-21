@@ -108,13 +108,16 @@ export function worldTokens(p) {
   // the same ratio, so the one fitting covers both. The one coloured word drawn on the page is --warm-word, fitted on
   // paper below. deep also carries the rubbish tile's bins, white words on a white veil (app.css .gtb, 16%): darkened
   // until they reach 4.5 there too (found by engine/scripts/contrast-check.mjs in Country and Tropical, 13 Nov 2026).
-  // light and warm: lightened until ink reaches 4.5 on them.
+  // light and warm: lightened until ink reaches 4.5 on them. light is also the one role drawn on another: the small
+  // icon of the rubbish tile, on deep (app.css .gt-tl svg), so it is lightened until it reaches 3 to 1 there (an icon,
+  // not text). The six worlds and any world a picture makes already do (picture-world.test.mjs); a "Light tiles"
+  // fine-tuned by hand to a dark mustard did not: 1.6 to 1 (found by engine/scripts/contrast-check.mjs, 21 Nov 2026).
   const deep1 = fit(p.deep, WHITE, 4.5, BLACK);
   let deep = deep1;
   for (let i = 1; i <= 100 && contrast(WHITE, mix(deep, WHITE, VEIL)) < 4.5; i++) deep = mix(deep1, BLACK, i / 100);
   const strong = fit(p.strong, WHITE, 4.5, BLACK);
   const fresh = fit(p.fresh, WHITE, 4.5, BLACK);
-  const light = fit(p.light, ink, 4.5, WHITE), warm = fit(p.warm, ink, 4.5, WHITE);
+  const light = fit(fit(p.light, ink, 4.5, WHITE), deep, 3, WHITE), warm = fit(p.warm, ink, 4.5, WHITE);
   // The page's own greys: muted text (ink most of the way, then darkened until it reaches 4.5 on paper), faint text
   // (ink a little over half way, the same rule) and the hairlines between rows (paper a tenth of the way to ink).
   const muted = fit(mix(ink, paper, 0.26), paper, 4.5, ink);

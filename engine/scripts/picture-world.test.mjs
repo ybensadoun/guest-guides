@@ -103,8 +103,8 @@ test('any picture: a world that keeps the rule, with a red strong, a green fresh
     for (const k of ['--blue', '--red', '--green']) assert.ok(contrast('#FFFFFF', t[k]) >= 4.5, `${k} ${say}`);
     for (const k of ['--yellow', '--orange']) assert.ok(contrast(t['--ink'], t[k]) >= 4.5, `${k} ${say}`);
     // The one pair between two roles that pages draw: the small light icon on the deep rubbish tile (app.css .gt-tl svg),
-    // 3 to 1 as an icon. A picture cannot break it (light is never darker than its world's own, deep never lighter); a
-    // colour fine-tuned by hand can (found 21 Nov 2026 with engine/scripts/contrast-check.mjs: open in the look's README).
+    // 3 to 1 as an icon. A picture never needed the rule for it (light is never darker than its world's own, deep never
+    // lighter); a colour fine-tuned by hand did, and worldTokens now sees to it (21 Nov 2026, worlds.test.mjs).
     assert.ok(contrast(t['--yellow'], t['--blue']) >= 3, `the light icon on a deep tile ${t['--yellow']} ${t['--blue']} ${say}`);
     for (const [x, y] of [['light', 'warm'], ['deep', 'fresh'], ['deep', 'strong'], ['fresh', 'strong']]) {
       const mine = r => w[r] && w[r] !== WORLDS[w.base][r];
