@@ -660,7 +660,8 @@ async function gResearchDeck() {
   { const items = TODO_G.items.map((it, i) => ({ ...it, name: { en: it.name.en }, type: { en: it.type.en }, description: { en: (it.description || {}).en || '' }, ...(i === 0 ? { km_from_house: 7.4, town: 'Querol' } : {}) }));
     const G = { ...B, answers: { ...B.answers, radius: '1 hour', _researchJob: JOB_ID, swipes: {}, favDo: [] } };
     const { ctx, p, errors } = await open(browser, G, 360, 780), asked = [], langs = []; let hold = true;
-    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [{ status: 'done', result: { todo: { ...TODO_G, items } } }]));
+    let job = { status: 'running', result: { todo: { ...TODO_G, items } } };
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [job]));
     await ctx.route('**/api/places**', async r => { const q = new URL(r.request().url()).searchParams; if (q.get('card')) return cardAnswer(r, asked, 0); if (q.get('probe')) return json(r, { ok: true, enabled: true });
       langs.push(q.get('lang')); while (hold) await new Promise(x => setTimeout(x, 100));
       return json(r, { ok: true, lat: A0.lat, lng: A0.lng, places: [{ id: 'g-ca', name: 'Lloc de Prova', rating: 4.6, reviews: 1204, type: 'Parc', maps: 'https://maps.google.com/?q=3', lat: A0.lat, lng: A0.lng, km: 3.25, photo: null }] }); });
@@ -672,12 +673,20 @@ async function gResearchDeck() {
     ok('deck in Catalan: a researched card says its kind in Catalan with its town, the distance with a comma', (await line()) === 'Castell, Querol · 7,4 km', await line());
     ok('deck in Catalan: Google\'s cards are asked in the maker\'s language', langs.join() === 'ca', langs.join());
     await p.locator('.sw-card').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'cards-ca-360.png') });
+    // Its words in Catalan come from the research a little later (one translation, worker/card-words.mjs): the card in hand
+    // takes them in place, its name and its buttons where they were.
+    { const at = () => p.evaluate(() => { const r = s => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().top) : -1; }; return [r('.sw-card'), r('.sw-btns')].join(); }), before = await at(), DESC = 'Les ruïnes d’un castell del segle X.';
+      job = { status: 'running', result: { todo: { ...TODO_G, items: items.map((it, i) => i ? it : { ...it, type: { ...it.type, ca: 'Ruïnes de castell, Querol' }, description: { ...it.description, ca: DESC } }) } } };
+      await p.waitForFunction(d => ((document.querySelector('.sw-card .sw-sum') || {}).textContent || '') === d, DESC, { timeout: 12000 }).catch(() => {});
+      ok('deck in Catalan: the words the research translated come into the card in hand (its description, its kind in words), the same card, nothing moved',
+        (await p.textContent('.sw-card .sw-sum').catch(() => '')) === DESC && (await line()) === 'Ruïnes de castell, Querol · 7,4 km' && (await p.textContent('.sw-card h3')) === items[0].name.en && (await at()) === before, `${await line()} | ${await p.textContent('.sw-card .sw-sum').catch(() => '')} | ${before} -> ${await at()}`);
+      await p.locator('.sw-card').scrollIntoViewIfNeeded(); await p.screenshot({ path: join(SHOTS, 'cards-ca-words-360.png') }); }
     for (let i = 0; i < items.length; i++) { await p.click('[data-sw="' + (i ? 'no' : 'yes') + '"]'); await settle(p, 450); }
     const g = (await p.textContent('.sw-card .sw-on').catch(() => '')).replace(/\s+/g, ' ');
     ok('deck in Catalan: Google\'s card, "★ 4,6 (1.204 ressenyes)" and "3,3 km"', (await p.textContent('.sw-card h3').catch(() => '')) === 'Lloc de Prova' && /★ 4,6 \(1\.204 ressenyes\)/.test(g) && /Parc · 3,3 km/.test(g), g.slice(0, 140));
     await inPhone(p, d => { const b = d.querySelector('[data-pv="todo"]'); b && b.click(); return 1; }); await settle(p, 500);
     const phone = ((await inPhone(p, d => d.body.textContent)) || '').replace(/\s+/g, ' ');
-    ok('deck in Catalan: the phone shows the pick with its kind in Catalan and "7,4 km"', /Castell, Querol · 7,4 km/.test(phone), phone.slice(0, 200));
+    ok('deck in Catalan: the phone shows the pick with its kind in Catalan and "7,4 km"', /Ruïnes de castell, Querol · 7,4 km/.test(phone), phone.slice(-200));
     ok('deck in Catalan: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   // The research needs nothing from the host (12 Nov 2026): it searched a reach of its own, and Your area's distance acts on

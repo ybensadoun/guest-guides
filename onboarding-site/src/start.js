@@ -417,9 +417,13 @@ function swOrder(base){
 }
 // New cards: the deck takes them (swArrive), Review says so, once. The deck is drawn again only when the research's cards
 // changed (not at every look at the research, which redrew the host's comment field under their fingers).
+// The cards' words in the host's language come a little after the cards (one translation at the research, worker/card-words.mjs,
+// 21 Nov 2026): the card in hand takes them in place, at its own height, and nothing else is drawn; held by the finger, when
+// it lets go.
 function moreRefresh(){
-  const sig = JSON.stringify([researchCards().map(p => p.id), !!AREA.fullOpen]);
-  if (sig !== SW.rsig) { SW.rsig = sig; swArrive(); }
+  const cards = researchCards(), sig = JSON.stringify([cards.map(p => p.id), !!AREA.fullOpen]), wsig = cards.map(p => p.type + '|' + p.summary).join('\n');
+  if (sig !== SW.rsig) { SW.rsig = sig; SW.wsig = wsig; swArrive(); }
+  else if (wsig !== SW.wsig) { SW.wsig = wsig; const c = document.querySelector('#swipe .sw-card'); if (c && !c.dataset.gone) { if (c.dataset.drag) SW.stale = true; else swCardRefresh(); } }
   const el = document.getElementById('rvMore'); if (el) el.innerHTML = moreNote();
   const n = researchCards().length; if (n && !AREA.cards && moreLeft() && !['nearby', 'send', 'building'].includes(route())) toast(`${n} more ${n === 1 ? 'place' : 'places'} in Attractions`); AREA.cards = n;
 }

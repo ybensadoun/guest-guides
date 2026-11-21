@@ -18,6 +18,7 @@ import { townPoint, municipalityAt, overtureTaxis, gazetteer, featureFor } from 
 import { researchPrompt, HOURS_RULE, MARKETS_RULE, TODO_RULE, earlyRules, EV_REACH, EV_MAIN, EV_EARLY, evFits, inReach, eventsInReach, holdMarkets } from './research-brief.mjs';   // the research's brief, how far it reaches
 import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
+import { cardWords, applyWords } from './card-words.mjs';   // a found place's description and kind in the maker's languages (the deck's cards)
 import { argOf } from './args.mjs';   // an option's value on the command line, '' when it is not given
 import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
 import { txPick } from '../engine/src/modules/transport/taxis.js';   // the taxis a house is offered, from our open directory (Getting around)
@@ -199,14 +200,14 @@ async function research(A, outDir, id, opt = {}) {
 }
 // Translation by Claude, 40 texts per question, returned as {"<source text>": {"es": "...", ...}}. A text that does not come back stays
 // as it is (Claude down, the day's budget spent): a search or a build is never lost for it. onPart(done, all) for progress.
-async function translate(texts, langs, srcLang, onPart) {
+async function translate(texts, langs, srcLang, onPart, meter = null) {
   const map = {};
   for (let i = 0; langs.length && i < texts.length; i += 40) {
     if (onPart) await onPart(Math.min(i + 40, texts.length), texts.length);
     const part = texts.slice(i, i + 40);   // by number, not by text: a text repeated with one character changed was lost
     const prompt = `Translate these texts into ${langs.join(', ')}. Most are in ${srcLang}, but a text can be in another language or mix two (Catalan hosts often mix Catalan and Spanish; a text copied from a listing can be in any language): understand each one and write it properly in every language asked for, the mix sorted out. Only a text written entirely and correctly in one of these languages stays word for word in that language. Keep names, numbers and times. No em-dashes. Speak to the guest informally: German du (dich, dein, euch for a group), never Sie; Dutch je and jij, never u. German quotes „like this“; Spanish opens questions and exclamations with ¿ and ¡; Catalan keeps l·l. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else, one entry per text, by its number: {"0": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(Object.fromEntries(part.map((x, n) => [n, x])))}`;
     let out = '';
-    try { out = await claudeAsk(prompt, { what: 'translation' }); } catch (e) { log('  translation skipped:', e.message); break; }
+    try { out = await claudeAsk(prompt, { what: 'translation', meter }); } catch (e) { log('  translation skipped:', e.message); break; }
     const a = out.indexOf('{'), b = out.lastIndexOf('}');
     if (a >= 0 && b > a) { try { for (const [n, tr] of Object.entries(JSON.parse(out.slice(a, b + 1)))) if (part[+n] != null) map[part[+n]] = tr; } catch (e) {} }
   }
@@ -818,8 +819,11 @@ async function researchJob(j, jp) {
     // the deck and at the build (research-brief.mjs); their interests stay out of it.
     // The taxis around the house, free (our open directory), for the builder's "Taxis near your house": in the result as
     // soon as they come, beside the paid search, which never waits for them.
-    let taxis = [], apps = [], placeNow = null;
-    const read = () => ({ ...Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))])), ...(placeNow ? { place: placeNow } : {}), ...(taxis.length ? { taxis } : {}), ...(apps.length ? { apps } : {}) });
+    let taxis = [], apps = [], placeNow = null, words = null, wordsP = null, wordsOff = false;
+    // The found places' words in the maker's languages (card-words.mjs) are kept here and written into every reading of
+    // the result, never into the research's file: the translation runs beside the markets' search and may end at any time.
+    const read = () => { const o = { ...Object.fromEntries(['markets', 'todo'].filter(k => existsSync(join(dir, k + '.json'))).map(k => [k, JSON.parse(readFileSync(join(dir, k + '.json'), 'utf8'))])), ...(placeNow ? { place: placeNow } : {}), ...(taxis.length ? { taxis } : {}), ...(apps.length ? { apps } : {}) };
+      if (words && o.todo) applyWords(o.todo.items, words); return o; };
     const taxisP = taxisAt(A).then(t => { taxis = t; return t.length ? jp({ result: read() }) : null; }).catch(() => {});
     const appsP = appsAt(A, appsAsk(meter), meter).then(a => { apps = a; return a.length ? jp({ result: read() }) : null; }).catch(() => {});
     const m = await muniSoon({ lat: +A.lat, lng: +A.lng });
@@ -831,7 +835,12 @@ async function researchJob(j, jp) {
     await research(A, dir, null, { meter, parts: ['todo', 'markets'], rules: earlyRules(A), early: true, onPart: async kind => {
       if (kind === 'todo') { const f = join(dir, 'todo.json'), o = JSON.parse(readFileSync(f, 'utf8')), ids = new Set();
         for (const it of o.items || []) { let n = slugOf(it.name_local || nameOf(it.name)); while (ids.has(n)) n += '-2'; ids.add(n); it.id = n; }
-        o.items = await checkOnGoogle(o.items || [], 'todo', { lat: +A.lat, lng: +A.lng }, () => {}); writeFileSync(f, JSON.stringify(o, null, 1)); }
+        o.items = await checkOnGoogle(o.items || [], 'todo', { lat: +A.lat, lng: +A.lng }, () => {}); writeFileSync(f, JSON.stringify(o, null, 1));
+        // Their description and kind in Spanish, French and Catalan (21 Nov 2026): one question to the translator, beside the
+        // rest of the research, which never waits for it. The cards go to the host in English at once (below) and again
+        // with their words when they come; on any error, past its ceiling or past the day's budget the English stays.
+        wordsP = cardWords(o.items, (texts, langs, src) => translate(texts, langs, src, null, meter), { log: m => log('  ' + m) })
+          .then(map => { if (!map || wordsOff) return null; words = map; log(`  cards' words: ${Object.keys(map).length} texts in ${['es', 'fr', 'ca'].join(', ')}`); return jp({ result: read() }); }).catch(() => {}); }
       // The markets located too (13 Nov 2026): Google's id only, so a guest who opens a market we hold no hours for gets
       // Google's own live line (engine/src/gcard.js). Nothing is asked about its status and no market is dropped here:
       // for an account billed in Europe Google's "closed" may only be shown to a person, never used by a job.
@@ -839,6 +848,8 @@ async function researchJob(j, jp) {
         o.markets = await checkOnGoogle(o.markets || [], 'markets', { lat: +A.lat, lng: +A.lng }, () => {}); writeFileSync(f, JSON.stringify(o, null, 1)); }
       await jp({ result: read() }); } });
     await within(Promise.all([taxisP, appsP]), 90000, null);
+    if (wordsP) await within(wordsP, 5000, null);   // long done by now (the markets' search takes minutes); never a real wait
+    wordsOff = true;   // words that came later than this are dropped: the result below is the job's last
     const result = read();
     const events = await firstEvents(A, meter).catch(e => { log('  events search skipped:', e.message); return null; });
     if (events) result.events = events;

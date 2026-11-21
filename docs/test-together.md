@@ -186,7 +186,7 @@ three lists share is live: they are not here yet.
 |---|---|---|
 | 6.1 | Go to Attractions | The card's place is there at once; the words "Looking for places near you…" only if it takes more than a moment; nothing says "best-rated" |
 | 6.2 | Look at a card the research found (it has a line of description) | Its kind is in your language ("Castell · 9,4 km"), the distance with a comma in Catalan, Spanish and French |
-| 6.3 | Read that card's description | In English until the guide is built: known, see below |
+| 6.3 | Read that card's description | In your language, at once or within about half a minute of the card showing (it changes in place, the buttons do not move); the place's name stays as found |
 | 6.4 | Look at a card from Google (a photo, a rating) | Its kind in your language, "★ 4,6 (1.204 ressenyes)", "Google Maps" beside it |
 | 6.5 | Click "Recommend", then "Not for us", several times, quickly | The two buttons never move; the count says "3 of 25" |
 | 6.6 | While the deck is open, wait for the research (about 4 minutes after the account) | The count grows in place ("3 of 33 · 8 more places found"); the card in hand stays |
@@ -205,10 +205,9 @@ three lists share is live: they are not here yet.
 | 6.24 | Open a place, "Change" its kind | The grid of kinds; the row takes the new icon and, for guests, its quick filter |
 
 ### Known, not to report
-- Before the build, a found place's description is in English in every language of the maker: the research writes in
-  English and the build translates. Its kind and its distance are in the host's language. Translating at the research
-  would be one more paid call a house (well under 0.01 USD); not decided.
-- A found place's own kind in words ("Seaside village") becomes the kind's plain name ("Poble o vila") before the build.
+- A found place's name is not translated ("Querol Castle" on a Catalan screen): the name is how the maker knows the place.
+- When the day's research budget is spent or the translation fails, a found place's description stays in English and its
+  kind is the plain one ("Castell, Querol").
 - A place's coordinates under "move the pin" keep their points (41.2345): they are not distances.
 - The deck is one card at a time on a desktop too (a grid to tick is a proposal, not built).
 
