@@ -28,6 +28,8 @@ pixel and byte for byte (the map's canvas hidden, its pins, controls and list sh
 | 11 | The small maps are still pictures (no interaction): a place's shows the place in red and the house's area in its bounds, and tapping it opens Google Maps; a list's shows its places with the house's area in its bounds. The guest's blue dot is on them once location is known, never asked there. | Code comments, before the modules. The house has no pin there (rule 2), only its position in the bounds (the comments corrected 15 Nov 2026) |
 | 12 | Its bar on Home is wide only, and keeps its 23 px title ("Mapa de todos los sitios" is longer than 20 characters). | Yohann, 14 Nov 2026 (proposal 22, `../README.md` frame rules 2 and 4) |
 | 13 | Coming back to the map keeps where it was; the back arrow does what the phone's back gesture does (Markets after its map). | `docs/UX-GUIDELINES.md` §4 |
+| 14 | The map's credit ("OpenFreeMap © OpenMapTiles Data from OpenStreetMap") is one line of 11 px along the bottom edge of every map, the big one and the small ones, always written out: never folded to an "i", never a box over the pins, and nothing of ours sits on it ("My location" and its message are above it). | Claude, 21 Nov 2026, in the map's turn of the order of fixes (Yohann's "Go", 17 Nov 2026); OpenStreetMap's attribution guidelines, read 16 Nov 2026: the credit in a corner of the map, easily readable; folding is allowed only after five seconds, on a touch of the map or a dismissal. A line that never moves is the surest reading, and a small map is a picture, which never folds. Before: the credit opened as a box, half under "My location" on the big map and over a fifth of a small one |
+| 15 | No pin that a view sets out to show opens under a button, nor its name: the overview and "Show all" keep room for "Show all" (top), the zoom buttons (right), "My location" and the credit (bottom); a town or a cluster opened does the same (`view.js`, `PAD`, `PAD_TOWN`). A place beyond the guide's radius may still be cut by the map's frame, as on any map. | Claude, 21 Nov 2026 (the overlap rule, `docs/UX-GUIDELINES.md`); before, 30 px all round, and a pin sat under the zoom buttons |
 
 ## Its data
 
@@ -40,7 +42,8 @@ on, the guest's position) is in `engine/src/state.js` (`st`).
 ## Its look
 
 The page (`#mapview`): the title and its note, the tabs (`.mapseg`), "Map centred on" (`.mapat`), the map box
-(`.mapbox`: `#mapgl`, the offline message `.map-msg`, "Show all" on top, "My location" at the bottom), then the list
+(`.mapbox`: `#mapgl`, the offline message `.map-msg`, "Show all" on top, "My location" at the bottom, the credit's line under
+it), then the list
 (`#sheet`: `.maplist-h`, `.maplist`). Pins `.mk` (a town's with its count, a cluster's, a place's), the blue dot `.me-mk`,
 the centre's target `.at-mk`. A small map: `.pl-map` (a place) or `.secmap` (a list). On Home, the wide bar
 (`SECTION_LOOK.map`, white with dark text, `wide s-wide`, never `t-long`).
@@ -64,8 +67,9 @@ the centre's target `.at-mk`. A small map: `.pl-map` (a place) or `.secmap` (a l
 
 - The pure rules (the tab of a place, the overview's bounds, the clusters) are not in a `plan.js`: they read the guide
   (`CATS`) or MapLibre's screen positions, and drawing them out would mean rewriting `view.js`, which this move did not do.
-- The map following the colour world (plan, proposal 6) and the credit folded to its "i" (plan, "The pins stay round")
-  are not built.
+- The map following the colour world (plan, proposal 6) is not built. The credit folded to its "i" (plan, "The pins
+  stay round") was not built either: it is one line, always written out (rule 14).
+- No test of its own: what was checked on 21 Nov 2026 is in `docs/test-together.md` (the map's section).
 
 ## Still Ca La Kimberly's own
 

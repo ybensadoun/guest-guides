@@ -151,5 +151,24 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 - A part cannot be added (other than Check-out) or removed, and a line cannot be moved to another part yet.
 - A house whose host wrote nothing about its rooms has a short house guide: the way in, the rules, check-in and check-out.
 
+## 13. The map (its credit and its buttons, 21 Nov 2026)
+In a guide on a phone (or the maker's phone preview), no sign-in needed. Each step in one other language too.
+| # | Do | Expect |
+|---|---|---|
+| 13.1 | Open the map from Home | Along the map's bottom edge, one line: "OpenFreeMap © OpenMapTiles Data from OpenStreetMap", whole and readable. "My location" sits above it, not on it |
+| 13.2 | Look at the pins as the map opens | None under "Show all", the zoom buttons or "My location"; the target of the place the map is centred on is in the middle |
+| 13.3 | Tap a town's circle (a number) | The map zooms to its places, each clear of the buttons; the list under the map shows the same places |
+| 13.4 | Tap "Show all" | Back to the opening view, as in 13.2 |
+| 13.5 | Tap another tab (Eat, Markets) | The view fits that tab's places, none under a button |
+| 13.6 | Tap "My location" and allow it | Your blue dot; far from the house, a message above the credit, not on it |
+| 13.7 | Open Eat and drink, Markets, Getting around, and a card of Home (the bar next door) | Each small map has the same one line at its bottom, over no pin; no box with an "i" |
+| 13.8 | Tap the credit's words on the big map | OpenStreetMap's page opens |
+| 13.9 | The same in the dark theme | The line stays readable |
+
+### Known, not to report
+- A place farther than the guide's area (Barcelona from Ca La Kimberly) may show as a pin cut by the map's frame.
+- The map is grey in every colour world (the plan's proposal 6, to decide).
+- Tapping a small map of a list opens the big map, wherever the tap lands.
+
 ## Later modules
 Added here as each one is built or changed: public transport (bus, metro, tram), then the rest of the plan.

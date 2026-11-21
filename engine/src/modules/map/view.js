@@ -15,6 +15,13 @@ const SPLIT_ZOOM = 13;        // below: one pin per town; at or above: one pin p
 const ITEM_ZOOM = 16.5;       // tapping a market
 const GROUP_MIN = 11, GROUP_MAX = 16.5;
 const CLUSTER_PX = 34;     // towns closer than this on screen share one pin
+// The map's credit, on every map: MapLibre's own line, written out along the bottom edge and never folded to an "i"
+// (README.md, rule 14).
+const CREDIT = { compact: false };
+// Room kept around what a view sets out to show, so that none of its pins (nor a pin's name under it) opens under a
+// button: "Show all" (top left), the zoom buttons (top right), "My location" and the credit (bottom). README.md, rule 15.
+const PAD = { top: 62, right: 60, bottom: 104, left: 30 };              // the overview: the area around the chosen place
+const PAD_TOWN = { top: 70, right: 66, bottom: 110, left: 60 };         // a town or a cluster opened
 
 
 let ml = null;          // maplibre module
@@ -140,7 +147,7 @@ function atSet(v) {
   if (location.hash !== '#map') { location.hash = '#map'; return; }
   st.mapSel = null; expanded.clear();
   // Same view for every choice, the house included: centred on it, showing the places around it.
-  if (map) map.fitBounds(overviewBounds(), { padding: 30, duration: 900 });
+  if (map) map.fitBounds(overviewBounds(), { padding: PAD, duration: 900 });
   drawMarkers(); renderSheet();
 }
 
@@ -206,8 +213,8 @@ async function initMap() {
     container: el.querySelector('#mapgl'),
     style: STYLE[scheme()],
     bounds: overviewBounds(),
-    fitBoundsOptions: { padding: 30 },
-    attributionControl: { compact: true },
+    fitBoundsOptions: { padding: PAD },
+    attributionControl: CREDIT,
     dragRotate: false,
     pitchWithRotate: false,
     maxZoom: 18.5,
@@ -349,8 +356,8 @@ function zoomToGroup(slug) {
   expanded.add(slug);
   const bb = new ml.LngLatBounds([items[0].lng, items[0].lat], [items[0].lng, items[0].lat]);
   items.forEach(m => bb.extend([m.lng, m.lat]));
-  expandZoom = map.cameraForBounds(bb, { padding: 60 })?.zoom ?? map.getZoom();
-  map.fitBounds(bb, { padding: 60, maxZoom: GROUP_MAX, duration: 800 });
+  expandZoom = map.cameraForBounds(bb, { padding: PAD_TOWN })?.zoom ?? map.getZoom();
+  map.fitBounds(bb, { padding: PAD_TOWN, maxZoom: GROUP_MAX, duration: 800 });
   drawMarkers(); renderSheet();
 }
 
@@ -386,7 +393,7 @@ function applyRoute(r, animate = true) {
   const opts = { duration: animate ? 900 : 0, essential: true };
   if (!r) {
     expanded.clear();
-    map.fitBounds(overviewBounds(), { padding: 30, ...opts });
+    map.fitBounds(overviewBounds(), { padding: PAD, ...opts });
   } else if (r.type === 'group') {
     zoomToGroup(r.slug); return;
     const items = groupItems(r.slug);
@@ -440,8 +447,8 @@ function onClick(e) {
     const bb = new ml.LngLatBounds([all[0].lng, all[0].lat], [all[0].lng, all[0].lat]);
     all.forEach(m => bb.extend([m.lng, m.lat]));
     new Set(all.map(m => m.groupSlug)).forEach(s => expanded.add(s));
-    map.fitBounds(bb, { padding: 60, maxZoom: GROUP_MAX, duration: 800 });
-    expandZoom = map.cameraForBounds(bb, { padding: 60 })?.zoom ?? map.getZoom();
+    map.fitBounds(bb, { padding: PAD_TOWN, maxZoom: GROUP_MAX, duration: 800 });
+    expandZoom = map.cameraForBounds(bb, { padding: PAD_TOWN })?.zoom ?? map.getZoom();
     drawMarkers(); renderSheet();
   }
   else if (b.dataset.group) { zoomToGroup(b.dataset.group); }
@@ -458,9 +465,9 @@ function onClick(e) {
   else if (b.dataset.mgroup) {
     st.mapTab = b.dataset.mgroup; if (st.mapTab !== 'markets') st.mapToday = false;
     expanded.clear(); texts();
-    if (location.hash !== '#map') location.hash = '#map'; else { st.mapSel = null; map && map.fitBounds(overviewBounds(), { padding: 40, duration: 700 }); drawMarkers(); renderSheet(); }
+    if (location.hash !== '#map') location.hash = '#map'; else { st.mapSel = null; map && map.fitBounds(overviewBounds(), { padding: PAD, duration: 700 }); drawMarkers(); renderSheet(); }
   }
-  else if (b.hasAttribute('data-mtoday')) { st.mapToday = !st.mapToday; texts(); map && map.fitBounds(overviewBounds(), { padding: 40, duration: 700 }); drawMarkers(); renderSheet(); }
+  else if (b.hasAttribute('data-mtoday')) { st.mapToday = !st.mapToday; texts(); map && map.fitBounds(overviewBounds(), { padding: PAD, duration: 700 }); drawMarkers(); renderSheet(); }
   else if (b.hasAttribute('data-locate')) {
     locate(ok => {
       texts();
@@ -505,7 +512,7 @@ function meDot(m, b) {
 export async function miniMap(box, lng, lat) {
   if (!box) return;
   try { await loadLib(); } catch (e) { box.classList.add('off'); return; }
-  const m = new ml.Map({ container: box, style: STYLE[scheme()], center: [lng, lat], zoom: 13, interactive: false, attributionControl: { compact: true } });
+  const m = new ml.Map({ container: box, style: STYLE[scheme()], center: [lng, lat], zoom: 13, interactive: false, attributionControl: CREDIT });
   const pin = document.createElement('div');
   pin.className = 'mk'; pin.innerHTML = `<div class="pin" style="--cc:var(--red)">${ICON.pin}</div>`;
   new ml.Marker({ element: pin, anchor: 'center' }).setLngLat([lng, lat]).addTo(m);
@@ -519,7 +526,7 @@ export async function miniMap(box, lng, lat) {
 export async function overviewMap(box, items) {
   if (!box || !items.length) return;
   try { await loadLib(); } catch (e) { box.classList.add('off'); return; }
-  const m = new ml.Map({ container: box, style: STYLE[scheme()], center: [HOUSE.lng, HOUSE.lat], zoom: 10, interactive: false, attributionControl: { compact: true } });
+  const m = new ml.Map({ container: box, style: STYLE[scheme()], center: [HOUSE.lng, HOUSE.lat], zoom: 10, interactive: false, attributionControl: CREDIT });
   const b = new ml.LngLatBounds([HOUSE.lng, HOUSE.lat], [HOUSE.lng, HOUSE.lat]);
   items.forEach(it => {
     const el = document.createElement('div');

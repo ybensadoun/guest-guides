@@ -3,7 +3,7 @@
 #mapgl{position:absolute;inset:0}
 .map-top{position:absolute;left:10px;top:10px;right:56px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start;z-index:2;pointer-events:none}
 .map-top > *{pointer-events:auto}
-.map-bottom{position:absolute;left:10px;bottom:10px;right:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;z-index:2;pointer-events:none}
+.map-bottom{position:absolute;left:10px;bottom:24px;right:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;z-index:2;pointer-events:none}
 .map-bottom > *{pointer-events:auto}
 .btn.float{box-shadow:0 2px 8px rgb(0 0 0 / .15)}
 .btn.float svg{width:14px;height:14px}
@@ -19,6 +19,10 @@
 .maplibregl-ctrl-group button+button{border-top:1px solid var(--line)!important}
 :root[data-scheme="dark"] .maplibregl-ctrl-group .maplibregl-ctrl-icon{filter:invert(1)}
 .maplibregl-ctrl-attrib{font-size:11px;background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--muted)}
+/* The credit is one line along the bottom edge of every map, always written out (never a box over the pins, never folded
+   to an "i"): README.md of the map, rule 14. Its right end keeps clear of the box's round corner; the big map's bottom
+   row (.map-bottom) sits above it. MapLibre's own stylesheet loads after this one, hence the longer selector. */
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-attrib{margin:0;padding:1px 16px 1px 8px;font-size:11px;line-height:15px;border-radius:8px 0 0 0;text-align:right}
 .maplibregl-ctrl-attrib a{color:var(--muted)!important}
 :root[data-scheme="dark"] .maplibregl-ctrl-attrib-button{filter:invert(1)}
 .maplibregl-ctrl-bottom-right{bottom:0}
