@@ -927,7 +927,7 @@ body:not(.is-home) #view > .wrap{padding-top:calc(env(safe-area-inset-top,0px) +
    "Open until" in the rows). The distance is a small switch of the same patch (.pills.sm: lists.js sortRow, small), with
    the chosen side in white; the Markets page keeps its own pills. */
 .gchip{border:0;background:var(--ink-soft);min-height:44px;padding:8px 14px;font-size:15px;gap:7px}
-.gchip .n{font-size:13px;opacity:.6}
+.gchip .n{font-size:13px;opacity:.7}
 .gchip[aria-pressed="true"] .n{opacity:.85}
 .pills.sm{display:inline-flex;width:auto;border:0;padding:0;gap:0;background:var(--ink-soft)}
 .pills.sm button{flex:none;min-height:44px;padding:0 16px;font-size:15px;color:var(--muted)}

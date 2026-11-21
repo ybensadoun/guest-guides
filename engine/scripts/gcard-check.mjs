@@ -181,7 +181,7 @@ try {
         for (const x of await layout(pg)) fail(at(id), x);
         // Closed and opened again, a filter, the language: the same card, never a second request.
         await click(pg, id); await click(pg, id); await pg.waitForTimeout(300);
-        await pg.evaluate(() => document.querySelector('[data-openf="any"], [data-sgroup="all"], [data-featf]')?.click()); await pg.waitForTimeout(300);
+        await pg.evaluate(() => document.querySelector('[data-sgroup="all"], [data-sort="house"]')?.click()); await pg.waitForTimeout(300);
         await pg.evaluate(o => { const s = document.getElementById('langSel'); s.value = o; s.dispatchEvent(new Event('change')); }, l === 'de' ? 'fr' : 'de'); await pg.waitForTimeout(300);
         const again = await rowState(pg, id), c = await counts(pg);
         if (!again.open || !again.on || again.gbtn.shown) fail(at(id), 'after a filter and a language change the card is gone or our button is back');
