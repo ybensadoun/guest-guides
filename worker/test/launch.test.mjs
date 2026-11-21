@@ -110,3 +110,14 @@ test('the generator: the builder\'s own answer counts for the same position only
   assert.equal(house({ country: 'PT', _countryAt: '38.722,-9.139' }, ['41.2186', '1.535']).country, 'ES');  // from another position: read again
   assert.equal('country' in house({}, ['42.4316', '1.9283']), false);   // Puigcerdà: at the border, not known
 });
+
+// The worker's image holds only what .dockerignore lets in from onboarding-site/: every file a script of the engine reads
+// there at a build must be let in (found on 21 Nov 2026: the countries file was not, and the server read no country).
+test('the worker\'s image holds the files the generator\'s scripts read from onboarding-site/', () => {
+  const ignore = readFileSync(join(ROOT, '.dockerignore'), 'utf8').split('\n');
+  assert.ok(ignore.includes('onboarding-site/*'));
+  const scripts = ['country-of.mjs', 'stations-of.mjs'].map(f => readFileSync(join(ROOT, 'engine/scripts', f), 'utf8')).join('\n');
+  const read = [...scripts.matchAll(/onboarding-site\/([\w.-]+\.json)/g)].map(m => m[1]);
+  assert.ok(read.includes('countries.json') && read.includes('stations-es.json'));
+  for (const f of new Set(read)) { assert.ok(ignore.includes('!onboarding-site/' + f), `.dockerignore must let in onboarding-site/${f}`); assert.ok(existsSync(join(ROOT, 'onboarding-site', f)), f + ' is committed'); }
+});
