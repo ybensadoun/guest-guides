@@ -3,7 +3,7 @@
 // filters of a list and its order. Pure: content.js reads the guide's lists with readSpots, data.js binds the rest to the
 // guide, and engine/scripts/places-plan.test.mjs tests them. Only schedule.js is used (hours, statuses, seasons:
 // season.js); the order by distance is engine/src/lists.js, handed in as sort.
-import { statusLabel, runsOn, offSeason, hiddenNow } from '../../schedule.js';
+import { statusLabel, runsOn, offSeason, hiddenNow, noHours } from '../../schedule.js';
 
 // Every section with a list of items (except markets and events) gives its places to the map and to its list, with the
 // guide's shared readers (content.js: slots for the schedule rows, slug for the map's groups). A place of a "spots" section
@@ -33,12 +33,13 @@ export const shownNow = (m, now = new Date()) => !hiddenNow(m, now);
 
 // Where a place stands now: 0 open now (or open all day), 1 opens later today, 2 closed or not today, 3 not known (no hours
 // of ours: Google's live line shows when the row opens, gcard.js). A season of ours and no hours (schedule.js seasonOnly):
-// closed out of season, not known in season.
+// closed out of season, not known in season. A kind with no hours by nature (a beach, a town, a city: schedule.js noHours)
+// and no hours of ours counts as open, with no status in its row: it is never "not known".
 export function stateOf(s, now) {
   const nmin = now.getHours() * 60 + now.getMinutes();
   const tm = h => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
   if (s.always) return 0;
-  if (!(s.s && s.s.length)) return offSeason(s, now) ? 2 : 3;
+  if (!(s.s && s.s.length)) return offSeason(s, now) ? 2 : noHours(s) ? 0 : 3;   // a beach, a town, a city: there at any time
   const lab = statusLabel(s, now);
   if (lab && lab.cls === 'open') return 0;
   return runsOn(s, now).some(x => tm(x.o) > nmin) ? 1 : 2;

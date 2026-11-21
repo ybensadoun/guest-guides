@@ -148,6 +148,7 @@ lists too (their own steps: sections 6 and 10, when written).
 | 5.2 | Look at the chips at lunch time, then late in the evening | "Open now" and "Opens later today" each show only when they hold a place, with their count. When nothing is open or opening later, no time chip at all |
 | 5.3 | Tap "Open now" | It turns green and the list keeps the open places; places whose hours we do not hold come after, under "Hours not known, check before going" |
 | 5.4 | Tap "Open now" again | It is cleared and every place is back |
+| 5.4b | The same page in French, Spanish, Catalan and Dutch | The chips stand two to a row, as in English: no chip alone on its row because of a long word ("Ouvert", "Ouvre plus tard", "Admite perros", "Kindvriendelijk") |
 | 5.5 | Tap "Dog friendly", then "Vegetarian" too | Each turns dark; the list keeps the places that have both; a second tap clears one |
 | 5.6 | Tap "From me" (allow the position) | The switch's white side moves; rows say both distances, nearest to you first |
 | 5.7 | Read a closed row | The name on the row's whole width; under it two lines: kind and town, then distance and price, a dot between two pieces and never alone at a line's end; then the status on its own line ("Open until 16:00 · Reopens at 20:00", "Closed · Opens tomorrow 13:00"); then two lines of the host's words; then the marks |
@@ -155,6 +156,12 @@ lists too (their own steps: sections 6 and 10, when written).
 | 5.9 | Open a row | The two lines of words leave the row and the full text is in the opened part, with the address, the hours and the buttons. In German no word of that text is cut with a hyphen |
 | 5.10 | The same in German and in French | No word cut in two, nothing over anything; a long line wraps between its pieces, a distance or a price is never split |
 | 5.11 | Open Markets, Rubbish's glass container, and the map's list | They look as before (their rows did not change) |
+
+### A town, a city, a beach (kinds with no hours)
+| # | Do | Expect |
+|---|---|---|
+| 5.15 | Ca La Kimberly, Things to do, tap "Open now" | Sitges and Barcelona stand with the open places, with no status line; they are counted in "Open now" and are not under "Hours not known, check before going" |
+| 5.16 | The same list with nothing chosen | Sitges and Barcelona stand among the open places by distance, no longer after the closed ones |
 
 ### After midnight (a place that closes after midnight)
 | # | Do | Expect |
@@ -173,6 +180,7 @@ lists too (their own steps: sections 6 and 10, when written).
 - A pasted Google Maps link stays a web address in the builder until the guide is built (fix `05.3`, after the test).
 - The pool house's three names still end with their town ("Llépol Vila-rodona"): to change in the editor (`05.1`).
 - In the pictures made by the checks the small map is empty; on a real phone it draws.
+- Altafulla, Tarragona and Montblanc still stand under "Hours not known" with "Open now" on: in Ca La Kimberly's list their kind is a castle or a Roman site, not a town. A place's kind is changed in the editor (Things to do).
 - A long host comment ends with "…" after two lines, sometimes inside a word: the full text is one tap away.
 - A place with four marks has four lines of marks: unchanged, to look at with the one tile system.
 

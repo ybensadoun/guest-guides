@@ -36,6 +36,11 @@ export const seasonText = m => {
   return typo(S.confirmed ? `${fmtMD(r.from)} - ${fmtMD(r.to)}` : `${cap(mo(r.from))} - ${mo(r.to)} · ${t('expected')}`);
 };
 
+// A kind of place with no hours by nature (kinds.json "hours": false: a beach, a town, a city): it is there at any time, so
+// with no hours of ours it is never "hours not known" (modules/places/README.md rule 10).
+const NO_HOURS = new Set(Object.values(KINDS).filter(l => l && typeof l === 'object').flatMap(l => Object.entries(l)).filter(([, v]) => v && v.hours === false).map(([k]) => k));
+export const noHours = m => !!(m && NO_HOURS.has(m.icon));
+
 export const runsOn = (m, dt) => m.s.filter(x => slotOn(x, dt));
 // The rows of the day before that close after midnight and are still running (Sat 23:30-05:00, asked on Sunday at 1:30):
 // a night belongs to the evening it started (modules/places/README.md rule 21, 16 Nov 2026). runsOn stays the day's own

@@ -77,6 +77,11 @@ test('stateOf: open now, later today, closed or not today, not known', () => {
   assert.equal(stateOf(SP.later, D(2026, 11, 14, 16, 0)), 2);
   assert.equal(stateOf(SP.monday, MON), 0);
   assert.equal(stateOf({ id: 'night', s: [row([6], '22:00', '03:00')] }, SAT), 1);   // a close after midnight
+  // A kind with no hours by nature (kinds.json "hours": false) and no hours of ours counts as open, by day and at night;
+  // a castle with no hours stays "not known"; with rows of hours a town follows them like any place (rule 10).
+  for (const icon of ['beach', 'town', 'city']) { assert.equal(stateOf({ id: icon, icon, s: [] }, SAT), 0); assert.equal(stateOf({ id: icon, icon, s: [] }, D(2026, 11, 15, 1, 30)), 0); }
+  assert.equal(stateOf({ id: 'castle', icon: 'castle', s: [] }, SAT), 3);
+  assert.equal(stateOf({ id: 'town', icon: 'town', s: [row([1], '09:00', '20:00')] }, SAT), 2);
   // After midnight the night goes on (rule 21): open now on Sunday at 1:30, closed once it has closed.
   assert.equal(stateOf({ id: 'night', s: [row([6], '22:00', '03:00')] }, D(2026, 11, 15, 1, 30)), 0);
   assert.equal(stateOf({ id: 'night', s: [row([6], '22:00', '03:00')] }, D(2026, 11, 15, 3, 0)), 2);
@@ -118,6 +123,19 @@ test('listPlan: Open now and Opens later today keep the places whose hours we do
   const none = plan([SP.done, SP.unknown], { openf: 'later' });  // nothing later today: back to Any time
   assert.equal(none.ofsel, 'any'); assert.equal(none.k3, -1);
   assert.deepEqual(ids(none.list), ['done', 'unknown']);
+});
+
+test('listPlan: a town or a beach with no hours counts as open, and is never under "hours not known"', () => {
+  const town = { id: 'town', km: 8, s: [], icon: 'town', group: 'sights' }, L2 = [...LIST, town];
+  const any = plan(L2);
+  assert.equal(any.nNow, plan(LIST).nNow + 1);                                    // counted under "Open now"
+  assert.ok(any.list.findIndex(x => x.id === 'town') < any.list.findIndex(x => x.id === 'later'));   // with the open places
+  const now = plan(L2, { openf: 'now' }), at = now.list.findIndex(x => x.id === 'town');
+  assert.ok(at >= 0 && at < now.k3);                                              // before the places whose hours we do not hold
+  assert.ok(!plan(L2, { openf: 'later' }).list.some(x => x.id === 'town'));       // not under "Opens later today"
+  // The places with hours stand as before, in the same order among themselves.
+  assert.deepEqual(any.list.filter(x => x.id !== 'town').map(x => x.id), plan(LIST).list.map(x => x.id));
+  assert.deepEqual(now.list.filter(x => x.id !== 'town').map(x => x.id), plan(LIST, { openf: 'now' }).list.map(x => x.id));
 });
 
 test('listPlan: a list where no place has hours has no time filters and keeps its order by distance', () => {
