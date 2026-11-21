@@ -137,6 +137,45 @@ On a phone, as a guest: Ca La Kimberly (ca-la-kimberly.netlify.app) and the pool
 - The first monthly search of events by the server is 1 Dec 2026: until then only "Search now" and the switch bring new events.
 - An event's time has no end unless a source gave one: a village festa then stays "On now" until midnight, human towers for two hours.
 
+## 5. Eat and drink (the page the three lists of places share, changed 21 Nov 2026)
+Things to do and Nightlife are drawn by the same page: what is said here of the filters and the rows holds on their
+lists too (their own steps: sections 6 and 10, when written).
+
+### In the guide, on a phone (Ca La Kimberly and the pool house, Eat and drink)
+| # | Do | Expect |
+|---|---|---|
+| 5.1 | Open "Our favourite places to eat" | The small map, then quiet chips with no outline (a soft patch of the page colour), then the small switch "From the house / From me", then the places. No "Any time" chip |
+| 5.2 | Look at the chips at lunch time, then late in the evening | "Open now" and "Opens later today" each show only when they hold a place, with their count. When nothing is open or opening later, no time chip at all |
+| 5.3 | Tap "Open now" | It turns green and the list keeps the open places; places whose hours we do not hold come after, under "Hours not known, check before going" |
+| 5.4 | Tap "Open now" again | It is cleared and every place is back |
+| 5.5 | Tap "Dog friendly", then "Vegetarian" too | Each turns dark; the list keeps the places that have both; a second tap clears one |
+| 5.6 | Tap "From me" (allow the position) | The switch's white side moves; rows say both distances, nearest to you first |
+| 5.7 | Read a closed row | The name on the row's whole width; under it one line: kind, town, distance, price; then the status on its own line ("Open until 16:00 · Reopens at 20:00", "Closed · Opens tomorrow 13:00"); then two lines of the host's words; then the marks |
+| 5.8 | Look at the pool house's rows | The town is there beside the kind ("Pizza · El Vendrell"). On Ca La Kimberly the kind already holds the town and it is not said twice |
+| 5.9 | Open a row | The two lines of words leave the row and the full text is in the opened part, with the address, the hours and the buttons |
+| 5.10 | The same in German and in French | No word cut in two, nothing over anything; a long line wraps between its pieces, a distance or a price is never split |
+| 5.11 | Open Markets, Rubbish's glass container, and the map's list | They look as before (their rows did not change) |
+
+### After midnight (a place that closes after midnight)
+| # | Do | Expect |
+|---|---|---|
+| 5.20 | Ca La Kimberly, Things to do, in the night of a Friday or a Saturday, between midnight and 2:00: "Bowling & Arcade El Vendrell" | "Open until 2:00", under "Open now" (before: "Closed, Opens at 17:00") |
+| 5.21 | The same place at 2:00 | "Closed · Opens at 17:00" |
+
+### In the maker (nothing changed there on 21 Nov; to try on the test house)
+| # | Do | Expect |
+|---|---|---|
+| 5.30 | Builder, Eat and drink: type a place's name and pick it from the list | The row keeps the place's own name (not the words typed to find it), and the phone shows it |
+| 5.31 | Add a comment under it | It is the line guests read in the closed row |
+| 5.32 | Editor, Eat and drink: open a place | Name, Your comment, Our favourite, then "Filled in for you" (kind, hours, price, phone, website) with "Change" |
+
+### Known, not to report
+- A pasted Google Maps link stays a web address in the builder until the guide is built (fix `05.3`, after the test).
+- The pool house's three names still end with their town ("Llépol Vila-rodona"): to change in the editor (`05.1`).
+- In the pictures made by the checks the small map is empty; on a real phone it draws.
+- A long host comment ends with "…" after two lines, sometimes inside a word: the full text is one tap away.
+- A place with four marks has four lines of marks: unchanged, to look at with the one tile system.
+
 ## 6. Things to do (the deck and the found places in the host's language, 21 Nov 2026)
 Do it once in Catalan or Spanish (the language picker at the top, or `?lang=ca` in the address): Wednesday's hosts
 work in those. The guest's list page (the chips, a place's row) has its steps after Restaurants' change to what the
