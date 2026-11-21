@@ -8664,6 +8664,11 @@
 "es": "Taxis a los que pueden llamar los huéspedes. Buscamos los más cercanos a tu casa: revísalos o escribe el de tu confianza.",
 "fr": "Taxis que les voyageurs peuvent appeler. Nous cherchons ceux près de chez vous : vérifiez-les ou indiquez le vôtre."
 },
+"Emergency numbers are added for you: 112, the nearest hospital and pharmacy.": {
+"ca": "Els números d’emergència s’afegeixen sols: el 112, l’hospital i la farmàcia més propers.",
+"es": "Los números de emergencia se añaden solos: el 112, el hospital y la farmacia más cercanos.",
+"fr": "Les numéros d’urgence sont ajoutés pour vous : le 112, l’hôpital et la pharmacie les plus proches."
+},
 "From an open directory. Tick the ones you would call: guests see them in the guide.": {
 "ca": "D’un directori obert. Marca els que trucaries: els hostes els veuen a la guia.",
 "es": "De un directorio abierto. Marca los que llamarías: los huéspedes los ven en la guía.",

@@ -1005,7 +1005,7 @@ const knTick = p => p.done() ? `<span class="kn-ok">${CHECK}Done</span>` : '';
 function knownHTML(m){
   return slimStep(m, m.lead, `<section class="card kn-card">${knownParts().map(p => `<div class="kn-part" data-part="${p.id}" data-screen="${p.screen}">
       <div class="kn-hd"><span class="kn-ic" aria-hidden="true">${I[p.icon] || ''}</span><h2>${esc(p.title)}</h2><span class="kn-tick" id="kn_${p.id}">${knTick(p)}</span></div>
-      <p class="hint">${esc(p.hint)}</p><div class="grid">${p.fields.map(field).join('')}</div></div>`).join('')}</section>`, 'known-page');
+      <p class="hint">${esc(p.hint)}</p><div class="grid">${p.fields.map(field).join('')}</div></div>`).join('')}${secOn('emergency') ? '<p class="hint kn-foot">Emergency numbers are added for you: 112, the nearest hospital and pharmacy.</p>' : ''}</section>`, 'known-page');   // the foot line: what the host need not give (it sat under Getting around until 21 Nov 2026)
 }
 function knownTicks(){ for (const p of knownParts()) { const el = document.getElementById('kn_' + p.id); if (el) el.innerHTML = knTick(p); } }
 // The phone shows the part being filled in: the Wi-Fi card, the way in, the bins, the numbers.
