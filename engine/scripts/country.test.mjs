@@ -14,8 +14,14 @@ test('the outline that holds the position names the country', () => {
 test('a country inside another: the smallest outline wins', () => { assert.equal(countryAt(P, 44.5, 4.5), 'CC'); });
 test('just off the shore: the nearest outline within 25 km', () => {
   assert.equal(countryAt(P, 47, 10.05), 'AA');        // about 4 km off AA's east shore
-  assert.equal(countryAt(P, 44.15, 10.06), 'BB');     // between the two, nearer the island
+  assert.equal(countryAt(P, 44.15, 10.06), '');       // between the two, a few km from each: not known, never a guess
   assert.equal(countryAt(P, 39.9, 5), 'AA');          // about 11 km south
+});
+test('within 6 km of another country: not known', () => {
+  assert.equal(countryAt(P, 44.5, 3.97), '');         // in AA, about 2 km from the country inside it
+  assert.equal(countryAt(P, 44.5, 4.03), '');         // inside the small country, about 2 km from its border
+  assert.equal(countryAt(P, 44.5, 3.8), 'AA');        // about 16 km away: sure again
+  assert.equal(countryAt(P, 44.15, 10.02), '');       // in AA, about 6 km from the island's shore
 });
 test('the open sea, and no position, are no country', () => {
   assert.equal(countryAt(P, 30, 5), '');
