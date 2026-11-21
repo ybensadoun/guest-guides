@@ -45,6 +45,23 @@ export function upcoming(items, now = new Date()) {
 // x: an event of upcoming(), with its days from today.
 export const listedMonth = (x, now = new Date()) => (x.days <= 0 ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}` : x.o.start.slice(0, 7));
 
+// An event's Google Maps button (README rule 5; 21 Nov 2026): the event's own pin, not a search for its words alone.
+// In order: the place the host matched on Google, by its id (the only thing of Google's we keep; the words are what
+// Google falls back to); else a Google Maps link the host pasted; else its position; else the words "venue, town"; none
+// of these: no button. A position is never used when the event has no pin (nomap: a new event of the host's carries the
+// house's position until it is placed, and Google's position past its 30 days is no longer ours to use: content.js).
+// Before, the button always searched "venue, town": "Centre, El Vendrell" or "Old town, Valls" found whatever Google
+// made of the words, and the place a host had matched was not used.
+const MAPS = 'https://www.google.com/maps/search/?api=1&query=';
+export function mapsLink(e) {
+  const txt = x => (typeof x === 'string' ? x.trim() : ''), words = [txt(e.venue), txt(e.town)].filter(Boolean).join(', ');
+  if (txt(e.gid)) return `${MAPS}${encodeURIComponent(words || txt(e.name_local))}&query_place_id=${encodeURIComponent(e.gid)}`;
+  const own = [e.gmaps, e.map].map(txt).find(u => /^https?:\/\//.test(u));
+  if (own) return own;
+  if (!e.nomap && typeof e.lat === 'number' && typeof e.lng === 'number' && (e.lat || e.lng)) return `${MAPS}${e.lat},${e.lng}`;
+  return words ? MAPS + encodeURIComponent(words) : '';
+}
+
 // The event Home's tile names: today's, as long as it is not known to be over, "Today: Santa Teresa Fair"
 // ({ e, o, now: true }): one that starts today first, else a short one that is on (a fair of up to three days is today's
 // on each of its days; a Christmas market on for a month only on the day it starts, or the tile would name it for weeks).

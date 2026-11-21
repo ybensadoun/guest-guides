@@ -5,7 +5,7 @@
 // node --test engine/scripts/events-plan.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { evState, upcoming, nextEvent, listedMonth, MOMENT_KINDS, MOMENT_MIN } from '../src/modules/events/plan.js';
+import { evState, upcoming, nextEvent, listedMonth, mapsLink, MOMENT_KINDS, MOMENT_MIN } from '../src/modules/events/plan.js';
 
 const D = (y, m, d, h = 12, mi = 0) => new Date(y, m - 1, d, h, mi);
 const SAT = D(2026, 11, 14, 11, 30);
@@ -124,4 +124,24 @@ test('listedMonth: an event that has already started is under this month, never 
     const m = upcoming(items, now).map(x => listedMonth(x, now));
     assert.deepEqual(m, [...m].sort(), 'months in order on ' + now.toDateString());
   }
+});
+
+test('mapsLink: the event\'s own pin: the host\'s match on Google, the host\'s link, its position, then its words (21 Nov 2026)', () => {
+  const G = 'https://www.google.com/maps/search/?api=1&query=';
+  const ev = { venue: 'Centre', town: 'El Vendrell', lat: 41.2196, lng: 1.535 };
+  // Its position, where the words alone found whatever Google made of "Centre, El Vendrell".
+  assert.equal(mapsLink(ev), G + '41.2196,1.535');
+  // Matched on Google by the host: the link is built from the id, whatever link the data holds; the words are the fallback.
+  assert.equal(mapsLink({ ...ev, gid: 'ChIJ-abc', gmaps: 'https://maps.google.com/?cid=1' }), G + 'Centre%2C%20El%20Vendrell&query_place_id=ChIJ-abc');
+  // A Google Maps link the host pasted, before the position.
+  assert.equal(mapsLink({ ...ev, gmaps: 'https://maps.app.goo.gl/xyz' }), 'https://maps.app.goo.gl/xyz');
+  assert.equal(mapsLink({ ...ev, gmaps: 'not a link' }), G + '41.2196,1.535');
+  // No pin (a new event of the host's carries the house's position until it is placed; Google's position past its days):
+  // the position is never used, the words are.
+  assert.equal(mapsLink({ ...ev, nomap: true }), G + 'Centre%2C%20El%20Vendrell');
+  assert.equal(mapsLink({ town: 'El Vendrell', lat: 41.27, lng: 1.48, nomap: true }), G + 'El%20Vendrell');
+  assert.equal(mapsLink({ venue: '', town: 'Valls', lat: 0, lng: 0 }), G + 'Valls');
+  // Neither a pin nor words: no button, never "undefined, undefined".
+  assert.equal(mapsLink({ name: { en: 'New event' }, lat: 41.27, lng: 1.48, nomap: true }), '');
+  assert.equal(mapsLink({}), '');
 });

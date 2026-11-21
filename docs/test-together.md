@@ -55,6 +55,39 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 | 2.6 | "Back to the arrangement we suggest" | One confirmation, then the default |
 | 2.7 | Preview | The phone shows the same arrangement |
 
+## 4. Local events (the step never used by a real host)
+
+### In the editor, on the pool house (8 events from its build, "Keep events up to date" off)
+| # | Do | Expect |
+|---|---|---|
+| 4.1 | Open Local events | On top "Finding events": how guests get around (By car, In a city), the switch "Keep events up to date" (off), topics to skip, things to look for, "Search now". Under it the guide's events, each with its kind's icon and its town |
+| 4.2 | Open an event | Name, Kind with "Change", Description, Town, Where exactly, Official website, Find it on Google, the pin, its dates |
+| 4.3 | Kind, "Change" | Eighteen kinds as icon tiles, with a search: "castells", "torres humanas" or "tours humaines" all find Human towers. Picking one changes the icon on the row |
+| 4.4 | In its dates, set today, a start time an hour ago and no end; Preview | The phone's Local events page: the event first, "On now" in green; its row opened says the end time is not given. On Home, What's on names it under Today |
+| 4.5 | Set its end time to ten minutes ago; Preview | "Ended" with the hour under it, the row greyed, after today's others. Put the date back afterwards |
+| 4.6 | "Expected" or "Confirmed" on a date | An expected date says "Expected" on its row and, opened, that the dates come from previous years |
+| 4.7 | "+ Add an event", give it a name and a town, no pin | In the preview its "Google Maps" button searches the town: never a pin at the house |
+| 4.8 | "Find it on Google" on that event, pick the square or the venue | The preview's "Google Maps" button opens that very place |
+| 4.9 | Preview, open an event the research found, "Google Maps" | Google Maps opens on a pin at the event's position (the centre of its town when the research knew no better) |
+| 4.10 | Add "jazz" to "Things to look for", then "Search now" (paid, about 1 to 2 USD) | "A search usually takes 3 to 6 minutes", you can keep editing. Then cards one at a time, "Suggestion 1 of n", with dates and "expected" or "confirmed": "Add to my guide" or "Not for us" |
+| 4.11 | Switch "Keep events up to date" on (paid: the first search starts at once) | New events go straight into the guide, marked "added automatically" on their row; "Last search" and how many were added |
+| 4.12 | Delete an event that was added automatically ("Sure? Tap again") | It is gone and a later search never brings it back |
+| 4.13 | Home page, "Add to your home page", Local events | A wide tile "Next: <event>, <date>" (or "Today: <event>") |
+| 4.14 | The same step on a phone (360 px wide) | Nothing overlaps; the chips and the date fields wrap cleanly |
+
+### In the builder, with a new link (the test house)
+| # | Do | Expect |
+|---|---|---|
+| 4.20 | Build the guide without doing anything for events | The builder has no step for events: the guide opens with the events the research of the area found for the next three months (small ones within 10 km, the main ones as far as the host's distance; 8 for the pool house), each with a kind, a town, dates and its official page |
+| 4.21 | Open the built guide on a phone, Home, down to What's on | The events of today and the days ahead; "All events" opens the page, by month, soonest first |
+
+### Known, not to report
+- The step opens on the search settings, not on the events, and a closed event row shows no date: both are in the list of fixes for hosts (`04.2`, `04.6`).
+- Most dates say "Expected" until an official source gives the year's dates; the monthly search does not confirm an event the host wrote (`04.3`, Yohann's decision).
+- The page lists a whole year, with no distance on a row (`04.4`, `04.5`).
+- The first monthly search of events by the server is 1 Dec 2026: until then only "Search now" and the switch bring new events.
+- An event's time has no end unless a source gave one: a village festa then stays "On now" until midnight, human towers for two hours.
+
 ## 8. Rubbish (the default texts, the "no day" card and the header: 19 Nov 2026; the editor's and builder's step: 21 Nov 2026)
 
 ### In the editor, on the pool house (collected at the house, one glass container)
