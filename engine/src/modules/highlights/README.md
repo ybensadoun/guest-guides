@@ -27,6 +27,7 @@ pages are the reference: the move into this folder (14 Nov 2026) was checked pix
 | 9 | A list that names a card (`"highlight"` in `sections.json`) shows it on top of its page, wide, with no status; its page link is `#p/<id>`. | As built (`views/section.js`) |
 | 10 | The bar next door's pin is on the map under Eat and drink, and on Eat and drink's map in green. | As built (`content.js` `QSHOP`, `views/section.js`) |
 | 11 | Hosts make a card with "Show on the home page" on a place of Eat and drink, or from the maker's step Home page ("Add to your home page": a place to eat, something to do, Nightlife, a place in none of the lists, Getting around's card), and change its words there. Its size and its place are the arranger's (`../README.md`, "The arranger (maker)"): a card has no "wide" field of its own in the maker. A card on top of Eat and drink is still the plan's gap D11. | `onboarding-site/src/editor.js` (`cPinned`, `cmPin`), `onboarding-site/src/board.js`; plan, D11; the arranger, Yohann, 15 Nov 2026 |
+| 12 | A card never cuts a word in two. Its name, its line and its status wrap between words; a card with a word too wide for a half card at 360 px (131 px of text: the name in 17 px, the line in 14 px) is drawn wide by the frame. `fit.js` says which, from the letters' own widths measured in the built guide (`longForHalf`), in the language shown; the maker's board uses the same file. | Yohann, 21 Nov 2026 (`02.1`); `../README.md`, frame rule 14 |
 
 ## Its data
 
@@ -52,6 +53,7 @@ description, "Opening hours" (status, the week, the note, the price, or Google's
 | Part | Where | In the module? |
 |---|---|---|
 | The rules, pure and tested | `plan.js` (tests: `engine/scripts/highlights-plan.test.mjs`) | Yes |
+| Whether a card fits a half card, with no import (the maker pastes it) | `fit.js` (same tests) | Yes |
 | The cards and the ones shown today | `data.js` | Yes |
 | The icons | `icons.js` | Yes |
 | The card on Home, on a list, its pin on a list's map | `widget.js` (`card`, `pageCard`, `mapPin`) | Yes |

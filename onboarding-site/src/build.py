@@ -158,6 +158,12 @@ for _n,_d in _oimp:
 ENG_DATA+=('const FR = (() => {\n'+_re.sub(r'(?m)^export ','',_fsrc)
   +'\nconst OFFERS = { '+', '.join(_offs)+' };\n'
   +'return { GROUPS, SIZES, keyOf, thing, defaultArrangement, placements, resolve, place, check, OFFERS };\n})();\n')
+# Whether a card fits a half card (engine/src/modules/highlights/fit.js): the cards' own rule, so the board draws a card
+# wide where guests will see it wide and says why. One rule, never a second copy: HLFIT.
+_hsrc=open(__import__('os').path.join(_MD,'highlights','fit.js'),encoding='utf-8').read()
+assert not _re.search(r'(?m)^import ',_hsrc),'engine/src/modules/highlights/fit.js: an import the maker does not paste'
+assert 'export const longForHalf' in _hsrc,'engine/src/modules/highlights/fit.js: longForHalf not found'
+ENG_DATA+='const HLFIT = (() => {\n'+_re.sub(r'(?m)^export ','',_hsrc)+'\nreturn { longForHalf };\n})();\n'
 # Which train stations a house gets and a station as a guide holds it (engine/src/modules/transport/pick.js): Getting
 # around's one rule, which the generator also uses (engine/scripts/stations-of.mjs). Pasted whole, its names all tp...,
 # pickStations, stationEntry, stationsFor and cmMin (the minutes by car the editor guesses). Never a second copy.

@@ -13,18 +13,21 @@ const HB_PHONE = '(max-width:700px)';
 // content.js MODULE_ON (a module switched off in site.json disappears; markets with none found too, markets/plan.js
 // noneFound), SECTIONS, QUICK_ON and QUICK_ALL, TR_SEC with transport/plan.js cardOf (Getting around's card when its file
 // has a "tile") and TRANSPORT_CARD; views/home.js frameGuide; highlights/data.js shown (a card closed for the season and
-// opening in more than 30 days is left out: highlights/plan.js shownOn, which is engine/src/season.js hiddenOn, pasted).
+// opening in more than 30 days is left out: highlights/plan.js shownOn, which is engine/src/season.js hiddenOn, pasted; a
+// card with a word too wide for a half card is "long" and drawn wide: highlights/fit.js, pasted as HLFIT, on the card's
+// words in the language being edited, as guests of that language see it).
 // all: every card, seasons aside, as check() wants it (frame.js check) and as the arrangement is written.
 function hbGuide(all = false, now = new Date()) {
   const c = edC(), f = c.files || {}, mods = (c.site || {}).modules || {};
   const on = id => mods[id] !== false && !(id === 'markets' && !(((f.markets || {}).markets) || []).length);
   const secs = (((f.sections || {}).sections) || []).filter(s => s && on(s.id));
   const tr = secs.find(s => s.kind === 'transport' && s.status === 'live'), trData = tr && f[tr.file || tr.id];
-  const card = trData && trData.tile ? { id: tr.id, wide: !!trData.tile.wide } : null;
+  const long = x => HLFIT.longForHalf(edShown(x.name), edShown(x.sub));
+  const card = trData && trData.tile ? { id: tr.id, wide: !!trData.tile.wide, long: long(trData.tile) } : null;
   const quick = on('quick') ? (((f.quick || {}).items) || []) : [];
   return {
     sections: secs.map(({ id, kind, group, status }) => ({ id, kind, group, status })),
-    highlights: [...quick.filter(q => all || !hiddenOn(q, PL_SK, now)).map(q => ({ id: q.id, wide: !!q.wide })), ...(card ? [card] : [])],
+    highlights: [...quick.filter(q => all || !hiddenOn(q, PL_SK, now)).map(q => ({ id: q.id, wide: !!q.wide, long: long(q) })), ...(card ? [card] : [])],
     map: on('map'), transportCard: card ? tr.id : null, offers: FR.OFFERS
   };
 }
@@ -75,8 +78,9 @@ const hbSays = x => x.kind === 'highlight' && hbCard(x.id).tr ? 'Opens Getting a
 // A thing offered in one size only says so, in one line, instead of a switch.
 const HB_ONE = { garbage: 'Always wide: it shows tonight’s bins.', map: 'Always wide: a bar across the page.', events: 'Always wide: it names the next event and its date.' };
 const HB_SIZES = [['half', 'Half'], ['wide', 'Wide'], ['tall', 'Tall']];
-// Shown in another size than the host's pick (the frame's no holes rule): one quiet line says why.
-const hbWhy = (pick, shown) => pick === shown ? '' : shown === 'wide' ? 'Shown wide for now: it is alone in its row.' : 'Shown half for now: a tall tile needs two tiles beside it.';
+// Shown in another size than the host's pick (the frame's no holes rule, or a card with a word too long for half the
+// width: no word is cut in two on Home): one quiet line says why.
+const hbWhy = (pick, shown, long) => pick === shown ? '' : long ? 'Shown wide: one of its words is too long for half the width.' : shown === 'wide' ? 'Shown wide for now: it is alone in its row.' : 'Shown half for now: a tall tile needs two tiles beside it.';
 
 /* --- Colours: the guide's own, in its colour world (worldTok, preview.js) through the engine's SECTION_LOOK (ENG_LOOK) and
    app.css's names and shapes (ENG_TILE), all pasted from the engine by build.py --- */
@@ -112,7 +116,8 @@ function hbSel(R) {
   const vis = hbVis(R, x.g), i = vis.indexOf(HB.sel), th = FR.thing(x, hbGuide());
   const pick = (hbPicks()[x.g].find(y => FR.keyOf(y) === HB.sel) || x).size;
   const step = x.kind === 'section' && cmSteps().find(m => m.sec === x.id);
-  return { x, i, n: vis.length, sizes: th ? th.sizes : [x.size], pick, why: hbWhy(pick, x.size), name: hbName(x), card: x.kind === 'highlight' ? hbCard(x.id) : null, step, events: hbKind(x) === 'events' };
+  const long = x.kind === 'highlight' && (hbGuide().highlights.find(q => q.id === x.id) || {}).long;
+  return { x, i, n: vis.length, sizes: th ? th.sizes : [x.size], pick, why: hbWhy(pick, x.size, long), name: hbName(x), card: x.kind === 'highlight' ? hbCard(x.id) : null, step, events: hbKind(x) === 'events' };
 }
 const hbSizes = (s, pre) => s.sizes.length > 1
   ? `<div class="hb-size" role="group" aria-label="Size" style="--n:${s.sizes.length}">${HB_SIZES.filter(([k]) => s.sizes.includes(k)).map(([k, n]) => `<button type="button" id="${pre}_${k}" data-hbsize="${k}" aria-pressed="${s.pick === k}"><span class="sh ${k}" aria-hidden="true">${k === 'half' ? '<b class="on"></b><b></b><b></b><b></b>' : k === 'wide' ? '<b class="on"></b><b></b><b></b>' : '<b class="on"></b><b></b>'}</span>${n}</button>`).join('')}</div>`
@@ -170,9 +175,12 @@ function hbBox() {
     ${hbOwn() ? `<p class="hb-foot"><button type="button" class="hb-link" id="hbReset" data-hbreset>Back to the arrangement we suggest</button></p>` : ''}</div></div>${s ? hbDock(s) : ''}`;
 }
 function hbStepHTML() {
-  const items = ((edF().quick || {}).items) || [];
+  const items = ((edF().quick || {}).items) || [], off = items.length && ((edC().site || {}).modules || {}).quick === false;
   setTimeout(hbAfter, 0);
+  // The cards were once a section a host could switch off in Guide sections (until 21 Nov 2026): a guide that has them off
+  // keeps them hidden, and says so here, with the way back.
   return `<p class="hint hb-hint">Drag a tile to move it, tap it to change its size.</p><div id="hbBox">${hbBox()}</div>
+    ${off ? `<p class="hint hb-off"><span>The places below are hidden from your home page.</span> <button type="button" class="hb-link" data-hbshow>Show them again</button></p>` : ''}
     ${items.length ? `<h3 class="cm-h">Places on your home page</h3><div class="cm-list">${items.map((it, i) => cItem('files/quick/items', it, i, 'tile')).join('')}</div>` : ''}
     <p class="hint">Taxis, train stations and bus stops go in <a href="#transport">Getting around</a>, which can have its own tile here.</p><div id="hbPad" aria-hidden="true"></div>`;
 }
@@ -240,7 +248,7 @@ document.addEventListener('input', e => {
 document.addEventListener('click', e => {
   if (!CM.on || route() !== 'tiles') return;
   if (HBD.noClick && e.target.closest && e.target.closest('.hb-plan')) { HBD.noClick = false; e.preventDefault(); e.stopPropagation(); return; }
-  const t = e.target.closest && e.target.closest('[data-hbk],[data-hbsize],[data-hbmove],[data-hbadd],[data-hbpin],[data-hbown],[data-hbdel],[data-hbwords],[data-hbreset]');
+  const t = e.target.closest && e.target.closest('[data-hbk],[data-hbsize],[data-hbmove],[data-hbadd],[data-hbpin],[data-hbown],[data-hbdel],[data-hbwords],[data-hbreset],[data-hbshow]');
   if (!t) { if (HB.sel && !(e.target.closest && e.target.closest('.hb-plan, .hb-dock, .hb-side'))) { HB.sel = null; hbRedraw(); } return; }
   const d = t.dataset;
   if (d.hbk) return hbSelect(d.hbk);
@@ -258,6 +266,7 @@ document.addEventListener('click', e => {
   }
   if (d.hbpin) { const it = edGet(edC(), edPath(d.hbpin)); if (!it || cPinned(it)) return; cmPin(d.hbpin); const q = edF().quick.items.find(x => x.from === it.id); return hbAddDone('highlight:' + (q && q.id)); }
   if (d.hbown) { edAddTile(d.hbown); const s = edC().site = edC().site || {}; s.modules = { ...(s.modules || {}), quick: true }; const items = edF().quick.items; return hbAddDone('highlight:' + items[items.length - 1].id); }
+  if (d.hbshow !== undefined) { const s = edC().site = edC().site || {}; s.modules = { ...(s.modules || {}), quick: true }; return hbDone(); }
   if (d.hbreset !== undefined) {
     if (d.sure !== '1') { const was = t.textContent; d.sure = '1'; t.textContent = 'Sure? Tap again'; setTimeout(() => { if (t.isConnected) { delete t.dataset.sure; t.textContent = was; } }, 4000); return; }
     delete edF().home; HB.sel = null; hbDone();
@@ -411,6 +420,7 @@ body.hb-dragging,body.hb-dragging *{cursor:grabbing!important;user-select:none!i
 .hb-pi{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;border:0;border-top:1px solid var(--line);background:none;padding:10px 12px;font:inherit;color:var(--ink);cursor:pointer;min-height:44px}
 .hb-pi:first-child{border-top:0}.hb-pi small{color:var(--muted);font-size:13px}.hb-pi:hover{background:var(--sunk)}
 .hb-pl .hint{margin:0;padding:10px 12px}
+.hb-off{display:flex;flex-wrap:wrap;align-items:center;column-gap:10px}
 .hb-foot{margin:0}.hb-link{border:0;background:none;padding:6px 0;font:inherit;font-size:14.5px;color:var(--ink);text-decoration:underline;cursor:pointer;text-align:left;min-height:44px}
 .hb-dock{display:none}
 @media ${HB_PHONE}{.hb{grid-template-columns:minmax(0,1fr);gap:16px}.hb-side .hb-pan.sel{display:none}

@@ -3720,16 +3720,19 @@ async function gLayout() {
 // in memory: nothing reaches the database.
 async function gHomePage() {
   const ES = join(ROOT, 'engine/src'), imp = f => import(pathToFileURL(join(ES, f)).href);
-  const FRM = await imp('modules/frame.js'), { OFFERS } = await imp('modules/offers.js'), { seasonKinds, hiddenOn } = await imp('season.js');
+  const FRM = await imp('modules/frame.js'), { OFFERS } = await imp('modules/offers.js'), { seasonKinds, hiddenOn } = await imp('season.js'), { longForHalf } = await imp('modules/highlights/fit.js');
   const SK = seasonKinds(JSON.parse(readFileSync(join(ES, 'kinds.json'), 'utf8')));
   // The guide as the frame sees it (content.js: modules switched off and markets with none found disappear, Getting around's
   // card when transport has a "tile", the cards shown today; views/home.js frameGuide). all: every card, seasons aside (check()).
+  // long: a word of the card too wide for a half card (highlights/fit.js), here in any of its languages (the board reads
+  // the language being edited; the only long card of these checks is the one they rename).
+  const longOf = x => [...new Set([...Object.keys(x.name || {}), ...Object.keys(x.sub || {})])].some(l => longForHalf((x.name || {})[l], (x.sub || {})[l]));
   const guideOf = (c, all = false) => {
     const f = c.files || {}, mods = (c.site || {}).modules || {}, on = id => mods[id] !== false && !(id === 'markets' && !((f.markets || {}).markets || []).length);
     const secs = ((f.sections || {}).sections || []).filter(s => on(s.id)), tr = secs.find(s => s.kind === 'transport' && s.status === 'live'), T = tr && f[tr.file || tr.id];
     const quick = on('quick') ? (f.quick || {}).items || [] : [];
     return { sections: secs.map(({ id, kind, group, status }) => ({ id, kind, group, status })), map: on('map'), transportCard: T && T.tile ? tr.id : null, offers: OFFERS,
-      highlights: [...quick.filter(q => all || !hiddenOn(q, SK, new Date())).map(q => ({ id: q.id, wide: !!q.wide })), ...(T && T.tile ? [{ id: tr.id, wide: !!T.tile.wide }] : [])] };
+      highlights: [...quick.filter(q => all || !hiddenOn(q, SK, new Date())).map(q => ({ id: q.id, wide: !!q.wide, long: longOf(q) })), ...(T && T.tile ? [{ id: tr.id, wide: !!T.tile.wide, long: longOf(T.tile) }] : [])] };
   };
   const drawnOf = R => Object.fromEntries(['house', 'area'].map(g => [g, R[g].map(r => `${r.type}[${r.items.map(x => FRM.keyOf(x) + ':' + x.size).join(' ')}]`).join(' ')]));
   const want = c => drawnOf(FRM.resolve((c.files || {}).home || null, guideOf(c)));
@@ -3766,6 +3769,7 @@ async function gHomePage() {
     return [...new Set(out)];
   });
   const T_LONE = { en: 'Shown wide for now: it is alone in its row.', fr: 'Affichée en large pour l’instant : elle est seule sur sa ligne.' };
+  const T_LONG = { en: 'Shown wide: one of its words is too long for half the width.', fr: 'Affichée en large\u00a0: un de ses mots est trop long pour une demi-largeur.' };
   const T_BINS = { en: 'Always wide: it shows tonight’s bins.', fr: 'Toujours large : elle montre les poubelles de ce soir.' };
   const T_TITLE = { en: 'Home page', fr: 'Page d’accueil' };
   for (const [w, h] of [[1280, 900], [360, 780]]) for (const lang of ['en', 'fr']) {
@@ -3897,9 +3901,45 @@ async function gHomePage() {
     ok(`${tag}: Remove, a pinned place: off the board at once, still in Eat and drink`, !(await p.$(`.hb-plan [data-hbk="highlight:${pinned.id}"]`)) && !(((d.files || {}).quick || {}).items || []).some(q => q.from === free.id) && ((d.files.restaurants || {}).items || []).some(r => r.id === free.id) && !FRM.check(d.files.home, guideOf(d, true)).length);
     await sel('section:' + evSec.id); await p.click(del); await settle(p, 1300); d = now();
     ok(`${tag}: Remove, Local events: out of files.home and off the board, which passes the check`, !order(d, 'area').includes('section:' + evSec.id) && !(await p.$(`.hb-plan [data-hbk="section:${evSec.id}"]`)) && !FRM.check(d.files.home, guideOf(d, true)).length);
+    // No word is cut in two on Home (21 Nov 2026): a card with a word too long for half the width is long by the engine's
+    // own rule (highlights/fit.js, pasted as HLFIT), the frame draws it wide whatever was picked, and one line says why.
+    // own rule (highlights/fit.js, pasted as HLFIT), the frame draws it wide whatever was picked, and one line says why.
+    // The pizza card, half beside Getting around's, gets a long word as its name.
+    const pz = (now().files.quick.items || []).findIndex(q => q.id === 'pizza'), pzKey = 'highlight:pizza';
+    if (pz >= 0) {
+      await sel(pzKey); const was = await p.$eval(`.hb-plan [data-hbk="${pzKey}"]`, e => (e.className.match(/\bs-(half|wide)\b/) || [])[1]);
+      await p.click(phone ? '.hb-dock [data-hbwords]' : '.hb-side .hb-pan.sel [data-hbwords]'); await settle(p, 300);
+      await p.fill(`[data-p="files/quick/items/${pz}/name"]`, 'Lebensmittelgeschäft'); await p.keyboard.press('Tab'); await settle(p, 1300); d = now();
+      await sel(pzKey);
+      const cls = await p.$eval(`.hb-plan [data-hbk="${pzKey}"]`, e => e.className), why = await sideText('.hb-why'), pressed = await p.$eval(`${pre}_half`, e => e.getAttribute('aria-pressed')).catch(() => '');
+      c = await hbClear(p);
+      ok(`${tag}: a card whose name has a word too long for half the width is shown wide, its switch keeps Half, one line says why, and the board is the frame's Home`, was === 'half' && /\bs-wide\b/.test(cls) && pressed === 'true' && why === T_LONG[lang] && JSON.stringify(await board(p)) === JSON.stringify(want(d)) && !c.length, JSON.stringify({ was, cls, pressed, why, c }));
+    } else ok(`${tag}: a card whose name has a word too long for half the width is shown wide`, false, 'no pizza card in this guide');
     // Back to the arrangement we suggest: after one confirmation, files.home goes (the cards stay).
     await p.click('#hbReset'); await settle(p, 200); const still = !!(now().files || {}).home; await p.click('#hbReset'); await settle(p, 1300); d = now();
-    ok(`${tag}: Back to the arrangement we suggest asks once more, then removes files.home; the board is the default again`, still && !(d.files || {}).home && !(await p.$('#hbReset')) && JSON.stringify(await board(p)) === JSON.stringify(want(E.content)), JSON.stringify((d.files || {}).home || null));
+    ok(`${tag}: Back to the arrangement we suggest asks once more, then removes files.home; the board is the default again`, still && !(d.files || {}).home && !(await p.$('#hbReset')) && JSON.stringify(await board(p)) === JSON.stringify(want(d)), JSON.stringify((d.files || {}).home || null));
+    // Guide sections (21 Nov 2026): the cards are no longer a section to switch; the sections and the map still are.
+    await p.goto('http://editor.test/#sections'); await settle(p, 600);
+    const mods = await p.$$eval('.mods [data-cmod]', els => els.map(e => e.dataset.cmod));
+    ok(`${tag}: Guide sections has no switch for the cards on the home page, and still one for each section and the map`, !mods.includes('quick') && mods.includes('map') && mods.includes('garbage') && mods.includes('transport') && mods.length >= 8, mods.join(' '));
+    // A guide that had the cards switched off there (until 21 Nov 2026) keeps them hidden: the board has none, the step
+    // says so, and "Show them again" brings them back.
+    {
+      const E2 = { ...E, content: { ...E.content, site: { ...E.content.site, modules: { ...((E.content.site || {}).modules || {}), quick: false } } } };
+      const o2 = await open(browser, E2, w, h, { 'porta-lang-v1': lang }, null, phone ? { hasTouch: true, isMobile: true } : {}), q = o2.p; let on2;
+      await o2.ctx.route(u => u.origin === SB, route => { if (route.request().method() !== 'PATCH') return route.fallback(); try { const j = JSON.parse(route.request().postData() || '{}'); if (j.draft) on2 = ((j.draft.content.site || {}).modules || {}).quick; } catch (e) { /* not a save */ } return route.fulfill({ status: 204, body: '' }); });
+      await q.goto('http://editor.test/#tiles'); await ready(q); await settle(q, 600); await q.evaluate(() => document.fonts.ready);
+      // Getting around's card is not one of them: it stays on the board.
+      const tr2 = (E2.content.files.sections.sections.find(s => s.kind === 'transport') || {}).id, mine = `.hb-plan .hb-t.card:not([data-hbk="highlight:${tr2}"])`;
+      const hid = { line: !!(await q.$('.hb-off [data-hbshow]')), cards: (await q.$$(mine)).length, list: (await q.$$('details.cmi[data-open^="files/quick/items/"]')).length };
+      const c2 = await hbClear(q);
+      if (hid.line && lang === 'en') { await q.$eval('.hb-off', e => e.scrollIntoView({ block: 'center' })); await q.screenshot({ path: join(SHOTS, `home-page-${w}-hidden.png`) }); }
+      if (hid.line) { await q.click('.hb-off [data-hbshow]'); await settle(q, 1300); }
+      const back = { line: !!(await q.$('.hb-off')), cards: (await q.$$(mine)).length, on: on2 };
+      ok(`${tag}: cards switched off in an older guide: the board has none, one line says they are hidden, nothing overlaps; "Show them again" brings them back`, hid.line && hid.cards === 0 && hid.list >= 1 && !c2.length && !back.line && back.cards >= 1 && back.on === true, JSON.stringify({ hid, back, c2 }));
+      ok(`${tag}, cards switched off: no page errors`, !o2.errors.length, o2.errors.join(' | '));
+      await o2.ctx.close();
+    }
     ok(`${tag}: every call to the database was answered here, none reached it (${sb.seen} calls, ${saved.length} saves kept in memory)`, sb.seen > 0 && sb.seen === sb.ours, `${sb.seen} seen, ${sb.ours} answered`);
     ok(`${tag}: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close();

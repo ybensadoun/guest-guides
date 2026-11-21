@@ -3309,11 +3309,6 @@
 "es": "Uno por línea. Los huéspedes los ven en la Guía de la casa, en Consejos locales.",
 "fr": "Un par ligne. Les voyageurs les voient dans le Guide de la maison, sous Conseils locaux."
 },
-"One tap for a taxi, the station, a favourite.": {
-"ca": "Un toc per a un taxi, l’estació, un lloc preferit.",
-"es": "Un toque para un taxi, la estación, un favorito.",
-"fr": "D’un geste : un taxi, la gare, une adresse préférée."
-},
 "One tap from the home page: the bar next door, a shop you love. Each tile opens a page with its map and your words.": {
 "ca": "A un toc de la pàgina d’inici: el bar del costat, una botiga que t’encanta. Cada botó obre una pàgina amb el mapa i les teves paraules.",
 "es": "A un toque de la página de inicio: el bar de al lado, una tienda que te encanta. Cada botón abre una página con su mapa y tus palabras.",
@@ -8289,11 +8284,6 @@
 "es": "Lo primero que ven los huéspedes. Ya está organizada: cambia solo lo que quieras.",
 "fr": "Ce que les voyageurs voient en premier. Elle est organisée pour vous : changez seulement ce que vous voulez."
 },
-"Places on the home page": {
-"ca": "Llocs a la pàgina d’inici",
-"es": "Sitios en la página de inicio",
-"fr": "Lieux sur la page d’accueil"
-},
 "A card on the home page, one tap away, like the bar next door. You can move it and change its words in Home page.": {
 "ca": "Una targeta a la pàgina d’inici, a un toc, com el bar del costat. Pots moure-la i canviar-ne el text a Pàgina d’inici.",
 "es": "Una tarjeta en la página de inicio, a un toque, como el bar de al lado. Puedes moverla y cambiar su texto en Página de inicio.",
@@ -8428,6 +8418,21 @@
 "ca": "De moment es veu ample: està sol a la seva fila.",
 "es": "Por ahora se ve ancho: está solo en su fila.",
 "fr": "Affichée en large pour l’instant : elle est seule sur sa ligne."
+},
+"Shown wide: one of its words is too long for half the width.": {
+"ca": "Es veu ample: una de les seves paraules és massa llarga per a mitja amplada.",
+"es": "Se ve ancho: una de sus palabras es demasiado larga para la mitad del ancho.",
+"fr": "Affichée en large : un de ses mots est trop long pour une demi-largeur."
+},
+"The places below are hidden from your home page.": {
+"ca": "Els llocs de sota estan amagats de la teva pàgina d’inici.",
+"es": "Los sitios de abajo están ocultos en tu página de inicio.",
+"fr": "Les lieux ci-dessous sont masqués de votre page d’accueil."
+},
+"Show them again": {
+"ca": "Torna a mostrar-los",
+"es": "Mostrarlos de nuevo",
+"fr": "Les afficher à nouveau"
 },
 "Shown half for now: a tall tile needs two tiles beside it.": {
 "ca": "De moment es veu mig: un botó alt necessita dos botons al costat.",

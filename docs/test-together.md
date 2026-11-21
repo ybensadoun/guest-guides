@@ -75,6 +75,14 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 | 2.5 | "Add to your home page" | A place to eat, something to do, another place, the next local event |
 | 2.6 | "Back to the arrangement we suggest" | One confirmation, then the default |
 | 2.7 | Preview | The phone shows the same arrangement |
+| 2.8 | Open a card's words ("Edit its words") and give it a very long word as its name, such as "Lebensmittelgeschäft"; tap the card on the board | The card is wide, its switch still says Half, and one line says why: "Shown wide: one of its words is too long for half the width." Put the name back after |
+| 2.9 | In the guide on a phone, Home in Spanish, Dutch and French, by day and late in the evening | No word is cut in two on a tile or a card ("si-tios", "favo-riete", "domi-cile", "Opens to-morrow" are gone); nothing overlaps |
+| 2.10 | Open Guide sections | No switch "Places on the home page" any more; one switch for each section and the map |
+
+Known, not to report:
+- A card may be wide in one language and half in another, when only one language has a word too long.
+- A middle dot can begin the second line of a card's status ("· Reopens at 18:00").
+- Moving a tile from one group to the other is not built: a drag out of its group goes back.
 
 ## 3. Markets (the empty day and the evening, built 19 Nov 2026)
 On a phone, as a guest: Ca La Kimberly (ca-la-kimberly.netlify.app) and the pool house

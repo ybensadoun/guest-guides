@@ -206,6 +206,18 @@ test('runs: highlights and tiles in runs of their own, each packed', () => {
   assert.deepEqual(r.map(x => `${x.type}:${brief(x.items)}`), ['highlights:a:wide', 'tiles:b:half c:half', 'highlights:d:half e:half']);
 });
 
+test('resolve: a card with a word too wide for a half card is drawn wide, whatever was asked; the pick is kept', () => {
+  const g = guide(['house', 'garbage', 'markets', 'restaurants'], { highlights: [{ id: 'shop', wide: false }, { id: 'pizza', wide: false, long: true }, { id: 'taxi', wide: false }] });
+  const own = { house: [{ kind: 'section', id: 'garbage', size: 'wide' }], area: [{ kind: 'highlight', id: 'shop', size: 'half' }, { kind: 'highlight', id: 'pizza', size: 'half' }, { kind: 'highlight', id: 'taxi', size: 'half' },
+    { kind: 'section', id: 'markets', size: 'half' }, { kind: 'section', id: 'restaurants', size: 'half' }, { kind: 'map', size: 'wide' }] };
+  // The long card is wide; the cards on either side, each left alone in its row, are wide by the no holes rule.
+  assert.equal(brief(resolve(own, g).area[0].items), 'shop:wide pizza:wide taxi:wide');
+  assert.equal(brief(placements(own, g).area.slice(0, 3)), 'shop:half pizza:half taxi:half');   // what the host picked stays
+  assert.equal(brief(resolve(null, g).area[0].items), 'shop:wide pizza:wide taxi:wide');         // the default arrangement too
+  const short = { ...g, highlights: g.highlights.map(q => ({ ...q, long: false })) };
+  assert.equal(brief(resolve(own, short).area[0].items), 'shop:half pizza:half taxi:wide');
+});
+
 test('thing: who offers which sizes and widgets', () => {
   assert.deepEqual(thing({ kind: 'section', id: 'garbage' }, CLK).sizes, ['wide']);
   assert.equal(thing({ kind: 'section', id: 'garbage' }, CLK).widget, 'live');

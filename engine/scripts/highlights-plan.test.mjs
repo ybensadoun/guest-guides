@@ -56,3 +56,32 @@ test('statusOf: open now, closed with when it opens, a season with no hours, or 
   assert.equal(out.cls, 'closed'); assert.match(out.sub, /Dec/);
   assert.equal(statusOf({ id: 'kiosk', season: { from: '11-01', to: '03-31' } }, slots, SAT), null);     // in season: nothing
 });
+
+// fit.js: whether a card fits a half card (no word is cut in two on Home; README.md rule 12). The widths below are what
+// the built guide measured at 360 px on 21 Nov 2026: a half card has 131 px for its text.
+const { longForHalf, widest } = await import('../src/modules/highlights/fit.js');
+
+test('longForHalf: Ca La Kimberly\'s cards fit a half card in every language', () => {
+  for (const [name, line] of [['Pizza delivery', 'El Racó de la Pedra'], ['Pizza a domicilio', 'Entrega en 30 min'], ['Livraison à domicile de pizza', 'Livrée en 30 min'],
+    ['Pizza-Lieferung', 'Lieferung in 30 Min.'], ['Pizzabezorging', 'Bezorging in 30 min'], ['Local bar & shop', 'Bar, snacks & convenience shop'], ['Bar & Laden um die Ecke', 'Bar, Snacks & kleiner Laden'],
+    ['Buurtbar & buurtwinkel', '1 min lopen van het huis'], ['Bar & supérette locale', 'Bar, snacks et épicerie'], ['Taxi & train', '3 train stations']]) assert.equal(longForHalf(name, line), false, name);
+});
+test('longForHalf: a word wider than a half card makes the card long, in its name or its line', () => {
+  assert.equal(longForHalf('Lebensmittelgeschäft', ''), true);          // 167 px measured
+  assert.equal(longForHalf('Lebensmittelladen', ''), true);             // 144 px
+  assert.equal(longForHalf('De kruidenierswinkel', ''), true);          // 142 px
+  assert.equal(longForHalf('Supermercado', 'Abierto todos los días'), false);   // 116 px
+  assert.equal(longForHalf('Fahrradverleih', ''), false);               // 116 px
+  assert.equal(longForHalf('Bar', 'Lebensmittelgeschäft'), false);      // 122 px in the line's smaller letters
+  assert.equal(longForHalf('Bar', 'Donaudampfschifffahrtsgesellschaft'), true);
+  assert.equal(longForHalf('', ''), false);
+  assert.equal(longForHalf(undefined, undefined), false);
+});
+test('widest: a line may break at a space, a soft hyphen and after a hyphen or a slash', () => {
+  assert.equal(longForHalf('Lebensmittel-Geschäft', ''), false);
+  assert.equal(longForHalf('Lebensmittel­geschäft', ''), false);
+  assert.equal(longForHalf('Lebensmittel/Getränke', ''), false);
+  assert.ok(Math.abs(widest('Pizzabezorging') * 17 - 123.3) < 4);        // within a few px of the measure
+  assert.ok(Math.abs(widest('Lebensmittelgeschäft') * 17 - 166.7) < 4);
+  assert.ok(widest('Ærø') > 0);                                         // letters not in the table still count
+});

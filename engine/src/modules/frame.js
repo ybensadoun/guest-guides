@@ -10,8 +10,9 @@
 //
 // The guide, as the frame sees it:
 //   sections: [{ id, kind, group, status }]   the sections whose module is on, in content/sections.json order
-//   highlights: [{ id, wide }]                the white cards shown now (quick.json items not left out for the season,
-//                                             then the transport card), in their order
+//   highlights: [{ id, wide, long }]          the white cards shown now (quick.json items not left out for the season,
+//                                             then the transport card), in their order; long: a word of the card is
+//                                             too wide for a half card (highlights/fit.js), so it is drawn wide
 //   map: true | false                         the map's module is on
 //   transportCard: id | null                  the transport section shown as a highlight (its section tile then stays off)
 //   offers: { kind: { <widget>: { sizes } } } what each module says it offers (its widgets, modules/<folder>/offers.js),
@@ -176,11 +177,13 @@ export function placements(arrangement, guide) {
   return placed;
 }
 
-// The arrangement to draw: the guide's own (content/home.json) laid over the default (placements), then packed.
+// The arrangement to draw: the guide's own (content/home.json) laid over the default (placements), a card with a word
+// too wide for a half card made wide (no word is cut in two on Home: its "long", highlights/fit.js), then packed.
 // Returns { house: [runs], area: [runs] }, each item { kind, id, size, widget }.
 export function resolve(arrangement, guide) {
-  const placed = placements(arrangement, guide);
-  return { house: runs(placed.house), area: runs(placed.area) };
+  const placed = placements(arrangement, guide), long = new Set((guide.highlights || []).filter(q => q.long).map(q => q.id));
+  const fit = list => list.map(x => (x.kind === 'highlight' && long.has(x.id) ? { ...x, size: 'wide' } : x));
+  return { house: runs(fit(placed.house)), area: runs(fit(placed.area)) };
 }
 
 // content/home.json, checked against the guide's own files (check-content.js). The guide here holds every quick.json

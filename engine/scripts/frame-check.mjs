@@ -1,7 +1,8 @@
 // Frame check (engine/src/modules/README.md): every tile and card of Home in every size it offers, measured as the UX check
 // measures (engine/scripts/ux-measures.mjs: a shape on text, an icon or the arrow; a word wider than its line; a page wider
 // than the screen), plus a hole in Home's grid and a word of a tile or card cut over two lines, in all the site's
-// languages at 360, 390 and 430 px.
+// languages at 360, 390 and 430 px, at two times of the week (a card's status changes its lines: by day, and late in the
+// evening when a place opens "tomorrow").
 // Builds temporary copies of the site (never its own folder, never private/), each with a content/home.json:
 //   "as is"        the site's own sections, cards and map;
 //   "every module" the same copy with Getting around as a tile (its card's "tile" taken out), and Nightlife and one
@@ -118,27 +119,36 @@ const holeCheck = () => {
   return out;
 };
 
-// A word cut over two lines by the browser's hyphenation on a tile or a card, even one that would fit on a line of its own
-// (the UX check finds only words wider than their line): "conve-nience" on a half card. Printed as notes, not counted:
-// Ca La Kimberly's own Home has some today ("si-tios" in Spanish), which the frame does not change.
+// A word cut over two lines on a tile or a card, even one that would fit on a line of its own (the UX check finds only
+// words wider than their line): "conve-nience" on a half card, "Opens to-morrow" in a card's status. Counted since 21 Nov
+// 2026 (rule 14: no word is cut in two on Home); before, Ca La Kimberly's own Home had some ("si-tios" in Spanish) and
+// they were only noted.
 const splitCheck = () => {
   const out = [];
-  for (const e of document.querySelectorAll('#view .gt-t, #view .gt-m, #view .qcall b, #view .qcall small')) {
+  for (const e of document.querySelectorAll('#view .gt, #view .qcall')) {
     const tw = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
     for (let t; (t = tw.nextNode());) {
       const re = /[^\s\u00ad/-]+/g; let m;
       while ((m = re.exec(t.textContent))) {
-        const r = document.createRange(); r.setStart(t, m.index); r.setEnd(t, m.index + m[0].length);
-        const tops = new Set([...r.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top)));
-        if (tops.size > 1) out.push(`"${m[0]}" is cut over two lines (${e.closest('.gt, .qcall').dataset.k || e.closest('.qcall')?.dataset.q})`);
+        // Letter by letter, each on the line where it is drawn: after a break at a soft hyphen of the content (allowed), the
+        // browser counts the hyphen it draws at the end of the first line with the letter that follows it.
+        const tops = new Set();
+        for (let i = 0; i < m[0].length; i++) {
+          const r = document.createRange(); r.setStart(t, m.index + i); r.setEnd(t, m.index + i + 1);
+          const ys = [...r.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top)); if (ys.length) tops.add(Math.max(...ys));
+        }
+        if (tops.size > 1) out.push(`"${m[0]}" is cut over two lines (${e.dataset.k || e.dataset.q})`);
       }
     }
   }
   return out;
 };
 
+// Two times of the week, the same at every run: a weekday morning, and late on a Saturday, when a card says "Closed ·
+// Opens tomorrow 9:00".
+const TIMES = [['day', '2026-11-24T11:00:00+01:00'], ['night', '2026-11-21T23:30:00+01:00']];
 let bad = 0;
-const report = [], notes = new Map();
+const report = [];
 const variants = [['as-is', copy('as-is'), []]];
 { const d = copy('every-module'); variants.push(['every-module', d, everyModule(d)]); }
 for (const [vname, dir, added] of variants) {
@@ -151,14 +161,14 @@ for (const [vname, dir, added] of variants) {
     ROOT = build(`${vname}-${name}`, dir);
     const sizes = [...drawnBy(arr, g)].join(' ');
     report.push(`${vname}/${name}: ${sizes}`);
-    for (const w of [360, 390, 430]) for (const l of LANGS) {
+    for (const [tn, iso] of TIMES) for (const w of [360, 390, 430]) for (const l of LANGS) {
       const pg = await b.newPage({ viewport: { width: w, height: 900 } });
+      await pg.clock.setFixedTime(new Date(iso));
       await pg.route('**/*', r => (new URL(r.request().url()).hostname === 'localhost' ? r.continue() : r.abort()));
       await pg.goto(`${base}?lang=${l}`); await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(600);
-      const res = [...new Set([...(await pg.evaluate(measure)), ...(await pg.evaluate(holeCheck))])];
-      for (const x of res) { bad++; console.log(`  ${name} ${w}px ${l}: ${x}`); }
-      for (const x of new Set(await pg.evaluate(splitCheck))) { const k = `${l}: ${x}`; if (!notes.has(k)) notes.set(k, []); notes.get(k).push(`${vname}/${name} ${w}px`); }
-      if (w === 360 && shotLangs.includes(l)) {
+      const res = [...new Set([...(await pg.evaluate(measure)), ...(await pg.evaluate(holeCheck)), ...(await pg.evaluate(splitCheck))])];
+      for (const x of res) { bad++; console.log(`  ${name} ${w}px ${l}, ${tn}: ${x}`); }
+      if (tn === 'day' && w === 360 && shotLangs.includes(l)) {
         await pg.addStyleTag({ content: 'canvas,.maplibregl-canvas{visibility:hidden!important}' });
         // From the "At the house" heading to the last tile or card of "Around the house".
         const box = await pg.evaluate(() => { const first = document.querySelector('#view h2.sh'), blocks = [...document.querySelectorAll('#view .ggrid, #view .qcalls')], last = blocks[blocks.length - 1] || first;
@@ -172,7 +182,6 @@ for (const [vname, dir, added] of variants) {
 }
 await b.close(); srv.close(); rmSync(TMP, { recursive: true, force: true });
 writeFileSync(join(PICS, 'arrangements.txt'), report.join('\n') + '\n');
-if (notes.size) { console.log(`\nNotes, not counted: words the browser cut over two lines`); for (const [k, v] of notes) console.log(`  ${k}, in ${v.length > 3 ? `${v.slice(0, 3).join(', ')} and ${v.length - 3} more` : v.join(', ')}`); }
 console.log(`\nPictures (en, de at 360 px) and the list of arrangements: ${PICS}`);
 console.log(bad ? `Frame check: ${bad} problem(s)` : 'Frame check OK');
 process.exit(bad ? 1 : 0);
