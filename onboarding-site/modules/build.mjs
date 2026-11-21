@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-// The modules page's two copied lists (run from anywhere: node onboarding-site/modules/build.mjs):
+// The modules page's copied files (run from anywhere: node onboarding-site/modules/build.mjs):
 //   available.json      the engine's list of parts and countries (engine/src/modules/available.json), checked, as it is:
 //                       Netlify serves only onboarding-site/, so the page reads this copy. Never edit the copy.
+//   available.js        the rule that reads it (engine/src/modules/available.js), without its "export" words: a plain
+//                       script the page loads before console.js. Never edit the copy.
 //   samples/index.json  the sample houses there are fixtures for (samples/sample-*.json, made by samples/make.mjs):
 //                       slug, name, kind, town, base, without their content.
 // A test keeps the copies in step with their sources (engine/scripts/available.test.mjs).
@@ -46,6 +48,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const text = readFileSync(SOURCE, 'utf8'), bad = checkList(JSON.parse(text));
   if (bad.length) { console.error('available.json:\n- ' + bad.join('\n- ')); process.exit(1); }
   writeFileSync(resolve(HERE, 'available.json'), text);
+  // The rule itself, as a plain script for the page: the engine's file without its "export" words.
+  writeFileSync(resolve(HERE, 'available.js'), readFileSync(resolve(ROOT, 'engine/src/modules/available.js'), 'utf8').replace(/^export /gm, ''));
   const idx = samplesIndex();
   writeFileSync(resolve(HERE, 'samples/index.json'), JSON.stringify(idx, null, 1) + '\n');
   console.log(`modules page: available.json copied (${JSON.parse(text).modules.length} modules), ${idx.length} sample houses listed`);

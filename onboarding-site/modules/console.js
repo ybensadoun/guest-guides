@@ -124,12 +124,14 @@ async function loadFeedback() {
 const availOf = id => (S.avail.modules || []).find(m => m.id === id) || { id, name: id, parts: [] };
 const cur = () => MODS.find(m => m.id === S.mod);
 const countries = () => [...new Set([...(S.avail.countries || []), ...Object.keys(S.lc), ...Object.values(S.sw).map(x => x.country)])];
-const listSays = (p, c) => p.where === 'any' || (Array.isArray(p.where) && p.where.includes(c));
+// On or off, open or not: the engine's own rule (available.js, the copy build.mjs makes), given what this page holds.
+const launchNow = () => ({ countries: Object.values(S.lc), switches: Object.values(S.sw) });
+const listSays = (p, c) => avListSays(p, c);
 const swRow = (m, p, c) => S.sw[`${m}/${p}/${c}`];
-const isOn = (m, p, c) => { const r = swRow(m, p.id, c); return r ? !!r.is_on : listSays(p, c); };
+const isOn = (m, p, c) => avPartOn(S.avail, launchNow(), `${m}/${p.id}`, c);
 const newCount = id => S.fb.filter(f => f.module === id && f.state === 'new').length;
 // A country is open when the owner opened it, or, with no word of his, when the code's list names it (Spain).
-const stateOf = c => (S.lc[c] && S.lc[c].state) || ((S.avail.countries || []).includes(c) ? 'open' : 'preparing');
+const stateOf = c => avCountryState(S.avail, launchNow(), c);
 const STATE_NAMES = { open: 'Open', preparing: 'Not open yet' };
 const allParts = () => MODS.flatMap(m => availOf(m.id).parts.map(p => ({ m, p })));
 const asksFor = (mid, pid, c) => S.fb.filter(f => f.kind === 'request' && f.module === mid && f.part === pid && f.country === c);
