@@ -1834,11 +1834,6 @@
 "es": "Añadir a mi guía",
 "fr": "Ajouter à mon guide"
 },
-"Add Wi-Fi": {
-"ca": "Afegeix el wifi",
-"es": "Añadir el wifi",
-"fr": "Ajouter le wifi"
-},
 "Add your logo": {
 "ca": "Afegeix el teu logotip",
 "es": "Añade tu logo",
@@ -4269,11 +4264,6 @@
 "es": "No se puede deshacer.",
 "fr": "C’est irréversible."
 },
-"This guide has no Wi-Fi card yet.": {
-"ca": "Aquesta guia encara no té targeta de wifi.",
-"es": "Esta guía aún no tiene tarjeta de wifi.",
-"fr": "Ce guide n’a pas encore de carte wifi."
-},
 "This steers what comes next: the places you swipe, and how far the markets and events in your guide reach.": {
 "ca": "Això orienta el que ve després: els llocs que veuràs, i fins on arriben els mercats i els esdeveniments de la teva guia.",
 "es": "Esto orienta lo que viene después: los sitios que verás, y hasta dónde llegan los mercados y los eventos de tu guía.",
@@ -5603,6 +5593,16 @@
 "ca": "No s’ha pogut connectar amb Google. Torna-ho a provar.",
 "es": "No se ha podido conectar con Google. Vuelve a intentarlo.",
 "fr": "Impossible de joindre Google. Réessayez."
+},
+"To check it, open the preview, tap Wi-Fi and scan the code with your phone.": {
+"ca": "Per comprovar-ho, obre la vista prèvia, toca Wifi i escaneja el codi amb el mòbil.",
+"es": "Para comprobarlo, abre la vista previa, toca Wifi y escanea el código con tu móvil.",
+"fr": "Pour vérifier, ouvrez l’aperçu, touchez Wifi et scannez le code avec votre téléphone."
+},
+"Every network here uses this password.": {
+"ca": "Totes les xarxes d’aquí fan servir aquesta contrasenya.",
+"es": "Todas las redes de aquí usan esta contraseña.",
+"fr": "Tous les réseaux indiqués ici utilisent ce mot de passe."
 },
 "Guests see it in the guide, so use your guest network if you have one.": {
 "ca": "Els hostes el veuen a la guia, així que fes servir la xarxa de convidats si en tens.",

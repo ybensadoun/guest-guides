@@ -917,12 +917,19 @@ function hgMark(path) {
   const m = path.match(/^files\/message\/blocks\/\d+/), n = m && document.querySelector(`details.cmi[data-open="${m[0]}"] summary .pl-hid`);
   if (n) n.classList.toggle('hg-ok', INFO.partShown(edGet(edC(), edPath(m[0]))));
 }
+// The step Wi-Fi: the network's name and the password at once, in the order a host reads them on the router, with nothing
+// to press first. Other networks share the password; a note for guests ("Best inside the house") only matters once there
+// are several. Guests get the Wi-Fi fact and its sheet once there is a password and a named network (the guide's own
+// rule: engine/src/modules/house/plan.js wifiShown), so a half-typed Wi-Fi never reaches them.
 function cmWifi(c) {
-  const w = (c.private || {}).wifi;
-  if (!w) return `<div class="note"><div>This guide has no Wi-Fi card yet.</div></div><div><button class="btn primary" type="button" data-addwifi>Add Wi-Fi</button></div>`;
-  return `<div class="grid">${cf('Password', 'private/wifi/password', w.password, { hint: 'Guests see it in the guide, so use your guest network if you have one.' })}</div>
-    <h3 class="cm-h">Networks</h3>${(w.networks || []).map((n, i) => `<div class="cm-sub"><div class="grid">${cf('Network name', `private/wifi/networks/${i}/ssid`, n.ssid, { half: true })}${cf('Note for guests', `private/wifi/networks/${i}/label`, n.label, { i18n: true, half: true, ph: 'Best inside the house' })}</div>
-      <div><button class="btn small danger" type="button" data-cdel="private/wifi/networks/${i}">Remove this network</button></div></div>`).join('')}
+  const w = (c.private || {}).wifi || {}, nets = (w.networks || []).length ? w.networks : [{}], W = 'private/wifi', many = nets.length > 1;
+  const note = (n, i, half) => cf('Note for guests', `${W}/networks/${i}/label`, n.label, { i18n: true, half, ph: 'Best inside the house' });
+  return `<div class="grid">${cf('Network name', `${W}/networks/0/ssid`, nets[0].ssid, { half: true })}${cf('Password', `${W}/password`, w.password, { half: true })}${many ? note(nets[0], 0, false) : ''}</div>
+    <p class="hint">Guests see it in the guide, so use your guest network if you have one.</p>
+    <p class="hint">To check it, open the preview, tap Wi-Fi and scan the code with your phone.</p>
+    ${nets.slice(1).map((n, k) => `<div class="cm-sub"><div class="grid">${cf('Network name', `${W}/networks/${k + 1}/ssid`, n.ssid, { half: true })}${note(n, k + 1, true)}</div>
+      <div><button class="btn small danger" type="button" data-cdel="${W}/networks/${k + 1}">Remove this network</button></div></div>`).join('')}
+    ${many ? '<p class="hint">Every network here uses this password.</p>' : ''}
     <button class="btn small cm-add" type="button" data-addnet>+ Add a network</button>`;
 }
 const ED_BINS = [['organic', 'Organic'], ['packaging', 'Packaging'], ['paper', 'Paper'], ['glass', 'Glass'], ['rest', 'General waste']];
@@ -2361,11 +2368,11 @@ document.addEventListener('click', e => {
   if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
   if (d.amput) { cmAmPut(d.amput); return done(); }
   if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); const a = arr(d.addit); a.push(edNewItem(a, d.addit)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
-  if (d.addwifi !== undefined) { const pr = edC().private = edC().private || {}; pr.wifi = { password: '', networks: [{ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }] }; return done(); }
   if (d.hgcheckout !== undefined) { const a = arr('files/message/blocks');   // the house guide's Check-out part, open, its first line ready to type
     if (!a.some(b => b.id === 'checkout')) { a.push({ id: 'checkout', icon: 'key', tone: 'ink', title: L6(HG_CHECKOUT), items: [L6('')] }); CM.open.add('files/message/blocks/' + (a.length - 1)); }
     done(); setTimeout(() => { const x = document.getElementById(cmId(`files/message/blocks/${a.length - 1}/items/0`)); if (x) x.focus(); }, 0); return; }
-  if (d.addnet !== undefined) { edC().private.wifi.networks.push({ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) }); return done(); }
+  if (d.addnet !== undefined) { const pr = edC().private = edC().private || {}, w = pr.wifi = pr.wifi || { password: '', networks: [] }, blank = () => ({ ssid: '', label: Object.fromEntries(edLangs().map(l => [l, ''])) });   // the first network's fields show before anything is typed: it gets its place, then the new one
+    w.networks = w.networks || []; if (!w.networks.length) w.networks.push(blank()); w.networks.push(blank()); return done(); }
   if (d.add) { const o = {}; for (const l of edLangs()) o[l] = ''; arr(d.add).push(o); done(); setTimeout(() => { const x = document.getElementById(cmId(d.add + '/' + (arr(d.add).length - 1))); if (x) x.focus(); }, 0); return; }
   if (d.cdel) {
     if (!d.now && d.sure !== '1') { const was = t.textContent; d.sure = '1'; t.textContent = 'Sure? Tap again'; setTimeout(() => { if (t.isConnected) { delete t.dataset.sure; t.textContent = was; } }, 4000); return; }

@@ -29,5 +29,14 @@ export function wifiPayload(ssid, pw) {
   const q = s => String(s || '').replace(/([\\;,:"])/g, '\\$1');
   return `WIFI:T:WPA;S:${q(ssid)};P:${q(pw)};;`;
 }
+// The Wi-Fi a guide shows: the password and the networks that have a name; none (no fact on Home, no sheet) without a
+// password or without a named network, so a host who began typing never gives guests an empty sheet.
+export function wifiShown(w) {
+  const nets = ((w && w.networks) || []).filter(n => n && String(n.ssid || '').trim());
+  return w && String(w.password || '').trim() && nets.length ? { ...w, networks: nets } : null;
+}
+// The words under a network's QR code: with several networks whose label names a place before a colon ("House: best
+// inside"), that place; else the network's own name, the one sure way to tell two codes apart.
+export const qrCaption = (one, ssid, label) => (!one && /[:：]/.test(label || '') && label.split(/[:：]/)[0].trim()) || ssid;
 // A network's label on the Wi-Fi sheet: none when there is one network and its label only says "Wi-Fi".
 export const netLabel = (one, s) => (one && /^\s*wi-?fi\s*$/i.test(s || '') ? '' : s);

@@ -233,6 +233,50 @@ On a phone, as a guest: Ca La Kimberly (ca-la-kimberly.netlify.app) and the pool
 - A part cannot be added (other than Check-out) or removed, and a line cannot be moved to another part yet.
 - A house whose host wrote nothing about its rooms has a short house guide: the way in, the rules, check-in and check-out.
 
+## 12. Wi-Fi (the step and the sheet changed 21 Nov 2026)
+
+Use a guest network or a made-up one: every guest with the link sees the password. Never write a real one in a note or
+a message about the test.
+
+### In the builder, with a new link (the test house)
+| # | Do | Expect |
+|---|---|---|
+| 12.1 | In "Only you know", type a network name and a password | The part Wi-Fi is ticked; the phone beside shows the name and the password |
+| 12.2 | Type a password with one of `; , : " \` in it | Accepted as typed |
+| 12.3 | Build the guide, open it on a phone | On Home, under the name: "Wifi, Tap to connect". It opens a sheet: the network, the password, Copy, one QR code with the network's name under it |
+| 12.4 | Build one with a name and no password, or with neither | No Wi-Fi on Home at all (the check-out time takes the whole row); in the editor, Wi-Fi is first under "Needs you" |
+
+### In the editor, on a guide with no Wi-Fi (the pool house)
+| # | Do | Expect |
+|---|---|---|
+| 12.10 | Open Wi-Fi | First under "Needs you". Two fields at once, Network name then Password, nothing to press first |
+| 12.11 | Type the name only, look at the phone beside (or Preview) | No Wi-Fi on Home yet: it shows once both are typed |
+| 12.12 | Type the password | The step says "Changed"; the phone beside reloads with "Wifi, Tap to connect" on Home; the step leaves "Needs you" |
+| 12.13 | Tap Wi-Fi in the phone beside, or in Preview | The sheet with your name and password, and a QR code |
+| 12.14 | Scan that code with your own phone's camera | The phone offers to join your network, and joins. This is the one check of what you typed |
+| 12.15 | "+ Add a network", type its name and a note ("Best by the pool"); give the first one a note too | A line says every network uses the one password. In the sheet: both names with their notes, "same for both", two codes, each with its network's name under it |
+| 12.16 | Remove the second network | One network again, one larger code |
+| 12.17 | Publish changes, open the guide as a guest | The same sheet. Nothing reached guests before Publish |
+| 12.18 | Empty both fields, publish | No Wi-Fi on Home, no empty sheet |
+
+### As a guest, on a phone (any guide with Wi-Fi)
+| # | Do | Expect |
+|---|---|---|
+| 12.20 | Tap "Wifi, Tap to connect", then Copy | "Copied"; pasted in the phone's Wi-Fi settings it is the exact password |
+| 12.21 | Read a long password | Cut with no hyphen added; l, I and 1, O and 0 can be told apart |
+| 12.22 | Scan the code from a second phone | It joins |
+| 12.23 | On an iPhone, press and hold the code on the phone's own screen | To find out: does it offer to join? Tell Claude what happens (if it does, the sheet will say so) |
+| 12.24 | Close the sheet: the cross, a tap outside, the back gesture | The cross and a tap outside close it. Known: the back gesture leaves Home instead of closing the sheet |
+| 12.25 | German or French, a small phone (360 px wide) | The whole sheet fits, the cross stays in view, nothing overlaps |
+
+### Known, not to report
+- One password for all the networks of a house: two networks with different passwords cannot be written yet.
+- A network with no password (open) cannot be shown: the guide waits for a password.
+- "Tap to connect" opens the sheet; it does not join by itself (no web page can). The code is for a second phone until 12.23 is known.
+- In the builder the phone beside draws its own small Wi-Fi page; the real sheet is in the built guide.
+- A note typed in one language shows as typed in the others until it is translated (Name and languages).
+- The editor's "You are editing in" bar on this step matters only for the notes.
+
 ## 13. The map (its credit and its buttons, 21 Nov 2026)
 In a guide on a phone (or the maker's phone preview), no sign-in needed. Each step in one other language too.
 | # | Do | Expect |
