@@ -49,7 +49,7 @@ Things to do hold only what the host chose (Yohann, 30 Oct 2026: nothing goes in
 
 ## What it does for each queued guide
 1. Takes it (status `generating`) and writes progress messages the host sees.
-2. Runs `engine/scripts/generate-site.py` on the host's answers (and research and translation when `RESEARCH=cli` or `api`), then the content check.
+2. Runs `engine/scripts/generate-site.py` on the host's answers (and research and translation when `RESEARCH=cli` or `api`), then the content check. What a host typed never fails the build (22 Nov 2026): `engine/scripts/host-text.mjs` first repairs the host's words in the language they are written in (an em-dash between words becomes a comma, Spanish ¿ and ¡, Catalan l·l, German „…“, Dutch IJ; never a web address, email, phone or code-like text), and the check runs with `--host`, which makes the typography findings on the guide's own words notes in this log ("content notes"), never shown to guests. A missing file, a broken shape or days and times that cannot be read still fail it. No language ticked (answers from before 22 Nov 2026): the six, translated like the ones a host ticks.
 3. Uploads the images to the `guide-assets` bucket and saves content and theme to the guide row.
 4. Sets status `published` (or `ready`), or `failed` with a plain message the host sees.
 

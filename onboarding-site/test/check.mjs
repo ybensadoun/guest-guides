@@ -1242,6 +1242,63 @@ async function gHouses() {
     await ctx.close(); }
 }
 async function gBuilder() {
+  // ---- Nothing over a step's text after a chip is pressed, nor under the short message (Sunday walk, 22 Nov 2026: at 1024 px
+  // a "Done" pill sat on the sentence at the end of Your area; the message now takes the step count's place in the bar) ----
+  const covered = p => p.evaluate(() => {   // visible text covered by the message, or (at the end of the page) the foot by the bar; '' when clear
+    const end = Math.ceil(scrollY + innerHeight) >= document.documentElement.scrollHeight - 2;
+    const words = e => { const g = document.createRange(); g.selectNodeContents(e); return [...g.getClientRects()].filter(r => r.width > 0 && r.height > 0); };
+    const hit = (a, b) => a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1;
+    const toastEl = document.getElementById('toast'), tr = toastEl && !toastEl.hidden ? [toastEl.getBoundingClientRect()] : [];
+    const bar = document.getElementById('navbar'), br = bar ? [bar.getBoundingClientRect()] : [];
+    const out = [];
+    for (const e of document.querySelectorAll('#main .col p, #main .col h1, #main .col .lab, #main .col label.chip span, #navbar .nb:not(.count)')) {
+      if (getComputedStyle(e).visibility === 'hidden') continue;
+      for (const r of words(e)) { if (tr.some(t => hit(t, r))) { out.push('message on: ' + e.textContent.trim().slice(0, 40)); break; } if (end && !bar.contains(e) && e.closest('.foot') && br.some(b => hit(b, r))) { out.push('bar on: ' + e.textContent.trim().slice(0, 40)); break; } }
+    }
+    return out.join(' | ');
+  });
+  for (const w of [1024, 1280]) { const { ctx, p, errors } = await open(browser, B, w, 700);
+    await p.goto('http://editor.test/#look'); await ready(p); await go(p, '#look'); await settle(p, 300);
+    // "Done, next" on The look says "Done" and opens Your area: the message shows there for a few seconds (the walk's case).
+    const btn = await p.$('#navbar [data-donenext]'), bar0 = await barText(p);
+    if (btn) { await btn.click(); await settle(p, 250); }
+    const shown = await p.$eval('#toast', e => !e.hidden && e.textContent).catch(() => '');
+    const dbg = shown === 'Done' && (await p.evaluate(() => location.hash)) === '#area' ? '' : `${bar0} / ${await p.evaluate(() => location.hash)} / ${await p.$eval('#toast', e => e.outerHTML).catch(e => e.message)}`;
+    for (const at of ['top', 'end']) { if (at === 'end') { await p.evaluate(() => window.scrollTo(0, 1e6)); await settle(p, 100); }
+      ok(`builder, ${w} px: the "Done" message sits in the bar, over nothing of the step (${at} of the page)`, shown === 'Done' && (await covered(p)) === '', `${shown} ${await covered(p)} ${dbg}`); }
+    ok(`builder, ${w} px: the message takes the step count's place`, await p.$eval('#openSteps', e => getComputedStyle(e).visibility === 'hidden').catch(() => false));
+    await p.screenshot({ path: join(SHOTS, `area-foot-${w}-message.png`) });
+    await p.waitForFunction(() => document.getElementById('toast').hidden, null, { timeout: 8000 }).catch(() => {});
+    ok(`builder, ${w} px: the count comes back after`, await p.$eval('#openSteps', e => getComputedStyle(e).visibility === 'visible').catch(() => false));
+    // A chip pressed: nothing on the sentence at the step's end.
+    await p.locator('label.chip:has([data-multi="interests"])').nth(1).click(); await settle(p, 400);
+    await p.evaluate(() => window.scrollTo(0, 1e6)); await settle(p, 200);
+    ok(`builder, ${w} px: Your area after a chip is pressed, nothing on the sentence at its end`, (await covered(p)) === '', await covered(p));
+    await p.screenshot({ path: join(SHOTS, `area-foot-${w}.png`) });
+    ok(`builder, ${w} px: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // ---- Name and languages: the six are ticked for the host, their own language first; no Italian, no Portuguese; one always stays (22 Nov 2026) ----
+  // At 1024 px a host using the maker in Catalan (its words checked in Catalan), at 360 px one in English.
+  const SAYS = { en: ['Guests read the guide in their own language: we translate it for them.', 'Welcome line'], ca: ['Els hostes llegeixen la guia en el seu idioma: nosaltres la traduïm per a ells.', 'Frase de benvinguda'] };
+  for (const [w, lang] of [[1024, 'ca'], [360, 'en']]) { const a = { ...B.answers, sourceLang: lang, tagline: 'An old welcome line, still read without error' }; delete a.languages;
+    const { ctx, p, errors } = await open(browser, { ...B, answers: a }, w, 800, { 'porta-lang-v1': lang });
+    await p.goto('http://editor.test/#guide'); await ready(p); await go(p, '#guide');
+    const chips = await p.$$eval('input[data-multi="languages"]', els => els.map(e => [e.value, e.checked]));
+    ok(`builder, ${w} px: Name and languages offers the six languages, all ticked`, chips.map(c => c[0]).join() === 'en,es,fr,ca,de,nl' && chips.every(c => c[1]), JSON.stringify(chips));
+    ok(`builder, ${w} px: no Italian or Portuguese`, !(await p.$('input[data-multi="languages"][value="it"], input[data-multi="languages"][value="pt"]')));
+    await p.fill('[data-k="guideName"]', 'Casa de prova'); await settle(p, 700);   // anything saved carries the languages with it
+    const saved = () => p.evaluate(() => { try { return JSON.parse(localStorage.getItem('porta-onboarding-v1')).A.languages; } catch (e) { return null; } });
+    ok(`builder, ${w} px: the guide's first language is the host's own (${lang})`, ((await saved()) || [])[0] === lang && (await saved()).length === 6, JSON.stringify(await saved()));
+    const card = await p.textContent('.card').catch(() => '');
+    ok(`builder, ${w} px: the step says in one line (${lang}) that guests read it in their own language, translated for them`, card.includes(SAYS[lang][0]) && !/Claude|\bAI\b|\bIA\b/.test(card), card.slice(0, 300));
+    ok(`builder, ${w} px: no welcome line is asked for (guests never saw it), an old one read without error`, !(await p.$('[data-k="tagline"]')) && !card.includes(SAYS[lang][1]));
+    if (w === 1024) await p.screenshot({ path: join(SHOTS, 'name-and-languages-1024.png'), fullPage: true });
+    for (const l of ['en', 'es', 'fr', 'ca', 'de', 'nl']) { await p.locator(`label.chip:has(input[data-multi="languages"][value="${l}"])`).click(); await settle(p, 100); }
+    const left = await p.$$eval('input[data-multi="languages"]:checked', els => els.map(e => e.value));
+    await settle(p, 700);
+    ok(`builder, ${w} px: a host may untick, one language always stays`, left.length === 1 && ((await saved()) || []).join() === left.join(), `${left.join()} saved ${JSON.stringify(await saved())}`);
+    ok(`builder, ${w} px: languages, no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // ---- The builder, just after the listing was read ----
   { const { ctx, p, errors } = await open(browser, B, 360, 780);
     await p.goto('http://editor.test/'); await ready(p);
@@ -1300,7 +1357,7 @@ async function gBuilder() {
     await go(p, '#favourites');
     ok('builder: Eat and drink says what happens, with no "would not recommend" box', !(await p.$('[data-k="avoidPlaces"]')) && /House guide/.test(await p.textContent('.card').catch(() => '')));
     await go(p, '#guide');
-    ok('builder: the welcome line has room for the whole text, and "Who usually stays" moved to Your area', (await p.$eval('[data-k="tagline"]', e => e.tagName).catch(() => '')) === 'TEXTAREA' && !(await p.$('[data-multi="guests"]')));
+    ok('builder: no welcome line is asked for (22 Nov 2026: guests never saw it), and "Who usually stays" moved to Your area', !(await p.$('[data-k="tagline"]')) && !(await p.$('[data-multi="guests"]')));
     await p.screenshot({ path: join(SHOTS, 'guide-step-360.png'), fullPage: true });
     await p.screenshot({ path: join(SHOTS, 'builder-ready-step-360.png') });
     await everyPage(p, 'builder');

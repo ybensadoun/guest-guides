@@ -39,7 +39,9 @@ ups = [json.loads(p.read_text()) | {'_id': p.stem} for p in sorted((S / 'uploads
 TR = json.loads(Path(args.translations).read_text()) if args.translations else {}
 SITE = ROOT / 'sites' / args.slug
 for d in ['content', 'public/guide', 'public/icons', 'i18n', 'docs']: (SITE / d).mkdir(parents=True, exist_ok=True)
-LANGS = [l for l in (A.get('languages') or ['en']) if l in ENGINE_LANGS] or ['en']
+# No language ticked (answers from before 22 Nov 2026, or only Italian or Portuguese, which the engine does not have): the
+# six, the host's own language first, as the builder ticks them for a new guide.
+LANGS = [l for l in (A.get('languages') or []) if l in ENGINE_LANGS] or [args.src] + [l for l in ENGINE_LANGS if l != args.src]
 if args.src not in LANGS: LANGS = [args.src] + LANGS
 untranslated = set()
 

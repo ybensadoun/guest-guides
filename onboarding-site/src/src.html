@@ -201,7 +201,32 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;bac
 'use strict';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const toast = t => { const e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => e.hidden = true, Math.max(2600, String(t).length * 60)); };   // long enough to read
+// A short message (long enough to read). Never over the step's text (Sunday walk, 22 Nov 2026: a "Done" pill floated on the
+// sentence at the end of Your area at 1024 px): it takes the place of the step count in the bar at the bottom, between the
+// bar's two buttons, and the count comes back when it goes. A message too long for that place (or a page with no bar) is a
+// band just above the bar, as wide as the page, and the page gets room for it at its end.
+const toast = t => { const e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.t);
+  const cnt = $('#navbar #openSteps'), row = cnt && cnt.parentElement, bar = $('#navbar');
+  e.classList.remove('in-bar', 'band'); e.removeAttribute('style'); document.body.classList.remove('toasting');
+  let placed = false;
+  if (cnt && cnt.getClientRects().length) {
+    const kids = [...row.children], c = cnt.getBoundingClientRect(), mid = (c.left + c.right) / 2, rr = row.getBoundingClientRect();
+    const l = kids.slice(0, kids.indexOf(cnt)).reduce((m, k) => Math.max(m, k.getClientRects().length ? k.getBoundingClientRect().right : rr.left), rr.left);
+    const r = kids.slice(kids.indexOf(cnt) + 1).reduce((m, k) => Math.min(m, k.getClientRects().length && k.textContent.trim() ? k.getBoundingClientRect().left : rr.right), rr.right);
+    const room = Math.floor(2 * Math.min(mid - l, r - mid) - 16);
+    e.classList.add('in-bar'); e.style.maxWidth = room + 'px';
+    const w = e.offsetWidth, h = e.offsetHeight;
+    if (room >= 80 && h <= rr.height + 2) { e.style.left = Math.round(mid - w / 2) + 'px'; e.style.top = Math.round(rr.top + (rr.height - h) / 2) + 'px'; document.body.classList.add('toasting'); placed = true; }
+    else { e.classList.remove('in-bar'); e.removeAttribute('style'); }
+  }
+  if (!placed) {
+    let under = 0;   // the fixed bar(s) at the bottom edge: the band goes just above them
+    for (const el of document.elementsFromPoint(innerWidth / 2, innerHeight - 1)) { for (let x = el; x && x !== document.body; x = x.parentElement) if (x !== e && getComputedStyle(x).position === 'fixed') { under = Math.max(under, innerHeight - x.getBoundingClientRect().top); break; } }
+    e.classList.add('band'); e.style.bottom = Math.max(0, Math.round(under)) + 'px';
+    let room = $('#toastRoom'); if (!room) { room = document.createElement('div'); room.id = 'toastRoom'; room.setAttribute('aria-hidden', 'true'); document.body.appendChild(room); }
+    const end = Math.ceil(scrollY + innerHeight) >= document.documentElement.scrollHeight - 2; room.style.height = e.offsetHeight + 'px'; if (end) scrollBy(0, e.offsetHeight);
+  }
+  toast.t = setTimeout(() => { e.hidden = true; document.body.classList.remove('toasting'); const room = $('#toastRoom'); if (room) room.style.height = '0px'; }, Math.max(2600, String(t).length * 60)); };
 const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ARROW = svg('<path d="M5 12h13M13 6l6 6-6 6"/>'), BACK = svg('<path d="M15 5l-7 7 7 7"/>'), CHECK = svg('<path d="M4 12.5l5 5L20 6"/>');
 const I = {
@@ -227,7 +252,9 @@ const I = {
 };
 
 /* ---------- Answer options ---------- */
-const LANGS = [['en','English'],['es','Español'],['fr','Français'],['ca','Català'],['de','Deutsch'],['nl','Nederlands'],['it','Italiano'],['pt','Português']];
+// The engine's six (engine/src/i18n/): a guide is in all of them, kept in sync (Yohann). Italian and Portuguese were offered
+// until 22 Nov 2026 and dropped by the generator without a word.
+const LANGS = [['en','English'],['es','Español'],['fr','Français'],['ca','Català'],['de','Deutsch'],['nl','Nederlands']];
 const GUESTS = ['Families with kids','Couples','Groups of friends','Remote workers','Older guests','Guests with pets','Wedding or event guests'];
 const ROOMS = ['Outside','Living room','Kitchen','Bedroom','Bathroom','Pool','Garden','Terrace','Office','Laundry','View','Other'];
 const INTERESTS = ['Beaches','Wine and food','Hiking and nature','Culture and history','Local markets','Nightlife','Festivals','Sports','Shopping','Wellness'];
@@ -312,7 +339,7 @@ const Q = {
   beds:{t:'number',label:'Beds',ph:'5',opt:true},
   guideName:{label:'Guide name',opt:true,full:true,hintFn:()=>v('placeName')?`Leave empty to use “${v('placeName')}”.`:''},
   tagline:{t:'area',rows:3,label:'Welcome line',opt:true,full:true,ph:'Make yourself at home'},
-  languages:{t:'chips',label:'Languages',opts:LANGS,hint:'The guide opens in the guest’s phone language when it can.'},
+  languages:{t:'chips',label:'Languages',opts:LANGS,hint:'Guests read the guide in their own language: we translate it for them.'},
   guests:{t:'chips',label:'Who usually stays',opts:GUESTS,opt:true},
   styleBrief:{t:'area',rows:4,label:'In your own words, what should your guide feel like?',full:true,ph:'Like a small hotel in Tuscany: warm, earthy, lots of white space. Or: bright and playful, like a children\u2019s picture book.',hint:'The more specific you are, the more different your guide looks. We design a look just for you, not from a template.'},
   lookLikes:{t:'area',rows:3,label:'What do you like about them?',opt:true,full:true,ph:'The blue of the sea, the hand-drawn feel…'},

@@ -1,5 +1,10 @@
 // Run before every build: content and UI strings must be complete, and no em-dashes anywhere.
-// Usage: node engine/scripts/check-content.js <site>
+// Usage: node engine/scripts/check-content.js <site> [--host]
+// --host (the worker, for a guide built from a host's answers; Yohann, 22 Nov 2026: a build never fails because of what a
+// host typed): the typography rules and em-dashes in the guide's own files (its content, its i18n, site.json, theme.css)
+// are notes printed after the result, not errors; whatever the worker could repair it already did (host-text.mjs). Every
+// structural error (a missing file or string, a broken shape, days and times that cannot be read) and an em-dash in the
+// engine's own files still fail. Without --host (npm run build, npm run check: the hand-made guides) nothing changes.
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { ENGINE, ROOT, siteDir, readSite } from '../site.config.js';
@@ -8,13 +13,15 @@ import { OFFERS } from '../src/modules/offers.js';
 const FLAGS = JSON.parse(readFileSync(resolve(ENGINE, 'src/flags.json'), 'utf8')).flags;   // the only warnings a place can carry
 const GROUPS = JSON.parse(readFileSync(resolve(ENGINE, 'src/groups.json'), 'utf8')).groups;   // the only quick-filter groups
 
-const SITE = process.argv[2] || process.env.SITE || 'ca-la-kimberly';
+const ARGS = process.argv.slice(2), HOST = ARGS.includes('--host');
+const SITE = ARGS.find(a => !a.startsWith('--')) || process.env.SITE || 'ca-la-kimberly';
 const SD = siteDir(SITE);
 const site = readSite(SITE);
 const LANGS = site.languages;
 const on = id => site.modules[id] !== false;
 const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-const errors = [];
+const errors = [], notes = [];
+const soft = HOST ? notes : errors;   // the host's own words: notes with --host, errors otherwise
 const rel = p => relative(ROOT, p);
 const read = p => JSON.parse(readFileSync(p, 'utf8'));
 const C = f => resolve(SD, 'content', f + '.json');
@@ -28,7 +35,8 @@ else errors.push(`${rel(SD)}/theme.css is missing (it can hold just a comment)`)
 
 for (const f of files) {
   const raw = readFileSync(f, 'utf8');
-  raw.split('\n').forEach((line, i) => { if (line.includes('\u2014')) errors.push(`${rel(f)}:${i + 1} contains an em-dash`); });
+  const to = HOST && !f.startsWith(ENGINE) ? notes : errors;   // the engine's own files are our words, always
+  raw.split('\n').forEach((line, i) => { if (line.includes('\u2014')) to.push(`${rel(f)}:${i + 1} contains an em-dash`); });
 }
 
 for (const k of ['name', 'languages']) if (!site[k] || (Array.isArray(site[k]) && !site[k].length)) errors.push(`site.json needs "${k}"`);
@@ -124,14 +132,16 @@ if (existsSync(C('home'))) {
 const formal = [];
 const lint = (l, v, w) => {
   if (typeof v !== 'string') return;
-  if (l === 'es') for (const x of v.split(/(?<=[.?!])\s+/)) { if (x.includes('?') && !x.includes('¿')) errors.push(`${w} (es) question without ¿: ${x.slice(0, 60)}`); if (x.includes('!') && !x.includes('¡')) errors.push(`${w} (es) exclamation without ¡: ${x.slice(0, 60)}`); }
-  if (l === 'ca' && /l[.•∙ŀ⋅]l/i.test(v)) errors.push(`${w} (ca) use the punt volat l·l`);
-  if (l === 'nl' && /\bIj/.test(v)) errors.push(`${w} (nl) write IJ, not Ij`);
-  if (l === 'de' && v.includes('"')) errors.push(`${w} (de) use „…“ quotes, not "…"`);
+  if (l === 'es') for (const x of v.split(/(?<=[.?!])\s+/)) { if (x.includes('?') && !x.includes('¿')) soft.push(`${w} (es) question without ¿: ${x.slice(0, 60)}`); if (x.includes('!') && !x.includes('¡')) soft.push(`${w} (es) exclamation without ¡: ${x.slice(0, 60)}`); }
+  if (l === 'ca' && /l[.•∙ŀ⋅]l/i.test(v)) soft.push(`${w} (ca) use the punt volat l·l`);
+  if (l === 'nl' && /\bIj/.test(v)) soft.push(`${w} (nl) write IJ, not Ij`);
+  if (l === 'de' && v.includes('"')) soft.push(`${w} (de) use „…“ quotes, not "…"`);
   if (l === 'de' && /\b(Bringen|Rufen|Spielen|Versuchen|Öffnen|Nehmen|Fragen|Kommen|Gehen|Schauen|Lassen|Stellen|Legen|Werfen|Parken|Buchen|Reservieren) Sie\b/.test(v)) formal.push(w);
 };
 // An untranslated copy of the English text (v === o.en) is not linted as another language.
-const lintAll = (o, w) => { if (Array.isArray(o)) o.forEach((x, i) => lintAll(x, `${w}[${i}]`)); else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { if (['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(k) && typeof v === 'string') { if (k === 'en' || v !== o.en) lint(k, v, w); } else lintAll(v, `${w}.${k}`); } };
+// With --host, a copy of another language's text (not translated yet) is not linted as this language either: one note, not six.
+const copied = (o, k, v) => HOST && Object.entries(o).some(([l, x]) => l !== k && x === v && LANGS.includes(l) && LANGS.indexOf(l) < LANGS.indexOf(k));
+const lintAll = (o, w) => { if (Array.isArray(o)) o.forEach((x, i) => lintAll(x, `${w}[${i}]`)); else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { if (['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(k) && typeof v === 'string') { if ((k === 'en' || v !== o.en) && !copied(o, k, v)) lint(k, v, w); } else lintAll(v, `${w}.${k}`); } };
 for (const f of jsonIn(resolve(SD, 'content'))) lintAll(read(f), rel(f));
 for (const l of LANGS) for (const [k, v] of Object.entries(i18n[l])) lint(l, v, `i18n ${l}.${k}`);
 
@@ -140,3 +150,4 @@ if (formal.length && LANGS.includes('de')) console.warn(`Typography warning for 
 
 if (errors.length) { console.error(`Content check failed for ${SITE}:\n  ` + errors.join('\n  ')); process.exit(1); }
 console.log(`Content check OK for ${SITE}: ${nMarkets} markets, ${LANGS.length} languages.`);
+if (notes.length) console.warn(`Content notes for ${SITE} (the host's own words, not stopping the build): ${notes.length}\n  ` + notes.join('\n  '));

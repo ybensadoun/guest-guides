@@ -21,6 +21,7 @@ import { makeSweep } from './sweep-photos.mjs';
 import { cardWords, applyWords } from './card-words.mjs';   // a found place's description and kind in the maker's languages (the deck's cards)
 import { countryOf, readLaunch, launchFor } from './launch.mjs';   // what is on for a house's country (the launch desk)
 import { argOf } from './args.mjs';   // an option's value on the command line, '' when it is not given
+import { repairSite } from '../engine/scripts/host-text.mjs';   // the host's own words repaired before the content check (dashes, ¿ ¡, l·l, „…“)
 import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
 import { txPick } from '../engine/src/modules/transport/taxis.js';   // the taxis a house is offered, from our open directory (Getting around)
 import { appsJob, refreshApps, appsNear, appsPrompt, readApps, APPS } from './ride-apps.mjs';   // Uber, Cabify, Bolt, Freenow (find-transport, what: apps)
@@ -297,14 +298,20 @@ async function build(g) {
   let out = run('python3', gen).stdout;
   if (RESEARCHING) {
     const need = existsSync(join(siteDir, 'docs/untranslated.json')) ? JSON.parse(readFileSync(join(siteDir, 'docs/untranslated.json'), 'utf8')) : [];
-    const langs = (A.languages || []).filter(l => l !== srcLang && ['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(l));
+    // No language ticked (an answer set from before 22 Nov 2026): the generator's six, so they are translated too.
+    const langs = ((A.languages || []).filter(l => ['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(l)).length ? A.languages : ['en', 'es', 'fr', 'ca', 'de', 'nl']).filter(l => l !== srcLang && ['en', 'es', 'fr', 'ca', 'de', 'nl'].includes(l));
     // Into the guide's own language too: a listing read from airbnb.es is in Spanish, whatever language the guide is in.
     if (need.length) { say(id, 'Translating'); const map = await translate(need, [srcLang, ...langs], srcLang);
       if (Object.keys(map).length) { const tf = join(job, 'translations.json'); writeFileSync(tf, JSON.stringify(map, null, 1)); out = run('python3', [...gen, '--translations', tf]).stdout; } }
   }
   if (LA.on('transport/brands')) await brandsOnSite(siteDir);
-  const checked = run('node', ['engine/scripts/run.js', 'check', tmp], { allowFail: true });
+  // What a host typed never stops the build (Yohann, 22 Nov 2026): what can be repaired safely is, in the language it is
+  // written in (engine/scripts/host-text.mjs), and the check's typography findings on the guide's words are notes for this
+  // log (--host), never shown to guests. A broken guide (a missing file, a shape, days and times) still fails.
+  try { const fixed = repairSite(siteDir, srcLang); if (fixed.length) log('  host text repaired:', fixed.join(', ')); } catch (e) { log('  host text not repaired:', e.message); }
+  const checked = run('node', ['engine/scripts/run.js', 'check', tmp, '--host'], { allowFail: true });
   if (checked.status !== 0) throw new Error('The guide did not pass its checks: ' + ((checked.stdout || '') + (checked.stderr || '')).trim().split('\n').slice(-3).join(' | '));
+  const notes = String(checked.stderr || '').split('\n').filter(l => l.trim()); if (notes.length) log('  content notes (not shown to guests):', notes.slice(0, 12).join(' | ').slice(0, 1500));
   say(id, 'Saving the guide');
   await holdBack(siteDir, id);   // the markets with a Google id wait for the host's maker (below), the last change before the row
   const assetBase = `${URL_}/storage/v1/object/public/guide-assets/${id}/`;

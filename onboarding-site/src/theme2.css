@@ -466,3 +466,8 @@ body:has(#main > :is(.start,.yours,.bwrap)) #ver{padding-bottom:18px}
 .tx-row > span{display:flex;flex-direction:column;min-width:0}
 .tx-row b{overflow-wrap:break-word}
 .tx-row small{color:var(--muted);font-size:13px}
+/* The short message (toast in src.html, 22 Nov 2026): in the bar, in the step count's place (.in-bar, placed by the script),
+   or a band just above the bar as wide as the page (.band); never a pill floating over the step's text. */
+.toast.in-bar{right:auto;bottom:auto;width:max-content;margin:0;padding:8px 14px;border-radius:999px;z-index:31}
+.toast.band{left:0;right:0;width:auto;max-width:none;margin:0;border-radius:0;padding:10px 16px}
+body.toasting #navbar #openSteps{visibility:hidden}

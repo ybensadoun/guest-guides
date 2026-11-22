@@ -502,8 +502,22 @@ function feedbackPageHTML(){
 
 /* ---------- Render ---------- */
 let lastRoute = null;
+// A guide is in the engine's six languages (Yohann: "always kept in sync"; quick for the host: never an empty form): all six
+// are ticked for a new guide, the host's own language first (the guide's first language), and one always stays ticked.
+// Answers from before 22 Nov 2026 with none, or only Italian or Portuguese, get the six too; the generator does the same.
+const SIX_LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
+function langsDefault(){
+  // Only on answers someone has started (a listing read, a name typed): an empty device stays empty, or the account would
+  // take it for a guide begun here (account.js, local) and not load the house's own answers.
+  if (!Object.entries(A).some(([k, x]) => !k.startsWith('_') && k !== 'languages' && (Array.isArray(x) ? x.length : x && typeof x === 'object' ? Object.keys(x).length : String(x ?? '').trim()))) return;
+  const kept = (Array.isArray(A.languages) ? A.languages : []).filter(l => SIX_LANGS.includes(l));
+  if (kept.length) { if (kept.length !== A.languages.length) A.languages = kept; return; }
+  const own = SIX_LANGS.includes(A.sourceLang) ? A.sourceLang : SIX_LANGS.includes(UIL) ? UIL : 'en';
+  A.languages = [own, ...SIX_LANGS.filter(l => l !== own)];
+}
 function render(){
   if (/(^|[#&])(access_token|error_description)=/.test(location.hash)) return;   // a sign-in link: accountBoot reads it first
+  if (!CM.on) langsDefault();
   let r = route(); const main = $('#main');
   if (!main) return;
   clearInterval(buildTimer); clearInterval(BL.timer);
@@ -557,6 +571,7 @@ document.addEventListener('change', e => {
   const t = e.target;
   if ((t.dataset.multi || t.dataset.radio) && A._pre && A._pre[t.dataset.multi || t.dataset.radio]) { const p = { ...A._pre }; delete p[t.dataset.multi || t.dataset.radio]; A._pre = p; }
   if (t.dataset.multi === 'interests') { A._interestsHost = true; delete A._seaAuto; }   // the host's own chips: nothing ticks them for them again (start.js seaFromResearch, applyDraft)
+  if (t.dataset.multi === 'languages' && !t.checked && (A.languages || []).filter(l => l !== t.value).length === 0) { t.checked = true; return; }   // one language always stays
   if (t.dataset.multi) { const k = t.dataset.multi, cur = new Set(A[k] || []); t.checked ? cur.add(t.value) : cur.delete(t.value); set(k, [...cur]); softRefresh(); }
   else if (t.dataset.radio) { set(t.dataset.radio, t.value); softRefresh(); refreshSend(); }
   else if (t.dataset.k && t.tagName === 'SELECT') { set(t.dataset.k, t.value); softRefresh(); }

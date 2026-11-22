@@ -4289,6 +4289,11 @@
 "es": "La verja, el desvío, dónde aparcar, dónde está la llave. Los huéspedes las ven en la guía de la casa, en Cómo llegar.",
 "fr": "Le portail, l’embranchement, où se garer, où est la clé. Les voyageurs les voient dans le guide de la maison, dans Comment venir."
 },
+"Guests read the guide in their own language: we translate it for them.": {
+"ca": "Els hostes llegeixen la guia en el seu idioma: nosaltres la traduïm per a ells.",
+"es": "Tus huéspedes leen la guía en su idioma: nosotros se la traducimos.",
+"fr": "Vos voyageurs lisent le guide dans leur langue : nous le traduisons pour eux."
+},
 "The guide opens in the guest’s phone language when it can.": {
 "ca": "La guia s’obre en l’idioma del mòbil de l’hoste quan pot.",
 "es": "La guía se abre en el idioma del móvil del huésped cuando puede.",

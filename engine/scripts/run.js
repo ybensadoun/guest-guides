@@ -11,7 +11,10 @@ import { resolve } from 'node:path';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { ENGINE, ROOT, listSites, readSite } from '../site.config.js';
 
-const [cmd, arg] = process.argv.slice(2);
+// --host (the worker, a guide built from a host's answers): the content check's typography findings on the guide's own
+// words are notes, not errors (check-content.js). Never given by npm run build or npm run check.
+const HOST = process.argv.includes('--host');
+const [cmd, arg] = process.argv.slice(2).filter(a => a !== '--host');
 const sites = listSites();
 const run = (args, SITE) => {
   const r = spawnSync(args[0], args.slice(1), { stdio: 'inherit', cwd: ROOT, env: { ...process.env, SITE }, shell: process.platform === 'win32' });
@@ -27,7 +30,7 @@ const writePrivate = async SITE => {
   mkdirSync(dir, { recursive: true });
   writeFileSync(resolve(dir, 'wifi.json'), JSON.stringify(w, null, 2));
 };
-const check = SITE => run(['node', resolve(ENGINE, 'scripts/check-content.js'), SITE], SITE);
+const check = SITE => run(['node', resolve(ENGINE, 'scripts/check-content.js'), SITE, ...(HOST ? ['--host'] : [])], SITE);
 
 if (cmd === 'sites') { for (const s of sites) console.log(`${s}  ·  ${readSite(s).name}`); process.exit(0); }
 const pick = () => {
