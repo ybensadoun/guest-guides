@@ -23,6 +23,21 @@ export const sameMarket = (it, p, far) => { if (far > 0.6 || !/mercat|mercado|ma
   return [...a].some(d => b.has(d)) || [...b].some(d => ({ lunes: 'dilluns', martes: 'dimarts', miercoles: 'dimecres', jueves: 'dijous', viernes: 'divendres', sabado: 'dissabte', domingo: 'diumenge' })[d] && a.has(({ lunes: 'dilluns', martes: 'dimarts', miercoles: 'dimecres', jueves: 'dijous', viernes: 'divendres', sabado: 'dissabte', domingo: 'diumenge' })[d])); };
 export const sameName = (it, p) => { const a = new Set([...words(it.name_local, it.town), ...words(nameOf(it.name), it.town), ...Object.values(it.name || {}).flatMap(x => [...words(x, it.town)])]); return [...words(p.displayName?.text, it.town)].some(w => a.has(w)); };
 
+// The sort of place a name says it is, by the word it carries: "Platja del Roc de Sant Gaietà" is a beach, "El Roc de Sant
+// Gaietà" says none. Two names that share their own words but not their sort are two places: the beach, the viewpoint,
+// the hotel or the bar named after a village is not the village (22 Nov 2026: a host kept the village "El Roc de Sant
+// Gaietà" in the deck and the guide got "Platja del Roc de Sant Gaietà", kind Beach, because "platja" was read as a
+// word that says nothing). In the languages a record or a name comes in: Catalan, Spanish, English, French.
+// list 'eat': a place to eat is often kept without its "Restaurant" or "Bar", so that sort is not looked at.
+export const SORTS = {
+  beach: 'platja platges playa playas beach beaches plage plages', view: 'mirador miradors miradores viewpoint lookout belvedere',
+  eat: 'restaurant restaurante restaurants bar cafe cafeteria braseria pizzeria xiringuito chiringuito', stay: 'hotel hostal hostel camping apartaments apartamentos apartments resort alberg albergue',
+  port: 'port puerto harbour harbor marina', station: 'estacio estacion station gare', park: 'parc parque park', museum: 'museu museo museum musee' };
+const SORT_OF = new Map(Object.entries(SORTS).flatMap(([k, v]) => v.split(' ').map(w => [w, k])));
+export const sortsOf = (name, list) => new Set(String(name || '').replace(/\u00ad/g, '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).map(w => SORT_OF.get(w)).filter(k => k && !(k === 'eat' && list === 'eat')));
+// The same sort: the same words of that kind on both sides (none on both is the same). only: the sorts looked at.
+export const sameSort = (a, b, list, only = null) => { const x = sortsOf(a, list), y = sortsOf(b, list), ks = only || Object.keys(SORTS); return ks.every(k => x.has(k) === y.has(k)); };
+
 // Each request: 15 s limit and up to 3 tries (a dropped connection must not stop a run).
 export async function get(url, init) {
   for (let i = 1; ; i++) {

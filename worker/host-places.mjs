@@ -14,7 +14,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { hav, locateById, locateByWords, nameById } from './places.mjs';
+import { hav, locateById, locateByWords, nameById, sameSort } from './places.mjs';
 import { nearby, gazetteer, featureFor, placeFacts } from './place-facts.mjs';
 import { tidyName, due, lookedFor, mergeFacts, makeStore } from './place-store.mjs';
 
@@ -73,11 +73,14 @@ const num = v => typeof v === 'number' && Number.isFinite(v);
 // The record that carries a name, among Overture's records around a pin: every word of the name (small and generic words
 // aside) is in the record's name, or, failing that, at least half of them in one record only. Ties: the record whose own
 // words are most in the name, then the nearest. Used for a kept card (see hostPlaces).
+// list (a kept card: 'todo' or 'eat'): the record must also be the same sort of place as the name says (sameSort in
+// places.mjs): "platja", "bar" or "museu" say nothing when both names carry them, and set two places apart when only one
+// does. Without list (the monthly check, which compares a name of ours with the directory's) the words alone, as before.
 const GENERIC = new Set('el la els les l d de del dels the of i y and a en al restaurant restaurante bar platja playa beach parc parque park museu museo museum'.split(' '));
 const wordsOf = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w && !GENERIC.has(w));
 const share = (a, b) => { const x = wordsOf(a), y = wordsOf(b); return x.length && y.length ? x.filter(w => y.some(v => v === w || (w.length > 4 && v.length > 4 && (v.startsWith(w) || w.startsWith(v))))).length / x.length : 0; };
-export function sameNamed(name, cands) {
-  const scored = (cands || []).map(c => ({ c, s: share(name, c.name), back: share(c.name, name) })).filter(x => x.s >= 0.5)
+export function sameNamed(name, cands, list = null) {
+  const scored = (cands || []).filter(c => !list || sameSort(name, c.name, list)).map(c => ({ c, s: share(name, c.name), back: share(c.name, name) })).filter(x => x.s >= 0.5)
     .sort((a, b) => b.s - a.s || b.back - a.back || (a.c.metres || 0) - (b.c.metres || 0));
   if (!scored.length) return null;
   return scored[0].s >= 0.99 || scored.length === 1 ? scored[0].c : null;
@@ -196,8 +199,12 @@ export async function hostPlaces({ rows = [], cards = [], own = [], house, town 
     gzPins.clear();
     const feats = gid => (gz && gz.pins && gz.pins[gid]) || [];
     for (const p of found) if (theirs.has(p.gid)) {
-      let rec = null; for (const n of theirs.get(p.gid)) if ((rec = sameNamed(n, ov.pins[p.gid] || []))) break;
-      const f = rec ? null : featureFor(feats(p.gid));
+      const names = theirs.get(p.gid);
+      let rec = null; for (const n of names) if ((rec = sameNamed(n, ov.pins[p.gid] || [], p.list))) break;
+      // GeoNames' feature the same way: the very name, or a name of the same sort ("Mirador Roc de Sant Gaietà" is not
+      // the village). No record and no feature that is this place: the card waits for the host to name it (below); a
+      // look-alike is never taken for it.
+      const f = rec ? null : featureFor(feats(p.gid).filter(x => x && (x.exact === true || names.some(n => sameSort(n, x.name, p.list)))));
       if (rec) { p.words = rec.name; p.record = true; }   // from here on the card has words: our record's own name
       else if (f && f.name) { p.words = f.name; p.feature = true; }   // or GeoNames' own name for the feature (a town, a beach), ours to keep
       else p.unnamed = true;         // no record or feature of that name: picking one from the spot alone would more likely be wrong

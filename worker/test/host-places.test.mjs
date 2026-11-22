@@ -206,7 +206,8 @@ test('hostPlaces: a kept card is named by comparing Google\'s name with our reco
   const GOOGLE = 'Aqualeón Parc Aquàtic';   // what Google calls it: read, compared, dropped
   const rows = {}, saved = [], prompts = [], logs = [], asked = [];
   const ask = async (prompt, o) => { prompts.push(prompt);
-    return o.what === 'place match' ? (/"Aqualeon Water Park"/.test(prompt) ? '{"venue": true, "entry": 1, "sure": true, "name": "Aqualeon", "kind": "waterpark"}' : '{"venue": true, "entry": null, "sure": false, "name": null, "kind": null}') : '{"website": null, "about": false}'; };
+    return o.what === 'place match' ? (/"Aqualeon Water Park"/.test(prompt) ? '{"venue": true, "entry": 2, "sure": true, "name": "Aqualeon", "kind": "waterpark"}' : '{"venue": true, "entry": null, "sure": false, "name": null, "kind": null}') : '{"website": null, "about": false}'; };
+  // (entry 2: the water park's own record. Entry 1, the bar beside it, is another sort of place and would not be taken: place-sort.test.mjs.)
   const loc2 = { ...locate, name: async id => { asked.push(id); return id === 'G2aaaaaaaaaa' ? GOOGLE : 'A Place Nobody Lists'; } };
   const pins = [];
   const near2 = async (h, p) => { pins.push(...p); return { release: 'r', towns: {}, pins: { G2aaaaaaaaaa: [{ id: 'ov9', name: 'Bar Pepe', kind: 'bar', metres: 5, lat: 41.25, lng: 1.55 }, { id: 'ov2', name: 'Aqualeon Water Park', kind: 'water_park', metres: 60, lat: 41.2502, lng: 1.5502, phones: [], websites: [], socials: [] }], G3aaaaaaaaaa: [{ id: 'ov7', name: 'Hotel Sol', kind: 'hotel', metres: 20, lat: 41.1, lng: 1.4 }] } }; };

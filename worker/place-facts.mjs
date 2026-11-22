@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
-import { nameOf } from './places.mjs';
+import { nameOf, sameSort } from './places.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
 
@@ -265,13 +265,19 @@ export async function placeFacts(place, cands, ask, { meter, again, matchOnly = 
     + (named ? `Then: which entry is the same place as the host's (the same business or the same site, even if spelt or named a little differently)? Another business that only shares a word with it, or sits next door, is not it. The entry must carry the word that sets the host's name apart (for "La Fàbrica del Pernil" that word is Pernil, not Fàbrica): without it you are not sure. `
       : `Then: which entry is the place the host kept? It is the entry that is such a place; the shops, restaurants, hotels, offices and services around it are not${place.list === 'todo' ? '' : ' unless the list is of places to eat'}. Two entries that are plainly the same place under two names count as one: take the better named. When two or more different entries could be it, or none is such a place, none is it and you are not sure. `)
     + `A town, a village, a beach or a natural spot is never matched to a business or building that carries its name (a school, a hotel, a shop, a restaurant).\n`
+    + `The entry must be the same sort of place: a beach, a viewpoint, a port, a station, a hotel or a bar named after a village, a rock or a person is not that village, rock or person, and the other way round ("Platja del Roc de Sant Gaietà" is not "El Roc de Sant Gaietà").\n`
     + `Its name: when an entry is the place, the entry's name as the place itself writes it, correcting only a clear typing fault or a web address written as a name ("esenciaelvendrell" is "Esencia", "Pith and Putt Vendrell" is "Pitch and Putt Vendrell"), else null.\n`
     + (K ? `Its kind: the one key from this list that best says what the place is, from the host's words and the entry: ${kinds}. null when you are unsure.\n` : '')
     + `Answer with JSON only: {"venue": true or false, "entry": the number, or null if none is it, "sure": true if you are sure, else false, "name": "the name" or null${K ? ', "kind": "a key" or null' : ''}}`;
-  const decide = a => { const n = a && Number.isInteger(a.entry) ? a.entry : 0, entry = a && a.sure === true && n >= 1 && n <= cands.length ? cands[n - 1] : null;
+  // Whatever the answer, an entry of another sort than the place's name says is not taken (sameSort in places.mjs, 22 Nov
+  // 2026): the beach, the viewpoint, the port, the station, the hotel or the bar named after the place. Its kind goes
+  // with it, since it was read off that entry. Not for a museum or a park, which hosts name without the word.
+  const SORT_APART = ['beach', 'view', 'eat', 'stay', 'port', 'station'];
+  const decide = a => { const n = a && Number.isInteger(a.entry) ? a.entry : 0, picked = a && a.sure === true && n >= 1 && n <= cands.length ? cands[n - 1] : null;
+    const other = !!picked && named && !sameSort(place.name, picked.name, place.list, SORT_APART), entry = other ? null : picked;
     return { usable: !!a && typeof a.venue === 'boolean', entry, venue: !(a && a.venue === false),
       name: entry ? cleanText(a.name) || cleanText(entry.name) : null,   // a name only for a sure entry; the entry's own when Claude gave none
-      kind: K && a && typeof a.kind === 'string' && Object.hasOwn(K, a.kind.trim()) ? a.kind.trim() : null }; };
+      kind: !other && K && a && typeof a.kind === 'string' && Object.hasOwn(K, a.kind.trim()) ? a.kind.trim() : null }; };
   const match = async () => {
     let d = decide(json(await q(MATCH, { web: false, what: 'place match' }))), tries = 1;
     // A venue with candidates but no sure record: once more with more effort, the second answer wins when usable.
