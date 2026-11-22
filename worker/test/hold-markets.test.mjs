@@ -1,13 +1,14 @@
-// The markets a build holds back (Yohann, 13 Nov 2026): every market with a Google id leaves the built guide and waits in
-// a find-markets job for the host's maker, which asks Google live (worker/research-brief.mjs holdMarkets, guide-worker.mjs
-// holdBack). Made-up markets only; nothing runs but the function.
+// The markets a build lists for the host's maker (Yohann, 13 Nov 2026; changed 22 Nov 2026): every market stays in the
+// built guide, and those with a Google id are also listed in a find-markets job, for the maker to ask Google live and take
+// out a permanently closed one (worker/research-brief.mjs listed, named; guide-worker.mjs holdBack). holdMarkets is the
+// split itself, as a guide was built from 13 to 22 Nov. Made-up markets only; nothing runs but the functions.
 //   node --test 'worker/test/*.test.mjs'
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { holdMarkets } from '../research-brief.mjs';
+import { holdMarkets, listed, named } from '../research-brief.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const M = (id, category, gid) => ({ id, category, name: { en: id, es: id }, description: { en: 'A market.', es: 'Un mercado.' }, lat: 41.6, lng: 2.7, schedule: [], ...(gid ? { gid } : {}) });
@@ -44,10 +45,22 @@ test('a held market whose category the file does not list still carries it', () 
   assert.deepEqual(h.categories, ['antiques']); assert.deepEqual(h.file.categories, ['street']);
 });
 
-test('the build holds them back as its last change before the guide\'s row is made, and the job is the maker\'s shape', () => {
+test('since 22 Nov 2026 the build keeps every market in the guide: the job lists those with a Google id and says they are in it', () => {
+  const file = structuredClone(FILE), r = listed(file), out = named(file, 'job-1');
+  assert.deepEqual(r.items.map(m => m.id), ['weekly-a', 'flea-c', 'fair-e']);
+  assert.equal(r.held, true); assert.equal(r.inGuide, true); assert.equal(r.kind, 'find-markets');
+  assert.deepEqual(out.markets.map(m => m.id), FILE.markets.map(m => m.id));   // every market, in its order: none waits outside the guide
+  assert.deepEqual(out.categories, FILE.categories); assert.equal(out.held, 'job-1'); assert.equal(out.heldDone, undefined);
+  assert.deepEqual(file, FILE);                                                // nothing of the built file changed
+  assert.equal(listed({ categories: ['street'], markets: [M('a', 'street'), M('b', 'street')] }), null);   // no Google id: no job
+  for (const x of [null, undefined, {}, { markets: null }]) assert.equal(listed(x), null);
+});
+
+test('the build lists them as its last change before the guide\'s row is made, with the pure parts above', () => {
   const src = readFileSync(resolve(ROOT, 'worker/guide-worker.mjs'), 'utf8');
   const hold = src.indexOf('await holdBack(siteDir, id);'), row = src.indexOf("run('node', ['engine/scripts/guide-to-row.mjs'"), check = src.indexOf("run('node', ['engine/scripts/run.js', 'check'");
   assert.ok(check > 0 && hold > check && row > hold, 'holdBack runs after the checks and the translation, right before guide-to-row');
-  assert.match(src, /kind: 'find-markets', status: 'done'[^\n]*result: \{ kind: 'find-markets', held: true, items: h\.held, categories: h\.categories \}/);
-  assert.match(src, /writeFileSync\(f, JSON\.stringify\(\{ \.\.\.h\.file, held: jid \}/);   // the guide names its held job
+  assert.match(src, /result = listed\(file\); if \(!result\) return 0;/);
+  assert.match(src, /kind: 'find-markets', status: 'done'[^\n]*result, finished_at/);
+  assert.match(src, /writeFileSync\(f, JSON\.stringify\(named\(file, jid\), null, 1\)\)/);   // the guide names its job and keeps every market
 });

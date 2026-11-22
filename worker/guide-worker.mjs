@@ -15,7 +15,7 @@ import { hav, nameOf, sameName, locateItem } from './places.mjs';
 import { checkResearch } from './research-check.mjs';   // the research's check: Google locates, our own sources fill
 import { hostPlaces, placesOf } from './host-places.mjs';   // a host's own places: located by Google, filled from our own table
 import { townPoint, municipalityAt, overtureTaxis, gazetteer, featureFor } from './place-facts.mjs';   // the house's town in GeoNames, when its position is Google's; the municipality it lies in
-import { researchPrompt, HOURS_RULE, MARKETS_RULE, TODO_RULE, earlyRules, EV_REACH, EV_MAIN, EV_EARLY, evFits, inReach, eventsInReach, holdMarkets } from './research-brief.mjs';   // the research's brief, how far it reaches
+import { researchPrompt, HOURS_RULE, MARKETS_RULE, TODO_RULE, earlyRules, EV_REACH, EV_MAIN, EV_EARLY, evFits, inReach, eventsInReach, listed, named } from './research-brief.mjs';   // the research's brief, how far it reaches
 import { makeStore, mergeFacts } from './place-store.mjs';
 import { makeSweep } from './sweep-photos.mjs';
 import { cardWords, applyWords } from './card-words.mjs';   // a found place's description and kind in the maker's languages (the deck's cards)
@@ -283,7 +283,7 @@ async function build(g) {
   if (checked.status !== 0) throw new Error('The guide did not pass its checks: ' + ((checked.stdout || '') + (checked.stderr || '')).trim().split('\n').slice(-3).join(' | '));
   const notes = String(checked.stderr || '').split('\n').filter(l => l.trim()); if (notes.length) log('  content notes (not shown to guests):', notes.slice(0, 12).join(' | ').slice(0, 1500));
   say(id, 'Saving the guide');
-  await holdBack(siteDir, id);   // the markets with a Google id wait for the host's maker (below), the last change before the row
+  await holdBack(siteDir, id);   // the markets with a Google id are listed for the host's maker to look at (below), the last change before the row
   const assetBase = `${URL_}/storage/v1/object/public/guide-assets/${id}/`;
   const row = JSON.parse(run('node', ['engine/scripts/guide-to-row.mjs', tmp, assetBase]).stdout);
   row.content.site.slug = g.slug; row.content.site.storageKey = g.slug;
@@ -317,24 +317,26 @@ async function brandsOnSite(siteDir) {
   late = true;
 }
 
-// The markets with a Google id are held back (Yohann, 13 Nov 2026): for an account billed in Europe, Google's "permanently
-// closed" may only be shown to a person looking at the guide, never used by a job such as this build. So they leave the
-// built guide (research-brief.mjs holdMarkets), as the generator and the translation made them, and wait in a find-markets
-// job of their own (status done, result.held: true, the shape Find more's results have), which the guide's markets file
-// names (held: the job's id). The host's maker, open on the ready screen or the editor, asks Google about each one live and
-// by itself, and puts the others into the guide with heldDone: the job's id (onboarding-site/src/editor.js, cmHeld).
-// Markets with no Google id (no key on the server: none has one) stay in the guide as before. The job not saved: the
-// markets stay in the guide, as before this hold, so a failure never costs a guide its markets.
+// The markets with a Google id, for the host's maker to look at (Yohann, 13 Nov 2026, changed 22 Nov 2026). For an account
+// billed in Europe, Google's "permanently closed" may only be shown to a person looking at the guide, never used by a job
+// such as this build. From 13 to 22 Nov those markets left the built guide and waited for the host's maker; a guide then
+// went live with a quarter of its markets (5 of 21 on 22 Nov) until its host opened the maker, and Yohann asked that a
+// host need do nothing ("we should be accurate enough so that the host doesn't need to do this"). So every market stays in
+// the built guide, on the research's own sources, and the ones with a Google id are also listed in a find-markets job of
+// their own (status done, result.held: true and inGuide: true, the shape Find more's results have), which the guide's
+// markets file names (held: the job's id). The host's maker, whenever it opens on the guide, asks Google about each one
+// live and by itself, and takes out of the guide one Google calls permanently closed, with heldDone: the job's id
+// (onboarding-site/src/editor.js, cmHeld). The job not saved: the guide is as it is, nothing asked later.
 async function holdBack(siteDir, id) {
   const f = join(siteDir, 'content/markets.json'); if (!existsSync(f)) return 0;
-  const h = holdMarkets(JSON.parse(readFileSync(f, 'utf8'))); if (!h.held.length) return 0;
+  const file = JSON.parse(readFileSync(f, 'utf8')), result = listed(file); if (!result) return 0;
   try {
-    const j = await rest('/rest/v1/guide_jobs?select=id', { method: 'POST', body: { guide_id: id, kind: 'find-markets', status: 'done', message: `${h.held.length} markets held for the host's maker`, result: { kind: 'find-markets', held: true, items: h.held, categories: h.categories }, finished_at: new Date().toISOString() }, headers: { Prefer: 'return=representation' } });
+    const j = await rest('/rest/v1/guide_jobs?select=id', { method: 'POST', body: { guide_id: id, kind: 'find-markets', status: 'done', message: `${result.items.length} markets for the host's maker to look at`, result, finished_at: new Date().toISOString() }, headers: { Prefer: 'return=representation' } });
     const jid = j && j[0] && j[0].id; if (!jid) throw new Error('no job id came back');
-    writeFileSync(f, JSON.stringify({ ...h.file, held: jid }, null, 1));
-    log(`  ${h.held.length} market(s) with a Google id held back for the host's maker (job ${jid}), ${h.file.markets.length} in the guide`);
-    return h.held.length;
-  } catch (e) { log('  markets not held back, they stay in the guide:', e.message); return 0; }
+    writeFileSync(f, JSON.stringify(named(file, jid), null, 1));
+    log(`  all ${file.markets.length} market(s) in the guide; ${result.items.length} with a Google id listed for the host's maker to look at (job ${jid})`);
+    return result.items.length;
+  } catch (e) { log('  markets with a Google id not listed for the host\'s maker, the guide is as built:', e.message); return 0; }
 }
 
 /* ---------- Loop ---------- */

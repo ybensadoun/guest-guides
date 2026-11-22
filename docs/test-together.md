@@ -103,6 +103,13 @@ On a phone, as a guest: Ca La Kimberly (ca-la-kimberly.netlify.app) and the pool
 | 3.8 | Ca La Kimberly's Markets page: Filters, keep one kind only (Flea market), then tap a day that has none of it | "No markets match these filters." with "Show all types": this box only after your own filters |
 | 3.9 | 3.2, 3.4 and 3.6 in German and in French | Nothing cut, nothing over anything else |
 
+### A new guide's markets (changed 22 Nov 2026)
+| # | Do | Expect |
+|---|---|---|
+| 3.10 | Build a guide from a listing, and open its link as a guest without going back to the maker | Markets has every market the research found (about twenty around Ca La Kimberly), not a handful |
+| 3.11 | Stay on the build screen until "Your guide is ready." | Nothing about markets, unless Google Maps calls one permanently closed: then one line, "Taken out: (its name). It is permanently closed on Google Maps." |
+| 3.12 | Open Local markets in the editor | The same list as guests see; a market taken out is not in it, and can be added again by its name |
+
 ### Known, not to report
 - A yearly fair whose date is only written in words is in "All" and on no day (to decide with Local events).
 - The market halls are not in the tile's number and not in the day's list until "Show all types" (they open every weekday).

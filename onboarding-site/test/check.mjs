@@ -3831,14 +3831,16 @@ async function gHeldMarkets() {
   const FIND = { id: 'job-find-m', status: 'done', message: '1 markets found', created_at: now, result: { kind: 'find-markets', items: [HM('fm-new', 'g-fm-new', 'Mercat Nou de Prova', 8)] } };
   // The guide as the database holds it (G, changed by the write the maker makes), its held job, Google's stand-in.
   const ctxOf = async (w, h, lang, o = {}) => {
-    const content = structuredClone(E.content), items = o.slow ? [...ITEMS, SLOW] : ITEMS; if (!o.none) content.files.markets = { ...content.files.markets, held: JID };
+    // o.inGuide: a job of a build since 22 Nov 2026, whose markets are in the guide already (result.inGuide); o.allOpen: Google calls none closed.
+    const content = structuredClone(E.content), items = (o.slow ? [...ITEMS, SLOW] : ITEMS).filter(i => !o.inGuide || i.id !== 'hm-dup'); if (!o.none) content.files.markets = { ...content.files.markets, held: JID };
+    if (o.inGuide) content.files.markets.markets = [...(content.files.markets.markets || []), ...structuredClone(items)];
     const G = { ...E, status: 'published', finished_at: now, answers: { ...E.answers, slug: E.slug, _sentAt: now }, content, draft: null };
     if (o.draft) { const d = structuredClone(content); d.site.name = E.content.site.name + ' (draft)'; G.draft = { content: d, theme: E.theme, savedAt: now }; }
     const x = await open(browser, G, w, h, { 'porta-lang-v1': lang }); Object.assign(x, { G, asked: [], patches: [], jobsAsked: [], down: !!o.down });
     await x.ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => { const q = decodeURIComponent(new URL(r.request().url()).search); x.jobsAsked.push(r.request().method() + ' ' + q);
       if (r.request().method() !== 'GET') return json(r, []);
-      if (q.includes('id=eq.' + JID)) return json(r, [{ id: JID, result: { kind: 'find-markets', held: true, items, categories: ['street'] } }]);
-      if (/kind=eq\.find-markets/.test(q)) return json(r, [{ id: JID, status: 'done', message: 'held', created_at: now, result: { kind: 'find-markets', held: true, items } }, FIND]);   // the held job is the latest of its kind, the host's own search behind it
+      if (q.includes('id=eq.' + JID)) return json(r, [{ id: JID, result: { kind: 'find-markets', held: true, ...(o.inGuide ? { inGuide: true } : {}), items, categories: ['street'] } }]);
+      if (/kind=eq\.find-markets/.test(q)) return json(r, [{ id: JID, status: 'done', message: 'held', created_at: now, result: { kind: 'find-markets', held: true, ...(o.inGuide ? { inGuide: true } : {}), items } }, FIND]);   // the held job is the latest of its kind, the host's own search behind it
       return json(r, []); });
     await x.ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), r => { const req = r.request(); if (req.method() !== 'PATCH') return r.fallback();
       const q = decodeURIComponent(new URL(req.url()).search), b = JSON.parse(req.postData() || '{}'); x.patches.push({ q, b });
@@ -3849,6 +3851,7 @@ async function gHeldMarkets() {
       return json(r, []); });
     await x.ctx.route(u => u.pathname === '/api/places', r => { const id = new URL(r.request().url()).searchParams.get('open'); if (!id) return json(r, { ok: false }); x.asked.push(id);
       if (id === 'g-hm-slow') return setTimeout(() => json(r, { ok: true, closed: 'permanent' }).catch(() => {}), 20000);   // Google never answers in time: it goes in
+      if (o.allOpen && id === 'g-hm-perm') return json(r, { ok: true, closed: null });
       return json(r, ANS[id] || { ok: false }); });
     return x; };
   const writes = x => x.patches.filter(z => 'content' in z.b);
@@ -3925,6 +3928,61 @@ async function gHeldMarkets() {
     ok('held markets, the write fails: nothing marked, "not in your guide yet" with Try again; Try again writes them, Google not asked twice', /Your markets are not in your guide yet\.\s*Try again/.test(said) && !marked
       && x.G.content.files.markets.heldDone === JID && ids(x.G.content).includes('hm-open') && count(x.asked, 'g-hm-perm') === 1 && !errors.length, `${said} | ${x.asked.join()}`);
     const clear = [...await heroClear(p), ...await linesClear(p, '#bheld')]; ok('held markets, after Try again: the lines touch nothing, no sideways scroll', !clear.length, clear.join(' | '));
+    await ctx.close(); }
+  // ---- Since 22 Nov 2026 the build leaves the markets in the guide (result.inGuide): the maker only takes a closed one out ----
+  const once = (c, id) => ids(c).filter(i => i === id).length === 1, STAY = ['hm-temp', 'hm-fail', 'hm-open'];
+  for (const [w, h, lang] of [[1280, 860, 'en'], [360, 780, 'en'], [360, 780, 'fr']]) {
+    const tag = `markets in the guide from the build, ready screen, ${w} px, ${lang}`, slow = w === 1280, x = await ctxOf(w, h, lang, { inGuide: true, slow }), { ctx, p, errors } = x;
+    await p.goto(`http://editor.test/${lang === 'en' ? '' : '?lang=' + lang}#building`); await p.waitForSelector('#bstate h1', { timeout: 15000 }).catch(() => {});
+    if (slow) { await settle(p, 1500, { net: false });   // Google takes its time: nothing is said meanwhile, the markets are in the guide
+      ok(`${tag}: while Google is asked nothing is said (no "Adding your markets…"), "Open my guide" is there, nothing written yet`, !(await textNow(p, '#bheld')).trim() && /Open my guide/.test(await textNow(p, '#bstate .go-next')) && !writes(x).length, await textNow(p, '#bheld')); }
+    await p.waitForSelector('#bheld .hd-g', { timeout: slow ? 12000 : 8000 }).catch(() => {}); await settle(p, 400, { net: false });
+    const wr = writes(x), c = wr[0] && wr[0].b.content, lines = await p.textContent('#bheld').catch(() => '');
+    ok(`${tag}: one write takes the permanently closed market out of the live guide and sets the marker; every other market stays, once${slow ? ', the one Google did not answer in time too' : ''}; the guide stays published, no draft`,
+      wr.length === 1 && c && !ids(c).includes('hm-perm') && [...STAY, ...(slow ? ['hm-slow'] : [])].every(id => once(c, id)) && ids(c).length === ids(x.G.content).length && c.files.markets.heldDone === JID && c.files.markets.held === JID
+      && (mk0.markets || []).every(m => once(c, m.id)) && !('status' in wr[0].b) && wr[0].b.draft === null && wr[0].q.includes(`content->files->markets->>held=eq.${JID}`) && wr[0].q.includes('heldDone=is.null'), `${wr.length} write(s): ${c ? ids(c).filter(i => i.startsWith('hm-')).join() : ''}`);
+    ok(`${tag}: nothing of Google's answer is kept (no write, no job, nothing on this device)`, !/permanent|temporary|"closed"/.test(JSON.stringify(x.patches.map(z => z.b)) + await p.evaluate(() => JSON.stringify({ ...localStorage })))
+      && !x.jobsAsked.some(j => !j.startsWith('GET')), x.jobsAsked.filter(j => !j.startsWith('GET')).join());
+    ok(`${tag}: no "added" line; the closed one named as taken out, with "Google Maps" beside Google's word, and what to do`, !/added to your guide|ajouté/.test(lines) && (lang === 'en'
+      ? lines.includes('Taken out: Mercat del Molí Vell. It is permanently closed on Google Maps.') && lines.includes('If you know it still runs, add it by its name in Local markets.')
+      : /Retiré du guide\s: Mercat del Molí Vell\. Il est fermé définitivement selon Google\sMaps\./.test(lines) && /Marchés\.$/.test(lines.trim())), lines);
+    const clear = [...await heroClear(p), ...await linesClear(p, '#bheld')];
+    ok(`${tag}: the lines touch nothing (the doorway included), no word cut or broken, no sideways scroll, no page errors`, !clear.length && (await wide(p)) <= 0 && !errors.length, [...clear, ...errors].join(' | '));
+    await p.screenshot({ path: join(SHOTS, `held-in-guide-ready-${lang}-${w}.png`), fullPage: true });
+    if (w === 360 && lang === 'en') {   // the same guide again: the marker is set, so nothing is asked, written or said
+      const asked = x.asked.length, pn = x.patches.length;
+      await p.reload(); await p.waitForSelector('#bstate .go-next', { timeout: 15000 }).catch(() => {}); await settle(p, 1200);
+      ok('markets in the guide from the build, a second load with the marker set: nothing asked, nothing written, nothing said', x.asked.length === asked && x.patches.length === pn && !(await textNow(p, '#bheld')).trim(), `${x.asked.length - asked} asked, ${x.patches.length - pn} written`);
+    }
+    await ctx.close(); }
+  for (const [w, h] of [[1280, 860], [360, 780]]) {   // the editor, later, with unpublished changes
+    const tag = `markets in the guide from the build, editor with a draft, ${w} px`, x = await ctxOf(w, h, 'en', { inGuide: true, draft: true }), { ctx, p, errors } = x;
+    await p.goto('http://editor.test/?step=markets'); await ready(p); await p.waitForSelector('#cmHeld', { timeout: 8000 }).catch(() => {}); await settle(p, 400);
+    const toastAt = await textNow(p, '#toast'), wr = writes(x), b = wr[0] && wr[0].b, note = (await textNow(p, '#cmHeld')).replace(/\s+/g, ' ');
+    ok(`${tag}: one write; the closed market leaves the live guide and the draft, the others stay in both, the host's other unpublished change stays in the draft only; no status`,
+      wr.length === 1 && b.content.site.name === E.content.site.name && !ids(b.content).includes('hm-perm') && STAY.every(id => once(b.content, id)) && b.content.files.markets.heldDone === JID
+      && b.draft && b.draft.content.site.name === E.content.site.name + ' (draft)' && !ids(b.draft.content).includes('hm-perm') && STAY.every(id => once(b.draft.content, id)) && b.draft.content.files.markets.heldDone === JID && !('status' in b), wr.length + ' write(s)');
+    ok(`${tag}: a toast says it, and the note at the top of Local markets names it with "Google Maps"; no "added" line`, toastAt === 'Taken out: Mercat del Molí Vell. It is permanently closed on Google Maps.'
+      && /^Taken out: Mercat del Molí Vell\. It is permanently closed on Google Maps\. If you know it still runs, add it by its name below\.$/.test(note.trim()), `${toastAt} | ${note}`);
+    ok(`${tag}: the step's list keeps the other markets and no longer has the closed one`, await p.evaluate(() => { const t = [...document.querySelectorAll('.cm-list .cmi > summary')].map(e => e.textContent).join('|');
+      return ['Mercat de la Platja', 'Mercat de Sant Pere', 'Mercat de la Plaça Nova'].every(n => t.includes(n)) && !t.includes('Mercat del Molí Vell'); }));
+    const clear = await linesClear(p, '#cmHeld');
+    ok(`${tag}: the note touches nothing, no word cut or broken, no sideways scroll, no page errors`, !clear.length && !errors.length, [...clear, ...errors].join(' | '));
+    await p.evaluate(() => { const e = document.getElementById('cmHeld'); if (e) window.scrollBy(0, e.getBoundingClientRect().top - 110); }); await settle(p, 150);
+    await p.screenshot({ path: join(SHOTS, `held-in-guide-editor-en-${w}.png`) });
+    await ctx.close(); }
+  { const x = await ctxOf(360, 780, 'en', { inGuide: true, allOpen: true }), { ctx, p, errors } = x;   // Google calls none closed: the host sees nothing at all
+    await p.goto('http://editor.test/#building'); await p.waitForSelector('#bstate .go-next', { timeout: 15000 }).catch(() => {}); await settle(p, 2500);
+    const wr = writes(x), c = wr[0] && wr[0].b.content, said = (await textNow(p, '#bheld')).trim();
+    await p.goto('http://editor.test/?step=markets'); await ready(p); await settle(p, 1000);
+    ok('markets in the guide from the build, none closed: one write that only sets the marker, every market still there, and nothing shown on the ready screen or in the editor', wr.length === 1 && c && ids(c).length === ids(x.G.content).length && ['hm-perm', ...STAY].every(id => once(c, id)) && c.files.markets.heldDone === JID
+      && !said && !(await p.$('#cmHeld')) && writes(x).length === 1 && !errors.length, `${wr.length} write(s), said "${said}"`);
+    await ctx.close(); }
+  { const x = await ctxOf(360, 780, 'en', { inGuide: true, down: true }), { ctx, p, errors } = x;   // the write fails: the markets are in the guide, so nothing to mend in front of the host
+    await p.goto('http://editor.test/#building'); await p.waitForSelector('#bstate .go-next', { timeout: 15000 }).catch(() => {}); await settle(p, 2500);
+    const said = (await textNow(p, '#bheld')).trim(), marked = !!x.G.content.files.markets.heldDone;
+    x.down = false; await p.reload(); await p.waitForSelector('#bheld .hd-g', { timeout: 10000 }).catch(() => {}); await settle(p, 300);
+    ok('markets in the guide from the build, the write fails: nothing marked, nothing said, no Try again; the next load does it', !said && !marked && !ids(x.G.content).includes('hm-perm') && x.G.content.files.markets.heldDone === JID && /Taken out: Mercat del Molí Vell/.test(await textNow(p, '#bheld')) && !errors.length, `said "${said}"`);
     await ctx.close(); }
   // ---- No held job: nothing asked, nothing written, nothing shown ----
   { const x = await ctxOf(360, 780, 'en', { none: true }), { ctx, p, errors } = x;

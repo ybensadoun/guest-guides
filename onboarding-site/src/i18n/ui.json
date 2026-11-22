@@ -8269,6 +8269,16 @@
 "es": "No añadidos: {x}. Están cerrados permanentemente según Google Maps.",
 "fr": "Non ajoutés : {x}. Ils sont fermés définitivement selon Google Maps."
 },
+"Taken out: {x}. It is permanently closed on Google Maps.": {
+"ca": "Tret de la guia: {x}. Està tancat permanentment segons Google Maps.",
+"es": "Quitado de la guía: {x}. Está cerrado permanentemente según Google Maps.",
+"fr": "Retiré du guide : {x}. Il est fermé définitivement selon Google Maps."
+},
+"Taken out: {x}. They are permanently closed on Google Maps.": {
+"ca": "Trets de la guia: {x}. Estan tancats permanentment segons Google Maps.",
+"es": "Quitados de la guía: {x}. Están cerrados permanentemente según Google Maps.",
+"fr": "Retirés du guide : {x}. Ils sont fermés définitivement selon Google Maps."
+},
 "If you know it still runs, add it by its name in Local markets.": {
 "ca": "Si saps que encara se celebra, afegeix-lo pel seu nom a Mercats.",
 "es": "Si sabes que todavía se celebra, añádelo por su nombre en Mercados.",

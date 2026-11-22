@@ -129,13 +129,13 @@ export function eventsInReach(items, radius, { city = false } = {}) {
   const kept = list.filter(e => evFits(e, R));
   return { items: kept, dropped: list.length - kept.length };
 }
-// The markets a build holds back (Yohann, 13 Nov 2026): for an account billed in Europe, Google's "permanently closed" may
-// only be shown to a person looking at the guide, never used by a job. So the build keeps out of the guide every market
-// that has a Google id (gid) and leaves them in a find-markets job of its own (result.held); the host's maker asks Google
-// about each one live, by itself, and puts in the guide those that may go in (onboarding-site/src/editor.js, cmHeld).
-// Markets with no Google id stay in the guide as before. file: the built content/markets.json. Returns { file, held,
-// categories }: the file without the held markets (its categories cut to the markets it keeps, as reachCut does), the held
-// markets as they were, and their categories. Nothing held: the same file.
+// The markets a build lists for the host's maker (Yohann, 13 Nov 2026; since 22 Nov 2026 they stay in the guide): for an
+// account billed in Europe, Google's "permanently closed" may only be shown to a person looking at the guide, never used
+// by a job. So the build lists every market that has a Google id (gid) in a find-markets job of its own (result.held), and
+// the host's maker asks Google about each one live, by itself, and takes a permanently closed one out of the guide
+// (onboarding-site/src/editor.js, cmHeld). file: the built content/markets.json. Returns { file, held, categories }: the
+// file without the listed markets (what a guide kept from 13 to 22 Nov, while they waited outside it; the build no longer
+// uses it), the listed markets as they were, and their categories. Nothing listed: the same file.
 export function holdMarkets(file) {
   const o = file && typeof file === 'object' ? file : {}, list = Array.isArray(o.markets) ? o.markets : [];
   const held = list.filter(m => m && m.gid), markets = list.filter(m => !(m && m.gid));
@@ -144,3 +144,11 @@ export function holdMarkets(file) {
   return { file: { ...o, markets, ...(Array.isArray(o.categories) ? { categories: of(markets) } : {}) }, held,
     categories: [...new Set([...of(held), ...held.map(m => m.category).filter(Boolean)])] };
 }
+// What the build does with them since 22 Nov 2026: listed(file) is the job's result for the host's maker (null when no
+// market has a Google id), inGuide saying that the markets it lists are in the guide, so the maker only ever takes one
+// out; named(file, jid) is the guide's markets file as it is published: every market, and the job's id.
+export function listed(file) {
+  const h = holdMarkets(file);
+  return h.held.length ? { kind: 'find-markets', held: true, inGuide: true, items: h.held, categories: h.categories } : null;
+}
+export const named = (file, jid) => ({ ...file, held: jid });
