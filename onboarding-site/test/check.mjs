@@ -236,7 +236,7 @@ function groupList() {
   return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'research-deck': gResearchDeck, 'deck-steady': gDeckSteady, 'build-ready': gBuildReady, 'web-address': gWebAddress,
     'houses': gHouses, 'builder': gBuilder, 'rooms-offers': gRoomsOffers, 'nearby': gNearby, 'wow': gWow, 'editor': gEditor, 'editor-names': gEditorNames,
     'place-card': gPlaceCard, 'place-season': gPlaceSeason, 'still-open': gStillOpen, 'place-facts': gPlaceFacts, 'market-event': gMarketEvent,
-    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea, 'home-page': gHomePage, 'trains': gTrains, 'taxis': gTaxis, 'stops': gStops };
+    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea, 'home-page': gHomePage, 'trains': gTrains, 'taxis': gTaxis, 'stops': gStops, 'rubbish': gRubbish };
 }
 
   // Inside a navy start card (sel): nothing touches anything (the eyebrow, title and text by their words, the panel, the moon
@@ -3597,6 +3597,57 @@ async function gHeldMarkets() {
     const ready1 = !(await textNow(p, '#bheld')).trim();
     await p.goto('http://editor.test/?step=markets'); await ready(p); await settle(p, 1200);
     ok('held markets, none held: nothing asked, nothing written, nothing shown on the ready screen or in the editor', ready1 && !x.asked.some(i => i.startsWith('g-hm-')) && !writes(x).length && !(await p.$('#cmHeld')) && !x.jobsAsked.some(j => j.includes('id=eq.' + JID)) && !errors.length, `${x.asked.join() || 'nothing'} asked, ${writes(x).length} written`);
+    await ctx.close(); }
+}
+// Rubbish in the editor (22 Nov 2026): a guide built without a rubbish page (the question skipped in the builder) has the
+// step all the same, with the builder's one question; the first answer makes the file, its section and its switch.
+async function gRubbish() {
+  const RB_DIR = join(SHOTS, 'rubbish'); mkdirSync(RB_DIR, { recursive: true });
+  const strip = c => { if (!c) return c; const x = JSON.parse(JSON.stringify(c)); delete (x.files || {}).garbage; delete (x.files || {}).home;
+    if ((x.files || {}).sections) x.files.sections.sections = (x.files.sections.sections || []).filter(r => r.id !== 'garbage');
+    x.site = { ...x.site, modules: { ...(x.site || {}).modules, garbage: false } }; return x; };
+  const BARE = { ...E, content: strip(E.content), draft: E.draft ? { ...E.draft, content: strip(E.draft.content) } : E.draft };
+  const lastSave = saved => { for (const b of saved.slice().reverse()) { try { const j = JSON.parse(b), c = (j.draft || {}).content || j.content; if (c && c.files) return c; } catch (e) { /* not a save */ } } return null; };
+  const rail = p => p.evaluate(() => { const out = { need: [], all: [] }; let need = false; for (const e of document.querySelectorAll('.rail .sg, .rail a.si')) { if (e.matches('.sg')) { need = /Needs you/.test(e.textContent); continue; } const n = e.querySelector('.st').textContent; out.all.push(n); if (need) out.need.push(n); } return out; });
+  for (const [w, h] of [[1280, 860], [360, 780]]) {
+    const { ctx, p, errors } = await open(browser, BARE, w, h), tag = `rubbish, no page yet, ${w}`;
+    const saved = []; await ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
+    await p.goto('http://editor.test/#sections'); await ready(p); await settle(p, 400);
+    ok(`${tag}: Guide sections offers no Rubbish switch while the guide has none (nothing behind it)`, !(await p.$('[data-cmod="garbage"]')));
+    if (w === 1280) { const r = await rail(p); ok(`${tag}: the Rubbish step is in the list all the same, under "Needs you"`, r.all.includes('Rubbish') && r.need.includes('Rubbish'), r.need.join(', ')); }
+    await go(p, '#rubbish'); await settle(p, 400);
+    const empty = await p.evaluate(() => ({ modes: [...document.querySelectorAll('[data-rubmode]')].map(e => e.textContent.trim()), fields: document.querySelectorAll('.card input, .card textarea, .card select').length - document.querySelectorAll('.card .cm-langbar select, .card [data-edlang]').length,
+      note: (document.querySelector('.card .note') || {}).textContent || '', pill: (document.getElementById('cmPill') || {}).textContent, wide: document.documentElement.scrollWidth > innerWidth }));
+    ok(`${tag}: the step asks the builder's one question, three answers, and says the page is not in the guide yet`, cmpSame(empty.modes, ['Shared containers in the street', 'Bins collected at the house', 'A mix of both']) && /no Rubbish page yet/.test(empty.note) && empty.pill === 'Needs you', JSON.stringify(empty));
+    ok(`${tag}: nothing wider than the screen`, !empty.wide);
+    await p.screenshot({ path: join(RB_DIR, `empty-${w}.png`) });
+    await p.click('[data-rubmode="Bins collected at the house"]'); await settle(p, 2500);
+    const c = lastSave(saved) || {}, g = (c.files || {}).garbage || {}, ids = (((c.files || {}).sections || {}).sections || []).map(x => x.id), langs = (c.site || {}).languages || [];
+    ok(`${tag}: the answer makes the rubbish file: the five kinds with no day yet, the house's four steps, in every language of the guide`, g.mode === 'Bins collected at the house' && cmpSame((g.fractions || []).map(f => f.id + ':' + f.days.length), ['organic:0', 'packaging:0', 'paper:0', 'glass:0', 'rest:0'])
+      && (g.steps || []).length === 4 && langs.length > 1 && langs.every(l => g.steps[0][l] && g.missed[l] && g.fractions[1].name[l]) && langs.filter(l => l !== 'en').every(l => g.steps[1][l] !== g.steps[1].en), JSON.stringify({ mode: g.mode, langs, step: g.steps && g.steps[1] }).slice(0, 400));
+    // The same file as the generator writes for that answer with no day ticked: the default texts themselves (garbage-defaults.json).
+    const GD = JSON.parse(readFileSync(join(ROOT, 'engine/scripts/garbage-defaults.json'), 'utf8')), pick = o => Object.fromEntries(langs.map(l => [l, o[l] || o.en]));
+    ok(`${tag}: its texts are the generator's defaults, word for word (the house's steps and missed day, each kind's name, the street wording for a kind with no day)`, cmpSame(g.steps, GD.steps_home.map(pick)) && cmpSame(g.missed, pick(GD.missed_home))
+      && (g.fractions || []).every(f => cmpSame(f.name, pick(GD.names[f.id])) && cmpSame(f.examples, pick(GD.examples_street[f.id] || GD.examples[f.id])) && f.bin === 'street') && g.collectionTime === '' && cmpSame(g.bins, {}) && cmpSame(g.containers, []));
+    ok(`${tag}: and its section, right before the house guide, switched on`, ids.includes('garbage') && ids.indexOf('garbage') === ids.indexOf('message') - 1 && ((c.site || {}).modules || {}).garbage === true, ids.join(', '));
+    const after = await p.evaluate(() => ({ modes: document.querySelectorAll('[data-rubmode]').length, cards: document.querySelectorAll('details.cmi[data-open^="files/garbage/fractions/"]').length, note: (document.querySelector('.card .note') || {}).textContent || '', wide: document.documentElement.scrollWidth > innerWidth }));
+    ok(`${tag}: the step is now the usual one (five kinds to open), with one line asking for the days`, after.modes === 0 && after.cards === 5 && /Tick the days each bin is collected/.test(after.note) && !after.wide, JSON.stringify(after));
+    await p.screenshot({ path: join(RB_DIR, `answered-${w}.png`) });
+    await p.$eval('details.cmi[data-open="files/garbage/fractions/0"] summary', e => { e.scrollIntoView({ block: 'center' }); e.click(); }); await settle(p, 300);
+    await p.click('details.cmi[data-open="files/garbage/fractions/0"] [data-daytog][data-d="mon"]'); await settle(p, 2500);
+    const c2 = lastSave(saved) || {}, noteGone = await p.evaluate(() => ![...document.querySelectorAll('.card .note')].some(e => /Tick the days each bin is collected/.test(e.textContent)));
+    ok(`${tag}: a day ticked is kept, and the line asking for days goes`, cmpSame((((c2.files || {}).garbage || {}).fractions || [{}])[0].days, ['mon']) && noteGone);
+    if (w === 1280) { const r = await rail(p); ok(`${tag}: Rubbish no longer needs the host`, r.all.includes('Rubbish') && !r.need.includes('Rubbish'), r.need.join(', ')); }
+    ok(`${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // A guide that has its rubbish page: the step as it was, no question, not under "Needs you".
+  { const { ctx, p, errors } = await open(browser, E, 1280, 860);
+    await p.goto('http://editor.test/#rubbish'); await ready(p); await settle(p, 400);
+    const st = await p.evaluate(() => ({ modes: document.querySelectorAll('[data-rubmode]').length, cards: document.querySelectorAll('details.cmi[data-open^="files/garbage/fractions/"]').length, pill: (document.getElementById('cmPill') || {}).textContent, note: [...document.querySelectorAll('.card .note')].some(e => /Tick the days|no Rubbish page yet/.test(e.textContent)) }));
+    const r = await rail(p);
+    ok('rubbish, a guide with its page: the step is as it was (its kinds, no question, no note, not under "Needs you")', st.modes === 0 && st.cards > 0 && !st.note && st.pill !== 'Needs you' && !r.need.includes('Rubbish'), JSON.stringify(st));
+    ok('rubbish, a guide with its page: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
 }
 async function gNightlifeColours() {

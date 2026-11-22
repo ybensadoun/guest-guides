@@ -62,7 +62,8 @@ const CSTEPS = [
   { id: 'wifi', group: 'house', title: 'Wi-Fi', sub: 'Name and password', icon: 'wifi', tc: 'var(--pine)', ti: '#fff', sh: 'var(--tomato)', shape: 'half', lang: true,
     lead: 'Guests join with one tap: the guide makes the QR code from the name and password.',
     paths: ['content/private/wifi'], body: c => cmWifi(c) },
-  { id: 'rubbish', group: 'practical', sec: 'garbage', when: c => !!(c.files || {}).garbage, title: 'Rubbish', sub: 'Bins and days', icon: 'bin', tc: 'var(--sky)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
+  // Always in the editor (22 Nov 2026): a host who skipped the question in the builder has no rubbish file, and answers it here.
+  { id: 'rubbish', group: 'practical', sec: 'garbage', when: c => !!(c.files || {}).garbage, absent: c => !(c.files || {}).garbage, title: 'Rubbish', sub: c => (c.files || {}).garbage ? 'Bins and days' : 'Not in your guide yet', icon: 'bin', tc: 'var(--sky)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
     lead: 'Which bin goes out on which evening, the containers guests can use, and how to sort.',
     paths: ['content/files/garbage'], body: c => cmRubbish(c) },
   { id: 'contacts', group: 'practical', sec: 'emergency', when: c => !!(c.files || {}).emergency, title: 'Contacts', sub: 'Emergency and services', icon: 'phone', tc: 'var(--tomato)', ti: '#fff', sh: 'var(--ink)', shape: 'tri', lang: true,
@@ -93,7 +94,9 @@ const CSTEPS = [
     lead: 'Festivals, fairs, concerts and local traditions, with their dates. Guests see the ones during their stay.',
     paths: ['content/files/events'], body: () => cmPlaces('files/events/items', 'event') }
 ];
-const cmSteps = () => CSTEPS.filter(m => (!m.sec || cmOnSec(m.sec)) && (!m.when || m.when(edC())));
+// A step whose section does not exist yet in this guide (its `absent`: the host skipped it in the builder) is listed all the
+// same, whatever its switch says, so that it can be answered here; it has no page for the phone to show yet (cmScreen).
+const cmSteps = () => CSTEPS.filter(m => (m.absent && m.absent(edC())) || ((!m.sec || cmOnSec(m.sec)) && (!m.when || m.when(edC()))));
 const cmSub = m => typeof m.sub === 'function' ? m.sub(edC()) : m.sub;
 
 /* --- Fields, in the onboarding's own markup (.f, .chips, .btn) --- */
@@ -936,12 +939,35 @@ function cmWifi(c) {
     <button class="btn small cm-add" type="button" data-addnet>+ Add a network</button>`;
 }
 const ED_BINS = [['organic', 'Organic'], ['packaging', 'Packaging'], ['paper', 'Paper'], ['glass', 'Glass'], ['rest', 'General waste']];
+// How rubbish is collected, as the builder asks it (src.html, rubbishMode). The words are the answer's own, kept as they are.
+const RUB_MODES = ['Shared containers in the street', 'Bins collected at the house', 'A mix of both'];
+const rubAtHouse = m => /house|mix/i.test(m || '');
+// The file, its section row (first among the house's sections, as the generator puts it) and its switch, made with the
+// host's first answer here, for a guide built without one (the question skipped in the builder). The file is the one the
+// generator writes for that answer with no day ticked (engine/scripts/generate-site.py, the rubbish block), from the same
+// default texts (engine/scripts/garbage-defaults.json, pasted by build.py as RUB_DEFAULTS), in the guide's languages.
+function cmRubEnsure(mode) {
+  const f = edF(); if (f.garbage || !RUB_MODES.includes(mode)) return f.garbage;
+  const D = RUB_DEFAULTS, pick = o => Object.fromEntries(edLangs().map(l => [l, o[l] || o.en])), cont = /container|mix/i.test(mode) && !rubAtHouse(mode);
+  f.garbage = { _doc: 'Made in the editor from what the host said about rubbish. Not researched. Bins have no names (a colour is not known), so the guide names only what goes in each.',
+    mode, collectionTime: '', bins: {},
+    fractions: ED_BINS.map(([id]) => ({ id, bin: 'street', days: [], name: pick(D.names[id]), examples: pick(D.examples_street[id] || D.examples[id]) })),
+    steps: (cont ? D.steps_containers : D.steps_home).map(pick), missed: pick(cont ? D.missed_containers : D.missed_home), containers: [], items: [] };
+  const ss = (f.sections = f.sections || { sections: [] }).sections = f.sections.sections || [];
+  if (!ss.some(x => x.id === 'garbage')) { const at = ss.findIndex(x => x.id === 'message'), hs = ss.findIndex(x => x.id === 'house'); ss.splice(at >= 0 ? at : hs + 1, 0, { id: 'garbage', group: 'house', kind: 'garbage', labelKey: 'garbage', status: 'live', color: 'glass', mapLabelKey: 'glassChip' }); }
+  const site = edC().site = edC().site || {}; site.modules = { ...(site.modules || {}), garbage: true };
+  return f.garbage;
+}
+// Bins collected at the house, and no day ticked yet: the guide would tell guests to use the street containers.
+const rubNoDays = g => !!g && rubAtHouse(g.mode) && !(g.fractions || []).some(x => (x.days || []).length);
 function cmRubbish(c) {
+  if (!(c.files || {}).garbage) return `<div class="note"><div>Your guide has no Rubbish page yet. Only you know how it works at the house: answer this one question and the page is added, with its tile on the home page. Guests see it once you publish.</div></div>
+    <div class="f full"><span class="lab" id="rubModeLab">How is rubbish collected where you are?</span><div class="chips" role="group" aria-labelledby="rubModeLab">${RUB_MODES.map(m => `<button class="chip" type="button" data-rubmode="${esc(m)}" aria-pressed="false"><span>${esc(m)}</span></button>`).join('')}</div></div>`;
   const g = c.files.garbage, G = 'files/garbage', bins = ['street', ...Object.keys(g.bins || {}).filter(b => b !== 'street')];
   // "Goes in" only where the guide names its bins: a guide the maker built names none, and the list then offered a
   // bin collected at the house nothing but "A container in the street" (engine/src/modules/garbage/README.md).
   const named = Object.values(g.bins || {}).some(b => edShown(b));
-  return `<div class="grid">${cf('Bins out by (time on collection morning)', G + '/collectionTime', g.collectionTime || '', { type: 'time', half: true, hint: 'Guests are told to put each bin out the evening before.' })}</div>
+  return `${rubNoDays(g) ? '<div class="note"><div>Tick the days each bin is collected, below. Until then, the guide tells guests to take everything to the street containers.</div></div>' : ''}<div class="grid">${cf('Bins out by (time on collection morning)', G + '/collectionTime', g.collectionTime || '', { type: 'time', half: true, hint: 'Guests are told to put each bin out the evening before.' })}</div>
     ${(g.fractions || []).length ? `<h3 class="cm-h">What goes where</h3><div class="cm-list">${g.fractions.map((f, i) => { const P = `${G}/fractions/${i}`;
       return cCard(P, edShown(f.name) || f.id, (f.days || []).length ? (f.days || []).map(d => (ED_DAYS.find(x => x[0] === d) || [0, d])[1]).join(' ') : 'No collection day', `<div class="grid">${cf('Name', P + '/name', f.name, { i18n: true, half: named })}
         ${named ? `<div class="f"><label for="${cmId(P + '/bin')}">Goes in</label><select id="${cmId(P + '/bin')}" data-p="${P}/bin" data-t="str">${bins.map(b => `<option value="${esc(b)}"${f.bin === b ? ' selected' : ''}>${esc(b === 'street' ? 'A container in the street' : edShown((g.bins || {})[b]) || b)}</option>`).join('')}</select></div>` : ''}
@@ -1919,7 +1945,7 @@ const cmIsPage = r => r === 'publish' || cmSteps().some(m => m.id === r);
 /* The phone next to every step (from 1240 px wide), as in the builder. Here it is the guide itself: the shared viewer with
    the changes not published yet (/g/<slug>?preview), on the screen the step changes; it reloads after each saved change,
    where it was. Yohann, 29 Oct 2026: "we should always see the preview". */
-const cmScreen = r => { const m = cmSteps().find(x => x.id === r); return !m || !m.sec || m.sec === 'quick' ? 'home' : m.sec === 'markets' ? 'markets' : 's/' + m.sec; };
+const cmScreen = r => { const m = cmSteps().find(x => x.id === r); return !m || !m.sec || m.sec === 'quick' || (m.absent && m.absent(edC())) ? 'home' : m.sec === 'markets' ? 'markets' : 's/' + m.sec; };
 const cmPhoneHTML = r => `<aside class="side-phone" aria-label="Your guide, as guests will see it"><div class="phone"><div class="phone-scr" id="cmPhone" data-screen="${esc(cmScreen(r))}"><p class="phone-msg" id="cmPhoneMsg" hidden></p></div></div><p>Your guide with your changes, as guests will see it</p></aside>`;
 function cmPhoneOn() {
   const s = document.getElementById('cmPhone'); if (!s) return;
@@ -1949,9 +1975,10 @@ function cmStart() { let id = ''; try { id = (JSON.parse(localStorage.getItem(CM
 function cmRemember(r) { try { const o = JSON.parse(localStorage.getItem(CM_LAST) || '{}') || {}; if (o[CM.g.id] !== r) { o[CM.g.id] = r; localStorage.setItem(CM_LAST, JSON.stringify(o)); } } catch (e) {} }
 // Rail and bottom bar (nav.js asks for these while CM.on)
 // What only the host can tell us and the guide still lacks: listed first, as "Needs you" (docs/plan-fast-builder.md).
-// For a guide that exists this is the Wi-Fi: rubbish and contacts pages only exist once they are filled.
+// For a guide that exists this is the Wi-Fi, and Rubbish when the host has not said how it is collected (22 Nov 2026).
 // A step with an entry that has words but no name needs the host too: Publish waits for it (cmNameless).
-const CM_NEEDS = { wifi: c => { const w = (c.private || {}).wifi || {}; return !w.password || !(w.networks || []).some(n => n.ssid); } };
+const CM_NEEDS = { wifi: c => { const w = (c.private || {}).wifi || {}; return !w.password || !(w.networks || []).some(n => n.ssid); } ,
+  rubbish: c => !(c.files || {}).garbage || rubNoDays(c.files.garbage) };   // not answered yet, or bins at the house with no day ticked
 for (const id of ['todo', 'restaurants', 'nightlife', 'markets', 'events', 'tiles', 'contacts', 'transport', 'housepage']) CM_NEEDS[id] = c => cmNameless(c, id).length > 0 || cmUnnamedOf(c, `files/${id}/items`).length > 0 || cmLooks(c, id).length > 0;   // places waiting for a name (cmUnnamed) and places asked "Is it still open?" (lkHTML) too, without stopping Publish: guests do not see the first and still see the second
 // The places of a step that the monthly check asks about and the host has not answered yet.
 const CM_LOOK = { todo: ['todo', 'items'], restaurants: ['restaurants', 'items'], nightlife: ['nightlife', 'items'], markets: ['markets', 'markets'] };
@@ -2372,6 +2399,7 @@ document.addEventListener('click', e => {
   if (d.cfadd) return cmFindAccept(t, t.closest('[data-fpath]').dataset.fpath, d.cfadd);
   if (d.cfskip) { const f = CM.find[FIND_OF[t.closest('[data-fpath]').dataset.fpath][0]]; findMark(f.id, [d.cfskip]); return cmFindRefresh(); }
   if (d.cfstop !== undefined) { const path = t.closest('[data-fpath]').dataset.fpath, kind = FIND_OF[path][0]; findMark(CM.find[kind].id, cmFindItems(kind, path).map(x => x.id)); return cmFindRefresh(); }
+  if (d.rubmode) { cmRubEnsure(d.rubmode); return done(); }
   if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
   if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
   if (d.amput) { cmAmPut(d.amput); return done(); }

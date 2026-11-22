@@ -131,6 +131,11 @@ for _need in ("import { WORLDS } from './worlds.js';\n",'export function swatche
     assert _need in _psrc,'engine/src/picture-world.js: '+_need.strip()+' not found'
 assert not _re.search(r'(?m)^import ',_psrc.replace("import { WORLDS } from './worlds.js';\n",'')),'engine/src/picture-world.js: an import the maker does not paste'
 assert not _re.search(r'(?m)^import ',_wsrc),'engine/src/worlds.js: an import the maker does not paste'
+# Rubbish's default texts (engine/scripts/garbage-defaults.json), for the editor's first answer in a guide built without a
+# rubbish page (editor.js cmRubEnsure): the file it makes is the generator's, from the same words, never retyped.
+_gd=_jsn.load(open(__import__('os').path.join(_ES,'..','scripts','garbage-defaults.json'),encoding='utf-8'))
+for _need in ('names','examples','examples_street','steps_home','steps_containers','missed_home','missed_containers'): assert _need in _gd,'engine/scripts/garbage-defaults.json: '+_need+' not found'
+ENG_DATA+='const RUB_DEFAULTS = '+_jsn.dumps({k: v for k, v in _gd.items() if not k.startswith('_')},ensure_ascii=False,separators=(',',':'))+';\n'
 ENG_DATA+=('const WK = (() => {\n'
   +'const W = (() => {\n'+_re.sub(r'(?m)^export ','',_wsrc)+'\nreturn { WORLDS, worldTokens, worldOf };\n})();\n'
   +'const P = (() => {\nconst { WORLDS } = W;\n'+_re.sub(r'(?m)^export ','',_psrc.replace("import { WORLDS } from './worlds.js';\n",''))+'\nreturn { swatches, worldFromPicture };\n})();\n'

@@ -251,6 +251,15 @@ is Things to do's own is said here.
 | 8.5 | "+ Add containers", say where, tick what they take | A new card, open; in the preview "Where the containers are" shows it with its kinds |
 | 8.6 | The same on a phone (360 px wide) | Nothing overlaps; the day chips wrap cleanly |
 
+### In the editor, on a guide built without rubbish (the question skipped in the builder)
+| # | Do | Expect |
+|---|---|---|
+| 8.7 | Look at the list of steps | Rubbish is there, under "Needs you" |
+| 8.8 | Open Rubbish | One line saying the guide has no Rubbish page yet, and one question with three answers. Guide sections shows no Rubbish switch yet |
+| 8.9 | Choose "Bins collected at the house" | The usual step opens: the five kinds with "No collection day", the steps, a missed day; one line asks to tick the days |
+| 8.10a | Tick a day for a bin | The line goes and Rubbish leaves "Needs you"; Guide sections now has its switch, on |
+| 8.10b | Preview, then Publish changes | The Rubbish tile is first among the house's tiles on Home, and its page opens |
+
 ### In the builder, with a new link (the test house)
 | # | Do | Expect |
 |---|---|---|

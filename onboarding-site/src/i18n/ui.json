@@ -1019,6 +1019,21 @@
 "es": "Cubos y días",
 "fr": "Poubelles et jours"
 },
+"Not in your guide yet": {
+"ca": "Encara no és a la guia",
+"es": "Aún no está en la guía",
+"fr": "Pas encore dans le guide"
+},
+"Your guide has no Rubbish page yet. Only you know how it works at the house: answer this one question and the page is added, with its tile on the home page. Guests see it once you publish.": {
+"ca": "La teva guia encara no té pàgina d’Escombraries. Només tu saps com funciona a la casa: respon aquesta pregunta i s’hi afegeix la pàgina, amb el seu botó a la pàgina d’inici. Els hostes la veuen quan publiques.",
+"es": "Tu guía aún no tiene página de Basura. Solo tú sabes cómo funciona en la casa: responde a esta pregunta y se añade la página, con su botón en la página de inicio. Los huéspedes la ven cuando publicas.",
+"fr": "Votre guide n’a pas encore de page Déchets. Vous seul savez comment cela fonctionne à la maison : répondez à cette question et la page est ajoutée, avec sa vignette sur la page d’accueil. Les voyageurs la voient quand vous publiez."
+},
+"Tick the days each bin is collected, below. Until then, the guide tells guests to take everything to the street containers.": {
+"ca": "Marca a sota els dies de recollida de cada cubell. Fins llavors, la guia diu als hostes que ho portin tot als contenidors del carrer.",
+"es": "Marca abajo los días de recogida de cada cubo. Hasta entonces, la guía dice a los huéspedes que lo lleven todo a los contenedores de la calle.",
+"fr": "Cochez ci-dessous les jours de collecte de chaque bac. D’ici là, le guide dit aux voyageurs de tout porter aux conteneurs de la rue."
+},
 "Wi-Fi": {
 "ca": "Wifi",
 "es": "Wifi",
