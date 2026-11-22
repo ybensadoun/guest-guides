@@ -1,0 +1,35 @@
+{
+ "_doc": "What every guide's Emergencies page holds with no research at all (README.md beside this file, rule 10): the European emergency number, real and free everywhere the maker builds, and the Health group, empty, for the host's hospital and pharmacy (a group with no contact is not shown to guests). One file, read by the generator (engine/scripts/generate-site.py) and pasted into the maker (onboarding-site/src/build.py) for a guide that has no contacts yet. Never a host's own number.",
+ "groups": [
+  {
+   "id": "urgent",
+   "items": [
+    {
+     "id": "112",
+     "phone": "112",
+     "always": true,
+     "name": {
+      "en": "Emergencies",
+      "es": "Emergencias",
+      "fr": "Urgences",
+      "ca": "Emergències",
+      "de": "Notruf",
+      "nl": "Noodnummer"
+     },
+     "what": {
+      "en": "Ambulance, police or fire, for anything serious or dangerous. Free from any phone.",
+      "es": "Ambulancia, policía o bomberos, para cualquier cosa grave o peligrosa. Gratis desde cualquier teléfono.",
+      "fr": "Ambulance, police ou pompiers, pour tout ce qui est grave ou dangereux. Gratuit depuis n'importe quel téléphone.",
+      "ca": "Ambulància, policia o bombers, per a qualsevol cosa greu o perillosa. Gratuït des de qualsevol telèfon.",
+      "de": "Rettungsdienst, Polizei oder Feuerwehr bei allem, was ernst oder gefährlich ist. Kostenlos von jedem Telefon.",
+      "nl": "Ambulance, politie of brandweer, voor alles wat ernstig of gevaarlijk is. Gratis vanaf elke telefoon."
+     }
+    }
+   ]
+  },
+  {
+   "id": "health",
+   "items": []
+  }
+ ]
+}

@@ -67,7 +67,7 @@ const CSTEPS = [
   { id: 'rubbish', group: 'practical', sec: 'garbage', when: c => !!(c.files || {}).garbage, absent: c => !(c.files || {}).garbage, title: 'Rubbish', sub: c => (c.files || {}).garbage ? 'Bins and days' : 'Not in your guide yet', icon: 'bin', tc: 'var(--sky)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
     lead: 'Which bin goes out on which evening, the containers guests can use, and how to sort.',
     paths: ['content/files/garbage'], body: c => cmRubbish(c) },
-  { id: 'contacts', group: 'practical', sec: 'emergency', when: c => !!(c.files || {}).emergency, title: 'Contacts', sub: 'Emergency and services', icon: 'phone', tc: 'var(--tomato)', ti: '#fff', sh: 'var(--ink)', shape: 'tri', lang: true,
+  { id: 'contacts', group: 'practical', sec: 'emergency', title: 'Contacts', sub: 'Emergency and services', icon: 'phone', tc: 'var(--tomato)', ti: '#fff', sh: 'var(--ink)', shape: 'tri', lang: true,
     lead: 'Numbers and places guests may need: emergencies, health, police, town services.',
     paths: ['content/files/emergency'], body: c => cmContacts(c) },
   { id: 'transport', group: 'practical', sec: 'transport', title: 'Getting around', sub: c => cmTrSub(c), icon: 'train', tc: 'var(--pine)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
@@ -585,6 +585,8 @@ function cmPin(p) {
 // page filters by it and the content check refuses one without): one neutral default per list, never the first market's.
 const ED_NEW_DEFAULT = { 'files/markets/markets': { category: 'street' } };
 function edNewItem(arr, path) {
+  // A contact: its own fields, whatever the first of its group holds (112 has no address) and in a group still empty.
+  if (/^files\/emergency\/groups\/\d+\/items$/.test(path || '')) { const e = () => Object.fromEntries(edLangs().map(l => [l, ''])); return { id: 'custom-' + Date.now().toString(36), name: e(), what: e(), phone: '', address: '', web: '', schedule: [] }; }
   const clone = arr && arr[0] ? cmClone(arr[0]) : { name: { en: '' }, description: { en: '' }, lat: 0, lng: 0 };
   const h = edF().house || {};
   const clear = o => { for (const k of Object.keys(o)) { const x = o[k]; if (['icon', 'group', 'tone', 'category', 'type', 'wide'].includes(k) && !edIs18(x)) { delete o[k]; continue; } if (edIs18(x)) o[k] = Object.fromEntries(Object.keys(x).map(l => [l, ''])); else if (typeof x === 'string') o[k] = ''; else if (Array.isArray(x)) o[k] = []; else if (typeof x === 'number' && k !== 'lat' && k !== 'lng') o[k] = 0; else if (typeof x === 'boolean') delete o[k]; } return o; };   // switches too: a new event is not "added automatically" because the first one was
@@ -985,10 +987,23 @@ function cmRubbish(c) {
     ${(g.steps || []).length ? `<h3 class="cm-h">How to sort</h3>${cLines(G + '/steps', g.steps, 'Add a step')}` : ''}
     ${g.missed || g.deixalleria ? `<div class="grid">${g.missed ? cf('If a collection is missed', G + '/missed', g.missed, { long: true }) : ''}${g.deixalleria ? cf('Recycling centre', G + '/deixalleria', g.deixalleria, { long: true }) : ''}</div>` : ''}`;
 }
+// A guide with no contacts yet (its research found none, or the page was switched off) still has this step: Emergencies
+// is never left empty or "Coming soon" (engine/src/modules/contacts/README.md, rule 10). One button brings what needs no
+// search, the module's own minimum (CONTACTS_MIN, pasted from engine/src/modules/contacts/minimum.json by build.py: 112,
+// and the Health group for the hospital and the pharmacy), in the guide's languages, and puts the page live.
+function cmContactsEnsure() {
+  const f = edF(), ls = edLangs(), own = x => Array.isArray(x) ? x.map(own) : !x || typeof x !== 'object' ? x : edIs18(x) ? Object.fromEntries(ls.map(l => [l, x[l] || x.en || ''])) : Object.fromEntries(Object.entries(x).map(([k, v]) => [k, own(v)]));
+  if (!((f.emergency || {}).groups || []).length) f.emergency = { ...(f.emergency || {}), groups: own(cmClone(CONTACTS_MIN.groups)) };
+  const ss = (f.sections = f.sections || { sections: [] }).sections = f.sections.sections || [], row = ss.find(x => x.id === 'emergency');
+  if (row) row.status = 'live';
+  else { const at = Math.max(ss.findIndex(x => x.id === 'garbage'), ss.findIndex(x => x.id === 'message')); ss.splice(at < 0 ? ss.length : at + 1, 0, { id: 'emergency', group: 'house', kind: 'contacts', labelKey: 'emergency', status: 'live' }); }
+  const site = edC().site = edC().site || {}; site.modules = { ...(site.modules || {}), emergency: true };
+}
 function cmContacts(c) {
   const groups = ((c.files || {}).emergency || {}).groups || [], title = { urgent: 'Urgent', health: 'Health', police: 'Police and roads', town: 'Town and services' };
+  if (!groups.length) return '<div class="note"><div>This guide has no contacts yet.</div></div><div><button class="btn small primary cm-add" type="button" data-cmcontacts="1">+ Add the emergency number (112)</button></div>';
   return groups.map((g, gi) => `<h3 class="cm-h">${esc(title[g.id] || g.id)}</h3><div class="cm-list">${(g.items || []).map((it, i) => cItem(`files/emergency/groups/${gi}/items`, it, i, 'contact')).join('')}</div>
-    <button class="btn small cm-add" type="button" data-addit="files/emergency/groups/${gi}/items">+ Add a contact</button>`).join('') || '<div class="note"><div>This guide has no contacts yet.</div></div>';
+    <button class="btn small cm-add" type="button" data-addit="files/emergency/groups/${gi}/items">+ Add a contact</button>`).join('');
 }
 // A card of the host's own words on the home page (Home page, "Another place", board.js).
 // Taxis, stations and bus stops are in Getting around; a place from a list is pinned with cmPin.
@@ -2433,6 +2448,7 @@ document.addEventListener('click', e => {
   if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
   if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
   if (d.amput) { cmAmPut(d.amput); return done(); }
+  if (d.cmcontacts) { cmContactsEnsure(); return done(); }   // Contacts with nothing in it: 112 and the page live
   if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); if (d.addit === 'files/restaurants/items' && !cmSecRow(edC(), 'restaurants')) cmEatOn(); const a = arr(d.addit); a.push(edNewItem(a, d.addit)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
   if (d.hgcheckout !== undefined) { const a = arr('files/message/blocks');   // the house guide's Check-out part, open, its first line ready to type
     if (!a.some(b => b.id === 'checkout')) { a.push({ id: 'checkout', icon: 'key', tone: 'ink', title: L6(HG_CHECKOUT), items: [L6('')] }); CM.open.add('files/message/blocks/' + (a.length - 1)); }

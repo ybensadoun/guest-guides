@@ -24,6 +24,7 @@ import { argOf } from './args.mjs';   // an option's value on the command line, 
 import { repairSite } from '../engine/scripts/host-text.mjs';   // the host's own words repaired before the content check (dashes, ¿ ¡, l·l, „…“)
 import { placeFactsJob } from './place-job.mjs';   // a place added or found in the editor gets its facts (job place-facts)
 import { txPick } from '../engine/src/modules/transport/taxis.js';   // the taxis a house is offered, from our open directory (Getting around)
+import { normSchedule, normGroups } from './hours-shape.mjs';   // a research's opening hours in the guide's one shape (markets, places, contacts)
 import { appsJob, refreshApps, appsNear, appsPrompt, readApps, APPS } from './ride-apps.mjs';   // Uber, Cabify, Bolt, Freenow (find-transport, what: apps)
 import { brandsJob, refreshBrands, applyToFiles, brandsList, hsStations, brandsPrompt, readBrands } from './rail-brands.mjs';   // iryo and Ouigo on high speed stations (find-transport, what: brands)
 
@@ -145,37 +146,6 @@ function researchTools() {
   const allowed = `Where an item has "tags", "flags" or "group", use ONLY these values. tags: ${tagsOk.join(', ')}. flags: ${flagsOk.join(', ')}. group: ${Object.keys(groupsOk).join(', ')}. Leave out any that do not fit.`;
   return { clean, located, allowed, normSchedule };
 }
-// Opening hours the guide can read: rows of days (mon..sun), open and close (HH:MM), and an optional season (from/to MM-DD).
-// Research sometimes writes "Tue-Sun" or "10:00-17:30" or "third Sunday of the month": the first two are converted,
-// anything else leaves the schedule as words in "hours" and asks guests to check.
-const WEEK = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-const dayOf = w => WEEK.find(d => String(w).toLowerCase().startsWith(d)) || ({ thursday: 'thu', tuesday: 'tue' })[String(w).toLowerCase()];
-function daysList(x) {
-  if (Array.isArray(x)) { const d = x.map(dayOf); return d.every(Boolean) ? WEEK.filter(w => d.includes(w)) : null; }
-  const s = String(x || '').toLowerCase().trim();
-  if (/^(daily|every ?day|all week|mon(day)?\s*[-–to]+\s*sun(day)?)$/.test(s)) return [...WEEK];
-  const out = new Set();
-  for (const part of s.split(/\s*(?:,|&|\band\b)\s*/)) {
-    const m = part.match(/^([a-z]+)\s*(?:-|–|to)\s*([a-z]+)$/);
-    if (m) { const a = WEEK.indexOf(dayOf(m[1])), b = WEEK.indexOf(dayOf(m[2])); if (a < 0 || b < 0) return null; for (let i = a; ; i = (i + 1) % 7) { out.add(WEEK[i]); if (i === b) break; } }
-    else if (dayOf(part)) out.add(dayOf(part)); else return null;
-  }
-  return out.size ? WEEK.filter(w => out.has(w)) : null;
-}
-function normSchedule(it) {
-  if (!Array.isArray(it.schedule)) { if (it.schedule != null) delete it.schedule; return it; }
-  const ok = [], words = [];
-  for (const r of it.schedule) {
-    const days = daysList(r.days), t = String(r.hours || '').match(/(\d{1,2}[:.]\d{2})\s*(?:-|–|to)\s*(\d{1,2}[:.]\d{2})/);
-    const hm = x => x && x.replace('.', ':').padStart(5, '0');
-    const open = hm(r.open || (t && t[1])), close = hm(r.close || (t && t[2]));
-    if (days && /^\d\d:\d\d$/.test(open || '') && /^\d\d:\d\d$/.test(close || '')) ok.push({ days, open, close, ...(/^\d\d-\d\d$/.test(r.from || '') && /^\d\d-\d\d$/.test(r.to || '') ? { from: r.from, to: r.to } : {}) });
-    else words.push([r.days, r.hours || [r.open, r.close].filter(Boolean).join('-'), r.note].filter(x => x && typeof x === 'string').join(', '));
-  }
-  if (ok.length) it.schedule = ok; else delete it.schedule;
-  if (words.length) { if (!it.hours) it.hours = { en: words.join('; ') }; it.flags = [...new Set([...(it.flags || []), 'check'])]; }
-  return it;
-}
 // A part already in outDir (areaResearch) is not searched again. id: the guide whose progress message follows the research
 // (none for an area or a research job). opt.meter adds up what it costs; opt.parts, opt.rules and opt.searches change which parts
 // are searched, in what order, how, and with how many web searches; opt.together asks them side by side (the quick search at the
@@ -195,7 +165,7 @@ async function research(A, outDir, id, opt = {}) {
     if (existsSync(join(outDir, kind + '.json'))) return;
     if (id) say(id, `Researching: ${kind}`);
     const rules = (opt.rules || {})[kind] || rules0;
-    try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed, { early: !!opt.early }), kind, opt.meter, (opt.searches || {})[kind]))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); if (opt.onPart) await opt.onPart(kind); }
+    try { const o = located(clean(await claudeJson(researchPrompt(kind, A, rules + ' ' + allowed, { early: !!opt.early }), kind, opt.meter, (opt.searches || {})[kind]))); for (const k of ['markets', 'items']) (o[k] || []).forEach(normSchedule); normGroups(o); writeFileSync(join(outDir, kind + '.json'), JSON.stringify(o, null, 1)); if (opt.onPart) await opt.onPart(kind); }
     catch (e) { log(`  research ${kind} skipped:`, e.message); }
   };
   if (opt.together) await Promise.all(list.map(one)); else for (const j of list) await one(j);

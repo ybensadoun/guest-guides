@@ -274,6 +274,20 @@ if args.research:
 # ---------- modules ----------
 M = A.get('modules') or {}
 on = lambda k, default=True: M.get(k, default)
+# Emergencies is never empty or "soon" (engine/src/modules/contacts/README.md, rule 10): with no researched contacts (the
+# day's research spent, a search that failed, a file with no contact in it) the guide gets what needs no search, the
+# module's own minimum (112), so the page is live and the host has the step Contacts for the hospital and the pharmacy.
+# Marked _research, so that a later research replaces it; a file someone wrote, or one with contacts, is left alone.
+EMERGENCY = SITE / 'content/emergency.json'
+_em = json.loads(EMERGENCY.read_text()) if EMERGENCY.exists() else None
+if on('emergency') and (_em is None or (_em.get('_research') and not any(g.get('items') for g in _em.get('groups') or []))):
+    def _mine(x):   # the guide's languages only
+        if isinstance(x, list): return [_mine(v) for v in x]
+        if not isinstance(x, dict): return x
+        if x and all(k in ENGINE_LANGS for k in x): return {l: x[l] for l in LANGS if l in x}
+        return {k: _mine(v) for k, v in x.items()}
+    _min = json.loads((ROOT / 'engine/src/modules/contacts/minimum.json').read_text())
+    EMERGENCY.write_text(json.dumps({'_research': 'the minimum, written by generate-site.py: no researched contacts', **_mine({k: v for k, v in _min.items() if k != '_doc'})}, ensure_ascii=False, indent=1))   # nothing printed: what this script prints last is read as JSON by its callers
 name = (A.get('guideName') or A.get('placeName') or args.slug).strip()
 place = (A.get('placeName') or name).strip()
 town = (A.get('town') or '').strip()

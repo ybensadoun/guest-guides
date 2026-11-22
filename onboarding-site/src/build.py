@@ -119,6 +119,7 @@ _eng=lambda n: {k: v for k, v in _jsn.load(open(__import__('os').path.join(_ES, 
 _ENGW=_re.compile(r'^(g_[a-z]+|t_(dogs|veggie|glutenfree|terrace|seaview|kidsfun|free|rainy|fruitveg|food|cheese|deli|clothes|plants|home|secondhand|toys|meat|fish|shoes|tapas|crafts|antiques|books)|f_(book|check|holidays|octmay|older|closest|tiny)|cat_[a-z]+|nth(\d|Last)?|stalls|sm_\w+|ff_(menuDia|tasting)|perPerson)$')   # markets: kinds, what they sell, their marks, the week of the month, stalls
 ENG_DATA=('const ENG_KINDS = '+_jsn.dumps(_eng('kinds.json'),ensure_ascii=False,separators=(',',':'))+';\n'
   +'const ENG_GROUPS = '+_jsn.dumps(_eng('groups.json'),ensure_ascii=False,separators=(',',':'))+';\n'
+  +'const CONTACTS_MIN = '+_jsn.dumps(_eng('modules/contacts/minimum.json'),ensure_ascii=False,separators=(',',':'))+';\n'   # Emergencies with no research: 112 and the Health group (editor.js cmContactsEnsure), the generator's own file
   +'const ENG_T = '+_jsn.dumps({l: {k: v for k, v in _eng('i18n/'+l+'.json').items() if _ENGW.match(k)} for l in ('en','ca','es','fr')},ensure_ascii=False,separators=(',',':'))+';\n'
   +_re.sub(r'(?m)^export ','',open(__import__('os').path.join(_ES,'weeks.js'),encoding='utf-8').read())   # the week of the month and its word (nthKey), the guide's own rule
   +_re.sub(r'(?m)^export ','',open(__import__('os').path.join(_ES,'season.js'),encoding='utf-8').read()))   # a place's season and whether guests see it today, the guide's own rule

@@ -1514,6 +1514,11 @@
 "es": "+ Añadir un contacto",
 "fr": "+ Ajouter un contact"
 },
+"+ Add the emergency number (112)": {
+"ca": "+ Afegeix el número d’emergències (112)",
+"es": "+ Añadir el número de emergencias (112)",
+"fr": "+ Ajouter le numéro d’urgence (112)"
+},
 "+ Add a destination": {
 "ca": "+ Afegeix una destinació",
 "es": "+ Añadir un destino",

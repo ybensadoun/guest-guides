@@ -316,10 +316,22 @@ is Things to do's own is said here.
 | 9.13 | "Delete this contact" | It leaves the list and the preview |
 | 9.14 | The same on a phone (360 px wide) | Nothing overlaps; the fields are full width |
 
+### A guide whose research found no contacts (22 Nov 2026)
+| # | Do | Expect |
+|---|---|---|
+| 9.20 | Build a guide on a day the research is spent, or look at one built so | Emergencies is on Home and opens on 112, "Open 24 h", with its red button; never "Coming soon" |
+| 9.21 | In the editor, open Contacts on a guide that has none (one built before 22 Nov with "Coming soon") | The step is there: "This guide has no contacts yet." and one button, "+ Add the emergency number (112)" |
+| 9.22 | Press it | Two groups, Urgent with the card "Emergencies" and Health with none yet, each with "+ Add a contact"; the step says "Changed"; the phone shows 112 and no longer "Coming soon" |
+| 9.23 | "+ Add a contact" under Health | A new card, open: name, what guests need to know, address, phone, website, opening days and hours; nothing about a position or a description |
+| 9.24 | Leave the new contact's name empty and look at the phone | The contact and its empty group are not shown to guests |
+| 9.25 | Give it a name and a phone, no hours | It shows with its call button and no "Closed" line |
+
+| 9.26 | Open Emergencies on the guide built on 22 Nov at 06:48 (`ca-la-kimberly-pool-house-can-gordei`), whose hours were written as "mon-fri" | The page draws all its contacts with their hours (it was blank before the fix); its data was not touched |
+
 ### Known, not to report
 - A guide the maker builds has two groups only (emergencies, health): no police, town hall, power cut, vet or poison
   line yet. The four groups need one paid research, after the test (fix 09.1).
-- The editor cannot add a group, switch "open 24 h" on, or give hours to a contact that has none (fix 09.3).
+- The editor cannot add a group or switch "open 24 h" on; hours can be given to a new contact, not to an older one that has none (fix 09.3).
 - Nothing tells the host which numbers came from a search and should be checked (fix 09.2).
 - The page's title, its first group and its first row all say "Emergencies" (fix 09.5).
 - Contacts are not on the map (fix 09.6).

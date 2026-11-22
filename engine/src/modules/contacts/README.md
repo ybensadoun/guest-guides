@@ -22,6 +22,8 @@ date. Ca La Kimberly's page is the reference: the move was checked pixel for pix
 | 7 | Its tile says "Emergencies", shorter than the page's title. | Code comment, before the modules (`views/home.js`: "Short label on the tile; the page itself keeps the full title") |
 | 8 | Its tile on Home is an entry tile, half, wide or tall; a tall tile keeps the half tile's title size, since "Emergencies" was wider than a tall tile's larger title at 360 px. | Yohann, 14 Nov 2026 (proposal 22); the title: Claude, 14 Nov 2026, from the frame check, to confirm with Yohann (`../README.md` frame rule 13) |
 | 9 | Its colour is the strong role, red in every colour world, so that Emergencies always reads as urgent. | Plan, step 3, the first mockups of the colour worlds (10 Nov 2026: "Strong stays in the red family in every world, so Emergencies always reads as urgent"), after Yohann's decision of one tile system that day; `engine/src/worlds.js` |
+| 10 | Emergencies is never empty and never "Coming soon". A guide whose research left no contacts (the day's research spent, a search that failed) gets by itself what needs no search, the module's own minimum (`minimum.json`: 112, in six languages, and the Health group, empty, for the host's hospital and pharmacy), and its page is live. In the maker the step Contacts is always there: a guide with no contacts has one button that brings the same minimum and puts the page live. Guests are never shown a group with no contact, a contact with no name yet, or "Closed" for a contact whose hours are not typed. A new contact in the editor has a contact's own fields (name, what guests need to know, address, phone, website, hours), whatever its group holds. Never a host's own number (rule 1). | Yohann's deadline of 25 Nov 2026 (real users build guides), the main conversation's analysis of 22 Nov 2026 (H3: "Emergencies: Coming soon" that the host could not fix), built 22 Nov 2026; researched contacts are unchanged, proved byte for byte (`onboarding-site/modules/test/same-guide.mjs`) |
+| 11 | Nothing a guide holds may blank this page: it is the one a guest opens in an emergency. A contact's hours are read through `contactHours` (`plan.js`): days as a list, or as a research wrote them ("mon-fri", "sat", "mon": a range, a single day or a list in words, read by `engine/src/days.js`); a row that cannot be read is left out, so the contact shows the hours that can be read, or none, never "Closed" by mistake and never an error. Its words may be a string or per language, a link is a web address or nothing, a number may be a number; a contact that still cannot be drawn is left out alone, the rest of the page stays. The worker brings a research's hours to the one shape before it writes them, the contacts' groups too (`worker/hours-shape.mjs`). No guide's data is patched by hand: the page reads what the guides already hold. | A guide built through the maker on 22 Nov 2026 (06:48) had a blank Emergencies page: its research wrote "days": "mon-fri" and the page threw "e.days.map is not a function"; the main conversation's turn of that morning, built the same day. Yohann, 21 Nov 2026: never a fix for one guide |
 
 ## Its data
 
@@ -29,6 +31,10 @@ One file per guide, `content/emergency.json` (its `_doc` describes it): `groups`
 item `{ id, name, what, phone, address, schedule or always, web, map, link: { url, label }, verify }`, `name` and `what`
 in six languages, `schedule` as the markets' (days, open, close). Read by `content.js` with the other sections. The
 section in `content/sections.json`: `{ "id": "emergency", "kind": "contacts", "labelKey": "emergency" }`.
+
+With no research at all: `minimum.json` in this folder (its `_doc` says what it is), written into the guide by the
+generator and marked `_research`, so that a later research replaces it; the maker holds the same file (pasted by
+`onboarding-site/src/build.py` as `CONTACTS_MIN`).
 
 Where it comes from: the contacts research of the worker at the build (`worker/guide-worker.mjs`); Ca La Kimberly's was
 written by hand, with its sources (`sites/ca-la-kimberly/docs/RESEARCH-NOTES.md`). What the maker cannot change yet (add,
@@ -45,7 +51,7 @@ button `.ccall` with the phone icon and the number). On Home, the entry tile, it
 
 | Part | Where | In the module? |
 |---|---|---|
-| The rules, pure and tested: a group's word, an address's map link, the tile's label, a number as shown (`phoneShown`) | `plan.js` (tests: `engine/scripts/contacts-plan.test.mjs`) | Yes |
+| The rules, pure and tested: a group's word, an address's map link, the tile's label, a number as shown (`phoneShown`), hours, words and links as the page may read them (`contactHours`, `wordOf`, `linkOf`) | `plan.js` (tests: `engine/scripts/contacts-plan.test.mjs`) | Yes |
 | How a Spanish number is grouped | `engine/src/modules/transport/taxis.js` (`txPhone`), imported by `plan.js` | No: Getting around's, the one rule; to move to a shared place when that file may change (the maker pastes it, `onboarding-site/src/build.py`) |
 | The page | `page.js` | Yes |
 | The Home widget, its short label | `widget.js` | Yes |
@@ -53,11 +59,13 @@ button `.ccall` with the phone icon and the number). On Home, the entry tile, it
 | What Home and the section view call | `index.js`, listed in `../index.js` | Yes |
 | The phone icon, a number as a `tel:` link | `engine/src/ui.js` (`PHONE`, `tel`) | No: shared with Getting around and a highlight's page |
 | Hours and statuses | `engine/src/schedule.js`, `content.js` (`slots`) | No: shared machinery |
+| The days of a week as a research may write them | `engine/src/days.js` (`daysList`; tests in `engine/scripts/contacts-plan.test.mjs`) | No: shared with the worker (`worker/hours-shape.mjs`, tests `worker/test/hours-shape.test.mjs`) |
 | A page's title and lead | `engine/src/views/section.js` (`sectionFrame`) | No: shared with every section's page |
 | Its styles | `engine/src/styles/app.css` (`.cgroup`, `.clist`, `.crow`, `.ctx`, `.chours`, `.clinks`, `.cmap`, `.ccall`, `.gt[data-k="emergency"]`; the status line: `.crow .chours .st`, which undoes for this page the shared status's stack and 8 em width) | Not yet: they move with the one tile system (plan, proposal 4) |
 | Its words | `engine/src/i18n/<lang>.json`: `emergency`, `emergencyTile`, `c_<group>`, `open24`, `openMap`, `website` | Not yet |
+| What a guide holds with no research | `minimum.json` (tests: `worker/test/generate-emergency.test.mjs`) | Yes |
 | From the research to the file | `worker/guide-worker.mjs` (contacts), `engine/scripts/generate-site.py` | No: the worker's; the generator's |
-| The maker's step | `onboarding-site/src/editor.js` | No: the maker's |
+| The maker's step | `onboarding-site/src/editor.js` (`cmContacts`, `cmContactsEnsure`, a new contact in `edNewItem`) | No: the maker's |
 
 ## Still Ca La Kimberly's own
 

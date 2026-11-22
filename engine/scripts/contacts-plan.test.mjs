@@ -4,7 +4,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { groupKey, mapsSearch, tileLabelKey, phoneShown } from '../src/modules/contacts/plan.js';
+import { groupKey, mapsSearch, tileLabelKey, phoneShown, contactHours, wordOf, linkOf } from '../src/modules/contacts/plan.js';
+import { daysList } from '../src/days.js';
 
 test('groupKey: c_<id>, health for a hospital, a pharmacy, a clinic or a medical centre', () => {
   assert.equal(groupKey('urgent'), 'c_urgent');
@@ -48,4 +49,42 @@ test('phoneShown: every number Ca La Kimberly holds is shown as it is written', 
   const all = f.groups.flatMap(g => g.items).map(it => it.phone).filter(Boolean);
   assert.ok(all.length >= 8);
   for (const n of all) assert.equal(phoneShown(n), n);
+});
+
+// The shapes a guide built on 22 Nov 2026 held (its Emergencies page went blank: "e.days.map is not a function").
+test('contactHours: days written as words are read, a row that cannot be read is left out, never an error', () => {
+  const row = (days, open = '09:00', close = '14:00') => ({ days, open, close });
+  assert.deepEqual(contactHours([row('mon-fri')]), [row(['mon', 'tue', 'wed', 'thu', 'fri'])]);
+  assert.deepEqual(contactHours([row('sat')]), [row(['sat'])]);
+  assert.deepEqual(contactHours([row('mon'), row('wed', '15:00', '20:00')]), [row(['mon']), row(['wed'], '15:00', '20:00')]);
+  assert.deepEqual(contactHours([row('Mon-Sat', '9:30', '13.30')]), [row(['mon', 'tue', 'wed', 'thu', 'fri', 'sat'], '09:30', '13:30')]);
+  assert.deepEqual(contactHours([row('daily', '00:00', '24:00')]).map(r => r.days.length), [7]);
+  assert.deepEqual(contactHours([row('Monday and Wednesday')]), [row(['mon', 'wed'])]);
+  assert.deepEqual(contactHours([row('fri-mon')]).map(r => r.days), [['mon', 'fri', 'sat', 'sun']]);
+  // what cannot be read: that row only
+  assert.deepEqual(contactHours([row('weekdays'), row('sat')]), [row(['sat'])]);
+  assert.deepEqual(contactHours([row('mon', 'morning', '14:00'), row(['tue'], '09:00', '')]), []);
+  for (const bad of [undefined, null, '', 'mon-fri 9-14', 7, {}, [null], ['mon'], [{}], [{ days: null }], [{ days: 5, open: 9, close: 14 }], [{ days: ['mon', 'xyz'], open: '09:00', close: '14:00' }]]) assert.deepEqual(contactHours(bad), []);
+});
+
+test('contactHours: every schedule Ca La Kimberly holds is read as it is written', () => {
+  const f = JSON.parse(readFileSync(new URL('../../sites/ca-la-kimberly/content/emergency.json', import.meta.url), 'utf8'));
+  const all = f.groups.flatMap(g => g.items).filter(it => it.schedule);
+  assert.ok(all.length >= 3);
+  for (const it of all) assert.deepEqual(contactHours(it.schedule), it.schedule);
+});
+
+test('daysList: a list, a range, a single day, words; else null', () => {
+  assert.deepEqual(daysList(['wed', 'mon']), ['mon', 'wed']);
+  assert.deepEqual(daysList('Tue-Sun'), ['tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
+  assert.deepEqual(daysList('thursday'), ['thu']);
+  for (const bad of ['', null, undefined, 'weekdays', 'mon-xyz', 12, {}]) assert.equal(daysList(bad), null);
+});
+
+test('wordOf, linkOf: a string or the guide\'s languages; a web address or nothing', () => {
+  const tx = o => o.en || '';
+  assert.equal(wordOf({ en: 'Pharmacy' }, tx), 'Pharmacy'); assert.equal(wordOf(' Pharmacy ', tx), 'Pharmacy');
+  for (const bad of [undefined, null, 5, '']) assert.equal(wordOf(bad, tx), '');
+  assert.equal(linkOf(' https://example.org/a '), 'https://example.org/a');
+  for (const bad of [undefined, null, 5, {}, 'javascript:alert(1)', 'example.org']) assert.equal(linkOf(bad), '');
 });
