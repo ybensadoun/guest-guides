@@ -3669,6 +3669,67 @@ async function gRubbish() {
     await ctx.close(); }
 }
 async function gNightlifeColours() {
+  // A list with a named entry is live, and Eat and drink can be added in the editor (22 Nov 2026, editor.js cmListsLive).
+  const lastSecs = saved => { for (const b of saved.slice().reverse()) { try { const j = JSON.parse(b), c = (j.draft || {}).content || j.content; if (c && c.files && c.files.sections) return c; } catch (e) { /* not a save */ } } return null; };
+  const patches = async (ctx, saved) => ctx.route(u => u.pathname.startsWith('/rest/v1/guides'), route => { if (route.request().method() !== 'PATCH') return route.fallback(); saved.push(route.request().postData() || ''); return route.fulfill({ status: 204, body: '' }); });
+  // Attractions written "soon" by the build (a host who kept no card): a place added by hand, once named, makes it live.
+  { const files = { ...E.content.files, todo: { ...E.content.files.todo, items: [] }, sections: { ...E.content.files.sections, sections: E.content.files.sections.sections.map(x => x.id === 'todo' ? { ...x, status: 'soon' } : x) } };
+    const { ctx, p, errors } = await open(browser, { ...E, draft: null, content: { ...E.content, files } }, 1280, 860); const saved = []; await patches(ctx, saved);
+    await p.goto('http://editor.test/#todo'); await ready(p); await settle(p, 400);
+    ok('editor, an empty list: it says when guests will see it', /Guests see this part of the guide once it holds a place/.test(await p.textContent('.cm-list').catch(() => '')));
+    await p.click('[data-addit="files/todo/items"]'); await settle(p, 1700);
+    const c0 = lastSecs(saved), st = c => ((c.files.sections.sections.find(x => x.id === 'todo') || {}).status);
+    ok('editor, added by hand: a place with no name yet leaves Attractions as it was ("soon")', !!c0 && st(c0) === 'soon' && c0.files.todo.items.length === 1, c0 ? st(c0) : 'no save');
+    const field = 'details.cmi[open] [data-p$="/name"]'; await p.click(field); await p.locator(field).pressSequentially('Castell de Prova', { delay: 12 }); await p.keyboard.press('Tab'); await settle(p, 1900);
+    const c1 = lastSecs(saved);
+    ok('editor, added by hand: once it has a name, Attractions is live for guests', !!c1 && st(c1) === 'live' && /Castell de Prova/.test(JSON.stringify(c1.files.todo.items[0].name)), c1 ? `${st(c1)} ${JSON.stringify(c1.files.todo.items[0].name)}` : 'no save');
+    ok('editor, added by hand: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // A guide built with no restaurant: no file, no section, the switch off. Eat and drink is a step all the same; its section
+  // comes with its first named place, at its place in the guide's order, never before.
+  { const files = { ...E.content.files, sections: { ...E.content.files.sections, sections: E.content.files.sections.sections.filter(x => x.id !== 'restaurants') } }; delete files.restaurants;
+    const G = { ...E, draft: null, content: { ...E.content, files, site: { ...E.content.site, modules: { ...E.content.site.modules, restaurants: false } } } };
+    for (const [w, h] of [[1280, 860], [360, 780]]) {
+      const { ctx, p, errors } = await open(browser, G, w, h); const saved = []; await patches(ctx, saved);
+      await p.goto('http://editor.test/#sections'); await ready(p); await settle(p, 400);
+      ok(`editor, no restaurant yet (${w} px): Guide sections does not list Eat and drink (no switch with nothing behind it)`, !(await p.$('[data-cmod="restaurants"]')) && !!(await p.$('[data-cmod="todo"]')));
+      await go(p, '#restaurants'); await settle(p, 400);
+      ok(`editor, no restaurant yet (${w} px): Eat and drink is a step, empty, with its Add button`, (await p.evaluate(() => location.hash)) === '#restaurants' && !!(await p.$('[data-addit="files/restaurants/items"]')) && /Guests see this part of the guide once it holds a place/.test(await p.textContent('.cm-list').catch(() => '')));
+      await p.screenshot({ path: join(SHOTS, `editor-eat-empty-${w}.png`) });
+      ok(`editor, no restaurant yet (${w} px): nothing overlaps, no page wider than the screen`, !(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)));
+      if (w === 1280) {
+        await p.$eval('[data-addit="files/restaurants/items"]', e => e.scrollIntoView({ block: 'center' })); await p.click('[data-addit="files/restaurants/items"]'); await settle(p, 1700);
+        const c0 = lastSecs(saved), ids = c => c.files.sections.sections.map(x => x.id);
+        ok('editor, no restaurant yet: adding a place switches Eat and drink on, and with no name yet it makes no section (guests get no empty tile)', !!c0 && !ids(c0).includes('restaurants') && c0.site.modules.restaurants === true, c0 ? ids(c0).join(', ') + ' ' + c0.site.modules.restaurants : 'no save');
+        const field = 'details.cmi[open] [data-p$="/name"]'; await p.click(field); await p.locator(field).pressSequentially('Bar de Prova', { delay: 12 }); await p.keyboard.press('Tab'); await settle(p, 1900);
+        const c1 = lastSecs(saved), row = c1 && c1.files.sections.sections.find(x => x.id === 'restaurants'), i1 = c1 ? ids(c1) : [];
+        ok('editor, no restaurant yet: its first named place makes the section, live, switched on, before Attractions', !!row && row.status === 'live' && row.kind === 'spots' && row.labelKey === 'barsRestaurants' && c1.site.modules.restaurants === true && i1.indexOf('restaurants') === i1.indexOf('todo') - 1 && c1.files.restaurants.items.length === 1, JSON.stringify(row) + ' ' + i1.join(', '));
+        await go(p, '#sections'); await settle(p, 400); const box = await p.$('[data-cmod="restaurants"]');
+        ok('editor, no restaurant yet: once its section exists, Guide sections lists Eat and drink, on', !!box && (await box.isChecked()));
+      }
+      ok(`editor, no restaurant yet (${w} px): no page errors`, !errors.length, errors.join(' | '));
+      await ctx.close(); } }
+  // Local events written "soon" (a guide built with no events research): an event added by hand, once named, makes it live.
+  { const files = { ...E.content.files, events: { ...E.content.files.events, items: [] }, sections: { ...E.content.files.sections, sections: E.content.files.sections.sections.map(x => x.id === 'events' ? { ...x, status: 'soon' } : x) } };
+    const { ctx, p, errors } = await open(browser, { ...E, draft: null, content: { ...E.content, files } }, 1280, 860); const saved = []; await patches(ctx, saved);
+    await p.goto('http://editor.test/#events'); await ready(p); await settle(p, 400);
+    await p.$eval('[data-addit="files/events/items"]', e => e.scrollIntoView({ block: 'center' })); await p.click('[data-addit="files/events/items"]'); await settle(p, 1700);
+    const st = c => c && ((c.files.sections.sections.find(x => x.id === 'events') || {}).status), c0 = lastSecs(saved);
+    const field = 'details.cmi[open] [data-p$="/name"]'; await p.click(field); await p.locator(field).pressSequentially('Festa de Prova', { delay: 12 }); await p.keyboard.press('Tab'); await settle(p, 1900);
+    ok('editor, added by hand: an event with no name leaves Local events "soon"; named, it is live', st(c0) === 'soon' && st(lastSecs(saved)) === 'live', `${st(c0)} > ${st(lastSecs(saved))}`);
+    ok('editor, an event added by hand: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // A host who switched Eat and drink off keeps it off: named places in the file and no section's row are not turned
+  // into a section by another change in the editor.
+  { const files = { ...E.content.files, sections: { ...E.content.files.sections, sections: E.content.files.sections.sections.filter(x => x.id !== 'restaurants') } };
+    const G = { ...E, draft: null, content: { ...E.content, files, site: { ...E.content.site, modules: { ...E.content.site.modules, restaurants: false, nightlife: false } } } };
+    const { ctx, p, errors } = await open(browser, G, 1280, 860); const saved = []; await patches(ctx, saved);
+    await p.goto('http://editor.test/#sections'); await ready(p); await settle(p, 400);
+    await p.$eval('[data-cmod="nightlife"]', e => e.closest('label').scrollIntoView({ block: 'center' })); await p.click('[data-cmod="nightlife"]', { force: true }); await settle(p, 1700);
+    const c = lastSecs(saved);
+    ok('editor: a list that is switched off is never made a section by another change (its places stay, no row, still off)', !!c && !c.files.sections.sections.some(x => x.id === 'restaurants') && c.site.modules.restaurants === false && c.site.modules.nightlife === true && c.files.restaurants.items.length > 0, c ? JSON.stringify(c.site.modules) : 'no save');
+    ok('editor, a switched-off list: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // Nightlife (29 Oct 2026): optional and off in Ca La Kimberly; switched on in Guide sections, its first place makes its
   // section, right after Attractions.
   { const off = { ...E, content: { ...E.content, site: { ...E.content.site, modules: { ...E.content.site.modules, nightlife: false } } } };   // whatever the live guide has switched on today

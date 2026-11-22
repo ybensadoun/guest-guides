@@ -178,6 +178,10 @@ lists too (their own steps: sections 6 and 10, when written).
 | 5.30 | Builder, Eat and drink: type a place's name and pick it from the list | The row keeps the place's own name (not the words typed to find it), and the phone shows it |
 | 5.31 | Add a comment under it | It is the line guests read in the closed row |
 | 5.32 | Editor, Eat and drink: open a place | Name, Your comment, Our favourite, then "Filled in for you" (kind, hours, price, phone, website) with "Change" |
+| 5.33 | A guide built with no restaurant typed in the builder: open the editor | Eat and drink is a step all the same, after Attractions, empty: "Nothing here yet. Guests see this part of the guide once it holds a place." Guide sections does not list it yet |
+| 5.34 | There, "+ Add a place", and leave the new place with no name | The Preview's Home has no Eat and drink tile yet, and Guide sections still does not list it |
+| 5.35 | Type the place's name, then Preview | Home has the tile "Our favourite places to eat", before Things to do, and its page lists the place; Guide sections now lists Eat and drink, on |
+| 5.36 | A guide whose Attractions said "Coming soon" (no card kept in the deck): in Attractions, "+ Add a place", type its name, Preview | Attractions is no longer "Coming soon" on Home and on its page; the same for an event added by hand in Local events |
 
 ### Known, not to report
 - A pasted Google Maps link stays a web address in the builder until the guide is built (fix `05.3`, after the test).

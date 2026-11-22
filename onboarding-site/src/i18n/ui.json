@@ -3304,6 +3304,11 @@
 "es": "Aún no hay nada.",
 "fr": "Rien pour l’instant."
 },
+"Nothing here yet. Guests see this part of the guide once it holds a place.": {
+"ca": "Encara no hi ha res. Els hostes veuen aquesta part de la guia quan tingui un lloc.",
+"es": "Aún no hay nada. Los huéspedes ven esta parte de la guía en cuanto tenga un lugar.",
+"fr": "Rien pour l’instant. Les voyageurs voient cette partie du guide dès qu’elle contient un lieu."
+},
 "Nothing here yet": {
 "ca": "Encara no hi ha res",
 "es": "Aún no hay nada",

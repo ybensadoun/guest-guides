@@ -35,6 +35,7 @@ const cmChanged = m => m.paths.some(p => { const q = edPath(p); return !cmSameSh
 const cmDirty = () => !cmSameShown(cmW(), CM.live);
 const cmLive = () => CM.g.status === 'published';
 const cmOnSec = id => ((edC().site || {}).modules || {})[id] !== false;
+const cmSecRow = (c, id) => ((((c.files || {}).sections || {}).sections) || []).find(x => x.id === id);   // a section's row in the guide, if it has one
 const cmLiveUrl = () => { const n = (edC().site || {}).netlify; return n && n.project ? `https://${n.project}.netlify.app` : `${location.origin}/g/${CM.g.slug}`; };
 const cmPreviewUrl = () => `${location.origin}/g/${encodeURIComponent(CM.g.slug)}?preview`;
 const cmId = p => 'c_' + p.replace(/[^a-zA-Z0-9]+/g, '_');
@@ -80,7 +81,9 @@ const CSTEPS = [
   { id: 'todo', group: 'area', sec: 'todo', title: 'Attractions', sub: c => cmCount(cmLen('files/todo/items'), 'place', 'places'), icon: 'compass', tc: 'var(--pine)', ti: '#fff', sh: 'var(--sun)', shape: 'circle', lang: true,
     lead: 'Places guests go to visit or to do something: museums, castles, theme parks, karting, beaches, nature. Restaurants and bars go in Eat and drink. Open a place to change its words, links, position and opening hours.',
     paths: ['content/files/todo'], body: () => cmPlaces('files/todo/items', 'place') },
-  { id: 'restaurants', group: 'area', sec: 'restaurants', when: c => !!(c.files || {}).restaurants, title: 'Eat and drink', sub: c => cmCount(cmLen('files/restaurants/items'), 'place', 'places'), icon: 'heart', tc: 'var(--tomato)', ti: '#fff', sh: 'var(--sun)', shape: 'half', lang: true,
+  // Eat and drink: always a step, also in a guide built with no restaurant (22 Nov 2026; `absent`, as Rubbish's step): its
+  // section is made with its first named place (cmListsLive), never an empty tile for guests.
+  { id: 'restaurants', group: 'area', sec: 'restaurants', absent: c => !cmSecRow(c, 'restaurants'), title: 'Eat and drink', sub: c => cmCount(cmLen('files/restaurants/items'), 'place', 'places'), icon: 'heart', tc: 'var(--tomato)', ti: '#fff', sh: 'var(--sun)', shape: 'half', lang: true,
     lead: 'Restaurants, cafés, bakeries and bars you send friends to, with a few words from you: what to order, when to go. Late bars and clubs go in Nightlife.',
     paths: ['content/files/restaurants'], body: () => cmPlaces('files/restaurants/items', 'place') },
   // Nightlife: optional (Guide sections), the host's own list; its section is made with the first place (cmNightEnsure)
@@ -1000,7 +1003,7 @@ function cmPlaces(path, what) {
   const arr = edGet(edC(), edPath(path)) || [];
   if (PL_SEC[path] && CM.pfLoaded !== true) pfLoad();   // lookups of a place's facts still running, or done while away
   return `${path === MK_PATH ? heldNote() : ''}${lkList(path, what)}${PL_SEC[path] ? cmUnnamed(path) : ''}${FIND_OF[path] ? cmFindHTML(path) : ''}${arr.length > 8 ? `<div class="f full"><label for="c_filter">Find ${esc(aAn(what))}</label><input id="c_filter" type="text" enterkeyhint="search" autocomplete="off" data-cfilter placeholder="Name or town"></div>` : ''}
-    <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">Nothing here yet.</p>`}</div>
+    <div class="cm-list">${arr.map((it, i) => cItem(path, it, i, what)).join('') || `<p class="hint">${PL_SEC[path] ? 'Nothing here yet. Guests see this part of the guide once it holds a place.' : 'Nothing here yet.'}</p>`}</div>
     <div><button class="btn small primary" type="button" data-addit="${path}">+ Add ${esc(aAn(what))}</button></div>
     <p class="hint">A new ${esc(what)} has no pin yet: find it on Google, or paste its Google Maps link. The distance from the house follows the pin.</p>`;
 }
@@ -1039,6 +1042,29 @@ function cmTrSub(c) {
   const T = (c.files || {}).transport || {}, n = (T.taxis || []).length, m = (T.stations || []).length;
   return n || m ? [n ? cmCount(n, 'taxi', 'taxis') : '', m ? cmCount(m, 'station or stop', 'stations and stops') : ''].filter(Boolean).join(', ') : 'Taxis, trains, buses';
 }
+// A list with at least one named entry is live (22 Nov 2026): a place or an event added by hand ("+ Add", edNewItem) used to
+// stay behind "Coming soon" when the build had written its section as "soon" (a guide whose host kept no card), and a guide
+// built with no restaurant had no Eat and drink to add to. Run on every change (cmQueue) and before Publish: the section's
+// row goes live with the first entry that has a name, and a list with no row gets one at its place in the guide's order,
+// when its switch is on (adding a place by hand switches it on: the Add button; a list the host switched off is never
+// forced back). Never the other way: an empty or unnamed list changes nothing, so guests never get an empty tile from here.
+const LIST_ROW = { restaurants: { kind: 'spots', labelKey: 'barsRestaurants', color: 'restaurants' }, todo: { kind: 'spots', labelKey: 'whatToDo', color: 'todo' }, nightlife: { kind: 'spots', labelKey: 'nightlife', color: 'nightlife' }, events: { kind: 'events', labelKey: 'events', color: 'events' } };   // as FIND_SECTION and cmNightEnsure write them
+const LIST_ORDER = ['markets', 'restaurants', 'todo', 'nightlife', 'events'];
+function cmListsLive(c) {
+  const F = c && c.files; if (!F) return;
+  for (const id of Object.keys(LIST_ROW)) {
+    const items = (F[id] || {}).items; if (!Array.isArray(items) || !items.some(it => it && !cmNoName(it))) continue;
+    const ss = (F.sections = F.sections || { sections: [] }).sections = F.sections.sections || [], row = ss.find(x => x.id === id);
+    if (row) { if (row.status !== 'live') row.status = 'live'; continue; }
+    if (((c.site || {}).modules || {})[id] !== true) continue;   // no section yet and not switched on: not ours to make
+    const at = LIST_ORDER.indexOf(id), has = x => ss.findIndex(r => r.id === x);
+    const prev = LIST_ORDER.slice(0, at).reverse().map(has).find(i => i >= 0), next = LIST_ORDER.slice(at + 1).map(has).find(i => i >= 0);
+    ss.splice(prev != null ? prev + 1 : next != null ? next : ss.length, 0, { id, group: 'area', ...LIST_ROW[id], status: 'live' });
+  }
+}
+// Eat and drink in a guide built with none: adding a place by hand switches it on; its section's row comes with the first
+// place that has a name (cmListsLive).
+function cmEatOn() { const site = edC().site = edC().site || {}; site.modules = { ...(site.modules || {}), restaurants: true }; }
 // Nightlife: the file, its section row (after Attractions) and its switch, made with the first place.
 function cmNightEnsure() {
   const f = edF(); f.nightlife = f.nightlife || { items: [] };
@@ -2021,7 +2047,7 @@ function cmMarks() {
 
 /* --- Saving the draft, publishing, undoing --- */
 const cmSaveText = () => cmDirty() ? (cmLive() ? 'Live, latest changes not published yet' : 'Draft saved, not live yet') : cmLive() ? 'Everything is live' : 'Saved, not published';
-function cmQueue() { hbTidy(); setSave('busy', 'Saving…'); clearTimeout(CM.timer); CM.timer = setTimeout(cmSave, 900); cmMarks(); }
+function cmQueue() { cmListsLive(edC()); hbTidy(); setSave('busy', 'Saving…'); clearTimeout(CM.timer); CM.timer = setTimeout(cmSave, 900); cmMarks(); }
 async function cmSave() {
   clearTimeout(CM.timer); CM.timer = null;
   if (CM.saving) { CM.again = true; return CM.saving; }
@@ -2095,6 +2121,7 @@ const cmNamelessText = miss => { const n = miss.reduce((s, x) => s + x.n, 0);
 async function cmPublishNow(o = {}) {
   clearTimeout(CM.timer); while (CM.saving) await CM.saving;
   if (cmTidy(CM.g.content)) CM.open.clear();   // empty entries never go live (and leave the draft too)
+  cmListsLive(CM.g.content);   // a list with a named entry is live
   hbTidy();   // nor does a place on Home that has gone with them (board.js)
   const miss = cmNameless(CM.g.content);
   if (miss.length) { cmQueue(); throw Object.assign(new Error(cmNamelessText(miss)), { miss }); }
@@ -2406,7 +2433,7 @@ document.addEventListener('click', e => {
   if (d.addcont !== undefined) { const g = edF().garbage; if (g) { (g.containers = g.containers || []).push({ where: Object.fromEntries(edLangs().map(l => [l, ''])), takes: [] }); CM.open.add('files/garbage/containers/' + (g.containers.length - 1)); done(); } return; }
   if (d.ctake !== undefined) { const ct = ((edF().garbage || {}).containers || [])[+d.ctake]; if (ct) { const s = ct.takes || []; ct.takes = s.includes(d.id) ? s.filter(x => x !== d.id) : [...s, d.id]; done(); } return; }
   if (d.amput) { cmAmPut(d.amput); return done(); }
-  if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); const a = arr(d.addit); a.push(edNewItem(a, d.addit)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
+  if (d.addit) { if (d.addit === 'files/nightlife/items') cmNightEnsure(); if (d.addit === 'files/restaurants/items' && !cmSecRow(edC(), 'restaurants')) cmEatOn(); const a = arr(d.addit); a.push(edNewItem(a, d.addit)); CM.open.add(d.addit + '/' + (a.length - 1)); return done(); }
   if (d.hgcheckout !== undefined) { const a = arr('files/message/blocks');   // the house guide's Check-out part, open, its first line ready to type
     if (!a.some(b => b.id === 'checkout')) { a.push({ id: 'checkout', icon: 'key', tone: 'ink', title: L6(HG_CHECKOUT), items: [L6('')] }); CM.open.add('files/message/blocks/' + (a.length - 1)); }
     done(); setTimeout(() => { const x = document.getElementById(cmId(`files/message/blocks/${a.length - 1}/items/0`)); if (x) x.focus(); }, 0); return; }
