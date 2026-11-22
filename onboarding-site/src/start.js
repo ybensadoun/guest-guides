@@ -716,6 +716,31 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Enter' && PS.on >= 0) { e.preventDefault(); psPick(PS.on); }
   else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && n) { e.preventDefault(); PS.on = (PS.on + (e.key === 'ArrowDown' ? 1 : n)) % n; psDraw(); }
 });
+/* ---------- How things work: what the house has, offered as line starts (engine/src/modules/info/README.md, rule 17).
+   Nothing in a listing says how the boiler works, but it says what the house has. The things guests most often get stuck
+   on (INFO.HOW_ASKS, the guide's own list) are offered above the text, those this house has: a tap starts a line with the
+   thing's name in the host's language ("Heating: ") and the host finishes it. A line nobody finished never reaches the
+   guide (INFO.tipSaid). No offer for a house whose list has none of them. ---------- */
+// What is written now: the text on the screen when the step is open (it is ahead of the saved answer while typing).
+const howText = () => { const ta = document.getElementById('f_howTos'); return String(ta && route() === 'howto' ? ta.value : A.howTos || ''); };
+const howStarted = text => text.split('\n').map(l => l.includes(':') ? amenMatch(l.split(':')[0]) : '').filter(Boolean);
+const howOffers = text => INFO.howAsks(amenNow(), howStarted(text));
+const howAsksInner = ids => ids.map(id => `<button type="button" class="how-ask" data-howask="${esc(id)}"><span translate="no">+ ${esc(amenName(id))}</span></button>`).join('');
+function howAsksHTML(){
+  const ids = howOffers(String(A.howTos || ''));
+  return `<div class="how-asks" id="how_asks"${ids.length ? '' : ' hidden'}><p class="hint">Your house has these, and guests often ask about them. Tap one, then finish the line.</p><div class="chips" role="group" aria-label="Things guests ask about">${howAsksInner(ids)}</div></div>`;
+}
+// The offers follow the text: one the host has started (by a tap or by typing its name) leaves, the next one comes.
+function howAsksRefresh(){ const box = document.getElementById('how_asks'); if (!box) return; const ids = howOffers(howText()); box.hidden = !ids.length; box.querySelector('.chips').innerHTML = howAsksInner(ids); }
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-howask]'); if (!b) return;
+  const ta = document.getElementById('f_howTos'); if (!ta) return;
+  const cur = ta.value.replace(/\s+$/, ''), next = (cur ? cur + '\n' : '') + amenName(b.dataset.howask) + ': ';
+  ta.value = next; set('howTos', next); log('howto', 'ask'); howAsksRefresh(); if (typeof phoneSoon === 'function') phoneSoon();
+  ta.focus(); ta.setSelectionRange(next.length, next.length); ta.scrollTop = ta.scrollHeight;
+});
+document.addEventListener('input', e => { if (e.target.id === 'f_howTos') howAsksRefresh(); });
+
 /* ---------- Taxis near your house (16 Nov 2026, engine/src/modules/transport/README.md, "The taxis found") ----------
    The research of the area brings the taxis of our open directory around its point (free, worker/guide-worker.mjs
    taxisAt). Where the host is asked for the taxi they trust (Getting around, Only you know), they come first: up to 4

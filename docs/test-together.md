@@ -408,6 +408,9 @@ made-up list, in German and French at 360 px, at 18:00, 23:45, 0:30, 1:30, 2:30 
 | 11.21 | Build the guide, open its House guide | Parts with words only. A line under a title reads like "Washing machine, tumble dryer", never "Free washer – In unit" |
 | 11.22 | The same guide in German and French | The lines under the titles are in that language |
 | 11.23 | In the builder, open How things work before writing anything | Its foot says "Optional. Only you know this: a listing does not say it.", never "Filled in from your listing"; no "Manuals or labels" |
+| 11.26 | In How things work, look above the text | Up to eight buttons, the things your listing says the house has that guests ask about ("+ Heating", "+ Pool"...), in your language |
+| 11.27 | Tap one, finish the line, tap another | Each tap starts a new line ("Heating: ") with the cursor after it; a tapped button leaves and another comes |
+| 11.28 | Leave one line unfinished ("Pool: "), build the guide | The finished lines are in the house guide, each in its room (heating under Living room, the pool under Pool); the unfinished one is nowhere |
 | 11.24 | In Only you know, add one or two photos under "Photos to help find the place or the key", then build | The built guide's Getting here opens on those photos, then its lines |
 | 11.25 | The built guide's Check-in and check-out part | "Check-in from ..." and "Check-out by ..." first, in the guest's language, then the check-out tasks |
 

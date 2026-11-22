@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { toneOf, paragraphs, directionsTo, partShown, stayTimes, partItems, isTimeLine } from '../src/modules/info/plan.js';
+import { toneOf, paragraphs, directionsTo, partShown, stayTimes, partItems, isTimeLine, HOW_ASKS, howAsks, tipSaid } from '../src/modules/info/plan.js';
 
 test('toneOf: ink, yellow as the taxi\'s, else the tone of that name', () => {
   assert.equal(toneOf('ink'), 'var(--ink)');
@@ -90,4 +90,23 @@ test('isTimeLine: the generator\'s old sentence for either time, and nothing els
   assert.equal(isTimeLine({ en: 'Check-in is from 15:00, the key is in the lockbox.' }), false);
   assert.equal(isTimeLine({ en: 'Lock up at checkout' }), false);
   assert.equal(isTimeLine(null), false);
+});
+
+test('HOW_ASKS: every thing a host is offered to explain is a thing of our list, named in the six languages, none twice', () => {
+  const items = JSON.parse(readFileSync(new URL('../src/amenities.json', import.meta.url), 'utf8')).items, by = Object.fromEntries(items.map(x => [x.id, x]));
+  assert.equal(new Set(HOW_ASKS).size, HOW_ASKS.length);
+  for (const id of HOW_ASKS) { assert.ok(by[id], id); for (const l of ['en', 'es', 'fr', 'ca', 'de', 'nl']) assert.ok(by[id].t[l], `${id} ${l}`); }
+});
+
+test('howAsks: the house\'s own things, most asked first, without those a line already starts with, at most eight', () => {
+  assert.deepEqual(howAsks(['bbq', 'pool', 'washer', 'hangers', 'wifi'], []), ['pool', 'washer', 'bbq']);
+  assert.deepEqual(howAsks(['bbq', 'pool', 'washer'], ['pool']), ['washer', 'bbq']);
+  assert.deepEqual(howAsks(HOW_ASKS, []), HOW_ASKS.slice(0, 8));
+  assert.deepEqual(howAsks(HOW_ASKS, HOW_ASKS.slice(0, 3)), HOW_ASKS.slice(3, 11));   // one started: the next one comes
+  assert.deepEqual(howAsks([], []), []); assert.deepEqual(howAsks(undefined, undefined), []);
+});
+
+test('tipSaid: a line start nobody finished says nothing; a finished line does', () => {
+  assert.equal(tipSaid('Heating:'), false); assert.equal(tipSaid('Chauffage : '), false); assert.equal(tipSaid('  '), false); assert.equal(tipSaid(undefined), false);
+  assert.equal(tipSaid('Heating: the thermostat is by the front door'), true); assert.equal(tipSaid('Spare batteries are in the TV unit'), true);
 });

@@ -2196,12 +2196,48 @@ async function gRoomsOffers() {
     { const foot0 = await p.textContent('.card .foot .todo').catch(() => ''), empty = !(await p.inputValue('[data-k="howTos"]').catch(() => 'x'));
       ok('How things work: empty, its foot says only the host knows this, never "Filled in from your listing"', empty && /Only you know this: a listing does not say it/.test(foot0) && !/Filled in/.test(foot0), foot0);
       ok('How things work: no "Manuals or labels" to send (they never reached the guide)', !(await p.$('[data-file="manual"]')) && !/Manuals or labels/.test(await p.textContent('.card')));
+      // Rule 17: the things this house has that guests ask about (it has a pool, a hot tub, a TV, a washing machine, a
+      // dryer and a dishwasher by now, no heating and no barbecue), most asked first, as line starts above the text. A
+      // tap starts a line and leaves the cursor at its end; the offer then leaves.
+      const asks = () => p.$$eval('#how_asks:not([hidden]) [data-howask]', bs => bs.map(b => [b.dataset.howask, b.textContent.trim()]));
+      const a0 = await asks(), ids0 = a0.map(x => x[0]).join();
+      ok('How things work: the house\'s own things are offered as line starts, most asked first, and nothing it does not have', ids0 === 'pool,hot_tub,tv,washer,dryer,dishwasher' && a0.map(x => x[1]).join('|') === '+ Pool|+ Hot tub|+ TV|+ Washing machine|+ Tumble dryer|+ Dishwasher', JSON.stringify(a0));
+      await p.screenshot({ path: join(SHOTS, 'builder-howto-asks-360.png'), fullPage: true });
+      await p.click('[data-howask="pool"]'); await settle(p, 200);
+      const t1 = await p.evaluate(() => { const t = document.getElementById('f_howTos'); return { v: t.value, focus: document.activeElement === t, at: t.selectionStart }; });
+      ok('How things work: a tap starts the line "Pool: " and leaves the cursor at its end; that offer leaves', t1.v === 'Pool: ' && t1.focus && t1.at === 6 && (await asks()).map(x => x[0]).join() === 'hot_tub,tv,washer,dryer,dishwasher', JSON.stringify(t1));
+      await p.keyboard.type('the cover key hangs by the door'); await p.click('[data-howask="washer"]'); await settle(p, 200);
+      const t2 = await p.inputValue('#f_howTos');
+      ok('How things work: the next tap starts a new line under what was written', t2 === 'Pool: the cover key hangs by the door\nWashing machine: ' && (await asks()).map(x => x[0]).join() === 'hot_tub,tv,dryer,dishwasher', JSON.stringify(t2));
+      await p.keyboard.type('x'); await settle(p, 900);
+      const hp = await inPhone(p, `d => d.body.textContent`).catch(() => '');
+      await p.keyboard.press('Backspace'); await settle(p, 900);
+      const hp2 = await inPhone(p, `d => d.body.textContent`).catch(() => '');
+      ok('How things work: a line nobody finished ("Washing machine: ") is not saved as a tip a guest would read', /Pool: the cover key hangs by the door/.test(await p.evaluate(() => JSON.stringify(typeof A === 'undefined' ? document.getElementById('f_howTos').value : A.howTos))) && !/Washing machine:\s*(\||$)/.test(hp2 || ''), (hp2 || '').slice(0, 80));
+      ok('How things work: nothing overlaps, the page is not wider than the screen', await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+      await p.fill('[data-k="howTos"]', ''); await settle(p, 200);
+      ok('How things work: emptied, every offer is back', (await asks()).length === a0.length);
       await p.fill('[data-k="howTos"]', 'The heating is set on the thermostat by the front door'); await settle(p, 300); await go(p, '#stay'); await settle(p, 200); await go(p, '#howto'); await settle(p, 200);
       const foot1 = await p.textContent('.card .foot .todo').catch(() => '');
       ok('How things work: once the host has written a line, the foot no longer says only they know it, and still not "Filled in"', /^Optional\. Anything you add here saves as you type\./.test(foot1.trim()), foot1);
       await go(p, '#stay'); await settle(p, 200);
       ok('Check-in and rules, filled from the listing, still says so', /Filled in from your listing/.test(await p.textContent('.card .foot .todo').catch(() => ''))); }
     ok('amenities: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // The same step on a desktop, in French: the offers are named in the host's language, beside the phone, nothing overlaps.
+  { const G = { ...B, answers: { ...B.answers, amenities: ['Pool', 'BBQ', 'Washing machine', 'Heating', 'Air conditioning'], howTos: '' } };
+    const { ctx, p, errors } = await open(browser, G, 1280, 860, { 'porta-lang-v1': 'fr' });
+    await p.goto('http://editor.test/#howto'); await ready(p); await settle(p, 400);
+    const fr = await p.$$eval('#how_asks:not([hidden]) [data-howask]', bs => bs.map(b => b.textContent.trim()));
+    ok('How things work, desktop, French: the house\'s things in the host\'s language, most asked first', fr.join('|') === '+ Chauffage|+ Climatisation|+ Piscine|+ Lave-linge|+ Barbecue', fr.join('|'));
+    await p.click('[data-howask="heating"]'); await settle(p, 200); await p.keyboard.type('le thermostat est près de la porte'); await settle(p, 300);
+    ok('How things work, desktop, French: the line starts with the thing\'s French name', (await p.inputValue('#f_howTos')) === 'Chauffage: le thermostat est près de la porte');
+    ok('How things work, desktop: the page is not wider than the screen, the phone is beside the step', await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1 && !!document.querySelector('.side-phone')));
+    await p.click('[data-howask="pool"]'); await settle(p, 1500);   // a second line, started and not finished
+    const ph = await inPhone(p, `d => d.body.innerText`).catch(() => "");
+    ok('How things work, desktop: the phone shows the finished line and not the one only started ("Piscine: ")', /Chauffage:?\s*le thermostat est près de la porte/.test(ph || '') && !/Piscine/.test(ph || ''), (ph || '').replace(/\s+/g, ' ').slice(0, 160));
+    await p.screenshot({ path: join(SHOTS, 'builder-howto-asks-1280-fr.png') });
+    ok('How things work, desktop: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
 }
 async function gNearby() {

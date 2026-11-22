@@ -372,9 +372,28 @@ KW = {'kitchen': r'coffee|oven|hob|stove|dishwasher|fridge|freezer|kettle|microw
 ROOM = {'living': ('sofa', 'blue', 'Living room'), 'kitchen': ('kitchen', 'green', 'Kitchen'), 'bedrooms': ('bed', 'red', 'Bedrooms'),
         'bathrooms': ('drop', 'yellow', 'Bathrooms'), 'pool': ('pool', 'blue', 'Pool'), 'outside': ('flame', 'orange', 'Outside'),
         'laundry': ('washer', 'green', 'Laundry'), 'office': ('desk', 'blue', 'Office'), 'other': ('box', 'ink', 'Good to know')}
+# A thing of the house (a listing's word for it and our own name) and the room it is in: what is outdoors goes outside,
+# the pool stays the pool's, a safety item goes to "Good to know"; None when no room is known for it.
+AM_KW = {'kitchen': KW['kitchen'] + r'|refrigerator|fridge|cooking basics|pots and pans|dishes|plates|cutlery|silverware|wine glass|baking|dining table|blender|rice cooker|spices|bread maker',
+         'living': KW['living'] + r'|sound system|books|board games|game console|games console|piano|record player|ethernet',
+         'bedrooms': KW['bedrooms'] + r'|hangers|clothing storage|room-darkening|blackout|crib|travel cot',
+         'bathrooms': KW['bathrooms'] + r'|hair dryer|shampoo|conditioner|body soap|shower gel|bidet|bathtub',
+         'pool': KW['pool'] + r'|hot tub',
+         'outside': KW['outside'] + r'|balcony|backyard|outdoor furniture|outdoor dining|sun lounger|fire pit|beach essentials',
+         'laundry': KW['laundry'] + r'|drying rack|clothes drying',
+         'office': KW['office'] + r'|dedicated workspace'}
+SAFE = r'first aid|fire extinguisher|smoke alarm|carbon monoxide'
+def thing_room(words):
+    if re.search(r'outdoor|outside', words, re.I) and not re.search(AM_KW['pool'], words, re.I): return 'outside'
+    return next((r for r, rx in AM_KW.items() if re.search(rx, words, re.I)), 'other' if re.search(SAFE, words, re.I) else None)
 items = {k: [] for k in ROOM}
+# How things work, one tip a line. A tip that starts with a thing of the house, as the builder offers them ("Heating: ...",
+# "Chauffage : ...", in any of the six languages), goes to that thing's room; any other by its own words. A line start
+# nobody finished ("Heating:") says nothing and is left out (engine/src/modules/info/README.md, rule 17).
 for ln in lines('howTos'):
-    k = next((r for r, rx in KW.items() if re.search(rx, ln, re.I)), 'other')
+    if re.search(r':\s*$', ln): continue
+    head = AM_BY.get(am_match(ln.split(':', 1)[0])) if ':' in ln else None
+    k = (head and thing_room(head['t']['en'])) or next((r for r, rx in KW.items() if re.search(rx, ln, re.I)), 'other')
     items[k].append(ln)
 # What the host wrote in a room's own card goes with that room; a kitchen has one card, bedrooms may have several.
 for r in rooms:
@@ -386,15 +405,6 @@ if not HOUSE_PAGE: items['bedrooms'] = lines('sleeping') + items['bedrooms']   #
 # names (engine/src/amenities.json, six languages), never in the listing's raw words ("Free washer – In unit"): a thing
 # our list does not know is left out (engine/src/modules/info/README.md, rule 13). Safety items go to "Good to know";
 # Wi-Fi, parking and generic lines are left out (they have their own places); what is outdoors goes outside.
-AM_KW = {'kitchen': KW['kitchen'] + r'|refrigerator|fridge|cooking basics|pots and pans|dishes|plates|cutlery|silverware|wine glass|baking|dining table|blender|rice cooker|spices|bread maker',
-         'living': KW['living'] + r'|sound system|books|board games|game console|games console|piano|record player|ethernet',
-         'bedrooms': KW['bedrooms'] + r'|hangers|clothing storage|room-darkening|blackout|crib|travel cot',
-         'bathrooms': KW['bathrooms'] + r'|hair dryer|shampoo|conditioner|body soap|shower gel|bidet|bathtub',
-         'pool': KW['pool'] + r'|hot tub',
-         'outside': KW['outside'] + r'|balcony|backyard|outdoor furniture|outdoor dining|sun lounger|fire pit|beach essentials',
-         'laundry': KW['laundry'] + r'|drying rack|clothes drying',
-         'office': KW['office'] + r'|dedicated workspace'}
-SAFE = r'first aid|fire extinguisher|smoke alarm|carbon monoxide'
 JUST_ROOM = r'(kitchen|cocina|cuina|cuisine|pool|piscina|piscine)'   # the listing's "Kitchen" says nothing inside the Kitchen
 am_room = {k: [] for k in ROOM}
 for x in [str(v).strip() for v in (A.get('listingAmenities') or []) if str(v).strip()]:
@@ -404,9 +414,7 @@ for x in [str(v).strip() for v in (A.get('listingAmenities') or []) if str(v).st
     if it.get('g') == 'views': continue   # a view is not a thing in a room
     if (re.search(r'^(wifi|wi-fi|essentials|tv)$', x, re.I) or re.search(r'parking|wifi', x + ' | ' + ours, re.I)) and not re.search(r'smart tv', x, re.I): continue
     if re.fullmatch(JUST_ROOM, x, re.I) or re.fullmatch(JUST_ROOM, ours, re.I): continue
-    both = x + ' | ' + ours
-    k = ('outside' if re.search(r'outdoor|outside', both, re.I) and not re.search(AM_KW['pool'], both, re.I)
-         else next((r for r, rx in AM_KW.items() if re.search(rx, both, re.I)), 'other' if re.search(SAFE, both, re.I) else None))
+    k = thing_room(x + ' | ' + ours)
     if k and it not in am_room[k]: am_room[k].append(it)
 low = lambda x: x[:1].lower() + x[1:] if x[1:2].islower() else x
 # Several things said in one line, in each language of the guide: the first as it is named, the next ones in small

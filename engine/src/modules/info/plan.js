@@ -1,5 +1,5 @@
 // The house guide's rules, with no guide in them (README.md says each rule, who decided it and when): a row's colour, a
-// text cut into paragraphs, the directions link to the house, which parts guests see, the times of the stay. Pure, no imports (tests:
+// text cut into paragraphs, the directions link to the house, which parts guests see, the times of the stay, what a host is offered to explain. Pure, no imports (tests:
 // engine/scripts/info-plan.test.mjs); pasted whole into the maker (onboarding-site/src/build.py, as INFO), whose editor
 // says which parts guests do not see: never a second copy.
 
@@ -27,3 +27,11 @@ const firstWords = i => String(typeof i === 'string' ? i : (i && (i.en != null ?
 // gives a check-in time, and the check-out time is then drawn after it, in the order of a stay.
 export const isTimeLine = i => Object.values(OLD_TIME).some(r => r.test(firstWords(i)));
 export const partItems = (b, house) => { const has = stayTimes(b, house).map(x => x[0]); return ((b && b.items) || []).filter(i => !has.some(k => OLD_TIME[k].test(firstWords(i)))); };
+// What guests most often get stuck on in a house, most asked first, by the ids of engine/src/amenities.json. The builder's
+// step How things work offers those the house has as line starts ("Heating: "), for the host to finish (README.md, rule 17).
+export const HOW_ASKS = ['heating', 'floor_heating', 'ac', 'hot_water', 'pool', 'hot_tub', 'tv', 'coffee_maker', 'washer', 'dryer', 'dishwasher', 'oven', 'hob',
+  'fireplace', 'bbq', 'outdoor_shower', 'ev_charger', 'safe', 'smart_lock', 'keypad', 'sauna', 'ceiling_fan', 'blackout', 'streaming', 'sound_system', 'fire_pit', 'bikes', 'kayak', 'lift'];
+// Those to offer: the house's own, in that order, without the ones a line already starts with; at most eight.
+export const howAsks = (has, started) => HOW_ASKS.filter(id => (has || []).includes(id) && !(started || []).includes(id)).slice(0, 8);
+// A tip as it reaches the guide: a line start nobody finished ("Heating:") says nothing and is left out.
+export const tipSaid = ln => !/:\s*$/.test(String(ln || '')) && !!String(ln || '').trim();

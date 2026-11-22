@@ -1,5 +1,5 @@
 // The generator (engine/scripts/generate-site.py) writes the house guide's parts (content/message.json;
-// engine/src/modules/info/README.md, rules 11 to 15): the line under a part's title and "Also in ..." are said in our own
+// engine/src/modules/info/README.md, rules 11 to 17): the line under a part's title and "Also in ..." are said in our own
 // names for things, in every language of the guide, never in the listing's raw words; what is outdoors goes outside; and
 // which of the parts guests then see is the guide's own rule (partShown). Made-up answers; the site folder is removed after.
 //   node --test 'worker/test/*.test.mjs'
@@ -85,4 +85,19 @@ test('arrival photos: saved with the guide and shown in Getting here, before its
   const alone = generate({}, ups.slice(0, 1));
   assert.deepEqual(alone('arrival').photos, ['guide/arrival-1.jpg']); assert.equal(alone('arrival').items, undefined); assert.equal(partShown(alone('arrival'), alone.house), false);
   assert.deepEqual(Object.keys(generate({ arrival: 'Park inside the gate.' })('arrival')), ['id', 'icon', 'tone', 'title', 'items']);   // no photo: the part as before
+});
+
+// Rule 17: a tip that starts with a thing of the house, as the builder offers them, goes to that thing's room in any
+// language; a start nobody finished is left out; a tip with no such start is filed by its own words, as before.
+test('How things work: "Chauffage : ..." goes to the living room, "Lavadora: ..." to the laundry, an unfinished "Heating:" nowhere', () => {
+  const g = generate({ howTos: ['Chauffage : le thermostat est près de la porte', 'Lavadora: el detergente está en el armario de la cocina', 'Heating:', 'Piscine:  ',
+    'Outdoor shower: the tap is behind the hedge', 'Air conditioning: the remote is in the bedside drawer', 'Spare batteries are in the TV unit', 'Note: the oven is slow'].join('\n') });
+  const where = Object.fromEntries(g.blocks.flatMap(b => (b.items || []).map(i => [i.en, b.id])));
+  assert.equal(where['Chauffage : le thermostat est près de la porte'], 'living');
+  assert.equal(where['Lavadora: el detergente está en el armario de la cocina'], 'laundry');   // not the kitchen, though the line says "cocina"
+  assert.equal(where['Outdoor shower: the tap is behind the hedge'], 'outside');
+  assert.equal(where['Air conditioning: the remote is in the bedside drawer'], 'bedrooms');     // no room of its own: by its words ("bed")
+  assert.equal(where['Spare batteries are in the TV unit'], 'living');
+  assert.equal(where['Note: the oven is slow'], 'kitchen');
+  assert.ok(!JSON.stringify(g.blocks).includes('Heating:"') && !JSON.stringify(g.blocks).includes('Piscine'), 'the unfinished starts are left out');
 });

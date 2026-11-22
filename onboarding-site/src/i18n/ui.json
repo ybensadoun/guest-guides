@@ -3414,6 +3414,16 @@
 "es": "Opcional. Lo que añadas aquí se guarda mientras escribes.",
 "fr": "Facultatif. Ce que vous ajoutez ici s’enregistre pendant la saisie."
 },
+"Your house has these, and guests often ask about them. Tap one, then finish the line.": {
+"ca": "La teva casa té això, i els hostes sovint ho pregunten. Toca’n un i acaba la línia.",
+"es": "Tu casa tiene esto, y los huéspedes suelen preguntar por ello. Toca uno y termina la línea.",
+"fr": "Votre logement a ceci, et les voyageurs posent souvent la question. Touchez-en un, puis terminez la ligne."
+},
+"Things guests ask about": {
+"ca": "El que pregunten els hostes",
+"es": "Lo que preguntan los huéspedes",
+"fr": "Ce que demandent les voyageurs"
+},
 "Optional. Only you know this: a listing does not say it. What you add here saves as you type.": {
 "ca": "Opcional. Només tu ho saps: un anunci no ho diu. El que afegeixis aquí es desa mentre escrius.",
 "es": "Opcional. Solo tú lo sabes: un anuncio no lo dice. Lo que añadas aquí se guarda mientras escribes.",

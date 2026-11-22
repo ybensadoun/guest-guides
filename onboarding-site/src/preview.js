@@ -179,7 +179,7 @@ const PV_ROOM = { 'Living room': 'Living room', Kitchen: 'Kitchen', Bedroom: 'Be
 function houseParts(){
   const out = new Map(), rooms = roomsNow(), part = c => PV_ROOM[c] || 'Good to know', at = t => out.get(t) || out.set(t, { r: t, items: [], photos: [] }).get(t);
   rooms.forEach(r => { if (part(r.c) !== 'Good to know') at(part(r.c)); });
-  lines('howTos').forEach(l => at(part(Object.keys(ROOMKW).find(k => ROOMKW[k].test(l)))).items.push(l));
+  lines('howTos').filter(INFO.tipSaid).forEach(l => at(part(Object.keys(ROOMKW).find(k => ROOMKW[k].test(l)))).items.push(l));   // a line start nobody finished ("Heating:") is not shown, as in the built guide
   rooms.forEach(r => String(r.t || '').split('\n').map(x => x.trim()).filter(Boolean).forEach(l => at(part(r.c)).items.push(rooms.filter(x => part(x.c) === part(r.c)).length > 1 ? `${r.n}: ${l}` : l)));
   uploads.filter(u => u.kind === 'photo').forEach(u => at(part(u.room)).photos.push(u.url));
   const parts = [...out.values()].filter(p => p.items.length);
