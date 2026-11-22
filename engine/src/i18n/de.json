@@ -212,6 +212,8 @@
   "t_scary": "Gruselig",
   "g_wine": "Wein & Cava",
   "houseGuideLead": "Alles, was ihr über das Haus wissen müsst.",
+  "hgCheckin": "Anreise ab {time} Uhr.",
+  "hgCheckout": "Abreise bis {time} Uhr.",
   "events": "Feste & Events",
   "eventsLead": "Feste, Jahrmärkte und lokale Traditionen rund ums Haus.",
   "onNow": "Läuft gerade",

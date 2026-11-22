@@ -181,8 +181,9 @@ ENG_DATA+=_re.sub(r'(?m)^export ','',_tsrc)+'\n'
 # says on a part's row when guests do not see it. The guide's own rule, pasted whole. Never a second copy.
 _isrc=open(__import__('os').path.join(_MD,'info','plan.js'),encoding='utf-8').read()
 assert not _re.search(r'(?m)^import ',_isrc),'engine/src/modules/info/plan.js: an import the maker does not paste'
-assert 'export const partShown' in _isrc,'engine/src/modules/info/plan.js: export const partShown not found'
-ENG_DATA+='const INFO = (() => {\n'+_re.sub(r'(?m)^export ','',_isrc)+'\nreturn { partShown };\n})();\n'
+for _need in ('export const partShown','export const stayTimes','export const partItems'):
+    assert _need in _isrc,'engine/src/modules/info/plan.js: '+_need+' not found'
+ENG_DATA+='const INFO = (() => {\n'+_re.sub(r'(?m)^export ','',_isrc)+'\nreturn { partShown, stayTimes, partItems };\n})();\n'
 # The taxis a house is offered from our open directory (engine/src/modules/transport/taxis.js): the builder's "Taxis near
 # your house" and the editor's. Its one import is pick.js, pasted just above.
 _xsrc=open(__import__('os').path.join(_MD,'transport','taxis.js'),encoding='utf-8').read()

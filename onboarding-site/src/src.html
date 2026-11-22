@@ -274,7 +274,7 @@ const MODULES = [
   {id:'offers',group:'house',title:'What the place offers',sub:'Amenities, by group',icon:'star',tc:'var(--sun)',ti:'#1b1407',sh:'var(--pine)',shape:'circle',
    lead:'Guests see these on the house page, the most asked for first. What your listing says is already ticked. Search for anything else, or open a group.',need:[],fields:['amenities']},
   {id:'howto',group:'house',title:'How things work',sub:'Boiler, pool, TV…',icon:'tool',tc:'var(--clay)',ti:'#fff',sh:'var(--ink)',shape:'bar',sec:'houseguide',
-   lead:'Anything guests get stuck on that belongs to no room in particular: the boiler, the shutters, the pool pump. Each room has its own notes in Rooms and photos.',need:[],fields:['howTos','up:manual']},
+   lead:'Anything guests get stuck on that belongs to no room in particular: the boiler, the shutters, the pool pump. Each room has its own notes in Rooms and photos.',need:[],fields:['howTos']},
   {id:'stay',group:'house',title:'Check-in and rules',sub:'Times, rules, leaving',icon:'key',tc:'var(--plum)',ti:'#fff',sh:'var(--sun)',shape:'circle',
    lead:'The times and the few rules that matter.',need:['checkIn','checkOut'],fields:['checkIn','checkOut','houseRules','checkoutTasks']},
   {id:'wifi',group:'house',title:'Wi-Fi',sub:'Name and password',icon:'wifi',tc:'var(--pine)',ti:'#fff',sh:'var(--tomato)',shape:'half',sec:'wifi',part:'known',
@@ -362,7 +362,7 @@ const UP = {
   cover:{label:'Your own cover picture',opt:true,max:1,hint:'A photo, or an artistic rendering of your house (made with an AI image tool or by an artist). It replaces the photo above. Landscape works best.'},
   photo:{label:'Photos of the place',max:16},
   manual:{label:'Manuals or labels',opt:true,max:6,doc:true,hint:'Photos of labels or instructions are fine.'},
-  arrivalPhoto:{label:'Photos to help find the place or the key',opt:true,max:4,hint:'The gate, the turning, where to park, where the key is.'},
+  arrivalPhoto:{label:'Photos to help find the place or the key',opt:true,max:4,hint:'The gate, the turning, where to park, where the key is. Guests see them in the house guide, under Getting here.'},
   feedback:{label:'Screenshots',opt:true,max:6,hint:'Circle the problem on a screenshot if that is easier.'}
 };
 

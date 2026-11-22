@@ -2134,6 +2134,16 @@ async function gRoomsOffers() {
     const offers = await inPhone(p, `d => { const h = [...d.querySelectorAll('.pv-card h3')].find(x => x.textContent === 'What this place offers'); return h ? h.nextElementSibling.textContent : ''; }`);
     ok('amenities: the phone shows them on the house page, the most asked for first', /^Pool, Hot tub/.test(offers || ''), offers);
     ok('amenities: How things work no longer asks for them', await (async () => { await go(p, '#howto'); await settle(p, 200); return !(await p.$('#amQ')); })());
+    // How things work (engine/src/modules/info/README.md, rule 16): nothing in a listing fills it, so its foot never says
+    // "Filled in from your listing" while it is empty, and it asks for no file that would not reach the guide.
+    { const foot0 = await p.textContent('.card .foot .todo').catch(() => ''), empty = !(await p.inputValue('[data-k="howTos"]').catch(() => 'x'));
+      ok('How things work: empty, its foot says only the host knows this, never "Filled in from your listing"', empty && /Only you know this: a listing does not say it/.test(foot0) && !/Filled in/.test(foot0), foot0);
+      ok('How things work: no "Manuals or labels" to send (they never reached the guide)', !(await p.$('[data-file="manual"]')) && !/Manuals or labels/.test(await p.textContent('.card')));
+      await p.fill('[data-k="howTos"]', 'The heating is set on the thermostat by the front door'); await settle(p, 300); await go(p, '#stay'); await settle(p, 200); await go(p, '#howto'); await settle(p, 200);
+      const foot1 = await p.textContent('.card .foot .todo').catch(() => '');
+      ok('How things work: once the host has written a line, the foot no longer says only they know it, and still not "Filled in"', /^Optional\. Anything you add here saves as you type\./.test(foot1.trim()), foot1);
+      await go(p, '#stay'); await settle(p, 200);
+      ok('Check-in and rules, filled from the listing, still says so', /Filled in from your listing/.test(await p.textContent('.card .foot .todo').catch(() => ''))); }
     ok('amenities: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
 }
@@ -2354,6 +2364,8 @@ async function gEditor() {
     // The house guide's parts (engine/src/modules/info/README.md, rules 11 and 12): every part can have a line under its
     // title; on the reference guide no part is hidden from guests and there is a Check-out part, so none is offered.
     const h0 = await hg(p);
+    ok('editor: House guide: the two times of the stay are fields, check-in and check-out, and one line says where guests read them', !!(await p.$('[data-p="files/house/checkin"][type="time"]')) && !!(await p.$('[data-p="files/house/checkout"][type="time"]'))
+      && /Guests read these two times on the home page and at the top of the Check-out part/.test(await p.textContent('.edz')));
     ok('editor: House guide: every part can have a line under its title; the reference guide hides no part and has its Check-out part', h0.cards > 2 && h0.subs === h0.cards && !h0.hidden.length && !h0.add, JSON.stringify(h0));
     ok('editor: no page errors (phone)', !errors.length, errors.join(' | '));
     await ctx.close(); }
@@ -2368,10 +2380,16 @@ async function gEditor() {
     await p.click('[data-hgcheckout]'); await settle(p, 250);
     const h2 = await p.evaluate(() => { const c = [...document.querySelectorAll('details.cmi[data-open^="files/message/blocks/"]')].pop(), a = document.activeElement;
       return { title: c.querySelector('summary b').textContent, open: c.open, note: (c.querySelector('summary .pl-hid:not(.hg-ok)') || {}).textContent || '', focus: a && a.dataset ? a.dataset.p || '' : '', add: !!document.querySelector('[data-hgcheckout]') }; });
-    ok(`editor ${w}: House guide: "Add a Check-out part" adds it once, at the end, open, its first line ready to type`, h2.title === 'Check-out' && h2.open && /Guests do not see/.test(h2.note) && /\/items\/0$/.test(h2.focus) && !h2.add && (await hg(p)).cards === h1.cards + 1, JSON.stringify(h2));
+    ok(`editor ${w}: House guide: "Add a Check-out part" adds it once, at the end, open, its first line ready to type; the house has a check-out time, so guests see the part at once (rule 14)`, h2.title === 'Check-out' && h2.open && !h2.note && /\/items\/0$/.test(h2.focus) && !h2.add && (await hg(p)).cards === h1.cards + 1, JSON.stringify(h2));
     await p.keyboard.type('Leave the keys on the table.'); await settle(p, 300);
     const h3 = await hg(p);
-    ok(`editor ${w}: House guide: once the part has a line, its row no longer says guests do not see it`, h3.hidden.length === 1, JSON.stringify(h3.hidden));
+    ok(`editor ${w}: House guide: with a line typed in the new part, still only the part with no words says guests do not see it`, h3.hidden.length === 1, JSON.stringify(h3.hidden));
+    // No check-out time: the new part has no words until a line is typed, and its note follows the typing.
+    await p.fill('[data-p="files/house/checkout"]', ''); await settle(p, 300);
+    await p.fill('[data-p="files/message/blocks/9/items/0"]', ''); await settle(p, 300);
+    const noTime = (await hg(p)).hidden.length;
+    await p.fill('[data-p="files/message/blocks/9/items/0"]', 'Leave the keys on the table.'); await settle(p, 300);
+    ok(`editor ${w}: House guide: with no check-out time, an empty Check-out part says guests do not see it, until a line is typed`, noTime === 2 && (await hg(p)).hidden.length === 1, String(noTime));
     ok(`editor ${w}: House guide: nothing overlaps, the page is not wider than the screen`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
     await p.screenshot({ path: join(SHOTS, `editor-houseguide-added-${w}.png`) });
     ok(`editor ${w}: House guide: no page errors`, !errors.length, errors.join(' | '));

@@ -283,6 +283,7 @@ if A.get('wifiName') and on('wifi'):
 
 house = {'_doc': 'lat/lng: an approximate area point, never the address.', 'name': place, 'lat': args.lat, 'lng': args.lng,
          'photoPos': '50% 55%', 'checkout': (A.get('checkOut') or '')[:5]}   # no time given: none shown, never one we made up
+if (A.get('checkIn') or '').strip(): house['checkin'] = A['checkIn'].strip()[:5]   # the times of the stay live here, once: Home's fact and the house guide's Check-out part both read them (engine/src/modules/info/README.md, rule 14)
 HAS_PHOTO = (SITE / 'public/house.jpg').exists()
 if HAS_PHOTO: house['photo'] = 'house.jpg'
 elif first_room: house['photo'] = str(first_room.relative_to(SITE / 'public'))
@@ -420,15 +421,24 @@ for k in first + [k for k in ROOM if k not in first]:
     if items[k]: b['items'] = [L(x) for x in items[k]]
     blocks.append(b)
 # No Wi-Fi block here: Wi-Fi is the first thing on Home (its card opens the network, password and QR code), as in Ca La Kimberly.
-if lines('arrival'):
-    blocks.insert(0, {'id': 'arrival', 'icon': 'car', 'tone': 'blue', 'title': L('Getting here'), 'items': [L(x) for x in lines('arrival')]})
+# The host's photos that help find the place or the key (the builder's "Only you know"): shown in "Getting here" (rule 15).
+arrival_photos = []
+for u in by_kind.get('arrivalPhoto', []):
+    im = load_upload(u)
+    if not im: continue
+    arrival_photos.append(f'guide/arrival-{len(arrival_photos) + 1}.jpg'); save_jpg(im, SITE / 'public' / arrival_photos[-1])
+if lines('arrival') or arrival_photos:
+    blocks.insert(0, {'id': 'arrival', 'icon': 'car', 'tone': 'blue', 'title': L('Getting here'), **({'photos': arrival_photos} if arrival_photos else {}),
+                      **({'items': [L(x) for x in lines('arrival')]} if lines('arrival') else {})})
 if lines('localTips'):
     blocks.append({'id': 'tips', 'icon': 'home', 'tone': 'green', 'title': L('Local tips'), 'items': [L(x) for x in lines('localTips')]})
 if lines('houseRules'):
     blocks.append({'id': 'rules', 'icon': 'home', 'tone': 'ink', 'title': L('House rules'), 'items': [L(x) for x in lines('houseRules')]})
-co = ([f"Check-out by {house['checkout']}."] if house['checkout'] else []) + lines('checkoutTasks')
-if A.get('checkIn'): co.insert(0, f"Check-in from {A['checkIn'][:5]}.")
-if co: blocks.append({'id': 'checkout', 'icon': 'key', 'tone': 'ink', 'title': L('Check-in and check-out'), 'items': [L(x) for x in co]})
+# Check-in and check-out: the part holds what to do before leaving. The times are not written here a second time: the
+# guide draws them at the top of this part from house.json (checkin, checkout), the one place they live (rule 14).
+co = lines('checkoutTasks')
+if co or house['checkout'] or house.get('checkin'):
+    blocks.append({'id': 'checkout', 'icon': 'key', 'tone': 'ink', 'title': L('Check-in and check-out'), **({'items': [L(x) for x in co]} if co else {})})
 (SITE / 'content/message.json').write_text(json.dumps({'_doc': 'House guide by room, from the host’s onboarding answers.', 'blocks': blocks}, ensure_ascii=False, indent=1))
 
 def _num(x):

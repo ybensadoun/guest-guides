@@ -58,7 +58,7 @@ const CSTEPS = [
     paths: ['content/files/house-page'], body: c => cmHousePage(c) },
   { id: 'howto', group: 'house', sec: 'message', when: c => !!(c.files || {}).message, title: 'House guide', sub: c => cmCount((((c.files || {}).message || {}).blocks || []).length, 'part', 'parts'), icon: 'tool', tc: 'var(--clay)', ti: '#fff', sh: 'var(--ink)', shape: 'bar', lang: true,
     lead: 'How everything works, one part per room or topic. Open a part to change its lines and photos.',
-    paths: ['content/files/message', 'content/files/house/checkout'], body: c => cmHouseGuide(c) },
+    paths: ['content/files/message', 'content/files/house/checkin', 'content/files/house/checkout'], body: c => cmHouseGuide(c) },
   { id: 'wifi', group: 'house', title: 'Wi-Fi', sub: 'Name and password', icon: 'wifi', tc: 'var(--pine)', ti: '#fff', sh: 'var(--tomato)', shape: 'half', lang: true,
     lead: 'Guests join with one tap: the guide makes the QR code from the name and password.',
     paths: ['content/private/wifi'], body: c => cmWifi(c) },
@@ -903,25 +903,27 @@ function cmAmPut(id) {
   list[gi].items.push(L(x)); CM.open.add(`files/house-page/amenities/${gi}`);
 }
 document.addEventListener('input', e => { if (e.target.id === 'cmAmQ') cmAmSearch(); });
-// The house guide (engine/src/modules/info/README.md): the check-out time Home shows, then its parts. Guests see a part
-// only once it has words (rule 11; INFO.partShown is the guide's own rule, pasted by build.py): a part they do not see says
-// so on its row. Every part can have a line under its title. A guide with no Check-out part can add one: Home's check-out
-// time opens the part of that id.
+// The house guide (engine/src/modules/info/README.md): the times of the stay, then its parts. The two times live once, in
+// the house's facts: Home shows the check-out time and the Check-out part starts with both (rule 14), so no line of the
+// part repeats them. Guests see a part only once it has words (rule 11; INFO.partShown is the guide's own rule, pasted by
+// build.py): a part they do not see says so on its row. Every part can have a line under its title. A guide with no
+// Check-out part can add one: Home's check-out time opens the part of that id.
 const HG_CHECKOUT = { en: 'Check-out', es: 'Salida', fr: 'Départ', ca: 'Sortida', de: 'Abreise', nl: 'Vertrek' };
 function cmHouseGuide(c) {
   const h = (c.files || {}).house || {}, blocks = ((c.files || {}).message || {}).blocks || [];
-  return `<div class="grid">${cf('Check-out time', 'files/house/checkout', h.checkout || '', { type: 'time', half: true })}</div>
+  return `<div class="grid">${cf('Check-in time', 'files/house/checkin', h.checkin || '', { type: 'time', half: true })}${cf('Check-out time', 'files/house/checkout', h.checkout || '', { type: 'time', half: true })}</div>
+    <p class="hint">Guests read these two times on the home page and at the top of the Check-out part. Change them here only.</p>
     ${blocks.some(b => b.id === 'checkout') ? '' : `<div class="cm-row"><button class="btn small" type="button" data-hgcheckout>+ Add a Check-out part</button><span class="hint">What guests do before they leave. The check-out time on the home page opens it.</span></div>`}
-    <h3 class="cm-h">Parts of the house guide</h3><p class="hint">Guests see a part once it has a line of text.</p><div class="cm-list">${blocks.map((b, i) => { const P = `files/message/blocks/${i}`;
-      return cCard(P, edShown(b.title) || b.id, `${cmCount((b.items || []).length, 'line', 'lines')} · ${cmCount((b.photos || []).length, 'photo', 'photos')}`,
+    <h3 class="cm-h">Parts of the house guide</h3><p class="hint">Guests see a part once it has a line of text.</p><div class="cm-list">${blocks.map((b, i) => { const P = `files/message/blocks/${i}`, own = INFO.partItems(b, h);
+      return cCard(P, edShown(b.title) || b.id, `${cmCount(own.length, 'line', 'lines')} · ${cmCount((b.photos || []).length, 'photo', 'photos')}`,
         `<div class="grid">${cf('Title', P + '/title', b.title, { i18n: true })}${cf('Line under the title', P + '/sub', b.sub, { i18n: true, ph: 'TV, games, heating' })}</div>
-        <div class="f full"><span class="lab">Photos</span>${cPhotos(P + '/photos', b.photos)}</div><div class="f full"><span class="lab">What guests need to know</span>${cLines(P + '/items', b.items, 'Add a line')}</div>`, [i, blocks.length],
-        '', { t: 'Guests do not see this part yet: add a line.', c: INFO.partShown(b) ? 'hg-ok' : '' }); }).join('')}</div>`;
+        <div class="f full"><span class="lab">Photos</span>${cPhotos(P + '/photos', b.photos)}</div><div class="f full"><span class="lab">What guests need to know</span>${INFO.stayTimes(b, h).length ? `<p class="hint">The check-in and check-out times come first, by themselves.</p>` : ''}${cLines(P + '/items', b.items, 'Add a line')}</div>`, [i, blocks.length],
+        '', { t: 'Guests do not see this part yet: add a line.', c: INFO.partShown(b, h) ? 'hg-ok' : '' }); }).join('')}</div>`;
 }
 // The note leaves a part's row, or comes back, as the host types: the step is not drawn again while typing.
 function hgMark(path) {
   const m = path.match(/^files\/message\/blocks\/\d+/), n = m && document.querySelector(`details.cmi[data-open="${m[0]}"] summary .pl-hid`);
-  if (n) n.classList.toggle('hg-ok', INFO.partShown(edGet(edC(), edPath(m[0]))));
+  if (n) n.classList.toggle('hg-ok', INFO.partShown(edGet(edC(), edPath(m[0])), (edC().files || {}).house || {}));
 }
 // The step Wi-Fi: the network's name and the password at once, in the order a host reads them on the router, with nothing
 // to press first. Other networks share the password; a note for guests ("Best inside the house") only matters once there
@@ -2071,6 +2073,7 @@ function cmTidy(c) {
     if (rows && !it.schedule.length) plSeasonBack(it, rows);   // only rows nobody filled in: a season one of them carried stays the place's
   }
   for (const b of (f.message || {}).blocks || []) drop(b.items, edBlank);                 // a line of text empty in every language: house guide,
+  for (const b of (f.message || {}).blocks || []) if (b.items && INFO.partItems(b, h).length !== b.items.length) { n += b.items.length - INFO.partItems(b, h).length; b.items = INFO.partItems(b, h); }   // a time kept a second time as a sentence (guides built before 22 Nov 2026): the field says it
   drop((f.garbage || {}).steps, edBlank); drop((f['house-page'] || {}).beds, edBlank);    // how to sort, beds,
   for (const g of (f['house-page'] || {}).amenities || []) drop(g.items, edBlank);        // amenities
   drop((f.garbage || {}).containers, ct => edBlank(ct.where) && edBlank(ct.takes) && edBlank(ct.map));   // containers: no "where", nothing ticked, no link

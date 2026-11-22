@@ -212,6 +212,8 @@
   "t_scary": "Scary",
   "g_wine": "Wine & cava",
   "houseGuideLead": "Everything you need to know about the house.",
+  "hgCheckin": "Check-in from {time}.",
+  "hgCheckout": "Check-out by {time}.",
   "events": "Local events",
   "eventsLead": "Festivals, fairs and local traditions around the house.",
   "onNow": "On now",

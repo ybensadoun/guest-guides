@@ -3404,6 +3404,11 @@
 "es": "Opcional. Lo que añadas aquí se guarda mientras escribes.",
 "fr": "Facultatif. Ce que vous ajoutez ici s’enregistre pendant la saisie."
 },
+"Optional. Only you know this: a listing does not say it. What you add here saves as you type.": {
+"ca": "Opcional. Només tu ho saps: un anunci no ho diu. El que afegeixis aquí es desa mentre escrius.",
+"es": "Opcional. Solo tú lo sabes: un anuncio no lo dice. Lo que añadas aquí se guarda mientras escribes.",
+"fr": "Facultatif. Vous seul le savez : une annonce ne le dit pas. Ce que vous ajoutez ici s’enregistre pendant la saisie."
+},
 "Optional. It shows on the welcome card and becomes the icon on guests’ phones. Without one, the guide shows no logo.": {
 "ca": "Opcional. Surt a la targeta de benvinguda i es converteix en la icona dels mòbils dels hostes. Sense logotip, la guia no en mostra cap.",
 "es": "Opcional. Aparece en la tarjeta de bienvenida y se convierte en el icono en los móviles de los huéspedes. Sin logo, la guía no muestra ninguno.",
@@ -3453,6 +3458,21 @@
 "ca": "Aparcament de pagament",
 "es": "Aparcamiento de pago",
 "fr": "Parking payant"
+},
+"Check-in time": {
+"ca": "Hora d’entrada",
+"es": "Hora de entrada",
+"fr": "Heure d’arrivée"
+},
+"Guests read these two times on the home page and at the top of the Check-out part. Change them here only.": {
+"ca": "Els hostes llegeixen aquestes dues hores a la pàgina d’inici i a dalt de la part Sortida. Canvia-les només aquí.",
+"es": "Los huéspedes leen estas dos horas en la página de inicio y arriba de la parte Salida. Cámbialas solo aquí.",
+"fr": "Les voyageurs lisent ces deux heures sur la page d’accueil et en haut de la partie Départ. Modifiez-les ici seulement."
+},
+"The check-in and check-out times come first, by themselves.": {
+"ca": "Les hores d’entrada i de sortida van primer, soles.",
+"es": "Las horas de entrada y de salida van primero, solas.",
+"fr": "Les heures d’arrivée et de départ viennent en premier, d’elles-mêmes."
 },
 "Parts of the house guide": {
 "ca": "Parts de la guia de la casa",
@@ -4259,10 +4279,10 @@
 "es": "La primera parte es nuestra, la última es tuya. Mejor corta y fácil de escribir.",
 "fr": "La première partie est à nous, la dernière à vous. Court et facile à taper, c’est l’idéal."
 },
-"The gate, the turning, where to park, where the key is.": {
-"ca": "La porta, el trencall, on aparcar, on és la clau.",
-"es": "La verja, el desvío, dónde aparcar, dónde está la llave.",
-"fr": "Le portail, l’embranchement, où se garer, où est la clé."
+"The gate, the turning, where to park, where the key is. Guests see them in the house guide, under Getting here.": {
+"ca": "La porta, el trencall, on aparcar, on és la clau. Els hostes les veuen a la guia de la casa, a Com arribar-hi.",
+"es": "La verja, el desvío, dónde aparcar, dónde está la llave. Los huéspedes las ven en la guía de la casa, en Cómo llegar.",
+"fr": "Le portail, l’embranchement, où se garer, où est la clé. Les voyageurs les voient dans le guide de la maison, dans Comment venir."
 },
 "The guide opens in the guest’s phone language when it can.": {
 "ca": "La guia s’obre en l’idioma del mòbil de l’hoste quan pot.",

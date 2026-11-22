@@ -212,6 +212,8 @@
   "t_scary": "Fa por",
   "g_wine": "Vi i cava",
   "houseGuideLead": "Tot el que cal saber de la casa.",
+  "hgCheckin": "Entrada a partir de les {time}.",
+  "hgCheckout": "Sortida abans de les {time}.",
   "events": "Festes i esdeveniments",
   "eventsLead": "Festes, fires i tradicions locals a prop de la casa.",
   "onNow": "En curs",

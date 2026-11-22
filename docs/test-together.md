@@ -379,9 +379,10 @@ made-up list, in German and French at 360 px, at 18:00, 23:45, 0:30, 1:30, 2:30 
 | 11.2 | Open Kitchen, "+ Add a line", type a line | The note leaves Kitchen's row; the step says "Changed" |
 | 11.3 | In Kitchen, type a "Line under the title" | Every part has that field, also those that had none |
 | 11.4 | "+ Add a Check-out part" | A part "Check-out" at the end, open, the cursor in its first line; the button is gone |
-| 11.5 | Set a check-out time, type a line in Check-out | Nothing else to do |
+| 11.5 | Set a check-in and a check-out time at the top of the step, type a line in Check-out | One line says guests read the two times on the home page and at the top of the Check-out part |
 | 11.6 | Preview, then House guide in the phone | Only the parts with words: Getting here, Kitchen, House rules, Check-out. Kitchen opens on its photos, your line under the title and your line |
 | 11.7 | In the preview, Home, tap the check-out time | The house guide opens with Check-out open, in the middle of the screen |
+| 11.9 | Change the check-out time in the editor, Preview | Home and the top of the Check-out part say the same new time; no other line of the part says a time |
 | 11.8 | The same on a phone (360 px wide) | Nothing overlaps; the note under a row's name wraps cleanly |
 
 ### In the builder, with a new link (the test house)
@@ -390,8 +391,13 @@ made-up list, in German and French at 360 px, at 18:00, 23:45, 0:30, 1:30, 2:30 
 | 11.20 | In Rooms and photos, write a note in one room only | The phone's House guide shows that part, not the rooms that only have photos |
 | 11.21 | Build the guide, open its House guide | Parts with words only. A line under a title reads like "Washing machine, tumble dryer", never "Free washer – In unit" |
 | 11.22 | The same guide in German and French | The lines under the titles are in that language |
+| 11.23 | In the builder, open How things work before writing anything | Its foot says "Optional. Only you know this: a listing does not say it.", never "Filled in from your listing"; no "Manuals or labels" |
+| 11.24 | In Only you know, add one or two photos under "Photos to help find the place or the key", then build | The built guide's Getting here opens on those photos, then its lines |
+| 11.25 | The built guide's Check-in and check-out part | "Check-in from ..." and "Check-out by ..." first, in the guest's language, then the check-out tasks |
 
 ### Known, not to report
+- A guide built before 22 Nov shows its check-in time as its old sentence until a check-in time is typed in the editor.
+- A photo of a manual or a label is added in the editor, to the part it belongs to; the builder no longer asks for them.
 - A guide built before 21 Nov keeps its old lines under the titles ("Free washer – In unit") until they are changed in the editor.
 - A new guide has a Check-out part only when the listing gave a check-out time or the host wrote check-out tasks; else it is added in the editor (11.4).
 - A part cannot be added (other than Check-out) or removed, and a line cannot be moved to another part yet.

@@ -212,6 +212,8 @@
   "t_scary": "Eng",
   "g_wine": "Wijn & cava",
   "houseGuideLead": "Alles wat je over het huis moet weten.",
+  "hgCheckin": "Aankomst vanaf {time} uur.",
+  "hgCheckout": "Vertrek voor {time} uur.",
   "events": "Feesten & evenementen",
   "eventsLead": "Feesten, jaarmarkten en lokale tradities rond het huis.",
   "onNow": "Nu bezig",

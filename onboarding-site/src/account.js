@@ -697,9 +697,10 @@ function acctBar() {
 }
 
 /* ---------- Publish: queue the guide for building, then follow its status ---------- */
-// The host's own images (logo, cover, photos, inspiration images) stay on their device until they publish: then they go
-// to the guide's storage, so the guide builder can use them (their paths travel in the answers, _uploads).
-const HOST_KINDS = ['logo', 'cover', 'photo', 'inspiration'];
+// The host's own images (logo, cover, photos, inspiration images, the photos that help find the place) stay on their
+// device until they publish: then they go to the guide's storage, so the guide builder can use them (their paths travel
+// in the answers, _uploads). A kind asked for in the builder and missing here never reaches the guide.
+const HOST_KINDS = ['logo', 'cover', 'photo', 'inspiration', 'arrivalPhoto'];
 async function acctSendUploads(){
   for (const u of uploads.filter(x => !x.remote && x.blob && !x.path && HOST_KINDS.includes(x.kind))) await acctSendOne(u);
 }

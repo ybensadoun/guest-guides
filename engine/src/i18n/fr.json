@@ -212,6 +212,8 @@
   "t_scary": "Ça fait peur",
   "g_wine": "Vin et cava",
   "houseGuideLead": "Tout ce qu'il faut savoir sur la maison.",
+  "hgCheckin": "Arrivée à partir de {time}.",
+  "hgCheckout": "Départ avant {time}.",
   "events": "Fêtes et événements",
   "eventsLead": "Fêtes, foires et traditions locales autour de la maison.",
   "onNow": "En cours",
