@@ -58,6 +58,27 @@ export function txPhone(s) {
   if (es && /^[6789]/.test(es)) return `${es.slice(0, 3)} ${es.slice(3, 5)} ${es.slice(5, 7)} ${es.slice(7)}`;
   return raw.startsWith('+') ? raw.replace(/\s+/g, ' ') : raw.startsWith('00') ? '+' + d.slice(2) : raw.replace(/\s+/g, ' ');
 }
+// The taxi a host types in one field as "name and number" (the builder; 22 Nov 2026): { name, phone }, the number as
+// txPhone writes it, or null when no number can be read (the builder says so as the host types, and the generator then
+// writes no taxi: a taxi guests cannot call helps no one). A number: digits written with spaces, dots, dashes and
+// brackets, with or without a country code ("+34 600-123-456", "938.94.13.29", "(93) 225 0000", "0034 977666111"): 9
+// digits or more, 8 with a country code, 15 at most; the first one that reads. A run longer than a Spanish number with no
+// code ("24 977 66 61 11") is read by its last 9 digits. The name: the words before the number, else those after it, as
+// the host wrote them, without the signs left hanging; none: empty (the generator says "Taxi").
+const TX_RUN = /(?:\+|00)?\(?\d+\)?(?:[\s.\-]{1,2}\d+)*/g;   // groups of digits a space, a dot or a dash apart; brackets round the first only, so "(24 h)" after a number is not part of it
+export function txTyped(s) {
+  const raw = String(s || '').replace(/\s+/g, ' ').trim();
+  for (const m of raw.matchAll(TX_RUN)) {
+    const run = m[0], coded = /^(\+|00)/.test(run), d = txDigits(run);
+    if (d.length > 15 || d.length < (coded ? 8 : 9)) continue;
+    const tidy = (coded && run.startsWith('+') ? '+' : '') + run.replace(/[^\d]+/g, ' ').trim();   // "+34 600 123 456"; "00" stays in front, txPhone reads it
+    const es = !coded && d.length > 9 && !d.startsWith('34') && /^[6789]/.test(d.slice(-9)) ? d.slice(-9) : '';
+    const edge = t => t.replace(/^[\s,:;·\-–)\]]+|[\s,:;·\-–(\[]+$/g, '');
+    const name = edge(raw.slice(0, m.index)) || edge(raw.slice(m.index + run.length));
+    return { name, phone: txPhone(es || tidy) };
+  }
+  return null;
+}
 // A short id that stays the same for the same record (FNV-1a, base 36).
 const txHash = s => { let h = 0x811c9dc5; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(36); };
 // The taxi as content/transport.json holds one (its _doc): the record's name and town, no words of the host's (what

@@ -188,7 +188,7 @@ ENG_DATA+='const INFO = (() => {\n'+_re.sub(r'(?m)^export ','',_isrc)+'\nreturn 
 _xsrc=open(__import__('os').path.join(_MD,'transport','taxis.js'),encoding='utf-8').read()
 _ximp="import { tpLine, tpRoadKm, tpPlaced } from './pick.js';\n"
 assert _ximp in _xsrc and len(_re.findall(r'(?m)^import ',_xsrc))==1,'engine/src/modules/transport/taxis.js: its imports are not as expected'
-for _need in ('export function txPick(','export function txEntry(','export const txKey','export function txName('):
+for _need in ('export function txPick(','export function txEntry(','export const txKey','export function txName(','export function txTyped('):
     assert _need in _xsrc,'engine/src/modules/transport/taxis.js: '+_need+' not found'
 ENG_DATA+=_re.sub(r'(?m)^export ','',_xsrc.replace(_ximp,''))+'\n'
 # Public transport stops (engine/src/modules/transport/stops.js): the editor's "Near your house" and its search. Its one

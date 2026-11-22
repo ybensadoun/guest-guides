@@ -3,7 +3,7 @@
 //   node --test engine/scripts/transport-taxis.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TX, txPick, txAuto, txEntry, txName, txPhone, txKey } from '../src/modules/transport/taxis.js';
+import { TX, txPick, txAuto, txEntry, txName, txPhone, txKey, txTyped } from '../src/modules/transport/taxis.js';
 import { tpRoadKm } from '../src/modules/transport/pick.js';
 
 const at = km => ({ lat: 40 + km * 0.008993, lng: 0 });   // about 1 km of latitude
@@ -63,4 +63,26 @@ test('txEntry: the taxi as transport.json holds one, credited to the directory',
   assert.equal(e.phone, '900 00 01 11'); assert.deepEqual(e.what, { en: '', de: '' });
   assert.deepEqual(e.src, { from: 'overture', id: 'ab-1', at: '2026-11-16' });
   assert.ok(!('alt' in e) && !('always' in e));
+});
+
+// The taxi a host types as "name and number" (22 Nov 2026): before, "+34 600-123-456" and "938.94.13.29" gave no taxi at
+// all, silently, and "Radio Taxi (93) 225 0000" the wrong number "225 0000".
+test('txTyped: a number written with spaces, dots, dashes, brackets and a country code', () => {
+  const T = s => { const t = txTyped(s); return t && [t.name, t.phone]; };
+  assert.deepEqual(T('Taxi Pepe 977 66 61 11'), ['Taxi Pepe', '977 66 61 11']);
+  assert.deepEqual(T('Taxi Pepe, 600 123 456'), ['Taxi Pepe', '600 12 34 56']);
+  assert.deepEqual(T('+34 600-123-456'), ['', '600 12 34 56']);
+  assert.deepEqual(T('938.94.13.29'), ['', '938 94 13 29']);
+  assert.deepEqual(T('Radio Taxi (93) 225 0000'), ['Radio Taxi', '932 25 00 00']);
+  assert.deepEqual(T('Taxi Mine +34 900 000 003'), ['Taxi Mine', '900 00 00 03']);
+  assert.deepEqual(T('Taxi Vendrell: 0034 977666111 (24 h)'), ['Taxi Vendrell', '977 66 61 11']);
+  assert.deepEqual(T('977-66-61-11 Taxi Pepe'), ['Taxi Pepe', '977 66 61 11']);
+  assert.deepEqual(T('Taxi Pepe - tel. 977 666 111 / 600 12 34 56'), ['Taxi Pepe - tel.', '977 66 61 11']);   // the first number that reads
+  assert.deepEqual(T('Taxi 24 977 66 61 11'), ['Taxi', '977 66 61 11']);                                         // too long for a Spanish number: its last 9 digits
+  assert.deepEqual(T('Taxi Andorra +376 812 345'), ['Taxi Andorra', '+376 812 345']);                            // another country: with its code, as written
+  assert.deepEqual(T('Taxi Lyon +33 6.12.34.56.78'), ['Taxi Lyon', '+33 6 12 34 56 78']);
+  assert.deepEqual(T('  taxi   pepe   977666111 '), ['taxi pepe', '977 66 61 11']);                              // the name as the host wrote it
+});
+test('txTyped: no number that can be read gives null, never a wrong number', () => {
+  for (const s of ['', '   ', 'Taxi Pepe', 'Taxi Pepe 225 0000', 'Taxi 24 h', 'Call 112', 'Taxi Pepe 12345678', '1234567890123456789', null, undefined]) assert.equal(txTyped(s), null, String(s));
 });

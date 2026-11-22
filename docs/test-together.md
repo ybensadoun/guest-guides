@@ -36,6 +36,9 @@ Nothing reaches guests until "Publish changes". A paid search is marked (paid).
 | 1.22 | In a served city only: "Ride apps that work near you" | The apps ticked for you |
 | 1.23 | Build the guide | Getting around has the taxis you approved, its stations and its nearest stops by themselves, and iryo and Ouigo on a high-speed station |
 | 1.24 | Build one without opening the step | The guide has the nearest taxi by itself |
+| 1.25 | In "Taxi you trust" (or "Another taxi"), type "Radio Taxi (93) 225 0000", then build | The guide's taxi is "Radio Taxi" with "932 25 00 00"; "+34 600-123-456" and "938.94.13.29" are read too |
+| 1.26 | Type only a name, "Taxi Pepe", and leave the field | One quiet line: "No phone number we can read yet. Add it after the name, so guests can call."; it goes as soon as a number is typed |
+| 1.27 | In Guide sections, untick "Quick calls", then build | Getting around is still in the guide with its taxi, trains and stops; only the "Taxi" card on Home is gone, and Getting around has its own tile there |
 
 ### Public transport, in the editor (built 16 and 17 Nov 2026; the pool house is in the country, so its stops are buses)
 | # | Do | Expect |

@@ -23,8 +23,9 @@ function generate(answers) {
     writeFileSync(join(src, 'host.json'), JSON.stringify({ answers: { placeName: 'Test house', town: 'El Vendrell', languages: ['en', 'de'], ...answers } }));
     const r = spawnSync('python3', ['engine/scripts/generate-site.py', src, '--slug', slug, '--lat', VENDRELL[0], '--lng', VENDRELL[1]], { cwd: ROOT, encoding: 'utf8', timeout: 60000 });
     assert.equal(r.status, 0, (r.stderr || '').slice(-600));
-    const f = join(site, 'content/transport.json');
-    return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : null;
+    const f = join(site, 'content/transport.json'), T = existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : null;
+    if (T) Object.defineProperty(T, 'site', { value: { sections: JSON.parse(readFileSync(join(site, 'content/sections.json'), 'utf8')).sections.map(x => x.id), modules: JSON.parse(readFileSync(join(site, 'site.json'), 'utf8')).modules } });   // not a key of the file
+    return T;
   } finally { rmSync(site, { recursive: true, force: true }); rmSync(src, { recursive: true, force: true }); }
 }
 
@@ -57,4 +58,32 @@ test('ride apps: found ones by themselves, the host\'s choice when there is one,
   assert.deepEqual(T1.apps.map(a => a.id), ['uber', 'cabify']); assert.deepEqual(T1.apps[0], { id: 'uber', name: 'Uber', link: 'https://www.uber.com/', src: { from: 'search', at: '2026-11-15' } });
   assert.deepEqual(generate({ _appsFound: FOUND_APPS, apps: ['bolt'] }).apps.map(a => a.id), ['bolt']);
   assert.ok(!('apps' in generate({ _appsFound: FOUND_APPS, apps: [] })));
+});
+
+// The taxi a host types as "name and number" (22 Nov 2026, engine/src/modules/transport/taxis.js txTyped): a number
+// written with dots, dashes, brackets or a country code gave no taxi at all, silently, or a wrong number.
+test('the typed taxi: numbers written with spaces, dots, dashes, brackets and a country code', () => {
+  const one = taxi => { const T = generate({ taxi }); return T && T.taxis.map(t => [t.id, t.name.en, t.phone, t.what.en]); };
+  assert.deepEqual(one('Taxi Mine 977 66 61 11'), [['taxi', 'Taxi Mine', '977 66 61 11', 'The taxi we use and trust.']]);   // well written: as before
+  assert.deepEqual(one('+34 600-123-456'), [['taxi', 'Taxi', '600 12 34 56', 'The taxi we use and trust.']]);
+  assert.deepEqual(one('938.94.13.29'), [['taxi', 'Taxi', '938 94 13 29', 'The taxi we use and trust.']]);
+  assert.deepEqual(one('Radio Taxi (93) 225 0000'), [['taxi', 'Radio Taxi', '932 25 00 00', 'The taxi we use and trust.']]);
+});
+test('the typed taxi with no number that can be read is not written, and nothing else is lost', () => {
+  const T = generate({ taxi: 'Taxi Pepe', _taxisFound: FOUND });
+  assert.deepEqual(T.taxis.map(t => t.name.en), ['Taxi Nearest']);   // the found one, by itself; no "Taxi Pepe" guests cannot call
+  assert.ok(T.stations.length > 0);
+});
+
+// The builder's tick "Quick calls" (answers.modules.quick) is only the taxi's card on Home (22 Nov 2026): unticked, it
+// took all of Getting around away, the trains and the stops with it.
+test('"Quick calls" unticked: Getting around stays, with its taxis, trains and stops; only the Home card goes', () => {
+  const on = generate({ taxi: 'Taxi Mine 977 66 61 11', _taxisFound: FOUND }), off = generate({ taxi: 'Taxi Mine 977 66 61 11', _taxisFound: FOUND, modules: { quick: false } });
+  assert.ok(on.stations.length > 0, 'El Vendrell has train stations');
+  assert.equal(on.tile.name.en, 'Taxi'); assert.equal(off.tile, null);
+  assert.deepEqual({ ...off, tile: on.tile }, { ...on });   // the same file, the card aside
+  assert.ok(off.site.sections.includes('transport')); assert.equal(off.site.modules.transport, true);
+  assert.deepEqual(off.site.sections, on.site.sections);
+  const bare = generate({ modules: { quick: false } });   // no taxi at all: the stations alone keep the section
+  assert.ok(bare && bare.stations.length > 0 && bare.taxis.length === 0 && bare.tile === null); assert.ok(bare.site.sections.includes('transport'));
 });

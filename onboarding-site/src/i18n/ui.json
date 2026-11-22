@@ -8754,6 +8754,11 @@
 "es": "Taxis a los que pueden llamar los huéspedes. Buscamos los más cercanos a tu casa: revísalos o escribe el de tu confianza.",
 "fr": "Taxis que les voyageurs peuvent appeler. Nous cherchons ceux près de chez vous : vérifiez-les ou indiquez le vôtre."
 },
+"No phone number we can read yet. Add it after the name, so guests can call.": {
+"ca": "Encara no hi veiem cap número de telèfon. Afegeix-lo després del nom perquè els hostes puguin trucar.",
+"es": "Todavía no vemos ningún número de teléfono. Añádelo después del nombre para que los huéspedes puedan llamar.",
+"fr": "Nous ne voyons pas encore de numéro de téléphone. Ajoutez-le après le nom pour que les voyageurs puissent appeler."
+},
 "Emergency numbers are added for you: 112, the nearest hospital and pharmacy.": {
 "ca": "Els números d’emergència s’afegeixen sols: el 112, l’hospital i la farmàcia més propers.",
 "es": "Los números de emergencia se añaden solos: el 112, el hospital y la farmacia más cercanos.",

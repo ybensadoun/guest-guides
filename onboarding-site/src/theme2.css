@@ -112,6 +112,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .kn-ok svg{width:14px;height:14px}
 .kn-part > .hint{margin:0}
 .kn-part > .grid{margin-top:4px}
+.tx-note{margin:6px 0 0}   /* the typed taxi has no number we can read */
 .kn-foot{margin:0;padding:16px 0 14px;border-top:1.5px solid var(--line)}   /* what is added for the host: 112, hospital, pharmacy */
 .kn-card .opt{display:none}   /* everything here is optional: the header says so once */
 /* Places nearby: one big card at a time, the next ones behind it; dragged with a finger, or the buttons, or the arrow keys */

@@ -743,6 +743,13 @@ function txRefresh(){
   const lab = box.querySelector('label'); if (lab && lab.firstChild && lab.firstChild.nodeType === 3) lab.firstChild.data = 'Another taxi: name and number ';
   softRefresh(); phoneSoon();
 }
+// The taxi the host types as "name and number": read by the rule the generator uses (engine/src/modules/transport/taxis.js
+// txTyped, 22 Nov 2026). No number we can read: one quiet line, said when the host leaves the field (never while the name
+// is being typed) and gone as soon as a number reads; before, such a taxi was left out of the guide without a word.
+function txNote(s){ return String(s || '').trim() && !txTyped(s) ? 'No phone number we can read yet. Add it after the name, so guests can call.' : ''; }   // a declaration: field() may ask before this line has run
+function txNoteSet(text){ const n = document.getElementById('tx_note'); if (n) { n.textContent = text; n.hidden = !text; } }
+document.addEventListener('change', e => { if (e.target.id === 'f_taxi') txNoteSet(txNote(e.target.value)); });
+document.addEventListener('input', e => { if (e.target.id === 'f_taxi' && !txNote(e.target.value)) txNoteSet(''); });
 document.addEventListener('change', e => {
   const t = e.target; if (!t.dataset || t.dataset.txb === undefined) return;
   const x = txList().find(z => z.id === t.dataset.txb); if (!x) return;

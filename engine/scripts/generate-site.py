@@ -494,11 +494,33 @@ def info(fid, title_key_text, paras, icon='car', tone='blue'):
 # stations and no taxi, the section has no card (tile null): Home shows its entry tile, which the frame places like any
 # other (engine/src/modules/README.md). Bus stops and other stations are added in the editor.
 quick = []
-def phone_of(s): m = re.search(r'\+?\d[\d\s]{6,}\d', s or ''); return m.group(0).strip() if m else None
+# The taxis, asked once of the module's own rule (engine/src/modules/transport/taxis.js, through
+# engine/scripts/taxis-of.mjs; Python keeps no copy of it):
+# - the taxi the host typed as "name and number" (answers.taxi), read by the rule the builder uses as the host types
+#   (txTyped, 22 Nov 2026: a number written with dots, dashes, brackets or a country code gave no taxi at all, or a wrong
+#   number); no number that can be read: no taxi, which the builder has told the host;
+# - then the taxis of our open directory: answers.taxis is what the host approved in the builder (a list, even empty, is
+#   their choice); absent (the host never saw it), the nearest of answers._taxisFound (what the worker found), alone.
+#   Never the typed one's number twice; no words of the host's (what empty), credited to the directory (src).
+def taxis_of():
+    import shutil, subprocess, datetime
+    node, script = shutil.which('node'), ROOT / 'engine/scripts/taxis-of.mjs'
+    typed = A.get('taxi') if isinstance(A.get('taxi'), str) and A.get('taxi').strip() else None
+    approved = A.get('taxis') if isinstance(A.get('taxis'), list) else None
+    found = A.get('_taxisFound') if isinstance(A.get('_taxisFound'), list) else []
+    if not typed and approved is None and not found: return None, []
+    if not node: print(f'generate-site: node is not on the PATH: no taxis ({script.relative_to(ROOT)})', file=sys.stderr); return None, []
+    ask = {'typed': typed, 'approved': approved, 'found': found, 'house': {'lat': args.lat, 'lng': args.lng}, 'langs': LANGS, 'have': [], 'at': datetime.date.today().isoformat()}
+    try: r = subprocess.run([node, str(script)], input=json.dumps(ask), capture_output=True, text=True, timeout=60)
+    except Exception as e: print(f'generate-site: {script.relative_to(ROOT)} could not be run: {e}: no taxis', file=sys.stderr); return None, []
+    if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no taxis', file=sys.stderr); return None, []
+    out = json.loads(r.stdout)
+    if typed and not out.get('typed'): print('generate-site: no phone number could be read in the taxi the host typed: not written', file=sys.stderr)
+    return out.get('typed'), out.get('taxis') or []
+typed_taxi, found_taxis = taxis_of()
 taxis = []
-if A.get('taxi') and phone_of(A['taxi']):
-    nm = re.sub(r'[,:]?\s*\+?\d[\d\s]{6,}\d.*$', '', A['taxi']).strip() or 'Taxi'
-    taxis.append({'id': 'taxi', 'name': L(nm), 'phone': phone_of(A['taxi']), 'what': L('The taxi we use and trust.')})
+if typed_taxi:
+    taxis.append({'id': 'taxi', 'name': L(typed_taxi.get('name') or 'Taxi'), 'phone': typed_taxi['phone'], 'what': L('The taxi we use and trust.')})
 def stations_of(lat, lng):   # the house's stations as transport.json holds them; none when the script fails (said on stderr)
     import shutil, subprocess
     node, script = shutil.which('node'), ROOT / 'engine/scripts/stations-of.mjs'
@@ -519,23 +541,7 @@ def stops_of(lat, lng):
     if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no stops', file=sys.stderr); return []
     return json.loads(r.stdout).get('stops') or []
 if part_on('transport/stops'): stations += stops_of(args.lat, args.lng)
-# The taxis of our open directory (engine/src/modules/transport/taxis.js, through engine/scripts/taxis-of.mjs; Python keeps
-# no copy of the rule): answers.taxis is what the host approved in the builder (a list, even empty, is their choice);
-# absent (the host never saw it), the nearest of answers._taxisFound (what the worker found), alone. After the typed one,
-# never the same number twice; no words of the host's (what empty), credited to the directory (src).
-def found_taxis():
-    import shutil, subprocess, datetime
-    node, script = shutil.which('node'), ROOT / 'engine/scripts/taxis-of.mjs'
-    approved = A.get('taxis') if isinstance(A.get('taxis'), list) else None
-    found = A.get('_taxisFound') if isinstance(A.get('_taxisFound'), list) else []
-    if approved is None and not found: return []
-    if not node: print(f'generate-site: node is not on the PATH: no taxis from the directory ({script.relative_to(ROOT)})', file=sys.stderr); return []
-    ask = {'approved': approved, 'found': found, 'house': {'lat': args.lat, 'lng': args.lng}, 'langs': LANGS, 'have': [t['phone'] for t in taxis], 'at': datetime.date.today().isoformat()}
-    try: r = subprocess.run([node, str(script)], input=json.dumps(ask), capture_output=True, text=True, timeout=60)
-    except Exception as e: print(f'generate-site: {script.relative_to(ROOT)} could not be run: {e}: no taxis from the directory', file=sys.stderr); return []
-    if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no taxis from the directory', file=sys.stderr); return []
-    return json.loads(r.stdout).get('taxis') or []
-taxis += found_taxis()
+taxis += found_taxis   # the directory's, after the typed one (taxis_of, above)
 # The ride apps (engine/src/modules/transport/apps.js through engine/scripts/apps-of.mjs): answers.apps (the ids the host
 # approved) when present, even empty, else the ones found near the house (answers._appsFound), by themselves.
 def found_apps():
@@ -552,7 +558,7 @@ apps = found_apps() if part_on('transport/apps') else []
 (SITE / 'content/quick.json').write_text(json.dumps({'items': quick}, ensure_ascii=False, indent=1))
 if taxis or stations or apps:
     (SITE / 'content/transport.json').write_text(json.dumps({'_doc': 'Getting around: taxis and stations or stops, on their own page; tile = a one-tap tile on Home (null: the section\'s own tile). Written by generate-site.py: the taxi the host typed, the taxis of our open directory they approved or the nearest (src: {from: overture, id, at}), apps: [{id, name, link, src}] the ride apps approved or found near the house, the train stations from onboarding-site/stations-es.json (Renfe, src: {from, at}) by engine/src/modules/transport/pick.js.',
-        'taxis': taxis, **({'apps': apps} if apps else {}), 'stations': stations, 'tile': {'name': L('Taxi'), 'sub': taxis[0]['name']} if taxis else None}, ensure_ascii=False, indent=1))
+        'taxis': taxis, **({'apps': apps} if apps else {}), 'stations': stations, 'tile': {'name': L('Taxi'), 'sub': taxis[0]['name']} if taxis and on('quick', True) else None}, ensure_ascii=False, indent=1))
 
 
 # ---------- host-supplied content: how rubbish works, and the places the host recommends ----------
@@ -766,7 +772,7 @@ for sid, grp, kind, label, extra, mod in SEC:
     if sid == 'garbage': want = want and bool(rmode)   # only the host can tell us: no answer, no section
     if sid == 'restaurants': want = want and bool(fav)
     if sid == 'nightlife': want = on('nightlife', False) and bool(night)
-    if sid == 'transport': want = want and bool(taxis or stations or apps)
+    if sid == 'transport': want = bool(taxis or stations or apps)   # what it has to show, never the builder's tick "Quick calls" (mod 'quick'), which is only the taxi's card on Home (22 Nov 2026: unticked, it took the trains and the stops away too)
     modules[sid] = bool(want)
     if not want: continue
     live = kind == 'markets' and (SITE / 'content/markets.json').exists() or has_items(sid)
