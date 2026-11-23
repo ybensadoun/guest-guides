@@ -527,6 +527,13 @@ function render(){
   if (path && path !== 'index.html' && CM.on) { location.replace('/g/' + encodeURIComponent(CM.g.slug)); return; }
   if (path && path !== 'index.html') { if (path === v('slug') || path === 'preview') { renderPreview(); return; } main.innerHTML = notHereHTML(path); return; }
   if (CM.on && r !== 'building' && !cmIsPage(r)) { history.replaceState(null, '', '#' + cmStart()); r = route(); }   // no overview: the editor opens on a step
+  // No account, no step (Yohann, 23 Nov 2026: changing anything asks for the account): a step or Review and send opened by
+  // its address (the rail, a hash, the back button, a device that started before) shows the house in the phone, whose
+  // button asks for the account; with no house yet (no listing read), the page that asks for the link. The answers on this
+  // device stay, and go to the account when it is made (account.js acctAttach). Before the session is read no step is drawn
+  // (the boot draws the page once it is, below).
+  if (!CM.on && (m || r === 'send') && !ACCT_KNOWN) return;
+  if (!AUTH && !CM.on && (m || r === 'send')) { PHONE.screen = 'home'; history.replaceState(null, '', '#' + (A._draftAt || WOW.stage ? 'yours' : 'start')); return render(); }
   if (CM.on && r === 'building') { main.innerHTML = buildingHTML(); watchBuild(); }   // just built: the ready screen, found places first
   else if (CM.on) { main.innerHTML = cmPageHTML(r); cmRemember(r); cmPhoneOn(); }   // the guide exists: the steps edit it (editor.js)
   else if (new URLSearchParams(location.search).has('feedback')) main.innerHTML = feedbackPageHTML();
@@ -584,7 +591,7 @@ document.addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.donenext) { const id = b.dataset.donenext; A._done = { ...(A._done || {}), [id]: true }; log('done', id); queueSave(); const o = stepsOrder(); const nx = o[o.indexOf(id) + 1]; toast('Done'); location.hash = '#' + (nx || 'home'); render(); }
   else if (b.id === 'openSteps') openSteps();
-  else if (b.id === 'skipStart') { A._skipStart = true; queueSave(); location.hash = '#listing'; render(); }
+  else if (b.id === 'skipStart') { if (!AUTH) return stepsGate(); A._skipStart = true; queueSave(); location.hash = '#listing'; render(); }   // signed out: the account first (account.js)
   else if (b.dataset.done) { A._done = { ...(A._done || {}), [b.dataset.done]: true }; log('done', b.dataset.done); queueSave(); render(); toast('Done'); }
   else if (b.dataset.undone) { const d = { ...(A._done || {}) }; delete d[b.dataset.undone]; A._done = d; log('reopen', b.dataset.undone); queueSave(); render(); }
   else if (b.dataset.del) { roomsKeep(); uploads = uploads.filter(x => x.id !== b.dataset.del); try { await idb.del(b.dataset.del); } catch (err) {} render(); }
@@ -649,6 +656,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { cle
   { const d = device(); A._sessions = [...(A._sessions || []), { t: Date.now(), d: deviceLine(d) }].slice(-50); log('session', null, { d: deviceLine(d) }); flush(); }
   try { uploads = (await idb.all() || []).map(u => ({ ...u, url: u.blob ? URL.createObjectURL(u.blob) : u.url })).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')); } catch (e) { uploads = []; }
   try { await accountBoot(); } catch (e) {}
+  ACCT_KNOWN = true;   // also when the account could not be read: the page is drawn
   setSave('ok', CM.on ? cmSaveText() : A._seen ? 'Saved on this device' : 'Answers save on this device');
   render();
   if (!CM.on) areaWatch();   // the research from the link, when it is still on its way

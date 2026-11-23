@@ -79,12 +79,10 @@ function sendHTML(){
       ${nameless.length ? `<div class="rv-open rv-nn"><b>Places with no name yet</b><p class="hint">We look their names up in an open directory; any we do not find waits in your editor for you to name it.</p><div class="rv-links">${nameless.map(m => `<a href="#${m.id}">${esc(m.title)}</a>`).join('')}</div></div>` : ''}
       ${open.length ? `<div class="rv-open"><b>Still worth a look</b><div class="rv-links">${open.map(m => `<a href="#${m.id}">${esc(m.title)}</a>`).join('')}</div></div>` : ''}
       <div class="grid">${field('slug')}
-        <label class="f full" style="flex-direction:row;gap:10px;align-items:flex-start"><input type="checkbox" data-check="consent"${A.consent ? ' checked' : ''} style="width:20px;height:20px;margin-top:2px;flex:none"><span>I own these photos and texts or may use them, and I understand the guide is visible to anyone who has its link.</span></label></div>
+        <label class="f full" style="flex-direction:row;gap:10px;align-items:flex-start"><input type="checkbox" data-check="consent"${A.consent ? ' checked' : ''} style="width:20px;height:20px;margin-top:2px;flex:none"><span>${CONSENT_TEXT}</span></label></div>
       <div class="foot">${miss.length ? `<p class="todo">Before sending: <b>${miss.map(esc).join(', ')}</b></p>` : '<p class="todo"></p>'}
         <p id="sendState"></p>
-        ${AUTH ? '' : '<p class="hint">Your answers are on this device only. Save them to an account first: then we build your guide from them.</p>'}
-        <div class="row"><button class="btn" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Preview my guide</button>${AUTH ? `<button class="btn primary" type="button" id="send"${miss.length ? ' disabled' : ''}>${I.send.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Send to build my guide</button>`
-          : '<button class="btn primary" type="button" data-acctnow="signup">Save my guide</button>'}</div></div>
+        <div class="row"><button class="btn" type="button" id="openPreview">${I.eye.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Preview my guide</button><button class="btn primary" type="button" id="send"${miss.length ? ' disabled' : ''}>${I.send.replace('stroke-width="2.2"','stroke-width="2.2" width="17" height="17"')}Send to build my guide</button></div></div>
     </section><div class="resetrow"><button class="btn small" type="button" id="resetAll">Start over</button><p>Erases everything on this device and begins again from the first step. Anything you already sent to us stays with us.</p></div></div>
     <aside class="side-phone" aria-label="A first draft of your guide">${phoneHTML()}<p>${A._draftAt || v('placeName') || v('guideName') ? 'A first draft of your guide' : 'An example for now: load your listing and it becomes your guide'}</p></aside></div>`;
 }

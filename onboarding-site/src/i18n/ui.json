@@ -149,10 +149,10 @@
 "es": "Pega el enlace de tu anuncio. Verás toda tu guía en un minuto.",
 "fr": "Collez le lien de votre annonce. Voyez tout votre guide en une minute."
 },
-"Free to try. No account needed.": {
-"ca": "Prova-ho gratis. No cal cap compte.",
-"es": "Pruébalo gratis. No necesitas cuenta.",
-"fr": "Essai gratuit. Pas besoin de compte."
+"Free. See your guide first, then save it.": {
+"ca": "Gratis. Primer veus la guia, després la deses.",
+"es": "Gratis. Primero ves tu guía, después la guardas.",
+"fr": "Gratuit. Voyez d’abord votre guide, puis enregistrez-le."
 },
 "An example guide.": {
 "ca": "Una guia d’exemple.",
@@ -188,11 +188,6 @@
 "ca": "Comença pel teu anunci",
 "es": "Empieza por tu anuncio",
 "fr": "Commencez par votre annonce"
-},
-"See your whole guide in about a minute. No account needed: you save it at the end.": {
-"ca": "Veuràs tota la guia en un minut. No cal cap compte: la desaràs al final.",
-"es": "Verás toda tu guía en un minuto. No necesitas cuenta: la guardas al final.",
-"fr": "Voyez tout votre guide en une minute environ. Pas besoin de compte : vous l’enregistrez à la fin."
 },
 "Your listing link": {
 "ca": "L’enllaç del teu anunci",
@@ -259,10 +254,20 @@
 "es": "Guarda tu guía",
 "fr": "Enregistrez votre guide"
 },
-"Create your account: your guide is kept in it, and you can come back to it from any device.": {
-"ca": "Crea el teu compte: la guia s’hi guarda i hi pots tornar des de qualsevol dispositiu.",
-"es": "Crea tu cuenta: tu guía se guarda en ella y puedes volver desde cualquier dispositivo.",
-"fr": "Créez votre compte : votre guide y est conservé et vous pouvez y revenir depuis n’importe quel appareil."
+"It’s free: your guide is kept in your account, and you can come back to it from any device.": {
+"ca": "És gratis: la guia es guarda al teu compte i hi pots tornar des de qualsevol dispositiu.",
+"es": "Es gratis: tu guía se guarda en tu cuenta y puedes volver desde cualquier dispositivo.",
+"fr": "C’est gratuit : votre guide est conservé dans votre compte et vous pouvez y revenir depuis n’importe quel appareil."
+},
+"With no listing link there is nothing to show yet: create your free account, then fill in your guide step by step.": {
+"ca": "Sense l’enllaç de l’anunci encara no hi ha res a mostrar: crea el teu compte gratuït i després omple la guia pas a pas.",
+"es": "Sin el enlace del anuncio aún no hay nada que mostrar: crea tu cuenta gratis y después rellena tu guía paso a paso.",
+"fr": "Sans lien d’annonce, il n’y a encore rien à montrer : créez votre compte gratuit, puis remplissez votre guide étape par étape."
+},
+"Tick this box to go on.": {
+"ca": "Marca aquesta casella per continuar.",
+"es": "Marca esta casilla para continuar.",
+"fr": "Cochez cette case pour continuer."
 },
 "Welcome back": {
 "ca": "Hola de nou",
@@ -308,6 +313,11 @@
 "ca": "o amb el teu correu",
 "es": "o con tu correo",
 "fr": "ou avec votre e-mail"
+},
+"or use your email": {
+"ca": "o fes servir el teu correu",
+"es": "o usa tu correo",
+"fr": "ou utilisez votre e-mail"
 },
 "Continue with Google": {
 "ca": "Continua amb Google",
@@ -4549,10 +4559,10 @@
 "es": "¿Quieres algo único? Redibujamos la foto que has elegido como una obra de arte.",
 "fr": "Envie de quelque chose d’unique ? Nous redessinons la photo choisie comme une œuvre d’art."
 },
-"When you save, we add the nearest hospital, pharmacy and on-call doctor, with hours.": {
-"ca": "Quan desis la guia, hi afegim l’hospital, la farmàcia i el metge de guàrdia més propers, amb horaris.",
-"es": "Cuando guardes tu guía, añadimos el hospital, la farmacia y el médico de guardia más cercanos, con horarios.",
-"fr": "Quand vous enregistrez votre guide, nous ajoutons l’hôpital, la pharmacie et le médecin de garde les plus proches, avec leurs horaires."
+"When you send your guide, we add the nearest hospital, pharmacy and on-call doctor, with hours.": {
+"ca": "Quan enviïs la guia, hi afegim l’hospital, la farmàcia i el metge de guàrdia més propers, amb horaris.",
+"es": "Cuando envíes tu guía, añadimos el hospital, la farmacia y el médico de guardia más cercanos, con horarios.",
+"fr": "Quand vous envoyez votre guide, nous ajoutons l’hôpital, la pharmacie et le médecin de garde les plus proches, avec leurs horaires."
 },
 "We are looking for more places near you": {
 "ca": "Busquem més llocs a prop teu",
@@ -4769,11 +4779,6 @@
 "es": "Tu cuenta y tus casas, con sus respuestas, fotos y guías, se borran para siempre.",
 "fr": "Votre compte et vos maisons, avec leurs réponses, photos et guides, sont supprimés définitivement."
 },
-"Your answers are on this device only. Save them to an account first: then we build your guide from them.": {
-"ca": "Les teves respostes només són en aquest dispositiu. Primer desa-les en un compte: després farem la teva guia amb elles.",
-"es": "Tus respuestas solo están en este dispositivo. Primero guárdalas en una cuenta: después crearemos tu guía con ellas.",
-"fr": "Vos réponses ne sont que sur cet appareil. Enregistrez-les d’abord dans un compte : nous créerons ensuite votre guide à partir d’elles."
-},
 "Your guide": {
 "ca": "La teva guia",
 "es": "Tu guía",
@@ -4809,10 +4814,10 @@
 "es": "Un primer borrador de tu guía",
 "fr": "Une première ébauche de votre guide"
 },
-"When you save, we finish it for you: local events, markets with their hours, trains and stops, the map, your guests’ languages.": {
-"ca": "Quan desis la guia, l’acabem per tu: esdeveniments locals, mercats amb els seus horaris, trens i parades, el mapa, els idiomes dels teus hostes.",
-"es": "Cuando guardes tu guía, la terminamos por ti: eventos locales, mercados con sus horarios, trenes y paradas, el mapa, los idiomas de tus huéspedes.",
-"fr": "Quand vous enregistrez votre guide, nous le terminons pour vous : événements locaux, marchés avec leurs horaires, trains et arrêts, la carte, les langues de vos voyageurs."
+"When you send your guide, we finish it for you: local events, markets with their hours, trains and stops, the map, your guests’ languages.": {
+"ca": "Quan enviïs la guia, l’acabem per tu: esdeveniments locals, mercats amb els seus horaris, trens i parades, el mapa, els idiomes dels teus hostes.",
+"es": "Cuando envíes tu guía, la terminamos por ti: eventos locales, mercados con sus horarios, trenes y paradas, el mapa, los idiomas de tus huéspedes.",
+"fr": "Quand vous envoyez votre guide, nous le terminons pour vous : événements locaux, marchés avec leurs horaires, trains et arrêts, la carte, les langues de vos voyageurs."
 },
 "Your houses": {
 "ca": "Les teves cases",
@@ -5664,20 +5669,20 @@
 "es": "Para una llegada de noche",
 "fr": "Pour une arrivée de nuit"
 },
-"Found near you. When you save, we add their days and hours.": {
-"ca": "Trobat a prop teu. Quan desis la guia, hi afegim els dies i horaris.",
-"es": "Encontrado cerca de ti. Cuando guardes tu guía, añadimos sus días y horarios.",
-"fr": "Trouvé près de chez vous. Quand vous enregistrez votre guide, nous ajoutons les jours et horaires."
+"Found near you. When you send your guide, we add their days and hours.": {
+"ca": "Trobat a prop teu. Quan enviïs la guia, hi afegim els dies i horaris.",
+"es": "Encontrado cerca de ti. Cuando envíes tu guía, añadimos sus días y horarios.",
+"fr": "Trouvé près de chez vous. Quand vous envoyez votre guide, nous ajoutons les jours et horaires."
 },
 "Found near you:": {
 "ca": "Trobat a prop teu:",
 "es": "Encontrado cerca de ti:",
 "fr": "Trouvé près de chez vous :"
 },
-"Found near you: {x}. When you save, we add their hours and directions.": {
-"ca": "Trobat a prop teu: {x}. Quan desis la guia, hi afegim horaris i com arribar-hi.",
-"es": "Encontrado cerca de ti: {x}. Cuando guardes tu guía, añadimos sus horarios y cómo llegar.",
-"fr": "Trouvé près de chez vous : {x}. Quand vous enregistrez votre guide, nous ajoutons horaires et itinéraires."
+"Found near you: {x}. When you send your guide, we add their hours and directions.": {
+"ca": "Trobat a prop teu: {x}. Quan enviïs la guia, hi afegim horaris i com arribar-hi.",
+"es": "Encontrado cerca de ti: {x}. Cuando envíes tu guía, añadimos sus horarios y cómo llegar.",
+"fr": "Trouvé près de chez vous : {x}. Quand vous envoyez votre guide, nous ajoutons horaires et itinéraires."
 },
 "Found the spot, but not its name. Type its name instead.": {
 "ca": "Hem trobat el lloc, però no el nom. Escriu-ne el nom.",
@@ -6569,15 +6574,15 @@
 "es": "Tenemos tus respuestas",
 "fr": "Nous avons vos réponses"
 },
-"When you save, we list every weekly market nearby, with what runs today.": {
-"ca": "Quan desis la guia, hi posem tots els mercats setmanals de la zona, amb els que hi ha avui.",
-"es": "Cuando guardes tu guía, listamos todos los mercados semanales cercanos, con los que hay hoy.",
-"fr": "Quand vous enregistrez votre guide, nous listons chaque marché hebdomadaire à proximité, avec ceux du jour."
+"When you send your guide, we list every weekly market nearby, with what runs today.": {
+"ca": "Quan enviïs la guia, hi posem tots els mercats setmanals de la zona, amb els que hi ha avui.",
+"es": "Cuando envíes tu guía, listamos todos los mercados semanales cercanos, con los que hay hoy.",
+"fr": "Quand vous envoyez votre guide, nous listons chaque marché hebdomadaire à proximité, avec ceux du jour."
 },
-"When you save, we list festivals and fairs, with dates.": {
-"ca": "Quan desis la guia, hi posem festes i fires, amb dates.",
-"es": "Cuando guardes tu guía, listamos fiestas y ferias, con fechas.",
-"fr": "Quand vous enregistrez votre guide, nous listons les fêtes et foires, avec leurs dates."
+"When you send your guide, we list festivals and fairs, with dates.": {
+"ca": "Quan enviïs la guia, hi posem festes i fires, amb dates.",
+"es": "Cuando envíes tu guía, listamos fiestas y ferias, con fechas.",
+"fr": "Quand vous envoyez votre guide, nous listons les fêtes et foires, avec leurs dates."
 },
 "We make a QR code so guests join with one tap.": {
 "ca": "Fem un codi QR perquè els hostes s’hi connectin amb un toc.",

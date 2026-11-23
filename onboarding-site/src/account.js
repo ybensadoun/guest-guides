@@ -1,7 +1,7 @@
 /* ---------- Accounts (Supabase): sign up, log in, answers saved to the account ---------- */
 const SB = { url: 'https://dmoxszfwulolqkgxtxcp.supabase.co', key: 'sb_publishable_4esKE09oxNusDwlEPNdeWg_sUroV5Kr' };   // public values: the database rules decide who sees what
 const AUTH_KEY = 'porta-auth-v1';
-let AUTH = null, GUIDE = null, pushTimer = null, pushing = false, pushAgain = false;
+let AUTH = null, ACCT_KNOWN = false, GUIDE = null, pushTimer = null, pushing = false, pushAgain = false;
 function authLoad(){ try { AUTH = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (e) { AUTH = null; } }
 function authStore(s){ AUTH = s; try { s ? localStorage.setItem(AUTH_KEY, JSON.stringify(s)) : localStorage.removeItem(AUTH_KEY); } catch (e) {} }
 async function sb(path, o = {}){
@@ -78,12 +78,24 @@ function niceError(e){
 #acct .small a{color:var(--ac-ink);font-weight:600}
 /* The sheet: the card alone over the dimmed builder, like the app's other boxes (account.js .acdel): at the bottom on a
    phone, in the middle on a wide screen; a long card scrolls inside it */
-#acct.only{background:rgba(10,10,10,.5);display:flex;align-items:flex-end;justify-content:center;padding:16px}
-@media (min-width:621px){#acct.only{align-items:center}}
+#acct.only,#acct .ac-over{background:rgba(10,10,10,.5);display:flex;align-items:flex-end;justify-content:center;padding:16px}
+#acct .ac-over{position:fixed;inset:0;z-index:2;overflow:auto;overscroll-behavior:contain}   /* the same sheet over the first page (no listing link), inside it */
+@media (min-width:621px){#acct.only,#acct .ac-over{align-items:center}}
 #acct .ac-sheet{position:relative;width:100%;max-width:440px;max-height:100%;overflow:auto;overscroll-behavior:contain;background:var(--surface);color:var(--ink);border-radius:var(--r);box-shadow:0 18px 48px rgba(0,0,0,.25)}
 #acct .ac-sheet .ac-card{--ac-ink:var(--ink);--ac-muted:var(--muted);--ac-line:var(--line);--ac-bad:var(--danger);--ac-ok:var(--ok);padding:22px 20px 16px}
 #acct .ac-sheet .ac-card h2{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.05;margin:0 0 8px;padding:6px 52px 0 0}   /* the step headers' serif (.mhead h1) */
 #acct .ac-sheet p.lead{margin:0 0 18px;color:var(--muted);font-size:16px;line-height:1.45}
+/* Signing up: the consent tick first (its whole row the target), its line when a button is pressed without it, Google,
+   then the quiet "or use your email" that opens the fields in place */
+#acct .ac-card label.ac-consent{display:flex;align-items:flex-start;gap:12px;min-height:44px;margin:0;font-weight:400;font-size:15px;line-height:1.4;color:var(--ac-ink);cursor:pointer}
+#acct .ac-consent input{flex:none;width:22px;height:22px;margin:1px 0 0;accent-color:var(--ink,#14233A);cursor:pointer}
+#acct .ac-consent span{min-width:0;overflow-wrap:break-word;hyphens:none}
+#acct .ac-tick{margin:6px 0 0 34px}
+#acct .ac-tick:empty{margin:0}
+#acct .ac-consent~.gbtn{margin-top:16px}
+#acct .ac-mail{display:block;margin:4px auto 0;min-height:44px;padding:0 6px;border:0;background:none;font:inherit;font-size:15px;color:var(--ac-muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+#acct .ac-mail:hover{color:var(--ac-ink)}
+#acct .ac-consent~form{margin-top:16px}
 #acct .ac-x{position:absolute;top:14px;right:14px;z-index:1;width:44px;height:44px;background:var(--sunk)}   /* .sheet-x, the app's close button, on white */
 /* The first screen (Yohann, 21 Nov 2026: "one screen, one job"): in the navy card the words, the box with the link alone
    and one quiet link, beside a phone with a real guide in it. No arch, no moon. From 900 px two columns, the phone at the
@@ -379,41 +391,59 @@ function acPhoneLoad(el){
   return { fit, relang };
 }
 // The account card. On the first page (signed out, nothing on this device yet) it asks for the listing link, not an
-// account: the account comes at the end, after the wow (docs/plan-fast-builder.md, step 7; Yohann, 29 Oct 2026).
-// mode: 'start' (the link), 'signup', 'login', 'recover', 'reset'. sheet: the card alone over the builder, with a close
-// button, when the account is needed (Review and send, an artistic cover, Log in in the top bar).
-// Resolves true once signed in, 'link' or 'steps' when the visitor starts without one, false when the sheet is closed.
-async function gate(mode0, notice, noticeOk, sheet){
+// account: the link is free, the guide builds itself in a phone, and the account comes right after, before any change
+// (Yohann, 23 Nov 2026, docs/plan-fast-builder.md; it was "at the end" from 29 Oct 2026).
+// mode: 'start' (the link), 'signup', 'login', 'recover', 'reset'. sheet: the card alone over the page, with a close
+// button, when the account is needed (Save my guide on "This is your guide", no listing link, Log in in the top bar).
+// o (a sheet's): { to: the address the host lands on once signed in, also back from Google; lead: 'steps' for the
+// sheet over the first page when there is no listing link }.
+// Resolves true once signed in, 'link' when the visitor sends a link, false when the sheet is closed.
+// The consent of Review and send, asked once with the account (the same words, one copy): A.consent.
+const CONSENT_TEXT = 'I own these photos and texts or may use them, and I understand the guide is visible to anyone who has its link.';
+async function gate(mode0, notice, noticeOk, sheet, o = {}){
   await googleOn();
   return new Promise(resolve => {
-    let mode = mode0 || 'start', drawn = 0;
-    const el = document.getElementById('acct') || Object.assign(document.createElement('div'), { id: 'acct' });
+    let mode = mode0 || 'start', drawn = 0, mail = false;   // mail: the email fields opened under "Continue with Google"
+    // A sheet over the first page (no listing link) goes inside it, so the page stays as it is under it, and closing the
+    // sheet leaves the page there.
+    const page = sheet && document.querySelector('#acct:not(.only)');
+    const el = page ? page.appendChild(document.createElement('div')) : document.getElementById('acct') || Object.assign(document.createElement('div'), { id: 'acct' });
     if (!el.isConnected) document.body.appendChild(el);
-    const done = r => { el.remove(); removeEventListener('keydown', esc_); resolve(r); };
+    // The sheet's top held where it was when the email opened (below), until the window changes size (a phone turned, its
+    // keyboard): then it sits where a sheet sits again.
+    const unpin = () => { el.style.alignItems = ''; const sh = el.querySelector('.ac-sheet'); if (sh) sh.style.marginTop = ''; };
+    const done = r => { el.remove(); removeEventListener('keydown', esc_); removeEventListener('resize', unpin); resolve(r); };
+    if (sheet) addEventListener('resize', unpin);
     const esc_ = e => { if (sheet && e.key === 'Escape') done(false); };
     if (sheet) addEventListener('keydown', esc_);
     const draw = (msg, ok) => {
       const up = mode === 'signup', rec = mode === 'recover', reset = mode === 'reset', start = mode === 'start';
       const google = window.__googleOn && (up || mode === 'login');
+      if (!google) mail = true;   // no Google: the email fields at once, as before
       // The mode's own title and sentence: in the sheet on its card; on the page in the navy card, above the white panel,
       // except the first page, whose title is the promise (its own heading stays for the screen reader, the form's name).
       const head = start ? 'Start with your listing' : reset ? 'Choose a new password' : rec ? 'Reset your password' : up ? (sheet ? 'Save your guide' : 'Create your account') : 'Welcome back';
-      const lead = start ? 'See your whole guide in about a minute. No account needed: you save it at the end.' : reset ? 'Pick a new password, then you are back in.' : rec ? 'We email you a link to choose a new password.' : up ? (sheet ? 'Create your account: your guide is kept in it, and you can come back to it from any device.' : 'So you can come back any time and change your answers. It takes a minute.') : 'Log in to continue where you left off.';
+      const lead = start ? 'Paste your listing link. See your whole guide in a minute.' : reset ? 'Pick a new password, then you are back in.' : rec ? 'We email you a link to choose a new password.'
+        : up ? (o.lead === 'steps' ? 'With no listing link there is nothing to show yet: create your free account, then fill in your guide step by step.' : 'It’s free: your guide is kept in your account, and you can come back to it from any device.') : 'Log in to continue where you left off.';
       const named = sheet || start ? 'acHead' : 'acTitle';
+      // Signing up (Yohann, 23 Nov 2026): the consent tick first, then Google, big; the email and password behind one quiet
+      // line under it. Login keeps Google, "or with your email" and the fields, as before.
       const card = `<section class="ac-card${sheet ? '' : ' st-form'}">
           ${sheet ? `<h2 id="acHead">${head}</h2><p class="lead">${lead}</p>` : start ? `<h2 class="sr" id="acHead">${head}</h2>` : ''}
-          ${google ? `<button class="btn gbtn" type="button" id="acGoogle">${GOOGLE_G}Continue with Google</button><div class="or">or with your email</div>` : ''}
-          <form id="acForm" novalidate aria-labelledby="${named}">
+          ${up ? `<label class="ac-consent"><input type="checkbox" id="acConsent"${A.consent ? ' checked' : ''}><span>${CONSENT_TEXT}</span></label><p class="acmsg ac-tick" id="acTick" role="status"></p>` : ''}
+          ${google && up ? `<button class="btn gbtn" type="button" id="acGoogle">${GOOGLE_G}Continue with Google</button><button type="button" class="ac-mail" id="acMail"${mail ? ' hidden' : ''}>or use your email</button>`
+            : google ? `<button class="btn gbtn" type="button" id="acGoogle">${GOOGLE_G}Continue with Google</button><div class="or">or with your email</div>` : ''}
+          <form id="acForm" novalidate aria-labelledby="${named}"${up && !mail ? ' hidden' : ''}>
           ${start ? `<label for="acUrl"${sheet ? '' : ' class="sr"'}>Your listing link</label><input id="acUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://www.airbnb.com/rooms/…" data-ph-short="airbnb.com/rooms/…" value="${esc(v('listingUrl'))}">` : ''}
           ${start || reset ? '' : '<label for="acEmail">Email</label><input id="acEmail" type="email" autocomplete="email" inputmode="email" required>'}
           ${start || rec ? '' : `<label for="acPw">${reset ? 'New password' : 'Password'}</label><input id="acPw" type="password" autocomplete="${up || reset ? 'new-password' : 'current-password'}" ${up || reset ? 'minlength="8" placeholder="At least 8 characters"' : ''} required>`}
           <button class="btn ${sheet ? 'primary' : 'st-go'} go" type="submit">${start ? 'Show me my guide' : reset ? 'Save password' : rec ? 'Send me the link' : up ? 'Create my account' : 'Log in'}${sheet ? '' : ' ' + ARROW}</button>
           <div class="acmsg${ok ? ' ok' : ''}" id="acMsg" role="status">${esc(msg || '')}</div>
         </form>
-          ${start && !sheet ? '<p class="ac-note">Free to try. No account needed.</p>' : ''}
+          ${start && !sheet ? '<p class="ac-note">Free. See your guide first, then save it.</p>' : ''}
           ${start ? '' : `<div class="alt">${rec || reset ? '<button type="button" data-m="login">Back to log in</button>' : up ? 'Already have an account? <button type="button" data-m="login">Log in</button>' : `New here? <button type="button" data-m="${sheet ? 'signup' : 'start'}">${sheet ? 'Create an account' : 'Start with your listing'}</button></div><div class="alt"><button type="button" data-m="recover">Forgot password?</button>`}</div>`}
         ${up ? '<p class="small">By creating an account you agree that we store your answers and photos to build your guide, and that we may contact you about it. <a href="/privacy/" target="_blank" rel="noopener">How we handle your data</a></p>' : ''}</section>`;
-      el.className = sheet ? 'only' : '';
+      el.className = page ? 'ac-over' : sheet ? 'only' : ''; el.style.alignItems = '';
       // The page: the app's header (Log in beside the language, its room kept while the page is Log in), then the navy card
       // with this mode's words and the panel beside the phone, then the guides made with the maker. The phone is drawn
       // once: a new mode changes everything around it and never moves it (a frame moved in the page loads again).
@@ -423,7 +453,7 @@ async function gate(mode0, notice, noticeOk, sheet){
         <header class="ac-top"><span class="brand"><span class="door" aria-hidden="true"></span><b translate="no">Guest Guide Maker</b></span>${langPick()}<button type="button" class="ac-login${mode === 'login' ? ' off' : ''}" data-m="login">Log in</button></header>
         <section class="start ac-start" aria-labelledby="acTitle">
           <div class="ac-main"><div class="st-tx"><small>Guest guides for holiday homes</small><h1 id="acTitle">${start ? 'Your guest guide, written for you.' : head}</h1>
-            <p>${start ? 'Paste your listing link. See your whole guide in a minute.' : lead}</p></div>
+            <p>${lead}</p></div>
           ${card}
           ${start ? '<p class="ac-steps"><button type="button" id="acSteps">No listing link? Fill it in step by step</button></p>' : ''}</div>
           ${ph ? '' : acPhoneHTML()}
@@ -438,11 +468,22 @@ async function gate(mode0, notice, noticeOk, sheet){
         while (card0.nextElementSibling) card0.nextElementSibling.remove();
         old.append(...[...nu.children].slice([...nu.children].indexOf(nu.querySelector('.ac-start')) + 1));
       }
-      const gb = el.querySelector('#acGoogle'); if (gb) gb.onclick = () => { gb.disabled = true; flush(); try { sessionStorage.setItem('porta-return', location.hash); if (sheet) sessionStorage.setItem('porta-saved', '1'); } catch (e) {} location.href = `${SB.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + '/')}`; };
+      // Signing up needs the tick: the buttons stay on, and one without it says so under the tick and puts the focus there.
+      const tick = el.querySelector('#acConsent'), tickMsg = el.querySelector('#acTick');
+      if (tick) tick.onchange = () => { A.consent = tick.checked; queueSave(); if (tick.checked) tickMsg.textContent = ''; };
+      const ticked = () => { if (!up || !tick || tick.checked) return true; tickMsg.textContent = 'Tick this box to go on.'; tick.focus(); return false; };
+      const gb = el.querySelector('#acGoogle'); if (gb) gb.onclick = () => { if (!ticked()) return; gb.disabled = true; flush(); try { sessionStorage.setItem('porta-return', o.to || location.hash); if (o.steps) sessionStorage.setItem('porta-steps', '1'); if (sheet) sessionStorage.setItem('porta-saved', '1'); } catch (e) {} location.href = `${SB.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + '/')}`; };
+      // "or use your email": the fields open in place, the sheet's top where it was as long as the sheet still fits under it.
+      const mb = el.querySelector('#acMail'); if (mb) mb.onclick = () => {
+        const sh = el.querySelector('.ac-sheet'), t0 = sh ? sh.getBoundingClientRect().top : 0;
+        mail = true; mb.hidden = true; el.querySelector('#acForm').hidden = false;
+        if (sh) { const pad = parseFloat(getComputedStyle(el).paddingTop) || 0, top = Math.max(pad, Math.min(t0, innerHeight - pad - sh.offsetHeight)); el.style.alignItems = 'flex-start'; sh.style.marginTop = (top - pad) + 'px'; }
+        const em = el.querySelector('#acEmail'); if (em) em.focus({ preventScroll: true });
+      };
       el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; draw(); });
       const x = el.querySelector('.ac-x'); if (x) x.onclick = () => done(false);
       if (sheet) el.onclick = e => { if (e.target === el) done(false); };
-      const st = el.querySelector('#acSteps'); if (st) st.onclick = () => { A._skipStart = true; flush(); done('steps'); setTimeout(() => { location.hash = '#listing'; render(); }); };
+      const st = el.querySelector('#acSteps'); if (st) st.onclick = () => stepsGate();   // no listing link: the account first, over this page
       const f = el.querySelector('#acForm'), m = el.querySelector('#acMsg');
       f.onsubmit = async ev => {
         ev.preventDefault();
@@ -453,6 +494,7 @@ async function gate(mode0, notice, noticeOk, sheet){
         }
         const email = ((el.querySelector('#acEmail') || {}).value || '').trim(), pw = (el.querySelector('#acPw') || {}).value || '';
         const btn = f.querySelector('.go'); m.className = "acmsg"; m.textContent = '';
+        if (!ticked()) return;
         if (!reset && !/^\S+@\S+\.\S+$/.test(email)) { m.textContent = 'That email address does not look right.'; return; }
         if ((up || reset) && pw.length < 8) { m.textContent = 'Choose a password of at least 8 characters.'; return; }
         if (mode === 'login' && !pw) { m.textContent = 'Enter your password.'; return; }
@@ -469,7 +511,7 @@ async function gate(mode0, notice, noticeOk, sheet){
           authStore(toSession(j)); done(true);
         } catch (e) { btn.disabled = false; m.className = "acmsg"; m.textContent = niceError(e); }
       };
-      setTimeout(() => { const i = el.querySelector('input'); if (i && (drawn++ || innerWidth >= 900 || sheet)) i.focus(); }, 30);   // on a phone the first page opens on the guide, not the keyboard
+      setTimeout(() => { const i = el.querySelector('input:not([hidden] *)'); if (i && (drawn++ || innerWidth >= 900 || sheet)) i.focus(); }, 30);   // on a phone the first page opens on the guide, not the keyboard
     };
     draw(notice, noticeOk);
     if (sheet) return;
@@ -485,16 +527,23 @@ async function gate(mode0, notice, noticeOk, sheet){
     const live = setInterval(() => { if (!el.isConnected) return clearInterval(live); stand(); }, 30000);
   });
 }
-// The account, asked when it is needed (Review and send, an artistic cover, Log in). Once signed in, the page starts
-// again: the answers on this device go to the account as a house of their own (acctAttach), and the host is where they were.
-async function acctNow(mode){
+// The account, asked when it is needed (Save my guide on "This is your guide", no listing link, an artistic cover, Log
+// in). Once signed in, the page starts again: the answers on this device go to the account as a house of their own
+// (acctAttach), and the host lands on o.to (the first step), else where they were. o.gate names the gate for the count:
+// the sheet shown there is one event of the maker's own log (log('gate', ...)), set against the links pasted
+// (draft_start) and the accounts made (the signup form).
+async function acctNow(mode, o = {}){
   if (AUTH) return true;
-  const ok = await gate(mode || 'signup', '', false, true);
-  if (ok === true) { flush(); try { sessionStorage.setItem('porta-saved', '1'); } catch (e) {} location.reload(); }
+  if (o.gate) { log('gate', o.gate); queueSave(); }
+  const ok = await gate(mode || 'signup', '', false, true, o);
+  if (ok === true) { flush(); try { sessionStorage.setItem('porta-saved', '1'); if (o.to) sessionStorage.setItem('porta-return', o.to); if (o.steps) sessionStorage.setItem('porta-steps', '1'); } catch (e) {} location.reload(); }
   return ok === true;
 }
 window.__acctNow = acctNow;
-document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.loginTop, [data-acctnow]'); if (b) acctNow(b.dataset.acctnow || 'login'); });
+// No listing link (the first page's quiet link, or "Or fill it in step by step"): there is no house to show, so the account
+// comes first, over the page; closing it leaves the page as it was. Once signed in, Load your listing, step by step.
+const stepsGate = () => acctNow('signup', { to: '#listing', lead: 'steps', steps: true, gate: 'steps' });
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.loginTop, [data-acctnow]'); if (b) acctNow(b.dataset.acctnow || 'login', b.dataset.to ? { to: b.dataset.to, gate: b.dataset.gate } : {}); });
 
 // Links in confirmation and reset emails come back as /#access_token=...&type=signup|recovery.
 async function acctHash(){
@@ -751,10 +800,11 @@ async function accountBoot(){
   authLoad();
   const type = await acctHash();
   if (AUTH) { try { await ensureFresh(); } catch (e) { authStore(null); } }
+  ACCT_KNOWN = true;   // from here render() may hold a visitor with no account to the house (runtime.js)
   if (type === 'recovery' && AUTH) await gate('reset');
   let notice = window.__authError ? 'That sign-in did not work. Try again, or use your email.' : '', noticeOk = false;
   try { if (sessionStorage.getItem('porta-deleted')) { sessionStorage.removeItem('porta-deleted'); notice = 'Your account is deleted, with its houses and photos.'; noticeOk = true; } } catch (e) {}
-  try { const back = sessionStorage.getItem('porta-return'); if (back != null) { sessionStorage.removeItem('porta-return'); if (AUTH && back) history.replaceState(null, '', location.pathname + back); } } catch (e) {}   // back from Google, where the host was
+  try { const back = sessionStorage.getItem('porta-return'); if (back != null) { sessionStorage.removeItem('porta-return'); if (AUTH && back) history.replaceState(null, '', location.pathname + location.search + back); } } catch (e) {}   // back from Google or the account just made: where the host was, or the first step
   // Not signed in: the first page asks for the listing link; a visitor who already started goes on where they were. The
   // answers stay on this device until they make an account (acctNow).
   if (!AUTH && !startedHere()) await gate('start', notice, noticeOk);
@@ -762,6 +812,9 @@ async function accountBoot(){
   try { if (sessionStorage.getItem('porta-saved')) { sessionStorage.removeItem('porta-saved'); setTimeout(() => toast('Your guide is saved to your account.'), 700); } } catch (e) {}
   try { await acctAttach(); }
   catch (e) { if (e.status === 401 || e.status === 403) { authStore(null); await accountBoot(); return; } /* offline: keep working on this device */ }
+  // Signed up from "no listing link": step by step, as that link did before the account came first (A._skipStart, after
+  // acctAttach, so that logging in to an account that has a house opens that house).
+  try { if (sessionStorage.getItem('porta-steps')) { sessionStorage.removeItem('porta-steps'); if (!startedHere()) { A._skipStart = true; queueSave(); } } } catch (e) {}
   try { cmInit(); } catch (e) {}
   if (CM.on) await readyLanding();   // just built, with found places not looked at yet: the ready screen first (runtime.js)
   if (!CM.on && GUIDE && GUIDE.status === 'draft' && !A._researchJob) researchStart();   // the full research, now that the guide has an account

@@ -268,20 +268,22 @@ function nameListingRooms(d){
     saveUpload(u);
   });
 }
-// The wow page.
+// The wow page. Signed out (Yohann, 23 Nov 2026), its button is "Save my guide": the guide is theirs to look at and tap
+// around, and changing anything asks for the account first (account.js acctNow), which then opens the first step.
 function yoursHTML(){
-  return `<section class="yours"><div class="yours-tx" id="yoursTx">${yoursText()}</div><div class="yours-ph">${phoneHTML()}<p class="yours-cap"><b>A first draft of your guide</b><span>When you save, we finish it for you: local events, markets with their hours, trains and stops, the map, your guests’ languages.</span></p></div></section>`;
+  return `<section class="yours"><div class="yours-tx" id="yoursTx">${yoursText()}</div><div class="yours-ph">${phoneHTML()}<p class="yours-cap"><b>A first draft of your guide</b><span>When you send your guide, we finish it for you: local events, markets with their hours, trains and stops, the map, your guests’ languages.</span></p></div></section>`;
 }
 const WHAT_LEFT = { look: 'choose the look', nearby: 'pick the things to do', favourites: 'add your favourite places to eat', nightlife: 'add your nightlife spots', known: 'add what only you know' };
 function yoursText(){
   const st = WOW.stage || (A._draftAt ? 'done' : ''), name = v('guideName') || v('placeName') || WOW.name;
-  const left = flowMods().filter(m => statusOf(m).k !== 'done').map(m => WHAT_LEFT[m.id]).filter(Boolean), todo = left.length > 1 ? left.slice(0, -1).join(', ') + ' and ' + left[left.length - 1] : left[0];
+  const left = flowMods().filter(m => statusOf(m).k !== 'done').map(m => WHAT_LEFT[m.id]).filter(Boolean), std = ['look', 'nearby', 'favourites', 'known'].map(k => WHAT_LEFT[k]), todo = left.join('|') === std.join('|') ? left.slice(0, -1).join(', ') + ' and ' + left[left.length - 1] : '';   // the one sentence translated in four languages; any other mix of steps left gets the plain line
   const say = { reading: 'Opening your listing…', writing: 'Writing your house guide, the rules and the times…' };
   if (!st) return `<small>Your guest guide</small><h1>Not started yet</h1><p>Paste your listing link first.</p><div class="row"><a class="btn primary" href="#start">Paste my link ${ARROW}</a></div>`;
   return `<small>Your guest guide</small><h1>${esc(name || 'Your guide')}</h1>
     <p class="yours-st" role="status" aria-live="polite">${st === 'done' ? CHECK : '<span class="spin dark" aria-hidden="true"></span>'}<span>${st === 'done' ? 'Your guide is written.' : esc(say[st])}</span></p>
-    <p>${st === 'done' ? `We’ve prefilled your guide from your listing! ${todo ? `You now just need to ${todo} to make it yours.` : 'Tap around in the phone: this is your first draft.'}` : 'Your photos and the details of your listing are going into it right now.'}</p>
-    <div class="row">${st === 'done' ? `<a class="btn primary" href="#guide">Make it yours ${ARROW}</a>` : `<span class="btn primary" aria-disabled="true">Make it yours ${ARROW}</span>`}</div>`;
+    <p>${st === 'done' ? (todo ? `We’ve prefilled your guide from your listing! You now just need to ${todo} to make it yours.` : 'Tap around in the phone: this is your first draft.') : 'Your photos and the details of your listing are going into it right now.'}</p>
+    <div class="row">${!AUTH ? (st === 'done' ? `<button class="btn primary" type="button" data-acctnow="signup" data-to="#guide" data-gate="yours">Save my guide ${ARROW}</button>` : `<span class="btn primary" aria-disabled="true">Save my guide ${ARROW}</span>`)
+      : st === 'done' ? `<a class="btn primary" href="#guide">Make it yours ${ARROW}</a>` : `<span class="btn primary" aria-disabled="true">Make it yours ${ARROW}</span>`}</div>`;
 }
 const yoursRefresh = () => { const el = document.getElementById('yoursTx'); if (el) el.innerHTML = yoursText(); };
 function applyDraft(d){

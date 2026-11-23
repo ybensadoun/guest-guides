@@ -233,7 +233,7 @@ const launch = async () => {
 
 // ======== The groups. Each runs alone in its process; between them, only the constants above and the helpers below. ========
 function groupList() {
-  return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'research-deck': gResearchDeck, 'deck-steady': gDeckSteady, 'build-ready': gBuildReady, 'web-address': gWebAddress,
+  return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'gate': gGate, 'research-deck': gResearchDeck, 'deck-steady': gDeckSteady, 'build-ready': gBuildReady, 'web-address': gWebAddress,
     'houses': gHouses, 'builder': gBuilder, 'rooms-offers': gRoomsOffers, 'nearby': gNearby, 'wow': gWow, 'editor': gEditor, 'editor-names': gEditorNames,
     'place-card': gPlaceCard, 'place-season': gPlaceSeason, 'still-open': gStillOpen, 'place-facts': gPlaceFacts, 'market-event': gMarketEvent,
     'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea, 'home-page': gHomePage, 'trains': gTrains, 'taxis': gTaxis, 'stops': gStops, 'rubbish': gRubbish };
@@ -274,7 +274,7 @@ function groupList() {
       const s = getComputedStyle(e), tag = e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className ? '.' + e.className.split(' ')[0] : '');
       if (/jost/i.test(s.fontFamily) && e.childNodes.length && [...e.childNodes].some(n => n.nodeType === 3 && n.data.trim())) out.push('Jost: ' + tag);
       for (const side of ['Top', 'Right', 'Bottom', 'Left']) if (parseFloat(s['border' + side + 'Width']) >= 2 && /^rgb\((0, 0, 0|18, 18, 18)\)$/.test(s['border' + side + 'Color'])) { out.push('black outline: ' + tag); break; }
-      if (phone && e.matches('button, input, select, .lpick') && !e.closest('.lpick') && e.getBoundingClientRect().height < 44 && getComputedStyle(e).visibility !== 'hidden') out.push(`under 44 px: ${tag} ${Math.round(e.getBoundingClientRect().height)}`);
+      if (phone && e.matches('button, input, select, .lpick') && !e.closest('.lpick') && !(e.matches('input[type=checkbox]') && e.closest('label') && e.closest('label').getBoundingClientRect().height >= 44) && e.getBoundingClientRect().height < 44 && getComputedStyle(e).visibility !== 'hidden') out.push(`under 44 px: ${tag} ${Math.round(e.getBoundingClientRect().height)}`);
     }
     for (const h of root.querySelectorAll('.st-tx h1, .ac-refs h2, .ac-ref h3, .ac-sheet h2')) { const s = getComputedStyle(h); if (!/Gloock/.test(s.fontFamily) || s.fontWeight !== '400') out.push('title not in the serif: ' + h.textContent.slice(0, 20)); }
     for (const e of root.querySelectorAll('.st-tx p, .ac-card label, .ac-card input, .ac-refs p, .ac-foot, .ac-steps button')) if (!/Onest/.test(getComputedStyle(e).fontFamily)) out.push('text not in the app font: ' + e.tagName);
@@ -430,7 +430,7 @@ async function gFirstPage() {
   // ---- The quiet link, and the button with a link: on as before, the phone where the example was ----
   { const { ctx, p } = await signedOut(1280, 860, false);
     await p.click('#acSteps'); await settle(p, 400);
-    ok('"No listing link? Fill it in step by step": the first page goes, the builder opens on Load your listing', !(await p.$('#acct')) && (await p.evaluate(() => location.hash)) === '#listing');
+    ok('"No listing link? Fill it in step by step": the account first, over the first page (no step opened; the rest in the group gate)', !!(await p.$('#acct .ac-over #acConsent')) && !!(await p.$('#acct .ac2 #acUrl')) && (await p.evaluate(() => location.hash)) === '');
     await ctx.close(); }
   for (const [w, h] of [[1280, 860], [360, 780]]) {
     const { ctx, p, errors, first } = await signedOut(w, h, false), h0 = await p.evaluate(() => history.length), ph0 = await R(p, '#acct .ac-phone .phone');
@@ -503,10 +503,14 @@ async function gFirstPage() {
     ok('the viewer in the phone: it calls out only to our database and storage, the fonts\' CDN and the map\'s tiles (OpenFreeMap)', on.hosts.length > 1 && on.hosts.every(h => ['editor.test', new URL(SB).host, 'cdn.jsdelivr.net', 'tiles.openfreemap.org'].includes(h)), on.hosts.join(', '));
     ok('the viewer in the phone: no page errors', !on.errors.length, on.errors.join(' | ')); }
 }
-  // ---- No account until the end (docs/plan-fast-builder.md, step 7): the link, the wow and the steps on this device, then the account ----
+  // ---- The link and the wow without an account, then the account before any step (docs/plan-fast-builder.md, step 7, changed 23 Nov 2026) ----
   const JOB_ID = '00000000-0000-0000-0000-00000000f011', AREA_ID = '00000000-0000-0000-0000-0000000a4ea1', AREA_MARKETS = JSON.parse(readFileSync(join(ROOT, 'worker/examples/markets.json'), 'utf8')), AREA_TODO = JSON.parse(readFileSync(join(ROOT, 'worker/examples/todo.json'), 'utf8'));
   // The sheet puts the cursor in the email box just after it opens: type once it has, or the password lands there.
-  const signUp = async p => { await p.waitForFunction(() => (document.activeElement || {}).id === 'acEmail'); await p.fill('#acEmail', 'visitor@example.org'); await p.fill('#acPw', 'a-good-password'); await p.click('#acct .go'); };
+  // Since 23 Nov 2026 the sheet starts with the consent tick, and with Google on the email fields open behind one line.
+  const signUp = async p => { await p.waitForSelector('#acct .ac-sheet #acConsent'); await p.check('#acConsent'); if (await p.isVisible('#acMail')) await p.click('#acMail');
+    await p.waitForFunction(() => (document.activeElement || {}).id === 'acEmail'); await p.fill('#acEmail', 'visitor@example.org'); await p.fill('#acPw', 'a-good-password'); await p.click('#acct .go'); };
+  // The visitor signs up from "This is your guide" (its button), and is back on the first step.
+  const signUpNow = async p => { const reloaded = nextLoad(p); await p.click('#yoursTx button[data-acctnow]'); await signUp(p); await reloaded; await p.waitForSelector('.mhead h1', { timeout: 10000 }).catch(() => {}); };
   const visitor = async (w, h, existing, taken = []) => {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } }), rows = {}, calls = [], uid = '00000000-0000-0000-0000-0000000070aa'; ctx.taken = new Set(taken);
     if (existing) rows[existing.id] = { ...existing, owner: uid };
@@ -544,13 +548,12 @@ async function gNoAccount() {
     const td = AREA_TODO.items[0].name.en;
     ok('research from the link: a place the host has not chosen stays out of the phone', !((await inPhone(p, d => d.body.textContent)) || '').includes(td), td);
     ok('no account yet: the link opens the wow at once, the first page is gone, the top bar offers Log in', (await p.evaluate(() => location.hash)) === '#yours' && !(await p.$('#acct')) && !!(await p.$('.loginTop')) && !(await p.$('.logoutTop')));
-    await go(p, '#known'); await p.fill('[data-k="wifiName"]', 'Visitor wifi'); await settle(p, 400);
-    ok('no account yet: the steps work, answers saved on this device', /on this device/i.test(await p.textContent('#saveState').catch(() => '')) && !calls.some(c => !c.startsWith('research')), (await p.textContent('#saveState').catch(() => '')).trim());
-    await go(p, '#send');
-    ok('no account yet: Review and send offers "Save my guide", not Send', !!(await p.$('[data-acctnow="signup"]')) && !(await p.$('#send')));
-    await p.click('[data-acctnow="signup"]'); await p.waitForSelector('#acct.only #acEmail', { timeout: 3000 }).catch(() => {});
-    ok('Save my guide: the account card alone, over the builder, with Google', /Save your guide/.test(await p.textContent('#acct.only .ac-card h2').catch(() => '')) && !!(await p.$('#acct.only #acGoogle')) && !(await p.$('#acct.only .start, #acct.only .ac-top')));
+    await go(p, '#known'); await settle(p, 400);
+    ok('no account yet: a step\'s address comes back to the house in the phone, nothing sent anywhere', (await p.evaluate(() => location.hash)) === '#yours' && !(await p.$('[data-k="wifiName"]')) && !calls.some(c => !c.startsWith('research')), calls.join(', '));
+    await p.click('#yoursTx button[data-acctnow]'); await p.waitForSelector('#acct.only #acConsent', { timeout: 3000 }).catch(() => {});
+    ok('Save my guide: the account card alone, over the page, with Google', /Save your guide/.test(await p.textContent('#acct.only .ac-card h2').catch(() => '')) && !!(await p.$('#acct.only #acGoogle')) && !(await p.$('#acct.only .start, #acct.only .ac-top')));
     await p.screenshot({ path: join(SHOTS, 'save-sheet-360.png') });
+    await p.click('#acMail'); await settle(p, 200);
     // the sheet in the app's look (12 Nov 2026): white, no outline, the serif title, the app's fields and navy button; it fits a
     // phone, and a phone too short for it scrolls inside the sheet to the button
     const sheetLook = () => p.evaluate(() => { const sh = document.querySelector('#acct .ac-sheet'), r = sh.getBoundingClientRect(), go = sh.querySelector('.go'), g = go.getBoundingClientRect();
@@ -559,8 +562,8 @@ async function gNoAccount() {
         sheet: ss.backgroundColor === 'rgb(255, 255, 255)' && parseFloat(ss.borderTopWidth) === 0 && ss.borderTopLeftRadius === '20px' && ss.boxShadow !== 'none',
         title: /Gloock/.test(h2.fontFamily) && h2.fontWeight === '400', field: /Onest/.test(pw.fontFamily) && pw.borderTopLeftRadius === '12px' && [1, 1.5].includes(parseFloat(pw.borderTopWidth)) && pw.backgroundColor === 'rgb(246, 244, 240)' && pw.borderTopColor === 'rgb(222, 218, 210)',
         button: getComputedStyle(go).backgroundColor === 'rgb(20, 35, 58)' && /Onest/.test(getComputedStyle(go).fontFamily), google: gb.borderTopColor === 'rgb(22, 32, 46)' && gb.backgroundColor === 'rgb(255, 255, 255)', close: x.width >= 44 && x.height >= 44 }; });
-    const sl = await sheetLook(), slBad = Object.entries(sl).filter(([k, v]) => !v && k !== 'scrolls').map(([k]) => k), slLook = await makerLook(p, true);
-    ok('Save my guide, 360 x 780: the sheet fits with its button, white with no outline, the serif title, the app\'s fields, navy button and outlined Google button', !slBad.length && !slLook.length, [...slBad, ...slLook].join('; '));
+    const sl = await sheetLook(), slBad = Object.entries(sl).filter(([k, v]) => !v && !['scrolls', 'goIn'].includes(k)).map(([k]) => k), slLook = await makerLook(p, true);
+    ok('Save my guide, 360 x 780, the email open: the sheet fits, white with no outline, the serif title, the app\'s fields, navy button and outlined Google button', !slBad.length && !slLook.length, [...slBad, ...slLook].join('; '));
     await p.setViewportSize({ width: 360, height: 520 }); await settle(p, 200);
     const tall = await sheetLook();
     await p.evaluate(() => document.querySelector('#acct .ac-sheet .go').scrollIntoView({ block: 'nearest' })); await settle(p, 100);
@@ -568,15 +571,238 @@ async function gNoAccount() {
     ok('Save my guide, a phone too short for it (360 x 520): the sheet stays on screen and scrolls inside to its button', tall.fits && tall.scrolls && reach, JSON.stringify({ fits: tall.fits, scrolls: tall.scrolls, reach }));
     await p.setViewportSize({ width: 360, height: 780 }); await settle(p, 200);
     await p.keyboard.press('Escape'); await settle(p, 200);
-    ok('Save my guide: Escape closes it, nothing lost', !(await p.$('#acct')) && (await p.evaluate(() => location.hash)) === '#send');
-    const reloaded = nextLoad(p); await p.click('[data-acctnow="signup"]'); await signUp(p);
-    await reloaded; await settle(p, 4500);
+    ok('Save my guide: Escape closes it, nothing lost', !(await p.$('#acct')) && (await p.evaluate(() => location.hash)) === '#yours');
+    await signUpNow(p); await settle(p, 1500);
+    await go(p, '#known'); await p.fill('[data-k="wifiName"]', 'Visitor wifi'); await settle(p, 2500);
     const h = Object.values(rows)[0] || { answers: {} };
-    ok('after the account: the answers from this device are the account\'s house, back on Review and send, with Send', Object.keys(rows).length === 1 && h.answers.wifiName === 'Visitor wifi' && h.answers._research === AREA_ID && h.answers.listingUrl === 'https://www.airbnb.com/rooms/12345678' && (await p.evaluate(() => location.hash)) === '#send' && !!(await p.$('#send')) && !!(await p.$('.logoutTop')), calls.join(', '));
+    ok('after the account: the answers from this device are the account\'s house, the first step, and what is typed then goes to it', Object.keys(rows).length === 1 && h.answers.wifiName === 'Visitor wifi' && h.answers._research === AREA_ID && h.answers.listingUrl === 'https://www.airbnb.com/rooms/12345678' && !!(await p.$('.logoutTop')) && /Saved to your account/.test(await p.textContent('#saveState').catch(() => '')), calls.join(', '));
     ok('after the account: the full research of the area starts in the background, for the house\'s point, and travels with the answers', calls.includes('job research ' + A0.lat) && h.answers._researchJob === JOB_ID, calls.join(', '));
     ok('the house\'s position from the listing is kept as ours, with no date (no pos)', +h.answers.lat === +A0.lat && !('pos' in h.answers), JSON.stringify({ lat: h.answers.lat, pos: h.answers.pos }));
-    ok('no account until the end: no page errors', !errors.length, errors.join(' | '));
+    ok('the account after the wow: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+}
+  // ---- The account right after the wow (Yohann, 23 Nov 2026): the link free, the house in the phone, "Save my guide" opens
+  // "Save your guide" (the consent tick first, Google, the email behind one line); no step without an account. ----
+  // A visitor of their own (no session): the database here keeps what the page writes (rows), the calls it makes (calls),
+  // Google's sign-in comes straight back as a new account (the harness's fake return). seed: this device's answers before.
+  const gateCtx = async (w, h, lang, seed = null) => {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } }), rows = {}, calls = [], uid = '00000000-0000-0000-0000-0000000070ab'; ctx.taken = new Set();
+    await ctx.addInitScript(([lang, seed]) => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', '1'); if (lang) localStorage.setItem('porta-lang-v1', lang); if (seed) localStorage.setItem('porta-onboarding-v1', seed); }, [lang, seed]);
+    // what the page said to come back to, as it was when it left (for Google, or the reload after the account)
+    await ctx.addInitScript(() => addEventListener('pagehide', () => { try { const r = sessionStorage.getItem('porta-return'); if (r != null) localStorage.setItem('chk-return', r); } catch (e) {} }));
+    await ctx.route('**/*', route => { const req = route.request(), u = new URL(req.url());
+      if (u.host === 'editor.test' && u.pathname === '/api/listing') return listing(route, JSON.parse(req.postData() || '{}'));
+      if (u.host === 'editor.test' && u.pathname.startsWith('/g/')) return fakeGuide(route);
+      if (u.host === 'editor.test' && req.method() === 'POST' && u.pathname === '/') { calls.push('form ' + (new URLSearchParams(req.postData() || '').get('form-name') || 'file')); return route.fulfill({ status: 200, body: '' }); }
+      if (u.host === 'editor.test') return u.pathname.startsWith('/api/') ? json(route, { ok: false }) : route.fulfill({ status: 200, contentType: 'text/html', body: HTML });
+      if (u.origin !== SB) return route.continue();
+      if (u.pathname === '/auth/v1/settings') return json(route, { external: { google: true, email: true } });
+      if (u.pathname === '/auth/v1/authorize') { calls.push('google ' + u.searchParams.get('provider')); return route.fulfill({ status: 200, contentType: 'text/html', body: '<p>Google</p><script>setTimeout(() => location.replace("http://editor.test/#access_token=tk&expires_in=3600&refresh_token=rt&token_type=bearer&provider_token=g1"), 200)</script>' }); }
+      if (u.pathname === '/auth/v1/signup' || u.pathname === '/auth/v1/token') { calls.push(u.pathname.split('/').pop()); return json(route, { access_token: 'tk', refresh_token: 'rt', expires_in: 3600, user: { id: uid, email: 'visitor@example.org' } }); }
+      if (u.pathname.startsWith('/auth/v1/user')) return json(route, { id: uid, email: 'visitor@example.org', created_at: new Date().toISOString() });
+      if (u.pathname === '/rest/v1/rpc/start_area_research') return json(route, { ok: true, id: AREA_ID, status: 'queued' });
+      if (u.pathname === '/rest/v1/rpc/area_research_status') return json(route, { status: 'done', result: { markets: AREA_MARKETS, todo: AREA_TODO } });
+      if (u.pathname === '/rest/v1/rpc/slug_check') return slugAnswer(route, JSON.parse(req.postData() || '{}'), ctx.taken);
+      if (u.pathname.startsWith('/rest/v1/guide_jobs')) { if (req.method() === 'POST') { calls.push('job ' + JSON.parse(req.postData() || '{}').kind); return json(route, [{ id: JOB_ID, status: 'queued' }]); } return json(route, [{ status: 'running' }]); }
+      if (u.pathname.startsWith('/rest/v1/guides')) {
+        const id = (u.search.match(/id=eq\.([0-9a-f-]+)/) || [])[1];
+        if (req.method() === 'POST') { const b = JSON.parse(req.postData() || '{}'), r = { id: '00000000-0000-0000-0000-00000000720' + Object.keys(rows).length, owner: uid, answers: b.answers || {}, status: 'draft', slug: null, origin: null, content: null, theme: null, draft: null }; rows[r.id] = r; calls.push('new house'); return json(route, [r]); }
+        if (req.method() === 'PATCH') { const b = JSON.parse(req.postData() || '{}'); if (rows[id]) Object.assign(rows[id], b); return json(route, rows[id] ? [rows[id]] : []); }
+        if (/select=id(%2C|,)slug/.test(u.search)) return json(route, Object.values(rows).map(r => ({ id: r.id, slug: r.slug, status: r.status })));
+        return json(route, rows[id] ? [rows[id]] : []);
+      }
+      return json(route, u.pathname.startsWith('/auth/') ? {} : []); });
+    const p = await ctx.newPage(), errors = []; p.on('pageerror', e => errors.push(e.message));
+    return { ctx, p, errors, rows, calls };
+  };
+  // The link pasted on the first page; back once the guide is written (the sheet's button is there, in any language).
+  const paste = async p => {
+    await p.goto('http://editor.test/'); await p.waitForSelector('#acUrl', { timeout: 15000 }).catch(() => {});
+    await p.fill('#acUrl', 'https://www.airbnb.com/rooms/12345678'); await p.click('#acct .go');
+    await p.waitForSelector('#yoursTx span.btn[aria-disabled="true"]', { timeout: 5000 }).catch(() => {});
+    const writing = await rectOf(p, '#yoursTx .btn');
+    await p.waitForSelector('#yoursTx button[data-acctnow="signup"]', { timeout: 8000 }).catch(() => {});
+    await p.evaluate(() => document.fonts.ready); await settle(p, 2600);   // the tiles pop in one after another
+    return writing;
+  };
+  const gateLog = async p => { await settle(p, 500); return ((await stored(p))._log || []).filter(x => x.e === 'gate').map(x => x.m); };   // saved on the device 400 ms after
+  // The sheet: its parts one under the other, nothing touching or cut, no word wider than its line, inside the screen; the
+  // main button (Google, or Create my account) in the first screen of the sheet without scrolling it.
+  const sheetClear = p => p.evaluate(() => {
+    const sh = document.querySelector('#acct .ac-sheet'); if (!sh) return { bad: ['no sheet'] };
+    const card = sh.querySelector('.ac-card'), vis = e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden';
+    const parts = [...card.querySelectorAll(':scope > *, :scope > form > *'), sh.querySelector('.ac-x')].filter(e => vis(e) && e.tagName !== 'FORM' && !(e.classList.contains('acmsg') && !e.textContent.trim()));
+    const words = e => { const g = document.createRange(); g.selectNodeContents(e); return [...g.getClientRects()].filter(r => r.width > 0); };
+    const boxes = e => /^(H2|P|LABEL|DIV)$/.test(e.tagName) ? words(e) : [e.getBoundingClientRect()];
+    const name = e => (e.id || e.className || e.tagName).toString().split(' ')[0];
+    const bad = [], hit = (a, b) => a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1;
+    parts.forEach((e, i) => parts.slice(i + 1).forEach(f => { if (!e.contains(f) && !f.contains(e) && boxes(e).some(a => boxes(f).some(b => hit(a, b)))) bad.push(`${name(e)} touches ${name(f)}`); }));
+    const cr = card.getBoundingClientRect();
+    for (const e of parts) if (e !== sh.querySelector('.ac-x') && boxes(e).some(r => r.left < cr.left - 0.5 || r.right > cr.right + 0.5)) bad.push('outside: ' + name(e));
+    for (const e of sh.querySelectorAll('h2, p, label, span, button, a, input')) if (vis(e) && e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible') bad.push('cut: ' + e.textContent.trim().slice(0, 30));
+    // no word broken mid-word: every line of the sheet's text ends at a space, a dash or the end of its block
+    for (const e of sh.querySelectorAll('h2, p.lead, .ac-consent span, .acmsg, .ac-mail, .alt, p.small')) { if (!vis(e)) continue;
+      const tw = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); let n;
+      while ((n = tw.nextNode())) { const t = n.data; for (let k = 1; k < t.length; k++) { if (/\s/.test(t[k - 1]) || /\s/.test(t[k])) continue;
+        const a = document.createRange(); a.setStart(n, k - 1); a.setEnd(n, k); const b = document.createRange(); b.setStart(n, k); b.setEnd(n, k + 1);
+        const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(); if (ra.width && rb.width && rb.top > ra.bottom - 2) { bad.push('broken word: ' + t.slice(Math.max(0, k - 8), k + 8)); break; } } } }
+    const sr = sh.getBoundingClientRect(); if (sr.top < -0.5 || sr.bottom > innerHeight + 0.5 || sr.left < -0.5 || sr.right > innerWidth + 0.5) bad.push('sheet off the screen');
+    if (document.documentElement.scrollWidth > innerWidth || document.getElementById('acct').scrollWidth > innerWidth) bad.push('sideways scroll');
+    const main = [...sh.querySelectorAll('#acGoogle, .go')].find(vis), m = main && main.getBoundingClientRect();
+    return { bad: [...new Set(bad)], mainIn: !!m && m.top >= sr.top && m.bottom <= Math.min(sr.bottom, innerHeight), top: Math.round(sr.top), height: Math.round(sr.height) };
+  });
+  // "This is your guide": the words, the button and the phone apart, nothing wider than its line, no sideways scroll.
+  const yoursClear = p => p.evaluate(() => {
+    const tx = document.getElementById('yoursTx'), ph = document.querySelector('.yours-ph .phone'); if (!tx || !ph) return ['no screen'];
+    const parts = [...tx.children, ph, document.querySelector('.yours-cap')].filter(e => e && e.getClientRects().length), bad = [];
+    const hit = (a, b) => a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1;
+    parts.forEach((e, i) => parts.slice(i + 1).forEach(f => { if (hit(e.getBoundingClientRect(), f.getBoundingClientRect())) bad.push(`${e.className || e.tagName} touches ${f.className || f.tagName}`); }));
+    for (const e of tx.querySelectorAll('*')) if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible' && !e.closest('svg')) bad.push('cut: ' + e.textContent.trim().slice(0, 30));
+    if (document.documentElement.scrollWidth > innerWidth) bad.push('sideways scroll');
+    return bad;
+  });
+  const rectOf = (p, s) => p.evaluate(s => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom, w: b.width, h: b.height }; }, s);
+  const nearR = (a, b) => !!a && !!b && ['l', 't', 'w', 'h'].every(k => Math.abs(a[k] - b[k]) < 1.5);
+  const GATE_SHOTS = env.GATE_SHOTS || join(SHOTS, 'gate');
+  const shotG = (p, name) => p.screenshot({ path: join(GATE_SHOTS, name + '.png') });
+async function gGate() {
+  mkdirSync(GATE_SHOTS, { recursive: true });
+  for (const lang of ['en', 'fr', 'ca']) for (const [w, h] of [[360, 780], [1280, 860]]) {
+    const tag = `${lang}, ${w} px`, pic = lang !== 'ca' ? n => shotG(p, `${n}-${lang}-${w}`) : async () => {};
+    const { ctx, p, errors, rows, calls } = await gateCtx(w, h, lang);
+    const writing = await paste(p), btn = await rectOf(p, '#yoursTx .btn');
+    // its place: the last row of the words, as the waiting button (the words above it grow once the guide is written), its size
+    const last = await p.evaluate(() => { const b = document.querySelector('#yoursTx .btn'); return !!b && b.parentElement.classList.contains('row') && b.parentElement === document.getElementById('yoursTx').lastElementChild && b.classList.contains('primary'); });
+    ok(`gate, ${tag}: after the link the house is in the phone and the button is "Save my guide", in the waiting button's place, the same size`, !!(await p.$('#yoursTx button[data-acctnow="signup"][data-to="#guide"]')) && !(await p.$('#yoursTx a[href="#guide"]')) && !!(await inPhone(p, d => d.querySelector('.pv-name h1'))) && last && !!writing && !!btn && Math.abs(writing.l - btn.l) < 1.5 && Math.abs(writing.w - btn.w) < 1.5 && Math.abs(writing.h - btn.h) < 1.5, JSON.stringify({ writing, btn }));
+    if (lang === 'en') ok(`gate, ${tag}: its words are "Save my guide"`, /^Save my guide/.test((await p.textContent('#yoursTx .btn')).trim()));
+    if (w < 900) ok(`gate, ${tag}: the button is on screen without scrolling`, btn && btn.t >= 0 && btn.b <= h, JSON.stringify(btn));
+    let c = await yoursClear(p); ok(`gate, ${tag}: "This is your guide" has nothing overlapping or cut, no sideways scroll`, !c.length, c.join('; '));
+    await pic('1-after-link');
+    await inPhone(p, d => { const b = d.querySelector('.pv-sec'); b && b.click(); return 1; }); await settle(p, 400);
+    ok(`gate, ${tag}: the phone is still the visitor's to tap (a tile opens its screen)`, !!(await inPhone(p, d => d.querySelector('.pv-page'))));
+    // the sheet
+    await p.click('#yoursTx button[data-acctnow]'); await p.waitForSelector('#acct.only .ac-sheet', { timeout: 3000 }).catch(() => {});
+    const st = await p.evaluate(() => { const v = s => { const e = document.querySelector(s); return !!e && !!e.getClientRects().length; }, order = [...document.querySelectorAll('#acct .ac-card > *')].filter(e => e.getClientRects().length).map(e => e.id || e.className.split(' ')[0] || e.tagName);
+      return { tick: v('#acConsent') && !document.getElementById('acConsent').checked, google: v('#acGoogle'), mail: v('#acMail'), form: v('#acForm'), login: !!document.querySelector('#acct .alt [data-m="login"]'), order: order.join(' '), focus: (document.activeElement || {}).id || '' }; });
+    ok(`gate, ${tag}: the button opens "Save your guide": the tick first and not ticked, Google, "or use your email", the fields closed, Log in`, st.tick && st.google && st.mail && !st.form && st.login && /^acHead lead ac-consent acTick acGoogle acMail/.test(st.order), JSON.stringify(st));
+    if (lang === 'en') ok(`gate, ${tag}: the title and its one sentence (free, kept in the account, from any device), the tick with Review and send's sentence`, (await p.textContent('#acHead')) === 'Save your guide' && (await p.textContent('#acct .lead')) === 'It’s free: your guide is kept in your account, and you can come back to it from any device.' && (await p.textContent('#acct .ac-consent span')) === 'I own these photos and texts or may use them, and I understand the guide is visible to anyone who has its link.' && (await p.textContent('#acMail')) === 'or use your email');
+    ok(`gate, ${tag}: the sheet shown at the gate is counted once in the maker's log`, cmpSame(await gateLog(p), ['yours']), JSON.stringify(await gateLog(p)));
+    let s = await sheetClear(p);
+    ok(`gate, ${tag}: the sheet fits, nothing overlaps or is cut, no word broken, Google in it without scrolling`, !s.bad.length && s.mainIn, s.bad.join('; '));
+    const look = await makerLook(p, w < 600); ok(`gate, ${tag}: the sheet in the maker's look${w < 600 ? ', every target 44 px' : ''}`, !look.length, look.join('; '));
+    await pic('2-sheet');
+    // without the tick, neither button goes on
+    await p.click('#acGoogle'); await settle(p, 300);
+    const g0 = await p.evaluate(() => ({ line: document.getElementById('acTick').textContent, focus: (document.activeElement || {}).id, url: location.host }));
+    ok(`gate, ${tag}: Google without the tick: nowhere, one line under the tick, the focus on it`, !calls.some(x => x.startsWith('google')) && !!g0.line && g0.focus === 'acConsent' && g0.url === 'editor.test', JSON.stringify(g0));
+    if (lang === 'en') ok(`gate, ${tag}: the line says what to do`, g0.line === 'Tick this box to go on.', g0.line);
+    s = await sheetClear(p); ok(`gate, ${tag}: with the line shown, nothing overlaps, no word broken`, !s.bad.length, s.bad.join('; '));
+    await pic('3-no-tick');
+    const top0 = s.top; await p.click('#acMail'); await settle(p, 300);
+    const mo = await p.evaluate(() => ({ form: !!document.getElementById('acForm').getClientRects().length, mail: !!document.getElementById('acMail').getClientRects().length, focus: (document.activeElement || {}).id, hash: location.hash }));
+    s = await sheetClear(p);
+    const roomFor = h - 16 - s.height;   // where the top can stay: where it was, if the sheet still fits under it
+    ok(`gate, ${tag}: "or use your email" opens the fields in place (the line gone, the email focused, no page change), the sheet's top moved only as far as it must (${top0} then ${s.top})`, mo.form && !mo.mail && mo.focus === 'acEmail' && mo.hash === '#yours' && s.top === Math.max(16, Math.min(top0, roomFor)), JSON.stringify({ ...mo, top0, top: s.top, h: s.height }));
+    ok(`gate, ${tag}: the email fields open, nothing overlaps or is cut`, !s.bad.length, s.bad.join('; '));
+    await pic('4-email-open');
+    await p.fill('#acEmail', 'visitor@example.org'); await p.fill('#acPw', 'a-good-password'); await p.click('#acct .go'); await settle(p, 300);
+    ok(`gate, ${tag}: Create my account without the tick: no account, the line, the focus on the tick`, !calls.includes('signup') && (await p.evaluate(() => (document.activeElement || {}).id)) === 'acConsent' && !!(await p.textContent('#acTick')));
+    // closing it leaves the screen as it was
+    await p.keyboard.press('Escape'); await settle(p, 200);
+    ok(`gate, ${tag}: closing the sheet leaves "This is your guide", the phone still there`, !(await p.$('#acct')) && (await p.evaluate(() => location.hash)) === '#yours' && !!(await p.$('#phoneFrame')));
+    // no step without an account: its address brings the house back
+    for (const step of ['#known', '#send', '#guide']) { await go(p, step); await settle(p, 300);
+      ok(`gate, ${tag}: ${step} with no account comes back to the house in the phone, no step drawn`, (await p.evaluate(() => location.hash)) === '#yours' && !(await p.$('.mhead')) && !!(await p.$('#phoneFrame')) && !!(await p.$('#yoursTx button[data-acctnow]'))); }
+    await p.goBack().catch(() => {}); await settle(p, 300);
+    ok(`gate, ${tag}: the back button does not open a step either`, !(await p.$('.mhead')) && !(await p.$('[data-k]')), await p.evaluate(() => location.hash));
+    if (await p.evaluate(() => location.hash) !== '#yours') { await go(p, '#yours'); await settle(p, 300); }
+    // the account: lands on the first step, with the toast; the house made once, with the answers and the consent
+    const reloaded = nextLoad(p); await p.click('#yoursTx button[data-acctnow]'); await p.waitForSelector('#acct .ac-sheet #acConsent');
+    await p.check('#acConsent'); await p.click('#acMail'); await p.fill('#acEmail', 'visitor@example.org'); await p.fill('#acPw', 'a-good-password'); await p.click('#acct .go');
+    await reloaded; await p.waitForSelector('.mhead h1', { timeout: 10000 }).catch(() => {}); await settle(p, 900);
+    const after = await p.evaluate(() => ({ hash: location.hash, toast: !document.getElementById('toast').hidden && document.getElementById('toast').textContent, out: !!document.querySelector('.logoutTop'), field: !!document.querySelector('[data-k="guideName"]') }));
+    const hs = Object.values(rows), a1 = (hs[0] || {}).answers || {};
+    ok(`gate, ${tag}: signed up by email, the first step (name and languages) with "Your guide is saved to your account."`, after.hash === '#guide' && !!after.toast && after.out && after.field && (lang !== 'en' || after.toast === 'Your guide is saved to your account.'), JSON.stringify(after));
+    ok(`gate, ${tag}: the guide's row made once, with this device's answers and the consent`, calls.filter(x => x === 'new house').length === 1 && hs.length === 1 && a1.listingUrl === 'https://www.airbnb.com/rooms/12345678' && a1.consent === true && !!a1._draftAt, `${calls.join(', ')} / consent ${a1.consent}`);
+    ok(`gate, ${tag}: the full research starts with the account, the sign-up counted (form signup)`, calls.includes('job research') && calls.includes('form signup'), calls.join(', '));
+    await pic('5-first-step-toast');
+    await go(p, '#send'); await settle(p, 400);
+    ok(`gate, ${tag}: Review and send arrives ticked, with Send`, await p.isChecked('[data-check="consent"]').catch(() => false) && !!(await p.$('#send')) && !(await p.$('[data-acctnow]')));
+    ok(`gate, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // ---- Google: it leaves with the first step as the way back, and comes back there ----
+  for (const [w, h] of [[360, 780], [1280, 860]]) {
+    const { ctx, p, errors, rows, calls } = await gateCtx(w, h, 'en');
+    await paste(p); await p.click('#yoursTx button[data-acctnow]'); await p.waitForSelector('#acct .ac-sheet #acConsent');
+    await p.check('#acConsent'); const back = nextLoad(p); await p.click('#acGoogle');
+    await p.waitForURL(/supabase\.co/, { timeout: 5000 }).catch(() => {});
+    const leftFor = await p.evaluate(() => location.href).catch(() => '');
+    await back; await p.waitForURL(/editor\.test/, { timeout: 8000 }).catch(() => {}); await p.waitForSelector('.mhead h1', { timeout: 10000 }).catch(() => {}); await settle(p, 900);
+    const ret = await p.evaluate(() => ({ was: localStorage.getItem('chk-return'), hash: location.hash, toast: document.getElementById('toast').hidden ? '' : document.getElementById('toast').textContent }));
+    ok(`Google, ${w} px: with the tick, the button leaves for Google with the first step as the way back (porta-return = #guide)`, /provider=google/.test(leftFor) && calls.includes('google google') && ret.was === '#guide', `${leftFor.slice(0, 60)} / ${ret.was}`);
+    ok(`Google, ${w} px: back from Google, the first step with the toast; the house made once with the answers and the consent`, ret.hash === '#guide' && ret.toast === 'Your guide is saved to your account.' && Object.keys(rows).length === 1 && Object.values(rows)[0].answers.consent === true && Object.values(rows)[0].answers.listingUrl === 'https://www.airbnb.com/rooms/12345678', JSON.stringify(ret));
+    ok(`Google, ${w} px: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // ---- No listing link: the sheet at once over the first page; closing it leaves the page; signed in, step by step ----
+  for (const lang of ['en', 'fr', 'ca']) for (const [w, h] of [[360, 780], [1280, 860]]) {
+    const tag = `${lang}, ${w} px`, { ctx, p, errors, rows, calls } = await gateCtx(w, h, lang);
+    await p.goto('http://editor.test/'); await p.waitForSelector('#acSteps', { timeout: 15000 }).catch(() => {}); await p.evaluate(() => document.fonts.ready); await settle(p, 400);
+    await p.click('#acSteps'); await p.waitForSelector('#acct .ac-over .ac-sheet', { timeout: 3000 }).catch(() => {});
+    const o = await p.evaluate(() => ({ over: !!document.querySelector('#acct:not(.only) > .ac-over .ac-sheet #acConsent'), page: !!document.querySelector('#acct .ac2 #acUrl'), hash: location.hash, lead: (document.querySelector('#acct .ac-over .lead') || {}).textContent }));
+    ok(`no link, ${tag}: the sheet at once, over the first page (which stays under it), no step opened`, o.over && o.page && o.hash === '' && !(await p.$('.mhead')), JSON.stringify(o));
+    if (lang === 'en') ok(`no link, ${tag}: its lead says why in one line`, o.lead === 'With no listing link there is nothing to show yet: create your free account, then fill in your guide step by step.', o.lead);
+    const s = await sheetClear(p); ok(`no link, ${tag}: the sheet fits, nothing overlaps or is cut, no word broken, Google in it without scrolling`, !s.bad.length && s.mainIn, s.bad.join('; '));
+    ok(`no link, ${tag}: counted in the maker's log`, cmpSame(await gateLog(p), ['steps']), JSON.stringify(await gateLog(p)));
+    if (lang !== 'ca') await shotG(p, `6-no-link-${lang}-${w}`);
+    await p.click('#acct .ac-over .ac-x'); await settle(p, 200);
+    ok(`no link, ${tag}: closing it leaves the first page as it was`, !(await p.$('#acct .ac-over')) && !!(await p.$('#acct .ac2 #acUrl')) && (await p.evaluate(() => location.hash)) === '' && (await p.evaluate(() => getComputedStyle(document.getElementById('acct')).display)) !== 'none');
+    if (lang === 'en') {
+      const reloaded = nextLoad(p); await p.click('#acSteps'); await p.waitForSelector('#acct .ac-over #acConsent');
+      await p.check('#acConsent'); await p.click('#acMail'); await p.fill('#acEmail', 'visitor@example.org'); await p.fill('#acPw', 'a-good-password'); await p.click('#acct .ac-over .go');
+      await reloaded; await p.waitForSelector('.mhead h1', { timeout: 10000 }).catch(() => {}); await settle(p, 900);
+      const a = await stored(p);
+      ok(`no link, ${tag}: signed up, Load your listing, step by step, with the toast; one house`, (await p.evaluate(() => location.hash)) === '#listing' && a._skipStart === true && !(await p.$('#acct')) && Object.keys(rows).length === 1 && Object.values(rows)[0].answers.consent === true && /saved to your account/.test(await textNow(p, '#toast')), `${await p.evaluate(() => location.hash)} ${calls.join(', ')}`);
+    }
+    ok(`no link, ${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // ---- A device that started before (answers, no account): gated, its answers kept, and they go to the account ----
+  { const old = { sid: 'old-device', A: { ...B.answers, listingUrl: 'https://www.airbnb.com/rooms/12345678', _draftAt: '2026-11-20T10:00:00.000Z', wifiName: 'Old device wifi', _savedAt: Date.now() - 864e5 } };
+    delete old.A._acct;
+    const { ctx, p, errors, rows } = await gateCtx(360, 780, 'en', JSON.stringify(old));
+    await p.goto('http://editor.test/#known'); await p.waitForSelector('#yoursTx', { timeout: 15000 }).catch(() => {}); await settle(p, 1500);
+    const g = { ...(await p.evaluate(() => ({ hash: location.hash, step: !!document.querySelector('.mhead'), first: !!document.getElementById('acUrl'), btn: !!document.querySelector('#yoursTx button[data-acctnow]') }))), house: await inPhone(p, d => ((d.querySelector('.pv-name h1') || {}).textContent || '').trim()) };
+    ok('older device, no account: a step\'s address brings the house in the phone and "Save my guide", no step, no first page', g.hash === '#yours' && !g.step && !g.first && g.btn && !!g.house, JSON.stringify(g));
+    ok('older device: its answers are kept on the device', (await stored(p)).wifiName === 'Old device wifi');
+    const reloaded = nextLoad(p); await p.click('#yoursTx button[data-acctnow]'); await p.waitForSelector('#acct .ac-sheet #acConsent');
+    await p.check('#acConsent'); await p.click('#acMail'); await p.fill('#acEmail', 'visitor@example.org'); await p.fill('#acPw', 'a-good-password'); await p.click('#acct .go');
+    await reloaded; await p.waitForSelector('.mhead h1', { timeout: 10000 }).catch(() => {}); await settle(p, 900);
+    const r = Object.values(rows);
+    ok('older device: signed up, its answers are the account\'s house, on the first step', r.length === 1 && r[0].answers.wifiName === 'Old device wifi' && r[0].answers.consent === true && (await p.evaluate(() => location.hash)) === '#guide', JSON.stringify({ n: r.length, wifi: r[0] && r[0].answers.wifiName }));
+    ok('older device: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  { const old = { sid: 'old-steps', A: { _skipStart: true, wifiName: 'Typed by hand', _savedAt: Date.now() - 864e5 } };   // step by step, no listing: no house to show
+    const { ctx, p, errors } = await gateCtx(1280, 860, 'en', JSON.stringify(old));
+    await p.goto('http://editor.test/#known'); await p.waitForSelector('#st_url', { timeout: 15000 }).catch(() => {}); await settle(p, 500);
+    ok('older device with no house: a step\'s address brings the page that asks for the link, never a step or a blank page', (await p.evaluate(() => location.hash)) === '#start' && !(await p.$('.mhead')) && !!(await p.$('#st_url')) && (await stored(p)).wifiName === 'Typed by hand');
+    await p.click('#skipStart'); await p.waitForSelector('#acct.only .ac-sheet #acConsent', { timeout: 3000 }).catch(() => {});
+    ok('older device with no house: "Or fill it in step by step" asks for the account first, saying why', !!(await p.$('#acct.only #acConsent')) && /no listing link/.test(await textNow(p, '#acct .lead')));
+    await p.click('#acct .ac-x'); await settle(p, 200);
+    ok('older device with no house: closed, the same page', (await p.evaluate(() => location.hash)) === '#start' && !!(await p.$('#st_url')) && !(await p.$('#acct')));
+    ok('older device with no house: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // ---- The sheet on a small phone (360 x 640): Google in the first screen, in the three languages ----
+  for (const lang of ['en', 'fr', 'ca']) {
+    const { ctx, p, errors } = await gateCtx(360, 640, lang);
+    await paste(p); await p.click('#yoursTx button[data-acctnow]'); await p.waitForSelector('#acct .ac-sheet #acGoogle'); await settle(p, 300);
+    const s = await sheetClear(p);
+    ok(`360 x 640, ${lang}: the whole sheet on screen, Google in it without scrolling, nothing overlaps or is cut`, !s.bad.length && s.mainIn, `${s.bad.join('; ')} top ${s.top}, height ${s.height}`);
+    if (lang !== 'ca') await shotG(p, `7-sheet-${lang}-360x640`);
+    ok(`360 x 640, ${lang}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
 }
   // ---- Cards after sign-up (Yohann, 30 Oct 2026): what the research found goes in the guide only if the host keeps it ----
   // The research's items carry Google's id when the worker's check found them (part 3d): the first has a photo on Google, the
@@ -1092,7 +1318,7 @@ async function gWebAddress() {
   // ---- The web address: is it free? A name that is taken moves by itself; an address the host typed stays theirs to change ----
   { const name = slugOf(A0.placeName), moved = `${name}-${slugOf(A0.town)}`, note = () => p.textContent('#slugNote').catch(() => '');
     const { ctx, p, errors, rows } = await visitor(360, 780, null, [name, 'casa-cogida']);
-    await go(p, '#send'); await settle(p, 700);
+    await signUpNow(p); await go(p, '#send'); await settle(p, 700);
     ok('web address: a taken name moves to a free one by itself, no error, and says why', (await p.inputValue('#f_slug')) === moved && (await note()).includes(`${name} was taken, so we chose this one`) && !(await p.$('.slugopt')), await p.inputValue('#f_slug').catch(() => ''));
     ok('web address: it shows where guests really open it, with /g/', (await note()).includes(`editor.test/g/${moved}`), await note());
     await p.fill('#f_slug', 'casa-cogida'); ok('web address: "Checking" while the database answers', /Checking/.test(await note()), await note());
@@ -1109,8 +1335,7 @@ async function gWebAddress() {
     ok('web address: tapping a suggestion uses it', (await p.inputValue('#f_slug')) === 'casa-cogida-3' && (await note()).includes('editor.test/g/casa-cogida-3') && !/A free web address/.test(await p.textContent('.foot .todo').catch(() => '')), await note());
     await go(p, '#guide'); await settle(p, 100);
     ok('web address: the same field in Name and languages', (await p.inputValue('#f_slug').catch(() => '')) === 'casa-cogida-3');
-    const reloaded = nextLoad(p); await go(p, '#send'); await p.click('[data-acctnow="signup"]'); await signUp(p);
-    await reloaded; await settle(p, 3000);
+    await go(p, '#send'); await settle(p, 3000);
     const h = Object.values(rows)[0] || {};
     ok('web address: it goes to the account with the guide', h.slug === 'casa-cogida-3', h.slug);
     await p.fill('#f_slug', 'casa-cogida'); await settle(p, 700);
@@ -1122,10 +1347,9 @@ async function gWebAddress() {
     ok('web address: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
   { const { ctx, p, errors, rows } = await visitor(360, 780);   // someone takes it between the check and the account
-    await go(p, '#send'); await settle(p, 700);
-    const first = await p.inputValue('#f_slug'); ctx.taken.add(first);
-    const reloaded = nextLoad(p); await p.click('[data-acctnow="signup"]'); await signUp(p);
-    await reloaded; await settle(p, 5000);
+    await settle(p, 700);
+    const first = (await stored(p)).slug; ctx.taken.add(first);
+    await signUpNow(p); await settle(p, 5000);
     const h = Object.values(rows)[0] || {};
     ok('web address: taken a moment before the account, it still moves by itself', h.slug === `${first}-${slugOf(A0.town)}`, `${first} -> ${h.slug}`);
     ok('web address, the moment before: no page errors', !errors.length, errors.join(' | '));
