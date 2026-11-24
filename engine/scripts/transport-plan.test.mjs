@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { MODES, modeOf, stopsOf, groupsOf, pageIcon, iconOf, cardOf, transportOf, loneRow } from '../src/modules/transport/plan.js';
+import { MODES, modeOf, stopsOf, groupsOf, pageIcon, iconOf, cardOf, cardWords, transportOf, loneRow } from '../src/modules/transport/plan.js';
 
 test('modeOf: train when none, bus, an unknown mode drawn as a train', () => {
   assert.equal(modeOf({}), MODES[0]);
@@ -70,4 +70,32 @@ test('loneRow: a page with a single row shows it open (15 Nov 2026)', () => {
   assert.equal(loneRow({ taxis: [{ name: 'Taxi' }], apps: [{ id: 'uber' }] }, []), false);
   // A station never placed is not a row: one taxi beside it is still alone.
   assert.equal(loneRow({ taxis: [{ name: 'Taxi' }] }, stopsOf([{ id: 'new', lat: 0, lng: 0 }])), true);
+});
+
+// The words of a new guide's card (24 Nov 2026): it said "Taxi" and the taxi's name, nothing of the trains and stops.
+test('cardWords: the section\'s title, and one line of what the page has for this house', () => {
+  const LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'], W = Object.fromEntries(LANGS.map(l => [l, JSON.parse(readFileSync(new URL(`../src/i18n/${l}.json`, import.meta.url), 'utf8'))]));
+  const at = { lat: 41.2, lng: 1.5 }, taxi = { name: { en: 'Taxi El Vendrell', de: 'Taxi El Vendrell (de)' }, phone: '977 66 61 11' };
+  const train = { ...at, mode: 'train', min: 11 }, far = { ...at, mode: 'train', min: 29 }, bus = { ...at, mode: 'bus', walk: 3 }, metro = { ...at, mode: 'metro', walk: 6 }, tram = { ...at, mode: 'tram', walk: 10 };
+  const sub = (T, l = 'en') => cardWords(T, LANGS, W).sub?.[l];
+  assert.deepEqual(cardWords({ taxis: [taxi], stations: [train] }, LANGS, W).name, { en: 'Getting around', es: 'Cómo moverse', fr: 'Se déplacer', ca: "Com moure's", de: 'Unterwegs', nl: 'Vervoer' });
+  // The nearest with its minutes first (on foot before by car), then the other kinds in the page's order, then Taxi.
+  assert.equal(sub({ taxis: [taxi], stations: [train, far] }), 'Train 11 min by car · Taxi');
+  assert.equal(sub({ taxis: [taxi], stations: [train, far, bus] }), 'Bus 3 min on foot · Train · Taxi');
+  assert.equal(sub({ taxis: [taxi], stations: [tram, bus, metro, train] }), 'Bus 3 min on foot · Train · Metro · Tram · Taxi');
+  assert.equal(sub({ taxis: [taxi], stations: [metro, bus, far] }, 'de'), 'Bus 3 Min. zu Fuß · Zug · Metro · Taxi');
+  assert.equal(sub({ taxis: [taxi], stations: [train, bus] }, 'fr'), 'Bus 3 min à pied · Train · Taxi');
+  // A part the page lacks is left out, never an empty place.
+  assert.equal(sub({ taxis: [], stations: [bus] }), 'Bus 3 min on foot');
+  assert.equal(sub({ apps: [{ name: 'Uber' }], stations: [train] }), 'Train 11 min by car · Taxi');
+  assert.equal(sub({ taxis: [taxi], stations: [{ ...at, mode: 'train' }] }), 'Train · Taxi');                       // no minutes known: the kind alone
+  assert.equal(sub({ taxis: [taxi], stations: [{ lat: 0, lng: 0, mode: 'bus', walk: 1 }, train] }), 'Train 11 min by car · Taxi');   // a stop never placed is not on the page
+  // No station at all: the taxi's own name, in the language; else the first app's; nothing: no line.
+  assert.equal(sub({ taxis: [taxi] }), 'Taxi El Vendrell'); assert.equal(sub({ taxis: [taxi] }, 'de'), 'Taxi El Vendrell (de)'); assert.equal(sub({ taxis: [taxi] }, 'fr'), 'Taxi El Vendrell');
+  assert.equal(sub({ taxis: [{ name: 'Radio Taxi', phone: '1' }] }), 'Radio Taxi'); assert.equal(sub({ apps: [{ name: 'Uber' }] }), 'Uber');
+  assert.equal('sub' in cardWords({}, LANGS, W), false);
+  // A language the engine has no words for is said in English; no language asked: English.
+  assert.deepEqual(cardWords({ taxis: [taxi], stations: [bus] }, ['it'], W), { name: { it: 'Getting around' }, sub: { it: 'Bus 3 min on foot · Taxi' } });
+  assert.deepEqual(Object.keys(cardWords({ taxis: [taxi] }, null, W).name), ['en']);
+  for (const l of LANGS) for (const T of [{ taxis: [taxi], stations: [tram, bus, metro, train] }, { taxis: [taxi] }]) assert.ok(!/—|\{n\}|undefined|· ·|^·|·$/.test(sub(T, l)), `${l}: ${sub(T, l)}`);
 });

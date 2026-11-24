@@ -34,14 +34,14 @@ test('the host never saw the taxis: the nearest one found, alone, with no words 
   assert.deepEqual(T.taxis.map(t => t.name.en), ['Taxi Nearest']);
   assert.equal(T.taxis[0].phone, '900 00 00 01'); assert.deepEqual(T.taxis[0].what, { en: '', de: '' }); assert.deepEqual(T.taxis[0].sub, { en: 'Testville', de: 'Testville' });
   assert.equal(T.taxis[0].src.from, 'overture'); assert.equal(T.taxis[0].src.id, 'r-a');
-  assert.equal(T.tile.name.en, 'Taxi'); assert.deepEqual(T.tile.sub, T.taxis[0].name);
+  assert.deepEqual(T.tile.name, { en: 'Getting around', de: 'Unterwegs' }); assert.match(T.tile.sub.en, /^(Train|Bus|Metro|Tram) \d+ min (on foot|by car)( · (Train|Bus|Metro|Tram))* · Taxi$/); assert.match(T.tile.sub.de, /^\S+ \d+ Min\. .* · Taxi$/);   // whichever is nearest: the stops come from our storage when it answers   // the card says what the page has (24 Nov 2026), not "Taxi" and the taxi's name
 });
 
 test('two approved: exactly those, after the typed one, never its number again', () => {
   const T = generate({ taxi: 'Taxi Mine +34 900 000 003', taxis: [FOUND[1], FOUND[2]], _taxisFound: FOUND });
   assert.deepEqual(T.taxis.map(t => t.name.en), ['Taxi Mine', 'Taxi Second']);
   assert.equal(T.taxis[0].what.en, 'The taxi we use and trust.'); assert.ok(!T.taxis[0].src);
-  assert.deepEqual(T.tile.sub, T.taxis[0].name);
+  assert.match(T.tile.sub.en, / · Taxi$/);
 });
 
 test('an empty list: the host took them all out, none written', () => {
@@ -80,7 +80,7 @@ test('the typed taxi with no number that can be read is not written, and nothing
 test('"Quick calls" unticked: Getting around stays, with its taxis, trains and stops; only the Home card goes', () => {
   const on = generate({ taxi: 'Taxi Mine 977 66 61 11', _taxisFound: FOUND }), off = generate({ taxi: 'Taxi Mine 977 66 61 11', _taxisFound: FOUND, modules: { quick: false } });
   assert.ok(on.stations.length > 0, 'El Vendrell has train stations');
-  assert.equal(on.tile.name.en, 'Taxi'); assert.equal(off.tile, null);
+  assert.equal(on.tile.name.en, 'Getting around'); assert.equal(off.tile, null);
   assert.deepEqual({ ...off, tile: on.tile }, { ...on });   // the same file, the card aside
   assert.ok(off.site.sections.includes('transport')); assert.equal(off.site.modules.transport, true);
   assert.deepEqual(off.site.sections, on.site.sections);

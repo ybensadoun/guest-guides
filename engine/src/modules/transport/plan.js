@@ -27,6 +27,29 @@ export const iconOf = T => (T.taxis || []).length ? 'taxi' : ((T.stations || [])
 // cards, opening this page: { id, href, icon, name, sub, wide }, or null when the section has no file or no "tile".
 export const cardOf = sec => (sec && sec.data && sec.data.tile ? { id: sec.id, href: '#s/' + sec.id, icon: iconOf(sec.data), name: sec.data.tile.name, sub: sec.data.tile.sub, wide: sec.data.tile.wide } : null);
 
+// The words of the card a new guide gets (24 Nov 2026: it said "Taxi" and the taxi's name, and nothing of the trains and
+// stops the page holds): { name, sub }, each in every language asked. name: the section's own title ("Getting around"),
+// as the maker's own card has it. sub: what the page has for this house, in one line: the kind of the station or stop
+// nearest to the house with its minutes ("Bus 3 min on foot"; on foot before by car, then the fewest minutes), then the
+// other kinds the page has, in the page's order, then "Taxi" when it has a taxi or a ride app; with no station at all, the
+// first taxi's name, else the first app's. A part the page lacks is left out, never an empty place; nothing at all: sub is
+// absent. words: { <lang>: that language's strings of engine/src/i18n } (gettingAround, taxiH, byTrain, byMetro, byTram,
+// byBus, minOnFoot, minByCar); a language it lacks is said in English.
+export function cardWords(T, langs, words) {
+  const ls = langs && langs.length ? langs : ['en'], W = l => ({ ...((words || {}).en || {}), ...((words || {})[l] || {}) });
+  const all = f => Object.fromEntries(ls.map(l => [l, f(l, W(l))])), said = x => (x && typeof x === 'object' ? null : String(x || ''));
+  const stops = stopsOf((T || {}).stations), mins = s => (s.walk > 0 ? [0, +s.walk] : s.min > 0 ? [1, +s.min] : [2, 0]);
+  const near = stops.reduce((b, s) => { const [k, n] = mins(s), [bk, bn] = b ? mins(b) : [3, 0]; return k < bk || (k === bk && n < bn) ? s : b; }, null);
+  const kinds = groupsOf(stops).map(([label]) => label), first = near ? modeOf(near)[1] : '';
+  const taxi = (T.taxis || []).find(x => x && x.name), app = (T.apps || []).find(a => a && a.name), cabs = (T.taxis || []).length || (T.apps || []).length;
+  const sub = all((l, w) => {
+    if (!stops.length) { const n = taxi ? (said(taxi.name) ?? taxi.name[l] ?? taxi.name.en ?? '') : app ? String(app.name) : ''; return String(n || '').trim(); }
+    const t = mins(near), head = [w[first], t[0] === 0 ? String(w.minOnFoot || '').replace('{n}', t[1]) : t[0] === 1 ? String(w.minByCar || '').replace('{n}', t[1]) : ''].filter(Boolean).join(' ');
+    return [head, ...kinds.filter(k => k !== first).map(k => w[k]), cabs ? w.taxiH : ''].filter(Boolean).join(' · ');
+  });
+  return { name: all((l, w) => w.gettingAround || 'Getting around'), ...(Object.values(sub).some(Boolean) ? { sub } : {}) };
+}
+
 // An older guide's Home card with "trains" (content/quick.json), read as a Getting around page: its taxi, then its stations.
 export const transportOf = p => ({ id: p.id, title: p.title || p.name, lead: p.kind,
   taxis: [{ name: p.taxiName || p.name, sub: p.taxiSub, phone: p.phone, what: p.what, alt: p.alt, always: p.always }], stations: p.trains || [] });

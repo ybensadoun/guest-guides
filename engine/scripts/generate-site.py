@@ -590,9 +590,21 @@ def found_apps():
     return json.loads(r.stdout).get('apps') or []
 apps = found_apps() if part_on('transport/apps') else []
 (SITE / 'content/quick.json').write_text(json.dumps({'items': quick}, ensure_ascii=False, indent=1))
+# The card on Home ("tile"): only with a taxi, and only while the builder's tick "Quick calls" is on. Its words say what the
+# page has for this house (the nearest station or stop and its minutes, the other kinds, "Taxi"), by the module's rule
+# (engine/src/modules/transport/plan.js cardWords through engine/scripts/card-of.mjs; 24 Nov 2026: it said "Taxi" and the
+# taxi's name, nothing of the trains and stops). The script failing: the section's own tile, no card.
+def card_of():
+    import shutil, subprocess
+    node, script = shutil.which('node'), ROOT / 'engine/scripts/card-of.mjs'
+    if not node: print(f'generate-site: node is not on the PATH: no card on Home for Getting around ({script.relative_to(ROOT)})', file=sys.stderr); return None
+    try: r = subprocess.run([node, str(script)], input=json.dumps({'transport': {'taxis': taxis, 'apps': apps, 'stations': stations}, 'langs': LANGS}), capture_output=True, text=True, timeout=60)
+    except Exception as e: print(f'generate-site: {script.relative_to(ROOT)} could not be run: {e}: no card on Home for Getting around', file=sys.stderr); return None
+    if r.returncode != 0: print(f'generate-site: {script.relative_to(ROOT)} failed: {(r.stderr or r.stdout).strip()}: no card on Home for Getting around', file=sys.stderr); return None
+    return json.loads(r.stdout).get('tile') or None
 if taxis or stations or apps:
     (SITE / 'content/transport.json').write_text(json.dumps({'_doc': 'Getting around: taxis and stations or stops, on their own page; tile = a one-tap tile on Home (null: the section\'s own tile). Written by generate-site.py: the taxi the host typed, the taxis of our open directory they approved or the nearest (src: {from: overture, id, at}), apps: [{id, name, link, src}] the ride apps approved or found near the house, the train stations from onboarding-site/stations-es.json (Renfe, src: {from, at}) by engine/src/modules/transport/pick.js.',
-        'taxis': taxis, **({'apps': apps} if apps else {}), 'stations': stations, 'tile': {'name': L('Taxi'), 'sub': taxis[0]['name']} if taxis and on('quick', True) else None}, ensure_ascii=False, indent=1))
+        'taxis': taxis, **({'apps': apps} if apps else {}), 'stations': stations, 'tile': card_of() if taxis and on('quick', True) else None}, ensure_ascii=False, indent=1))
 
 
 # ---------- host-supplied content: how rubbish works, and the places the host recommends ----------

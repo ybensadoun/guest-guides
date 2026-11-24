@@ -46,7 +46,7 @@ test('no taxi, a house in Spain: Getting around with its stations, as the module
 test('a taxi: the taxi first and its card, as before, with the stations after it', () => {
   const g = generate({ taxi: 'Taxi Vendrell +34 600 000 000' }, VENDRELL);
   assert.equal(g.transport.taxis.length, 1);
-  assert.ok(g.transport.tile && g.transport.tile.name.en === 'Taxi');
+  assert.ok(g.transport.tile && g.transport.tile.name.en === 'Getting around' && / · Taxi$/.test(g.transport.tile.sub.en));
   assert.ok(g.transport.stations.length >= 1);
 });
 
