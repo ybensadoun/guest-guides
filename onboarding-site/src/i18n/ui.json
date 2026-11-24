@@ -8953,5 +8953,75 @@
 "ca": "Esborra aquesta parada",
 "es": "Eliminar esta parada",
 "fr": "Supprimer cet arrêt"
+},
+"Garbage and recycling": {
+"ca": "Escombraries i reciclatge",
+"es": "Basura y reciclaje",
+"fr": "Poubelles et tri"
+},
+"Sources and credits": {
+"ca": "Fonts i crèdits",
+"es": "Fuentes y créditos",
+"fr": "Sources et crédits"
+},
+"Wifi": {
+"ca": "Wifi",
+"es": "Wifi",
+"fr": "Wifi"
+},
+"Home": {
+"ca": "Inici",
+"es": "Inicio",
+"fr": "Accueil"
+},
+"Copy": {
+"ca": "Copiar",
+"es": "Copiar",
+"fr": "Copier"
+},
+"Another phone? Scan to join:": {
+"ca": "Un altre telèfon? Escaneja per connectar-te:",
+"es": "¿Otro teléfono? Escanea para conectarte:",
+"fr": "Un autre téléphone ? Scannez pour vous connecter :"
+},
+"A QR code to join with one tap.": {
+"ca": "Un codi QR per connectar-se amb un toc.",
+"es": "Un código QR para conectarse con un toque.",
+"fr": "Un code QR pour se connecter d’un geste."
+},
+"Photo tour": {
+"ca": "Recorregut fotogràfic",
+"es": "Recorrido fotográfico",
+"fr": "Visite en photos"
+},
+"Show all {n} amenities": {
+"ca": "Veure els {n} serveis",
+"es": "Ver los {n} servicios",
+"fr": "Voir les {n} équipements"
+},
+"Everything you need to know about the house.": {
+"ca": "Tot el que cal saber de la casa.",
+"es": "Todo lo que necesitas saber sobre la casa.",
+"fr": "Tout ce qu’il faut savoir sur la maison."
+},
+"Our favourite places to eat and drink, tried and loved.": {
+"ca": "Els nostres llocs preferits per menjar i beure, provats i recomanats.",
+"es": "Nuestros sitios favoritos para comer y beber, probados y recomendados.",
+"fr": "Nos adresses préférées pour manger et boire, testées et approuvées."
+},
+"What to do and see around the house.": {
+"ca": "Què fer i què veure a prop de la casa.",
+"es": "Qué hacer y qué ver cerca de la casa.",
+"fr": "Que faire et que voir autour de la maison."
+},
+"A place from your link": {
+"ca": "Un lloc del teu enllaç",
+"es": "Un sitio de tu enlace",
+"fr": "Un lieu de votre lien"
+},
+"When you send your guide, we add its name.": {
+"ca": "Quan enviïs la guia, hi afegim el nom.",
+"es": "Cuando envíes tu guía, añadimos su nombre.",
+"fr": "Quand vous envoyez votre guide, nous ajoutons son nom."
 }
 }

@@ -116,7 +116,7 @@ const worldBase = w => isWorldId(w) ? w : w && isWorldId(w.base) ? w.base : 'bau
 // The phone's palette, as the tiles use it (acc: blue, red, yellow, green), with the world's title font.
 function worldPal(w){
   const t = worldTok(w), b = WK.WORLDS[worldBase(w)];
-  return { paper: t['--paper'], ink: t['--ink'], acc: [t['--blue'], t['--red'], t['--yellow'], t['--green']], display: b.display, plain: !!b.plain, base: worldBase(w) };
+  return { paper: t['--paper'], ink: t['--ink'], acc: [t['--blue'], t['--red'], t['--yellow'], t['--green']], display: b.display, plain: !!b.plain, base: worldBase(w), tok: t };
 }
 const phonePalette = async () => worldPal(worldNow());
 // The fonts of a world from Google Fonts: Jost for the text, the world's title family in the weights the engine bundles.
@@ -219,52 +219,159 @@ function guideSections(){
 const FIRST = { 'Wi-Fi': 'wifi', 'Check-out time': 'stay', 'House guide': 'houseguide', 'How to get in': 'arrival', 'Places to eat': 'eat', 'What’s on today': 'events', 'Beaches': 'todo', 'Map': 'map', 'Your phone number': 'emergency', 'Rubbish tonight': 'rubbish' };
 function ordered(S){ const pri = (A.homeFirst || []).map(x => FIRST[x]).filter(Boolean); return [...S].sort((a, b) => { const ia = pri.indexOf(a.id), ib = pri.indexOf(b.id); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); }
 
-// The phone's styles: Ca La Kimberly's tiles (the Bauhaus look) in the chosen world's colours, its titles in the world's
-// font, the text in Jost, as in the guide (engine/src/worlds.js).
+// The phone's styles: the guide's own look (engine/src/styles/app.css, values read from it on 24 Nov 2026 and kept here
+// for the drawing only), in the chosen world's tokens (worldTok: the same names the guide's :root has), its titles in the
+// world's font, the text in Jost. Everything is under .pv, so the full-page preview never touches the maker's own styles.
+// The rules are the ones the built guide ends with once app.css's later blocks have overridden the earlier ones: a change
+// to the guide's look is copied here by hand (compare the two phones side by side), never the other way round.
 function pvStyle(p){
-  const a = p.acc;
-  const base = `:root{--pp:${p.paper};--pi:${p.ink};--a1:${a[0]};--a2:${a[1]};--a3:${a[2]};--a4:${a[3]};--pd:${p.display};--pb:"Jost",system-ui,sans-serif}${p.plain ? '.pv{font-synthesis-weight:none}' : ''}`;
-  const shared = `html,body{background:var(--pp)!important;margin:0!important;padding:0!important}
-.pv{background:var(--pp);color:var(--pi);font:16px/1.5 var(--pb);min-height:100vh;padding-bottom:96px}
-.pv *{box-sizing:border-box}.pv a{color:inherit}
-.pv-in{max-width:620px;margin:0 auto;padding:0 16px;display:flex;flex-direction:column;gap:16px}
-.pv h1,.pv h2,.pv h3{font-family:var(--pd);margin:0;line-height:1.05;text-wrap:balance}
-.pv-cover{position:relative;height:clamp(240px,42vh,380px);background:var(--a1) center/cover no-repeat;margin:0 -16px}
-.pv-cover::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.55))}
-.pv-art svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-.pv-art .a-sky{fill:var(--a1)}.pv-art .a-sun{fill:var(--a3)}.pv-art .a-far{fill:color-mix(in srgb,var(--a1) 72%,var(--pi))}
-.pv-art .a-mid{fill:color-mix(in srgb,var(--a4) 60%,var(--pp))}.pv-art .a-near{fill:color-mix(in srgb,var(--a4) 35%,var(--pp))}
-.pv-art .a-wall{fill:#fff}.pv-art .a-roof{fill:var(--a2)}.pv-art .a-win,.pv-art .a-door{fill:color-mix(in srgb,var(--pi) 75%,var(--a1))}.pv-art .a-tree{fill:color-mix(in srgb,var(--a4) 55%,var(--pi))}
-.pv-name{position:absolute;left:20px;right:20px;bottom:18px;z-index:1;color:#fff}
-.pv-logo{display:block;width:56px;height:56px;object-fit:contain;background:#fff;border-radius:12px;padding:5px;margin-bottom:10px}
-.pv-name small{display:block;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.9}
-.pv-name h1{font-size:clamp(34px,9vw,52px)}
-.pv-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.pv-fact{display:flex;flex-direction:column;gap:2px;padding:12px 14px;text-decoration:none;cursor:pointer;border:0;font:inherit;text-align:left;color:inherit;background:none}
-.pv-fact small{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
-.pv-fact b{font-size:17px}
-.pv-search{width:100%;font:inherit;font-size:17px;padding:14px 16px;border-radius:14px;border:2px solid var(--pi);background:#fff;color:#111}
-.pv-h{font-size:24px;margin-top:8px}
-.pv-secs{display:grid;gap:12px}
-.pv-sec{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;text-decoration:none;cursor:pointer;border:0;font:inherit;text-align:left;color:inherit}
-.pv-sec b{font-family:var(--pd);font-size:22px;line-height:1.1}
-.pv-sec small{opacity:.8;font-size:14px}
-.pv-sec .ic svg{width:28px;height:28px}
-.pv-sec .ar{display:none}
-.pv-top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--pp)}
-.pv-back{display:inline-flex;align-items:center;gap:6px;border:0;background:none;font:inherit;font-weight:700;cursor:pointer;color:inherit;padding:8px 4px}
-.pv-back svg{width:18px;height:18px}
-.pv-page h2{font-size:36px}
+  const tok = Object.entries(p.tok || worldTok('bauhaus')).map(([k, x]) => `${k}:${x}`).join(';');
+  const kmap = Object.entries(ENG_TILE.k).map(([k, x]) => `${k}:var(${x})`).join(';');
+  const base = `.pv{${tok};${kmap};--r:20px;--r-s:12px;--r-m:12px}${p.plain ? '.pv{font-synthesis-weight:none}' : ''}`;
+  const shared = `html,body{background:${p.paper}!important;margin:0!important;padding:0!important}
+.pv{position:relative;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased;min-height:100vh;padding-bottom:28px}
+.pv *,.pv *::before,.pv *::after{box-sizing:border-box}.pv a{color:inherit}
+.pv p,.pv li,.pv small,.pv b,.pv h2,.pv h3,.pv .lead{overflow-wrap:break-word;hyphens:manual}
+.pv-in{position:relative;max-width:720px;margin:0 auto;padding:12px 16px 0;display:flex;flex-direction:column;gap:14px}
+.pv-in.pg{padding-top:10px;gap:18px}
+.pv-lang{position:absolute;z-index:41;top:12px;right:16px;width:44px;height:44px;border-radius:50%;background:var(--white);color:var(--ink);display:grid;place-items:center;font-size:14px;font-weight:700;letter-spacing:.03em;box-shadow:0 2px 8px rgba(18,18,18,.22)}
+.pv-in.pg .pv-lang{top:10px}
+.pv-back{position:absolute;z-index:40;top:10px;left:16px;width:44px;height:44px;border-radius:50%;border:0;padding:0;background:var(--white);color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(18,18,18,.14),0 0 0 1px rgba(18,18,18,.06)}
+.pv-back svg{width:20px;height:20px}
+.pv .hcard{background:var(--white);border:2px solid var(--ink);border-radius:var(--r);overflow:hidden}
+.pv .hc-ph{display:block;height:clamp(140px,19vh,170px);background:var(--blue) 50% 74%/cover no-repeat;cursor:pointer;position:relative}
+.pv .hc-art svg{width:100%;height:100%;display:block}
+.pv .hc-art .a-sky{fill:var(--blue)}.pv .hc-art .a-sun{fill:var(--yellow)}.pv .hc-art .a-far{fill:color-mix(in srgb,var(--blue) 72%,var(--ink))}
+.pv .hc-art .a-mid{fill:color-mix(in srgb,var(--green) 60%,var(--paper))}.pv .hc-art .a-near{fill:color-mix(in srgb,var(--green) 35%,var(--paper))}
+.pv .hc-art .a-wall{fill:var(--white)}.pv .hc-art .a-roof{fill:var(--red)}.pv .hc-art .a-win,.pv .hc-art .a-door{fill:color-mix(in srgb,var(--ink) 75%,var(--blue))}.pv .hc-art .a-tree{fill:color-mix(in srgb,var(--green) 55%,var(--ink))}
+.pv .hc-id{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;color:var(--ink);background:none;border:0;border-bottom:1.5px solid var(--line);font:inherit;text-align:left;cursor:pointer}
+.pv .hc-id>img{width:44px;height:44px;border-radius:12px;flex:none;object-fit:contain}
+.pv .hc-nm{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+.pv .hc-nm h1{font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:.06em;text-transform:uppercase;line-height:1.1;margin:0}
+.pv .hc-nm small{font-size:14px;color:var(--muted)}
+.pv .hc-nm .hc-w{font-size:13px;font-weight:600;letter-spacing:.02em}
+.pv .hc-id .go{flex:none;width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--yellow);display:grid;place-items:center}
+.pv .hc-id .go svg,.pv .gt .go svg{width:20px;height:20px}
+.pv .keyfacts{display:grid;grid-template-columns:repeat(2,1fr)}
+.pv .keyfacts>:only-child{grid-column:1/-1}
+.pv .keyfacts button{display:flex;flex-direction:column;gap:2px;padding:12px 16px;color:var(--ink);background:none;border:0;border-left:1.5px solid var(--line);text-align:left;font:inherit;cursor:pointer}
+.pv .keyfacts button:first-child{border-left:0}
+.pv .keyfacts small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pv .keyfacts b{font-size:15px;font-weight:600;line-height:1.2}
+.pv .keyfacts .kf-wifi b{color:var(--blue)}
+.pv .sh{font-family:var(--display);font-weight:700;font-size:25px;line-height:1.15;letter-spacing:-.01em;margin:6px 0 0}
+.pv .ggrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pv .gt{position:relative;overflow:hidden;isolation:isolate;container-type:inline-size;display:flex;flex-direction:column;gap:2px;min-height:150px;margin:0;padding:16px;border:0;border-radius:var(--r);background:var(--tc);color:var(--ti);font:inherit;text-align:left;cursor:pointer;width:100%}
+.pv .gt *{hyphens:manual}
+.pv .gt .ib{display:block;width:34px;height:34px;margin-bottom:auto}
+.pv .gt .ib .ci{width:34px;height:34px;stroke-width:2.2}
+.pv .gt-tx{display:flex;flex-direction:column;gap:2px;margin-top:14px;position:relative;z-index:1}
+.pv .gt-t{font-family:var(--display);font-weight:700;font-size:23px;line-height:1.08;letter-spacing:-.01em}
+.pv .gt-m{font-size:16px;font-weight:600;line-height:1.25}
+.pv .gt .go{position:absolute;right:14px;bottom:14px;z-index:1;width:36px;height:36px;border-radius:50%;background:var(--ti);color:var(--gofg,#fff);display:grid;place-items:center}
+.pv .gt::before,.pv .gt::after{content:"";position:absolute;z-index:-1;pointer-events:none}
+.pv .gt.wide{grid-column:1/-1;min-height:0}
+.pv .gt.s-tall{grid-row:span 2}
+.pv .gt.s-tall .ib,.pv .gt.s-tall .ib .ci{width:42px;height:42px}
+.pv .gt[data-k="map"]{border:2px solid var(--ink)}
+.pv .gt[data-k="garbage"]{min-height:0}
+.pv .gt[data-k="garbage"] .ib{display:none}
+.pv .gt[data-k="garbage"] .gt-tx{margin-top:0}
+.pv .gt:not(.wide) .go{position:static;flex:none;align-self:flex-end;margin-top:10px}
+.pv .gt:not(.wide) .gt-t{overflow-wrap:normal;font-size:clamp(19px,15.5cqi,23px)}
+.pv .gt.s-tall:not(.wide) .gt-t{font-size:clamp(22px,17cqi,30px)}
+.pv .gt.s-tall.t-word:not(.wide) .gt-t{font-size:clamp(19px,15.5cqi,23px)}
+.pv .gt.t-long .gt-t{font-size:21px}
+.pv .gt.s-wide:not(.w-live){--wide-go:18px;--wide-r:62px;flex-direction:row;align-items:center;gap:14px;min-height:0;padding:18px}
+.pv .gt.s-wide:not(.w-live) .ib{margin:0}
+.pv .gt.s-wide:not(.w-live) .gt-tx{margin:0;padding-right:var(--wide-r)}
+.pv .gt.s-wide:not(.w-live) .go{top:50%;bottom:auto;right:var(--wide-go);margin-top:-18px}
+.pv .gt.s-wide:is([data-k="map"],[data-k="markets"],[data-k="restaurants"],[data-k="todo"],[data-k="events"],[data-k="message"],[data-k="emergency"],[data-k="transport"]){--wide-go:52px;--wide-r:96px}
+.pv .gt.wide[data-k="garbage"]{padding-right:96px}
+.pv .gt.wide[data-k="garbage"] .go{top:50%;bottom:auto;right:52px;margin-top:-18px}
+.pv .gt:not(.wide)::after{display:none}
+.pv .gt[data-k="garbage"]::before{width:80px;height:80px;border-radius:50%;background:var(--yellow);right:-44px;top:50%;margin-top:-40px}
+.pv .gt[data-k="message"]::before{width:64px;height:32px;border-radius:64px 64px 0 0;background:var(--ink);right:-6px;top:-2px;transform:rotate(180deg)}
+.pv .gt.s-wide[data-k="message"]::before{width:40px;height:80px;border-radius:80px 0 0 80px;right:-2px;top:50%;margin-top:-40px;transform:none}
+.pv .gt.s-tall[data-k="message"]::before{width:80px;height:40px;border-radius:80px 80px 0 0;right:-8px}
+.pv .gt[data-k="emergency"]::before{width:0;height:0;border-left:34px solid transparent;border-right:34px solid transparent;border-bottom:46px solid var(--ink);right:-6px;top:-4px;transform:rotate(180deg)}
+.pv .gt.s-wide[data-k="emergency"]::before{border-left:0;border-top:34px solid transparent;border-bottom:34px solid transparent;border-right:46px solid var(--ink);right:-6px;top:50%;margin-top:-34px;transform:none}
+.pv .gt.s-tall[data-k="emergency"]::before{border-left-width:42px;border-right-width:42px;border-bottom-width:58px;right:-8px;top:-6px}
+.pv .gt[data-k="markets"]::before{width:104px;height:104px;border-radius:50%;background:var(--red);right:-40px;top:-44px}
+.pv .gt.s-half[data-k="markets"]::before{width:84px;height:84px;right:-30px;top:-34px}
+.pv .gt[data-k="restaurants"]::before{width:84px;height:84px;border-radius:50%;background:var(--yellow);right:-30px;top:-34px}
+.pv .gt.s-tall[data-k="restaurants"]::before{width:104px;height:104px;right:-40px;top:-44px}
+.pv .gt[data-k="events"]::before{width:84px;height:84px;border-radius:50%;background:var(--red);right:-30px;top:-34px}
+.pv .gt.s-tall[data-k="events"]::before{width:104px;height:104px;right:-40px;top:-44px}
+.pv .gt.s-wide:is([data-k="markets"],[data-k="restaurants"],[data-k="events"])::before{width:80px;height:80px;border-radius:50%;right:-44px;top:50%;margin-top:-40px}
+.pv .gt[data-k="todo"]::before{width:0;height:0;border-left:30px solid transparent;border-right:30px solid transparent;border-bottom:40px solid var(--yellow);right:-6px;top:-4px;transform:rotate(180deg)}
+.pv .gt.s-wide[data-k="todo"]::before{border-left:0;border-top:30px solid transparent;border-bottom:30px solid transparent;border-right:40px solid var(--yellow);right:-6px;top:50%;margin-top:-30px;transform:none}
+.pv .gt.s-tall[data-k="todo"]::before{border-left-width:38px;border-right-width:38px;border-bottom-width:50px;right:-8px;top:-6px}
+.pv .gt[data-k="nightlife"]::before{width:56px;height:56px;border-radius:50%;background:transparent;box-shadow:inset -14px 8px 0 0 var(--yellow);right:-4px;top:-6px;transform:rotate(-12deg)}
+.pv .gt.s-wide[data-k="nightlife"]::before{right:2px;top:50%;margin-top:-28px}
+.pv .gt.s-tall[data-k="nightlife"]::before{width:70px;height:70px;box-shadow:inset -18px 10px 0 0 var(--yellow);right:-6px;top:-8px}
+.pv .gt[data-k="map"]::before{width:80px;height:80px;border-radius:50%;background:var(--blue);right:-44px;top:50%;margin-top:-40px}
+.pv .gt[data-k="map"]::after{width:56px;height:6px;background:var(--red);left:0;bottom:0}
+.pv .whatson{background:var(--white);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden}
+.pv .wo-day{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;padding:16px 18px 2px}
+.pv .wo-day b{font-family:var(--display);font-size:20px;font-weight:700}
+.pv .wo-day span{color:var(--muted);font-size:15px}
+.pv .wo-note{margin:0;padding:8px 18px 16px;font-size:16px;color:var(--muted)}
+.pv .wo-links{display:flex;gap:18px;padding:14px 18px 16px;border-top:1.5px solid var(--line)}
+.pv .wo-links button{border:0;background:none;padding:0;font:inherit;color:var(--blue);font-weight:600;font-size:15px;cursor:pointer}
+.pv .hfoot{text-align:center;margin:6px 0 0;font-size:14px;line-height:20px}
+.pv .hfoot span{display:inline-block;padding:12px 10px;color:var(--muted);font-weight:500;text-decoration:underline;text-underline-offset:3px}
+.pv .pv-page h2.title{font-family:var(--display);font-weight:700;letter-spacing:-.015em;line-height:1.05;margin:0;min-height:44px;display:flex;align-items:center;padding:0 52px 0 56px;font-size:clamp(25px,7.6vw,32px)}
+.pv .lead{color:var(--muted);margin:6px 0 0;font-size:17px;max-width:60ch}
+.pv-card{background:var(--white);border-radius:var(--r);padding:16px 18px;color:var(--ink)}
+.pv-card h3{font-family:var(--display);font-weight:700;font-size:21px;line-height:1.2;margin:0}
+.pv-card>p{margin:10px 0 0;font-size:16px;line-height:1.5}
+.pv-card.mlist{padding:0;overflow:hidden}
 .pv-list{display:flex;flex-direction:column}
-.pv-row{padding:14px 0;border-top:1px solid color-mix(in srgb,var(--pi) 15%,transparent)}
+.pv-row{padding:12px 0;border-top:1.5px solid var(--line);font-size:15px;color:var(--muted);line-height:1.35}
 .pv-row:first-child{border-top:0}
-.pv-row b{display:block}
+.pv-row b{display:block;font-size:18px;font-weight:600;line-height:1.25;color:var(--ink)}
+.pv-card h3+.pv-list,.pv-card h3+.pv-photos{margin-top:10px}
+.mlist .pv-row{position:relative;min-height:68px;padding:14px 16px 14px 68px}
+.mlist .pv-row>.dot{position:absolute;left:16px;top:14px;width:40px;height:40px;border-radius:var(--r-m);background:var(--cc);color:var(--ci,#fff);display:grid;place-items:center}
+.mlist .pv-row>.dot .ci{width:22px;height:22px;stroke-width:2.2}
+.pv-clist .pv-row{padding:14px 16px}
+.pv-gal{height:290px;margin:0 -16px;background:var(--line) 50% 50%/cover no-repeat;position:relative}
+.pv-gal span{position:absolute;right:12px;bottom:12px;padding:3px 10px;border-radius:999px;background:rgba(18,18,18,.55);color:#fff;font-size:13px;font-weight:600}
+.pv-hfacts{margin:0;font-size:20px;font-weight:600;line-height:1.3}
+.pv-card .pv-ch{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.15;margin:0}
+.pv-card .pv-ch+p{margin-top:12px}
+.pv-tour h3{font-family:var(--font);font-size:17px;font-weight:600;margin:18px 0 8px}
+.pv-card.pv-hc>h3{font-size:26px;line-height:1.15}
+.pv-beds{margin:10px 0 0;padding-left:20px;font-size:16px;line-height:1.5}
+.pv-checks{list-style:none;margin:10px 0 0;padding:0}
+.pv-checks li{position:relative;padding:9px 0 9px 28px;border-top:1.5px solid var(--line);font-size:16px;line-height:1.35}
+.pv-checks li:first-child{border-top:0}
+.pv-checks li::before{content:"";position:absolute;left:4px;top:13px;width:12px;height:7px;border-left:2.5px solid var(--blue);border-bottom:2.5px solid var(--blue);transform:rotate(-45deg)}
+.pv-btn.pv-wide{display:flex;justify-content:center;align-self:stretch;margin-top:12px}
+.pv-call{display:flex;width:max-content;align-items:center;gap:7px;margin-top:10px;padding:10px 18px;border-radius:999px;background:var(--strong-card);color:#fff;font-size:20px;font-weight:700;line-height:1.2}
+.pv-call .ci{width:18px;height:18px}
+.pv-row a{color:var(--blue);font-weight:600;text-decoration:none}
 .pv-photos{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory}
-.pv-photos img{height:150px;border-radius:12px;scroll-snap-align:start;flex:none}
-.pv-research{padding:14px 16px;border-radius:14px;background:color-mix(in srgb,var(--a3) 22%,var(--pp));font-size:15px}
-.pv-research b{display:block;margin-bottom:2px}
-.pv-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:999px;background:var(--pi);color:var(--pp);font-weight:700;text-decoration:none;border:0;font:inherit;cursor:pointer}
-.pv-card{padding:16px;border-radius:16px;background:#fff;color:#111}
+.pv-photos img{height:112px;min-width:84px;max-width:200px;object-fit:cover;border-radius:12px;scroll-snap-align:start;flex:none;background:var(--line)}
+.pv-research{padding:16px 18px;border-radius:var(--r);background:var(--white);color:var(--muted);font-size:16px;line-height:1.45}
+.pv-research b{display:block;margin-bottom:2px;color:var(--ink);font-size:17px;font-weight:600}
+.pv-btn{display:inline-flex;align-self:flex-start;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;background:var(--white);color:var(--ink);border:2px solid var(--ink);font-size:16px;font-weight:600;text-decoration:none}
+.pv .wsheet{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-end;justify-content:center}
+.pv .ws-bg{position:absolute;inset:0;background:rgba(10,10,10,.55);border:0;padding:0;cursor:pointer}
+.pv .ws-card{position:relative;width:100%;max-width:520px;max-height:calc(100vh - 12px);overflow:auto;background:var(--white);color:var(--ink);border-radius:20px 20px 0 0;padding:0 20px 22px;display:flex;flex-direction:column;gap:12px}
+.pv .ws-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -20px;padding:16px 12px 8px 20px}
+.pv .ws-card h3{margin:0;font-size:24px;font-family:var(--font)}
+.pv .ws-x{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:var(--paper);color:var(--ink);font-size:26px;line-height:1;cursor:pointer}
+.pv .ws-f{background:var(--paper);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+.pv .ws-f small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pv .ws-f b{font-size:17px;overflow-wrap:anywhere;hyphens:none}
+.pv .ws-pwrow{flex-direction:row;align-items:center;justify-content:space-between;gap:12px}
+.pv .ws-pwrow>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pv .ws-pw{font-family:ui-monospace,SFMono-Regular,Menlo,"Roboto Mono",Consolas,monospace;font-size:16px!important;font-weight:600;line-height:1.35}
+.pv .ws-copy{flex:none;padding:9px 18px;border-radius:999px;border:2px solid var(--blue);background:var(--blue);color:#fff;font:inherit;font-size:16px;font-weight:600}
+.pv .ws-how{margin:0;color:var(--muted);font-size:15px;line-height:1.4;text-align:center}
+.pv .ws-qr{align-self:center;width:200px;max-width:100%;aspect-ratio:1;border:2px dashed var(--line);border-radius:12px;display:grid;place-items:center;padding:14px;text-align:center;color:var(--muted);font-size:14px;line-height:1.35}
 .pv-bar{position:fixed;left:0;right:0;top:0;z-index:40;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px 12px;background:#111;color:#fff;font:600 13px/1.3 system-ui,sans-serif}
 .pv-bar a{color:#F2B33D}
 .pv-shell{padding-top:32px}
@@ -279,53 +386,99 @@ function pvStyle(p){
 .fbs-card .stars{display:flex;gap:6px}.fbs-card .stars button{width:42px;height:42px;border-radius:10px;border:1.5px solid #ddd;background:#f6f5f1;font:700 16px system-ui;cursor:pointer;color:#151515}
 .fbs-card .stars button[aria-pressed="true"]{background:#F2B33D;border-color:#F2B33D}
 .fbs-card .hint{font-size:13px;color:#666;margin:0}`;
-  const tiles = `.pv-secs{grid-template-columns:1fr 1fr}
-.pv-sec{min-height:156px;padding:14px;border-radius:20px;color:var(--st,#fff);background:var(--sc);justify-content:flex-start;gap:4px}
-.pv-sec::before{content:"";position:absolute;z-index:-1;top:0;right:0;width:54px;height:54px;background:var(--ss);border-radius:0 0 0 54px}
-.pv-sec:nth-child(3n+2)::before{width:0;height:0;background:none;border-radius:0;border-left:25px solid transparent;border-right:25px solid transparent;border-top:44px solid var(--ss);right:12px}
-.pv-sec:nth-child(3n)::before{width:46px;height:46px;border-radius:50%;top:-12px;right:-12px}
-.pv-sec .ic{min-height:50px}.pv-sec .ic svg{width:26px;height:26px}
-.pv-sec .tx{display:flex;flex-direction:column;gap:2px}.pv-sec b{font-family:var(--pd);font-weight:700;font-size:20px;line-height:1.12}.pv-sec small{font-size:13.5px}
-.pv-sec .ar{display:grid;place-items:center;align-self:flex-end;margin-top:auto;width:32px;height:32px;border-radius:50%;background:#fff;color:#121212;font-weight:700}
-.pv-sec.lt .ar{background:var(--pi);color:#fff}.pv-sec.wide{grid-column:1/-1;min-height:120px}
-.pv-fact{background:#fff;border-radius:14px;border:2px solid var(--pi)}.pv-h{font-weight:700}.pv h1,.pv h2{font-weight:700}`;
-  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${worldGF(p.base)}&display=swap"><style>${base}${shared}${tiles}</style>`;
+  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${worldGF(p.base)}&display=swap"><style>${base}${shared}</style>`;
 }
 
 // The drawn cover, same scene as the guide's (engine/src/modules/house/welcome.js THEMED_COVER).
 const PV_ART = `<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect class="a-sky" width="400" height="160"/><circle class="a-sun" cx="246" cy="48" r="15"/><path class="a-far" d="M0 112C60 86 120 88 186 104S318 84 400 98V160H0z"/><path class="a-mid" d="M0 128C80 110 150 114 228 126S350 116 400 120V160H0z"/><path class="a-wall" d="M178 104h44v32h-44z"/><path class="a-roof" d="M173 106l27-18 27 18z"/><path class="a-win" d="M186 112h8v8h-8zM206 112h8v8h-8z"/><path class="a-door" d="M196 123h8v13h-8z"/><path class="a-tree" d="M238 136c-4 0-5-9-5-19s2-20 5-25c3 5 5 15 5 25s-1 19-5 19zM251 136c-3 0-4-6-4-13s2-14 4-18c2 4 4 11 4 18s-1 13-4 13z"/><path class="a-near" d="M0 140C100 130 220 132 300 138S380 136 400 136V160H0z"/></svg>`;
 
-// One screen of the guide as guests will see it, built from the answers: the cover, the name, the sections. Used by the
-// phone in the builder (the wow, and next to the steps) and by the full-page preview.
+// The engine's arrow and back chevron (engine/src/ui.js ARROW, engine/viewer.html #backBtn), drawn as the guide draws them.
+const PV_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
+const PV_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+// The drawing's sections as the guide has them (engine/scripts/generate-site.py SEC, in its order): the section's id in
+// the guide (its tile's look: engine/src/ui.js SECTION_LOOK, pasted as ENG_LOOK), its group and kind (the frame's), the
+// tile's label and the page's title and lead in the guide's words (engine/src/i18n/en.json; the maker's languages in
+// i18n/ui.json). lead: null keeps the drawing's own line, '' none (the guide has none).
+const PV_ENG = {
+  rubbish: { id: 'garbage', group: 'house', kind: 'garbage', tile: 'Garbage and recycling', lead: null },
+  houseguide: { id: 'message', group: 'house', kind: 'info', tile: 'House guide', lead: 'Everything you need to know about the house.' },
+  emergency: { id: 'emergency', group: 'house', kind: 'contacts', tile: 'Emergencies', title: 'Emergency contacts', lead: '' },
+  markets: { id: 'markets', group: 'area', kind: 'markets', tile: 'Markets', lead: '' },
+  eat: { id: 'restaurants', group: 'area', kind: 'spots', tile: 'Our favourite places to eat', lead: 'Our favourite places to eat and drink, tried and loved.' },
+  todo: { id: 'todo', group: 'area', kind: 'spots', tile: 'What to do', lead: 'What to do and see around the house.' },
+  nightlife: { id: 'nightlife', group: 'area', kind: 'spots', tile: 'Nightlife', lead: null },
+  events: { id: 'events', group: 'area', kind: 'events', tile: 'Local events', lead: null }
+};
+// Whether the build will give the section a tile on Home (generate-site.py: rubbish needs the host's answer, the host's
+// lists a place, events wait for their research and are in What's on; the others always).
+function pvOnHome(x){
+  if (x.id === 'rubbish') return !!v('rubbishMode') || rubbishLines().length > 0;
+  if (x.id === 'eat' || x.id === 'todo') return (x.picks || []).length + (x.items || []).length > 0;
+  if (x.id === 'nightlife') return (x.items || []).length > 0;
+  return x.id !== 'events';
+}
+// The guide as the frame sees it (engine/src/modules/frame.js, pasted as FR; the engine's views/home.js frameGuide): the
+// sections with a tile, no highlight cards (the build makes none from the builder's answers), the map.
+function pvFrame(S){
+  const order = Object.keys(PV_ENG), live = S.filter(x => PV_ENG[x.id] && pvOnHome(x)).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  const G = { sections: live.map(x => ({ id: PV_ENG[x.id].id, kind: PV_ENG[x.id].kind, group: PV_ENG[x.id].group, status: 'live' })), highlights: [], map: S.some(x => x.id === 'map'), transportCard: null, offers: FR.OFFERS };
+  return { R: FR.resolve(null, G), of: id => live.find(x => PV_ENG[x.id].id === id) };
+}
+// A tile as views/home.js draws it: flat colour, one corner shape (CSS, by data-k), icon, title, round arrow. Its classes
+// by its size and widget, with home.js's rules for a long title (wide, over 20 characters) and a wordy one (tall, a word
+// over 9), counted on the words the phone shows.
+function pvTile(key, pvId, label, size, widget){
+  const look = ENG_LOOK[key] || ENG_LOOK.todo, shown = String(tr(label));
+  const cls = [size === 'wide' ? 'wide' : '', 's-' + size, widget === 'live' ? 'w-live' : '', size === 'wide' && widget === 'entry' && shown.length > 20 ? 't-long' : '', size === 'tall' && shown.split(/[\s\-\u2010-\u2014/]+/).some(w => w.length > 9) ? 't-word' : ''].filter(Boolean).join(' ');
+  return `<button type="button" class="pv-sec gt ${cls}" data-k="${key}" data-pv="${pvId}" style="--tc:${look.color};--ti:${look.ink ? 'var(--ink)' : '#fff'};--gofg:${look.ink ? '#fff' : 'var(--ink)'}"><span class="ib ic">${look.icon}</span><span class="gt-tx"><b class="gt-t">${esc(label)}</b></span><span class="go ar" aria-hidden="true">${PV_ARROW}</span></button>`;
+}
+
+// One screen of the guide as guests will see it, built from the answers: the welcome card, the two groups of tiles placed
+// by the guide's own frame, What's on. Used by the phone in the builder (the wow, and next to the steps) and by the
+// full-page preview.
 async function pvParts(screen){
   const p = await phonePalette();
-  const S = ordered(guideSections()), name = v('guideName') || v('placeName') || WOW.name || 'Your guide';
+  const S = guideSections(), name = v('guideName') || v('placeName') || WOW.name || 'Your guide';
   // Same rule as the guide (engine/scripts/generate-site.py): the host's own cover, else the listing photo they chose,
   // unless they asked for a cover drawn from the colours.
   const own = (uploads.find(u => u.kind === 'cover') || {}).url, listing = A.coverChoice !== 'drawn' && A.coverUrl ? String(A.coverUrl).split('?')[0] + '?im_w=720' : '';
   const cover = own || listing, logo = (uploads.find(u => u.kind === 'logo') || {}).url;   // on the welcome card, as in the guide
-  const colours = [p.acc[0], p.acc[1], p.ink, p.acc[3], p.acc[2]], shapes = [p.acc[2], p.ink, p.acc[1], p.acc[2], p.ink];
-  const light = hex => { const n = parseInt(String(hex).slice(1), 16); return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 160; };
   const scr = screen, sec = S.find(x => x.id === scr);
+  // The welcome card's two facts, as the guide has them (modules/house/welcome.js): Wi-Fi, then Check-out.
   const facts = [];
-  for (const f of (A.homeFirst && A.homeFirst.length ? A.homeFirst : ['Wi-Fi', 'Check-out time'])) {
-    if (f === 'Wi-Fi' && secOn('wifi')) facts.push(['wifi', 'Wi-Fi', 'Tap to connect']);
-    if (f === 'Check-out time' && v('checkOut')) facts.push(['stay', 'Check-out', 'Before ' + v('checkOut')]);
-    if (f === 'How to get in' && v('arrival')) facts.push(['arrival', 'Getting here', 'Directions']);
-    if (f === 'House guide') facts.push(['houseguide', 'House guide', 'How things work']);
-    if (f === 'Places to eat') facts.push(['eat', 'Eat', lines('favourites').length + ' favourites']);
-  }
-  // As on the guide's Home: Wi-Fi and check-out are the two facts on top, arrival is inside the House guide; the tiles follow in two groups.
-  const atHouse = ['rubbish', 'houseguide', 'emergency'].map(id => S.find(x => x.id === id)).filter(Boolean), around = S.filter(x => !atHouse.includes(x) && !['house', 'wifi', 'stay', 'arrival'].includes(x.id));
-  const tile = (x, i, wide) => `<button type="button" class="pv-sec${wide ? ' wide' : ''}${light(colours[i % colours.length]) ? ' lt' : ''}" data-pv="${x.id}" data-q="${esc((x.title + ' ' + x.sub + ' ' + (x.items || []).join(' ')).toLowerCase())}" style="--sc:${colours[i % colours.length]};--ss:${shapes[i % shapes.length]};--st:${light(colours[i % colours.length]) ? p.ink : '#fff'}"><span class="ic">${I[x.icon] || ''}</span><span class="tx"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small></span><span class="ar" aria-hidden="true">→</span></button>`;
-  const group = (list, title, from) => list.length ? `<h2 class="pv-h">${esc(title)}</h2><div class="pv-secs">${list.map((x, i) => tile(x, from + i, i === list.length - 1 && list.length % 2 === 1)).join('')}</div>` : '';
-  const ph = id => { const r = (S.find(x => x.id === 'houseguide') || {}).rooms || []; return id === 'houseguide' && r.find(x => x.photos.length) ? r.find(x => x.photos.length).photos[0] : null; };
-  const home = `<div class="pv-cover${cover ? '' : ' pv-art'}" data-pv="house"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}<div class="pv-name">${logo ? `<img class="pv-logo" src="${esc(logo)}" alt="">` : ''}<small>Welcome to</small><h1>${esc(name)}</h1></div></div>
-    ${/search/i.test(v('navStyle')) ? `<input class="pv-search" id="pvSearch" placeholder="Search the guide: wifi, bins, beach…" aria-label="Search the guide">` : ''}
-    ${facts.length ? `<div class="pv-facts">${facts.slice(0, 4).map(f => `<button type="button" class="pv-fact" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
-    ${group(atHouse, 'At the house', 0)}${group(around, 'Around the house', atHouse.length)}`;
-  return { name, style: pvStyle(p), body: `<div class="pv pv-shell">${sec ? `<div class="pv-top"><button class="pv-back" type="button" data-pv="home">${BACK}${esc(name)}</button></div>` : ''}
-      <div class="pv-in">${sec ? pageHTML(sec) : home}</div></div>` };
+  if (secOn('wifi')) facts.push(['wifi', 'Wifi', 'Tap to connect', 'kf-wifi']);
+  if (v('checkOut')) facts.push(['stay', 'Check-out', 'Before ' + v('checkOut'), '']);
+  const { R, of } = pvFrame(S);
+  const draw = it => it.kind === 'map' ? pvTile('map', 'map', 'Map of all spots', 'wide', 'entry') : (x => pvTile(it.id, x.id, PV_ENG[x.id].tile, it.size, it.widget))(of(it.id));
+  const grp = g => R[g].map(run => `<div class="ggrid${g === 'area' ? ' mosaic' : ''}">${run.items.map(draw).join('')}</div>`).join('');
+  // What's on: the days' markets and events are found when the guide is sent; until then the drawing's honest line, in
+  // the card they will fill (modules/whatson).
+  const mk = S.some(x => x.id === 'markets'), ev = S.some(x => x.id === 'events');
+  const today = (d => d.charAt(0).toUpperCase() + d.slice(1))(new Date().toLocaleDateString(UIL === 'en' ? 'en-GB' : UIL, { weekday: 'long', day: 'numeric', month: 'long' }));   // as the guide writes it: Mardi 24 novembre
+  const whatson = mk || ev ? `<h2 class="sh pv-h">What’s on</h2><section class="whatson"><div class="wo-day"><b>Today</b><span translate="no">${esc(today)}</span></div>
+    <p class="wo-note">${mk ? 'When you send your guide, we list every weekly market nearby, with what runs today.' : 'When you send your guide, we list festivals and fairs, with dates.'}</p>
+    <div class="wo-links">${mk ? '<button type="button" data-pv="markets">All markets</button>' : ''}${ev ? '<button type="button" data-pv="events">All events</button>' : ''}</div></section>` : '';
+  const lang = `<span class="pv-lang" translate="no" aria-hidden="true">${esc(String(A.sourceLang || UIL).toUpperCase())}</span>`;
+  const home = `${lang}<section class="sthero"><div class="hcard">
+    <div class="hc-ph pv-cover${cover ? '' : ' hc-art pv-art'}" data-pv="house" role="button" tabindex="0"${cover ? ` style="background-image:url('${cover}')"` : ''}>${cover ? '' : PV_ART}</div>
+    <div class="hc-id" data-pv="house" role="button" tabindex="0">${logo ? `<img src="${esc(logo)}" alt="">` : ''}<span class="hc-nm pv-name"><small class="hc-w">Welcome to</small><h1>${esc(name)}</h1><small>See the house</small></span><span class="go" aria-hidden="true">${PV_ARROW}</span></div>
+    ${facts.length ? `<div class="keyfacts pv-facts">${facts.map(f => `<button type="button" class="pv-fact ${f[3]}" data-pv="${f[0]}"><small>${esc(f[1])}</small><b>${esc(f[2])}</b></button>`).join('')}</div>` : ''}
+    </div></section>
+    <h2 class="sh pv-h">At the house</h2>${grp('house')}
+    <h2 class="sh pv-h">Around the house</h2>${grp('area')}
+    ${whatson}<p class="hfoot"><span>Sources and credits</span></p>`;
+  // The Wi-Fi is a sheet over Home in the guide (modules/house/wifi.js), not a page.
+  const page = sec && sec.kind === 'wifi' ? home + wifiSheetHTML() : sec ? `<button class="pv-back" type="button" data-pv="home" aria-label="Home">${PV_BACK}</button>${lang}${pageHTML(sec)}` : home;
+  return { name, style: pvStyle(p), body: `<div class="pv pv-shell"><div class="pv-in${sec && sec.kind !== 'wifi' ? ' pg' : ''}">${page}</div></div>` };
+}
+// The Wi-Fi sheet as the guide opens it from the welcome card: network, password with Copy, the QR code to scan. The code
+// is made when the guide is built: until then the drawing says so where it will be.
+function wifiSheetHTML(){
+  const inner = v('wifiName') ? `<div class="ws-f"><small>Network</small><b>${esc(v('wifiName'))}</b></div>
+    <div class="ws-f ws-pwrow"><span><small>Password</small><b class="ws-pw">${esc(v('wifiPassword'))}</b></span><span class="ws-copy">Copy</span></div>
+    <p class="ws-how">Another phone? Scan to join:</p><div class="ws-qr"><span><b>In your finished guide</b><br>A QR code to join with one tap.</span></div>`
+    : `<div class="pv-research" style="background:var(--paper)"><b>Your Wi-Fi goes here</b>Add it in Only you know: guests join with one tap.</div>`;
+  return `<div class="wsheet"><button type="button" class="ws-bg" data-pv="home" aria-label="Close"></button><div class="ws-card pv-page" role="dialog"><div class="ws-hd"><h3>Wifi</h3><button type="button" class="ws-x" data-pv="home" aria-label="Close">×</button></div>${inner}</div></div>`;
 }
 async function renderPreview(){
   const { name, style, body } = await pvParts(PV.screen);
@@ -351,10 +504,10 @@ const PHONE_W = 390;
 function phoneFit(f){ const s = f && f.parentElement; if (!s || !s.clientWidth) return; const k = s.clientWidth / PHONE_W; f.style.transform = `scale(${k})`; f.style.height = Math.ceil(s.clientHeight / k) + 'px'; }
 const phoneRO = typeof ResizeObserver === 'function' ? new ResizeObserver(es => es.forEach(e => phoneFit(e.target.querySelector('iframe')))) : null;
 function phoneWatch(f){ phoneFit(f); if (phoneRO && f && !f.__watched) { f.__watched = true; phoneRO.observe(f.parentElement); } }
-const PHONE_CSS = `<style>.pv{min-height:100vh;padding-bottom:28px}.pv-in{padding:0 14px}.pv-cover{margin:0 -14px;height:236px}.pv-name h1{font-size:34px}.pv-top{padding:8px 14px}
-.pv-build .pv-cover,.pv-build .pv-name,.pv-build .pv-welcome,.pv-build .pv-fact,.pv-build .pv-h,.pv-build .pv-sec{animation:pvIn .55s cubic-bezier(.2,.7,.2,1) both}
-.pv-build .pv-name{animation-delay:.25s}.pv-build .pv-welcome{animation-delay:.4s}.pv-build .pv-fact{animation-delay:.5s}.pv-build .pv-h{animation-delay:.6s}
-${Array.from({ length: 14 }, (_, i) => `.pv-build .pv-sec:nth-child(${i + 1}){animation-delay:${(0.7 + i * 0.12).toFixed(2)}s}`).join('')}
+const PHONE_CSS = `<style>.pv{min-height:100vh;padding-bottom:28px}.pv-shell{padding-top:0}
+.pv-build .hcard,.pv-build .pv-h,.pv-build .pv-sec,.pv-build .whatson{animation:pvIn .55s cubic-bezier(.2,.7,.2,1) both}
+.pv-build .pv-h{animation-delay:.4s}.pv-build .whatson{animation-delay:1.2s}
+${Array.from({ length: 14 }, (_, i) => `.pv-build .pv-sec:nth-child(${i + 1}){animation-delay:${(0.5 + i * 0.12).toFixed(2)}s}`).join('')}
 @keyframes pvIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.pv-build *{animation:none!important}}</style>`;
 async function phoneRender(){
@@ -378,27 +531,32 @@ document.addEventListener('input', phoneSoon); document.addEventListener('change
 function pageHTML(x){
   const research = x.research ? `<div class="pv-research"><b>In your finished guide</b>${esc(x.research)}</div>` : '';
   const list = items => items.length ? `<div class="pv-list">${items.map(t => { const [a, ...b] = t.split(/:\s|,\s| - /); return `<div class="pv-row"><b>${esc(a)}</b>${b.length ? esc(b.join(', ')) : ''}</div>`; }).join('')}</div>` : '';
+  const e = PV_ENG[x.id], look = e && ENG_LOOK[e.id];
+  const dot = look ? `<span class="dot" style="--cc:${look.color};--ci:${look.ink ? 'var(--ink)' : '#fff'}" aria-hidden="true">${look.icon}</span>` : '';
   let body = '';
   if (x.kind === 'house') {
-    const tour = roomsNow().map(r => ({ r: r.n, photos: photosIn(r.n).map(u => u.url) })).filter(r => r.photos.length);
+    // The house page (modules/house): the photos on top, one counter, the facts, then About, the photo tour (one card,
+    // its rooms inside), the beds and what the place offers, a tick before each.
+    const tour = roomsNow().map(r => ({ r: r.n, photos: photosIn(r.n).map(u => u.url) })).filter(r => r.photos.length), all = tour.flatMap(r => r.photos);
     const offers = amenKey(amenNow()).map(amenGuideName);
-    body = `${tour.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3><div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div></section>`).join('')}
-      ${v('welcome') ? `<section class="pv-card"><h3>About the house</h3><p style="margin:8px 0 0">${esc(v('welcome'))}</p></section>` : ''}
-      ${lines('sleeping').length ? `<section class="pv-card"><h3>Where you'll sleep</h3>${list(lines('sleeping'))}</section>` : ''}
-      ${offers.length ? `<section class="pv-card"><h3>What this place offers</h3><p style="margin:8px 0 0">${esc(offers.slice(0, 8).join(', '))}${offers.length > 8 ? ` and ${offers.length - 8} more` : ''}</p></section>` : ''}`;
+    body = `${all.length ? `<div class="pv-gal" style="background-image:url('${all[0]}')"><span translate="no">1 / ${all.length}</span></div>` : ''}${x.sub ? `<p class="pv-hfacts">${esc(x.sub)}</p>` : ''}
+      ${v('welcome') ? `<section class="pv-card"><h2 class="pv-ch">About the house</h2><p>${esc(v('welcome'))}</p></section>` : ''}
+      ${tour.length ? `<section class="pv-card pv-tour"><h2 class="pv-ch">Photo tour</h2>${tour.map(r => `<h3>${esc(r.r)}</h3><div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>`).join('')}</section>` : ''}
+      ${lines('sleeping').length ? `<section class="pv-card pv-hc"><h3>Where you'll sleep</h3><ul class="pv-beds">${lines('sleeping').map(l => `<li>${esc(l)}</li>`).join('')}</ul></section>` : ''}
+      ${offers.length ? `<section class="pv-card pv-hc"><h3>What this place offers</h3><ul class="pv-checks">${offers.slice(0, 8).map(o => `<li>${esc(o)}</li>`).join('')}</ul>${offers.length > 8 ? `<span class="pv-btn pv-wide">Show all ${offers.length} amenities</span>` : ''}</section>` : ''}`;
   }
   else if (x.kind === 'rooms') body = x.rooms.length ? x.rooms.map(r => `<section class="pv-card"><h3>${esc(r.r)}</h3>${r.photos.length ? `<div class="pv-photos">${r.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${list(r.items)}</section>`).join('') : `<div class="pv-research"><b>Nothing here yet</b>Add how things work and photos by room in your answers.</div>`;
-  else if (x.kind === 'wifi' && !v('wifiName')) body = `<div class="pv-research"><b>Your Wi-Fi goes here</b>Add it in Only you know: guests join with one tap.</div>`;
-  else if (x.kind === 'wifi') body = `<section class="pv-card"><p style="margin:0 0 6px;opacity:.7">Network</p><h3 style="font-size:24px">${esc(v('wifiName'))}</h3><p style="margin:12px 0 6px;opacity:.7">Password</p><h3 style="font-size:24px">${esc(v('wifiPassword'))}</h3></section><div class="pv-research"><b>In your finished guide</b>A QR code to join with one tap, and a copy button.</div>`;
-  else if (x.kind === 'contacts') body = `<section class="pv-card"><div class="pv-list"><div class="pv-row"><b>Emergencies: 112</b>Police, ambulance, fire</div>${(Array.isArray(A.taxis) ? A.taxis : []).map(t => `<div class="pv-row"><b>Taxi</b><span translate="no">${esc(txName(t.name))}</span></div>`).join('')}${v('taxi') ? `<div class="pv-row"><b>Taxi</b>${esc(v('taxi'))}</div>` : ''}</div></section>${research}`;
+  else if (x.kind === 'contacts') body = `<h2 class="sh" style="margin:0">Emergencies</h2><section class="pv-card mlist pv-clist"><div class="pv-list"><div class="pv-row"><b>Emergencies</b>Police, ambulance, fire<span class="pv-call">${ENG_LOOK.emergency.icon}112</span></div>${(Array.isArray(A.taxis) ? A.taxis : []).map(t => `<div class="pv-row"><b>Taxi</b><span translate="no">${esc(txName(t.name))}</span></div>`).join('')}${v('taxi') ? `<div class="pv-row"><b>Taxi</b>${esc(v('taxi'))}</div>` : ''}</div></section>${research}`;
   // A kept card: its name live, with Google Maps; no rating or kind of Google's, which the guide does not show either.
-  else if (x.kind === 'places') body = `${(x.picks || []).length ? `<section class="pv-card"><div class="pv-list">${x.picks.map(p => `<div class="pv-row"><b>${esc(p.gone ? 'A place you kept' : p.name)}</b>${esc([isOurs(p.id) ? p.type : '', p.km != null ? numUI(p.km) + ' km' : ''].filter(Boolean).join(' · '))}${p.c ? `<br><i>“${esc(p.c)}”</i>` : ''}<br><a href="${esc(swMaps(p) || '#')}" target="_blank" rel="noopener" translate="no">Google Maps</a></div>`).join('')}</div></section>` : ''}${x.items.length ? `<section class="pv-card"><div class="pv-list">${x.items.map(t => { const r = x.id === 'todo' && placeRows('favDo').find(y => twRow(y) && String(y.p).trim() === t);
+  else if (x.kind === 'places') body = `${(x.picks || []).length ? `<section class="pv-card mlist"><div class="pv-list">${x.picks.map(p => `<div class="pv-row">${dot}<b>${esc(p.gone ? 'A place you kept' : p.name)}</b>${esc([isOurs(p.id) ? p.type : '', p.km != null ? numUI(p.km) + ' km' : ''].filter(Boolean).join(' · '))}${p.c ? `<br><i>“${esc(p.c)}”</i>` : ''}<br><a href="${esc(swMaps(p) || '#')}" target="_blank" rel="noopener" translate="no">Google Maps</a></div>`).join('')}</div></section>` : ''}${x.items.length ? `<section class="pv-card mlist"><div class="pv-list">${x.items.map(t => { const r = x.id === 'todo' && placeRows('favDo').find(y => twRow(y) && String(y.p).trim() === t);
     // A town picked from our list: its kind, province and distance, the host's comment, and directions to its own position.
-    if (r) return `<div class="pv-row"><b>${esc(t)}</b><span translate="no">${esc(twLine(twOf(r)))}</span>${r.c ? `<br><i>“${esc(r.c)}”</i>` : ''}<br><a href="https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}" target="_blank" rel="noopener">Directions</a></div>`;
-    const [a, ...b] = t.split(/,\s| - |:\s/); return `<div class="pv-row"><b>${esc(a)}</b>${esc(b.join(', '))}<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a + ', ' + v('town'))}" target="_blank" rel="noopener">Directions</a></div>`; }).join('')}</div></section>` : ''}${research}`;
+    if (r) return `<div class="pv-row">${dot}<b>${esc(t)}</b><span translate="no">${esc(twLine(twOf(r)))}</span>${r.c ? `<br><i>“${esc(r.c)}”</i>` : ''}<br><a href="https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}" target="_blank" rel="noopener">Directions</a></div>`;
+    if (/^https?:\/\//i.test(t.trim())) return `<div class="pv-row">${dot}<b>A place from your link</b>When you send your guide, we add its name.<br><a href="${esc(t.trim())}" target="_blank" rel="noopener" translate="no">Google Maps</a></div>`;
+    const [a, ...b] = t.split(/,\s| - |:\s/); return `<div class="pv-row">${dot}<b>${esc(a)}</b>${esc(b.join(', '))}<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a + ', ' + v('town'))}" target="_blank" rel="noopener">Directions</a></div>`; }).join('')}</div></section>` : ''}${research}`;
   else if (x.kind === 'map') body = `<section class="pv-card"><p style="margin:0">Every place in the guide on one map, centred near ${esc(v('town') || 'the house')} (never on the house itself).</p></section><a class="pv-btn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v('town'))}" target="_blank" rel="noopener">Open ${esc(v('town') || 'the area')} in Maps</a>`;
   else body = `${x.photos && x.photos.length ? `<div class="pv-photos">${x.photos.map(s => `<img src="${s}" alt="">`).join('')}</div>` : ''}${x.items && x.items.length ? `<section class="pv-card">${list(x.items)}</section>` : ''}${x.extra ? `<section class="pv-card"><h3>${esc(x.extra.h)}</h3>${list(x.extra.items)}</section>` : ''}${research}`;
-  return `<div class="pv-page"><h2>${esc(x.title)}</h2><p style="opacity:.75;margin:6px 0 0">${esc(x.sub)}</p></div>${body}`;
+  const title = e ? e.title || e.tile : x.title, lead = x.kind === 'house' ? '' : e && e.lead !== null ? e.lead : x.sub;
+  return `<div class="pv-page"><h2 class="title">${esc(title)}</h2>${lead ? `<p class="lead">${esc(lead)}</p>` : ''}</div>${body}`;
 }
 document.addEventListener('click', e => {
   if (!document.querySelector('.pv')) return;

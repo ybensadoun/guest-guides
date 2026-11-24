@@ -2412,7 +2412,7 @@ async function gRoomsOffers() {
     ok('amenities: nothing wider than the screen at 360 px', !(await wide()));
     await p.screenshot({ path: join(SHOTS, 'amenities-360.png'), fullPage: true });
     await settle(p, 400);
-    const offers = await inPhone(p, `d => { const h = [...d.querySelectorAll('.pv-card h3')].find(x => x.textContent === 'What this place offers'); return h ? h.nextElementSibling.textContent : ''; }`);
+    const offers = await inPhone(p, `d => { const h = [...d.querySelectorAll('.pv-card h3')].find(x => x.textContent === 'What this place offers'); return h ? [...h.nextElementSibling.children].map(li => li.textContent).join(', ') : ''; }`);
     ok('amenities: the phone shows them on the house page, the most asked for first', /^Pool, Hot tub/.test(offers || ''), offers);
     ok('amenities: How things work no longer asks for them', await (async () => { await go(p, '#howto'); await settle(p, 200); return !(await p.$('#amQ')); })());
     // How things work (engine/src/modules/info/README.md, rule 16): nothing in a listing fills it, so its foot never says
@@ -2517,15 +2517,15 @@ async function gNearby() {
     ok('builder: Guide sections and Your area are no longer under "Filled in for you"', !path2.includes('Guide sections') && path2.indexOf('Your area') < path2.indexOf('Only you know'));
     const stepOff = async id => { await p.$eval(`[data-sec="${id}"]`, e => e.closest('label').scrollIntoView({ block: 'center' })); const y = await p.evaluate(() => scrollY); await p.click(`[data-sec="${id}"]`, { force: true }); await settle(p, 500); return Math.abs((await p.evaluate(() => scrollY)) - y) < 2; };
     const steps = () => p.$$eval('.rail a.si', as => as.map(a => a.querySelector('.st').textContent)), tiles = () => inPhone(p, d => [...d.querySelectorAll('.pv-sec b')].map(e => e.textContent).join(' | '));
-    ok('builder: the phone Home has what the guide has, the two groups of tiles, and no tile for Wi-Fi or check-out', /Eat and drink/.test(await tiles()) && !/Wi-Fi|Check-in/.test(await tiles()) && /At the house.*Around the house/.test(((await inPhone(p, d => d.body.textContent)) || '').replace(/\s+/g, ' ')), await tiles());
-    ok('builder: the phone has no description under the cover, as in the guide, and always the Wi-Fi', !(await inPhone(p, d => !!d.querySelector('.pv-welcome'))) && /Wi-Fi/.test(await inPhone(p, d => d.querySelector('.pv-facts').textContent)));
+    ok('builder: the phone Home has what the guide has, the two groups of tiles, and no tile for Wi-Fi or check-out', /Our favourite places to eat/.test(await tiles()) && !/Wi-Fi|Check-in/.test(await tiles()) && /At the house.*Around the house/.test(((await inPhone(p, d => d.body.textContent)) || '').replace(/\s+/g, ' ')), await tiles());
+    ok('builder: the phone has no description under the cover, as in the guide, and always the Wi-Fi', !(await inPhone(p, d => !!d.querySelector('.pv-welcome'))) && /Wifi/.test(await inPhone(p, d => d.querySelector('.pv-facts').textContent)));
     await p.screenshot({ path: join(SHOTS, 'look-sections.png') });
     const stays = await stepOff('eat');
-    ok('builder: switching Eat and drink off takes it off the steps and the phone, and the page stays where it is', !(await steps()).includes('Eat and drink') && !/Eat and drink/.test(await tiles()) && stays, (await steps()).slice(0, 8).join(' > '));
+    ok('builder: switching Eat and drink off takes it off the steps and the phone, and the page stays where it is', !(await steps()).includes('Eat and drink') && !/Our favourite places to eat/.test(await tiles()) && stays, (await steps()).slice(0, 8).join(' > '));
     await stepOff('eat');
     ok('builder: switched back on, it comes back in its place', (await steps()).indexOf('Eat and drink') === (await steps()).indexOf('Attractions') + 1);
     await stepOff('todo');
-    ok('builder: Attractions goes the same way', !(await steps()).includes('Attractions') && !/Attractions|Things to do/.test(await tiles()), await tiles());
+    ok('builder: Attractions goes the same way', !(await steps()).includes('Attractions') && !/Attractions|Things to do|What to do/.test(await tiles()), await tiles());
     await stepOff('todo');
     ok('builder: Check-out and the welcome page cannot be switched off, so they are not offered', !(await p.$('[data-sec="checkout"]')) && !(await p.$('[data-sec="welcome"]')));
     { const asked = []; await ctx.route('**/api/places**', r => { const q = new URL(r.request().url()).searchParams; if (!q.get('probe')) asked.push(`${q.get('radius')} ${q.get('want')}`); return json(r, q.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places }); });
@@ -2614,7 +2614,7 @@ async function gWow() {
     const shown = await inPhone(p, d => d.body.textContent);
     ok('desktop: typing the Wi-Fi updates the phone', /Casa Test Wifi/.test(shown || ''), (shown || '').slice(0, 60));
     await p.focus('[data-k="taxi"]'); await settle(p, 600);
-    ok('desktop: the phone shows the part being filled in (Getting around: the numbers)', /Emergency and contacts/.test((await inPhone(p, d => (d.querySelector('.pv-page h2') || {}).textContent)) || ''));
+    ok('desktop: the phone shows the part being filled in (Getting around: the numbers)', /Emergency contacts/.test((await inPhone(p, d => (d.querySelector('.pv-page h2') || {}).textContent)) || ''));
     await p.screenshot({ path: join(SHOTS, 'step-with-phone-desktop.png') });
     const arrows = () => inPhone(p, d => { const a = d.querySelector('.pv-sec .ar'); return a ? getComputedStyle(a).display !== 'none' : null; });
     await go(p, '#look'); await settle(p, 700);   // The look shows the guide's home in the phone
@@ -2625,17 +2625,17 @@ async function gWow() {
     await p.screenshot({ path: join(SHOTS, 'look-start-desktop.png') });
     ok('desktop: the phone draws the guide at a phone\'s width (390 px), scaled into the frame', await p.$eval('#phoneFrame', f => f.offsetWidth === 390 && /scale\(0\.\d+\)/.test(f.style.transform)).catch(() => false));
     const clash = await inPhone(p, d => [...d.querySelectorAll('.pv-sec')].flatMap(el => { const s = getComputedStyle(el, '::before'), b = el.getBoundingClientRect(), n = x => parseFloat(x) || 0;
-      const w = n(s.width) + n(s.borderLeftWidth) + n(s.borderRightWidth), h = n(s.height) + n(s.borderTopWidth) + n(s.borderBottomWidth), x2 = b.right - n(s.right), x1 = x2 - w, y1 = b.top + n(s.top), y2 = y1 + h;
+      const bb = s.boxSizing === 'border-box', w = n(s.width) + (bb ? 0 : n(s.borderLeftWidth) + n(s.borderRightWidth)), h = n(s.height) + (bb ? 0 : n(s.borderTopWidth) + n(s.borderBottomWidth)), x2 = b.right - n(s.right), x1 = x2 - w, y1 = b.top + n(s.top), y2 = y1 + h;
       const boxes = t => { if (t.matches('.ic, .ar')) return [t.getBoundingClientRect()]; const g = d.createRange(); g.selectNodeContents(t); return [...g.getClientRects()]; };
       return [...el.querySelectorAll('b, small, .ic svg, .ar')].filter(t => boxes(t).some(r => r.left < x2 - 1 && r.right > x1 + 1 && r.top < y2 - 1 && r.bottom > y1 + 1)).map(t => el.querySelector('b').textContent); }));
     ok('desktop: in the phone, no tile text under its corner shape', Array.isArray(clash) && clash.length === 0 && !!(await inPhone(p, d => d.querySelectorAll('.pv-sec').length)), (clash || []).join('; '));
     const logoEnd = await p.$eval('.lk-logo', e => e.getBoundingClientRect().bottom), barTop = await p.$eval('#navbar', e => e.getBoundingClientRect().top);
     ok('desktop: The look fits on one screen, its three choices above the bottom bar', logoEnd <= barTop, `logo row ends at ${Math.round(logoEnd)}, bar at ${Math.round(barTop)}`);
-    const tile = () => inPhone(p, d => getComputedStyle(d.querySelector('.pv-sec')).backgroundColor);
+    const tile = () => inPhone(p, d => getComputedStyle(d.querySelector('.pv-sec[data-k="emergency"]')).backgroundColor);   // Emergencies: the world's red, as in the guide
     const own = await tile();
     await p.click('#lk_world_country', { force: true }); await settle(p, 700);
     const country = await tile();
-    ok('desktop: picking Country changes the phone at once, the same tiles in its colours', (await arrows()) === true && own !== country && country === 'rgb(73, 100, 54)', `${own} -> ${country}`);
+    ok('desktop: picking Country changes the phone at once, the same tiles in its colours', (await arrows()) === true && own !== country && country === 'rgb(163, 71, 43)', `${own} -> ${country}`);
     await p.click('#lk_world_cover', { force: true }); await settle(p, 1500);
     const cover = await tile();
     ok('desktop: back to From your cover, the tiles in the phone take the picture\'s colours again', !!cover && cover === own && cover !== country, `${country} -> ${cover}`);
