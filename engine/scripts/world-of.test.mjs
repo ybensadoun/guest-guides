@@ -34,9 +34,10 @@ test('world-of: a picture\'s pixels make the world the maker would make', () => 
     const out = ok({ pixels: px(c).toString('base64') }), want = worldFromPicture(swatches(px(c), 3));
     assert.deepEqual(out.world, want); assert.deepEqual(out.tokens, worldTokens(worldOf(want)));
   }
-  assert.deepEqual(ok({ pixels: px('#2D7FB8').toString('base64') }).world, { base: 'sea', deep: '#185782' });
+  // one blue and nothing else: it leads alone, Sea's other colours step back (picture-world.js, 24 Nov 2026)
+  assert.deepEqual(ok({ pixels: px('#2D7FB8').toString('base64') }).world, { base: 'sea', deep: '#185782', fresh: '#52716B', light: '#E2D2AA', warm: '#D7B18E' });
   assert.deepEqual(ok({ pixels: px('#888888').toString('base64') }).world, { base: 'stone' });   // no colour of its own: Stone
-  assert.deepEqual(ok({ world: 'night', pixels: px('#2D7FB8').toString('base64') }).world, { base: 'sea', deep: '#185782' });   // the picture wins
+  assert.deepEqual(ok({ world: 'night', pixels: px('#2D7FB8').toString('base64') }).world, { base: 'sea', deep: '#185782', fresh: '#52716B', light: '#E2D2AA', warm: '#D7B18E' });   // the picture wins
 });
 
 test('world-of: a world that is not one exits 2 with one line', () => {

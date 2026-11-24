@@ -70,6 +70,35 @@ test('a photo of two colours keeps both: a pool and its lawn', () => {
   assert.ok(hueIn(oklch(w.fresh)[2], 110, 140), `the lawn's green is there too: ${w.fresh}`);
 });
 
+// A picture of one colour (24 Nov 2026): the test house of 22 Nov, a white house under a blue sky by its pool, as the
+// maker read it: one blue holding 96% of the picture's colour. Its guide read as Bauhaus, the host's choice as no choice.
+test('a picture of one colour: that colour leads alone, the rest steps back, Emergencies stays as it was', () => {
+  const house = [{ colour: '#4C89CA', h: 251.3607334925727, c: 0.11701399969912032, l: 0.6192708900752641, full: 0.6414853402925641, share: 0.9587002541757296 }];
+  const w = worldFromPicture(house), B = WORLDS.bauhaus, C = c => oklch(c)[1];
+  assert.equal(w.base, 'bauhaus');
+  assert.ok(Math.abs(oklch(w.deep)[2] - 251) < 4, `the main colour is the picture's blue: ${w.deep}`);
+  for (const r of ['fresh', 'light', 'warm']) assert.ok(C(w[r]) < 0.5 * C(B[r]) && apart(w[r], B[r]) > 0.06, `${r} steps back: ${w[r]} beside Bauhaus's ${B[r]}`);
+  assert.ok(apart(w.strong || B.strong, B.strong) < 0.03, `Emergencies' red is not made quieter by this: ${w.strong}`);
+  assert.ok(C(w.deep) > 1.2 * Math.max(C(w.fresh), C(w.light), C(w.warm)), 'the picture\'s colour is the strongest of the tiles but the red');
+  // The less one colour holds the picture, the less the rest steps back: at half and under, nothing changes.
+  const two = (a, b) => worldFromPicture(swatches(picture([['#1E6FD0', a], ['#3E8E41', b]]))), full = c => C(c);
+  assert.equal(two(45, 45).light, undefined, 'two colours in equal parts: Bauhaus keeps its own yellow');
+  assert.ok(full(two(70, 30).light || B.light) < full(B.light) && full(two(70, 30).light || B.light) > full(two(95, 5).light), 'in between, in between');
+  // Any single colour at all: still a world that keeps every rule, and no two tiles alike.
+  let seed = 20261124; const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32;
+  for (let n = 0; n < 400; n++) {
+    const c = '#' + [0, 1, 2].map(() => Math.floor(rnd() * 256).toString(16).padStart(2, '0')).join('').toUpperCase(), parts = [[c, 20 + Math.floor(rnd() * 70)]];
+    if (n % 2) parts.push(['#' + [0, 1, 2].map(() => Math.floor(rnd() * 256).toString(16).padStart(2, '0')).join(''), 2 + Math.floor(rnd() * 8)]);
+    const x = worldFromPicture(swatches(picture(parts))), p = worldOf(x), t = worldTokens(p), say = JSON.stringify({ parts, x });
+    assert.ok(hueIn(oklch(p.strong)[2], 345, 47) && oklch(p.strong)[1] >= 0.09, `strong is a red ${say}`);
+    assert.ok(hueIn(oklch(p.fresh)[2], 103, 207), `fresh is a green ${say}`);
+    for (const k of ['--blue', '--red', '--green']) assert.ok(contrast('#FFFFFF', t[k]) >= 4.5, `${k} ${say}`);
+    for (const k of ['--yellow', '--orange']) assert.ok(contrast(t['--ink'], t[k]) >= 4.5, `${k} ${say}`);
+    assert.ok(contrast(t['--yellow'], t['--blue']) >= 3, `the light icon on a deep tile ${say}`);
+    for (const [a, b] of [['light', 'warm'], ['deep', 'fresh'], ['deep', 'strong'], ['fresh', 'strong']]) if (x[a] || x[b]) assert.ok(apart(p[a], p[b]) >= 0.045, `${a} and ${b} are twins ${p[a]} ${p[b]} ${say}`);
+  }
+});
+
 test('an olive green never becomes the light tile (it made a lime one)', () => {
   const w = worldFromPicture(swatches(picture([['#9DBBD7', 33], ['#8A985A', 33], ['#C7A673', 28]])));
   assert.ok(!w.light || hueIn(oklch(w.light)[2], 60, 113), JSON.stringify(w));

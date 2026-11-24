@@ -87,8 +87,9 @@ test('generator: "From your picture" keeps the world the maker made as it is', (
 
 test('generator: "From your picture" with no world from the maker reads the cover picture', () => {
   const g = generate({ world: 'cover' }, [{ id: 'c1', kind: 'cover', colours: ['#2D7FB8'] }]);
-  assert.deepEqual(flat('#2D7FB8'), { base: 'sea', deep: '#185782' });
-  inWorld(g, { base: 'sea', deep: '#185782' });
+  const sea = { base: 'sea', deep: '#185782', fresh: '#52716B', light: '#E2D2AA', warm: '#D7B18E' };   // one blue: it leads alone, Sea's other colours step back (picture-world.js, 24 Nov 2026)
+  assert.deepEqual(flat('#2D7FB8'), sea);
+  inWorld(g, sea);
   assert.match(g.css, /from the host's cover picture/);
 });
 

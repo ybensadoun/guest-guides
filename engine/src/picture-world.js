@@ -10,7 +10,7 @@
 //      to in hue, and gives that role its own hue and fullness at the role's lightness (a sky blue becomes a deep
 //      blue under white text, a stone ochre a sand under dark text). The world is the one the picture fills best,
 //      its main colour (deep) first, and the one that leaves the least of the picture's colour out. The roles the picture does not fill keep the world's colours, quietened when the
-//      picture is a quiet one; the world's paper, text colour and fonts stay.
+//      picture is a quiet one, or of one colour (that colour then leads alone); the world's paper, text colour and fonts stay.
 // What keeps a guide readable and sane whatever the picture:
 //   - a role only moves a limited way round the colour wheel (LIMIT), so the five roles stay apart as in the world;
 //   - strong (Emergencies) stays red: it only takes a real red (the first try, 10 Nov 2026, let a farmhouse's ochre
@@ -106,6 +106,7 @@ const allowed = (role, f) => (role !== 'strong' || RED(f)) && (role !== 'fresh' 
 const QUIET = { deep: 0.3, strong: 0.55, fresh: 0.4, light: 0.33, warm: 0.4 };
 const RED_FULL = 0.7;   // the least full a red of the picture's is as strong
 const MAIN = 1.5, LEAD = 0.2;   // deep's weight in the choice of a world; how much fuller than the picture the rest may be
+const ALONE = [0.5, 0.9];       // the biggest family's share of the picture's colour from which the picture counts as partly, then wholly, of one colour
 const LEFT = 0.5;               // what a world loses for each part of the picture's colour it leaves out (a pool's blue, 35% of a photo, was left out for a lawn's green)
 const TWINS = [['light', 'warm'], ['deep', 'fresh'], ['deep', 'strong'], ['fresh', 'strong']], ALIKE = 0.05;   // OKLab distance under which two tiles are twins
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -143,7 +144,18 @@ export function worldFromPicture(sw) {
   // A role it does not fill: the world's colour, at most a little fuller than the picture is, so the picture's
   // colours lead and the rest steps back beside them (a quiet photo beside Bauhaus's full red and yellow was a
   // patchwork). Never quieter than Stone.
-  const rest = r => { const [L, C, h] = best.roles[r], was = full(L, C, h), now = Math.min(was, Math.max(fullness + LEAD, QUIET[r]));
+  // A picture of one colour (a white house under a blue sky by its pool: one blue, 96% of its colour) fills one role
+  // and is "full", so the rest kept the world's full colours and the guide read as that world, not as the picture: the
+  // host's "From your cover" looked like Bauhaus (the test house of 22 Nov 2026; Yohann's ask through the main
+  // conversation, 24 Nov 2026). So the more of the picture's colour its biggest family holds (from half: a little;
+  // nine tenths: wholly), the nearer the rest goes to the quiet level: the picture's one colour is the guide's one
+  // strong colour, as in the picture. Two things hold it back: strong is left as it was (Emergencies reads as urgent
+  // whatever the picture; quietened, Country's red sat beside a terracotta wall's own colour), and two tiles that
+  // would end up twins at the quiet level (Tropical's teal and its green) keep the first of them fuller, step by
+  // step, until they are two colours (back).
+  const alone = clamp((sw[0].share - ALONE[0]) / (ALONE[1] - ALONE[0]), 0, 1), back = {};
+  const rest = r => { const [L, C, h] = best.roles[r], was = full(L, C, h), most1 = Math.max(fullness + LEAD, QUIET[r]), one = r === 'strong' ? 0 : alone * (1 - (back[r] || 0));
+    const now = Math.min(was, QUIET[r] + (most1 - QUIET[r]) * (1 - one));
     return now < was - 0.05 ? fromOklch(L, now * most(L, h), h) : best.world[r]; };
   const out = { base: best.base }, took = { ...best.took };
   const colour = r => (took[r] ? own(r) : rest(r));
@@ -152,7 +164,8 @@ export function worldFromPicture(sw) {
   for (let again = true; again;) {
     again = false;
     for (const [x, y] of TWINS) {
-      if (apart(colour(x), colour(y)) >= ALIKE || (!took[x] && !took[y])) continue;
+      if (apart(colour(x), colour(y)) >= ALIKE) continue;
+      if (!took[x] && !took[y]) { if (alone && (back[x] || 0) < 1) { back[x] = (back[x] || 0) + 0.25; again = true; } continue; }   // both the world's own, made twins by the quiet level
       delete took[!took[y] || (took[x] && took[x].share < took[y].share) ? x : y]; again = true;
     }
   }

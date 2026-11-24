@@ -4227,6 +4227,23 @@ async function gLookWorlds() {
     ok('look-worlds, builder, no picture: 6 phones, the six worlds, Bauhaus selected and nothing stored, no picture on their covers', r.join() === WORLDS.join() && await checked(p) === 'bauhaus' && !(await stored(p)).world && cv.every(x => x === 'none'), r.join());
     ok('look-worlds, builder, no picture: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // A cover of one colour (a white house under a blue sky, 24 Nov 2026): "From your cover" is the picture's blue with
+  // quiet colours beside it, not a copy of one of the six worlds' phones (engine/src/picture-world.js, ALONE).
+  { const SKY = pngOf([[76, 137, 202], [76, 137, 202], [76, 137, 202], [250, 250, 250]]);
+    for (const [w, h] of [[1280, 860], [360, 780]]) {
+      const { ctx, p, errors } = await open(browser, B, w, h); await pictures(ctx, false, () => SKY);
+      await p.goto('http://editor.test/#look'); await ready(p); await settle(p, 1500);
+      const a = await stored(p), own = a.worldOwn || {};
+      const phone = id => p.$eval(`#lk_world_${id} + .wp-ph`, e => ['--deep', '--light', '--warm', '--fresh'].map(k => e.style.getPropertyValue(k)).join(' ')).catch(() => '');
+      const mine = await phone('cover'), six = await Promise.all(WORLDS.map(phone));
+      ok(`look-worlds, builder, ${w} px, a cover of one colour: From your cover is picked, with the picture's blue and quiet colours of its own beside it`, a.world === 'cover' && WORLDS.includes(own.base) && [own.deep, own.light, own.warm, own.fresh].every(c => HEX.test(c || '')), JSON.stringify(own));
+      ok(`look-worlds, builder, ${w} px, a cover of one colour: its small phone is none of the six worlds' phones, and shares no tile colour with the world it is made on`, !!mine && !six.includes(mine) && (six[WORLDS.indexOf(own.base)] || '').split(' ').every((c, i) => c !== mine.split(' ')[i]), `${mine} | ${six.join(' | ')}`);
+      const clear = await rowClear(p);
+      ok(`look-worlds, builder, ${w} px, a cover of one colour: nothing in the row overlaps`, !clear.length, clear.join('; '));
+      await p.$eval('#lk_worlds', e => e.scrollIntoView({ block: 'center' })); await settle(p, 300);
+      await p.screenshot({ path: join(SHOTS, `look-worlds-one-colour-${w}.png`) });
+      ok(`look-worlds, builder, ${w} px, a cover of one colour: no page errors`, !errors.length, errors.join(' | '));
+      await ctx.close(); } }
   // A picture that cannot be read (no CORS): From your cover is gone and the colours fall back to Bauhaus.
   { const G = { ...B, answers: { ...B.answers, world: 'cover', worldOwn: undefined, worldSrc: undefined } };
     const { ctx, p, errors } = await open(browser, G, 1280, 860); await pictures(ctx, true);
