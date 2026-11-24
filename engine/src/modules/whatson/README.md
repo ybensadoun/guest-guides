@@ -49,9 +49,10 @@ and what is open are What's on's (`plan.js`, tested). A new source is one `agend
 | 3 | Today stays open while something is still on or to come; once everything has finished it folds away with "All finished for today", and the next two days open instead, with the first folded day unfolded (tomorrow's markets). With nothing today: "No markets or events today." The heading's "2 open now" counts what the modules say is open now: the markets; an event that is on is not counted. | Code comments since the first engine; the events not counted: as built, kept on 17 Nov 2026, to decide |
 | 4 | Next 2 days: each day, each module's part in the modules' order. The markets of a day are one row ("Tuesday", "9 markets · three towns…"), which opens on the markets with their hours that day; the events starting that day are their own rows. The heading counts each module over both days ("12 markets · 1 event"). | Code comments since the first engine |
 | 5 | Coming up (from the third day, 6 weeks ahead): what the modules have with a date, plus at most two things held every month (the first two a module names: the markets held on a week of the month, of any kind, whatever the default kinds, worth planning for), at most five lines in date order; on the same day a thing with one date comes before a monthly one. | Code since the first engine (its comment, which said "the monthly antiques markets", corrected 15 Nov 2026) |
-| 6 | Its links: each module's own ("All markets": the day's list, its filters reset as from the tile; "All events"). | Code, first engine |
+| 6 | Its links: each module's own ("All markets": the day Home's markets tile leads to, today or the next day with a market once today's are over, its filters reset as from the tile; "All events"). | Code, first engine; the day the tile leads to: the markets module, 19 Nov 2026 (`../markets/agenda.js`) |
 | 7 | A market's row opens it on the map; an event's row opens in place with the details of the Local events page. A row is its module's. | Code comments since the first engine |
 | 8 | What's on names no module and reads no module's data: it asks the registry for feeds. | Yohann, 16 Nov 2026 ("it can suck from other modules"); built 17 Nov 2026 as a move: the agenda of Ca La Kimberly and of two test guides, in every language at sixteen moments of the year, is byte for byte what it was (160 comparisons) |
+| 9 | A date never breaks inside itself, at any width, in any language: the date badge is one block, and in a row's line the pieces of a date are kept whole (a line may break between the town and the date, between a day and its hour, between the two dates of "28 Nov - 10 Jan"). The pieces are the module's that draws the row: an event's, `../events/row.js` `dateParts`. | Yohann's test guide of 22 Nov 2026 ("11-13" over "Dec"); built 24 Nov 2026, measured on Ca La Kimberly at 360, 390 and 430 px in six languages at five moments |
 
 ## Where its code is
 
@@ -69,7 +70,6 @@ and what is open are What's on's (`plan.js`, tested). A new source is one `agend
 ## Open (17 Nov 2026)
 
 - "No markets or events today." names two modules: with a third source the sentence must change ("Nothing on today.").
-- "1 markets · Alcover": the markets' count has no word for one (seen on a test guide). The markets module's word.
 - When today is over, tomorrow's folded row opens on every market of the day (nine on a Monday evening at Ca La
   Kimberly), while today is cut at three.
 - Other sources Yohann named: Nightlife ("it might be the nightlife"). What it has on a day (a place open tonight) is to

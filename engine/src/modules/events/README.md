@@ -23,6 +23,7 @@ Local events page and What's on are the reference: the move was checked pixel fo
 | 8 | The curation rule applies to events as to every researched list: what a guest would not find by searching, each with a one-line reason; and each with a recent source. | `docs/CURATION.md` (18 Oct 2026: "Apply this to every researched list (things to do, places to eat, markets, events)"); `../PROJECTS.md` ("Data accuracy") |
 | 9 | Automatic events (the host's "Keep events up to date"): the next three months searched each month and right away when the host switches it on; by car every event within 10 km however small and only the main ones (regional or major) further out, up to the guide's radius; automatic events that do not fit are removed; the host's own events are never touched. This is the worker's code, not the guide's. | `worker/README.md` ("Automatic events"); `../CLAUDE.md` ("Monthly check": refreshes automatic events) |
 | 10 | Events never ask for Google's live line. | `engine/src/gcard.js` (its comment: "never events") |
+| 11 | A date in a row's line never breaks inside itself: its pieces are kept whole (`row.js` `dateParts`: one day and its hour, some days of one month, or the two dates of a range), on the Local events page and in What's on. | Yohann's test guide of 22 Nov 2026 ("11-13" over "Dec" in What's on); built 24 Nov 2026 by the What's on conversation, on the main conversation's order |
 
 ## Its data
 

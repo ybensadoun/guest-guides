@@ -7,11 +7,15 @@ import { mapsLink } from './plan.js';
 
 const D = s => new Date(s + 'T00:00:00');
 const fmt = (d, o) => d.toLocaleDateString(locale(), o);
-function dateRange(o) {
+// An event's dates as the pieces a line may break between, never inside (24 Nov 2026: "11-13" stood over "Dec" in What's
+// on): one day and its hour ("Sat 12 Dec," then "18:00"), some days of one month ("11-13 Dec"), or two dates ("28 Nov -"
+// then "10 Jan").
+function dateParts(o) {
   const a = D(o.start), b = D(o.end);
-  if (o.start === o.end) return fmt(a, { weekday: 'short', day: 'numeric', month: 'short' }) + (o.time ? ', ' + o.time : '');
-  return a.getMonth() === b.getMonth() ? `${a.getDate()}-${fmt(b, { day: 'numeric', month: 'short' })}` : `${fmt(a, { day: 'numeric', month: 'short' })} - ${fmt(b, { day: 'numeric', month: 'short' })}`;
+  if (o.start === o.end) { const d = fmt(a, { weekday: 'short', day: 'numeric', month: 'short' }); return o.time ? [d + ',', o.time] : [d]; }
+  return a.getMonth() === b.getMonth() ? [`${a.getDate()}-${fmt(b, { day: 'numeric', month: 'short' })}`] : [fmt(a, { day: 'numeric', month: 'short' }) + ' -', fmt(b, { day: 'numeric', month: 'short' })];
 }
+const dateHTML = o => dateParts(o).map(x => `<span class="nw">${esc(x)}</span>`).join(' ');
 // "On now", "Today", "Ended", "Tomorrow", "In 5 days".
 export const when = x => (x.on ? t('onNow') : x.ended ? t('evEnded') : x.at || x.today ? t('today') : x.days === 1 ? t('tomorrow') : t('inDays', { n: x.days }));
 // An event's status on the right of its row: green while it is on, quiet once it has ended, with its hour under "Ended"
@@ -26,7 +30,7 @@ export function eventRow(e, o, st, opts = {}) {
   const maps = mapsLink(e);
   return `<details class="mrow${st && st.ended ? ' ev-over' : ''}" data-id="${esc(e.id)}" style="--cc:${EVENT_TONE[e.type] || 'var(--tone-blue)'}"><summary>
         <span class="dot${opts.dot ? ' dbadge-wrap' : ''}">${opts.dot || EVENT_ICON[e.type] || EVENT_ICON.festa}</span>
-        <span class="nm">${esc(tx(e.name))}<small>${esc(e.town)} · ${esc(dateRange(o))}</small></span>
+        <span class="nm">${esc(tx(e.name))}<small>${esc(e.town)} · ${dateHTML(o)}</small></span>
         <span class="rt">${opts.right ?? (st && (st.on || st.at || st.today || st.ended) ? evStatus(st) : o.status === 'expected' ? `<span class="st plain">${esc(t('expected'))}</span>` : '')}<span class="chev" aria-hidden="true"></span></span></summary>
         <div class="mbody">
           <div class="note">${esc(tx(e.description))}</div>
