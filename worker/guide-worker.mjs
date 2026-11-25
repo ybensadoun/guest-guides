@@ -863,19 +863,20 @@ async function areaResearch(A, dir, id) {
   if (used.length) log('  research done before the build used:', used.join(', '));
   return quick;
 }
-// After the build's own research: the markets the quick search found that the full one does not have are added (by
-// name); if the build has no markets at all (its search did not work), the nearest ones from the quick search at least.
+// After the build's own research: the markets the quick search found that the full one does not have are added; if the
+// build has no markets at all (its search did not work), the nearest ones from the quick search at least. The same market
+// found by both is listed once (same-market.mjs, 25 Nov 2026: La Bisbal's Wednesday market came in twice, under two ids
+// and two pins): the research's record stays and takes from the quick one only what it lacks.
+// (Its import stands here, beside its one use, so that it is no part of the import lines at the top of this file.)
+import { joinQuick } from './same-market.mjs';
 function mergeQuick(dir, quick) {
   const q = (((quick || {}).markets || {}).markets || []); if (!q.length) return;
   const f = join(dir, 'markets.json');
   if (!existsSync(f)) { writeFileSync(f, JSON.stringify(quick.markets, null, 1)); log('  markets from the quick search only'); return; }
-  const o = JSON.parse(readFileSync(f, 'utf8')), key = m => String(m.name_local || nameOf(m.name) || '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, ' ').trim();
-  const have = new Set((o.markets || []).map(key)), ids = new Set((o.markets || []).map(m => m.id));
-  const add = q.filter(m => key(m) && !have.has(key(m))).map(m => ({ ...m, id: ids.has(m.id) ? m.id + '-near' : m.id }));
-  if (!add.length) return;
-  o.markets = [...(o.markets || []), ...add];
-  if (Array.isArray(o.categories)) o.categories = [...new Set([...o.categories, ...add.map(m => m.category).filter(Boolean)])];
-  writeFileSync(f, JSON.stringify(o, null, 1)); log(`  ${add.length} market(s) from the quick search added`);
+  const r = joinQuick(JSON.parse(readFileSync(f, 'utf8')), q);
+  if (!r.added && !r.joined) return;
+  writeFileSync(f, JSON.stringify(r.file, null, 1));
+  log(`  ${r.added} market(s) from the quick search added${r.joined ? `, ${r.joined} already found by the research (listed once)` : ''}`);
 }
 // The host's distance ("Your area") on what the research found, which searched a reach of its own: the markets beyond it
 // are left out, the 4 nearest always stay; the events as the monthly run keeps them (research-brief.mjs). Things to do need
