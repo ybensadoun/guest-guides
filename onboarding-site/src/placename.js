@@ -12,6 +12,10 @@
 //      first word of the town or the street (a misspelt word of the name stays, our directory's spelling comes later); the
 //      town or street is dropped, with a small word left at the end ("El" of "El Vendrell").
 //   3. Otherwise '': a search phrase, a few letters, another place. The caller then asks the host for the name.
+//   4. A word left half typed is not kept (25 Nov 2026: "Local Social Can Gor", picked as Local social Can Gordei, stayed the
+//      place's name, in the field, in the phone and in the guide). Half of a word of the place's name: the words typed do
+//      not name it yet, so '' (the name is asked for, or looked up in our directory by the build). Half of a word of its
+//      town or street ("... El Vend"): it goes with the town, as the whole word would.
 // Pasted into the maker by build.py (the export words taken out); tested in worker/test/place-name.test.mjs.
 export const PN_SMALL = new Set('a al als d da das de dei del della dels des di do dos du el els en i l la las le les lo los o of sa ses the y'.split(' '));
 export const PN_GENERIC = new Set(('restaurant restaurants restaurante restaurantes ristorante trattoria osteria bar bars cafe cafes cafeteria pizzeria brasserie bistro bistrot '
@@ -39,11 +43,14 @@ export function placeNameFrom(typed, sug) {
   const inN = w => N.some(n => pnSame(w, n)), inW = w => W.some(n => pnSame(w, n));
   const sigN = N.filter(sig), hits = T.map((x, i) => sig(x.w) && sigN.some(n => pnSame(x.w, n)) ? i : -1).filter(i => i >= 0);
   if (!hits.length) return '';
+  // Half typed: the start (two letters or more) of a longer word, that is not itself a word of the name or the address.
+  const half = (w, L) => w.length >= 2 && !PN_SMALL.has(w) && !inN(w) && !inW(w) && L.some(n => n.length > w.length && n.startsWith(w));
+  if (T.some(x => half(x.w, N))) return '';
   // Only the town's or the street's words typed, and not the whole of the name: a search near a town, not the place's name.
   const covered = sigN.filter(n => hits.some(i => pnSame(T[i].w, n))).length;
   if (hits.every(i => inW(T[i].w)) && covered < sigN.length) return '';
   // Widened over the host's words up to the town or the street (a word of the address that is not one of the name's).
-  const stop = w => inW(w) && !inN(w);
+  const stop = w => (inW(w) && !inN(w)) || half(w, W);
   let a = hits[0], b = hits[hits.length - 1];
   while (a > 0 && !stop(T[a - 1].w)) a--;
   while (b < T.length - 1 && !stop(T[b + 1].w)) b++;

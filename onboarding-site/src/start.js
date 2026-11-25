@@ -336,7 +336,7 @@ const swipes = () => A.swipes || (A.swipes = {});
 // that the research also found shows once, as the research's.
 const plainName = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 const samePlace = (a, b) => { const x = plainName(a), y = plainName(b); return x === y || (Math.min(x.length, y.length) >= 5 && (x.includes(y) || y.includes(x))); };
-const addedPlaces = () => (Array.isArray(A.favDo) ? placeRows('favDo').map(r => r.p) : String(A.favDo || '').split(/[,\n]+/)).map(x => x.trim()).filter(Boolean);
+const addedPlaces = () => (Array.isArray(A.favDo) ? placeRows('favDo').map(plName) : String(A.favDo || '').split(/[,\n]+/)).map(x => x.trim()).filter(Boolean);
 // Markets have their own section: never a card among the attractions (the same words as /api/places).
 const MARKET = /(?<!\p{L})(markets?|mercados?|mercats?|mercadillos?|mercadets?|march[ée]s?|m[äa]rkte?|mercato|mercati|markthal)(?!\p{L})/iu;
 const shownText = x => (typeof x === 'string' ? x : (x && (x[UIL] || x.en || Object.values(x)[0])) || '');
@@ -631,6 +631,10 @@ const BIN_ROWS = [['organic', 'Organic (food scraps)'], ['packaging', 'Packaging
 const placeRowsRaw = k => (Array.isArray(A[k]) && A[k].length ? A[k] : [{ p: '', c: '' }]);
 // A row counts with a name, or with a place picked on Google and no name yet (its name is asked, else looked up at the build).
 const placeRows = k => (Array.isArray(A[k]) ? A[k] : []).filter(r => r && (String(r.p || '').trim() || r.gid));
+// A row's name as the maker shows it: the host's words; with none yet (a pick whose typed words did not name it), the place's
+// own name while this session remembers the pick (PS.seen), shown only, never kept in the answers (Google's name is not
+// ours to store: only its id). After a reload such a row has no name to show until the host types one or the build finds it.
+const plName = r => String((r && r.p) || '').trim() || ((r && r.gid && PS.seen.get(r.gid)) || {}).name || '';
 document.addEventListener('input', e => {
   const t = e.target; if (!t.dataset || !t.dataset.pl) return;
   const k = t.dataset.pl, rows = placeRowsRaw(k).map(r => ({ ...r })), r = rows[+t.dataset.i], was = r[t.dataset.f]; r[t.dataset.f] = t.value;
@@ -663,7 +667,7 @@ function psDraw(){
   const T = PS.towns, n = T.length + PS.list.length;
   box.innerHTML = T.map((t, i) => `<button type="button" role="option" class="pl-tw" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}">${twTile(t.kind)}<span><b translate="no">${esc(t.n)}</b><small translate="no">${esc(twLine(t))}</small></span></button>`).join('')
     + (T.length ? '<span class="pl-gm pl-gn" aria-hidden="true" translate="no">GeoNames</span>' : '')
-    + PS.list.map((s, j) => { const i = T.length + j; return `<button type="button" role="option" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}"><b>${esc(s.name)}</b><small>${esc([s.where, s.km ? numUI(s.km) + ' km' : ''].filter(Boolean).join(' · '))}</small></button>`; }).join('')
+    + PS.list.map((s, j) => { const i = T.length + j; return `<button type="button" role="option" id="${box.id}_${i}" data-psi="${i}" aria-selected="${i === PS.on}"><b>${esc(s.name)}</b><small>${esc([s.where, s.km ? numUI(s.km) + '\u00a0km' : ''].filter(Boolean).join(' · '))}</small></button>`; }).join('')
     + (PS.list.length ? '<span class="pl-gm" aria-hidden="true" translate="no">Google Maps</span>' : '');
   if (PS.list.length) box.dataset.g = '1'; else delete box.dataset.g;   // Google's content on screen (gLiveNow)
   box.hidden = !n; el.setAttribute('aria-expanded', String(!!n));
@@ -723,7 +727,7 @@ function plAt(r){
   const none = !String(r.p || '').trim() || psIsLink(r.p) || window.__placesOff;
   // No name yet (asked for, or left empty): said under the line once the host has moved on (theme2.css); the build looks it up.
   if (r.gid) { const s = PS.seen.get(r.gid), link = `<a href="${esc(gmLink(r.p, r.gid))}" target="_blank" rel="noopener" translate="no">Google Maps</a>`;
-    return `<p class="pl-at ok"${s ? ' data-glive' : ''}><span aria-hidden="true">✓</span> ${s ? `<span translate="no">${esc([s.name, s.where, s.km ? numUI(s.km) + ' km' : ''].filter(Boolean).join(' · '))}</span>` : 'Matched on'} ${link}${String(r.p || '').trim() ? '' : '<span class="pl-nn">No name yet: type it, or we look it up in an open directory.</span>'}</p>`; }
+    return `<p class="pl-at ok"${s ? ' data-glive' : ''}><span aria-hidden="true">✓</span> ${s ? `<span translate="no">${esc([s.name, s.where, s.km ? numUI(s.km) + '\u00a0km' : ''].filter(Boolean).join(' · '))}</span>` : 'Matched on'} ${link}${String(r.p || '').trim() ? '' : '<span class="pl-nn">No name yet: type it, or we look it up in an open directory.</span>'}</p>`; }
   return `<p class="pl-at${none ? '' : ' miss'}">${none ? '' : 'Not matched on Google. Pick it from the list, or keep it as typed: it may have no map pin.'}</p>`;
 }
 function plShow(el, r){ el.parentElement.querySelector('.pl-at').outerHTML = plAt(r); }

@@ -36,6 +36,18 @@ test('a search phrase or a few letters do not name the place', () => {
   assert.equal(placeNameFrom('', S('Bar Pepe', 'Calafell, Spain')), '');
 });
 
+test('a word left half typed is never kept as the name', () => {
+  const gordei = S('Local social Can Gordei', 'Avinguda de Can Gordei, Can Gordei, Spain');
+  assert.equal(placeNameFrom('Local Social Can Gor', gordei), '');                                  // Yohann's test of 25 Nov 2026: the name is asked for
+  assert.equal(placeNameFrom('local social can gordei', gordei), 'local social can gordei');       // typed in full: the host's words, as typed
+  assert.equal(placeNameFrom('Bar Can', S('Bar Canet', 'Carrer Major, Calafell, Spain')), '');      // half of the name's own word
+  // Half of the town or the street: it goes with the town, the name stays.
+  assert.equal(placeNameFrom('La Locanda dei Sapori El Vend', S('La Locanda dei Sapori', 'Carrer de Mar, El Vendrell, Spain')), 'La Locanda dei Sapori');
+  assert.equal(placeNameFrom('Llépol Vila-ro', S('Llépol', 'Carrer Major, Vila-rodona, Spain')), 'Llépol');
+  // A whole word that happens to start another one is a word: nothing changes for it.
+  assert.equal(placeNameFrom('Cal Mar', S('Cal Mar', 'Passeig Marítim, Calafell, Spain')), 'Cal Mar');
+});
+
 test('a town that is part of the real name stays', () => {
   assert.equal(placeNameFrom('Bar El Vendrell', S('Bar El Vendrell', 'Rambla, El Vendrell, Spain')), 'Bar El Vendrell');
   assert.equal(placeNameFrom('bar el vendrell', S('Bar El Vendrell', 'El Vendrell, Spain')), 'bar el vendrell');

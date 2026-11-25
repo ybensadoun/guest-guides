@@ -1623,6 +1623,31 @@ async function gBuilder() {
     await everyPage(p, 'builder');
     ok('builder: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // ---- A name left half typed is never kept (Yohann's test of 25 Nov 2026, desktop): "Local Social Can Gor", picked as Local
+  // social Can Gordei, stayed in the field and in the phone. The words typed do not name the place: the field asks for the
+  // name, the place found is said under it (a number with its unit) and shown in the phone, and nothing of Google's is saved. ----
+  { const found = [{ id: 'g-gordei', name: 'Local social Can Gordei', where: 'Avinguda de Can Gordei, Can Gordei, Spain', km: 1 }];
+    const { ctx, p, errors } = await open(browser, B, 1280, 860);
+    await ctx.route('**/api/places**', r => { const q = new URL(r.request().url()).searchParams; return json(r, q.get('probe') ? { ok: true, enabled: true } : { ok: true, places: found }); });
+    await p.goto('http://editor.test/#favourites'); await ready(p);
+    await p.click('[data-pladd="favEat"]'); await settle(p, 150);
+    const row = '#pl_favEat .pl-row:last-child', field = row + ' input', list = row + ' .pl-sug button';
+    await p.locator(field).pressSequentially('Local Social Can Gor', { delay: 25 });
+    await p.waitForSelector(list, { timeout: 3000 }).catch(() => {});
+    ok('half-typed name: the list says the distance with its unit held to the number', /1 km/.test(await p.textContent(list).catch(() => '')), await p.textContent(list).catch(() => ''));
+    await p.click(list); await settle(p, 1400);
+    const at = await p.textContent(row + ' .pl-at.ok').catch(() => '');
+    ok('half-typed name: the field no longer keeps "Local Social Can Gor"; it asks for the name, with the place found under it', (await p.inputValue(field)) === '' && /Local social Can Gordei · Avinguda de Can Gordei/.test(at) && /1 km/.test(at) && /Google Maps/.test(at), `${await p.inputValue(field)} | ${at}`);
+    const phone = await p.evaluate(() => { const f = document.getElementById('phoneFrame'); return f && f.contentDocument ? f.contentDocument.body.innerText : ''; });
+    ok('half-typed name: the phone lists the place by its own name, not the half-typed words', /Local social Can Gordei/.test(phone) && !/Can Gor(?!dei)/.test(phone), phone.replace(/\s+/g, ' ').slice(0, 160));
+    { const A = await stored(p), r = (A.favEat || []).find(x => x.gid === 'g-gordei') || {}, all = JSON.stringify(A);
+      ok('half-typed name: only Google\'s id is saved, no name of Google\'s and no half-typed one', r.gid === 'g-gordei' && !String(r.p || '').trim() && !/Gordei|Can Gor/.test(all), JSON.stringify(r)); }
+    await p.screenshot({ path: join(SHOTS, 'place-half-typed-1280.png') });
+    await p.locator(field).pressSequentially('Local social Can Gordei', { delay: 15 }); await settle(p, 1400);
+    { const A = await stored(p), r = (A.favEat || []).find(x => x.gid === 'g-gordei') || {};
+      ok('half-typed name: the name the host then types is the place\'s, and the pick stays', r.p === 'Local social Can Gordei' && !!(await p.$(row + ' .pl-at.ok')), JSON.stringify(r)); }
+    ok('half-typed name: no page errors', !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // ---- A place's name, looked up as the host types (Yohann, 30 Oct 2026): the host sees which place it is, the row keeps Google's id ----
   { const found = [{ id: 'g-ull', name: 'Restaurant Ull de Llebre', where: 'Carrer Santa Cristina, La Bisbal del Penedès, Spain', km: 3 }, { id: 'g-long', name: 'Restaurant amb un nom molt llarg per provar la pantalla petita de tres-cents seixanta', where: 'Avinguda del Mediterrani amb un nom molt llarg, Vilafranca del Penedès, Spain', km: 30 }];
     const { ctx, p, errors } = await open(browser, B, 360, 780), asked = [];
@@ -1633,7 +1658,7 @@ async function gBuilder() {
     await p.locator(field).pressSequentially('llul de llebre', { delay: 30 });
     await p.waitForSelector(list, { timeout: 3000 }).catch(() => {});
     ok('place lookup: the name field looks like the comment under it', (await p.$eval(field, e => getComputedStyle(e).borderRadius)) === (await p.$eval(row + ' textarea', e => getComputedStyle(e).borderRadius)));
-    ok('place lookup: as the host types, Google\'s places show under the field, with where they are', (await p.$$(list)).length === 2 && /La Bisbal del Penedès, Spain · 3 km/.test(await p.textContent(row + ' .pl-sug').catch(() => '')));
+    ok('place lookup: as the host types, Google\'s places show under the field, with where they are', (await p.$$(list)).length === 2 && /La Bisbal del Penedès, Spain · 3\u00a0km/.test(await p.textContent(row + ' .pl-sug').catch(() => '')));
     ok('place lookup: a burst of typing is one request', asked.length === 1 && asked[0] === 'llul de llebre', asked.join(' | '));
     const box = await p.evaluate(sel => { const r = document.querySelector(sel), b = x => r.querySelector(x).getBoundingClientRect(); return { list: b('.pl-sug').bottom, comment: b('textarea').top, fits: [...r.querySelectorAll('.pl-sug button')].every(x => x.scrollWidth <= x.clientWidth), page: document.documentElement.scrollWidth - innerWidth }; }, row);
     ok('place lookup, 360 px: the list pushes the comment down, covers nothing, and long names fit', box.list <= box.comment && box.fits && box.page <= 0, JSON.stringify(box));
@@ -1688,7 +1713,7 @@ async function gBuilder() {
     await p.click('[data-pladd="favEat"]'); await settle(p, 150);
     const n1 = await p.$$eval(rows, r => r.length);
     await pick(n1, 'La Locanda dei Sapori El Vendrell');
-    ok(`name of a pick, builder, ${tag}: the name typed with its town keeps the name, as typed, and the town goes`, (await p.inputValue(field(n1))) === 'La Locanda dei Sapori' && /Restaurant La Locanda dei Sapori · Carrer de Mar, El Vendrell, Spain · 9 km/.test(await p.textContent(at(n1)).catch(() => '')), await p.inputValue(field(n1)));
+    ok(`name of a pick, builder, ${tag}: the name typed with its town keeps the name, as typed, and the town goes`, (await p.inputValue(field(n1))) === 'La Locanda dei Sapori' && /Restaurant La Locanda dei Sapori · Carrer de Mar, El Vendrell, Spain · 9\u00a0km/.test(await p.textContent(at(n1)).catch(() => '')), await p.inputValue(field(n1)));
     await p.$eval(`${rows}:nth-child(${n1})`, e => e.scrollIntoView({ block: 'center' })); await settle(p, 600); await p.screenshot({ path: join(SHOTS, `builder-name-kept-${w}.png`) });
     await p.click('[data-pladd="favEat"]'); await settle(p, 150);
     const n2 = n1 + 1; await pick(n2, 'restaurant La Bisbal del Penedès');
