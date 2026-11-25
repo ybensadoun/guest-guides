@@ -1,6 +1,14 @@
 {
 "_doc": "The maker in Catalan, Spanish and French: every English sentence it shows, as it is shown, with its translations. {n}, {x}: a number or a name inside the sentence, kept in every language. French spaces are added by build.py. Missing sentences: node onboarding-site/test/check.mjs writes them to test/shots/i18n-missing.json.",
 "_keep": [
+"1 h 30",
+"airbnb.com/rooms/…",
+"https://www.airbnb.com/rooms/…",
+"https://…",
+"https://www.google.com/maps/…",
+"https://",
+"Barcelona",
+"villa-mar",
 "AVE",
 "Airbnb",
 "Bauhaus",
@@ -49,6 +57,106 @@
 "Wi-Fi",
 "iryo"
 ],
+"1 change": {
+"ca": "1 transbord",
+"es": "1 transbordo",
+"fr": "1 correspondance"
+},
+"Like a small hotel in Tuscany: warm, earthy, lots of white space. Or: bright and playful, like a children’s picture book.": {
+"ca": "Com un petit hotel a la Toscana: càlid, terrós, molt d’espai en blanc. O bé: alegre i divertit, com un llibre il·lustrat per a infants.",
+"es": "Como un pequeño hotel en la Toscana: cálido, terroso, mucho espacio en blanco. O bien: alegre y divertido, como un libro ilustrado infantil.",
+"fr": "Comme un petit hôtel en Toscane : chaleureux, terreux, beaucoup de blanc. Ou bien : gai et ludique, comme un album pour enfants."
+},
+"Cleaning products and dishwasher tablets are under the kitchen sink": {
+"ca": "Els productes de neteja i les pastilles del rentaplats són sota la pica de la cuina",
+"es": "Los productos de limpieza y las pastillas del lavavajillas están bajo el fregadero",
+"fr": "Les produits ménagers et les pastilles du lave-vaisselle sont sous l’évier"
+},
+"One bath towel per person; beach towels are in the hall cupboard": {
+"ca": "Una tovallola de bany per persona; les de platja són a l’armari del rebedor",
+"es": "Una toalla de baño por persona; las de playa están en el armario del recibidor",
+"fr": "Une serviette de bain par personne ; celles de plage sont dans le placard de l’entrée"
+},
+"Quiet after 23:00": {
+"ca": "Silenci a partir de les 23:00",
+"es": "Silencio a partir de las 23:00",
+"fr": "Calme après 23:00"
+},
+"No parties": {
+"ca": "No es permeten festes",
+"es": "No se permiten fiestas",
+"fr": "Pas de fêtes"
+},
+"No smoking inside": {
+"ca": "No es pot fumar a dins",
+"es": "No se fuma dentro",
+"fr": "Interdit de fumer à l’intérieur"
+},
+"Late check-out, with the price": {
+"ca": "Sortida tardana, amb el preu",
+"es": "Salida tardía, con el precio",
+"fr": "Départ tardif, avec le prix"
+},
+"Airport transfer, breakfast basket…": {
+"ca": "Trasllat a l’aeroport, cistella d’esmorzar…",
+"es": "Traslado al aeropuerto, cesta de desayuno…",
+"fr": "Transfert aéroport, panier petit-déjeuner…"
+},
+"A watercolour in soft blues, like an old travel poster": {
+"ca": "Una aquarel·la en blaus suaus, com un cartell de viatges antic",
+"es": "Una acuarela en azules suaves, como un viejo cartel de viajes",
+"fr": "Une aquarelle aux bleus doux, comme une vieille affiche de voyage"
+},
+"Entire home in …": {
+"ca": "Allotjament sencer a …",
+"es": "Alojamiento entero en …",
+"fr": "Logement entier à …"
+},
+"Bigger photos, a list instead of tiles, the map first…": {
+"ca": "Fotos més grans, una llista en lloc de rajoles, el mapa primer…",
+"es": "Fotos más grandes, una lista en vez de mosaicos, el mapa primero…",
+"fr": "Des photos plus grandes, une liste au lieu des tuiles, la carte d’abord…"
+},
+"Entire home in [town], [country]": {
+"ca": "Allotjament sencer a [poble], [país]",
+"es": "Alojamiento entero en [pueblo], [país]",
+"fr": "Logement entier à [ville], [pays]"
+},
+"Check-in after 4:00 PM": {
+"ca": "Entrada a partir de les 16:00",
+"es": "Llegada a partir de las 16:00",
+"fr": "Arrivée à partir de 16:00"
+},
+"Checkout before 11:00 AM": {
+"ca": "Sortida abans de les 11:00",
+"es": "Salida antes de las 11:00",
+"fr": "Départ avant 11:00"
+},
+"No parties or events…": {
+"ca": "No es permeten festes ni esdeveniments…",
+"es": "No se permiten fiestas ni eventos…",
+"fr": "Pas de fêtes ni d’événements…"
+},
+"Bedroom 2: two single beds": {
+"ca": "Dormitori 2: dos llits individuals",
+"es": "Dormitorio 2: dos camas individuales",
+"fr": "Chambre 2 : deux lits simples"
+},
+"Living room: sofa bed": {
+"ca": "Sala d’estar: sofà llit",
+"es": "Salón: sofá cama",
+"fr": "Salon : canapé-lit"
+},
+"Lovely house, we did not want to leave. - Marie": {
+"ca": "Una casa preciosa, no volíem marxar. - Marie",
+"es": "Una casa preciosa, no queríamos irnos. - Marie",
+"fr": "Une maison charmante, on ne voulait plus partir. - Marie"
+},
+"Perfect for a family weekend. - Jordi": {
+"ca": "Perfecta per a un cap de setmana en família. - Jordi",
+"es": "Perfecta para un fin de semana en familia. - Jordi",
+"fr": "Parfaite pour un week-end en famille. - Jordi"
+},
 "Saved on this device": {
 "ca": "Desat en aquest dispositiu",
 "es": "Guardado en este dispositivo",
@@ -138,6 +246,66 @@
 "ca": "Guies per als hostes de cases de vacances",
 "es": "Guías para huéspedes de casas vacacionales",
 "fr": "Guides des voyageurs pour locations de vacances"
+},
+"see the map": {
+"ca": "mireu el mapa",
+"es": "mira el mapa",
+"fr": "voir la carte"
+},
+"Spare batteries are in the TV unit": {
+"ca": "Hi ha piles de recanvi al moble de la tele",
+"es": "Hay pilas de repuesto en el mueble de la tele",
+"fr": "Des piles de rechange sont dans le meuble télé"
+},
+"taking a little longer than usual": {
+"ca": "està trigant una mica més del normal",
+"es": "está tardando un poco más de lo normal",
+"fr": "un peu plus long que d’habitude"
+},
+"The pool is not heated; the cover key hangs by the door": {
+"ca": "La piscina no és climatitzada; la clau de la coberta penja al costat de la porta",
+"es": "La piscina no está climatizada; la llave de la cubierta cuelga junto a la puerta",
+"fr": "La piscine n’est pas chauffée ; la clé de la bâche est accrochée près de la porte"
+},
+"The heating is set on the thermostat by the front door": {
+"ca": "La calefacció es regula al termòstat de l’entrada",
+"es": "La calefacción se regula en el termostato de la entrada",
+"fr": "Le chauffage se règle sur le thermostat de l’entrée"
+},
+"The supermarket you use and why": {
+"ca": "El súper on compres i per què",
+"es": "El súper donde compras y por qué",
+"fr": "Le supermarché où vous allez et pourquoi"
+},
+"The best bakery, the pharmacy that opens on Sundays…": {
+"ca": "El millor forn, la farmàcia que obre els diumenges…",
+"es": "La mejor panadería, la farmacia que abre los domingos…",
+"fr": "La meilleure boulangerie, la pharmacie ouverte le dimanche…"
+},
+"you@example.com": {
+"ca": "tu@exemple.com",
+"es": "tu@ejemplo.com",
+"fr": "vous@exemple.com"
+},
+"Your comment: what to order, when to go…": {
+"ca": "El teu comentari: què demanar, quan anar-hi…",
+"es": "Tu comentario: qué pedir, cuándo ir…",
+"fr": "Votre commentaire : quoi commander, quand y aller…"
+},
+"The bakery closed last year, I want the pool first…": {
+"ca": "El forn va tancar l’any passat, vull la piscina primer…",
+"es": "La panadería cerró el año pasado, quiero la piscina primero…",
+"fr": "La boulangerie a fermé l’an dernier, je veux la piscine en premier…"
+},
+"What guests should know here (optional)": {
+"ca": "El que han de saber els hostes aquí (opcional)",
+"es": "Lo que deben saber los huéspedes aquí (opcional)",
+"fr": "Ce que les voyageurs doivent savoir ici (facultatif)"
+},
+"Where: at the end of the lane, 100 m left of the gate": {
+"ca": "On: al final del camí, a 100 m a l’esquerra de la porta",
+"es": "Dónde: al final del camino, a 100 m a la izquierda de la verja",
+"fr": "Où : au bout du chemin, à 100 m à gauche du portail"
 },
 "Your guest guide, written for you.": {
 "ca": "La teva guia per als hostes, escrita per a tu.",

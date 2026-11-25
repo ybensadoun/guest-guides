@@ -37,7 +37,7 @@ seg1=rep(seg1,'.loading{padding:40px;text-align:center;color:var(--muted)}','''.
 .nb.primary{background:var(--ink);color:var(--paper)}
 .nb.ghost{border-color:transparent;padding:0 10px 0 6px;color:var(--muted);max-width:30vw}
 .nb.count{border:0;background:var(--sunk);font-weight:600;color:var(--muted);gap:6px}
-.nb.count b{color:var(--ink);font-variant-numeric:tabular-nums}
+.nb.count b{color:var(--ink);font-variant-numeric:proportional-nums}   /* tabular digits put a gap inside "11" ("1 1 de 14", 25 Nov 2026) */
 .nb.count .chev{width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-135deg) translate(-2px,-2px)}
 @media (max-width:520px){.hide-s{display:none}.nb.ghost{padding:0 8px}}
 .sheet{position:fixed;inset:0;z-index:50;background:rgba(10,10,10,.5);display:flex;align-items:flex-end;justify-content:center}

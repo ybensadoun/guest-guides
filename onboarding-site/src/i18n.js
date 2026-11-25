@@ -42,6 +42,8 @@ function trS(s){
       if (UIL !== 'en') p.names.forEach((nm, i) => { const val = m[i + 1]; t = t.split('{' + nm + '}').join(trS(val) ?? val); });
       out = t; break;
     }
+    // Lines (a textarea's example, one tip per line): each line on its own; a line with no letters ("…") stays
+    if (out == null && s.includes('\n')) { const parts = s.split('\n').map(x => !/\p{L}/u.test(x) ? x : (y => y == null ? null : x.replace(x.trim(), y))(trS(x.trim()))); if (parts.every(x => x != null)) out = parts.join('\n'); }
     // A list of step or section names: "Wi-Fi, Rubbish"
     if (out == null && s.includes(', ')) { const parts = s.split(', ').map(trS); if (parts.every(x => x != null)) out = parts.join(', '); }
     // Parts in a row: "House · 8 guests · 4 bedrooms" (a part with no letters stays as it is)
@@ -63,6 +65,9 @@ function uiMiss(s, where){
   uiMissed.add(s); try { window.__i18nReport(s, where); } catch (e) {}
 }
 const uiLeave = el => !el || UI_SKIP.has(el.nodeName) || !!el.closest('[translate="no"],[contenteditable="true"]');
+// A field's own words (its placeholder, its label) are ours even where its text is the host's: a textarea's grey hint
+// was left in English until 25 Nov 2026 because the whole textarea was skipped.
+const uiLeaveA = el => !el || (el.nodeName !== 'TEXTAREA' && UI_SKIP.has(el.nodeName)) || !!el.closest('[translate="no"],[contenteditable="true"]');
 function uiText(n){
   if (WROTE.get(n) === n.data) return;   // our own translation coming back
   const el = n.parentElement; if (uiLeave(el)) return;
@@ -77,7 +82,7 @@ function uiText(n){
 function uiAttr(el, a){
   const v = el.getAttribute(a); if (v == null) return;
   const w = WROTEA.get(el); if (w && w[a] === v) return;
-  if (uiLeave(el)) return;
+  if (uiLeaveA(el)) return;
   const t = v.trim(); if (!t || !/\p{L}/u.test(t)) return;
   const x = trS(t);
   if (x == null) { uiMiss(t, '@' + a); return; }
@@ -88,8 +93,9 @@ function uiAttr(el, a){
 function uiWalk(root){
   if (UIL === 'en' && !uiCollect()) return;
   if (root.nodeType === 3) return uiText(root);
+  if (root.nodeType === 1 && root.nodeName === 'TEXTAREA') { for (const a of UI_ATTRS) if (root.hasAttribute(a)) uiAttr(root, a); return; }
   if (root.nodeType !== 1 || UI_SKIP.has(root.nodeName)) return;
-  const w = (root.ownerDocument || document).createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, { acceptNode: n => n.nodeType === 1 && (UI_SKIP.has(n.nodeName) || n.getAttribute('translate') === 'no') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  const w = (root.ownerDocument || document).createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, { acceptNode: n => n.nodeType === 1 && (UI_SKIP.has(n.nodeName) || n.getAttribute('translate') === 'no') ? (n.nodeName === 'TEXTAREA' && n.getAttribute('translate') !== 'no' && UI_ATTRS.forEach(a => n.hasAttribute(a) && uiAttr(n, a)), NodeFilter.FILTER_REJECT) : NodeFilter.FILTER_ACCEPT });
   for (let n = root; n; n = w.nextNode()) {
     if (n.nodeType === 3) uiText(n);
     else for (const a of UI_ATTRS) if (n.hasAttribute(a)) uiAttr(n, a);

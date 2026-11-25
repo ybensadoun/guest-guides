@@ -1512,6 +1512,19 @@ const progSecs = x => typeof x[1] === 'function' ? x[1]() : x[1], progRuns = x =
 // "about 9 min left" only while a step is within its usual time; past it, no number that could be wrong (Yohann, 11 Nov
 // 2026: "less than a minute left" stayed on screen for ten minutes of translation).
 const progLeft = s => s >= 90 ? `about ${Math.round(s / 60)}\u00a0min left` : s >= 45 ? 'about a minute left' : 'less than a minute left';
+// A time once said is a promise (Yohann, 25 Nov 2026: "quedan unos 2 min" stayed for many minutes of translation): the
+// job keeps the end the bar has announced, the soonest one, and counts down to it; a new estimate never shows a bigger
+// number. Once that end has passed, the line says it is taking a little longer than usual, and no number, until the end.
+const PROG_LATE = 'taking a little longer than usual';
+function progWhen(j, left, say = progLeft) {
+  const now = Date.now();
+  if (j.late) return null;
+  if (left != null && left > 0) { const end = now + left * 1000; j.until = j.until == null ? end : Math.min(j.until, end); }
+  if (j.until == null) return null;
+  const rest = (j.until - now) / 1000;
+  if (rest <= 0) { j.late = true; return null; }
+  return say(rest);
+}
 // The bar follows time: the share of the build's time spent since this page has followed it, out of that plus the time
 // left (the rest of this step and the steps still to run). A step past its usual time keeps a little time left, so the bar
 // slows down near the end instead of stopping or filling up.
@@ -1529,8 +1542,9 @@ function progBuild(j) {
   const u = progSecs(S[k]), t = (now - (j.phaseAt || now)) / 1000, over = t - u, later = S.slice(k + 1).filter(progRuns).reduce((a, x) => a + progSecs(x), 0);
   const left = (over > 0 ? Math.max(10, u / 10) : u - t) + later, spent = (now - j.startAt) / 1000;
   const pct = j.shown = Math.min(99, Math.max(j.shown || 0, 3 + 96 * spent / (spent + left)));
-  const when = over <= 0 ? progLeft(left) : over < Math.max(60, u / 2) ? (later < 60 ? 'almost there' : 'a little longer than usual') : 'taking longer than usual';
-  return { pct, text: `${words} · ${when}`, left: over > 0 ? null : left, k, words };
+  const said = progWhen(j, over <= 0 ? left : null);
+  const when = j.late ? PROG_LATE : said != null && over <= 0 ? said : over < Math.max(60, u / 2) ? (later < 60 ? 'almost there' : 'a little longer than usual') : 'taking longer than usual';
+  return { pct, text: `${words} · ${when}`, left: j.late || over > 0 || said == null ? null : (j.until - now) / 1000, k, words };
 }
 const progEase = (t, tau) => 1 - Math.exp(-Math.max(0, t) / tau);
 // A job's place on the bar and the time left, from its step and how long it has been in it.
@@ -1555,7 +1569,8 @@ function progOf(j, kind) {
   }
   pct = Math.min(99, Math.max(j.shown || 0, pct)); j.shown = pct;   // never goes back
   const words = ({ 'Researching: markets': 'Looking for markets', 'Researching: todo': 'Looking for things to do', 'Researching: emergency': 'Finding emergency numbers', 'Translating': 'Translating into your languages' })[j.message] || j.message.replace(/ · .*$/, '').replace(/^Starting again$/, 'Starting');
-  return { pct, text: words + (left == null ? '' : left > 75 ? ` · about ${Math.ceil(left / 60)} min left` : ' · less than a minute left'), left };
+  const said = left == null && !j.until ? null : progWhen(j, left, r => r > 75 ? `about ${Math.ceil(r / 60)} min left` : 'less than a minute left');
+  return { pct, text: words + (j.late ? ' · ' + PROG_LATE : said == null ? '' : ' · ' + said), left: j.late ? null : left };
 }
 // The bar itself; its key says which job it follows (see progJob).
 const progBar = (key, label, dark) => { const p = progOf(progJob(key), progKind(key)) || { pct: 2, text: '' };
@@ -2655,8 +2670,8 @@ function cmInit() {
 .bmain{display:flex;flex-direction:column;gap:12px;min-width:0}
 .bmain .cm-progw{max-width:none}
 .hero p.btick{display:grid;max-width:none;min-height:2.9em;margin:2px 0 0;font-size:17px;line-height:1.45;font-weight:500;color:var(--lamp2);opacity:1}
-.btick span{grid-area:1/1;opacity:0;transition:opacity .5s ease}
-.btick span.on{opacity:1}
+.btick span{grid-area:1/1;opacity:0;transition:opacity .3s ease}
+.btick span.on{opacity:1;transition-delay:.35s}   /* the old line has gone before the new one shows: never two in one place (25 Nov 2026) */
 .hero p.bclose{font-size:14px;opacity:.72}
 .bside{display:none}
 .bsteps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}

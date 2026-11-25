@@ -236,7 +236,7 @@ function groupList() {
   return { 'first-page': gFirstPage, 'no-account': gNoAccount, 'gate': gGate, 'research-deck': gResearchDeck, 'deck-steady': gDeckSteady, 'build-ready': gBuildReady, 'web-address': gWebAddress,
     'houses': gHouses, 'builder': gBuilder, 'rooms-offers': gRoomsOffers, 'nearby': gNearby, 'wow': gWow, 'editor': gEditor, 'editor-names': gEditorNames,
     'place-card': gPlaceCard, 'place-season': gPlaceSeason, 'still-open': gStillOpen, 'place-facts': gPlaceFacts, 'market-event': gMarketEvent,
-    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea, 'home-page': gHomePage, 'trains': gTrains, 'taxis': gTaxis, 'stops': gStops, 'rubbish': gRubbish };
+    'event-kinds': gEventKinds, 'editor-cards': gEditorCards, 'find-closed': gFindClosed, 'held-markets': gHeldMarkets, 'nightlife-colours': gNightlifeColours, 'look-worlds': gLookWorlds, 'layout': gLayout, 'towns': gTowns, 'area-sea': gAreaSea, 'home-page': gHomePage, 'trains': gTrains, 'taxis': gTaxis, 'stops': gStops, 'rubbish': gRubbish, 'host-test': gHostTest };
 }
 
   // Inside a navy start card (sel): nothing touches anything (the eyebrow, title and text by their words, the panel, the moon
@@ -4667,6 +4667,90 @@ async function gHomePage() {
 // WALK=1: no checks, only a picture of every screen a host meets, for a design review (walk.mjs, into shots/walk/), in this process.
 // WALK_FILE=<path>: another module run with the same harness instead (a design draft pictured in the real page, before it is built).
 if (env.WALK) { await launch(); try { await (await import(env.WALK_FILE || './walk.mjs')).default({ browser, open, ready, go, json, fakeGuide, inPhone, E, B, N, A0, photos, PAGE, WRITE, HTML, SB, HERE }); } finally { await browser.close(); } process.exit(0); }
+async function gHostTest() {
+  // ---- What Yohann saw testing the maker in Spanish on 25 Nov 2026, one check per fault (pictures in shots/host-test/) ----
+  const HT = join(SHOTS, 'host-test'); mkdirSync(HT, { recursive: true });
+  const RUB = { ...B, answers: { ...B.answers, rubbishMode: 'A mix of both', rubbishSpots: [{ w: 'Right next to the local social. On Sundays it is full.', m: '', t: ['glass', 'packaging'] }], rubbishPlan: { organic: ['mon', 'wed'], packaging: ['tue', 'thu'] } } };
+  // 1. The phone's notch: the page's title, back button and language button start below it, every phone size, four languages.
+  const notchClash = p => p.evaluate(() => {
+    const f = document.getElementById('phoneFrame'), d = f && f.contentDocument; if (!d) return ['no phone'];
+    const ph = f.closest('.phone'), n = getComputedStyle(ph, '::before'), pr = ph.getBoundingClientRect(), k = pr.width / ph.offsetWidth;
+    const nb = pr.top + (parseFloat(n.top) + parseFloat(n.height)) * k, nl = pr.left + (ph.offsetWidth / 2 - parseFloat(n.width) / 2) * k, nr = nl + parseFloat(n.width) * k;
+    const fr = f.getBoundingClientRect(), fk = fr.width / 390, out = [];
+    const el = d.querySelectorAll('.pv-page h2.title, .pv-back, .pv-lang'); if (!d.querySelector('.pv-page h2.title')) return ['no page title'];
+    for (const e of el) { const rg = d.createRange(); rg.selectNodeContents(e); const rs = e.matches('h2') ? [...rg.getClientRects()] : [e.getBoundingClientRect()];
+      for (const r of rs) { const top = fr.top + r.top * fk, l = fr.left + r.left * fk, rt = fr.left + r.right * fk; if (top < nb - 0.5 && rt > nl && l < nr) { out.push(`${e.className || e.tagName} ${Math.round(top)} < ${Math.round(nb)}`); break; } } }
+    const t = d.querySelector('.pv-page h2.title').getBoundingClientRect(), b = d.querySelector('.pv-back').getBoundingClientRect(), g = d.querySelector('.pv-lang').getBoundingClientRect();
+    if (t.left < b.right - 1 || t.right > g.left + 1 && t.top < g.bottom) { const rg = d.createRange(); rg.selectNodeContents(d.querySelector('.pv-page h2.title'));
+      if ([...rg.getClientRects()].some(r => (r.left < b.right - 1 && r.top < b.bottom) || (r.right > g.left + 1 && r.top < g.bottom))) out.push('title under a button'); }
+    return out; });
+  const toPage = async (p, scr) => { await p.evaluate(s => { const d = document.getElementById('phoneFrame').contentDocument, b = d.querySelector(`[data-pv="${s}"]`) || d.querySelector('[data-pv]:not([data-pv="home"])'); if (b) b.click(); }, scr); await settle(p, 400); };
+  for (const lang of ['es', 'fr', 'ca', 'en']) {
+    for (const [w, h, hash] of [[1280, 860, '#favourites'], [1280, 860, '#yours'], [360, 780, '#yours'], [360, 780, '#look']]) {
+      const { ctx, p, errors } = await open(browser, B, w, h, { 'porta-lang-v1': lang }); await p.goto('http://editor.test/' + hash); await p.waitForSelector('#phoneFrame', { timeout: 15000 }).catch(() => {}); await settle(p, 600);
+      if (hash !== '#favourites') await toPage(p, 'eat');
+      // a long title on three lines: the worst case of a page's header
+      if (lang === 'es') await inPhone(p, d => { const t = d.querySelector('.pv-page h2.title'); if (t) t.textContent = 'Nuestros favoritos para comer y beber cerca de la casa'; });
+      const bad = await notchClash(p);
+      ok(`host test, the phone's notch (${lang}, ${w} px, ${hash}): the page's title and buttons start below it`, !bad.length, bad.join(' | '));
+      if (lang === 'es') await p.screenshot({ path: join(HT, `1-notch-${hash.slice(1)}-${w}.png`) });
+      ok(`host test, the phone's notch (${lang}, ${w} px, ${hash}): no page errors`, !errors.length, errors.join(' | '));
+      await ctx.close();
+    }
+  }
+  // 2. A textarea's grey example is in the maker's language, lines included.
+  { const { ctx, p } = await open(browser, B, 1280, 860, { 'porta-lang-v1': 'es' }); await p.goto('http://editor.test/#howto'); await ready(p); await settle(p, 400);
+    const ph = await p.$$eval('textarea[placeholder]', es => es.map(e => e.placeholder));
+    ok('host test, placeholders: the How things work example is in Spanish, line by line', ph.some(x => /productos de limpieza/.test(x) && /pilas de repuesto/.test(x)) && !ph.some(x => /Cleaning products|Spare batteries/.test(x)), ph.join(' / ').slice(0, 300));
+    await p.screenshot({ path: join(HT, '2-placeholder-howto-1280.png') });
+    // 5. An optional step passed with Next gets the tick and "Revisado"; Review and send does not list it.
+    const before = await p.$eval('.rail a.si[href="#howto"]', e => e.className + ' ' + e.textContent.trim()).catch(() => '');
+    const nx = await p.$('#navbar [data-passed="howto"]'); if (nx) await nx.click(); await settle(p, 400);
+    const after = await p.$eval('.rail a.si[href="#howto"]', e => ({ done: e.classList.contains('s-done'), label: e.querySelector('.sl').textContent.trim() })).catch(() => ({}));
+    ok('host test, an optional step passed with Next: the tick and "Revisado" in the list', !!nx && after.done && after.label === 'Revisado', `${before} -> ${JSON.stringify(after)}`);
+    await p.screenshot({ path: join(HT, '5-passed-with-next-1280.png') });
+    await go(p, '#send'); const open1 = await p.$$eval('.rv-open:not(.rv-nn) a', as => as.map(a => a.getAttribute('href'))).catch(() => []);
+    ok('host test, an optional step passed with Next: Review and send does not list it', !open1.includes('#howto'), open1.join(', '));
+    // 6. The step counter: the two digits of 11 sit together.
+    const order = await p.evaluate(() => [...document.querySelectorAll('.rail a.si')].map(a => a.getAttribute('href')));
+    await go(p, order[10] || order[order.length - 2]);
+    // tabular digits give each "1" the width of a "0": the two of 11 stood apart. The number is as wide as its digits drawn plainly.
+    const dig = await p.$eval('#openSteps b', b => { const s = getComputedStyle(b), c = document.createElement('canvas').getContext('2d'); c.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+      return { text: b.textContent, w: +b.getBoundingClientRect().width.toFixed(1), plain: +c.measureText(b.textContent).width.toFixed(1), num: s.fontVariantNumeric }; }).catch(e => ({ err: e.message }));
+    ok('host test, the step counter: "11" with no gap between its digits (no tabular digits)', dig.text === '11' && !/tabular/.test(dig.num) && dig.w <= dig.plain + 0.6, JSON.stringify(dig));
+    await p.screenshot({ path: join(HT, '6-step-count-1280.png'), clip: { x: 0, y: 860 - 80, width: 1280, height: 80 } });
+    await ctx.close(); }
+  // 3 and 4. The build screen: never two lines in one place while one changes into the next; a time once passed is no number.
+  const now = new Date().toISOString(), BLD = { ...B, status: 'generating', message: 'Translating', slug: 'test-build', answers: { ...B.answers, slug: 'test-build', languages: ['en', 'es', 'fr', 'ca', 'de', 'nl'], sourceLang: 'es', _sentAt: now } };
+  for (const [w, h] of [[1280, 860], [360, 780]]) {
+    const { ctx, p, errors } = await open(browser, BLD, w, h, { 'porta-lang-v1': 'es' }); await p.goto('http://editor.test/#building'); await p.waitForSelector('#bstate .btick', { timeout: 15000 }).catch(() => {}); await settle(p, 800);
+    const both = await p.evaluate(() => new Promise(res => { const t0 = performance.now(); let n = 0, two = 0, seen = new Set(); const look = () => { const s = [...document.querySelectorAll('#bstate .btick span')].map(e => +getComputedStyle(e).opacity); n++; if (s.filter(x => x > 0.02).length > 1) two++; seen.add(document.querySelector('#bstate .btick .on').textContent); if (performance.now() - t0 < 15000) requestAnimationFrame(look); else res({ n, two, lines: seen.size }); }; look(); }));
+    ok(`host test, the build screen at ${w} px: while the line changes, never two sentences shown in one place`, both.lines > 1 && both.two === 0, JSON.stringify(both));
+    await p.screenshot({ path: join(HT, `3-build-line-${w}.png`) });
+    if (w === 1280) {
+      const t0 = await p.textContent('#bstate .cm-progt');
+      await p.evaluate(() => { window.__buildJob.until = Date.now() - 1; }); await settle(p, 1300);
+      const t1 = await p.textContent('#bstate .cm-progt');
+      await p.evaluate(() => { window.__buildJob.phaseAt = Date.now(); }); await settle(p, 1300);   // a new estimate after it: still no number
+      const t2 = await p.textContent('#bstate .cm-progt');
+      ok('host test, the time left: once the time it gave has passed, "tardando un poco más de lo normal" and no number, even after a new estimate', /\d/.test(t0) && /un poco más de lo normal/.test(t1) && /un poco más de lo normal/.test(t2) && !/\d/.test(t1 + t2), `${t0} / ${t1} / ${t2}`);
+      await p.screenshot({ path: join(HT, '4-time-passed-1280.png') });
+    }
+    ok(`host test, the build screen at ${w} px: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
+  // 7. The phone's rubbish page in the maker's language: kinds and days translated, a kind's name whole, the host's words as typed.
+  for (const [w, h] of [[1280, 860], [360, 780]]) {
+    const { ctx, p, errors } = await open(browser, RUB, w, h, { 'porta-lang-v1': 'es' }); await p.goto('http://editor.test/' + (w === 1280 ? '#listing' : '#yours')); await p.waitForSelector('#phoneFrame', { timeout: 15000 }).catch(() => {}); await settle(p, 600);
+    await toPage(p, 'rubbish');
+    const rows = await inPhone(p, d => [...d.querySelectorAll('.pv-row')].map(r => ({ b: (r.querySelector('b') || {}).textContent || '', all: r.textContent })));
+    const txt = (rows || []).map(r => r.all).join(' | ');
+    ok(`host test, the phone's rubbish page at ${w} px: kinds and days in Spanish, no English left`, (rows || []).length >= 3 && !/Containers|Packaging|Glass|Organic|\bTue\b|\bThu\b|\bMon\b|\bWed\b/.test(txt) && /Vidrio|vidrio/.test(txt) && /Mar/.test(txt), txt.slice(0, 300));
+    ok(`host test, the phone's rubbish page at ${w} px: a kind's name is whole in its title, the host's words as typed under it`, (rows || []).some(r => /\(.*,.*\)/.test(r.b) && /Right next to the local social\. On Sundays it is full\./.test(r.all.replace(r.b, ''))), JSON.stringify(rows).slice(0, 300));
+    await p.screenshot({ path: join(HT, `7-rubbish-phone-${w}.png`) });
+    ok(`host test, the phone's rubbish page at ${w} px: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
+}
+
 if (CHILD) {
   // One group, in a process of its own: its results go to the runner as they come; an error in it is a FAIL, never a silent end.
   const fn = groupList()[CHILD], t0 = Date.now();

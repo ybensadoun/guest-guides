@@ -233,9 +233,9 @@ function pvStyle(p){
 .pv *,.pv *::before,.pv *::after{box-sizing:border-box}.pv a{color:inherit}
 .pv p,.pv li,.pv small,.pv b,.pv h2,.pv h3,.pv .lead{overflow-wrap:break-word;hyphens:manual}
 .pv-in{position:relative;max-width:720px;margin:0 auto;padding:12px 16px 0;display:flex;flex-direction:column;gap:14px}
-.pv-in.pg{padding-top:10px;gap:18px}
+.pv-in.pg{padding-top:max(10px,calc(var(--notch,0px) + 6px));gap:18px}
 .pv-lang{position:absolute;z-index:41;top:12px;right:16px;width:44px;height:44px;border-radius:50%;background:var(--white);color:var(--ink);display:grid;place-items:center;font-size:14px;font-weight:700;letter-spacing:.03em;box-shadow:0 2px 8px rgba(18,18,18,.22)}
-.pv-in.pg .pv-lang{top:10px}
+.pv-in.pg .pv-lang,.pv-in.pg .pv-back{top:max(10px,calc(var(--notch,0px) + 6px))}
 .pv-back{position:absolute;z-index:40;top:10px;left:16px;width:44px;height:44px;border-radius:50%;border:0;padding:0;background:var(--white);color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(18,18,18,.14),0 0 0 1px rgba(18,18,18,.06)}
 .pv-back svg{width:20px;height:20px}
 .pv .hcard{background:var(--white);border:2px solid var(--ink);border-radius:var(--r);overflow:hidden}
@@ -501,7 +501,16 @@ const phoneHTML = () => `<div class="phone"><div class="phone-scr"><iframe id="p
 // Both phones (this one, and the editor's, which shows the guide itself) draw the guide at a real phone's width, then
 // scale it down to the frame: text and tiles keep their true sizes and wrap as they do on a phone.
 const PHONE_W = 390;
-function phoneFit(f){ const s = f && f.parentElement; if (!s || !s.clientWidth) return; const k = s.clientWidth / PHONE_W; f.style.transform = `scale(${k})`; f.style.height = Math.ceil(s.clientHeight / k) + 'px'; }
+function phoneFit(f){ const s = f && f.parentElement; if (!s || !s.clientWidth) return; const k = s.clientWidth / PHONE_W; f.style.transform = `scale(${k})`; f.style.height = Math.ceil(s.clientHeight / k) + 'px'; phoneNotch(f, k); }
+// The frame's notch (.phone::before) covers the top of the screen: its bottom edge, in the guide's own pixels, goes to
+// the page as --notch, so a page's header (back button, title, language) starts below it at every phone size (25 Nov 2026).
+function phoneNotch(f, k){
+  try {
+    const s = f.parentElement, ph = s && s.parentElement, de = f.contentDocument && f.contentDocument.documentElement; if (!ph || !de || !k) return;
+    const n = getComputedStyle(ph, '::before'), b = n.display === 'none' || n.content === 'none' ? 0 : parseFloat(n.top) + parseFloat(n.height) - s.offsetTop;
+    const v = Math.max(0, Math.ceil(b / k)) + 'px'; if (de.style.getPropertyValue('--notch') !== v) de.style.setProperty('--notch', v);
+  } catch (e) {}
+}
 const phoneRO = typeof ResizeObserver === 'function' ? new ResizeObserver(es => es.forEach(e => phoneFit(e.target.querySelector('iframe')))) : null;
 function phoneWatch(f){ phoneFit(f); if (phoneRO && f && !f.__watched) { f.__watched = true; phoneRO.observe(f.parentElement); } }
 const PHONE_CSS = `<style>.pv{min-height:100vh;padding-bottom:28px}.pv-shell{padding-top:0}
@@ -524,13 +533,14 @@ async function phoneRender(){
   }
   const st = doc.getElementById('pvStyle'), html = style + PHONE_CSS; if (st.innerHTML !== html) st.innerHTML = html;
   const bd = doc.getElementById('pvBody'); bd.className = PHONE.build ? 'pv-build' : ''; bd.innerHTML = body;
+  phoneFit(f);   // the notch's line on the new page
 }
 // Typing in a step updates the phone a moment later, without moving it.
 const phoneSoon = () => { if (!document.getElementById('phoneFrame')) return; clearTimeout(PHONE.timer); PHONE.timer = setTimeout(() => { PHONE.build = false; phoneRender(); }, 350); };
 document.addEventListener('input', phoneSoon); document.addEventListener('change', phoneSoon);
 function pageHTML(x){
   const research = x.research ? `<div class="pv-research"><b>In your finished guide</b>${esc(x.research)}</div>` : '';
-  const list = items => items.length ? `<div class="pv-list">${items.map(t => { const [a, ...b] = t.split(/:\s|,\s| - /); return `<div class="pv-row"><b>${esc(a)}</b>${b.length ? esc(b.join(', ')) : ''}</div>`; }).join('')}</div>` : '';
+  const list = items => items.length ? `<div class="pv-list">${items.map(t => { if (typeof t === 'object') return rubbishRow(t); const [a, ...b] = t.split(/:\s|,\s| - /); return `<div class="pv-row"><b>${esc(a)}</b>${b.length ? esc(b.join(', ')) : ''}</div>`; }).join('')}</div>` : '';
   const e = PV_ENG[x.id], look = e && ENG_LOOK[e.id];
   const dot = look ? `<span class="dot" style="--cc:${look.color};--ci:${look.ink ? 'var(--ink)' : '#fff'}" aria-hidden="true">${look.icon}</span>` : '';
   let body = '';
@@ -564,10 +574,19 @@ document.addEventListener('click', e => {
 });
 
 
+// Rubbish, as the step says it: the kinds and the days are the step's own words (BIN_ROWS, DAYS7 in start.js), each its own
+// piece so the maker's language reaches it (i18n.js), and a kind's name stays whole above the line under it (25 Nov 2026).
+// A row is { h: its heading's pieces, t: the line under it }; what the host typed stays as typed.
 function rubbishLines(){
-  const m = v('rubbishMode'), out = [];
-  for (const r of containerRows()) if ((r.w || '').trim() || (r.t || []).length) out.push(`Containers${(r.t || []).length ? ' (' + r.t.map(id => (BIN_ROWS.find(b => b[0] === id) || [0, id])[1]).join(', ') + ')' : ''}: ${(r.w || '').trim() || 'see the map'}`);
-  if (/house|mix/i.test(m)) for (const [id, lab] of BIN_ROWS) { const d = ((A.rubbishPlan || {})[id] || []); if (d.length) out.push(`${lab}: ${d.map(x => (DAYS7.find(y => y[0] === x) || [0, x])[1]).join(', ')}`); }
-  if (v('rubbishNotes')) out.push(v('rubbishNotes'));
+  const m = v('rubbishMode'), out = [], bin = id => (BIN_ROWS.find(b => b[0] === id) || [0, id])[1], day = x => (DAYS7.find(y => y[0] === x) || [0, x])[1];
+  for (const r of containerRows()) if ((r.w || '').trim() || (r.t || []).length) out.push({ h: ['Containers', ...(r.t || []).map(bin)], t: (r.w || '').trim() || 'see the map' });
+  if (/house|mix/i.test(m)) for (const [id, lab] of BIN_ROWS) { const d = ((A.rubbishPlan || {})[id] || []); if (d.length) out.push({ h: [lab], t: d.map(day) }); }
+  if (v('rubbishNotes')) out.push({ t: v('rubbishNotes') });
   return out;
 }
+// One row of rubbishLines: the heading's words and the days in spans of their own, so each is translated on its own.
+const rubbishRow = r => {
+  const sp = x => `<span>${esc(x)}</span>`, [k, ...kinds] = r.h || [];
+  const h = k ? `<b>${sp(k)}${kinds.length ? ` (${kinds.map(sp).join(', ')})` : ''}</b>` : '';
+  return `<div class="pv-row">${h}${Array.isArray(r.t) ? r.t.map(sp).join(', ') : r.h ? sp(r.t) : esc(r.t)}</div>`;
+};

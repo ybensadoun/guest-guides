@@ -22,7 +22,7 @@ function navbarHTML(cur){
   const order = stepsOrder(), i = order.indexOf(cur), m = MODULES.find(x => x.id === cur);
   const prev = order[i - 1], next = order[i + 1];
   let main = '';
-  if (m && !needsYou(m)) main = next ? `<a class="nb primary" href="#${next}"><span>Next</span>${ARROW}</a>` : '';   // filled in from the listing: nothing to press
+  if (m && !needsYou(m)) main = next ? `<a class="nb primary" href="#${next}" data-passed="${m.id}"><span>Next</span>${ARROW}</a>` : '';   // filled in from the listing: nothing to press
   else if (m) {
     const s = statusOf(m), miss = missingOf(m).length, answered = !ANSWERED[m.id] || ANSWERED[m.id]();
     if (s.k === 'done') main = next ? `<a class="nb primary" href="#${next}"><span>Next</span>${ARROW}</a>` : '';
@@ -34,6 +34,13 @@ function navbarHTML(cur){
     <button class="nb count" type="button" id="openSteps" aria-haspopup="dialog"><b>${i + 1}</b> of ${order.length}<i class="chev" aria-hidden="true"></i></button>
     ${main || '<span></span>'}</div>`;
 }
+// A step filled in for the host, passed with Next, has been looked at: it gets the tick and "Checked" even when it is
+// empty and optional, so the list reads finished from the top; an empty circle means "not been here yet" (Yohann, 25 Nov 2026).
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('[data-passed]'); if (!a) return;
+  const id = a.dataset.passed; if ((A._done || {})[id]) return;
+  A._done = { ...(A._done || {}), [id]: true }; log('done', id); queueSave();
+});
 function refreshNav(){
   const r = route(), nb = document.getElementById('navbar'); if (nb) nb.innerHTML = navbarHTML(r);
   const rail = document.querySelector('.rail nav'); if (rail) { const keep = rail.parentElement.scrollTop; rail.innerHTML = stepListHTML(r); rail.parentElement.scrollTop = keep; fixRail(); }
