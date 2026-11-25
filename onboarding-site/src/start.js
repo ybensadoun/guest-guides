@@ -151,8 +151,9 @@ async function areaWatch(){
       if (r && r.status === 'done' && r.result) AREA.quick = r.result; else if (r && ['queued', 'running'].includes(r.status)) wait = true;
       if (r && r.result && Array.isArray(r.result.taxis)) AREA.taxis = r.result.taxis;
       if (r && r.result && Array.isArray(r.result.apps)) AREA.apps = r.result.apps; }   // free: also when the paid part was limited or failed
-    if (A._researchJob && AUTH && (!AREA.full || AREA.fullOpen)) { const r = ((await sb('/rest/v1/guide_jobs?select=status,result&id=eq.' + A._researchJob)) || [])[0];
+    if (A._researchJob && AUTH && (!AREA.full || AREA.fullOpen)) { const r = ((await sb('/rest/v1/guide_jobs?select=status,result,created_at&id=eq.' + A._researchJob)) || [])[0];
       if (r && r.result) AREA.full = r.result;   // things to do come first, while the rest goes on
+      if (r && r.created_at) AREA.fullAt = r.created_at;   // when it began: the deck's time left (swLeftWords)
       AREA.fullOpen = !!r && ['queued', 'running'].includes(r.status); if (AREA.fullOpen) wait = true; }
   } catch (e) { wait = true; }   // no connection: try again
   const before = JSON.stringify(AREA.result);
@@ -419,11 +420,27 @@ function swOrder(base){
 }
 // New cards: the deck takes them (swArrive), Review says so, once. The deck is drawn again only when the research's cards
 // changed (not at every look at the research, which redrew the host's comment field under their fingers).
+// The deck is waiting for us (Yohann, 25 Nov 2026, on his own test build: a done tick and "that is all" beside "more is
+// coming" contradict each other; "shouldn't there be kind of a loading state so we know that you're thinking?"). Since
+// every host is signed in from the first step the research starts at once, and a host reaches Attractions while it runs.
+// Waiting: the research's job is open and its things to do have not come (they come first, the markets go on after
+// them, and then nothing more comes for this step). The one place a thinking state shows: the host is really waiting.
+const swWaiting = () => !!(AUTH && A._researchJob && AREA.fullOpen && !((AREA.full || {}).todo));
+// The time left, from when the research began: things to do took 200 s on 25 Nov 2026 and 220 s on 12 Nov, so 4 minutes
+// is their usual time. A number only within it; past it no number that could be wrong (as the build screen, 11 Nov 2026).
+// Nothing when the start is not known.
+const SW_USUAL = 240;
+function swLeftWords(){
+  const at = Date.parse(AREA.fullAt || ''); if (!at) return '';
+  const left = Math.min(SW_USUAL, SW_USUAL - (Date.now() - at) / 1000);
+  return left >= 90 ? `About ${Math.round(left / 60)} min left.` : left >= 30 ? 'About a minute left.' : left > -180 ? 'Almost there.' : 'Taking longer than usual.';
+}
 // The cards' words in the host's language come a little after the cards (one translation at the research, worker/card-words.mjs,
 // 21 Nov 2026): the card in hand takes them in place, at its own height, and nothing else is drawn; held by the finger, when
 // it lets go.
 function moreRefresh(){
-  const cards = researchCards(), sig = JSON.stringify([cards.map(p => p.id), !!AREA.fullOpen]), wsig = cards.map(p => p.type + '|' + p.summary).join('\n');
+  const cards = researchCards(), sig = JSON.stringify([cards.map(p => p.id), !!AREA.fullOpen, swWaiting()]), wsig = cards.map(p => p.type + '|' + p.summary).join('\n');
+  { const t = document.querySelector('#swipe .sw-left'), w = t && tr(swLeftWords()); if (t && t.textContent !== w) t.textContent = w; }   // the waiting card's time left, in place (its sign keeps turning)
   if (sig !== SW.rsig) { SW.rsig = sig; SW.wsig = wsig; swArrive(); }
   else if (wsig !== SW.wsig) { SW.wsig = wsig; const c = document.querySelector('#swipe .sw-card'); if (c && !c.dataset.gone) { if (c.dataset.drag) SW.stale = true; else swCardRefresh(); } }
   const el = document.getElementById('rvMore'); if (el) el.innerHTML = moreNote();
@@ -461,7 +478,7 @@ function swSwap(parts){
 function moreNote(){
   if (!AUTH) return ''; const left = moreLeft();
   if (left) return `<div class="rv-more"><b>${left} more ${left === 1 ? 'place' : 'places'} to look at</b><p>${left === 1 ? 'Our research found it near you. Keep it if you like it: only what you keep goes in your guide.' : 'Our research found them near you. Keep the ones you like: only those go in your guide.'}</p><a class="btn small" href="#nearby">Look at them</a></div>`;
-  if (AREA.fullOpen && !researchCards().length) return `<div class="rv-more"><b>We are looking for more places near you</b><p>It takes about 2 minutes. Wait for them here, or send now: they will wait for you in your editor.</p></div>`;
+  if (swWaiting()) return `<div class="rv-more"><b>We are looking for more places near you</b><p>It takes a few minutes. Wait for them here, or send now: they will wait for you in your editor.</p></div>`;
   return '';
 }
 async function loadPlaces(cat){
@@ -511,7 +528,11 @@ function swipeInner(){
         ${p.summary || gone ? `<div class="sw-tx">${gone ? '<p class="sw-gone">It cannot be added. If you know it is open, add it yourself by its name.</p>' : ''}${p.summary ? `<p class="sw-sum" translate="no">${esc(p.summary)}</p>` : ''}</div>` : ''}
       </article></div>
     <div class="sw-btns${gone ? ' gone' : ''}"><button type="button" class="sw-no" data-sw="no">${svg('<path d="M6 6l12 12M18 6L6 18"/>').replace('stroke-width="2.2"', 'stroke-width="2.4" width="16" height="16"')}Not for us</button><button type="button" class="sw-yes" data-sw="yes"${gone ? ' aria-disabled="true"' : ''}>${I.heart.replace('stroke-width="2.2"', 'stroke-width="2.2" width="18" height="18"')}Recommend</button></div>`
-    : `<div class="sw-empty sw-slot sw-end"><span class="sw-endic" aria-hidden="true">${CHECK}</span><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b><span>${AUTH && AREA.fullOpen && !researchCards().length ? 'Our research is finding more: they will land here in about 2 minutes.' : 'Missing one? Add it below.'}</span></div>`;
+    // No card left. While the research's things to do are still to come it is a waiting card, in the card's place: no
+    // tick, the maker's sign turning slowly, the time left, and that the host can go on. The cards take its place by
+    // themselves when they come (swArrive). The tick and "that is all" only when nothing more is coming.
+    : swWaiting() ? `<div class="sw-empty sw-slot sw-end sw-more" role="status"><span class="sw-endic" aria-hidden="true"><span class="spin dark"></span></span><b>More places are on their way.</b><span class="sw-left" translate="no">${esc(tr(swLeftWords()))}</span><span>You can go on to the next step: they will wait for you here.</span></div>`
+    : `<div class="sw-empty sw-slot sw-end"><span class="sw-endic" aria-hidden="true">${CHECK}</span><b>That’s all for ${esc(SW_CATS.find(c => c[0] === SW.cat)[1].toLowerCase())}.</b><span>Missing one? Add it below.</span></div>`;
   swFitSoon();
   const picks = Object.values(S).filter(x => x.d === 'yes' && x.cat === SW.cat).map(swShown);
   return `${tabs}${count}${card}

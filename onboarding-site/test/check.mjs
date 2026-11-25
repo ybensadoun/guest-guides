@@ -915,6 +915,42 @@ async function gResearchDeck() {
     ok('deck in Catalan: the phone shows the pick with its kind in Catalan and "7,4 km"', /Ruïnes de castell, Querol · 7,4 km/.test(phone), phone.slice(-200));
     ok('deck in Catalan: no page errors', !errors.length, errors.join(' | '));
     await ctx.close(); }
+  // The deck's end while the research is still running (Yohann, 25 Nov 2026): a waiting card, not an end card. No tick, the
+  // maker's sign turning, more places on their way, the time left, and that the host can go on; the cards take its place by
+  // themselves; the tick and "that is all" only when nothing more is coming. In Spanish, at both widths.
+  for (const [w, h] of [[360, 780], [1280, 860]]) {
+    const G = { ...B, answers: { ...B.answers, radius: '1 hour', _researchJob: JOB_ID, swipes: {}, favDo: [] } }, ago = sec => new Date(Date.now() - sec * 1000).toISOString();
+    const { ctx, p, errors } = await open(browser, G, w, h), tag = `deck waiting, ${w} px in Spanish`; let job = { status: 'running', result: null, created_at: ago(70) };
+    await ctx.route(u => u.pathname.startsWith('/rest/v1/guide_jobs'), r => json(r, [job]));
+    await ctx.route('**/api/places**', r => { const q = new URL(r.request().url()).searchParams; return q.get('card') ? cardAnswer(r, [], 0) : json(r, q.get('probe') ? { ok: true, enabled: true } : { ok: true, lat: A0.lat, lng: A0.lng, places: [{ id: 'g-only', name: 'Lugar de Prueba', rating: 4.4, reviews: 60, type: 'Parque', maps: 'https://maps.google.com/?q=5', lat: A0.lat, lng: A0.lng, km: 3, photo: null }] }); });
+    await p.goto('http://editor.test/?lang=es#nearby'); await ready(p); await p.waitForSelector('.sw-card', { timeout: 8000 }).catch(() => {});
+    const top = s => p.evaluate(q => { const e = document.querySelector(q); return e ? Math.round(e.getBoundingClientRect().top + scrollY) : -1; }, s);
+    const cardTop = await top('.sw-deck'), picksTop0 = await top('.pl-rows, .sw-picks, #swipe ~ *');
+    await p.click('[data-sw="yes"]'); await p.waitForSelector('.sw-more', { timeout: 5000 }).catch(() => {}); await settle(p, 400);
+    const at = () => p.evaluate(() => { const m = document.querySelector('.sw-more'); if (!m) return null; const sp = m.querySelector('.sw-endic .spin');
+      return { tick: !!m.querySelector('.sw-endic svg'), sign: !!sp && getComputedStyle(sp).animationName !== 'none', title: (m.querySelector('b') || {}).textContent || '', left: (m.querySelector('.sw-left') || {}).textContent || '',
+        words: m.textContent, role: m.getAttribute('role'), fits: m.scrollHeight <= m.clientHeight + 1 && [...m.children].every(c => c.scrollWidth <= m.clientWidth), wide: document.documentElement.scrollWidth - innerWidth }; });
+    const a1 = await at();
+    ok(`${tag}: no card left and the research still running: no tick, the maker's sign turning, "Llegan más sitios.", nothing of "Esto es todo"`, !!a1 && !a1.tick && a1.sign && a1.title === 'Llegan más sitios.' && !/Esto es todo/.test(a1.words) && a1.role === 'status', JSON.stringify(a1));
+    ok(`${tag}: the time left from when the research began ("Quedan unos 3 min."), and that the host can go on`, !!a1 && a1.left === 'Quedan unos 3 min.' && /Puedes seguir con el paso siguiente: te esperarán aquí\./.test(a1.words), a1 && a1.left);
+    ok(`${tag}: the waiting card takes the card's place, its words fit in it, no sideways scroll`, !!a1 && (await top('.sw-more')) === cardTop && a1.fits && a1.wide <= 0, `${cardTop} -> ${await top('.sw-more')} ${JSON.stringify(a1 && [a1.fits, a1.wide])}`);
+    await p.locator('.sw-more').scrollIntoViewIfNeeded().catch(() => {}); await p.screenshot({ path: join(SHOTS, `deck-waiting-es-${w}.png`) });
+    // Past its usual time: no number, and only the line changes (the sign is not drawn again).
+    await p.evaluate(() => { document.querySelector('.sw-more .spin').dataset.same = '1'; }); job = { ...job, created_at: ago(300) };
+    await p.waitForFunction(() => ((document.querySelector('.sw-more .sw-left') || {}).textContent || '') === 'Ya casi están.', null, { timeout: 12000 }).catch(() => {});
+    const a2 = await at();
+    ok(`${tag}: past its usual time the line says "Ya casi están." with no number, in place`, !!a2 && a2.left === 'Ya casi están.' && (await p.evaluate(() => (document.querySelector('.sw-more .spin') || { dataset: {} }).dataset.same)) === '1' && (await top('.sw-more')) === cardTop, a2 && a2.left);
+    // The things to do come: the cards take the waiting card's place by themselves.
+    job = { status: 'running', result: { todo: TODO_G }, created_at: job.created_at };
+    await p.waitForSelector('.sw-card', { timeout: 12000 }).catch(() => {}); await settle(p, 300);
+    ok(`${tag}: when the things to do come, the first card takes the waiting card's place by itself`, (await p.textContent('.sw-card h3').catch(() => '')) === TODO_G.items[0].name.en && !(await p.$('.sw-more')) && (await top('.sw-deck')) === cardTop, await p.textContent('.sw-card h3').catch(() => 'no card'));
+    // Every card seen while the research goes on with the markets: nothing more comes for this step, so it is the end.
+    for (let i = 0; i < TODO_G.items.length; i++) { await p.click('[data-sw="no"]'); await settle(p, 420); }
+    const end = await p.evaluate(() => { const m = document.querySelector('.sw-end'); return m ? { more: m.classList.contains('sw-more'), tick: !!m.querySelector('.sw-endic svg'), words: m.textContent } : null; });
+    ok(`${tag}: all seen and nothing more to come: the tick and "Esto es todo", no waiting`, !!end && !end.more && end.tick && /Esto es todo/.test(end.words) && /¿Falta alguno\?/.test(end.words), JSON.stringify(end));
+    await p.locator('.sw-end').scrollIntoViewIfNeeded().catch(() => {}); await p.screenshot({ path: join(SHOTS, `deck-end-es-${w}.png`) });
+    ok(`${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close(); }
   // The research needs nothing from the host (12 Nov 2026): it searched a reach of its own, and Your area's distance acts on
   // what it found at once, with no new search. A researched card beyond the host's distance is not in the deck; widened in
   // Your area, it comes in. A card with no distance stays.

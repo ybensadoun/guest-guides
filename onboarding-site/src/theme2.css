@@ -180,6 +180,10 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:-.01em}
 .sw-end b{font:400 26px/1.15 var(--display);color:var(--ink)}
 .sw-endic{width:64px;height:64px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--ok);margin-bottom:6px}
 .sw-endic svg{width:30px;height:30px;stroke-width:2.6}
+/* The waiting card (more places are coming): the same place and shape as the end card, the tick's circle holds the maker's
+   sign, larger and slower than on a button; the time left keeps one line's room, so the card's words do not move with it */
+.sw-more .spin{width:28px;height:28px;border-width:3px;animation-duration:1.4s;vertical-align:0}
+.sw-more .sw-left{min-height:1.4em;font-weight:700;color:var(--ink)}
 .sw-count .sw-new{color:var(--ok);font-weight:700}
 .sw-picks{display:grid;gap:8px;max-width:520px}
 .sw-picks > b{font-size:14px}

@@ -2947,10 +2947,10 @@
 "es": "Aparece en la guía cuando tiene la chincheta. Usa el enlace largo de la barra del navegador: contiene la posición.",
 "fr": "Il apparaît dans le guide une fois son repère placé. Utilisez le lien long de la barre du navigateur : il contient la position."
 },
-"It takes about 2 minutes. Wait for them here, or send now: they will wait for you in your editor.": {
-"ca": "Triga uns 2 minuts. Espera’ls aquí o envia ara: t’esperaran a l’editor.",
-"es": "Tarda unos 2 minutos. Espéralos aquí o envía ahora: te esperarán en tu editor.",
-"fr": "Cela prend environ 2 minutes. Attendez-les ici, ou envoyez maintenant : ils vous attendront dans votre éditeur."
+"It takes a few minutes. Wait for them here, or send now: they will wait for you in your editor.": {
+"ca": "Triga uns minuts. Espera’ls aquí o envia ara: t’esperaran a l’editor.",
+"es": "Tarda unos minutos. Espéralos aquí o envía ahora: te esperarán en tu editor.",
+"fr": "Cela prend quelques minutes. Attendez-les ici, ou envoyez maintenant : ils vous attendront dans votre éditeur."
 },
 "Its answers, photos and guide are deleted for good. This cannot be undone.": {
 "ca": "Les respostes, les fotos i la guia s’esborren per sempre. No es pot desfer.",
@@ -6197,10 +6197,35 @@
 "es": "Lo orgánico va al cubo marrón pequeño bajo el fregadero. El cartón, bien plano…",
 "fr": "Les biodéchets vont dans la petite poubelle marron sous l’évier. Le carton bien plié…"
 },
-"Our research is finding more: they will land here in about 2 minutes.": {
-"ca": "La nostra recerca en troba més: arribaran aquí en uns 2 minuts.",
-"es": "Nuestra búsqueda está encontrando más: llegarán aquí en unos 2 minutos.",
-"fr": "Notre recherche en trouve d’autres : ils arriveront ici dans environ 2 minutes."
+"More places are on their way.": {
+"ca": "Arriben més llocs.",
+"es": "Llegan más sitios.",
+"fr": "D’autres lieux arrivent."
+},
+"About {n} min left.": {
+"ca": "Queden uns {n} min.",
+"es": "Quedan unos {n} min.",
+"fr": "Encore {n} min environ."
+},
+"About a minute left.": {
+"ca": "Queda un minut, més o menys.",
+"es": "Queda un minuto, más o menos.",
+"fr": "Encore une minute environ."
+},
+"Almost there.": {
+"ca": "Ja gairebé hi són.",
+"es": "Ya casi están.",
+"fr": "Ils arrivent."
+},
+"Taking longer than usual.": {
+"ca": "Triga més del que és habitual.",
+"es": "Está tardando más de lo habitual.",
+"fr": "C’est plus long que d’habitude."
+},
+"You can go on to the next step: they will wait for you here.": {
+"ca": "Pots continuar amb el pas següent: t’esperaran aquí.",
+"es": "Puedes seguir con el paso siguiente: te esperarán aquí.",
+"fr": "Vous pouvez passer à l’étape suivante : ils vous attendront ici."
 },
 "Overall": {
 "ca": "En general",

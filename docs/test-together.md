@@ -212,6 +212,8 @@ is Things to do's own is said here.
 | 6.3 | Read that card's description | In your language, at once or within about half a minute of the card showing (it changes in place, the buttons do not move); the place's name stays as found |
 | 6.4 | Look at a card from Google (a photo, a rating) | Its kind in your language, "★ 4,6 (1.204 ressenyes)", "Google Maps" beside it |
 | 6.5 | Click "Recommend", then "Not for us", several times, quickly | The two buttons never move; the count says "3 of 25" |
+| 6.5b | Sign in from the first step, go straight to Attractions and decide every card before the research has answered (within about 3 minutes) | A waiting card in the card's place: no tick, a small sign turning, "More places are on their way.", "About 3 min left." counting down, "You can go on to the next step: they will wait for you here." Then the found places take its place by themselves |
+| 6.5c | Decide those too | Only now the tick and "That's all for attractions.", with "Missing one? Add it below." |
 | 6.6 | While the deck is open, wait for the research (about 4 minutes after the account) | The count grows in place ("3 of 33 · 8 more places found"); the card in hand stays |
 | 6.7 | Under "Your picks", write a line on one | It stays while cards come; the phone beside shows the pick, its kind and "9,4 km" |
 | 6.8 | In "Add your own", type "sitg" | "Sitges · Poble o vila · Barcelona · 31 km" first, "GeoNames" beside the towns; Google's rows below |
@@ -242,6 +244,7 @@ is Things to do's own is said here.
 | 6.39 | The pool house's Things to do (few places, no group named twice) | No group chips when the list has fewer than two groups; the feature chips only for marks a place has |
 
 ### Known, not to report
+- While the waiting card shows, the step still says "Done" in its header and in the list of steps (the builder's frame: with the main conversation).
 - A found place's name is not translated ("Querol Castle" on a Catalan screen): the name is how the maker knows the place.
 - When the day's research budget is spent or the translation fails, a found place's description stays in English and its
   kind is the plain one ("Castell, Querol").
