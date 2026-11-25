@@ -27,6 +27,7 @@ import { txPick } from '../engine/src/modules/transport/taxis.js';   // the taxi
 import { normSchedule, normGroups } from './hours-shape.mjs';   // a research's opening hours in the guide's one shape (markets, places, contacts)
 import { appsJob, refreshApps, appsNear, appsPrompt, readApps, APPS } from './ride-apps.mjs';   // Uber, Cabify, Bolt, Freenow (find-transport, what: apps)
 import { brandsJob, refreshBrands, applyToFiles, brandsList, hsStations, brandsPrompt, readBrands } from './rail-brands.mjs';   // iryo and Ouigo on high speed stations (find-transport, what: brands)
+import { makeTranslate } from './translate.mjs';   // the translation's parts, asked side by side, a cut answer asked again in halves
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(HERE, '..');
 const env = { ...process.env };
@@ -170,21 +171,12 @@ async function research(A, outDir, id, opt = {}) {
   };
   if (opt.together) await Promise.all(list.map(one)); else for (const j of list) await one(j);
 }
-// Translation by Claude, 40 texts per question, returned as {"<source text>": {"es": "...", ...}}. A text that does not come back stays
-// as it is (Claude down, the day's budget spent): a search or a build is never lost for it. onPart(done, all) for progress.
-async function translate(texts, langs, srcLang, onPart, meter = null) {
-  const map = {};
-  for (let i = 0; langs.length && i < texts.length; i += 40) {
-    if (onPart) await onPart(Math.min(i + 40, texts.length), texts.length);
-    const part = texts.slice(i, i + 40);   // by number, not by text: a text repeated with one character changed was lost
-    const prompt = `Translate these texts into ${langs.join(', ')}. Most are in ${srcLang}, but a text can be in another language or mix two (Catalan hosts often mix Catalan and Spanish; a text copied from a listing can be in any language): understand each one and write it properly in every language asked for, the mix sorted out. Only a text written entirely and correctly in one of these languages stays word for word in that language. Keep names, numbers and times. No em-dashes. Speak to the guest informally: German du (dich, dein, euch for a group), never Sie; Dutch je and jij, never u. German quotes „like this“; Spanish opens questions and exclamations with ¿ and ¡; Catalan keeps l·l. For French use real non-breaking spaces before ? ! ; : and inside guillemets. In German and Dutch, put a soft hyphen (U+00AD) at a correct syllable break inside every word of 10 letters or more (e.g. Geschichts\u00admuseum), so it can wrap on a narrow phone screen. Answer with ONE JSON object and nothing else, one entry per text, by its number: {"0": {"${langs.join('": "...", "')}": "..."}}.\n${JSON.stringify(Object.fromEntries(part.map((x, n) => [n, x])))}`;
-    let out = '';
-    try { out = await claudeAsk(prompt, { what: 'translation', meter }); } catch (e) { log('  translation skipped:', e.message); break; }
-    const a = out.indexOf('{'), b = out.lastIndexOf('}');
-    if (a >= 0 && b > a) { try { for (const [n, tr] of Object.entries(JSON.parse(out.slice(a, b + 1)))) if (part[+n] != null) map[part[+n]] = tr; } catch (e) {} }
-  }
-  return map;
-}
+// Translation by Claude, returned as {"<source text>": {"es": "...", ...}}: worker/translate.mjs splits the texts into parts
+// (at most 40 texts and about 6,000 characters each), asks up to TRANSLATE_AT_ONCE (default 4) side by side and asks a cut
+// answer again in halves. A text that does not come back stays as it is (Claude down, the day's budget spent): a search or
+// a build is never lost for it. onPart(done, all) for progress.
+const translateParts = makeTranslate({ ask: claudeAsk, log, atOnce: +env.TRANSLATE_AT_ONCE || 4 });
+async function translate(texts, langs, srcLang, onPart, meter = null) { return translateParts(texts, langs, srcLang, onPart, meter); }
 // A text in all of a guide's languages is an object like {"en": "...", "es": "..."}: i18nOf lists those inside x, fill adds
 // the languages they miss from a translation map (by their text in src) and says how many it added.
 const LANGS = ['en', 'es', 'fr', 'ca', 'de', 'nl'];
