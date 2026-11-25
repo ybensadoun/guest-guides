@@ -283,6 +283,7 @@ is Things to do's own is said here.
 |---|---|---|
 | 8.10 | "Only you know", Rubbish | One question first: how rubbish is collected |
 | 8.11 | Choose "Bins collected at the house" | The containers, the days of each bin, "Bins must be out by" and "Anything guests must know" open; no photo is asked |
+| 8.11b | Add a second place with containers, then press the cross at its top right | The place goes, as a place to eat does; on the last place the cross empties it. There is no "Remove this place" button |
 | 8.12 | Tick days for two bins, leave general waste empty | The phone preview lists the bins with their days |
 | 8.13 | Choose "Shared containers in the street" instead | The days and the hour go; the containers stay |
 | 8.14 | Build the guide in six languages | Rubbish reads in each language (steps, what goes where, a missed day), with no colour in a name ("Packaging") and "du" in German |

@@ -1200,15 +1200,16 @@ document.addEventListener('click', async e => {
 });
 
 /* ---------- Rubbish: the containers guests can use, each with a description, an optional map link and what it takes ---------- */
+// A place is one row of the same kind as a place to eat (.pl-row, theme2.css): its cross at the top right, beside the first
+// field, removes it (Yohann, 25 Nov 2026: "the same experience as with the restaurant with the cross"); the last one empties.
 // Older answers had one free-text "Where are the containers?": it becomes the first row.
 const containerRows = () => Array.isArray(A.rubbishSpots) && A.rubbishSpots.length ? A.rubbishSpots : [{ w: v('rubbishWhere'), m: '', t: [] }];
 function containersHTML(k, head, hint){
   const rows = containerRows();
-  return `<div class="f full" id="ct_${k}"><span class="lab">${head}</span>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}<div class="ctl">${rows.map((r, i) => `<div class="ct-row">
-    <textarea data-ct="${i}" data-f="w" rows="2" placeholder="Where: at the end of the lane, 100 m left of the gate" aria-label="Where containers ${i + 1} are">${esc(r.w || '')}</textarea>
+  return `<div class="f full" id="ct_${k}"><span class="lab">${head}</span>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}<div class="ctl">${rows.map((r, i) => `<div class="pl-row ct-row">
+    <textarea data-ct="${i}" data-f="w" rows="2" placeholder="Where: at the end of the lane, 100 m left of the gate" aria-label="Where containers ${i + 1} are">${esc(r.w || '')}</textarea><button type="button" class="x" data-ctrm="${i}" aria-label="Remove place ${i + 1}">×</button>
     <input type="url" data-ct="${i}" data-f="m" value="${esc(r.m || '')}" placeholder="Google Maps link (optional)" aria-label="Map link for containers ${i + 1}" inputmode="url">
-    <div class="chips" role="group" aria-label="What containers ${i + 1} take">${BIN_ROWS.map(([id, lab]) => `<button type="button" class="chip" data-ctt="${i}" data-id="${id}" aria-pressed="${(r.t || []).includes(id)}"><span>${esc(lab)}</span></button>`).join('')}</div>
-    ${rows.length > 1 ? `<button type="button" class="btn small" data-ctrm="${i}">Remove this place</button>` : ''}</div>`).join('')}</div>
+    <div class="chips" role="group" aria-label="What containers ${i + 1} take">${BIN_ROWS.map(([id, lab]) => `<button type="button" class="chip" data-ctt="${i}" data-id="${id}" aria-pressed="${(r.t || []).includes(id)}"><span>${esc(lab)}</span></button>`).join('')}</div></div>`).join('')}</div>
     <button type="button" class="btn small" data-ctadd="1">+ Add another place with containers</button></div>`;
 }
 document.addEventListener('input', e => {
@@ -1223,4 +1224,4 @@ document.addEventListener('click', e => {
   else { const r = rows[+c.dataset.ctt], id = c.dataset.id; r.t = r.t.includes(id) ? r.t.filter(x => x !== id) : [...r.t, id]; }
   set('rubbishSpots', rows.length ? rows : [{ w: '', m: '', t: [] }]); render();
 });
-(function(){ const st = document.createElement('style'); st.textContent = '.ctl{display:flex;flex-direction:column;gap:12px;margin-bottom:10px}.ct-row{display:flex;flex-direction:column;gap:8px;background:var(--sunk);border-radius:var(--r-s);padding:12px}.ct-row .btn{align-self:flex-start}.ct-row button.chip{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer}.ct-row .chip[aria-pressed=true] span{background:var(--ink);border-color:var(--ink);color:var(--paper)}.ct-row .chip:focus-visible span{outline:3px solid var(--focus);outline-offset:2px}'; document.head.appendChild(st); })();
+(function(){ const st = document.createElement('style'); st.textContent = '.ctl{display:flex;flex-direction:column;gap:12px;margin-bottom:10px}.ct-row .chips{grid-column:1/-1}.ct-row button.chip{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer}.ct-row .chip[aria-pressed=true] span{background:var(--ink);border-color:var(--ink);color:var(--paper)}.ct-row .chip:focus-visible span{outline:3px solid var(--focus);outline-offset:2px}'; document.head.appendChild(st); })();

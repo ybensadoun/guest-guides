@@ -4070,6 +4070,30 @@ async function gRubbish() {
     ok(`${tag}: no page errors`, !errors.length, errors.join(' | '));
     await ctx.close();
   }
+  // The builder's places with containers (25 Nov 2026): a place is removed with the same cross as a place to eat (.pl-row .x),
+  // at the top right beside the first field; no "Remove this place" button; the last place empties instead of going.
+  for (const [w, h] of [[1280, 860], [360, 780]]) {
+    const { ctx, p, errors } = await open(browser, B, w, h), tag = `rubbish, builder, containers, ${w}`;
+    await p.goto('http://editor.test/'); await ready(p); await go(p, '#known'); await settle(p, 400);
+    await p.click('input[name="rubbishMode"][value="A mix of both"]', { force: true }); await settle(p, 500);
+    await p.fill('.ct-row textarea', 'At the end of the lane'); await p.click('[data-ctadd]'); await settle(p, 400);
+    await p.fill('.ct-row:nth-child(2) textarea', 'By the roundabout'); await settle(p, 300);
+    const m = await p.evaluate(() => { const rows = [...document.querySelectorAll('.ct-row')], hit = (a, b) => a.right > b.left + 1 && b.right > a.left + 1 && a.bottom > b.top + 1 && b.bottom > a.top + 1;
+      return { rows: rows.length, same: rows.every(r => r.matches('.pl-row')), old: document.querySelectorAll('.ct-row .btn').length, wide: document.documentElement.scrollWidth > innerWidth,
+        x: rows.map(r => { const x = r.querySelector('button.x'), t = r.querySelector('textarea'); if (!x) return null; const X = x.getBoundingClientRect(), T = t.getBoundingClientRect(); return { label: x.getAttribute('aria-label'), size: Math.round(X.width) + 'x' + Math.round(X.height), beside: X.left >= T.right - 1 && Math.abs(X.top - T.top) < 2 }; }),
+        overlap: rows.some(r => { const k = [...r.children].filter(e => e.getClientRects().length).map(e => e.getBoundingClientRect()); return k.some((a, i) => k.some((b, j) => j > i && hit(a, b))); }) }; });
+    const eat = await p.evaluate(() => { const x = document.querySelector('.pl-row:not(.ct-row) .x'); return x ? Math.round(x.getBoundingClientRect().width) + 'x' + Math.round(x.getBoundingClientRect().height) : null; });
+    ok(`${tag}: each place has the places' cross at the top right, beside its first field, named "Remove place n"; no other remove button`, m.rows === 2 && m.same && !m.old && m.x.every((x, i) => x && x.label === `Remove place ${i + 1}` && x.size === '36x36' && x.beside) && (!eat || eat === '36x36'), JSON.stringify(m));
+    ok(`${tag}: nothing overlaps in a place, nothing wider than the screen`, !m.overlap && !m.wide);
+    if (w === 360) await (await p.$('#ct_rubbishSpots')).screenshot({ path: join(RB_DIR, `builder-containers-${w}.png`) });
+    await p.focus('.ct-row:nth-child(1) .x'); await p.keyboard.press('Enter'); await settle(p, 400);
+    const one = await p.$$eval('.ct-row textarea', els => els.map(e => e.value));
+    await p.click('.ct-row .x'); await settle(p, 400);
+    const none = await p.$$eval('.ct-row textarea', els => els.map(e => e.value));
+    ok(`${tag}: the cross removes its place, by keyboard too; on the last place it empties it`, cmpSame(one, ['By the roundabout']) && cmpSame(none, ['']), JSON.stringify([one, none]));
+    ok(`${tag}: no page errors`, !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
   // A guide that has its rubbish page: the step as it was, no question, not under "Needs you".
   { const { ctx, p, errors } = await open(browser, E, 1280, 860);
     await p.goto('http://editor.test/#rubbish'); await ready(p); await settle(p, 400);
