@@ -1,13 +1,13 @@
 // Getting around's page (README.md, "Its look"). Route #s/<id>, as every section's page (views/section.js asks the module,
 // modules/index.js); also an older guide's taxi card with "trains" (#p/<id>, the highlights module's page hands it over).
-import { t, tx } from '../../i18n.js';
+import { t, tx, locale } from '../../i18n.js';
 import { QUICK } from '../../content.js';
 import { gSearch, gDir } from '../../geo.js';
 import { esc, ICON, itemIcon, PHONE, WEB, tel } from '../../ui.js';
 import { overviewMap } from '../map/index.js';
 import { icon as quickIcon } from '../highlights/index.js';
 import { page as textPage } from '../info/index.js';
-import { modeOf, stopsOf, groupsOf, pageIcon, loneRow } from './plan.js';
+import { modeOf, stopsOf, groupsOf, pageIcon, loneRow, leadKinds, listOf } from './plan.js';
 
 // The section's page: its file, with the icon of its card on Home when it has one. A Getting around section with no file
 // is drawn as a text page with nothing in it (as built: the section view's last branch).
@@ -56,10 +56,14 @@ export function renderTransport(V, g, icons) {
  ${s.gid || s.gmaps ? `<a class="btn" href="${esc(gSearch(s))}" target="_blank" rel="noopener">${ICON.pin}Google Maps</a>` : ''}
      ${s.link ? `<a class="btn" href="${esc(s.link)}" target="_blank" rel="noopener">${WEB}${esc(t(s.linkKey || 'timetable'))}</a>` : ''}</div>`, badges(s)); };
   const groups = groupsOf(stops);
+  // The line under the title: the guide's own, else one said from what the page holds (plan.js leadKinds; README rule 54);
+  // the kinds in small letters inside the sentence, but German's nouns keep their capital. No line: no icon standing alone.
+  const kinds = leadKinds(g, stops), low = /^de/.test(locale()) ? x => x : x => x.toLocaleLowerCase(locale());
+  const lead = (g.lead && tx(g.lead)) || (kinds.length ? t('trLead', { kinds: listOf(kinds.map(k => low(t(k))), t('trAnd')) }) : '');
   const prev = V.querySelector('.transport'), was = prev && prev.dataset.q === String(g.id) ? [...prev.querySelectorAll('.mrow')].map(e => e.open) : null;
   V.innerHTML = `<div class="wrap place transport" style="gap:14px" data-q="${esc(g.id)}">
-    <div class="pl-head"><span class="qi">${icons({ icon: pageIcon(g, stops) })}</span>
-      <div><h2 class="title">${esc(typeof g.title === 'string' ? g.title : tx(g.title))}</h2>${g.lead ? `<p class="lead">${esc(tx(g.lead))}</p>` : ''}</div></div>
+    <div class="pl-head">${lead ? `<span class="qi">${icons({ icon: pageIcon(g, stops) })}</span>` : ''}
+      <div><h2 class="title">${esc(typeof g.title === 'string' ? g.title : tx(g.title))}</h2>${lead ? `<p class="lead">${esc(lead)}</p>` : ''}</div></div>
     ${taxis || apps ? `<h3 class="section-h">${esc(t('taxiH'))}</h3><div class="mlist">${taxis}${apps}</div>` : ''}
     ${groups.map(([label, l], i) => `<h3 class="section-h">${esc(t(label))}</h3>${i === 0 && pins.length ? '<div class="pl-map secmap"><div id="trmap"></div></div>' : ''}<div class="mlist">${l.map(station).join('')}</div>`).join('')}
   </div>`;

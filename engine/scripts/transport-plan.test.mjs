@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { MODES, modeOf, stopsOf, groupsOf, pageIcon, iconOf, cardOf, cardWords, transportOf, loneRow } from '../src/modules/transport/plan.js';
+import { MODES, modeOf, stopsOf, groupsOf, pageIcon, iconOf, cardOf, cardWords, transportOf, loneRow, leadKinds, listOf } from '../src/modules/transport/plan.js';
 
 test('modeOf: train when none, bus, an unknown mode drawn as a train', () => {
   assert.equal(modeOf({}), MODES[0]);
@@ -98,4 +98,25 @@ test('cardWords: the section\'s title, and one line of what the page has for thi
   assert.deepEqual(cardWords({ taxis: [taxi], stations: [bus] }, ['it'], W), { name: { it: 'Getting around' }, sub: { it: 'Bus 3 min on foot · Taxi' } });
   assert.deepEqual(Object.keys(cardWords({ taxis: [taxi] }, null, W).name), ['en']);
   for (const l of LANGS) for (const T of [{ taxis: [taxi], stations: [tram, bus, metro, train] }, { taxis: [taxi] }]) assert.ok(!/—|\{n\}|undefined|· ·|^·|·$/.test(sub(T, l)), `${l}: ${sub(T, l)}`);
+});
+
+// The line under the page's title when the guide has none (25 Nov 2026): the icon stood alone on a guide the maker built.
+test('leadKinds, listOf: the page\'s line said from what it holds, in six languages', () => {
+  const at = { lat: 41.2, lng: 1.5 }, train = { ...at, mode: 'train' }, bus = { ...at, mode: 'bus' }, metro = { ...at, mode: 'metro' }, tram = { ...at, mode: 'tram' };
+  assert.deepEqual(leadKinds({ taxis: [{}], stations: [bus, train] }, [bus, train]), ['taxiH', 'byTrain', 'byBus']);   // the page's order, whatever the file's
+  assert.deepEqual(leadKinds({ apps: [{}] }, []), ['taxiH']); assert.deepEqual(leadKinds({ taxis: [] }, [tram, metro]), ['byMetro', 'byTram']);
+  assert.deepEqual(leadKinds({}, []), []); assert.deepEqual(leadKinds(null, null), []);
+  assert.equal(listOf([], 'and'), ''); assert.equal(listOf(['taxi'], 'and'), 'taxi'); assert.equal(listOf(['taxi', 'train'], 'and'), 'taxi and train'); assert.equal(listOf(['taxi', 'train', 'bus'], 'and'), 'taxi, train and bus');
+  // The sentence as page.js writes it, with the engine's own words: small letters inside it, but German's nouns as they are.
+  const say = (l, T, stops) => { const W = JSON.parse(readFileSync(new URL(`../src/i18n/${l}.json`, import.meta.url), 'utf8')), low = l === 'de' ? x => x : x => x.toLocaleLowerCase(l);
+    return W.trLead.replace('{kinds}', listOf(leadKinds(T, stops).map(k => low(W[k])), W.trAnd)); };
+  const all = { taxis: [{}], stations: [] }, S = [train, bus];
+  assert.equal(say('en', all, S), 'By taxi, train and bus from the house.');
+  assert.equal(say('es', all, S), 'En taxi, tren y autobús desde la casa.');
+  assert.equal(say('fr', all, S), 'En taxi, train et bus depuis la maison.');
+  assert.equal(say('ca', all, S), 'En taxi, tren i autobús des de la casa.');
+  assert.equal(say('de', all, S), 'Mit Taxi, Zug und Bus ab dem Haus.');
+  assert.equal(say('nl', all, S), 'Met taxi, trein en bus vanaf het huis.');
+  assert.equal(say('en', all, []), 'By taxi from the house.'); assert.equal(say('fr', { taxis: [] }, [metro, tram]), 'En métro et tramway depuis la maison.'); assert.equal(say('de', { taxis: [] }, [tram]), 'Mit Straßenbahn ab dem Haus.');
+  for (const l of ['en', 'es', 'fr', 'ca', 'de', 'nl']) assert.ok(!/—|\d|\{/.test(say(l, all, [train, metro, tram, bus])), l);   // never a number, nothing left to fill
 });

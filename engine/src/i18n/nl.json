@@ -204,6 +204,8 @@
   "byBus": "Bus",
   "gettingAround": "Vervoer",
   "taxiH": "Taxi",
+  "trLead": "Met {kinds} vanaf het huis.",
+  "trAnd": "en",
   "minByCar": "{n} min met de auto",
   "timetable": "Dienstregeling",
   "bookTickets": "Tickets boeken",

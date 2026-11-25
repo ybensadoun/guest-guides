@@ -204,6 +204,8 @@
   "byBus": "Bus",
   "gettingAround": "Se déplacer",
   "taxiH": "Taxi",
+  "trLead": "En {kinds} depuis la maison.",
+  "trAnd": "et",
   "minByCar": "{n} min en voiture",
   "timetable": "Horaires",
   "bookTickets": "Réserver",

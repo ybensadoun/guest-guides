@@ -50,6 +50,16 @@ export function cardWords(T, langs, words) {
   return { name: all((l, w) => w.gettingAround || 'Getting around'), ...(Object.values(sub).some(Boolean) ? { sub } : {}) };
 }
 
+// The line under the page's title when the guide has none of its own (25 Nov 2026: on a guide the maker built the icon
+// stood alone beside an empty space, where Ca La Kimberly's host wrote "Four ways to get around without a car."). Said from
+// what the page holds, at the moment it is drawn, so it is true for any mix and follows what the host adds or removes:
+// the kinds in the page's order, "Taxi" first when there is a taxi or a ride app, then each kind that has a station or a
+// stop, as the words of their headings (leadKinds), written as a list ("taxi, train and bus": listOf) inside the
+// sentence of engine/src/i18n (trLead: "By {kinds} from the house."). Never a number, never "without a car". Nothing on
+// the page: no line, and page.js then draws no icon either.
+export const leadKinds = (T, stops) => [((T || {}).taxis || []).length || ((T || {}).apps || []).length ? 'taxiH' : '', ...groupsOf(stops || []).map(([label]) => label)].filter(Boolean);
+export const listOf = (words, and) => (words.length < 2 ? words.join('') : `${words.slice(0, -1).join(', ')} ${and} ${words[words.length - 1]}`);
+
 // An older guide's Home card with "trains" (content/quick.json), read as a Getting around page: its taxi, then its stations.
 export const transportOf = p => ({ id: p.id, title: p.title || p.name, lead: p.kind,
   taxis: [{ name: p.taxiName || p.name, sub: p.taxiSub, phone: p.phone, what: p.what, alt: p.alt, always: p.always }], stations: p.trains || [] });

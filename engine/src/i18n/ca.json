@@ -204,6 +204,8 @@
   "byBus": "Autobús",
   "gettingAround": "Com moure's",
   "taxiH": "Taxi",
+  "trLead": "En {kinds} des de la casa.",
+  "trAnd": "i",
   "minByCar": "{n} min amb cotxe",
   "timetable": "Horaris",
   "bookTickets": "Comprar bitllets",
